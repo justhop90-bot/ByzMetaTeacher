@@ -451,6 +451,8 @@
 ;================================================================
 (defrule
     (current-age >= feudal-age)
+    (food-amount < 350)
+    (idle-farm-count == 0)
     (building-type-count-total farm < 6)
     (wood-amount >= 60)
     (can-build farm)
@@ -460,6 +462,8 @@
 
 (defrule
     (current-age >= castle-age)
+    (food-amount < 500)
+    (idle-farm-count == 0)
     (building-type-count-total farm < 12)
     (wood-amount >= 60)
     (can-build farm)
