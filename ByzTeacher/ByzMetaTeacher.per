@@ -814,7 +814,11 @@
 ; 13A. MILITARY PRESSURE -> FLUSH
 ;---------------------------------------------------------------
 ; Threat observation is centralized in section 12C.
-
+;
+; FLUSH is the highest-priority strategy state.  It may only be
+; entered from a non-FLUSH state.  Recovery is explicit: once the
+; threat is gone, return either to the Feudal RUSH posture when its
+; conditions are still satisfied, or to BOOM otherwise.
 (defrule
     (town-under-attack)
     (not (goal strategy-goal bt-strategy-flush))
@@ -844,7 +848,72 @@
 )
 
 ;---------------------------------------------------------------
-; 13B. FEUDAL MILITARY READY -> RUSH
+; 13B. FLUSH RECOVERY -> RUSH
+;---------------------------------------------------------------
+; This is an explicit exit from FLUSH.  It is evaluated after the
+; threat writers, so the current pass must already be threat-free.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy > 0)
+    (military-population >= 6)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-rush)
+)
+
+;---------------------------------------------------------------
+; 13C. FLUSH RECOVERY -> BOOM
+;---------------------------------------------------------------
+; If the RUSH recovery conditions are not satisfied, recover to the
+; economic posture explicitly rather than relying on a generic BOOM
+; rule to overwrite FLUSH.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (not (current-age == feudal-age))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (not (game-time >= 600))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy <= 0)
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy > 0)
+    (military-population < 6)
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+;---------------------------------------------------------------
+; 13D. FEUDAL MILITARY READY -> RUSH
 ;---------------------------------------------------------------
 ;
 ; This does NOT run if the AI is already in FLUSH.
@@ -861,23 +930,26 @@
     (not (goal strategy-goal bt-strategy-rush))
 =>
     (set-goal strategy-goal bt-strategy-rush)
-    (set-goal unit-goal archer-line)
 )
 
 ;---------------------------------------------------------------
-; 13C. SAFE CASTLE -> BOOM
+; 13E. SAFE CASTLE -> BOOM
+;---------------------------------------------------------------
+; Explicitly exclude both active pressure states.  BOOM can no
+; longer overwrite RUSH or FLUSH.
 (defrule
     (current-age >= castle-age)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
     (not (goal strategy-goal bt-strategy-boom))
+    (not (goal strategy-goal bt-strategy-rush))
+    (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-boom)
-    (set-goal unit-goal bt-unit-mix)
 )
 
 ;---------------------------------------------------------------
-; 13D. SAFE PRE-CASTLE DEFAULT
+; 13F. SAFE PRE-CASTLE DEFAULT
 ;---------------------------------------------------------------
 (defrule
     (current-age < castle-age)
@@ -885,9 +957,9 @@
     (not (goal bt-any-threat-goal 1))
     (not (goal strategy-goal bt-strategy-boom))
     (not (goal strategy-goal bt-strategy-rush))
+    (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-boom)
-    (set-goal unit-goal bt-unit-mix)
 )
 
 ;================================================================
@@ -952,6 +1024,24 @@
     (set-goal unit-goal archer-line)
 )
 
+;---------------------------------------------------------------
+; 14B. FLUSH WITH NO CURRENT THREAT -> MIX
+;---------------------------------------------------------------
+; Prevent a stale composition from surviving a transient defensive
+; posture when the town is still under attack but the counted enemy
+; threat has not resolved to a specific counter.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (not (goal bt-cavalry-threat-goal 1))
+    (not (goal bt-ranged-threat-goal 1))
+    (not (goal bt-spear-threat-goal 1))
+=>
+    (set-goal unit-goal bt-unit-mix)
+)
+
+;---------------------------------------------------------------
+; 14C. STRATEGIC POSTURES
+;---------------------------------------------------------------
 (defrule
     (goal strategy-goal bt-strategy-rush)
 =>
