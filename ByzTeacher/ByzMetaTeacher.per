@@ -1,0 +1,1561 @@
+;================================================================
+; BELISARIUS BYZANTINE TEACHING AI
+; FINAL INTEGRATED TEACHING VERSION
+;
+; PURPOSE
+;   Teach practical AoE2DE .per scripting while producing a small,
+;   coherent Byzantine AI controller.
+;
+; CONTROL LOOP
+;
+;   SCOUT
+;      ->
+;   OBSERVE
+;      ->
+;   STRATEGY-GOAL
+;      ->
+;   UNIT-GOAL
+;      ->
+;   PRODUCTION ARBITRATION
+;      ->
+;   ARMY GATHERING
+;      ->
+;   ATTACK
+;      ->
+;   RETREAT IF NEEDED
+;      ->
+;   REASSESS
+;
+; COMMUNITY-STYLE CONSTANTS
+;
+;   attack-goal       = 2
+;   strategy-goal     = 3
+;   unit-goal         = 4
+;   train-civ-goal    = 5
+;   sn-resource-control = 191
+;
+;   flush = 200
+;   rush  = 201
+;   boom  = 202
+;   mix   = 1
+;
+;   scouting timer = 3
+;   attack timer   = 4
+;   retreat timer  = 15
+;
+;   group-type-land-explore = 101
+;
+; IMPORTANT
+;   This is a standalone teaching controller.
+;   Do not load another controller that defines the same constants,
+;   goals, timers, or owns the same strategy/unit-production state.
+;
+; REMOVE OLD DIRECT MILITARY TRAIN RULES
+;
+;   Old architecture:
+;       enemy cavalry -> train spear
+;       enemy archers -> train skirm
+;       enemy spears  -> train archer
+;
+;   New architecture:
+;       enemy observation
+;           ->
+;       strategy-goal
+;           ->
+;       unit-goal
+;           ->
+;       centralized military production
+;
+;================================================================
+;================================================================
+; 0. ENGINE / COMMUNITY DEFINITIONS
+;================================================================
+; Q: "What is sn-resource-control?"
+;
+; Strategic number 191.
+; It is the resource-claim register used by established .per AIs.
+;
+; Teaching values:
+;
+;   0            = no strategic claim
+;   feudal-age   = Feudal claim owns the bank
+;   castle-age   = Castle claim owns the bank
+;   imperial-age = Imperial claim owns the bank
+;   ri-*         = specific technology owns the bank
+;
+(defconst sn-resource-control 191)
+
+; Q: "What is attack-goal?"
+;
+; Community goal 2.
+; We use value 1 to mean that an attack cycle is currently active.
+(defconst attack-goal 2)
+
+; Q: "What is strategy-goal?"
+;
+; Community goal 3.
+; It stores the broad economic/military posture.
+(defconst strategy-goal 3)
+
+; Q: "What is unit-goal?"
+;
+; Community goal 4.
+; It stores the composition the military layer currently wants.
+(defconst unit-goal 4)
+
+; Q: "What is train-civ-goal?"
+;
+; Community goal 5.
+;
+; Established convention:
+;   1  = normal villager production
+;   !=1 = normal villager production disabled
+(defconst train-civ-goal 5)
+
+; Retreat state is the established community goal 20.
+(defconst retreat-now-goal 20)
+
+; Community strategy values.
+(defconst bt-strategy-flush 200)
+(defconst bt-strategy-rush 201)
+(defconst bt-strategy-boom 202)
+
+; Community mixed-composition value.
+(defconst bt-unit-mix 1)
+
+; Community timer identifiers.
+(defconst bt-scouting-timer 3)
+(defconst bt-attack-timer 4)
+(defconst bt-retreat-timer 15)
+
+; Community land-exploration group.
+(defconst bt-land-explore-group 101)
+
+;================================================================
+; 1. TEACHING CONSTANTS
+;================================================================
+; Q: "How do I stop repeating magic numbers?"
+;
+; defconst creates a fixed compile-time name.
+; It is not mutable runtime state.
+(defconst bt-feudal-villagers 21)
+(defconst bt-castle-villagers 30)
+(defconst bt-imperial-villagers 50)
+
+(defconst bt-imperial-food 667)
+(defconst bt-imperial-gold 536)
+
+; Military composition targets.
+(defconst bt-spear-target-1 6)
+(defconst bt-spear-target-2 16)
+(defconst bt-spear-target-3 24)
+
+(defconst bt-skirm-target-1 6)
+(defconst bt-skirm-target-2 16)
+(defconst bt-skirm-target-3 24)
+
+(defconst bt-camel-target-1 4)
+(defconst bt-camel-target-2 8)
+
+; Production-capacity ceilings.
+;
+; These are teaching/controller tuning values, not engine constants.
+(defconst bt-max-barracks 10)
+(defconst bt-max-ranges 7)
+
+;================================================================
+; 2. INITIALIZATION
+;================================================================
+; Q: "What must be true before any strategic rule starts?"
+;
+; One initialization rule establishes known runtime state.
+(defrule
+    (true)
+=>
+    ```
+    ; No resource claim is active.
+    (set-strategic-number sn-resource-control 0)
+
+    ; Community-style escrow baseline.
+    (set-escrow-percentage food 30)
+    (set-escrow-percentage wood 30)
+    (set-escrow-percentage gold 30)
+
+    ; Stone is not part of this teaching controller's current
+    ; research arbitration.
+    (set-escrow-percentage stone 0)
+
+    ; Normal villager production starts enabled.
+    (set-goal train-civ-goal 1)
+
+    ; Start economically conservative.
+    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal unit-goal bt-unit-mix)
+
+    ; No attack is active.
+    (set-goal attack-goal 0)
+
+    ; No retreat is active.
+    (set-goal retreat-now-goal 0)
+
+    ; One normal land scout/exploration group.
+    (set-strategic-number sn-number-explore-groups 1)
+    (set-strategic-number sn-total-number-explorers 1)
+
+    ; Attack-group behavior.
+    ;
+    ; minimum group = 10
+    ; gather spacing = 5
+    ; use 70% of eligible attack soldiers
+    ;
+    ; Randomness/scaling are disabled so the teaching behavior is
+    ; easier to understand and reproduce.
+    (set-strategic-number sn-minimum-attack-group-size 10)
+    (set-strategic-number sn-attack-group-gather-spacing 5)
+    (set-strategic-number sn-percent-attack-soldiers 70)
+    (set-strategic-number sn-attack-group-size-randomness 0)
+    (set-strategic-number sn-scale-minimum-attack-group-size 0)
+    (set-strategic-number sn-scale-maximum-attack-group-size 0)
+
+    ; Defensive units may contribute to attack groups.
+    (set-strategic-number sn-gather-defense-units 1)
+
+    ; Initial deliberate scout/attack cooldowns.
+    (enable-timer bt-scouting-timer 120)
+    (enable-timer bt-attack-timer 900)
+
+    ; Retreat timer starts disabled until a retreat occurs.
+    (disable-timer bt-retreat-timer)
+
+    ; Run initialization once.
+    (disable-self)
+    ```
+
+)
+
+;================================================================
+; 3. LOOM
+;================================================================
+; Q: "How do I write a technology rule?"
+;
+;   CONDITION
+;       ->
+;   CLAIM RESOURCE
+;       ->
+;   RELEASE ESCROW
+;       ->
+;   RESEARCH
+;
+; Loom costs gold, so gold escrow is released.
+(defrule
+    (current-age == dark-age)
+    (unit-type-count villager >= 7)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-loom)
+=>
+    (set-strategic-number sn-resource-control ri-loom)
+    (release-escrow gold)
+    (research ri-loom)
+)
+
+; Q: "How do I know the technology actually completed?"
+;
+; research-pending is not enough.
+; The completion witness is research-complete.
+(defrule
+    (strategic-number sn-resource-control == ri-loom)
+    (up-research-status c: ri-loom == research-complete)
+=>
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; 4. NORMAL VILLAGER PRODUCTION
+;================================================================
+; Q: "When is the TC allowed to make another villager?"
+;
+; The normal villager-training goal must be enabled.
+; An active age claim overrides ordinary production.
+(defrule
+    (goal train-civ-goal 1)
+    (strategic-number sn-resource-control != feudal-age)
+    (strategic-number sn-resource-control != castle-age)
+    (strategic-number sn-resource-control != imperial-age)
+    (can-train villager)
+    (population-headroom > 0)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+=>
+    (train villager)
+)
+
+;================================================================
+; 5. FEUDAL AGE
+;================================================================
+; Q: "How do I stop normal villager training without idling
+; every Town Center?"
+;
+; Use train-civ-goal.
+;
+; Do NOT use up-reset-building on Town Centers here.
+; That resets all TCs of the specified type.
+(defrule
+    (current-age == dark-age)
+    (unit-type-count villager >= bt-feudal-villagers)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow feudal-age)
+=>
+    (set-strategic-number sn-resource-control feudal-age)
+    (set-goal train-civ-goal -1)
+    (release-escrow food)
+    (release-escrow gold)
+    (research feudal-age)
+)
+
+; Q: "What proves the age transition actually happened?"
+;
+; current-age is the world-state witness.
+(defrule
+    (strategic-number sn-resource-control == feudal-age)
+    (current-age >= feudal-age)
+=>
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;================================================================
+; 6. CASTLE AGE
+;================================================================
+(defrule
+    (current-age == feudal-age)
+    (unit-type-count villager >= bt-castle-villagers)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow castle-age)
+=>
+    (set-strategic-number sn-resource-control castle-age)
+    (set-goal train-civ-goal -1)
+    (release-escrow food)
+    (release-escrow gold)
+    (research castle-age)
+)
+
+(defrule
+    (strategic-number sn-resource-control == castle-age)
+    (current-age >= castle-age)
+=>
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;================================================================
+; 7. IMPERIAL AGE
+;================================================================
+; Byzantine teaching thresholds:
+;   667 food
+;   536 gold
+(defrule
+    (current-age == castle-age)
+    (unit-type-count villager >= bt-imperial-villagers)
+    (food-amount >= bt-imperial-food)
+    (gold-amount >= bt-imperial-gold)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow imperial-age)
+=>
+    (set-strategic-number sn-resource-control imperial-age)
+    (set-goal train-civ-goal -1)
+    (release-escrow food)
+    (release-escrow gold)
+    (research imperial-age)
+)
+
+(defrule
+    (strategic-number sn-resource-control == imperial-age)
+    (current-age >= imperial-age)
+=>
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;================================================================
+; 8. HOUSING
+;================================================================
+; Q: "How do I prevent a population-cap stall?"
+(defrule
+    (housing-headroom <= 4)
+    (up-pending-objects c: house == 0)
+    (can-build house)
+=>
+    (build house)
+)
+
+;================================================================
+; 9. BASIC ECONOMIC BUILDINGS
+;================================================================
+(defrule
+    (building-type-count-total lumber-camp == 0)
+    (civilian-population >= 7)
+    (can-build lumber-camp)
+=>
+    (build lumber-camp)
+)
+
+(defrule
+    (building-type-count-total mining-camp == 0)
+    (civilian-population >= 8)
+    (can-build mining-camp)
+=>
+    (build mining-camp)
+)
+
+(defrule
+    (building-type-count-total mill == 0)
+    (civilian-population >= 10)
+    (can-build mill)
+=>
+    (build mill)
+)
+
+(defrule
+    (building-type-count-total barracks == 0)
+    (civilian-population >= 12)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+;================================================================
+; 10. HORSE COLLAR
+;================================================================
+; Age advancement gets first resource claim.
+; Horse Collar can only claim the bank if Castle is not currently
+; researchable.
+(defrule
+    (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+    (can-research-with-escrow ri-horse-collar)
+=>
+    (set-strategic-number sn-resource-control ri-horse-collar)
+    (release-escrow food)
+    (release-escrow wood)
+    (research ri-horse-collar)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-horse-collar)
+    (up-research-status c: ri-horse-collar == research-complete)
+=>
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; 11. FARM TRANSITION
+;================================================================
+(defrule
+    (current-age >= feudal-age)
+    (building-type-count-total farm < 6)
+    (wood-amount >= 60)
+    (can-build farm)
+=>
+    (build farm)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total farm < 12)
+    (wood-amount >= 60)
+    (can-build farm)
+=>
+    (build farm)
+)
+
+;================================================================
+; 12. SCOUTING
+;================================================================
+; Q: "How does the AI deliberately search for the enemy?"
+;
+; up-send-scout directs a land/water scout to a strategic location.
+;
+; The community uses scout-flank for the opening search and
+; scout-enemy after the enemy's town has actually been located.
+;---------------------------------------------------------------
+; 12A. INITIAL / REPEATED ENEMY SEARCH
+;---------------------------------------------------------------
+(defrule
+    (timer-triggered bt-scouting-timer)
+    (game-time >= 120)
+    (players-building-count any-enemy <= 0)
+    (strategic-number sn-number-explore-groups > 0)
+=>
+    (up-send-scout bt-land-explore-group scout-flank)
+    (enable-timer bt-scouting-timer 120)
+)
+
+;---------------------------------------------------------------
+; 12B. TARGETED ENEMY SCOUTING
+;---------------------------------------------------------------
+;
+; scout-enemy is legal only after the target enemy has actually
+; been located.
+(defrule
+    (timer-triggered bt-scouting-timer)
+    (game-time >= 120)
+    (players-building-count any-enemy > 0)
+    (strategic-number sn-number-explore-groups > 0)
+=>
+    (up-send-scout bt-land-explore-group scout-enemy)
+    (enable-timer bt-scouting-timer 180)
+)
+
+;================================================================
+; 13. STRATEGY SELECTION
+;================================================================
+;
+; Strategy answers:
+;
+;   "What kind of game are we playing right now?"
+;
+; It does NOT train units.
+;
+; Strategy values:
+;
+;   FLUSH = react to military pressure
+;   RUSH  = convert a small prepared army into pressure
+;   BOOM  = prioritize economic expansion
+;---------------------------------------------------------------
+; 13A. MILITARY PRESSURE -> FLUSH
+;---------------------------------------------------------------
+;
+; Any serious cavalry/ranged/spear signal OR an active town attack
+; puts the AI into a responsive posture.
+(defrule
+    (town-under-attack)
+    (not (goal strategy-goal bt-strategy-flush))
+=>
+    (set-goal strategy-goal bt-strategy-flush)
+)
+
+(defrule
+    (not (town-under-attack))
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (or
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (or
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (or
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    )
+    )
+    )
+    )
+    (not (goal strategy-goal bt-strategy-flush))
+=>
+    (set-goal strategy-goal bt-strategy-flush)
+)
+
+(defrule
+    (not (town-under-attack))
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    (not (goal strategy-goal bt-strategy-flush))
+=>
+    (set-goal strategy-goal bt-strategy-flush)
+)
+
+(defrule
+    (not (town-under-attack))
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    (not (goal strategy-goal bt-strategy-flush))
+=>
+    (set-goal strategy-goal bt-strategy-flush)
+)
+
+;---------------------------------------------------------------
+; 13B. FEUDAL MILITARY READY -> RUSH
+;---------------------------------------------------------------
+;
+; This does NOT run if the AI is already in FLUSH.
+;
+; The first rush army is intentionally small and readable:
+; Archery Range + Archers.
+(defrule
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy > 0)
+    (military-population >= 6)
+    (not (town-under-attack))
+    (goal strategy-goal != bt-strategy-flush)
+    (not (goal strategy-goal bt-strategy-rush))
+=>
+    (set-goal strategy-goal bt-strategy-rush)
+    (set-goal unit-goal archer-line)
+)
+
+;---------------------------------------------------------------
+; 13C. SAFE CASTLE -> BOOM
+;---------------------------------------------------------------
+;
+; Once Castle is reached and there is no immediate military reason
+; to stay in FLUSH, return to the Byzantine economic posture.
+(defrule
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+    )
+    (not (goal strategy-goal bt-strategy-boom))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal unit-goal bt-unit-mix)
+)
+
+;---------------------------------------------------------------
+; 13D. SAFE PRE-CASTLE DEFAULT
+;---------------------------------------------------------------
+(defrule
+    (current-age < castle-age)
+    (not (town-under-attack))
+    (not
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+    )
+    (not (goal strategy-goal bt-strategy-boom))
+    (not (goal strategy-goal bt-strategy-rush))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal unit-goal bt-unit-mix)
+)
+
+;================================================================
+; 14. UNIT-GOAL SELECTION
+;================================================================
+;
+; Unit-goal answers:
+;
+;   "What composition should the production system make?"
+;
+; The strategy layer decides POSTURE.
+; This layer decides COMPOSITION.
+;---------------------------------------------------------------
+; 14A. MULTIPLE THREAT TYPES -> MIX
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    )
+    (or
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (or
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    )
+    )
+    )
+    (or
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+=>
+    (set-goal unit-goal bt-unit-mix)
+)
+
+;---------------------------------------------------------------
+; 14B. CAVALRY ONLY -> SPEARS
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    )
+    (or
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (or
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    )
+    )
+    )
+    (not
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+    )
+=>
+    (set-goal unit-goal spearman-line)
+)
+
+;---------------------------------------------------------------
+; 14C. RANGED ONLY -> SKIRMISHERS
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    (not
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+    )
+=>
+    (set-goal unit-goal skirmisher-line)
+)
+
+;---------------------------------------------------------------
+; 14D. SPEAR ONLY -> ARCHERS
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    (not
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    )
+=>
+    (set-goal unit-goal archer-line)
+)
+
+;---------------------------------------------------------------
+; 14E. RUSH -> ARCHERS
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+=>
+    (set-goal unit-goal archer-line)
+)
+
+;---------------------------------------------------------------
+; 14F. BOOM -> MIX
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+=>
+    (set-goal unit-goal bt-unit-mix)
+)
+
+;================================================================
+; 15. PRODUCTION CAPACITY
+;================================================================
+;
+; Q: "How do strategy and unit-goal change actual production?"
+;
+; They become prerequisites for production-building rules.
+;
+; IMPORTANT:
+;   sn-resource-control must be 0.
+;
+; If an age/research claim owns the bank, military production waits.
+; This is the conservative resource arbitration rule.
+;---------------------------------------------------------------
+; 15A. BARRACK CAPACITY
+;---------------------------------------------------------------
+; Initial counter capacity.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 6)
+    (players-unit-type-count any-enemy camel-line >= 6)
+    (players-unit-type-count any-enemy cataphract-line >= 6)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 6)
+    (players-unit-type-count any-enemy war-elephant-line >= 6)
+    )
+    (building-type-count-total barracks < 2)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+; Castle pressure.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 15)
+    (players-unit-type-count any-enemy camel-line >= 15)
+    (players-unit-type-count any-enemy cataphract-line >= 15)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
+    (players-unit-type-count any-enemy war-elephant-line >= 15)
+    )
+    (building-type-count-total barracks < 4)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+; Large late-game pressure.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 25)
+    (players-unit-type-count any-enemy camel-line >= 25)
+    (players-unit-type-count any-enemy cataphract-line >= 25)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 25)
+    (players-unit-type-count any-enemy war-elephant-line >= 25)
+    )
+    (building-type-count-total barracks < 6)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+; Imperial massive pressure.
+(defrule
+    (current-age >= imperial-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 40)
+    (players-unit-type-count any-enemy camel-line >= 40)
+    (players-unit-type-count any-enemy cataphract-line >= 40)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 40)
+    (players-unit-type-count any-enemy war-elephant-line >= 40)
+    )
+    (building-type-count-total barracks < 8)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+; Extreme cavalry mass.
+(defrule
+    (current-age >= imperial-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 55)
+    (players-unit-type-count any-enemy camel-line >= 55)
+    (players-unit-type-count any-enemy cataphract-line >= 55)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 55)
+    (players-unit-type-count any-enemy war-elephant-line >= 55)
+    )
+    (building-type-count-total barracks < bt-max-barracks)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+;---------------------------------------------------------------
+; 15B. ARCHERY-RANGE CAPACITY
+;---------------------------------------------------------------
+; First range.
+;
+; IMPORTANT:
+; 3+ ranged threat matches the first Skirmisher threshold.
+;
+; That closes the dependency:
+;   ranged threat -> first Range -> Skirmisher.
+(defrule
+    (or
+    (goal unit-goal skirmisher-line)
+    (goal unit-goal archer-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (or
+    (goal strategy-goal bt-strategy-rush)
+    (goal strategy-goal bt-strategy-flush)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    (goal strategy-goal bt-strategy-rush)
+    )
+    (building-type-count-total archery-range < 1)
+    (can-build archery-range)
+=>
+    (build archery-range)
+)
+
+; Second range.
+(defrule
+    (or
+    (goal unit-goal skirmisher-line)
+    (goal unit-goal archer-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (goal strategy-goal != bt-strategy-boom)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 6)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 6)
+    (players-unit-type-count any-enemy spearman-line >= 8)
+    )
+    (building-type-count-total archery-range < 2)
+    (can-build archery-range)
+=>
+    (build archery-range)
+)
+
+; Large ranged pressure.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal skirmisher-line)
+    (goal unit-goal archer-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 15)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 15)
+    (players-unit-type-count any-enemy spearman-line >= 12)
+    )
+    (building-type-count-total archery-range < 4)
+    (can-build archery-range)
+=>
+    (build archery-range)
+)
+
+; Very large ranged pressure.
+(defrule
+    (current-age >= imperial-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal skirmisher-line)
+    (goal unit-goal archer-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 25)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 25)
+    )
+    (building-type-count-total archery-range < 6)
+    (can-build archery-range)
+=>
+    (build archery-range)
+)
+
+;---------------------------------------------------------------
+; 15C. STABLE CAPACITY
+;---------------------------------------------------------------
+; Camel support becomes active only against non-Camel cavalry.
+;
+; Enemy Camel Riders still trigger the cheap spear response.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 10)
+    (players-unit-type-count any-enemy cataphract-line >= 10)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+    (players-unit-type-count any-enemy war-elephant-line >= 10)
+    )
+    (building-type-count-total stable < 1)
+    (can-build stable)
+=>
+    (build stable)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 15)
+    (players-unit-type-count any-enemy cataphract-line >= 15)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
+    (players-unit-type-count any-enemy war-elephant-line >= 15)
+    )
+    (building-type-count-total stable < 2)
+    (can-build stable)
+=>
+    (build stable)
+)
+
+;================================================================
+; 16. MILITARY PRODUCTION ARBITRATION
+;================================================================
+;
+; ONLY this section directly trains military units.
+;
+; The goals above decide what is wanted.
+; These rules decide what actually gets queued.
+;
+; Every military train rule requires:
+;
+;   strategy
+;   unit-goal
+;   resource claim free
+;   enemy condition
+;   our queued+trained count below target
+;   legal training
+;
+; This is the arbitration layer.
+;---------------------------------------------------------------
+; 16A. EXPLICIT SPEAR GOAL
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal spearman-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    )
+    (unit-type-count-total spearman-line < bt-spear-target-1)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal spearman-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 10)
+    (players-unit-type-count any-enemy camel-line >= 10)
+    (players-unit-type-count any-enemy cataphract-line >= 10)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+    (players-unit-type-count any-enemy war-elephant-line >= 10)
+    )
+    (unit-type-count-total spearman-line < bt-spear-target-2)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal spearman-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 20)
+    (players-unit-type-count any-enemy camel-line >= 20)
+    (players-unit-type-count any-enemy cataphract-line >= 20)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 20)
+    (players-unit-type-count any-enemy war-elephant-line >= 20)
+    )
+    (unit-type-count-total spearman-line < bt-spear-target-3)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
+;---------------------------------------------------------------
+; 16B. EXPLICIT SKIRMISHER GOAL
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal skirmisher-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-skirm-target-1)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal skirmisher-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 10)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 10)
+    )
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-skirm-target-2)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal skirmisher-line)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 20)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 20)
+    )
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-skirm-target-3)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+)
+
+;---------------------------------------------------------------
+; 16C. EXPLICIT ARCHER GOAL
+;---------------------------------------------------------------
+; Rush or anti-Spear Archer production.
+(defrule
+    (or
+    (goal strategy-goal bt-strategy-rush)
+    (goal strategy-goal bt-strategy-flush)
+    )
+    (goal unit-goal archer-line)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total archer-line < 6)
+    (or
+    (goal strategy-goal bt-strategy-rush)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    )
+    (can-train archer-line)
+=>
+    (train archer-line)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal archer-line)
+    (strategic-number sn-resource-control == 0)
+    (players-unit-type-count any-enemy spearman-line >= 8)
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total archer-line < 10)
+    (can-train archer-line)
+=>
+    (train archer-line)
+)
+
+;---------------------------------------------------------------
+; 16D. MIXED COMPOSITION
+;---------------------------------------------------------------
+;
+; Priority:
+;
+;   1. Spears versus cavalry
+;   2. Camels versus larger non-Camel cavalry
+;   3. Skirms versus ranged
+;   4. Archers versus Spears
+;
+; These rules all require the resource bank to be free.
+; MIX #1: cheap cavalry cover first.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 3)
+    (players-unit-type-count any-enemy camel-line >= 3)
+    (players-unit-type-count any-enemy cataphract-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+    )
+    (unit-type-count-total spearman-line < bt-spear-target-1)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
+; MIX #2: Camel support after the cheap spear floor.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (unit-type-count-total spearman-line >= bt-spear-target-1)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 10)
+    (players-unit-type-count any-enemy cataphract-line >= 10)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+    (players-unit-type-count any-enemy war-elephant-line >= 10)
+    )
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total camel-line < bt-camel-target-1)
+    (can-train camel)
+=>
+    (train camel)
+)
+
+; MIX #3: ranged coverage.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-skirm-target-1)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+)
+
+; MIX #4: Archer support against Spears.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (goal unit-goal bt-unit-mix)
+    (strategic-number sn-resource-control == 0)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total archer-line < 6)
+    (can-train archer-line)
+=>
+    (train archer-line)
+)
+
+;================================================================
+; 17. BYZANTINE BOOM
+;================================================================
+;
+; Q: "What does BOOM mean in actual code?"
+;
+; Town Centers.
+;
+; These rules only fire in BOOM posture, so the AI does not spend
+; 600+ wood on TCs while a known attack needs military capacity.
+; TC2.
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (unit-type-count villager >= 32)
+    (food-amount >= 350)
+    (wood-amount >= 300)
+    (building-type-count-total town-center < 2)
+    (can-build town-center)
+=>
+    (build town-center)
+)
+
+; TC3.
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (unit-type-count villager >= 45)
+    (food-amount >= 500)
+    (wood-amount >= 300)
+    (building-type-count-total town-center < 3)
+    (can-build town-center)
+=>
+    (build town-center)
+)
+
+;================================================================
+; 18. SCOUTING -> ATTACK-GROUP GATHERING
+;================================================================
+;
+; Q: "How does the AI actually form an army?"
+;
+; We do not manually move ten units.
+;
+; The engine's attack-group system handles gathering.
+;
+; minimum group size = 10
+; gather spacing      = 5
+; attack allocation   = 70%
+; Q: "When should the first deliberate attack happen?"
+;
+; After:
+;   Feudal+
+;   enemy located
+;   attack group is actually available
+;   town is not currently under attack
+;   no other attack cycle is active
+(defrule
+    (timer-triggered bt-attack-timer)
+    (current-age >= feudal-age)
+    (players-building-count any-enemy > 0)
+    (attack-soldier-count >= 10)
+    (goal attack-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+=>
+    ; Mark the attack cycle active BEFORE attack-now.
+    (set-goal attack-goal 1)
+
+    ```
+    ; Force the available attack units into an attack-group.
+    ;
+    ; attack-now should NOT be spammed.
+    (attack-now)
+
+    ; Hold the attack cycle for five minutes before resetting it.
+    (enable-timer bt-attack-timer 300)
+    ```
+
+)
+
+;================================================================
+; 19. ATTACK CYCLE RESET
+;================================================================
+;
+; Q: "How do we regain script control after attack-now?"
+;
+; UserPatch supplies up-reset-attack-now for exactly this purpose.
+(defrule
+    (timer-triggered bt-attack-timer)
+    (goal attack-goal 1)
+=>
+    (up-reset-attack-now)
+
+    ```
+    ; End this attack cycle.
+    (set-goal attack-goal 0)
+
+    ; Cooldown before another attack command.
+    (enable-timer bt-attack-timer 180)
+    ```
+
+)
+
+;================================================================
+; 20. RETREAT
+;================================================================
+;
+; Q: "When does a human player abandon the attack?"
+;
+; Here:
+;
+;   attack is active
+;   +
+;   town is under attack
+;   ->
+;   recall military
+;
+; The rule is deliberately broad and conservative.
+;
+; up-retreat-now recalls military units toward the home Town Center.
+(defrule
+    (goal attack-goal 1)
+    (goal retreat-now-goal 0)
+    (town-under-attack)
+    (attack-soldier-count >= 6)
+=>
+    (set-goal retreat-now-goal 1)
+
+    ```
+    ; Stop the persistent attack-now targeting.
+    (up-reset-attack-now)
+
+    ; Recall military forces.
+    (up-retreat-now)
+
+    ; End the attack cycle.
+    (set-goal attack-goal 0)
+
+    ; Stop the existing attack cooldown.
+    (disable-timer bt-attack-timer)
+
+    ; Prevent repeated retreat commands.
+    (enable-timer bt-retreat-timer 120)
+    ```
+
+)
+
+;================================================================
+; 21. RETREAT RELEASE
+;================================================================
+(defrule
+    (timer-triggered bt-retreat-timer)
+    (goal retreat-now-goal 1)
+=>
+    (set-goal retreat-now-goal 0)
+
+    ```
+    ; Let the army regroup at home before another attack opportunity.
+    (enable-timer bt-attack-timer 180)
+    ```
+
+)
+
+;================================================================
+; 22. PIKEMAN RESEARCH
+;================================================================
+;
+; Q: "When does the composition earn its upgrade?"
+;
+; Existing spear mass + real cavalry threat + free resource claim.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal spearman-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (unit-type-count-total spearman-line >= 6)
+    (or
+    (players-unit-type-count any-enemy knight-line >= 6)
+    (players-unit-type-count any-enemy camel-line >= 6)
+    (players-unit-type-count any-enemy cataphract-line >= 6)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 6)
+    )
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-pikeman)
+=>
+    (set-strategic-number sn-resource-control ri-pikeman)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-pikeman)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-pikeman)
+    (up-research-status c: ri-pikeman == research-complete)
+=>
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; 23. ELITE SKIRMISHER RESEARCH
+;================================================================
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-flush)
+    (or
+    (goal unit-goal skirmisher-line)
+    (goal unit-goal bt-unit-mix)
+    )
+    (unit-type-count-total skirmisher-line >= 6)
+    (or
+    (players-unit-type-count any-enemy archer-line >= 6)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 6)
+    )
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-elite-skirmisher)
+=>
+    (set-strategic-number sn-resource-control ri-elite-skirmisher)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-elite-skirmisher)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher == research-complete)
+=>
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; 24. END-OF-FILE TEACHING MAP
+;================================================================
+;
+; The student should now be able to trace:
+;
+;   SCOUT
+;      |
+;      v
+;   enemy observation
+;      |
+;      v
+;   strategy-goal
+;      |
+;      v
+;   unit-goal
+;      |
+;      v
+;   production building
+;      |
+;      v
+;   train
+;      |
+;      v
+;   attack-soldier-count
+;      |
+;      v
+;   attack-now
+;      |
+;      +---- town-under-attack ----> retreat-now
+;      |
+;      v
+;   reassess
+;
+; STRATEGY:
+;   boom / rush / flush
+;
+; COMPOSITION:
+;   spearman-line
+;   skirmisher-line
+;   archer-line
+;   mix
+;
+; PRODUCTION:
+;   barracks
+;   archery-range
+;   stable
+;
+; RESOURCE ARBITRATION:
+;   sn-resource-control
+;   escrow
+;   train-civ-goal
+;
+; This is still intentionally a teaching controller.
+; It is not a full Stock AI replacement.
+;================================================================
