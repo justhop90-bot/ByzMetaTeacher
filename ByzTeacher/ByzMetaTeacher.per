@@ -422,7 +422,127 @@
 )
 
 ;================================================================
-; 10. HORSE COLLAR
+; 10. BOAR HUNTING / NATURAL-FOOD CONTROL
+;================================================================
+; Q: "How does a teaching AI turn the engine's native food system
+; into a practical early-game food income?"
+;
+; Do NOT write a villager-by-villager food allocator here.
+; The engine already owns normal food-source selection. Our job is
+; to configure the native hunt controller when a live boar is close
+; enough to justify it, then return control to normal hunting when
+; the boar is gone or too far away.
+;
+; COMMUNITY META PATTERN:
+;   live boar detected
+;       ->
+;   enable boar hunting
+;       ->
+;   require at least one hunter
+;       ->
+;   allow a one-villager lure
+;       ->
+;   request support hunters
+;       ->
+;   once the boar is under the TC, maintain the hunt group
+;       ->
+;   when no usable live boar remains, restore normal hunting
+;
+; This is deliberately smaller than a full food-economy model.
+; The teaching point is that:
+;
+;   OBSERVATION
+;       !=
+;   MANUAL VILLAGER ASSIGNMENT
+;
+; The observation changes an engine-native subsystem's policy.
+;
+; The community references use dropsite-min-distance live-boar,
+; sn-enable-boar-hunting, sn-minimum-number-hunters,
+; sn-minimum-boar-lure-group-size, sn-minimum-boar-hunt-group-size,
+; sn-maximum-hunt-drop-distance, and up-request-hunters.
+;
+; up-request-hunters is a request, not a guarantee. The engine may
+; fail to reach the requested total when suitable villagers are not
+; available.
+;
+;----------------------------------------------------------------
+; 10A. INITIAL FOOD-HUNT POLICY
+;----------------------------------------------------------------
+; Start with normal hunting behavior. A later live-boar rule takes
+; ownership only when the engine can actually see a live boar.
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-enable-boar-hunting 1)
+    (set-strategic-number sn-minimum-number-hunters 0)
+    (set-strategic-number sn-minimum-boar-lure-group-size 0)
+    (set-strategic-number sn-minimum-boar-hunt-group-size 0)
+    (set-strategic-number sn-maximum-hunt-drop-distance 8)
+)
+
+;----------------------------------------------------------------
+; 10B. START / MAINTAIN THE BOAR LURE
+;----------------------------------------------------------------
+; A live boar within 32 tiles is close enough for the engine's native
+; hunt controller to use as the preferred early food source.
+;
+; The minimum hunter count of 1 creates the initial lurer.
+; The lure group size of 1 keeps the opening deterministic.
+(defrule
+    (unit-type-count villager >= 9)
+    (dropsite-min-distance live-boar >= 0)
+    (dropsite-min-distance live-boar <= 32)
+=>
+    (set-strategic-number sn-enable-boar-hunting 2)
+    (set-strategic-number sn-minimum-number-hunters 1)
+    (set-strategic-number sn-minimum-boar-lure-group-size 1)
+    (set-strategic-number sn-minimum-boar-hunt-group-size 1)
+    (set-strategic-number sn-maximum-hunt-drop-distance 32)
+    (set-strategic-number sn-maximum-food-drop-distance 16)
+    (up-request-hunters c: 1)
+)
+
+;----------------------------------------------------------------
+; 10C. SUPPORT THE ACTIVE BOAR UNDER THE TOWN CENTER
+;----------------------------------------------------------------
+; Once the boar is very close, use the community-standard hunt-group
+; behavior: request a larger total hunting group rather than manually
+; retasking individual villagers.
+;
+; Seven is a hunt-group target, not a promise that seven villagers
+; will always be available.
+(defrule
+    (unit-type-count villager >= 9)
+    (dropsite-min-distance live-boar >= 0)
+    (dropsite-min-distance live-boar <= 10)
+=>
+    (set-strategic-number sn-enable-boar-hunting 2)
+    (set-strategic-number sn-minimum-number-hunters 7)
+    (set-strategic-number sn-minimum-boar-hunt-group-size 7)
+    (up-request-hunters c: 6)
+)
+
+;----------------------------------------------------------------
+; 10D. BOAR GONE / TOO FAR -> NORMAL HUNTING
+;----------------------------------------------------------------
+; Once no usable live boar is available, stop forcing the boar
+; subsystem and let normal hunting choose deer/forage/farms.
+(defrule
+    (or
+        (dropsite-min-distance live-boar == -1)
+        (dropsite-min-distance live-boar > 32)
+    )
+=>
+    (set-strategic-number sn-enable-boar-hunting 1)
+    (set-strategic-number sn-minimum-number-hunters 0)
+    (set-strategic-number sn-minimum-boar-lure-group-size 0)
+    (set-strategic-number sn-minimum-boar-hunt-group-size 0)
+    (set-strategic-number sn-maximum-hunt-drop-distance 8)
+)
+
+;================================================================
+; 11. HORSE COLLAR
 ;================================================================
 ; Age advancement gets first resource claim.
 ; Horse Collar can only claim the bank if Castle is not currently
