@@ -45,3 +45,34 @@ Recent repair commit
 Fix logical-operator arity using nested community-style ORs
 
 This report intentionally distinguishes verified source defects from stale or cascading historical diagnostics rather than declaring every historical ERR6002 line to be a separate programming error.
+
+
+Current debugger audit (main after core repair)
+-----------------------------------------------
+Source commit: 7b4060eb946c923a40811914cd071c8da9bff7eb
+
+Verified source invariants:
+- 95 defrule forms
+- 95 => separators
+- balanced parentheses
+- no nested defrule forms
+- no rule closes before its =>
+- no rule remains open after its action block
+- no direct n-ary logical operators
+- no source line exceeds 255 characters
+- no remaining goal ... != ... predicates
+- counter goals 42, 43, and 44 are explicitly initialized before their threat-state consumers run
+
+Fatal source defects repaired:
+1. The Pikeman research rule had an extra close before its => and therefore did not form a valid rule. The close was moved to the end of the action block.
+2. The two goal-negation predicates using "goal ... != ..." were replaced with documented (not (goal ... ...)) facts.
+3. Threat counter goals 42/43/44 were added to startup initialization rather than relying only on the per-pass threat reset.
+
+Semantic limitations that remain intentionally unclaimed:
+- This is a source-structure audit, not proof that the installed AoE2DE parser accepts the file.
+- Runtime behavior is not proven by repository inspection.
+- Strategic number 191 is retained as a community-established resource-control convention, but its collision status should be verified against the exact target DE build before treating it as a formally reserved custom SN.
+- Current source still requires gameplay validation for same-pass state visibility, research/production arbitration, building placement behavior, scouting behavior, and attack-group lifecycle.
+
+Reference standard:
+AIRef currently documents 32 elements per DE rule, binary logical operators, goal variables, escrow-aware commands, queued-unit semantics for unit-type-count-total, and explicit initialization as established defensive practice. These facts are used as engine/reference constraints; gameplay architecture decisions remain controller-specific.
