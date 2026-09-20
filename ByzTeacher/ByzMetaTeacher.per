@@ -446,6 +446,9 @@
 ;       ->
 ;   once the boar is under the TC, maintain the hunt group
 ;       ->
+;   current boar nearly exhausted + another live boar available
+;       -> reset to one-lurer mode for the next boar
+;       ->
 ;   when no usable live boar remains, restore normal hunting
 ;
 ; This is deliberately smaller than a full food-economy model.
@@ -479,6 +482,7 @@
     (set-strategic-number sn-minimum-boar-lure-group-size 0)
     (set-strategic-number sn-minimum-boar-hunt-group-size 0)
     (set-strategic-number sn-maximum-hunt-drop-distance 8)
+    (disable-self)
 )
 
 ;----------------------------------------------------------------
@@ -491,6 +495,7 @@
 ; The lure group size of 1 keeps the opening deterministic.
 (defrule
     (unit-type-count villager >= 9)
+    (unit-type-count villager-hunter == 0)
     (dropsite-min-distance live-boar >= 0)
     (dropsite-min-distance live-boar <= 32)
 =>
@@ -514,6 +519,8 @@
 ; will always be available.
 (defrule
     (unit-type-count villager >= 9)
+    (strategic-number sn-minimum-number-hunters < 7)
+    (unit-type-count villager-hunter < 7)
     (dropsite-min-distance live-boar >= 0)
     (dropsite-min-distance live-boar <= 10)
 =>
@@ -524,7 +531,37 @@
 )
 
 ;----------------------------------------------------------------
-; 10D. BOAR GONE / TOO FAR -> NORMAL HUNTING
+; 10D. MOVE FROM A FINISHED BOAR TO THE NEXT LURE
+;----------------------------------------------------------------
+; live-boar deliberately reports the next living boar, while
+; boar-hunting describes the nearest boar being hunted. The distinction
+; matters after the first boar is down: using live-boar alone cannot tell
+; us that the current hunt is nearly finished.
+;
+; up-remaining-boar-amount is valid only when a current/next boar exists;
+; 65535 means there is no valid boar. Therefore <195 is a safe "current
+; boar is low and another boar is available" signal.
+;
+; This is the smallest second-boar closure. We do not manually select a
+; lurer or direct units. We simply return the native hunt controller to
+; one-lurer mode so it can begin the next lure.
+(defrule
+    (strategic-number sn-enable-boar-hunting == 2)
+    (dropsite-min-distance live-boar >= 0)
+    (dropsite-min-distance live-boar <= 32)
+    (dropsite-min-distance boar-hunting >= 0)
+    (dropsite-min-distance boar-hunting <= 10)
+    (up-remaining-boar-amount < 195)
+    (strategic-number sn-minimum-number-hunters > 1)
+=>
+    (set-strategic-number sn-minimum-number-hunters 1)
+    (set-strategic-number sn-minimum-boar-hunt-group-size 1)
+    (set-strategic-number sn-minimum-boar-lure-group-size 1)
+    (up-request-hunters c: 1)
+)
+
+;----------------------------------------------------------------
+; 10E. BOAR GONE / TOO FAR -> NORMAL HUNTING
 ;----------------------------------------------------------------
 ; Once no usable live boar is available, stop forcing the boar
 ; subsystem and let normal hunting choose deer/forage/farms.
