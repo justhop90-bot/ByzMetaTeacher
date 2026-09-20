@@ -1,26 +1,47 @@
 ByzMetaTeacher lint repair record
 ================================
 
-Previous report status:
-  The prior ERR6002 report was generated against the pre-repair source and is retained here only as historical evidence.
+Forensic baseline
+-----------------
+The historical ERR6002 report in commit 12e29502cceb40c6e584f7e227e80241afc0b5d2 contains 210 diagnostic entries. Those entries are not 210 independent oversized rules.
 
-Repairs applied:
-  1. Removed accidental Markdown triple-backtick fences from .per source.
-  2. Split initialization into compact one-shot state/configuration rules.
-  3. Added compact enemy-threat observation goals.
-  4. Replaced repeated nested enemy OR trees in strategy and unit-goal consumers with state-goal consumers.
-  5. Replaced repeated five-unit cavalry OR trees in Barracks capacity consumers with a stored cavalry-mass level and up-compare-goal.
-  6. Preserved the teaching pipeline: observation -> strategy -> unit-goal -> production capability -> training.
+The historical source has a malformed initialization rule beginning at line 172. It contains 23 runtime actions plus its fact, and it also contains literal Markdown fence lines. That rule is unambiguously over the community-compatible 16-element limit and over DE's 32-element limit once its commands/operators are counted. The Markdown fences are also invalid .per source.
 
-Structural verification of current source:
-  rules=80
-  markdown_fences=0
-  rules_over_32_elements=0
-  oversized_rules=none
+The remaining ERR6002 line ranges in that historical report map, in the same repository snapshot, to rules whose actual command counts are below both 16 and 32. They therefore cannot be treated as independently verified rule-too-long defects from that snapshot. They are retained as historical diagnostics, not as a list of 210 separate code repairs.
 
-Community basis:
-  - AoE2 DE rule length is limited to 32 facts/actions/logical-operator elements.
-  - Community scripts use state goals to avoid repeating large condition trees and explicitly document split-rule goals for long rules.
-  - Goal comparisons use goal-typed comparison operations such as up-compare-goal.
+Community standard used
+-----------------------
+1. AIRef documents 32 elements per rule in DE and 16 in UP; the defrule and => separator do not count. Elements include commands and logical operators.
+2. Established community practice is to keep rules comfortably below the DE ceiling, and often at or below 16 when practical, using state goals or split rules rather than giant condition trees.
+3. Binary logical operators such as and/or take two direct child facts. Larger OR sets must be nested or, where appropriate, represented as state goals.
+4. Goals are used as state variables to reduce repeated condition trees and keep strategy/production consumers readable.
 
-This file is a repair record, not a substitute for running the installed AoE2 AI linter/editor against the current checkout.
+Repairs
+-------
+1. The oversized initialization rule was split into three one-shot initialization rules. This preserves the teaching architecture while reducing the command load.
+2. All accidental Markdown fences were removed from .per source.
+3. The existing threat-state architecture was retained rather than replacing it with a new controller.
+4. Every multi-child OR introduced by the prior repair was converted to binary nested OR form. No n-ary direct OR remains.
+5. The strategy -> unit-goal -> production -> training teaching pipeline remains intact.
+
+Current source audit
+--------------------
+Source: ByzTeacher/ByzMetaTeacher.per
+Rules: 80
+Maximum counted rule elements: 13
+Rules over 16 elements: 0
+Rules over 32 elements: 0
+N-ary logical operators: 0
+Source lines over 255 characters: 0
+Markdown fences in source: 0
+
+Important limitation
+--------------------
+This is a repository-source audit. It does not claim that an arbitrary older file already downloaded to an AoE2 installation has been replaced. The installed file must be the current main-branch source containing the repair commit.
+
+Recent repair commit
+--------------------
+803cc3a28fd38907329b801d9e0e7cbe9d1e30c9
+Fix logical-operator arity using nested community-style ORs
+
+This report intentionally distinguishes verified source defects from stale or cascading historical diagnostics rather than declaring every historical ERR6002 line to be a separate programming error.
