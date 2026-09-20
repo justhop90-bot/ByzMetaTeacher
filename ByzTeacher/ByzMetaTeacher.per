@@ -136,6 +136,9 @@
 (defconst bt-spear-threat-goal 35)
 (defconst bt-any-threat-goal 36)
 (defconst bt-cavalry-level-goal 37)
+(defconst bt-ranged-level-goal 38)
+(defconst bt-spear-level-goal 39)
+(defconst bt-noncav-cavalry-level-goal 41)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -198,6 +201,9 @@
     (set-goal bt-spear-threat-goal 0)
     (set-goal bt-any-threat-goal 0)
     (set-goal bt-cavalry-level-goal 0)
+    (set-goal bt-ranged-level-goal 0)
+    (set-goal bt-spear-level-goal 0)
+    (set-goal bt-noncav-cavalry-level-goal 0)
 )
 
 (defrule
@@ -520,7 +526,6 @@
 =>
     (set-goal bt-cavalry-threat-goal 1)
     (set-goal bt-any-threat-goal 1)
-)
 
 (defrule
     (or
@@ -541,6 +546,65 @@
 
 (defrule
     (or
+    (players-unit-type-count any-enemy archer-line >= 6)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 6)
+    )
+=>
+    (set-goal bt-ranged-level-goal 1)
+)
+(defrule
+    (or
+    (players-unit-type-count any-enemy archer-line >= 15)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 15)
+    )
+=>
+    (set-goal bt-ranged-level-goal 2)
+)
+(defrule
+    (or
+    (players-unit-type-count any-enemy archer-line >= 25)
+    (players-unit-type-count any-enemy cavalry-archer-line >= 25)
+    )
+=>
+    (set-goal bt-ranged-level-goal 3)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 8)
+=>
+    (set-goal bt-spear-level-goal 1)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 12)
+=>
+    (set-goal bt-spear-level-goal 2)
+)
+(defrule
+    (or
+    (players-unit-type-count any-enemy knight-line >= 10)
+    (or
+    (players-unit-type-count any-enemy cataphract-line >= 10)
+    (or
+    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+    (players-unit-type-count any-enemy war-elephant-line >= 10)))
+    )
+=>
+    (set-goal bt-noncav-cavalry-level-goal 1)
+)
+(defrule
+    (or
+    (players-unit-type-count any-enemy knight-line >= 15)
+    (or
+    (players-unit-type-count any-enemy cataphract-line >= 15)
+    (or
+    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
+    (players-unit-type-count any-enemy war-elephant-line >= 15)))
+    )
+=>
+    (set-goal bt-noncav-cavalry-level-goal 2)
+)
+
+(defrule
+    (or
 (players-unit-type-count any-enemy knight-line >= 6)
 (or
 (players-unit-type-count any-enemy camel-line >= 6)
@@ -552,7 +616,6 @@
     )
 =>
     (set-goal bt-cavalry-level-goal 1)
-)
 (defrule
     (or
 (players-unit-type-count any-enemy knight-line >= 15)
@@ -566,7 +629,6 @@
     )
 =>
     (set-goal bt-cavalry-level-goal 2)
-)
 (defrule
     (or
 (players-unit-type-count any-enemy knight-line >= 25)
@@ -580,7 +642,6 @@
     )
 =>
     (set-goal bt-cavalry-level-goal 3)
-)
 (defrule
     (or
 (players-unit-type-count any-enemy knight-line >= 40)
@@ -594,7 +655,6 @@
     )
 =>
     (set-goal bt-cavalry-level-goal 4)
-)
 (defrule
     (or
 (players-unit-type-count any-enemy knight-line >= 55)
@@ -608,7 +668,6 @@
     )
 =>
     (set-goal bt-cavalry-level-goal 5)
-)
 
 ;================================================================
 ; 13. STRATEGY SELECTION
@@ -628,50 +687,31 @@
 ;---------------------------------------------------------------
 ; 13A. MILITARY PRESSURE -> FLUSH
 ;---------------------------------------------------------------
-;
-; Any serious cavalry/ranged/spear signal OR an active town attack
-; puts the AI into a responsive posture.
+; Threat observation is centralized in section 12C.
+
 (defrule
     (town-under-attack)
     (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-flush)
 )
-
 (defrule
     (not (town-under-attack))
-    (or
-    (players-unit-type-count any-enemy knight-line >= 3)
-    (or
-    (players-unit-type-count any-enemy camel-line >= 3)
-    (or
-    (players-unit-type-count any-enemy cataphract-line >= 3)
-    (or
-    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-    (players-unit-type-count any-enemy war-elephant-line >= 3)
-    )
-    )
-    )
-    )
+    (goal bt-cavalry-threat-goal 1)
     (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-flush)
 )
-
 (defrule
     (not (town-under-attack))
-    (or
-    (players-unit-type-count any-enemy archer-line >= 3)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
-    )
+    (goal bt-ranged-threat-goal 1)
     (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-flush)
 )
-
 (defrule
     (not (town-under-attack))
-    (players-unit-type-count any-enemy spearman-line >= 4)
+    (goal bt-spear-threat-goal 1)
     (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-flush)
@@ -894,101 +934,43 @@
 ;---------------------------------------------------------------
 ; 15B. ARCHERY-RANGE CAPACITY
 ;---------------------------------------------------------------
-; 15B. ARCHERY-RANGE CAPACITY
-;---------------------------------------------------------------
-; First range.
-;
-; IMPORTANT:
-; 3+ ranged threat matches the first Skirmisher threshold.
-;
-; That closes the dependency:
-;   ranged threat -> first Range -> Skirmisher.
 (defrule
-    (or
-(goal unit-goal skirmisher-line)
-(or
-(goal unit-goal archer-line)
-(goal unit-goal bt-unit-mix)))
-    )
-    (or
-    (goal strategy-goal bt-strategy-rush)
-    (goal strategy-goal bt-strategy-flush)
-    )
+    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
+    (or (goal strategy-goal bt-strategy-rush) (goal strategy-goal bt-strategy-flush))
     (strategic-number sn-resource-control == 0)
-    (or
-(players-unit-type-count any-enemy archer-line >= 3)
-(or
-(players-unit-type-count any-enemy cavalry-archer-line >= 3)
-(or
-(players-unit-type-count any-enemy spearman-line >= 4)
-(goal strategy-goal bt-strategy-rush))))
-    )
+    (or (goal bt-ranged-threat-goal 1) (goal bt-spear-threat-goal 1))
     (building-type-count-total archery-range < 1)
     (can-build archery-range)
 =>
     (build archery-range)
 )
-
-; Second range.
 (defrule
-    (or
-(goal unit-goal skirmisher-line)
-(or
-(goal unit-goal archer-line)
-(goal unit-goal bt-unit-mix)))
-    )
+    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
     (goal strategy-goal != bt-strategy-boom)
     (strategic-number sn-resource-control == 0)
-    (or
-(players-unit-type-count any-enemy archer-line >= 6)
-(or
-(players-unit-type-count any-enemy cavalry-archer-line >= 6)
-(players-unit-type-count any-enemy spearman-line >= 8)))
-    )
+    (or (up-compare-goal bt-ranged-level-goal >= 1) (up-compare-goal bt-spear-level-goal >= 1))
     (building-type-count-total archery-range < 2)
     (can-build archery-range)
 =>
     (build archery-range)
 )
-
-; Large ranged pressure.
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-flush)
-    (or
-(goal unit-goal skirmisher-line)
-(or
-(goal unit-goal archer-line)
-(goal unit-goal bt-unit-mix)))
-    )
+    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
     (strategic-number sn-resource-control == 0)
-    (or
-(players-unit-type-count any-enemy archer-line >= 15)
-(or
-(players-unit-type-count any-enemy cavalry-archer-line >= 15)
-(players-unit-type-count any-enemy spearman-line >= 12)))
-    )
+    (or (up-compare-goal bt-ranged-level-goal >= 2) (up-compare-goal bt-spear-level-goal >= 2))
     (building-type-count-total archery-range < 4)
     (can-build archery-range)
 =>
     (build archery-range)
 )
-
-; Very large ranged pressure.
 (defrule
     (current-age >= imperial-age)
     (goal strategy-goal bt-strategy-flush)
-    (or
-(goal unit-goal skirmisher-line)
-(or
-(goal unit-goal archer-line)
-(goal unit-goal bt-unit-mix)))
-    )
+    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
     (strategic-number sn-resource-control == 0)
-    (or
-    (players-unit-type-count any-enemy archer-line >= 25)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 25)
-    )
+    (up-compare-goal bt-ranged-level-goal >= 3)
     (building-type-count-total archery-range < 6)
     (can-build archery-range)
 =>
@@ -998,41 +980,23 @@
 ;---------------------------------------------------------------
 ; 15C. STABLE CAPACITY
 ;---------------------------------------------------------------
-; Camel support becomes active only against non-Camel cavalry.
-;
-; Enemy Camel Riders still trigger the cheap spear response.
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
-    (or
-(players-unit-type-count any-enemy knight-line >= 10)
-(or
-(players-unit-type-count any-enemy cataphract-line >= 10)
-(or
-(players-unit-type-count any-enemy scout-cavalry-line >= 10)
-(players-unit-type-count any-enemy war-elephant-line >= 10))))
-    )
+    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
     (building-type-count-total stable < 1)
     (can-build stable)
 =>
     (build stable)
 )
-
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
-    (or
-(players-unit-type-count any-enemy knight-line >= 15)
-(or
-(players-unit-type-count any-enemy cataphract-line >= 15)
-(or
-(players-unit-type-count any-enemy scout-cavalry-line >= 15)
-(players-unit-type-count any-enemy war-elephant-line >= 15))))
-    )
+    (up-compare-goal bt-noncav-cavalry-level-goal >= 2)
     (building-type-count-total stable < 2)
     (can-build stable)
 =>
@@ -1079,7 +1043,6 @@
     (can-train spearman-line)
 =>
     (train spearman-line)
-)
 
 (defrule
     (goal strategy-goal bt-strategy-flush)
@@ -1099,7 +1062,6 @@
     (can-train spearman-line)
 =>
     (train spearman-line)
-)
 
 (defrule
     (goal strategy-goal bt-strategy-flush)
@@ -1119,7 +1081,6 @@
     (can-train spearman-line)
 =>
     (train spearman-line)
-)
 
 ;---------------------------------------------------------------
 ; 16B. EXPLICIT SKIRMISHER GOAL
@@ -1127,11 +1088,7 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (or
-    (players-unit-type-count any-enemy archer-line >= 3)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
-    )
+    (strategic-number sn-resource-control == 0)    (goal bt-ranged-threat-goal 1)
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total skirmisher-line < bt-skirm-target-1)
     (can-train skirmisher-line)
@@ -1142,11 +1099,7 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (or
-    (players-unit-type-count any-enemy archer-line >= 10)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 10)
-    )
+    (strategic-number sn-resource-control == 0)    (up-compare-goal bt-ranged-level-goal >= 1)
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total skirmisher-line < bt-skirm-target-2)
     (can-train skirmisher-line)
@@ -1157,11 +1110,7 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (or
-    (players-unit-type-count any-enemy archer-line >= 20)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 20)
-    )
+    (strategic-number sn-resource-control == 0)    (up-compare-goal bt-ranged-level-goal >= 2)
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total skirmisher-line < bt-skirm-target-3)
     (can-train skirmisher-line)
@@ -1183,8 +1132,7 @@
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total archer-line < 6)
     (or
-    (goal strategy-goal bt-strategy-rush)
-    (players-unit-type-count any-enemy spearman-line >= 4)
+    (goal strategy-goal bt-strategy-rush)    (goal bt-spear-threat-goal 1)
     )
     (can-train archer-line)
 =>
@@ -1194,8 +1142,7 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal archer-line)
-    (strategic-number sn-resource-control == 0)
-    (players-unit-type-count any-enemy spearman-line >= 8)
+    (strategic-number sn-resource-control == 0)    (up-compare-goal bt-spear-level-goal >= 1)
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total archer-line < 10)
     (can-train archer-line)
@@ -1234,7 +1181,6 @@
     (can-train spearman-line)
 =>
     (train spearman-line)
-)
 
 ; MIX #2: Camel support after the cheap spear floor.
 (defrule
@@ -1256,7 +1202,6 @@
     (can-train camel)
 =>
     (train camel)
-)
 
 ; MIX #3: ranged coverage.
 (defrule
@@ -1481,7 +1426,6 @@
     (release-escrow food)
     (release-escrow gold)
     (research ri-pikeman)
-)
 
 (defrule
     (strategic-number sn-resource-control == ri-pikeman)
