@@ -508,11 +508,14 @@
 
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 3)
-    (players-unit-type-count any-enemy camel-line >= 3)
-    (players-unit-type-count any-enemy cataphract-line >= 3)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-    (players-unit-type-count any-enemy war-elephant-line >= 3)
+(players-unit-type-count any-enemy knight-line >= 3)
+(or
+(players-unit-type-count any-enemy camel-line >= 3)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 3)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 3)
+(players-unit-type-count any-enemy war-elephant-line >= 3)))))
     )
 =>
     (set-goal bt-cavalry-threat-goal 1)
@@ -538,55 +541,70 @@
 
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 6)
-    (players-unit-type-count any-enemy camel-line >= 6)
-    (players-unit-type-count any-enemy cataphract-line >= 6)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 6)
-    (players-unit-type-count any-enemy war-elephant-line >= 6)
+(players-unit-type-count any-enemy knight-line >= 6)
+(or
+(players-unit-type-count any-enemy camel-line >= 6)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 6)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 6)
+(players-unit-type-count any-enemy war-elephant-line >= 6)))))
     )
 =>
     (set-goal bt-cavalry-level-goal 1)
 )
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 15)
-    (players-unit-type-count any-enemy camel-line >= 15)
-    (players-unit-type-count any-enemy cataphract-line >= 15)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
-    (players-unit-type-count any-enemy war-elephant-line >= 15)
+(players-unit-type-count any-enemy knight-line >= 15)
+(or
+(players-unit-type-count any-enemy camel-line >= 15)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 15)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 15)
+(players-unit-type-count any-enemy war-elephant-line >= 15)))))
     )
 =>
     (set-goal bt-cavalry-level-goal 2)
 )
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 25)
-    (players-unit-type-count any-enemy camel-line >= 25)
-    (players-unit-type-count any-enemy cataphract-line >= 25)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 25)
-    (players-unit-type-count any-enemy war-elephant-line >= 25)
+(players-unit-type-count any-enemy knight-line >= 25)
+(or
+(players-unit-type-count any-enemy camel-line >= 25)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 25)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 25)
+(players-unit-type-count any-enemy war-elephant-line >= 25)))))
     )
 =>
     (set-goal bt-cavalry-level-goal 3)
 )
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 40)
-    (players-unit-type-count any-enemy camel-line >= 40)
-    (players-unit-type-count any-enemy cataphract-line >= 40)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 40)
-    (players-unit-type-count any-enemy war-elephant-line >= 40)
+(players-unit-type-count any-enemy knight-line >= 40)
+(or
+(players-unit-type-count any-enemy camel-line >= 40)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 40)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 40)
+(players-unit-type-count any-enemy war-elephant-line >= 40)))))
     )
 =>
     (set-goal bt-cavalry-level-goal 4)
 )
 (defrule
     (or
-    (players-unit-type-count any-enemy knight-line >= 55)
-    (players-unit-type-count any-enemy camel-line >= 55)
-    (players-unit-type-count any-enemy cataphract-line >= 55)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 55)
-    (players-unit-type-count any-enemy war-elephant-line >= 55)
+(players-unit-type-count any-enemy knight-line >= 55)
+(or
+(players-unit-type-count any-enemy camel-line >= 55)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 55)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 55)
+(players-unit-type-count any-enemy war-elephant-line >= 55)))))
     )
 =>
     (set-goal bt-cavalry-level-goal 5)
@@ -887,9 +905,10 @@
 ;   ranged threat -> first Range -> Skirmisher.
 (defrule
     (or
-    (goal unit-goal skirmisher-line)
-    (goal unit-goal archer-line)
-    (goal unit-goal bt-unit-mix)
+(goal unit-goal skirmisher-line)
+(or
+(goal unit-goal archer-line)
+(goal unit-goal bt-unit-mix)))
     )
     (or
     (goal strategy-goal bt-strategy-rush)
@@ -897,10 +916,12 @@
     )
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy archer-line >= 3)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 3)
-    (players-unit-type-count any-enemy spearman-line >= 4)
-    (goal strategy-goal bt-strategy-rush)
+(players-unit-type-count any-enemy archer-line >= 3)
+(or
+(players-unit-type-count any-enemy cavalry-archer-line >= 3)
+(or
+(players-unit-type-count any-enemy spearman-line >= 4)
+(goal strategy-goal bt-strategy-rush))))
     )
     (building-type-count-total archery-range < 1)
     (can-build archery-range)
@@ -911,16 +932,18 @@
 ; Second range.
 (defrule
     (or
-    (goal unit-goal skirmisher-line)
-    (goal unit-goal archer-line)
-    (goal unit-goal bt-unit-mix)
+(goal unit-goal skirmisher-line)
+(or
+(goal unit-goal archer-line)
+(goal unit-goal bt-unit-mix)))
     )
     (goal strategy-goal != bt-strategy-boom)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy archer-line >= 6)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 6)
-    (players-unit-type-count any-enemy spearman-line >= 8)
+(players-unit-type-count any-enemy archer-line >= 6)
+(or
+(players-unit-type-count any-enemy cavalry-archer-line >= 6)
+(players-unit-type-count any-enemy spearman-line >= 8)))
     )
     (building-type-count-total archery-range < 2)
     (can-build archery-range)
@@ -933,15 +956,17 @@
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-flush)
     (or
-    (goal unit-goal skirmisher-line)
-    (goal unit-goal archer-line)
-    (goal unit-goal bt-unit-mix)
+(goal unit-goal skirmisher-line)
+(or
+(goal unit-goal archer-line)
+(goal unit-goal bt-unit-mix)))
     )
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy archer-line >= 15)
-    (players-unit-type-count any-enemy cavalry-archer-line >= 15)
-    (players-unit-type-count any-enemy spearman-line >= 12)
+(players-unit-type-count any-enemy archer-line >= 15)
+(or
+(players-unit-type-count any-enemy cavalry-archer-line >= 15)
+(players-unit-type-count any-enemy spearman-line >= 12)))
     )
     (building-type-count-total archery-range < 4)
     (can-build archery-range)
@@ -954,9 +979,10 @@
     (current-age >= imperial-age)
     (goal strategy-goal bt-strategy-flush)
     (or
-    (goal unit-goal skirmisher-line)
-    (goal unit-goal archer-line)
-    (goal unit-goal bt-unit-mix)
+(goal unit-goal skirmisher-line)
+(or
+(goal unit-goal archer-line)
+(goal unit-goal bt-unit-mix)))
     )
     (strategic-number sn-resource-control == 0)
     (or
@@ -981,10 +1007,12 @@
     (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 10)
-    (players-unit-type-count any-enemy cataphract-line >= 10)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
-    (players-unit-type-count any-enemy war-elephant-line >= 10)
+(players-unit-type-count any-enemy knight-line >= 10)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 10)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 10)
+(players-unit-type-count any-enemy war-elephant-line >= 10))))
     )
     (building-type-count-total stable < 1)
     (can-build stable)
@@ -998,10 +1026,12 @@
     (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 15)
-    (players-unit-type-count any-enemy cataphract-line >= 15)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
-    (players-unit-type-count any-enemy war-elephant-line >= 15)
+(players-unit-type-count any-enemy knight-line >= 15)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 15)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 15)
+(players-unit-type-count any-enemy war-elephant-line >= 15))))
     )
     (building-type-count-total stable < 2)
     (can-build stable)
@@ -1036,11 +1066,14 @@
     (goal unit-goal spearman-line)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 3)
-    (players-unit-type-count any-enemy camel-line >= 3)
-    (players-unit-type-count any-enemy cataphract-line >= 3)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-    (players-unit-type-count any-enemy war-elephant-line >= 3)
+(players-unit-type-count any-enemy knight-line >= 3)
+(or
+(players-unit-type-count any-enemy camel-line >= 3)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 3)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 3)
+(players-unit-type-count any-enemy war-elephant-line >= 3)))))
     )
     (unit-type-count-total spearman-line < bt-spear-target-1)
     (can-train spearman-line)
@@ -1053,11 +1086,14 @@
     (goal unit-goal spearman-line)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 10)
-    (players-unit-type-count any-enemy camel-line >= 10)
-    (players-unit-type-count any-enemy cataphract-line >= 10)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
-    (players-unit-type-count any-enemy war-elephant-line >= 10)
+(players-unit-type-count any-enemy knight-line >= 10)
+(or
+(players-unit-type-count any-enemy camel-line >= 10)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 10)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 10)
+(players-unit-type-count any-enemy war-elephant-line >= 10)))))
     )
     (unit-type-count-total spearman-line < bt-spear-target-2)
     (can-train spearman-line)
@@ -1070,11 +1106,14 @@
     (goal unit-goal spearman-line)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 20)
-    (players-unit-type-count any-enemy camel-line >= 20)
-    (players-unit-type-count any-enemy cataphract-line >= 20)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 20)
-    (players-unit-type-count any-enemy war-elephant-line >= 20)
+(players-unit-type-count any-enemy knight-line >= 20)
+(or
+(players-unit-type-count any-enemy camel-line >= 20)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 20)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 20)
+(players-unit-type-count any-enemy war-elephant-line >= 20)))))
     )
     (unit-type-count-total spearman-line < bt-spear-target-3)
     (can-train spearman-line)
@@ -1182,11 +1221,14 @@
     (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
     (or
-    (players-unit-type-count any-enemy knight-line >= 3)
-    (players-unit-type-count any-enemy camel-line >= 3)
-    (players-unit-type-count any-enemy cataphract-line >= 3)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-    (players-unit-type-count any-enemy war-elephant-line >= 3)
+(players-unit-type-count any-enemy knight-line >= 3)
+(or
+(players-unit-type-count any-enemy camel-line >= 3)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 3)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 3)
+(players-unit-type-count any-enemy war-elephant-line >= 3)))))
     )
     (unit-type-count-total spearman-line < bt-spear-target-1)
     (can-train spearman-line)
@@ -1202,10 +1244,12 @@
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (or
-    (players-unit-type-count any-enemy knight-line >= 10)
-    (players-unit-type-count any-enemy cataphract-line >= 10)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
-    (players-unit-type-count any-enemy war-elephant-line >= 10)
+(players-unit-type-count any-enemy knight-line >= 10)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 10)
+(or
+(players-unit-type-count any-enemy scout-cavalry-line >= 10)
+(players-unit-type-count any-enemy war-elephant-line >= 10))))
     )
     (building-type-count-total stable >= 1)
     (unit-type-count-total camel-line < bt-camel-target-1)
@@ -1423,10 +1467,12 @@
     )
     (unit-type-count-total spearman-line >= 6)
     (or
-    (players-unit-type-count any-enemy knight-line >= 6)
-    (players-unit-type-count any-enemy camel-line >= 6)
-    (players-unit-type-count any-enemy cataphract-line >= 6)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 6)
+(players-unit-type-count any-enemy knight-line >= 6)
+(or
+(players-unit-type-count any-enemy camel-line >= 6)
+(or
+(players-unit-type-count any-enemy cataphract-line >= 6)
+(players-unit-type-count any-enemy scout-cavalry-line >= 6))))
     )
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-pikeman)
