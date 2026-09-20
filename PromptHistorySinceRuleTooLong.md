@@ -25,3 +25,12 @@ Purpose: preserve this post-lint prompt trail and require a pre-publication stru
 ## Resulting repair doctrine
 
 Threat observations are state writers. Production-capacity thresholds and military-counter thresholds are separate policies and must not share a level goal merely because they observe the same unit family. Transient threat-state goals are reset before observation and then repopulated. Refactors must preserve the original consumer threshold unless an intentional gameplay change is explicitly requested. A structural audit is required before repository publication; it checks parenthesis balance, rule count, maximum direct rule children, source-line length, and presence of the intended dedicated counter goals.
+
+
+6. "Deep dive and turn yourself into a aoe2de ai-script debugger expert. Then I give you full authority and autonomy. Trace this code line for line, front and back. Lock down the basics."
+
+Purpose: perform a source-level debugger audit against current AoE2DE/AIRef command semantics and community practice, trace the controller from loader through initialization, state, strategy, production, training, attack, retreat, and research, then repair fatal parser/state-invariant defects before further gameplay work. The repair closed the malformed Pikeman rule, replaced invalid goal-negation syntax with documented NOT/goal form, and explicitly initialized all transient counter goals. The post-write structural audit verified 95 rules, 95 arrows, balanced parentheses, no nested top-level defrules, no logical-operator arity failures, no source line over 255 characters, and no remaining goal != predicates.
+
+## Debugger doctrine
+
+The debugger treats the .per source as an executable state machine, not as prose. Every symbol is traced from definition to writer to consumer; every writer is checked for initialization and lifetime; every consumer is checked for the correct comparison type; every action is checked for a corresponding world-state witness; and every claimed engine behavior is separated from community convention and architecture-specific inference. Structural cleanliness is necessary but never treated as runtime proof. The game remains the final debugger.
