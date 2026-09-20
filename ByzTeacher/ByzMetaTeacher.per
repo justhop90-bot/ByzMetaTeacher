@@ -1318,7 +1318,7 @@
     (goal unit-goal archer-line)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range >= 1)
-    (unit-type-count-total archer-line < 6)
+    (unit-type-count-total archer-line < 10)
     (or
     (goal strategy-goal bt-strategy-rush)
     (goal bt-spear-threat-goal 1)
@@ -1327,6 +1327,8 @@
 =>
     (train archer-line)
 )
+; RUSH target is ten archers so the production path can satisfy the
+; attack gate of attack-soldier-count >= 10. Total count is queue-aware.
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal archer-line)
