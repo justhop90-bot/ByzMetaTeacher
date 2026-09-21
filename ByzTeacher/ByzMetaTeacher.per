@@ -3825,15 +3825,32 @@
 ; Stable capacity, using building-type-count-total.
 ;
 ; Controller tuning:
-;   Feudal:                    6
-;   Castle:                   12
-;   Castle mature:            16
-;   Castle late:              20
-;   Imperial:                 26
-;   Imperial mature:          34
-;   Imperial late:            42
+;   Feudal:          6
+;   Castle:         12
+;   Castle mature:  16
+;   Castle late:    20
+;   Imperial:       26
+;   Imperial mature:34
+;   Imperial late:  42
 ;
 ; These are standing-force targets, not attack-group sizes.
+;
+; Community note: building-type-count-total is queue-aware, so a
+; production-building commitment counts toward infrastructure before
+; construction is complete.  Soldier-count is used for the actual
+; standing-force deficit rather than military-population.
+(defrule
+    (true)
+=>
+    (up-get-fact building-type-count-total barracks bt-standing-army-barracks-scratch-goal)
+    (up-get-fact building-type-count-total archery-range bt-standing-army-range-scratch-goal)
+    (up-get-fact building-type-count-total stable bt-standing-army-stable-scratch-goal)
+    (set-goal bt-standing-army-infra-goal 0)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-barracks-scratch-goal)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-range-scratch-goal)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-stable-scratch-goal)
+)
+
 (defrule
     (current-age < feudal-age)
 =>
@@ -3848,7 +3865,17 @@
 
 (defrule
     (current-age == castle-age)
-    (unit-type-count villager < 45)
+    (or
+        (unit-type-count villager < 45)
+        (and
+            (unit-type-count villager >= 45)
+            (up-compare-goal bt-standing-army-infra-goal < 2)
+        )
+        (and
+            (unit-type-count villager >= 60)
+            (up-compare-goal bt-standing-army-infra-goal < 3)
+        )
+    )
 =>
     (set-goal bt-standing-army-floor-goal 12)
 )
@@ -3857,7 +3884,10 @@
     (current-age == castle-age)
     (unit-type-count villager >= 45)
     (up-compare-goal bt-standing-army-infra-goal >= 2)
-    (unit-type-count villager < 60)
+    (or
+        (unit-type-count villager < 60)
+        (up-compare-goal bt-standing-army-infra-goal < 3)
+    )
 =>
     (set-goal bt-standing-army-floor-goal 16)
 )
@@ -3871,19 +3901,11 @@
 )
 
 (defrule
-    (current-age == castle-age)
-    (or
-        (unit-type-count villager < 45)
-        (up-compare-goal bt-standing-army-infra-goal < 2)
-    )
-    (unit-type-count villager >= 45)
-=>
-    (set-goal bt-standing-army-floor-goal 12)
-)
-
-(defrule
     (current-age >= imperial-age)
-    (unit-type-count villager < 60)
+    (or
+        (unit-type-count villager < 60)
+        (up-compare-goal bt-standing-army-infra-goal < 4)
+    )
 =>
     (set-goal bt-standing-army-floor-goal 26)
 )
@@ -3892,7 +3914,10 @@
     (current-age >= imperial-age)
     (unit-type-count villager >= 60)
     (up-compare-goal bt-standing-army-infra-goal >= 4)
-    (unit-type-count villager < 80)
+    (or
+        (unit-type-count villager < 80)
+        (up-compare-goal bt-standing-army-infra-goal < 6)
+    )
 =>
     (set-goal bt-standing-army-floor-goal 34)
 )
@@ -3901,58 +3926,39 @@
     (current-age >= imperial-age)
     (unit-type-count villager >= 80)
     (up-compare-goal bt-standing-army-infra-goal >= 6)
-    (unit-type-count villager < 100)
 =>
     (set-goal bt-standing-army-floor-goal 42)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (unit-type-count villager >= 100)
-    (up-compare-goal bt-standing-army-infra-goal >= 8)
-=>
-    (set-goal bt-standing-army-floor-goal 42)
-)
-
-(defrule
-    (current-age >= imperial-age)
-    (unit-type-count villager >= 80)
-    (up-compare-goal bt-standing-army-infra-goal >= 6)
-    (unit-type-count villager < 100)
-=>
-    (set-goal bt-standing-army-floor-goal 34)
 )
 
 (defrule
     (true)
 =>
-    (up-get-fact building-type-count-total barracks bt-standing-army-barracks-scratch-goal)
-    (up-get-fact building-type-count-total archery-range bt-standing-army-range-scratch-goal)
-    (up-get-fact building-type-count-total stable bt-standing-army-stable-scratch-goal)
-    (set-goal bt-standing-army-infra-goal 0)
-    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-barracks-scratch-goal)
-    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-range-scratch-goal)
-    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-stable-scratch-goal)
     (up-get-fact soldier-count 0 bt-standing-army-deficit-goal)
     (up-modify-goal bt-standing-army-deficit-goal g:- bt-standing-army-floor-goal)
 )
 
 (defrule
     (current-age >= feudal-age)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (up-compare-goal bt-standing-army-deficit-goal < 0)
 =>
     (set-goal bt-standing-army-demand-goal 1)
 )
 
 (defrule
-    (current-age >= feudal-age)
-    (up-compare-goal bt-standing-army-deficit-goal >= 0)
-=>
-    (set-goal bt-standing-army-demand-goal 0)
-)
-
-(defrule
-    (current-age < feudal-age)
+    (or
+        (current-age < feudal-age)
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-flush)
+            )
+        )
+        (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    )
 =>
     (set-goal bt-standing-army-demand-goal 0)
 )
@@ -4014,9 +4020,9 @@
 ;   queue-aware unit target
 ;   legal training
 ;
-; The persistent military floors are deliberate exceptions:
-; they use the aggregate military-population fact rather than a
-; unit-specific queued count.
+; The standing floor uses soldier-count for the live army deficit.
+; unit-type-count-total remains the queue-aware cap for the fallback
+; spear stream.
 ;---------------------------------------------------------------
 ; 16C. PERSISTENT BOOM MILITARY FLOOR
 ;---------------------------------------------------------------
