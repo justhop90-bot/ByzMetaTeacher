@@ -4303,17 +4303,140 @@
 (defrule (up-compare-goal bt-spear-counter-level-goal >= 1) =>
     (up-modify-goal bt-standing-archer-target-goal c:max 3)
 )
+;---------------------------------------------------------------
+; 15Z.1.1 CAMEL TARGET RESET ASSUMPTION
+;---------------------------------------------------------------
+; bt-standing-camel-target-goal is a DERIVED target.
+;
+; The unconditional role-target reset rule above runs every pass:
+;
+;     (set-goal bt-standing-camel-target-goal 0)
+;
+; These Camel witness rules therefore only RAISE the target during
+; the current evaluation pass. No persistent Camel release rule is
+; required.
+;
+; The generic cavalry counter remains separate. It may still raise
+; the Spear target, but it no longer directly authorizes Camels.
+
+;---------------------------------------------------------------
+; 15Z.1.2 KNIGHT-LINE CAMEL WITNESSES
+;---------------------------------------------------------------
+; 10+ enemy Knight-line units require a four-Camel package.
 (defrule
-    (current-age >= castle-age)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (players-unit-type-count any-enemy knight-line >= 10)
 =>
-    (set-goal bt-standing-camel-target-goal 4)
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
 )
+
+; 20+ enemy Knight-line units justify the eight-Camel package.
+(defrule
+    (players-unit-type-count any-enemy knight-line >= 20)
+=>
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-2)
+)
+
+;---------------------------------------------------------------
+; 15Z.1.3 WAR ELEPHANT-LINE CAMEL WITNESSES
+;---------------------------------------------------------------
+; War Elephants are strategically significant at a lower observed
+; count than ordinary cavalry.
+(defrule
+    (players-unit-type-count any-enemy war-elephant-line >= 3)
+=>
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
+)
+
+; Six+ enemy War Elephants justify the eight-Camel package.
+(defrule
+    (players-unit-type-count any-enemy war-elephant-line >= 6)
+=>
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-2)
+)
+
+;---------------------------------------------------------------
+; 15Z.1.4 LIGHT CAVALRY / HUSSAR CAMEL WITNESSES
+;---------------------------------------------------------------
+; Castle Age is required so Feudal Scout presence cannot authorize
+; Camel production.
+;
+; scout-cavalry-line is the existing Scout upgrade line. This means
+; surviving Scouts can still contribute to the line count after
+; Castle Age. That is a known classifier limitation, not a Camel
+; lifecycle failure.
+;
+; 15+ Scout/Light Cavalry/Hussar line units -> four Camels.
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
 =>
-    (set-goal bt-standing-camel-target-goal 8)
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
+)
+
+; 30+ Scout/Light Cavalry/Hussar line units -> eight Camels.
+(defrule
+    (current-age >= castle-age)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 30)
+=>
+    (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-2)
+)
+
+;---------------------------------------------------------------
+; 15Z.1.5 EXPLICIT NO-TRIGGER: ENEMY CAMELS
+;---------------------------------------------------------------
+; There is deliberately NO camel-line -> Camel-target rule.
+;
+; Enemy Camel Riders may still contribute to the generic cavalry
+; counter and therefore increase Spear demand elsewhere. They do
+; not authorize a Camel target.
+
+;---------------------------------------------------------------
+; 15Z.1.6 EXPLICIT NO-TRIGGER: ENEMY CATAPHRACTS
+;---------------------------------------------------------------
+; There is deliberately NO cataphract-line -> Camel-target rule.
+;
+; Enemy Cataphracts may still contribute to the generic cavalry
+; counter and therefore increase Spear demand elsewhere. They do
+; not authorize a Camel target.
+;
+; This exclusion is matchup-specific: the Camel's cavalry bonus
+; is heavily reduced by Cataphract cavalry armor, so Cataphracts
+; should not be treated as ordinary Camel targets.
+
+;---------------------------------------------------------------
+; 15Z.1.7 CAMEL CAPABILITY GATE
+;---------------------------------------------------------------
+; Capability lifecycle:
+;
+;   Camel target > 0
+;       -> Stable capability
+;       -> existing Camel train authority
+;
+; The Camel target remains the sole demand authority. No second
+; persistent Camel-demand goal is introduced.
+;
+; Any positive Camel target requires one Stable.
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-standing-camel-target-goal > 0)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total stable < 1)
+    (can-build stable)
+=>
+    (build stable)
+)
+
+; A Camel target of five or more requires a second Stable.
+; Current witness packages are four and eight, so this activates
+; only for the eight-Camel state.
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-standing-camel-target-goal >= 5)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total stable < 2)
+    (can-build stable)
+=>
+    (build stable)
 )
 
 (defrule
