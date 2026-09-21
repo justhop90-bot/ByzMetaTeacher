@@ -212,6 +212,12 @@
 (defconst bt-double-bit-axe-food-buffer 900)
 (defconst bt-double-bit-axe-wood-buffer 225)
 
+; Stone Shaft Mining late-Castle maturity buffers.
+; These are controller tuning values, not engine constants.
+(defconst bt-stone-shaft-villagers 60)
+(defconst bt-stone-shaft-food-buffer 700)
+(defconst bt-stone-shaft-wood-buffer 400)
+
 ; Farm-tech lifecycle tuning.
 (defconst bt-farm-feudal-cap 6)
 (defconst bt-farm-castle-cap 12)
@@ -2710,9 +2716,29 @@
     (not (town-under-attack))
     (up-research-status c: ri-stone-mining == research-complete)
     (research-available ri-stone-shaft-mining)
-    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
-    (building-type-count-total town-center >= 2)
-    (unit-type-count villager >= bt-imperial-villagers)
+    (not
+        (and
+            (building-type-count-total castle >= 2)
+            (unit-type-count villager >= bt-stone-shaft-villagers)
+            (stone-amount >= 650)
+        )
+    )
+    (or
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+            (building-type-count-total town-center >= 2)
+            (unit-type-count villager >= bt-stone-shaft-villagers)
+            (food-amount >= bt-stone-shaft-food-buffer)
+            (wood-amount >= bt-stone-shaft-wood-buffer)
+        )
+        (and
+            (building-type-count-total castle >= 2)
+            (unit-type-count villager >= bt-stone-shaft-villagers)
+            (food-amount >= bt-stone-shaft-food-buffer)
+            (wood-amount >= bt-stone-shaft-wood-buffer)
+            (stone-amount < 650)
+        )
+    )
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (strategic-number sn-resource-control != imperial-age)
@@ -2744,7 +2770,18 @@
                 (research-available ri-stone-shaft-mining)
                 (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
                 (building-type-count-total town-center >= 2)
-                (unit-type-count villager >= bt-imperial-villagers)
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (food-amount >= bt-stone-shaft-food-buffer)
+                (wood-amount >= bt-stone-shaft-wood-buffer)
+                (not (can-research-with-escrow imperial-age))
+                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+            )
+            (and
+                (building-type-count-total castle >= 2)
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (food-amount >= bt-stone-shaft-food-buffer)
+                (wood-amount >= bt-stone-shaft-wood-buffer)
+                (stone-amount < 650)
                 (not (can-research-with-escrow imperial-age))
                 (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
             )
