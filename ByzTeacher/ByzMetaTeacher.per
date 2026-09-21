@@ -185,6 +185,7 @@
 (defconst bt-resource-mode-wood-crisis 20)
 (defconst bt-gold-mining-demand-goal 47)
 (defconst bt-wheelbarrow-demand-goal 48)
+(defconst bt-hand-cart-demand-goal 49)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -267,6 +268,7 @@
     (set-goal bt-resource-mode-goal bt-resource-mode-dark)
     (set-goal bt-gold-mining-demand-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
+    (set-goal bt-hand-cart-demand-goal 0)
     (disable-self)
 )
 
@@ -2181,6 +2183,99 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
+)
+
+;================================================================
+; 14H. HAND CART DEMAND / RESEARCH LIFECYCLE
+;================================================================
+;
+; Hand Cart is a late-Castle economic investment. Wheelbarrow must be
+; complete, and the controller must show a mature BOOM economy through
+; either three Town Centers or the existing 50-villager Imperial-age
+; threshold. Do not spend the Castle economy's Food/Wood on Hand Cart
+; while the existing Imperial-bank-prep state owns that priority.
+;
+; The existing Imperial feasibility veto also prevents an immediate
+; Imperial-age bank from being cannibalized.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (up-research-status c: ri-wheel-barrow >= research-complete)
+    (or
+        (building-type-count-total town-center >= 3)
+        (unit-type-count villager >= bt-imperial-villagers)
+    )
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-research-status c: ri-hand-cart == research-available)
+=>
+    (set-goal bt-hand-cart-demand-goal 1)
+)
+
+; Withdraw only a pending demand when its maturity or opportunity-cost
+; witness disappears. An active Hand Cart claim owns the mutex until
+; completion or watchdog recovery.
+(defrule
+    (goal bt-hand-cart-demand-goal 1)
+    (strategic-number sn-resource-control != ri-hand-cart)
+    (or
+        (can-research-with-escrow imperial-age)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (not
+            (and
+                (current-age >= castle-age)
+                (goal strategy-goal bt-strategy-boom)
+                (up-research-status c: ri-wheel-barrow >= research-complete)
+                (or
+                    (building-type-count-total town-center >= 3)
+                    (unit-type-count villager >= bt-imperial-villagers)
+                )
+                (not (can-research-with-escrow imperial-age))
+                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+                (up-research-status c: ri-hand-cart == research-available)
+            )
+        )
+    )
+=>
+    (set-goal bt-hand-cart-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-hand-cart-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (can-research-with-escrow ri-hand-cart)
+=>
+    (set-strategic-number sn-resource-control ri-hand-cart)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-hand-cart)
+)
+
+; research-complete is the terminal witness for the Hand Cart claim.
+(defrule
+    (strategic-number sn-resource-control == ri-hand-cart)
+    (up-research-status c: ri-hand-cart == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-hand-cart-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; HAND CART WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-hand-cart)
+    (up-research-status c: ri-hand-cart <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-hand-cart-demand-goal 0)
 )
 
 ;================================================================
