@@ -1419,6 +1419,41 @@
 ;
 ; This is the arbitration layer.
 ;---------------------------------------------------------------
+; 16A. PERSISTENT FLUSH MILITARY FLOOR
+;---------------------------------------------------------------
+; FLUSH is a defensive posture, not a momentary reaction to a
+; currently visible enemy unit. Once entered, the bot must rebuild
+; a minimum army before it is allowed to recover out of FLUSH.
+;
+; This floor deliberately does not require a current enemy threat or
+; a specific unit-goal.  It closes the FLUSH -> temporary observation
+; gap -> no production failure.
+;
+; Six military units is the recovery floor used by strategy selection.
+; Total count is queue-aware, so queued units satisfy the floor.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age >= feudal-age)
+    (military-population < 6)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 1)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age >= feudal-age)
+    (military-population < 6)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks >= 1)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
+;---------------------------------------------------------------
 ; 16A. EXPLICIT SPEAR GOAL
 ;---------------------------------------------------------------
 (defrule
