@@ -1671,12 +1671,12 @@
     (wood-amount >= 300)
     (building-type-count-total town-center < 2)
     (strategic-number sn-resource-control == 0)
-    (can-build town-center)
+    (can-build-with-escrow town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc2-claim)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-tc2-watchdog-timer 120)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
     (build town-center)
 )
 
@@ -1710,12 +1710,12 @@
     (wood-amount >= 300)
     (building-type-count-total town-center < 3)
     (strategic-number sn-resource-control == 0)
-    (can-build town-center)
+    (can-build-with-escrow town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc3-claim)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-tc3-watchdog-timer 120)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
     (build town-center)
 )
 
