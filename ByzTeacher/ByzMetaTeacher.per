@@ -1421,16 +1421,18 @@
 ; The goals above decide what is wanted.
 ; These rules decide what actually gets queued.
 ;
-; Every military train rule requires:
+; Explicit composition train rules require:
 ;
 ;   strategy
 ;   unit-goal
 ;   resource claim free
-;   enemy condition
-;   our queued+trained count below target
+;   counter/pressure condition
+;   queue-aware unit target
 ;   legal training
 ;
-; This is the arbitration layer.
+; The persistent military floors are deliberate exceptions:
+; they use the aggregate military-population fact rather than a
+; unit-specific queued count.
 ;---------------------------------------------------------------
 ; 16A. PERSISTENT BOOM MILITARY FLOOR
 ;---------------------------------------------------------------
@@ -1473,7 +1475,8 @@
 ; gap -> no production failure.
 ;
 ; Six military units is the recovery floor used by strategy selection.
-; Total count is queue-aware, so queued units satisfy the floor.
+; military-population is the aggregate army-state fact here; the
+; queue-aware unit-type-count-total facts are used by composition caps.
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (current-age >= feudal-age)
