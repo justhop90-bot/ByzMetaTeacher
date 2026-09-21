@@ -3320,6 +3320,8 @@
     (set-goal bt-imperial-prereq-diagnostic-goal 0)
     (set-goal bt-imperial-prereq-retry-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
 )
 
 ;---------------------------------------------------------------
@@ -3545,6 +3547,10 @@
     (goal bt-imperial-prereq-backoff-goal 0)
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total university < 1)
+        (building-type-count-total monastery < 1)
+    )
     (building-type-count-total siege-workshop < 1)
     (up-pending-objects c: siege-workshop == 0)
     (strategic-number sn-resource-control == 0)
@@ -3590,6 +3596,7 @@
     (building-type-count-total siege-workshop >= 1)
     (not (can-research-with-escrow imperial-age))
     (building-type-count-total university < 1)
+    (building-type-count-total monastery < 1)
     (up-pending-objects c: university == 0)
     (strategic-number sn-resource-control == 0)
     (can-build university)
