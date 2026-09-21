@@ -1625,8 +1625,7 @@
 =>
     (train archer-line)
 )
-; RUSH target is ten archers so the production path can satisfy the
-; attack gate of attack-soldier-count >= 10. Total count is queue-aware.
+; RUSH target is ten archers; attack readiness is military-population >= 10.
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal archer-line)
@@ -1804,7 +1803,7 @@
     (timer-triggered bt-attack-timer)
     (current-age >= feudal-age)
     (players-building-count any-enemy > 0)
-    (attack-soldier-count >= 10)
+    (military-population >= 10)
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
