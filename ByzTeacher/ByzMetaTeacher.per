@@ -2029,6 +2029,20 @@
     (set-goal bt-counter-veto-goal 1)
 )
 
+; HAND-CANNONEER FAMILY.
+; Hand Cannoneers carry the archer armor class, so the canonical cheap
+; Byzantine response is a minimum Skirmisher presence at exact parity.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (players-unit-type-count target-player hand-cannoneer >= 3)
+        (unit-type-count-total skirmisher-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
 ; MAMELUKE FAMILY.
 ; Mamelukes are cavalry-class but function as ranged anti-cavalry specialists.
 ; At exact parity, require minimum archer-line presence before attack authority.
