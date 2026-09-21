@@ -3253,6 +3253,7 @@
     (current-age == feudal-age)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
     (strategic-number sn-resource-control == 0)
     (can-build blacksmith)
 =>
@@ -3292,6 +3293,7 @@
     (building-type-count-total blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total market < 1)
+    (up-pending-objects c: market == 0)
     (strategic-number sn-resource-control == 0)
     (can-build market)
 =>
