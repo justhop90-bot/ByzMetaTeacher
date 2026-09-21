@@ -1801,37 +1801,162 @@
     (set-goal bt-counter-veto-goal 0)
 )
 
+; CAVALRY-MELEE FAMILY #1.
+; Generic and high-frequency mounted melee families.
 (defrule
     (players-building-count target-player > 0)
     (up-compare-goal bt-relative-force-goal == 0)
-    (or
-        (and
+    (and
+        (or
+            (players-unit-type-count target-player knight-line >= 3)
             (or
-                (players-unit-type-count target-player knight-line >= 3)
+                (players-unit-type-count target-player scout-cavalry-line >= 3)
                 (or
                     (players-unit-type-count target-player camel-line >= 3)
                     (or
                         (players-unit-type-count target-player cataphract-line >= 3)
                         (or
-                            (players-unit-type-count target-player scout-cavalry-line >= 3)
-                            (players-unit-type-count target-player war-elephant-line >= 3)
+                            (players-unit-type-count target-player battle-elephant-line >= 3)
+                            (or
+                                (players-unit-type-count target-player war-elephant-line >= 3)
+                                (or
+                                    (players-unit-type-count target-player steppe-lancer-line >= 3)
+                                    (or
+                                        (players-unit-type-count target-player tarkan-line >= 3)
+                                        (or
+                                            (players-unit-type-count target-player boyar-line >= 3)
+                                            (players-unit-type-count target-player leitis-line >= 3)
+                                        )
+                                    )
+                                )
+                            )
                         )
                     )
                 )
             )
-            (unit-type-count-total spearman-line < 3)
         )
-        (and
+        (unit-type-count-total spearman-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; CAVALRY-MELEE FAMILY #2.
+; Additional current DE civilization-specific mounted melee families.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player keshik-line >= 3)
             (or
-                (players-unit-type-count target-player archer-line >= 3)
-                (players-unit-type-count target-player cavalry-archer-line >= 3)
+                (players-unit-type-count target-player coustillier-line >= 3)
+                (or
+                    (players-unit-type-count target-player konnik-line >= 3)
+                    (or
+                        (players-unit-type-count target-player magyar-huszar-line >= 3)
+                        (or
+                            (players-unit-type-count target-player shrivamsha-rider-line >= 3)
+                            (or
+                                (players-unit-type-count target-player iron-pagoda-line >= 3)
+                                (or
+                                    (players-unit-type-count target-player hei-guang-cavalry-line >= 3)
+                                    (or
+                                        (players-unit-type-count target-player kona-line >= 3)
+                                        (or
+                                            (players-unit-type-count target-player monaspa-line >= 3)
+                                            (players-unit-type-count target-player mameluke-line >= 3)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
             )
-            (unit-type-count-total skirmisher-line < 3)
         )
-        (and
-            (players-unit-type-count target-player spearman-line >= 4)
-            (unit-type-count-total archer-line < 3)
+        (unit-type-count-total spearman-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; BOW-RANGED FAMILY #1.
+; Generic archer/crossbow plus the established unique bow families.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player archer-line >= 3)
+            (or
+                (players-unit-type-count target-player cavalry-archer-line >= 3)
+                (or
+                    (players-unit-type-count target-player plumed-archer-line >= 3)
+                    (or
+                        (players-unit-type-count target-player longbowman-line >= 3)
+                        (or
+                            (players-unit-type-count target-player chu-ko-nu-line >= 3)
+                            (or
+                                (players-unit-type-count target-player genoese-crossbowman-line >= 3)
+                                (or
+                                    (players-unit-type-count target-player rattan-archer-line >= 3)
+                                    (players-unit-type-count target-player blackwood-archer-line >= 3)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
         )
+        (unit-type-count-total skirmisher-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; BOW-RANGED FAMILY #2.
+; Mounted/unique bow families with a canonical skirmisher response.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player elephant-archer-line >= 3)
+            (or
+                (players-unit-type-count target-player bolas-rider-line >= 3)
+                (or
+                    (players-unit-type-count target-player mangudai-line >= 3)
+                    (or
+                        (players-unit-type-count target-player kipchak-line >= 3)
+                        (or
+                            (players-unit-type-count target-player camel-archer-line >= 3)
+                            (or
+                                (players-unit-type-count target-player genitour-line >= 3)
+                                (or
+                                    (players-unit-type-count target-player war-wagon-line >= 3)
+                                    (players-unit-type-count target-player composite-bowman-line >= 3)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (unit-type-count-total skirmisher-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; SPEAR / ANTI-CAVALRY INFANTRY FAMILY.
+; Generic Spearman -> Pikeman -> Halberdier line.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (players-unit-type-count target-player spearman-line >= 4)
+        (unit-type-count-total archer-line < 3)
     )
 =>
     (set-goal bt-counter-veto-goal 1)
