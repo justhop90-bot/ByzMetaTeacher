@@ -1865,7 +1865,10 @@
                                         (players-unit-type-count target-player kona-line >= 3)
                                         (or
                                             (players-unit-type-count target-player monaspa-line >= 3)
-                                            (players-unit-type-count target-player mameluke-line >= 3)
+                                            (or
+                                                (players-unit-type-count target-player centurion-line >= 3)
+                                                (players-unit-type-count target-player ratha-melee-line >= 3)
+                                            )
                                         )
                                     )
                                 )
@@ -1935,7 +1938,10 @@
                                 (players-unit-type-count target-player genitour-line >= 3)
                                 (or
                                     (players-unit-type-count target-player war-wagon-line >= 3)
-                                    (players-unit-type-count target-player composite-bowman-line >= 3)
+                                    (or
+                                        (players-unit-type-count target-player composite-bowman-line >= 3)
+                                        (players-unit-type-count target-player ratha-ranged-line >= 3)
+                                    )
                                 )
                             )
                         )
