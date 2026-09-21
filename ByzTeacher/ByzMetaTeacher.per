@@ -4306,13 +4306,23 @@
     (up-modify-goal bt-standing-army-deficit-goal g:- bt-standing-army-floor-goal)
 )
 
+; Standing-army demand stays live until both constraints are
+; satisfied: the aggregate military floor AND every live role target.
+; The floor answers "how many soldiers?" while the role targets answer
+; "which composition minima?"  Reaching the floor must not suppress an
+; unmet Spear/Skirmisher/Archer target.
 (defrule
     (current-age >= feudal-age)
     (or
         (goal strategy-goal bt-strategy-boom)
         (goal strategy-goal bt-strategy-flush)
     )
-    (up-compare-goal bt-standing-army-deficit-goal < 0)
+    (or
+        (up-compare-goal bt-standing-army-deficit-goal < 0)
+        (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
+        (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
+        (unit-type-count-total archer-line < bt-standing-archer-target-goal)
+    )
 =>
     (set-goal bt-standing-army-demand-goal 1)
 )
@@ -4326,7 +4336,12 @@
                 (goal strategy-goal bt-strategy-flush)
             )
         )
-        (up-compare-goal bt-standing-army-deficit-goal >= 0)
+        (and
+            (up-compare-goal bt-standing-army-deficit-goal >= 0)
+            (unit-type-count-total spearman-line >= bt-standing-spear-target-goal)
+            (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal)
+            (unit-type-count-total archer-line >= bt-standing-archer-target-goal)
+        )
     )
 =>
     (set-goal bt-standing-army-demand-goal 0)
@@ -4389,9 +4404,9 @@
 ;   queue-aware unit target
 ;   legal training
 ;
-; The standing floor uses soldier-count for the live army deficit.
-; unit-type-count-total remains the queue-aware cap for the fallback
-; spear stream.
+; The standing floor uses soldier-count for the aggregate deficit.
+; Each live role target uses unit-type-count-total as its queue-aware
+; completion witness.
 ;---------------------------------------------------------------
 ; 16C. PERSISTENT BOOM MILITARY FLOOR
 ;---------------------------------------------------------------
