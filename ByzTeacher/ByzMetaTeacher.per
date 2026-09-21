@@ -336,6 +336,7 @@
     (disable-self)
 )
 
+; Initialize strategy, threat, and economic-demand state.
 (defrule
     (true)
 =>
@@ -363,6 +364,13 @@
     (set-goal bt-two-man-saw-demand-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
+    (disable-self)
+)
+
+; Initialize scouting, age-prerequisite, and standing-army state.
+(defrule
+    (true)
+=>
     (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
@@ -380,9 +388,6 @@
     (set-goal bt-standing-army-range-scratch-goal 0)
     (set-goal bt-standing-army-stable-scratch-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
-    (disable-timer bt-castle-prereq-backoff-timer)
-    (disable-timer bt-imperial-prereq-watchdog-timer)
-    (disable-timer bt-imperial-prereq-backoff-timer)
     (disable-self)
 )
 
