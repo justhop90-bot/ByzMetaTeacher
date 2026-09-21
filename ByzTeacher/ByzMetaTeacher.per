@@ -1979,6 +1979,56 @@
     (set-goal bt-counter-veto-goal 1)
 )
 
+; ELEPHANT-SPECIALIST FAMILY.
+; Ballista and Armored/Siege Elephant lines are elephant/siege specialists,
+; but their stable Byzantine parity counter remains the Spearman line.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player ballista-elephant-line >= 3)
+            (players-unit-type-count target-player armored-elephant-line >= 3)
+        )
+        (unit-type-count-total spearman-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; SPECIALIST-MELEE-INFANTRY FAMILY.
+; Fire Lancer, Liao Dao, and Ibirapema are infantry specialists with a
+; stable Archer-line counter relationship.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player fire-lancer-line >= 3)
+            (or
+                (players-unit-type-count target-player liao-dao-line >= 3)
+                (players-unit-type-count target-player ibirapema-warrior-line >= 3)
+            )
+        )
+        (unit-type-count-total archer-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; RANGED-MELEE SPECIALIST FAMILY.
+; Throwing Axemen retain a clean Skirmisher counter relationship.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (players-unit-type-count target-player throwing-axeman-line >= 3)
+        (unit-type-count-total skirmisher-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
 ; MAMELUKE FAMILY.
 ; Mamelukes are cavalry-class but function as ranged anti-cavalry specialists.
 ; At exact parity, require minimum archer-line presence before attack authority.
