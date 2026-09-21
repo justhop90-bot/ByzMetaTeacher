@@ -1549,20 +1549,7 @@
     (game-time >= 600)
     (players-building-count any-enemy > 0)
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
-    (or
-        (and
-            (current-age == feudal-age)
-            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
-        )
-        (and
-            (current-age == castle-age)
-            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-castle)
-        )
-        (and
-            (current-age >= imperial-age)
-            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-imperial)
-        )
-    )
+    (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
 =>
@@ -1579,7 +1566,7 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
-    (current-age >= castle-age)
+    (not (current-age == feudal-age))
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
     (or
         (and
@@ -1599,6 +1586,8 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (not (game-time >= 600))
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
     (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
@@ -1609,6 +1598,9 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy <= 0)
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
     (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
@@ -1619,6 +1611,9 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
+    (current-age == feudal-age)
+    (game-time >= 600)
+    (players-building-count any-enemy > 0)
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
     (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
@@ -1627,6 +1622,7 @@
 
 ;---------------------------------------------------------------
 ; 13D. FEUDAL MILITARY READY -> RUSH
+;---------------------------------------------------------------
 ;---------------------------------------------------------------
 ;
 ; This does NOT run if the AI is already in FLUSH.
