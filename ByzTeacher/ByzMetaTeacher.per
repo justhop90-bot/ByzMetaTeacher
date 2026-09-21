@@ -880,21 +880,23 @@
 ; physical existence of a farm. Their research lifecycle remains
 ; owned by section 11 and sn-resource-control.
 ;
-; building-type-count-total farm already includes farms under
-; construction. That is the construction witness used with the fixed
-; age caps, so an extra pending-object guard is not added here.
+; building-type-count-total farm includes existing and queued farms;
+; it remains the hard age-cap witness. The explicit pending-object
+; guard below is therefore not about the cap; it rate-limits farm
+; construction to one active placement at a time.
 ;
 ; A healthy natural-food state preserves the old conservative
-; food-stock trigger. Transition/depleted states are deliberately
-; still bounded by a higher preemptive food buffer and a food-heavy
-; gatherer policy, so the AI prepares farms before the old threshold
-; without turning one missing deer into a farm flood.
+; food-stock trigger. Transition/depleted states use the actual food
+; gatherer policy instead of an arbitrary minimum food percentage, so
+; 45%% food modes can still maintain farm capacity when natural land
+; food weakens. The pending guard prevents a farm flood.
 ;
 ;----------------------------------------------------------------
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
 (defrule
     (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
     (or
         (and
@@ -903,7 +905,6 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-castle-food-threshold)
             (idle-farm-count == 0)
         )
@@ -926,6 +927,7 @@
 ;----------------------------------------------------------------
 (defrule
     (current-age == castle-age)
+    (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
     (or
         (and
@@ -960,6 +962,7 @@
 ; signal; farm capacity remains the hard completion witness.
 (defrule
     (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
     (or
         (and
