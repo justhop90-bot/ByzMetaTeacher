@@ -774,6 +774,25 @@
     (build farm)
 )
 
+; Imperial farm expansion consumes Crop Rotation completion as its
+; authority and raises the existing 12-farm Castle ceiling.
+(defrule
+    (current-age >= imperial-age)
+    (up-research-status c: ri-crop-rotation == research-complete)
+    (food-amount < 700)
+    (idle-farm-count == 0)
+    (or
+        (dropsite-min-distance deer-hunting == -1)
+        (dropsite-min-distance deer-hunting == 255)
+        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+    )
+    (building-type-count-total farm < 24)
+    (wood-amount >= 60)
+    (can-build farm)
+=>
+    (build farm)
+)
+
 ;================================================================
 ; 12. SCOUTING
 ;================================================================
