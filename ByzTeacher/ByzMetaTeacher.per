@@ -145,6 +145,30 @@
 ; Script-local TC watchdog timer IDs, verified unused in this repo.
 (defconst bt-tc2-watchdog-timer 16)
 (defconst bt-tc3-watchdog-timer 17)
+(defconst bt-tc-watchdog-seconds 120)
+(defconst bt-tc-project-goal 520)
+(defconst bt-tc-stage-goal 521)
+(defconst bt-tc-retry-goal 522)
+(defconst bt-tc-failure-goal 523)
+(defconst bt-tc-stage-idle 0)
+(defconst bt-tc-stage-demanded 1)
+(defconst bt-tc-stage-resource-claimed 2)
+(defconst bt-tc-stage-placement-pending 3)
+(defconst bt-tc-stage-foundation-active 4)
+(defconst bt-tc-stage-foundation-stalled 5)
+(defconst bt-tc-stage-blocked 6)
+(defconst bt-tc-failure-none 0)
+(defconst bt-tc-failure-placement-timeout 1)
+(defconst bt-tc-failure-strategic-cancel 2)
+(defconst bt-tc-failure-foundation-stall 3)
+(defconst bt-tc-failure-project-invalid 4)
+(defconst bt-tc-retry-1-seconds 30)
+(defconst bt-tc-retry-2-seconds 60)
+(defconst bt-tc-retry-3-seconds 120)
+(defconst bt-tc-retry-4-seconds 240)
+(defconst bt-tc-placement-zone-size 12)
+(defconst bt-tc-placement-distance -12)
+(defconst bt-tc-builder-count 3)
 
 ; Script-local research/age watchdog timer.
 (defconst bt-research-watchdog-timer 18)
@@ -388,6 +412,10 @@
     (set-goal bt-standing-army-range-scratch-goal 0)
     (set-goal bt-standing-army-stable-scratch-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal 0)
     (disable-self)
 )
 
@@ -1919,15 +1947,17 @@
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-stone)
 )
 
-; P2 TC STONE. Mirror only existing TC demand conditions; never claim/build.
+; P2 TC STONE. Consume persistent TC project state; never recreate demand here.
 (defrule
     (goal bt-resource-mode-goal 0)
-    (current-age >= castle-age)
+    (goal bt-tc-project-goal 2)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    )
     (goal strategy-goal bt-strategy-boom)
-    (unit-type-count villager >= 32)
-    (food-amount >= 350)
-    (wood-amount >= 300)
-    (building-type-count-total town-center < 2)
     (stone-amount < 100)
     (goal bt-cataphract-demand-goal 1)
 =>
@@ -1936,12 +1966,14 @@
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (current-age >= castle-age)
+    (goal bt-tc-project-goal 2)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    )
     (goal strategy-goal bt-strategy-boom)
-    (unit-type-count villager >= 32)
-    (food-amount >= 350)
-    (wood-amount >= 300)
-    (building-type-count-total town-center < 2)
     (stone-amount < 100)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-tc-stone)
@@ -1949,12 +1981,14 @@
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (current-age >= castle-age)
+    (goal bt-tc-project-goal 3)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    )
     (goal strategy-goal bt-strategy-boom)
-    (unit-type-count villager >= 45)
-    (food-amount >= 500)
-    (wood-amount >= 300)
-    (building-type-count-total town-center < 3)
     (stone-amount < 100)
     (goal bt-cataphract-demand-goal 1)
 =>
@@ -1963,12 +1997,14 @@
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (current-age >= castle-age)
+    (goal bt-tc-project-goal 3)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    )
     (goal strategy-goal bt-strategy-boom)
-    (unit-type-count villager >= 45)
-    (food-amount >= 500)
-    (wood-amount >= 300)
-    (building-type-count-total town-center < 3)
     (stone-amount < 100)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-tc-stone)
@@ -4326,85 +4362,694 @@
 ;
 ; Town Centers.
 ;
-; These rules only fire in BOOM posture, so TC expansion does not
-; compete with the military pressure posture for the shared mutex.
-; TC2.
-; Demand -> claim -> release food/wood escrow -> start watchdog -> build.
+; Persistent project state separates strategic demand from resource claim,
+; controlled placement, foundation construction, completion, and recovery.
+
 (defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-failure-goal bt-tc-failure-none)
     (goal strategy-goal bt-strategy-boom)
     (current-age >= castle-age)
     (unit-type-count villager >= 32)
     (food-amount >= 350)
     (wood-amount >= 300)
     (building-type-count-total town-center < 2)
+=>
+    (set-goal bt-tc-project-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (goal bt-tc-failure-goal bt-tc-failure-none)
     (strategic-number sn-resource-control == 0)
+    (building-type-count-total town-center < 2)
     (can-build-with-escrow town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc2-claim)
     (release-escrow food)
     (release-escrow wood)
+    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
-    (build town-center)
 )
 
-; TC2 completed-count witness -> release only the TC2 claim.
 (defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (strategic-number sn-resource-control == bt-tc2-claim)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-placement-to-center 0)
+    (set-strategic-number sn-placement-zone-size bt-tc-placement-zone-size)
+    (set-strategic-number sn-placement-fail-delta 0)
+    (up-set-placement-data my-player-number -1 c: bt-tc-placement-distance)
+    (up-assign-builders c: town-center-foundation c: bt-tc-builder-count)
+    (up-build place-control 0 c: town-center)
+    (set-goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (building-type-count-total town-center >= 2)
+    (building-type-count town-center < 2)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
+    (set-goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (building-type-count town-center >= 2)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
     (building-type-count town-center >= 2)
 =>
     (disable-timer bt-tc2-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal 0)
 )
 
-; TC2 watchdog recovery.
-; Timeout only releases the stale claim. It never retries the build.
 (defrule
-    (strategic-number sn-resource-control == bt-tc2-claim)
-    (building-type-count town-center < 2)
+    (goal bt-tc-project-goal 2)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    )
+    (not (goal strategy-goal bt-strategy-boom))
+    (building-type-count-total town-center < 2)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-tc2-claim)
+    )
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-goal bt-tc-failure-goal bt-tc-failure-strategic-cancel)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 0)
 =>
     (disable-timer bt-tc2-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 1)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 30)
 )
 
-; TC3.
-; Demand -> claim -> release food/wood escrow -> start watchdog -> build.
 (defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 0)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 1)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 30)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 1)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 60)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 1)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 60)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 2)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 120)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 2)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 120)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 3)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 240)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (building-type-count town-center < 2)
+    (building-type-count-total town-center < 2)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (goal bt-tc-retry-goal 3)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc2-watchdog-timer 240)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 1)
+    (timer-triggered bt-tc2-watchdog-timer)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 2)
+    (timer-triggered bt-tc2-watchdog-timer)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 3)
+    (timer-triggered bt-tc2-watchdog-timer)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
+    (timer-triggered bt-tc2-watchdog-timer)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    (building-type-count-total town-center >= 2)
+    (building-type-count town-center < 2)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (up-compare-goal bt-tc-retry-goal < 3)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (up-modify-goal bt-tc-retry-goal g:+ 1)
+    (up-assign-builders c: town-center-foundation c: bt-tc-builder-count)
+    (set-goal bt-tc-failure-goal bt-tc-failure-foundation-stall)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    (building-type-count-total town-center >= 2)
+    (building-type-count town-center < 2)
+    (timer-triggered bt-tc2-watchdog-timer)
+    (up-compare-goal bt-tc-retry-goal >= 3)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-failure-goal bt-tc-failure-foundation-stall)
+    (set-goal bt-tc-stage-goal bt-tc-stage-foundation-stalled)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
+    (or
+        (not (goal strategy-goal bt-strategy-boom))
+        (building-type-count town-center >= 2)
+    )
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-failure-goal bt-tc-failure-none)
     (goal strategy-goal bt-strategy-boom)
     (current-age >= castle-age)
     (unit-type-count villager >= 45)
     (food-amount >= 500)
     (wood-amount >= 300)
+    (building-type-count town-center >= 2)
     (building-type-count-total town-center < 3)
+=>
+    (set-goal bt-tc-project-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (goal bt-tc-failure-goal bt-tc-failure-none)
     (strategic-number sn-resource-control == 0)
+    (building-type-count-total town-center < 3)
     (can-build-with-escrow town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc3-claim)
     (release-escrow food)
     (release-escrow wood)
+    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
-    (build town-center)
 )
 
-; TC3 completed-count witness -> release only the TC3 claim.
 (defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (strategic-number sn-resource-control == bt-tc3-claim)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-placement-to-center 0)
+    (set-strategic-number sn-placement-zone-size bt-tc-placement-zone-size)
+    (set-strategic-number sn-placement-fail-delta 0)
+    (up-set-placement-data my-player-number -1 c: bt-tc-placement-distance)
+    (up-assign-builders c: town-center-foundation c: bt-tc-builder-count)
+    (up-build place-control 0 c: town-center)
+    (set-goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (building-type-count-total town-center >= 3)
+    (building-type-count town-center < 3)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
+    (set-goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (building-type-count town-center >= 3)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
     (building-type-count town-center >= 3)
 =>
     (disable-timer bt-tc3-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal 0)
 )
 
-; TC3 watchdog recovery.
-; Timeout only releases the stale claim. It never retries the build.
 (defrule
-    (strategic-number sn-resource-control == bt-tc3-claim)
-    (building-type-count town-center < 3)
+    (goal bt-tc-project-goal 3)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    )
+    (not (goal strategy-goal bt-strategy-boom))
+    (building-type-count-total town-center < 3)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-tc3-claim)
+    )
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-goal bt-tc-failure-goal bt-tc-failure-strategic-cancel)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 0)
 =>
     (disable-timer bt-tc3-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 1)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 30)
 )
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 0)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 1)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 30)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 1)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 60)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 1)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 60)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 2)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 120)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 2)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 120)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 3)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 240)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (building-type-count town-center < 3)
+    (building-type-count-total town-center < 3)
+    (up-pending-placement c: town-center)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (goal bt-tc-retry-goal 3)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-reset-placement c: town-center)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (enable-timer bt-tc3-watchdog-timer 240)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 1)
+    (timer-triggered bt-tc3-watchdog-timer)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 2)
+    (timer-triggered bt-tc3-watchdog-timer)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 3)
+    (timer-triggered bt-tc3-watchdog-timer)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
+    (timer-triggered bt-tc3-watchdog-timer)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    (building-type-count-total town-center >= 3)
+    (building-type-count town-center < 3)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (up-compare-goal bt-tc-retry-goal < 3)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (up-modify-goal bt-tc-retry-goal g:+ 1)
+    (up-assign-builders c: town-center-foundation c: bt-tc-builder-count)
+    (set-goal bt-tc-failure-goal bt-tc-failure-foundation-stall)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    (building-type-count-total town-center >= 3)
+    (building-type-count town-center < 3)
+    (timer-triggered bt-tc3-watchdog-timer)
+    (up-compare-goal bt-tc-retry-goal >= 3)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-retry-goal 4)
+    (set-goal bt-tc-failure-goal bt-tc-failure-foundation-stall)
+    (set-goal bt-tc-stage-goal bt-tc-stage-foundation-stalled)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
+    (or
+        (not (goal strategy-goal bt-strategy-boom))
+        (building-type-count town-center >= 3)
+    )
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal 0)
+)
+
 
 ;================================================================
 ; 18. SCOUTING -> ATTACK-GROUP GATHERING
