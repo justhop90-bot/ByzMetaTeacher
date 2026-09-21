@@ -150,6 +150,9 @@
 (defconst bt-castle-prereq-backoff-timer 20)
 (defconst bt-castle-prereq-watchdog-seconds 120)
 (defconst bt-castle-prereq-backoff-seconds 30)
+(defconst bt-castle-prereq-backoff-2-seconds 60)
+(defconst bt-castle-prereq-backoff-3-seconds 120)
+(defconst bt-castle-prereq-backoff-cap-seconds 240)
 
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
@@ -206,6 +209,7 @@
 (defconst bt-scout-pressure-demand-goal 56)
 (defconst bt-natural-food-state-goal 57)
 (defconst bt-castle-prereq-backoff-goal 58)
+(defconst bt-castle-prereq-retry-goal 59)
 (defconst bt-natural-food-stable 0)
 (defconst bt-natural-food-transition 1)
 (defconst bt-natural-food-depleted 2)
@@ -318,6 +322,7 @@
     (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
     (disable-timer bt-castle-prereq-backoff-timer)
     (disable-self)
 )
@@ -3274,19 +3279,83 @@
     (building-type-count-total blacksmith >= 1)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
-; Blacksmith watchdog recovery.
-; Timeout only releases the stale claim. It never retries the build.
+; A timed-out foundation may finish after the watchdog released the
+; mutex. Reset retry history without touching a newer resource claim.
 (defrule
-    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-    (building-type-count-total blacksmith < 1)
+    (building-type-count-total blacksmith >= 1)
+    (up-compare-goal bt-castle-prereq-retry-goal >= 1)
+=>
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
+)
+
+; Blacksmith watchdog recovery.
+; Timeout only releases the stale claim. Retry delay doubles after
+; each repeated failure and caps at the configured maximum.
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
+    (up-compare-goal bt-castle-prereq-retry-goal >= 3)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-castle-prereq-backoff-goal 1)
+    (set-goal bt-castle-prereq-retry-goal 3)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-cap-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
+    (goal bt-castle-prereq-retry-goal 2)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (set-goal bt-castle-prereq-retry-goal 3)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-3-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
+    (goal bt-castle-prereq-retry-goal 1)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (set-goal bt-castle-prereq-retry-goal 2)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-2-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
+    (goal bt-castle-prereq-retry-goal 0)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (set-goal bt-castle-prereq-retry-goal 1)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
 )
 
@@ -3317,7 +3386,21 @@
     (building-type-count-total market >= 1)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
     (set-strategic-number sn-resource-control 0)
+)
+
+; A timed-out foundation may finish after the watchdog released the
+; mutex. Reset retry history without touching a newer resource claim.
+(defrule
+    (building-type-count-total market >= 1)
+    (up-compare-goal bt-castle-prereq-retry-goal >= 1)
+=>
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
 )
 
 ; Market watchdog recovery.
