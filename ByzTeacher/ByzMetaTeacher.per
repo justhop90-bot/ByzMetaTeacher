@@ -1659,8 +1659,8 @@
 ;
 ; Town Centers.
 ;
-; These rules only fire in BOOM posture, so the AI does not spend
-; 600+ wood on TCs while a known attack needs military capacity.
+; These rules only fire in BOOM posture, so TC expansion does not
+; compete with the military pressure posture for the shared mutex.
 ; TC2.
 ; Demand -> claim -> release food/wood escrow -> start watchdog -> build.
 (defrule
