@@ -4111,9 +4111,9 @@
 ; a specific unit-goal.  It closes the FLUSH -> temporary observation
 ; gap -> no production failure.
 ;
-; Six military units is the recovery floor used by strategy selection.
-; military-population is the aggregate army-state fact here; the
-; queue-aware unit-type-count-total facts are used by composition caps.
+; The FLUSH fallback stream consumes the live soldier deficit.
+; It remains active after six units until the FLUSH reinforcement floor
+; is restored, even when no specific enemy counter has been classified.
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (current-age >= feudal-age)
@@ -4131,7 +4131,7 @@
     (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
-    (unit-type-count-total spearman-line < bt-standing-army-floor-goal)
+    (up-compare-goal bt-standing-army-deficit-goal < 0)
     (can-train spearman-line)
 =>
     (train spearman-line)
