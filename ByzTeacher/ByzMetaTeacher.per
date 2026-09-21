@@ -740,25 +740,21 @@
 
 (defrule
     (strategic-number sn-enable-boar-hunting != 2)
+    (sheep-and-forage-too-far)
+    (not (dropsite-min-distance deer-hunting == -1))
+    (not (dropsite-min-distance deer-hunting == 255))
+    (not (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance))
+=>
+    (set-goal bt-natural-food-state-goal bt-natural-food-transition)
+)
+
+(defrule
+    (strategic-number sn-enable-boar-hunting != 2)
+    (not (sheep-and-forage-too-far))
     (or
-        (and
-            (sheep-and-forage-too-far)
-            (not
-                (or
-                    (dropsite-min-distance deer-hunting == -1)
-                    (dropsite-min-distance deer-hunting == 255)
-                    (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
-                )
-            )
-        )
-        (and
-            (not (sheep-and-forage-too-far))
-            (or
-                (dropsite-min-distance deer-hunting == -1)
-                (dropsite-min-distance deer-hunting == 255)
-                (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
-            )
-        )
+        (dropsite-min-distance deer-hunting == -1)
+        (dropsite-min-distance deer-hunting == 255)
+        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
     )
 =>
     (set-goal bt-natural-food-state-goal bt-natural-food-transition)
