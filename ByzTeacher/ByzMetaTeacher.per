@@ -1419,7 +1419,6 @@
 ;
 ; This is the arbitration layer.
 ;---------------------------------------------------------------
-;---------------------------------------------------------------
 ; 16A. PERSISTENT BOOM MILITARY FLOOR
 ;---------------------------------------------------------------
 ; BOOM prioritizes economic expansion, but it does not abandon a
@@ -1450,7 +1449,7 @@
     (train spearman-line)
 )
 
-; 16A. PERSISTENT FLUSH MILITARY FLOOR
+; 16B. PERSISTENT FLUSH MILITARY FLOOR
 ;---------------------------------------------------------------
 ; FLUSH is a defensive posture, not a momentary reaction to a
 ; currently visible enemy unit. Once entered, the bot must rebuild
@@ -1485,7 +1484,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16A. EXPLICIT SPEAR GOAL
+; 16C. EXPLICIT SPEAR GOAL
 ;---------------------------------------------------------------
 (defrule
     (goal strategy-goal bt-strategy-flush)
@@ -1519,7 +1518,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16B. EXPLICIT SKIRMISHER GOAL
+; 16D. EXPLICIT SKIRMISHER GOAL
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal skirmisher-line)
@@ -1555,7 +1554,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16C. EXPLICIT ARCHER GOAL
+; 16E. EXPLICIT ARCHER GOAL
 (defrule
     (or
     (goal strategy-goal bt-strategy-rush)
@@ -1588,7 +1587,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16D. MIXED COMPOSITION
+; 16F. MIXED COMPOSITION
 ; MIX #1: cheap cavalry cover first.
 (defrule
     (goal strategy-goal bt-strategy-flush)
