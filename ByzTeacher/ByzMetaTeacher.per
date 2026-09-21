@@ -1565,7 +1565,6 @@
 ; P2 CASTLE STONE. Stone exists only while the Castle project is unfunded.
 (defrule
     (goal bt-resource-mode-goal 0)
-    (goal bt-cataphract-demand-goal 1)
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (stone-amount < 650)
@@ -1586,7 +1585,6 @@
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (goal bt-cataphract-demand-goal 1)
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (stone-amount < 650)
