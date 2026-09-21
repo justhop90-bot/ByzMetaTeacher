@@ -6105,6 +6105,20 @@
 
 )
 
+; If attack-now fails to assemble the minimum package, release the
+; cycle instead of leaving attack-goal latched for the long reset.
+(defrule
+    (timer-triggered bt-attack-gather-watchdog-timer)
+    (goal attack-goal 1)
+    (attack-soldier-count < 10)
+=>
+    (disable-timer bt-attack-gather-watchdog-timer)
+    (up-reset-attack-now)
+    (set-goal attack-goal 0)
+    (enable-timer bt-attack-timer 180)
+)
+
+; attack-soldier-count >= 10 is the terminal attack-package witness.
 ;================================================================
 ; 19. ATTACK CYCLE RESET
 ;================================================================
@@ -6117,8 +6131,8 @@
     (goal attack-goal 1)
 =>
     (up-reset-attack-now)
+    (disable-timer bt-attack-gather-watchdog-timer)
 
-    
     ; End this attack cycle.
     (set-goal attack-goal 0)
 
@@ -6150,18 +6164,19 @@
     (goal retreat-now-goal 0)
     (or
         (town-under-attack)
+        (up-compare-goal bt-attack-reserve-goal < 0)
         (and
             (players-building-count target-player > 0)
             (up-compare-goal bt-relative-force-goal < -5)
         )
     )
-    (attack-soldier-count >= 6)
 =>
     (set-goal retreat-now-goal 1)
 
     
     ; Stop the persistent attack-now targeting.
     (up-reset-attack-now)
+    (disable-timer bt-attack-gather-watchdog-timer)
 
     ; Recall military forces.
     (up-retreat-now)
