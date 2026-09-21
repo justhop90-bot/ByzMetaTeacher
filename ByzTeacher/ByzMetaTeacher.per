@@ -3524,6 +3524,50 @@
 )
 
 ;---------------------------------------------------------------
+; 15A.1 ROLE-TARGET BARRACK CAPACITY
+;---------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-standing-spear-target-goal > 0)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 1)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+(defrule
+    (up-compare-goal bt-standing-spear-target-goal >= 7)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 2)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+(defrule
+    (up-compare-goal bt-standing-spear-target-goal >= 13)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 3)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+(defrule
+    (up-compare-goal bt-standing-spear-target-goal >= 21)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 4)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+(defrule
+    (up-compare-goal bt-standing-spear-target-goal >= 25)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 5)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+;---------------------------------------------------------------
 ; 15B. ARCHERY-RANGE CAPACITY
 ;---------------------------------------------------------------
 (defrule
