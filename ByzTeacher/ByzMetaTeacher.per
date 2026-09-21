@@ -6033,13 +6033,57 @@
 ;   attack group is actually available
 ;   town is not currently under attack
 ;   no other attack cycle is active
+; Reserve surplus above the standing floor is the attack budget.
+(defrule
+    (true)
+=>
+    (up-get-fact defend-soldier-count 0 bt-attack-reserve-goal)
+    (up-modify-goal bt-attack-reserve-goal g:- bt-standing-army-floor-goal)
+)
+
+; CPSB documents that sn-percent-attack-soldiers is difficulty-scaled.
+; Disable that scaling and derive a reserve-safe allocation from the
+; standing-floor tier. Ten soldiers is also the minimum attack group.
+(defrule (up-compare-goal bt-standing-army-floor-goal == 6)
+=> (set-strategic-number sn-percent-attack-soldiers 63))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 12)
+=> (set-strategic-number sn-percent-attack-soldiers 46))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 16)
+=> (set-strategic-number sn-percent-attack-soldiers 39))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 20)
+=> (set-strategic-number sn-percent-attack-soldiers 34))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 26)
+=> (set-strategic-number sn-percent-attack-soldiers 28))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 30)
+=> (set-strategic-number sn-percent-attack-soldiers 25))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 34)
+=> (set-strategic-number sn-percent-attack-soldiers 23))
+(defrule (up-compare-goal bt-standing-army-floor-goal == 42)
+=> (set-strategic-number sn-percent-attack-soldiers 20))
+
+; Normalized primary counter deficits remain a hard attack veto even
+; when relative force is positive.
+(defrule
+    (or
+        (and
+            (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+            (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-1)
+        )
+        (and
+            (up-compare-goal bt-ranged-counter-level-goal >= 1)
+            (up-compare-goal bt-standing-skirm-target-goal < bt-skirm-target-1)
+        )
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
 (defrule
     (timer-triggered bt-attack-timer)
     (current-age >= feudal-age)
     (players-building-count any-enemy > 0)
     (players-building-count target-player > 0)
-    (military-population >= 10)
-    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
     (up-compare-goal bt-relative-force-goal >= 0)
     (goal bt-counter-veto-goal 0)
     (goal attack-goal 0)
@@ -6048,8 +6092,8 @@
 =>
     ; Mark the attack cycle active BEFORE attack-now.
     (set-goal attack-goal 1)
+    (enable-timer bt-attack-gather-watchdog-timer bt-attack-gather-watchdog-seconds)
 
-    
     ; Force the available attack units into an attack-group.
     ;
     ; attack-now should NOT be spammed.
