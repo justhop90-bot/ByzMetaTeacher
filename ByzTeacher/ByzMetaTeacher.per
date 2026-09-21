@@ -609,14 +609,18 @@
 ; Deer remains part of the engine's normal natural-food phase.
 ; deer-hunting is used only as a minimal witness that huntable deer
 ; remain. We do not manually assign deer hunters or build a deer model.
-; The farm rule therefore waits for natural hunt pressure rather than
-; treating the disappearance of one boar as a farm command.
+; Ask the simple question: "Can the native hunt system still reach deer
+; without sending villagers too far?" If no, and food is low, farms can
+; take over. Deer remain part of normal native hunting.
 (defrule
     (current-age >= feudal-age)
     (food-amount < 350)
     (idle-farm-count == 0)
-    (dropsite-min-distance deer-hunting == -1)
-    (dropsite-min-distance deer-hunting == 255)
+    (or
+        (dropsite-min-distance deer-hunting == -1)
+        (dropsite-min-distance deer-hunting == 255)
+        (dropsite-min-distance deer-hunting > 8)
+    )
     (building-type-count-total farm < 6)
     (wood-amount >= 60)
     (can-build farm)
@@ -628,8 +632,11 @@
     (current-age >= castle-age)
     (food-amount < 500)
     (idle-farm-count == 0)
-    (dropsite-min-distance deer-hunting == -1)
-    (dropsite-min-distance deer-hunting == 255)
+    (or
+        (dropsite-min-distance deer-hunting == -1)
+        (dropsite-min-distance deer-hunting == 255)
+        (dropsite-min-distance deer-hunting > 8)
+    )
     (building-type-count-total farm < 12)
     (wood-amount >= 60)
     (can-build farm)
