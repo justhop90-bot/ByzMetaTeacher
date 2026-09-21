@@ -1953,9 +1953,13 @@
     (goal bt-tc-project-goal 2)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
-        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (or
+                (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+                (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+            )
+        )
     )
     (goal strategy-goal bt-strategy-boom)
     (stone-amount < 100)
@@ -1969,9 +1973,13 @@
     (goal bt-tc-project-goal 2)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
-        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (or
+                (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+                (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+            )
+        )
     )
     (goal strategy-goal bt-strategy-boom)
     (stone-amount < 100)
@@ -1984,9 +1992,13 @@
     (goal bt-tc-project-goal 3)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
-        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (or
+                (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+                (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+            )
+        )
     )
     (goal strategy-goal bt-strategy-boom)
     (stone-amount < 100)
@@ -2000,9 +2012,13 @@
     (goal bt-tc-project-goal 3)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
-        (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (or
+                (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+                (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+            )
+        )
     )
     (goal strategy-goal bt-strategy-boom)
     (stone-amount < 100)
