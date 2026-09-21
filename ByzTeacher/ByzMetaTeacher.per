@@ -3335,15 +3335,15 @@
     (set-goal bt-castle-prereq-retry-goal 0)
 )
 
-; Blacksmith watchdog recovery.
-; Timeout only releases the stale claim. Retry delay doubles after
-; each repeated failure and caps at the configured maximum.
-; Permanent failure cutoff after the capped retry has also timed out.
+; Castle prerequisite watchdog recovery.
+; Timeout only releases the stale claim. Retry delay doubles through
+; 30/60/120 seconds, then uses the 240-second cap. The next timeout
+; after the capped retry is the permanent-failure cutoff.
 ; This is terminal for the prerequisite subsystem: release the mutex,
 ; stop its timers, and leave a diagnostic witness. No retry follows.
 (defrule
     (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-    (up-compare-goal bt-castle-prereq-retry-goal >= 3)
+    (up-compare-goal bt-castle-prereq-retry-goal >= 4)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
@@ -3355,7 +3355,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-castle-market-claim)
-    (up-compare-goal bt-castle-prereq-retry-goal >= 3)
+    (up-compare-goal bt-castle-prereq-retry-goal >= 4)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
@@ -3378,6 +3378,21 @@
     (set-goal bt-castle-prereq-backoff-goal 1)
     (set-goal bt-castle-prereq-retry-goal 3)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-3-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
+    (goal bt-castle-prereq-retry-goal 3)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (set-goal bt-castle-prereq-retry-goal 4)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-cap-seconds)
 )
 
 (defrule
