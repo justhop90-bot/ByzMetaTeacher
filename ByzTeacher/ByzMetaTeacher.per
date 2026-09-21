@@ -120,6 +120,11 @@
 (defconst bt-strategy-rush 201)
 (defconst bt-strategy-boom 202)
 
+; TC resource-claim values use currently unused high strategic-number IDs.
+; They are state values stored in the existing sn-resource-control mutex.
+(defconst bt-tc2-claim 510)
+(defconst bt-tc3-claim 509)
+
 ; Community mixed-composition value.
 (defconst bt-unit-mix 1)
 
@@ -1649,6 +1654,7 @@
 ; These rules only fire in BOOM posture, so the AI does not spend
 ; 600+ wood on TCs while a known attack needs military capacity.
 ; TC2.
+; Demand -> claim -> release food/wood escrow -> build.
 (defrule
     (goal strategy-goal bt-strategy-boom)
     (current-age >= castle-age)
@@ -1656,12 +1662,25 @@
     (food-amount >= 350)
     (wood-amount >= 300)
     (building-type-count-total town-center < 2)
+    (strategic-number sn-resource-control == 0)
     (can-build town-center)
 =>
+    (set-strategic-number sn-resource-control bt-tc2-claim)
+    (release-escrow food)
+    (release-escrow wood)
     (build town-center)
 )
 
+; TC2 completion witness -> release only the TC2 claim.
+(defrule
+    (strategic-number sn-resource-control == bt-tc2-claim)
+    (building-type-count-total town-center >= 2)
+=>
+    (set-strategic-number sn-resource-control 0)
+)
+
 ; TC3.
+; Demand -> claim -> release food/wood escrow -> build.
 (defrule
     (goal strategy-goal bt-strategy-boom)
     (current-age >= castle-age)
@@ -1669,9 +1688,21 @@
     (food-amount >= 500)
     (wood-amount >= 300)
     (building-type-count-total town-center < 3)
+    (strategic-number sn-resource-control == 0)
     (can-build town-center)
 =>
+    (set-strategic-number sn-resource-control bt-tc3-claim)
+    (release-escrow food)
+    (release-escrow wood)
     (build town-center)
+)
+
+; TC3 completion witness -> release only the TC3 claim.
+(defrule
+    (strategic-number sn-resource-control == bt-tc3-claim)
+    (building-type-count-total town-center >= 3)
+=>
+    (set-strategic-number sn-resource-control 0)
 )
 
 ;================================================================
