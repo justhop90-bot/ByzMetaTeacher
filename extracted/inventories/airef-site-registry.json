@@ -1,0 +1,3273 @@
+{
+  "metadata": {
+    "name": "airef-site-registry",
+    "version": "2026-04-27",
+    "status": "curated-first-pass",
+    "source_site": "https://airef.github.io/",
+    "build_method": "Curated from accessible AIRef pages and search-visible summaries. Dynamic tables on AIRef are JS-driven, so this registry captures the stable page structure, definitions, and lookup routes first.",
+    "coverage_notes": [
+      "This is not a full export of every AIRef command, parameter, or strategic number row.",
+      "Use this registry as startup context and navigation metadata, then drill into the cited AIRef pages for details.",
+      "Promote an entry from 'documented' to stronger local guidance only after it is validated by the linter and an isolated in-game probe."
+    ],
+    "primary_sources": [
+      "https://airef.github.io/",
+      "https://airef.github.io/commands/commands-index.html",
+      "https://airef.github.io/parameters/parameters-index.html",
+      "https://airef.github.io/strategic-numbers/sn-index.html",
+      "https://airef.github.io/tables/objects.html",
+      "https://airef.github.io/tables/techs.html",
+      "https://airef.github.io/resources/res-index.html",
+      "https://airef.github.io/resources/articles/intro-to-commands.html",
+      "https://airef.github.io/resources/articles/logical-operators.html",
+      "https://airef.github.io/resources/articles/data-limits.html",
+      "https://airef.github.io/resources/articles/defconsts-goals-sns-1.html",
+      "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+    ]
+  },
+  "site_sections": [
+    {
+      "id": "home",
+      "name": "Site Home",
+      "url": "https://airef.github.io/",
+      "purpose": "Top-level entry point for commands, parameters, strategic numbers, tables, and guides."
+    },
+    {
+      "id": "commands-index",
+      "name": "Commands Index",
+      "url": "https://airef.github.io/commands/commands-index.html",
+      "purpose": "Master command directory with category, complexity, type, and version filtering."
+    },
+    {
+      "id": "parameters-index",
+      "name": "Parameters Index",
+      "url": "https://airef.github.io/parameters/parameters-index.html",
+      "purpose": "Master parameter directory. Use this when a command syntax mentions a parameter type you do not recognize."
+    },
+    {
+      "id": "sn-index",
+      "name": "Strategic Numbers Index",
+      "url": "https://airef.github.io/strategic-numbers/sn-index.html",
+      "purpose": "Lookup for strategic number meaning, flags, effective status, and ID ordering."
+    },
+    {
+      "id": "objects-table",
+      "name": "Objects Table",
+      "url": "https://airef.github.io/tables/objects.html",
+      "purpose": "Object IDs, lines, sets, classes, and notes on projectiles and dead objects."
+    },
+    {
+      "id": "techs-table",
+      "name": "Technologies Table",
+      "url": "https://airef.github.io/tables/techs.html",
+      "purpose": "Technology IDs and names."
+    },
+    {
+      "id": "resources-index",
+      "name": "Resources Index",
+      "url": "https://airef.github.io/resources/res-index.html",
+      "purpose": "Guides, articles, and DUC primers."
+    },
+    {
+      "id": "site-search",
+      "name": "Search All",
+      "url": "https://airef.github.io/search/search.html",
+      "purpose": "Search across command, parameter, strategic-number, object, and technology names/descriptions."
+    }
+  ],
+  "registries": {
+    "commands": {
+      "definition": "Executable AI scripting primitives. Most day-to-day .per work is selecting, composing, and sequencing commands.",
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "entry_ids": [
+        "commands",
+        "facts",
+        "actions",
+        "logical-operator-commands",
+        "userpatch-facts-actions",
+        "duc-actions"
+      ]
+    },
+    "parameters": {
+      "definition": "Typed inputs and outputs attached to commands. Understanding parameter direction and type is mandatory for reading syntax correctly.",
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "entry_ids": [
+        "parameters",
+        "parameter-directions",
+        "parameter-types",
+        "parameter-family-any-player",
+        "parameter-family-player-number",
+        "parameter-family-building-id",
+        "parameter-family-unit-id",
+        "parameter-family-tech-id",
+        "parameter-family-goal-id",
+        "parameter-family-sn-id",
+        "parameter-family-timer-id",
+        "parameter-family-signal-id",
+        "parameter-family-value",
+        "parameter-family-string",
+        "compare-op",
+        "math-op",
+        "type-op"
+      ]
+    },
+    "strategic_numbers": {
+      "definition": "Built-in mutable settings that steer AI engine behavior. Some are active behavior switches, some are effectively free storage.",
+      "source_urls": [
+        "https://airef.github.io/strategic-numbers/sn-index.html",
+        "https://airef.github.io/resources/articles/data-limits.html",
+        "https://airef.github.io/resources/articles/defconsts-goals-sns-1.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "entry_ids": [
+        "strategic-numbers",
+        "goals",
+        "defconsts"
+      ]
+    },
+    "duc": {
+      "definition": "Direct Unit Control. UserPatch-origin unit selection, filtering, point targeting, object targeting, and search-list manipulation.",
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/res-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/history/component-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "entry_ids": [
+        "duc",
+        "local-list",
+        "remote-list",
+        "duc-actions",
+        "duc-family-search-reset",
+        "duc-family-filters",
+        "duc-family-selection-scoping",
+        "duc-family-state-capture",
+        "duc-family-point-targeting",
+        "duc-family-object-targeting",
+        "duc-family-list-group-management",
+        "classes",
+        "lines",
+        "sets"
+      ]
+    },
+    "tables": {
+      "definition": "Reference tables for object IDs, technology IDs, lines, sets, classes, and version-specific variants.",
+      "source_urls": [
+        "https://airef.github.io/tables/objects.html",
+        "https://airef.github.io/tables/techs.html",
+        "https://airef.github.io/tables/tables-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "entry_ids": [
+        "objects-table",
+        "technologies-table",
+        "classes",
+        "lines",
+        "sets"
+      ]
+    },
+    "guides": {
+      "definition": "Narrative AIRef articles that explain semantics, pitfalls, and performance tradeoffs around the raw reference entries.",
+      "source_urls": [
+        "https://airef.github.io/resources/res-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md",
+        "docs/history/tournament-ai-learnings.md"
+      ],
+      "entry_ids": [
+        "intro-to-commands",
+        "logical-operator-commands",
+        "data-limits",
+        "performance-benchmarks",
+        "duc"
+      ]
+    }
+  },
+  "concepts": [
+    {
+      "id": "commands",
+      "name": "Commands",
+      "kind": "command-registry",
+      "definition": "Commands are the core units of AoE2 AI scripting. They make up most .per logic and are always written inside rules.",
+      "details": [
+        "AIRef classifies commands by category, complexity, type, and version.",
+        "There are facts, actions, and a smaller set of commands that can behave as either fact or action."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "commands",
+        "command index",
+        "fact",
+        "action"
+      ],
+      "related_ids": [
+        "facts",
+        "actions",
+        "parameters"
+      ]
+    },
+    {
+      "id": "facts",
+      "name": "Facts",
+      "kind": "command-type",
+      "definition": "Facts are rule conditions. They must evaluate true before the actions section runs.",
+      "details": [
+        "Facts appear before the => separator.",
+        "Example from AIRef: can-afford-building is a fact."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "fact",
+        "condition"
+      ],
+      "related_ids": [
+        "actions",
+        "logical-operator-commands"
+      ]
+    },
+    {
+      "id": "actions",
+      "name": "Actions",
+      "kind": "command-type",
+      "definition": "Actions are rule effects. They execute only after all facts in the rule are true.",
+      "details": [
+        "Actions appear after the => separator.",
+        "Example from AIRef: buy-commodity is an action."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "action",
+        "effect"
+      ],
+      "related_ids": [
+        "facts",
+        "duc-actions"
+      ]
+    },
+    {
+      "id": "userpatch-facts-actions",
+      "name": "UserPatch Facts/Actions",
+      "kind": "extension-family",
+      "definition": "UserPatch-origin commands, typically prefixed with up-, extend base AI scripting with DUC, advanced queries, and extra control surfaces.",
+      "details": [
+        "AIRef notes that some UserPatch commands can be used as either a fact or an action.",
+        "If placed in the facts section, some of these commands can both validate and execute."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html",
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "UserPatch",
+        "up-",
+        "UP command"
+      ],
+      "related_ids": [
+        "duc",
+        "duc-actions"
+      ]
+    },
+    {
+      "id": "parameters",
+      "name": "Parameters",
+      "kind": "syntax-registry",
+      "definition": "Parameters customize command behavior. A command can have zero to four parameters, and every populated parameter must use a valid value for its type.",
+      "details": [
+        "AIRef's command syntax shows both direction and type prefixes per parameter.",
+        "Examples include player selectors, object IDs, goals, strategic numbers, and operators."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "parameter",
+        "syntax",
+        "inConst",
+        "outGoal"
+      ],
+      "related_ids": [
+        "parameter-directions",
+        "parameter-types",
+        "compare-op",
+        "math-op",
+        "type-op"
+      ]
+    },
+    {
+      "id": "parameter-directions",
+      "name": "Parameter Directions",
+      "kind": "parameter-semantics",
+      "definition": "Direction prefixes describe whether a parameter is used as input, output, or both.",
+      "details": [
+        "in = input consumed by the command.",
+        "out = output written by the command, usually to a goal.",
+        "io = input and output, usually a goal that is read and then overwritten."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "in",
+        "out",
+        "io"
+      ],
+      "related_ids": [
+        "parameters",
+        "parameter-types"
+      ]
+    },
+    {
+      "id": "parameter-types",
+      "name": "Parameter Types",
+      "kind": "parameter-semantics",
+      "definition": "Type prefixes describe what sort of value a parameter expects.",
+      "details": [
+        "Common AIRef types: Const, Goal, Sn, Op, Player, Text.",
+        "Op means the value type follows the operator family currently in use."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "Const",
+        "Goal",
+        "Sn",
+        "Player",
+        "Text",
+        "Op"
+      ],
+      "related_ids": [
+        "parameters",
+        "compare-op",
+        "math-op",
+        "type-op"
+      ]
+    },
+    {
+      "id": "compare-op",
+      "name": "compareOp",
+      "kind": "operator",
+      "definition": "Comparison operator family used to compare constants, goals, or strategic numbers.",
+      "details": [
+        "Examples: >, <, >=, <=, ==, !=.",
+        "Bare operators default to constants, so > means the same thing as c:>.",
+        "Use g: prefixes for goal comparisons and s: prefixes for strategic-number comparisons."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "compareOp",
+        ">",
+        "<",
+        "==",
+        "!=",
+        "c:>",
+        "g:>",
+        "s:>"
+      ],
+      "related_ids": [
+        "math-op",
+        "type-op"
+      ]
+    },
+    {
+      "id": "math-op",
+      "name": "mathOp",
+      "kind": "operator",
+      "definition": "Math operator family used to perform arithmetic and store the result in a goal or similar writable slot.",
+      "details": [
+        "Unlike compareOp, the c:/g:/s: prefix is required.",
+        "Examples include c:+, g:+, and s:+."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "mathOp",
+        "c:+",
+        "g:+",
+        "s:+"
+      ],
+      "related_ids": [
+        "compare-op",
+        "type-op"
+      ]
+    },
+    {
+      "id": "type-op",
+      "name": "typeOp",
+      "kind": "operator",
+      "definition": "Type operator used to force the next parameter to be interpreted as a constant, goal, or strategic number.",
+      "details": [
+        "Valid prefixes are c:, g:, and s:."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "typeOp",
+        "c:",
+        "g:",
+        "s:"
+      ],
+      "related_ids": [
+        "compare-op",
+        "math-op"
+      ]
+    },
+    {
+      "id": "strategic-numbers",
+      "name": "Strategic Numbers",
+      "kind": "engine-setting",
+      "definition": "Strategic numbers are mutable AI engine settings that influence built-in behavior and can sometimes be repurposed as spare storage.",
+      "details": [
+        "AIRef documents 512 strategic-number slots from 0 to 511.",
+        "Only about 300 are actively used by the game according to the AIRef SN index summary.",
+        "AIRef recommends starting custom spare use from high IDs downward, noting that SN 511 has known DE issues."
+      ],
+      "source_urls": [
+        "https://airef.github.io/strategic-numbers/sn-index.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "strategic number",
+        "SN",
+        "sn-"
+      ],
+      "related_ids": [
+        "goals",
+        "defconsts"
+      ]
+    },
+    {
+      "id": "goals",
+      "name": "Goals",
+      "kind": "mutable-state",
+      "definition": "Goals are integer variables that the script can read and modify directly.",
+      "details": [
+        "AIRef's data limits article lists goals as ranging from 1 to 16,000.",
+        "Many output parameters in advanced commands write to goals."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/data-limits.html",
+        "https://airef.github.io/resources/articles/defconsts-goals-sns-1.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "docs/history/component-reference.md"
+      ],
+      "lookup_terms": [
+        "goal",
+        "set-goal",
+        "goal range"
+      ],
+      "related_ids": [
+        "strategic-numbers",
+        "defconsts",
+        "parameter-types"
+      ]
+    },
+    {
+      "id": "defconsts",
+      "name": "Defconsts",
+      "kind": "symbol-binding",
+      "definition": "Defconsts bind names to integer values or text strings so scripts can use readable identifiers instead of raw numbers.",
+      "details": [
+        "AIRef explains that the underlying engine is fundamentally numeric, and defconsts help map readable tokens onto those numbers.",
+        "The data-limits article lists defconst numeric limits as -32768 to 32767, or a text string."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/defconsts-goals-sns-1.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "defconst",
+        "constant"
+      ],
+      "related_ids": [
+        "goals",
+        "strategic-numbers"
+      ]
+    },
+    {
+      "id": "duc",
+      "name": "Direct Unit Control",
+      "kind": "control-system",
+      "definition": "DUC is a UserPatch-origin AI scripting module for selecting specific units and controlling them more like a human player would.",
+      "details": [
+        "AIRef's DUC guide frames it as manipulation of individual units and groups via IDs, searches, lists, and target commands.",
+        "It relies heavily on local-list and remote-list workflows."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/res-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/history/component-reference.md"
+      ],
+      "lookup_terms": [
+        "DUC",
+        "Direct Unit Control",
+        "up-"
+      ],
+      "related_ids": [
+        "local-list",
+        "remote-list",
+        "duc-actions"
+      ]
+    },
+    {
+      "id": "local-list",
+      "name": "Local List",
+      "kind": "duc-search-list",
+      "definition": "The DUC local list stores IDs of the AI player's own units and is used when inspecting or commanding those units.",
+      "details": [
+        "AIRef's DUC guide says the local list can hold up to 240 IDs.",
+        "The data-limits article repeats the local-search length limit of 240."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "local list",
+        "up-find-local",
+        "240"
+      ],
+      "related_ids": [
+        "remote-list",
+        "duc"
+      ]
+    },
+    {
+      "id": "remote-list",
+      "name": "Remote List",
+      "kind": "duc-search-list",
+      "definition": "The DUC remote list stores target IDs for any player's units, including enemies, allies, self targets, and Gaia.",
+      "details": [
+        "AIRef's DUC guide says the remote list can hold up to 40 IDs.",
+        "Use the remote list when the object is the target of an order, even if it belongs to the AI player."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "remote list",
+        "up-find-remote",
+        "40"
+      ],
+      "related_ids": [
+        "local-list",
+        "duc"
+      ]
+    },
+    {
+      "id": "duc-actions",
+      "name": "DUC Actions",
+      "kind": "command-family",
+      "definition": "DUC actions are unit-control commands, usually up-* actions, that issue point, object, group, or search-derived orders to selected local-list units.",
+      "details": [
+        "Typical examples include point targeting and object targeting commands such as up-target-point and up-target-objects.",
+        "They are often more powerful than default engine behavior but can be more expensive and stateful."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "DUC action",
+        "up-target-point",
+        "up-target-objects",
+        "action-move",
+        "action-garrison"
+      ],
+      "related_ids": [
+        "duc",
+        "local-list",
+        "remote-list"
+      ]
+    },
+    {
+      "id": "duc-family-search-reset",
+      "name": "DUC Search / Reset",
+      "kind": "command-family",
+      "definition": "Commands that clear DUC state or populate the local/remote search lists from map objects.",
+      "details": [
+        "This family is the start of almost every reliable DUC flow.",
+        "Typical members include reset commands and find commands such as up-full-reset-search, up-find-local, up-find-remote, up-find-status-local, up-find-status-remote, and up-find-resource."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "up-full-reset-search",
+        "up-find-local",
+        "up-find-remote",
+        "up-find-resource",
+        "up-find-status-local",
+        "up-find-status-remote"
+      ],
+      "aliases": [
+        "duc search",
+        "duc reset"
+      ],
+      "tags": [
+        "duc",
+        "search",
+        "reset",
+        "local-list",
+        "remote-list"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "local-list",
+        "remote-list",
+        "duc-family-filters",
+        "duc-family-state-capture"
+      ]
+    },
+    {
+      "id": "duc-family-filters",
+      "name": "DUC Filters",
+      "kind": "command-family",
+      "definition": "Commands that constrain subsequent DUC searches by distance, status, include/exclude criteria, or related search predicates.",
+      "details": [
+        "Filters persist until reset, which is a common source of bugs.",
+        "Use this family when the symptom is 'the search found the wrong units' rather than 'the target command was wrong'."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "up-filter-distance",
+        "up-filter-status",
+        "up-filter-include",
+        "filter"
+      ],
+      "aliases": [
+        "search filters"
+      ],
+      "tags": [
+        "duc",
+        "filters",
+        "search"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "duc-family-search-reset",
+        "duc-family-list-group-management"
+      ]
+    },
+    {
+      "id": "duc-family-selection-scoping",
+      "name": "DUC Selection / ID Scoping",
+      "kind": "command-family",
+      "definition": "Commands that force the current local or remote scope to a specific object, ID, or current-object context.",
+      "details": [
+        "This family is critical when the command should affect exactly one object rather than the whole current list.",
+        "Typical members include up-set-target-object, up-set-target-by-id, and up-add-object-by-id."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-set-target-object",
+        "up-set-target-by-id",
+        "up-add-object-by-id",
+        "object-data-id"
+      ],
+      "aliases": [
+        "id scoping",
+        "single-object scoping"
+      ],
+      "tags": [
+        "duc",
+        "selection",
+        "id",
+        "scope"
+      ],
+      "validation_status": "mixed",
+      "related_ids": [
+        "duc-family-search-reset",
+        "duc-family-point-targeting",
+        "duc-family-object-targeting",
+        "duc-family-list-group-management"
+      ]
+    },
+    {
+      "id": "duc-family-state-capture",
+      "name": "DUC State Capture / Measurement",
+      "kind": "command-family",
+      "definition": "Commands that read search-state, points, object-data, distances, or pathing measurements into goals for later branching.",
+      "details": [
+        "This family includes multi-goal writers and usually requires reserved consecutive goal blocks.",
+        "Typical members include up-get-search-state, up-get-point, up-get-object-data, up-get-point-distance, and up-get-path-distance."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-get-search-state",
+        "up-get-point",
+        "up-get-object-data",
+        "up-get-point-distance",
+        "up-get-path-distance"
+      ],
+      "aliases": [
+        "measurement",
+        "state capture"
+      ],
+      "tags": [
+        "duc",
+        "measurement",
+        "goals",
+        "distance",
+        "pathing"
+      ],
+      "validation_status": "mixed",
+      "related_ids": [
+        "parameter-family-goal-id",
+        "duc-family-search-reset",
+        "duc-family-point-targeting"
+      ]
+    },
+    {
+      "id": "duc-family-point-targeting",
+      "name": "DUC Point Targeting",
+      "kind": "command-family",
+      "definition": "Commands that send currently selected local-list units to a point or issue point-based orders such as move, stop, unload, or gather-point updates.",
+      "details": [
+        "Typical members include up-set-target-point, up-set-precise-target-point, and up-target-point.",
+        "This family often interacts with sn-target-point-adjustment and precise-coordinate workflows."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/command-reference.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-set-target-point",
+        "up-set-precise-target-point",
+        "up-target-point",
+        "action-move",
+        "action-stop"
+      ],
+      "aliases": [
+        "point orders",
+        "point movement"
+      ],
+      "tags": [
+        "duc",
+        "point",
+        "precise-point",
+        "movement"
+      ],
+      "validation_status": "mixed",
+      "related_ids": [
+        "duc-family-selection-scoping",
+        "duc-family-state-capture",
+        "parameter-family-value"
+      ]
+    },
+    {
+      "id": "duc-family-object-targeting",
+      "name": "DUC Object Targeting",
+      "kind": "command-family",
+      "definition": "Commands that issue an order from local-list units onto remote-list target objects.",
+      "details": [
+        "Typical members include up-target-objects, often paired with remote-list population and narrowing.",
+        "Use this family for gather, attack, repair, garrison, or default-action behavior aimed at specific objects."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "up-target-objects",
+        "action-default",
+        "action-garrison",
+        "action-gather"
+      ],
+      "aliases": [
+        "remote object targeting"
+      ],
+      "tags": [
+        "duc",
+        "object-targeting",
+        "remote-list"
+      ],
+      "validation_status": "mixed",
+      "related_ids": [
+        "remote-list",
+        "duc-family-search-reset",
+        "duc-family-selection-scoping"
+      ]
+    },
+    {
+      "id": "duc-family-list-group-management",
+      "name": "DUC List / Group Management",
+      "kind": "command-family",
+      "definition": "Commands that sort, clean, trim, persist, or restore search-list contents rather than issuing the final order directly.",
+      "details": [
+        "Typical members include up-clean-search, up-remove-objects, and group save/restore commands.",
+        "This family is where many one-unit narrowing and retry patterns live."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-clean-search",
+        "up-remove-objects",
+        "up-set-group",
+        "object-data-index",
+        "sort"
+      ],
+      "aliases": [
+        "list management",
+        "group management"
+      ],
+      "tags": [
+        "duc",
+        "sorting",
+        "removal",
+        "groups"
+      ],
+      "validation_status": "mixed",
+      "related_ids": [
+        "duc-family-filters",
+        "duc-family-selection-scoping",
+        "duc-family-search-reset"
+      ]
+    },
+    {
+      "id": "classes",
+      "name": "Classes / ClassId",
+      "kind": "object-grouping",
+      "definition": "Classes group together similar types of units, such as infantry or warships.",
+      "details": [
+        "AIRef positions classes as one of the main object-grouping abstractions alongside lines and sets.",
+        "Use the objects table to navigate from objects into class-oriented lookup."
+      ],
+      "source_urls": [
+        "https://airef.github.io/tables/objects.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "class",
+        "ClassId",
+        "infantry",
+        "warships"
+      ],
+      "related_ids": [
+        "lines",
+        "sets",
+        "objects-table"
+      ]
+    },
+    {
+      "id": "lines",
+      "name": "Lines / LineId",
+      "kind": "object-grouping",
+      "definition": "Lines group together a base unit and its upgraded versions so a script can count or target the line without hard-coding every upgrade state.",
+      "details": [
+        "This is important for upgrade-stable counting like militia-line or scout-cavalry-line."
+      ],
+      "source_urls": [
+        "https://airef.github.io/tables/objects.html",
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md"
+      ],
+      "lookup_terms": [
+        "line",
+        "LineId",
+        "unit line"
+      ],
+      "related_ids": [
+        "classes",
+        "sets"
+      ]
+    },
+    {
+      "id": "sets",
+      "name": "Sets / SetId",
+      "kind": "object-grouping",
+      "definition": "Sets combine multiple related units or unit lines so they can be counted more easily as a broader family.",
+      "details": [
+        "Sets are coarser than lines and help when related lines should be treated as one bucket."
+      ],
+      "source_urls": [
+        "https://airef.github.io/tables/objects.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md"
+      ],
+      "lookup_terms": [
+        "set",
+        "SetId"
+      ],
+      "related_ids": [
+        "classes",
+        "lines"
+      ]
+    },
+    {
+      "id": "logical-operator-commands",
+      "name": "Logical Operator Commands",
+      "kind": "command-family",
+      "definition": "Logical operator commands combine or negate facts to control whether a rule's conditions evaluate true.",
+      "details": [
+        "AIRef lists seven: and, nand, nor, not, or, xor, xnor.",
+        "They count toward the per-rule element limit."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/logical-operators.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "logical operator",
+        "and",
+        "or",
+        "not",
+        "nor",
+        "xor",
+        "xnor",
+        "nand"
+      ],
+      "related_ids": [
+        "facts",
+        "commands"
+      ]
+    },
+    {
+      "id": "objects-table",
+      "name": "Objects Table",
+      "kind": "reference-table",
+      "definition": "AIRef object table for unit, building, line, set, class, projectile, and dead-object lookups.",
+      "details": [
+        "The page also explains dead-object IDs, projectile IDs, and the role of lines, sets, and classes.",
+        "Version-specific objects are marked and filtered on the page."
+      ],
+      "source_urls": [
+        "https://airef.github.io/tables/objects.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md"
+      ],
+      "lookup_terms": [
+        "objects table",
+        "object id",
+        "projectile",
+        "dead object"
+      ],
+      "related_ids": [
+        "classes",
+        "lines",
+        "sets"
+      ]
+    },
+    {
+      "id": "technologies-table",
+      "name": "Technologies Table",
+      "kind": "reference-table",
+      "definition": "AIRef technology table for technology IDs and names.",
+      "details": [
+        "Use it when researching or checking technology constants."
+      ],
+      "source_urls": [
+        "https://airef.github.io/tables/techs.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md"
+      ],
+      "lookup_terms": [
+        "tech",
+        "technology",
+        "ri-"
+      ],
+      "related_ids": [
+        "commands",
+        "parameters"
+      ]
+    },
+    {
+      "id": "data-limits",
+      "name": "Data Limits",
+      "kind": "constraint-reference",
+      "definition": "Engine limits on rules, goals, strategic numbers, timers, flags, list sizes, and related scripting capacities.",
+      "details": [
+        "Critical values from AIRef include: 10,000 rules, 32 elements per rule in DE, 1-16,000 goals, 1-50 timers, local DUC list length 240, remote DUC list length 40."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "data limits",
+        "rule limit",
+        "element limit",
+        "goal limit",
+        "timer limit"
+      ],
+      "related_ids": [
+        "goals",
+        "strategic-numbers",
+        "local-list",
+        "remote-list",
+        "logical-operator-commands"
+      ]
+    },
+    {
+      "id": "performance-benchmarks",
+      "name": "AI Command Performance Benchmarks",
+      "kind": "performance-reference",
+      "definition": "AIRef benchmark article comparing relative command costs and lag thresholds for common search, sort, pathing, and DUC operations.",
+      "details": [
+        "The article highlights that searches, sorts, pathing calls, and chat spam can become expensive quickly.",
+        "This is directly relevant when designing repeated DUC loops."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/history/command-experiments.md",
+        "docs/history/component-reference.md"
+      ],
+      "lookup_terms": [
+        "performance",
+        "benchmark",
+        "lag",
+        "up-find-local",
+        "up-target-point"
+      ],
+      "related_ids": [
+        "duc-actions",
+        "local-list",
+        "remote-list"
+      ]
+    },
+    {
+      "id": "intro-to-commands",
+      "name": "Intro to Commands",
+      "kind": "guide",
+      "definition": "AIRef primer explaining facts, actions, parameters, syntax prefixes, and operators.",
+      "details": [
+        "This is the best first AIRef page for interpreting command signatures correctly."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "intro to commands",
+        "syntax",
+        "operator"
+      ],
+      "related_ids": [
+        "commands",
+        "parameters",
+        "compare-op",
+        "math-op",
+        "type-op"
+      ]
+    },
+    {
+      "id": "parameter-family-any-player",
+      "name": "AnyPlayer",
+      "kind": "parameter-family",
+      "definition": "Parameter family for commands that accept a player selector rather than a raw object or numeric state value.",
+      "details": [
+        "Use this family when a syntax slot refers to a player-like input such as any-enemy, self, ally, or target-player.",
+        "This is conceptually different from PlayerNumber, which is a numeric player identifier."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html",
+        "https://airef.github.io/resources/res-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "AnyPlayer",
+        "inPlayerAnyPlayer",
+        "player selector",
+        "any-enemy",
+        "self"
+      ],
+      "aliases": [
+        "player selector",
+        "player wildcard"
+      ],
+      "tags": [
+        "parameter",
+        "player",
+        "selector"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "parameter-family-player-number",
+        "parameters"
+      ]
+    },
+    {
+      "id": "parameter-family-player-number",
+      "name": "PlayerNumber",
+      "kind": "parameter-family",
+      "definition": "Parameter family for numeric player identifiers produced or consumed by commands that work with concrete player numbers.",
+      "details": [
+        "Do not confuse lobby color with AI player numbering.",
+        "DUC workflows and focus-player strategic numbers often need this family."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "PlayerNumber",
+        "player number",
+        "focus player"
+      ],
+      "aliases": [
+        "numeric player id"
+      ],
+      "tags": [
+        "parameter",
+        "player",
+        "numeric"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "parameter-family-any-player"
+      ]
+    },
+    {
+      "id": "parameter-family-building-id",
+      "name": "BuildingId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for building constants or building object identifiers used by build/count/check commands.",
+      "details": [
+        "Resolve these through the AIRef objects table when the name is uncertain.",
+        "This family often appears in economy, military production, and defensive commands."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/tables/objects.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "BuildingId",
+        "building id",
+        "inConstBuildingId",
+        "house",
+        "town-center"
+      ],
+      "aliases": [
+        "building constant"
+      ],
+      "tags": [
+        "parameter",
+        "object",
+        "building"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "objects-table",
+        "parameter-family-unit-id"
+      ]
+    },
+    {
+      "id": "parameter-family-unit-id",
+      "name": "UnitId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for unit constants, object IDs, or class-based unit selectors depending on the command.",
+      "details": [
+        "This family is broader than a single raw unit constant because some commands accept unit classes or line constants.",
+        "When the token is upgrade-stable, prefer a line or set if the command allows it."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/tables/objects.html",
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "UnitId",
+        "unit id",
+        "class",
+        "line",
+        "set"
+      ],
+      "aliases": [
+        "unit constant",
+        "object selector"
+      ],
+      "tags": [
+        "parameter",
+        "object",
+        "unit"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "objects-table",
+        "classes",
+        "lines",
+        "sets"
+      ]
+    },
+    {
+      "id": "parameter-family-tech-id",
+      "name": "TechId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for technology constants and technology identifiers used by research and technology-state commands.",
+      "details": [
+        "Resolve unknown tech names through the AIRef technologies table.",
+        "Many tech constants use the ri- prefix in practice."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/tables/techs.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/ai-scripting-reference.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "TechId",
+        "technology id",
+        "tech",
+        "ri-"
+      ],
+      "aliases": [
+        "technology constant"
+      ],
+      "tags": [
+        "parameter",
+        "technology"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "technologies-table"
+      ]
+    },
+    {
+      "id": "parameter-family-goal-id",
+      "name": "GoalId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for goal slots used as mutable integer storage or command outputs.",
+      "details": [
+        "Many advanced commands write into goals, often consecutive blocks.",
+        "Goal parameters are one of the most common output families in DUC and point commands."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "GoalId",
+        "goal id",
+        "outGoal",
+        "goal"
+      ],
+      "aliases": [
+        "goal slot"
+      ],
+      "tags": [
+        "parameter",
+        "goal",
+        "storage"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "goals",
+        "parameter-directions"
+      ]
+    },
+    {
+      "id": "parameter-family-sn-id",
+      "name": "SnId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for strategic-number selectors and direct strategic-number references.",
+      "details": [
+        "Use this when the syntax slot refers to which strategic number is being read or written, not to the value stored in it."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/strategic-numbers/sn-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "SnId",
+        "strategic number id",
+        "sn-"
+      ],
+      "aliases": [
+        "strategic number selector"
+      ],
+      "tags": [
+        "parameter",
+        "strategic-number"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "strategic-numbers"
+      ]
+    },
+    {
+      "id": "parameter-family-timer-id",
+      "name": "TimerId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for timer selectors used by enable, disable, and trigger-check commands.",
+      "details": [
+        "AIRef's limits article documents timers 1 through 50."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/data-limits.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/functional-ai-scripting-notes.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "TimerId",
+        "timer id",
+        "enable-timer",
+        "timer-triggered"
+      ],
+      "aliases": [
+        "timer selector"
+      ],
+      "tags": [
+        "parameter",
+        "timer"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "data-limits"
+      ]
+    },
+    {
+      "id": "parameter-family-signal-id",
+      "name": "SignalId",
+      "kind": "parameter-family",
+      "definition": "Parameter family for scenario trigger signals and related scripted event hooks.",
+      "details": [
+        "This family matters mainly in scenario-oriented AI work, not standard random-map openings."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "SignalId",
+        "signal id",
+        "scenario signal"
+      ],
+      "aliases": [
+        "trigger signal id"
+      ],
+      "tags": [
+        "parameter",
+        "scenario"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "scenarios"
+      ]
+    },
+    {
+      "id": "parameter-family-value",
+      "name": "Value",
+      "kind": "parameter-family",
+      "definition": "Generic numeric parameter family used for counts, thresholds, distances, IDs, and operator-bound values.",
+      "details": [
+        "The actual interpretation depends on the command and often on the operator prefix family."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "Value",
+        "inOpValue",
+        "numeric value"
+      ],
+      "aliases": [
+        "generic numeric parameter"
+      ],
+      "tags": [
+        "parameter",
+        "numeric"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "compare-op",
+        "math-op",
+        "parameter-types"
+      ]
+    },
+    {
+      "id": "parameter-family-string",
+      "name": "String",
+      "kind": "parameter-family",
+      "definition": "Text parameter family for quoted strings, mostly used in chat and text-related commands.",
+      "details": [
+        "Strings are distinct from numeric defconst-style constants."
+      ],
+      "source_urls": [
+        "https://airef.github.io/parameters/parameters-index.html",
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "String",
+        "text",
+        "quoted string",
+        "chat"
+      ],
+      "aliases": [
+        "text parameter"
+      ],
+      "tags": [
+        "parameter",
+        "text"
+      ],
+      "validation_status": "documented",
+      "related_ids": [
+        "text-data"
+      ]
+    }
+  ],
+  "articles": [
+    {
+      "id": "helpful-info-and-tips",
+      "name": "A Collection of Helpful Info and Tips",
+      "category": "article",
+      "summary": "General community tips and practical scripting guidance.",
+      "url": "https://airef.github.io/resources/res-index.html",
+      "lookup_terms": [
+        "tips",
+        "helpful info"
+      ]
+    },
+    {
+      "id": "command-performance",
+      "name": "AI Command Performance Benchmarks",
+      "category": "article",
+      "summary": "Relative command cost and lag guidance for searches, DUC, pathing, sorting, and chat.",
+      "url": "https://airef.github.io/resources/articles/command-performance.html",
+      "lookup_terms": [
+        "performance",
+        "benchmarks",
+        "lag"
+      ]
+    },
+    {
+      "id": "data-limits-article",
+      "name": "Data Limits",
+      "category": "article",
+      "summary": "Engine limits for rules, goals, strategic numbers, timers, flags, and DUC lists.",
+      "url": "https://airef.github.io/resources/articles/data-limits.html",
+      "lookup_terms": [
+        "limits",
+        "rule limit",
+        "timer limit"
+      ]
+    },
+    {
+      "id": "defconsts-goals-sns",
+      "name": "Defconsts, Goals, and Strategic Numbers",
+      "category": "article-series",
+      "summary": "Conceptual guide to the numeric AI engine model and how symbolic names map onto numbers.",
+      "url": "https://airef.github.io/resources/articles/defconsts-goals-sns-1.html",
+      "lookup_terms": [
+        "defconsts",
+        "goals",
+        "sns",
+        "numberphile"
+      ]
+    },
+    {
+      "id": "reference-players",
+      "name": "How to Reference Players with AI Scripting Commands",
+      "category": "article",
+      "summary": "Guide to player selectors and how AI player numbering works.",
+      "url": "https://airef.github.io/resources/res-index.html",
+      "lookup_terms": [
+        "players",
+        "player numbers",
+        "player selectors"
+      ]
+    },
+    {
+      "id": "intro-to-commands-article",
+      "name": "Intro to Commands",
+      "category": "article",
+      "summary": "Primer on facts, actions, parameters, syntax, and operators.",
+      "url": "https://airef.github.io/resources/articles/intro-to-commands.html",
+      "lookup_terms": [
+        "commands",
+        "syntax",
+        "operator"
+      ]
+    },
+    {
+      "id": "logical-operators-article",
+      "name": "Logical Operator Commands",
+      "category": "article",
+      "summary": "Guide to and/or/not/nor/xor style rule composition.",
+      "url": "https://airef.github.io/resources/articles/logical-operators.html",
+      "lookup_terms": [
+        "logical operators",
+        "and",
+        "or",
+        "not"
+      ]
+    },
+    {
+      "id": "sn-defaults-to-change",
+      "name": "The Seventeen Strategic Number Settings You Must Change Immediately",
+      "category": "article",
+      "summary": "Opinionated defaults guide for SNs that commonly need correction in new AIs.",
+      "url": "https://airef.github.io/resources/articles/sn-defaults-to-change.html",
+      "lookup_terms": [
+        "seventeen strategic numbers",
+        "sn defaults",
+        "defaults to change"
+      ]
+    },
+    {
+      "id": "enmipho-duc-intro",
+      "name": "Enmipho's Introduction to DUC",
+      "category": "duc-guide",
+      "summary": "Main DUC primer covering unique IDs, local and remote lists, targeting, and performance considerations.",
+      "url": "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+      "lookup_terms": [
+        "DUC",
+        "Enmipho",
+        "local list",
+        "remote list"
+      ]
+    },
+    {
+      "id": "leif-duc-intro",
+      "name": "Leif Ericson's Introduction to DUC",
+      "category": "duc-guide",
+      "summary": "Secondary DUC guide listed by AIRef as incomplete.",
+      "url": "https://airef.github.io/resources/res-index.html",
+      "lookup_terms": [
+        "DUC",
+        "Leif Ericson"
+      ]
+    }
+  ],
+  "taxonomies": {
+    "command_categories": [
+      {
+        "id": "duc-category",
+        "name": "DUC",
+        "definition": "Commands for direct unit control, selection, targeting, filters, and unit-level actions.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "DUC",
+          "up-"
+        ]
+      },
+      {
+        "id": "duc-groups",
+        "name": "DUC Groups",
+        "definition": "Commands related to storing, restoring, or manipulating unit groups/search results.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "group",
+          "search group"
+        ]
+      },
+      {
+        "id": "attack-buildings",
+        "name": "Attack Buildings",
+        "definition": "Commands for behavior that reasons about or reacts to hostile structures.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "attack buildings"
+        ]
+      },
+      {
+        "id": "can-do",
+        "name": "Can Do",
+        "definition": "Capability checks such as whether an action, build, train, or research step is currently possible.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "can-do",
+          "can-afford",
+          "can-build",
+          "can-train"
+        ]
+      },
+      {
+        "id": "chat",
+        "name": "Chat",
+        "definition": "Commands that send messages or taunts.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "chat",
+          "taunt"
+        ]
+      },
+      {
+        "id": "cheats",
+        "name": "Cheats",
+        "definition": "Commands tied to cheat behaviors or non-standard control hooks.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "cheat"
+        ]
+      },
+      {
+        "id": "cost-data",
+        "name": "Cost Data",
+        "definition": "Commands that query or reason about costs and resource requirements.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "cost"
+        ]
+      },
+      {
+        "id": "counting",
+        "name": "Counting",
+        "definition": "Commands for counting units, buildings, technologies, and related quantities.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "count",
+          "type-count"
+        ]
+      },
+      {
+        "id": "debugging",
+        "name": "Debugging",
+        "definition": "Commands used for introspection, diagnostics, or script-side debugging.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "debug",
+          "log"
+        ]
+      },
+      {
+        "id": "defense",
+        "name": "Defense",
+        "definition": "Commands for defensive reactions, threat handling, or defensive force management.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "defense"
+        ]
+      },
+      {
+        "id": "diplomacy",
+        "name": "Diplomacy",
+        "definition": "Commands for stance, ally/enemy state, or diplomatic interactions.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "diplomacy",
+          "ally",
+          "enemy"
+        ]
+      },
+      {
+        "id": "economy",
+        "name": "Economy",
+        "definition": "Commands for economy control, gathering, building economy, and resource flow.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "economy",
+          "gather",
+          "villager"
+        ]
+      },
+      {
+        "id": "game-info",
+        "name": "Game Info",
+        "definition": "Commands that query game state, map state, or general match context.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "game info",
+          "map",
+          "age"
+        ]
+      },
+      {
+        "id": "goals-category",
+        "name": "Goals",
+        "definition": "Commands that read, compare, set, or modify goals.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "goal",
+          "set-goal"
+        ]
+      },
+      {
+        "id": "other-player-info",
+        "name": "Other Player Info",
+        "definition": "Commands focused on non-self player state, counts, civs, or capabilities.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "other player",
+          "enemy",
+          "ally"
+        ]
+      },
+      {
+        "id": "own-player-info",
+        "name": "Own Player Info",
+        "definition": "Commands focused on the AI player's own state, units, or economy.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "self",
+          "own player"
+        ]
+      },
+      {
+        "id": "player-facts",
+        "name": "Player Facts",
+        "definition": "Fact-oriented commands about player state and relationships.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "player fact"
+        ]
+      },
+      {
+        "id": "points",
+        "name": "Points",
+        "definition": "Commands dealing with point coordinates, map positions, and point-based calculations or targeting.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "point",
+          "position"
+        ]
+      },
+      {
+        "id": "rule-jumps",
+        "name": "Rule Jumps",
+        "definition": "Commands that alter rule flow or jump behavior.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "rule jump",
+          "flow"
+        ]
+      },
+      {
+        "id": "scenarios",
+        "name": "Scenarios",
+        "definition": "Commands used mainly in scenario or trigger-style AI contexts.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "scenario",
+          "signal"
+        ]
+      },
+      {
+        "id": "strategic-numbers-category",
+        "name": "Strategic Numbers",
+        "definition": "Commands that read, compare, or modify strategic numbers.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "strategic number",
+          "set-strategic-number",
+          "sn-"
+        ]
+      },
+      {
+        "id": "technologies-category",
+        "name": "Technologies",
+        "definition": "Commands for checking, researching, or reasoning about techs.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "technology",
+          "research",
+          "ri-"
+        ]
+      },
+      {
+        "id": "text-data",
+        "name": "Text Data",
+        "definition": "Commands or parameters involving text strings and textual data.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "text",
+          "string"
+        ]
+      },
+      {
+        "id": "timers-category",
+        "name": "Timers",
+        "definition": "Commands for enabling, disabling, and reacting to timers.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "timer",
+          "enable-timer"
+        ]
+      },
+      {
+        "id": "trading",
+        "name": "Trading",
+        "definition": "Commands involving trade carts, trade cogs, or trading logic.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "trade",
+          "trading"
+        ]
+      },
+      {
+        "id": "units-category",
+        "name": "Units",
+        "definition": "General unit-control, unit-count, or unit-state commands outside narrower special categories.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "unit"
+        ]
+      },
+      {
+        "id": "walls-gates",
+        "name": "Walls & Gates",
+        "definition": "Commands for walls, gates, and related placement or state.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "wall",
+          "gate"
+        ]
+      },
+      {
+        "id": "other-category",
+        "name": "Other",
+        "definition": "Catch-all command category for entries that do not fit the primary buckets cleanly.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "other"
+        ]
+      }
+    ],
+    "command_types": [
+      {
+        "id": "fact-type",
+        "name": "Fact",
+        "definition": "Condition command used in the facts section of a rule.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html",
+          "https://airef.github.io/resources/articles/intro-to-commands.html"
+        ],
+        "lookup_terms": [
+          "fact"
+        ]
+      },
+      {
+        "id": "action-type",
+        "name": "Action",
+        "definition": "Effect command used in the actions section of a rule.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html",
+          "https://airef.github.io/resources/articles/intro-to-commands.html"
+        ],
+        "lookup_terms": [
+          "action"
+        ]
+      },
+      {
+        "id": "fact-action-type",
+        "name": "Fact/Action",
+        "definition": "Command family that can be used in both the facts and actions sections.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html",
+          "https://airef.github.io/resources/articles/intro-to-commands.html"
+        ],
+        "lookup_terms": [
+          "fact/action",
+          "UserPatch"
+        ]
+      },
+      {
+        "id": "other-type",
+        "name": "Other",
+        "definition": "Command type bucket for entries not classified strictly as facts or actions.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "other"
+        ]
+      }
+    ],
+    "command_complexities": [
+      {
+        "id": "complexity-low",
+        "name": "Low",
+        "definition": "Lower-complexity commands in AIRef's color coding.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "low complexity"
+        ]
+      },
+      {
+        "id": "complexity-medium",
+        "name": "Medium",
+        "definition": "Medium-complexity commands in AIRef's color coding.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "medium complexity"
+        ]
+      },
+      {
+        "id": "complexity-high",
+        "name": "High",
+        "definition": "High-complexity commands in AIRef's color coding.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "high complexity"
+        ]
+      },
+      {
+        "id": "complexity-very-high",
+        "name": "Very High",
+        "definition": "Very high complexity commands in AIRef's color coding.",
+        "source_urls": [
+          "https://airef.github.io/commands/commands-index.html"
+        ],
+        "lookup_terms": [
+          "very high complexity"
+        ]
+      }
+    ]
+  },
+  "validated_commands": [
+    {
+      "id": "cmd-set-strategic-number",
+      "command_name": "set-strategic-number",
+      "family_id": "strategic-numbers-category",
+      "validation_status": "observed",
+      "preconditions": [
+        "The strategic number identifier must be defined and valid in this script context."
+      ],
+      "validated_patterns": [
+        "Use it to suppress default AI subsystems before precise opening control.",
+        "Treat it as engine-behavior control first, not generic storage."
+      ],
+      "known_failure_modes": [
+        "Wrong SN choice can silently fight your DUC logic by re-enabling built-in behavior."
+      ],
+      "anti_patterns": [
+        "Using generic gatherer SNs alone to solve precise early-herdable control."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/data-limits.html",
+        "https://airef.github.io/strategic-numbers/sn-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "set-strategic-number",
+        "SN control"
+      ]
+    },
+    {
+      "id": "cmd-up-set-precise-target-point",
+      "command_name": "up-set-precise-target-point",
+      "family_id": "duc-family-point-targeting",
+      "validation_status": "observed",
+      "preconditions": [
+        "Set sn-target-point-adjustment to adjust-precise (6) using SN id 292.",
+        "Provide absolute map coordinates scaled by 100."
+      ],
+      "validated_patterns": [
+        "Set the precise target point, then issue up-target-point 0 action-move -1 -1.",
+        "Reset sn-target-point-adjustment back to adjust-middle (5) after the precise block."
+      ],
+      "known_failure_modes": [
+        "Using SN id 294 instead of 292 leaves the command effectively imprecise.",
+        "Resetting adjustment to 0 instead of 5 can diverge from validated project behavior."
+      ],
+      "anti_patterns": [
+        "Using tile coordinates instead of scaled precise coordinates."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-set-precise-target-point",
+        "precise point"
+      ]
+    },
+    {
+      "id": "cmd-up-set-target-by-id",
+      "command_name": "up-set-target-by-id",
+      "family_id": "duc-family-selection-scoping",
+      "validation_status": "observed",
+      "preconditions": [
+        "A valid stored object ID must already exist."
+      ],
+      "validated_patterns": [
+        "Use it to set the current target object by stored ID.",
+        "TC transport garrison testing confirmed it as part of the working Barbarian-style garrison primitive."
+      ],
+      "known_failure_modes": [
+        "It does not by itself constrain the local action scope for up-target-point."
+      ],
+      "anti_patterns": [
+        "Relying on up-set-target-by-id alone to ensure only one livestock receives a point move."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-set-target-by-id",
+        "target by id"
+      ]
+    },
+    {
+      "id": "cmd-up-add-object-by-id",
+      "command_name": "up-add-object-by-id",
+      "family_id": "duc-family-selection-scoping",
+      "validation_status": "observed",
+      "preconditions": [
+        "A valid stored object ID must already exist.",
+        "The destination list must be the correct local or remote scope for the next command."
+      ],
+      "validated_patterns": [
+        "Reliable for adding the active herdable to search-remote before up-target-objects.",
+        "Useful as part of remote target setup."
+      ],
+      "known_failure_modes": [
+        "Adding a single object to search-local after reset did not isolate local point-command scope in early owned-livestock probes."
+      ],
+      "anti_patterns": [
+        "Assuming it replaces all local command scope when used alone with search-local."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-add-object-by-id"
+      ]
+    },
+    {
+      "id": "cmd-up-get-object-data",
+      "command_name": "up-get-object-data",
+      "family_id": "duc-family-state-capture",
+      "validation_status": "observed",
+      "preconditions": [
+        "A current target object must already be set."
+      ],
+      "validated_patterns": [
+        "Use it to store object-data-id and other current-object fields into goals."
+      ],
+      "known_failure_modes": [
+        "Reading object data from the wrong current object because selection state was not refreshed."
+      ],
+      "anti_patterns": [
+        "Calling it without a known current target object."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-get-object-data",
+        "object-data-id"
+      ]
+    },
+    {
+      "id": "cmd-up-get-point-distance",
+      "command_name": "up-get-point-distance",
+      "family_id": "duc-family-state-capture",
+      "validation_status": "observed",
+      "preconditions": [
+        "Provide valid x/y point pairs and a reserved goal for the output."
+      ],
+      "validated_patterns": [
+        "Store distances in goals, then branch on those stored goals with up-compare-goal for tie-sensitive logic."
+      ],
+      "known_failure_modes": [
+        "Recomputing with up-point-distance later can disagree with the stored values in tie-sensitive cases."
+      ],
+      "anti_patterns": [
+        "Logging up-get-point-distance and then branching by recomputing with up-point-distance."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "AGENTS.md",
+        "docs/history/command-experiments.md",
+        "docs/reference/command-reference.md"
+      ],
+      "lookup_terms": [
+        "up-get-point-distance",
+        "distance goals"
+      ]
+    },
+    {
+      "id": "cmd-up-build-line",
+      "command_name": "up-build-line",
+      "family_id": "economy",
+      "validation_status": "observed",
+      "preconditions": [
+        "Compute the desired point first.",
+        "Assign builders and reset placement before building.",
+        "Use up-can-build-line as the placement guard when appropriate."
+      ],
+      "validated_patterns": [
+        "For exact one-point house placement, pass the same x/y point pair as both line endpoints.",
+        "For multiple houses, save prior points, check separation with up-get-point-distance, and wait for pending count before advancing."
+      ],
+      "known_failure_modes": [
+        "Two accepted build commands can still target overlapping or too-close foundations.",
+        "Later opening logic can steal builders if you do not wait for pending foundations."
+      ],
+      "anti_patterns": [
+        "Treating an accepted build command as proof that a useful foundation exists."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "docs/history/component-reference.md"
+      ],
+      "lookup_terms": [
+        "up-build-line",
+        "up-can-build-line"
+      ]
+    },
+    {
+      "id": "cmd-up-compare-goal",
+      "command_name": "up-compare-goal",
+      "family_id": "goals-category",
+      "validation_status": "observed",
+      "preconditions": [
+        "The referenced goal must already contain the value to branch on."
+      ],
+      "validated_patterns": [
+        "Prefer it for branching on distances or derived values already stored in goals.",
+        "Use it with up-get-point-distance results for exact or tie-sensitive comparisons."
+      ],
+      "known_failure_modes": [
+        "Branching on stale values because the producing command did not run in a prior rule pass."
+      ],
+      "anti_patterns": [
+        "Recomputing with up-point-distance when the stored goal result is the thing you actually tested/logged."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/intro-to-commands.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-compare-goal"
+      ]
+    },
+    {
+      "id": "cmd-up-full-reset-search",
+      "command_name": "up-full-reset-search",
+      "family_id": "duc-family-search-reset",
+      "validation_status": "observed",
+      "preconditions": [
+        "Be ready to rebuild local and remote scope afterward."
+      ],
+      "validated_patterns": [
+        "Use it at the start of an independent DUC search phase.",
+        "Treat it as clearing actionable local scope as well as search contents."
+      ],
+      "known_failure_modes": [
+        "Targeting immediately after reset without a fresh local scope leaks into undefined or unintended command behavior."
+      ],
+      "anti_patterns": [
+        "Reset then up-target-point or up-target-objects without repopulating search-local."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-full-reset-search"
+      ]
+    },
+    {
+      "id": "cmd-up-find-local",
+      "command_name": "up-find-local",
+      "family_id": "duc-family-search-reset",
+      "validation_status": "observed",
+      "preconditions": [
+        "Reset or intentionally preserve filters depending on the search plan.",
+        "Use the right class/unit/line constant for the intended local scope."
+      ],
+      "validated_patterns": [
+        "Rebuild search-local in the same rule before target commands.",
+        "Use small, purpose-specific searches rather than relying on stale local scope."
+      ],
+      "known_failure_modes": [
+        "Persisted filters silently alter the result set.",
+        "Broad searches can capture more units than expected if not narrowed further."
+      ],
+      "anti_patterns": [
+        "Assuming a prior rule's local list is still the correct command scope."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "docs/reference/functional-ai-scripting-notes.md"
+      ],
+      "lookup_terms": [
+        "up-find-local"
+      ]
+    },
+    {
+      "id": "cmd-up-find-remote",
+      "command_name": "up-find-remote",
+      "family_id": "duc-family-search-reset",
+      "validation_status": "observed",
+      "preconditions": [
+        "Search one player's units at a time with the correct remote target model.",
+        "Reset or intentionally preserve filters depending on the search plan."
+      ],
+      "validated_patterns": [
+        "Use it for visible Gaia herdables and other remote target acquisition.",
+        "Populate search-remote before object-target commands."
+      ],
+      "known_failure_modes": [
+        "Remote visibility assumptions can fail when the object is undiscovered.",
+        "Mixing remote target state across players or object types without reset causes bad targeting."
+      ],
+      "anti_patterns": [
+        "Treating remote search results as if they commandable local units."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-find-remote"
+      ]
+    }
+  ],
+  "local_binary_inventory": {
+    "source": "docs/extracted/raw/aoe2de/userpatch-sections/* and docs/extracted/raw/aoe2de/aoe2de-ai-identifiers.txt",
+    "status": "binary-sourced",
+    "notes": [
+      "These entries confirm identifier presence and family, not full syntax or runtime semantics.",
+      "Use this inventory to avoid live AIRef dependency for token discovery and family classification."
+    ],
+    "families": [
+      {
+        "id": "binary-up-facts-operations",
+        "name": "UserPatch Facts (operations)",
+        "kind": "binary-command-family",
+        "entries": [
+          "up-allied-goal",
+          "up-allied-resource-amount",
+          "up-allied-resource-percent",
+          "up-allied-sn",
+          "up-compare-goal",
+          "up-compare-const",
+          "up-pending-objects",
+          "up-remaining-boar-amount",
+          "up-research-status",
+          "up-timer-status",
+          "up-can-build",
+          "up-path-distance",
+          "up-can-search",
+          "up-object-data",
+          "up-object-target-data",
+          "up-compare-text",
+          "up-pending-placement",
+          "up-can-build-line"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-facts-operations.txt"
+        ]
+      },
+      {
+        "id": "binary-target-actions",
+        "name": "Target Actions",
+        "kind": "binary-action-family",
+        "entries": [
+          "action-default",
+          "action-delete",
+          "action-drop-relic",
+          "action-follow",
+          "action-garrison",
+          "action-gather",
+          "action-ground",
+          "action-guard",
+          "action-lock",
+          "action-move",
+          "action-none",
+          "action-pack",
+          "action-patrol",
+          "action-research",
+          "action-stop",
+          "action-train",
+          "action-ungarrison",
+          "action-unload",
+          "action-unpack",
+          "action-work"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-targetactions.txt",
+          "docs/extracted/raw/aoe2de/aoe2de-ai-identifiers.txt"
+        ]
+      },
+      {
+        "id": "binary-position-types",
+        "name": "Position Types",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "position-border",
+          "position-center",
+          "position-corner",
+          "position-enemy",
+          "position-flank",
+          "position-focus",
+          "position-map-size",
+          "position-mirror",
+          "position-object",
+          "position-opposite",
+          "position-point",
+          "position-self",
+          "position-target",
+          "position-zero"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-positiontypes.txt",
+          "docs/extracted/raw/aoe2de/aoe2de-ai-identifiers.txt"
+        ]
+      },
+      {
+        "id": "binary-object-data",
+        "name": "ObjectData Constants",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "object-data-action",
+          "object-data-carry",
+          "object-data-category",
+          "object-data-class",
+          "object-data-cmdid",
+          "object-data-dropsite",
+          "object-data-garrison-count",
+          "object-data-garrisoned",
+          "object-data-hitpoints",
+          "object-data-id",
+          "object-data-maxhp",
+          "object-data-order",
+          "object-data-point-x",
+          "object-data-point-y",
+          "object-data-range",
+          "object-data-resource",
+          "object-data-speed",
+          "object-data-status",
+          "object-data-target",
+          "object-data-type"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-objectdata-constants.txt",
+          "docs/extracted/raw/aoe2de/aoe2de-ai-identifiers.txt"
+        ]
+      },
+      {
+        "id": "binary-search-sources",
+        "name": "Search Sources",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "search-local",
+          "search-remote"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-searchsources.txt"
+        ]
+      },
+      {
+        "id": "binary-sort-target-methods",
+        "name": "Sort Target Methods",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "sort-targets",
+          "sort-random",
+          "sort-distance",
+          "sort-hitpoints",
+          "sort-range"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-sorttargetmethods.txt"
+        ]
+      },
+      {
+        "id": "binary-player-wildcards",
+        "name": "Player Wildcards",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "focus-player",
+          "target-player"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-player-wildcards.txt"
+        ]
+      },
+      {
+        "id": "binary-group-types",
+        "name": "Group Types",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "group-type-land-attack",
+          "group-type-land-explore",
+          "group-type-land-trade",
+          "group-type-water-attack",
+          "group-type-water-explore",
+          "group-type-water-trade",
+          "group-type-transport-ship",
+          "group-type-fishing-ship",
+          "group-type-forward-builder",
+          "group-type-monk"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-grouptypes.txt"
+        ]
+      },
+      {
+        "id": "binary-find-player-methods",
+        "name": "Find Player Methods",
+        "kind": "binary-parameter-family",
+        "entries": [
+          "find-attacker",
+          "find-random",
+          "find-closest",
+          "find-ordered"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-findplayermethods.txt"
+        ]
+      },
+      {
+        "id": "binary-extended-strategic-numbers",
+        "name": "Extended Strategic Numbers",
+        "kind": "binary-sn-family",
+        "entries": [
+          "sn-enable-new-building-system",
+          "sn-percent-building-cancellation",
+          "sn-enable-boar-hunting",
+          "sn-minimum-number-hunters",
+          "sn-object-repair-level",
+          "sn-enable-patrol-attack",
+          "sn-dropsite-separation-distance",
+          "sn-target-player-number",
+          "sn-safe-town-size",
+          "sn-focus-player-number",
+          "sn-minimum-boar-lure-group-size",
+          "sn-preferred-mill-placement",
+          "sn-enable-offensive-priority",
+          "sn-building-targeting-mode",
+          "sn-home-exploration-time",
+          "sn-number-civilian-militia",
+          "sn-allow-civilian-offense",
+          "sn-preferred-trade-distance",
+          "sn-lumber-camp-max-distance",
+          "sn-mining-camp-max-distance",
+          "sn-wall-targeting-mode",
+          "sn-livestock-to-town-center",
+          "sn-enable-training-queue",
+          "sn-ignore-tower-elevation",
+          "sn-town-center-placement",
+          "sn-disable-tower-priority",
+          "sn-placement-zone-size",
+          "sn-placement-fail-delta",
+          "sn-placement-to-center",
+          "sn-disable-attack-groups",
+          "sn-allow-adjacent-dropsites",
+          "sn-defer-dropsite-update",
+          "sn-maximum-garrison-fill",
+          "sn-number-garrison-units",
+          "sn-filter-under-attack",
+          "sn-disable-defend-groups",
+          "sn-dock-placement-mode",
+          "sn-dock-proximity-factor",
+          "sn-dock-avoidance-factor",
+          "sn-dock-training-filter",
+          "sn-free-siege-targeting",
+          "sn-warship-targeting-mode",
+          "sn-disable-sighted-response-cap",
+          "sn-disable-builder-assistance",
+          "sn-local-targeting-mode",
+          "sn-number-tasked-units",
+          "sn-minimum-tasked-units",
+          "sn-maximum-tasked-units",
+          "sn-disable-villager-garrison",
+          "sn-disable-trade-evasion",
+          "sn-boar-lure-destination",
+          "sn-target-point-adjustment",
+          "sn-unexplored-construction",
+          "sn-wild-animal-exploration",
+          "sn-ttkfactor-scalar",
+          "sn-maximum-patrol-distance",
+          "sn-villager-attack-reset",
+          "sn-gate-type-for-wall",
+          "sn-profiling-threshold",
+          "sn-enable-research-queue",
+          "sn-allow-serjeant-building",
+          "sn-allow-gathering-sea-fish-with-villagers",
+          "sn-allow-capturing-gaia-units",
+          "sn-mule-cart-dropsite-placement",
+          "sn-preferred-storage-pit-placement",
+          "sn-preferred-settlement-placement",
+          "sn-keystates",
+          "sn-remove-units-from-control-groups",
+          "sn-enable-full-vision",
+          "sn-fishing-boat-whaling-percentage",
+          "sn-whaling-max-distance",
+          "sn-gather-idle-soldiers-at-spawn-point"
+        ],
+        "source_files": [
+          "docs/extracted/raw/aoe2de/userpatch-sections/userpatch-extended-strategic-numbers.txt"
+        ]
+      }
+    ]
+  },
+  "lookup_workflows": [
+    {
+      "id": "unknown-command",
+      "problem": "A command name is known, but its semantics or syntax are unclear.",
+      "steps": [
+        "Check the commands index for category/type/version.",
+        "Read the command syntax with the intro-to-commands article in mind.",
+        "If the command is up-* or seems unit-control related, cross-check the DUC guide and command-experiments notes."
+      ],
+      "preferred_sources": [
+        "commands-index",
+        "intro-to-commands",
+        "duc"
+      ]
+    },
+    {
+      "id": "unknown-parameter",
+      "problem": "A parameter token or syntax fragment is unfamiliar.",
+      "steps": [
+        "Check the parameters index.",
+        "Resolve whether the token is a direction prefix, type prefix, or operator family.",
+        "If it looks like an object grouping, pivot into classes, lines, or sets."
+      ],
+      "preferred_sources": [
+        "parameters",
+        "parameter-directions",
+        "parameter-types",
+        "classes",
+        "lines",
+        "sets"
+      ]
+    },
+    {
+      "id": "duc-investigation",
+      "problem": "A unit-control problem needs search-list, object-data, or targeting guidance.",
+      "steps": [
+        "Start with the DUC concept and local/remote list entries.",
+        "Classify the problem into one of: search/reset, filters, selection scoping, state capture, point targeting, object targeting, or list/group management.",
+        "Read Enmipho's DUC guide section relevant to that family.",
+        "Cross-check local command probe notes before assuming runtime behavior."
+      ],
+      "preferred_sources": [
+        "duc",
+        "local-list",
+        "remote-list",
+        "duc-actions",
+        "duc-family-search-reset",
+        "duc-family-filters",
+        "duc-family-selection-scoping",
+        "duc-family-state-capture",
+        "duc-family-point-targeting",
+        "duc-family-object-targeting",
+        "duc-family-list-group-management"
+      ]
+    },
+    {
+      "id": "object-or-tech-id",
+      "problem": "A script needs the right unit, building, line, set, class, or technology identifier.",
+      "steps": [
+        "Use the objects or technologies table first.",
+        "If the problem is upgrade-stable counting, prefer lines or sets over raw object IDs.",
+        "If the problem is broad family selection, inspect classes."
+      ],
+      "preferred_sources": [
+        "objects-table",
+        "technologies-table",
+        "classes",
+        "lines",
+        "sets"
+      ]
+    }
+  ],
+  "project_command_notes": [
+    {
+      "id": "cmd-up-get-point",
+      "command_name": "up-get-point",
+      "family_id": "duc-family-state-capture",
+      "validation_status": "mixed",
+      "preconditions": [
+        "Reserve two consecutive goals for x and y output."
+      ],
+      "validated_patterns": [
+        "Use it for position anchors such as position-self, position-center, and current target-object point reads."
+      ],
+      "known_failure_modes": [
+        "Overwriting unrelated goals because the second consecutive goal was not reserved.",
+        "Confusing local and remote coordinate capture when the current target object was not set correctly first."
+      ],
+      "anti_patterns": [
+        "Assuming a single goal write.",
+        "Reading remote-object point semantics without explicitly setting the remote target object first."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-get-point",
+        "position-self",
+        "position-center"
+      ]
+    },
+    {
+      "id": "cmd-up-get-search-state",
+      "command_name": "up-get-search-state",
+      "family_id": "duc-family-state-capture",
+      "validation_status": "mixed",
+      "preconditions": [
+        "Call it only after a search action.",
+        "Pass the first goal of a reserved four-goal consecutive block."
+      ],
+      "validated_patterns": [
+        "Use it to inspect whether a search populated local or remote lists."
+      ],
+      "known_failure_modes": [
+        "Passing the second/third/fourth goal of the block produces misleading state.",
+        "Treating the 'last search count' field as proof of post-filter current-list size."
+      ],
+      "anti_patterns": [
+        "Using it as a post-filter count validator without a dedicated follow-up check."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-get-search-state",
+        "four-goal block"
+      ]
+    },
+    {
+      "id": "cmd-up-set-target-point",
+      "command_name": "up-set-target-point",
+      "family_id": "duc-family-point-targeting",
+      "validation_status": "mixed",
+      "preconditions": [
+        "The x goal must be the first of a valid x/y point pair."
+      ],
+      "validated_patterns": [
+        "Use it before point-distance or target-point-state logic.",
+        "Use it immediately before up-build place-point if testing place-point behavior."
+      ],
+      "known_failure_modes": [
+        "Stale target-point state causing unrelated later commands to use the wrong point."
+      ],
+      "anti_patterns": [
+        "Assuming it alone issues movement.",
+        "Assuming it fixes place-point reliability for all build cases; house placement preferred up-build-line in this project."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-set-target-point"
+      ]
+    },
+    {
+      "id": "cmd-up-clean-search",
+      "command_name": "up-clean-search",
+      "family_id": "duc-family-list-group-management",
+      "validation_status": "mixed",
+      "preconditions": [
+        "The target search list must already be populated.",
+        "Choose an object-data field that matches the narrowing or sorting task."
+      ],
+      "validated_patterns": [
+        "Sort by object-data-distance after setting a target point.",
+        "Use with object-data-index and follow-up removal when narrowing."
+      ],
+      "known_failure_modes": [
+        "Sorting alone does not narrow the list to one object."
+      ],
+      "anti_patterns": [
+        "Assuming index 0 is the only commanded object without explicit removal of the rest."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-clean-search",
+        "object-data-distance",
+        "search-order-asc"
+      ]
+    },
+    {
+      "id": "cmd-up-remove-objects",
+      "command_name": "up-remove-objects",
+      "family_id": "duc-family-list-group-management",
+      "validation_status": "risky",
+      "preconditions": [
+        "The target search list must already be populated.",
+        "The comparison field must match the intended narrowing strategy."
+      ],
+      "validated_patterns": [
+        "Use object-data-id comparisons to exclude or preserve a specific known object ID.",
+        "Use object-data-index after sorting only as part of a validated local narrowing sequence."
+      ],
+      "known_failure_modes": [
+        "Index-based narrowing can be misleading if later commands still act on broader owned-livestock behavior.",
+        "Local last-search counts from up-get-search-state do not prove the post-filter current count."
+      ],
+      "anti_patterns": [
+        "Treating object-data-index filtering as proof that only one object will receive a later point command."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-remove-objects",
+        "object-data-index",
+        "object-data-id"
+      ]
+    },
+    {
+      "id": "cmd-up-set-target-object",
+      "command_name": "up-set-target-object",
+      "family_id": "duc-family-selection-scoping",
+      "validation_status": "mixed",
+      "preconditions": [
+        "The referenced list and index must already exist."
+      ],
+      "validated_patterns": [
+        "Use it before up-get-object-data or up-get-point on the current object."
+      ],
+      "known_failure_modes": [
+        "Setting the target object does not necessarily shrink the underlying search list for later point-target commands."
+      ],
+      "anti_patterns": [
+        "Assuming up-set-target-object search-local c:0 means only one local object is now in command scope."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-set-target-object"
+      ]
+    },
+    {
+      "id": "cmd-up-target-point",
+      "command_name": "up-target-point",
+      "family_id": "duc-family-point-targeting",
+      "validation_status": "mixed",
+      "preconditions": [
+        "The local list must be explicitly populated in the same rule after the most recent reset.",
+        "For precise movement, sn-target-point-adjustment must be configured correctly."
+      ],
+      "validated_patterns": [
+        "For precise movement, use SN id 292, set to adjust-precise (6), then issue the move and reset to adjust-middle (5).",
+        "For active livestock movement, rebuild search-local and filter by object-data-id before issuing the command.",
+        "After moving the active sheep, rebuild local livestock and issue action-stop to non-active spares."
+      ],
+      "known_failure_modes": [
+        "Using stale local scope can command unintended units.",
+        "up-set-target-by-id alone does not isolate command scope.",
+        "Owned livestock can still exhibit group-follow behavior unless spares are explicitly stopped."
+      ],
+      "anti_patterns": [
+        "Resetting then targeting without repopulating search-local.",
+        "Relying on index narrowing or current-target state alone for one-unit livestock movement."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html",
+        "https://airef.github.io/resources/articles/command-performance.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "AGENTS.md"
+      ],
+      "lookup_terms": [
+        "up-target-point",
+        "action-move",
+        "action-stop"
+      ]
+    },
+    {
+      "id": "cmd-up-target-objects",
+      "command_name": "up-target-objects",
+      "family_id": "duc-family-object-targeting",
+      "validation_status": "mixed",
+      "preconditions": [
+        "Local units to command must already be in search-local.",
+        "Target objects must already be in search-remote or otherwise set for remote targeting."
+      ],
+      "validated_patterns": [
+        "For villager-to-active-herdable retask, put villagers in search-local and the active herdable ID in search-remote before issuing action-default.",
+        "For TC transport garrison, the validated pattern is local villager selection plus up-set-target-by-id on the TC followed by up-target-objects 1 action-garrison -1 -1."
+      ],
+      "known_failure_modes": [
+        "Wrong local/remote ownership silently targets the wrong side of the command.",
+        "Ungarrison direction control remains unvalidated even when garrison itself works."
+      ],
+      "anti_patterns": [
+        "Trying to issue object-targeting orders without explicitly rebuilding the correct remote scope."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-target-objects",
+        "action-default",
+        "action-garrison"
+      ]
+    },
+    {
+      "id": "cmd-up-build-place-point",
+      "command_name": "up-build place-point",
+      "family_id": "economy",
+      "validation_status": "mixed",
+      "preconditions": [
+        "Set the intended target point first with up-set-target-point.",
+        "Use a valid escrow-state argument as the second parameter."
+      ],
+      "validated_patterns": [
+        "Project uses the shape up-set-target-point build-point-x then up-build place-point goal-build-escrow-state c: house as the only valid candidate pattern worth testing."
+      ],
+      "known_failure_modes": [
+        "Passing the coordinate goal as the second argument makes DE interpret it as an escrow state and fall back to generic placement.",
+        "Even with the better shape, exact starting-house placement proved unreliable versus up-build-line in isolated tests."
+      ],
+      "anti_patterns": [
+        "up-build place-point point-x c: house",
+        "Using place-point for exact starting-house placement when up-build-line is available."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-build place-point",
+        "Invalid escrow state"
+      ]
+    },
+    {
+      "id": "cmd-up-point-distance",
+      "command_name": "up-point-distance",
+      "family_id": "duc-family-state-capture",
+      "validation_status": "mixed",
+      "preconditions": [
+        "Provide valid x/y point pairs."
+      ],
+      "validated_patterns": [
+        "Use it for simple front/back or threshold-style branches when exact tie behavior is not critical."
+      ],
+      "known_failure_modes": [
+        "It can disagree with stored up-get-point-distance values in tie-sensitive or exact-branch cases."
+      ],
+      "anti_patterns": [
+        "Using it for exact or tie-sensitive selector logic after logging/storing distances with up-get-point-distance."
+      ],
+      "source_urls": [
+        "https://airef.github.io/resources/articles/enmipho-intro-to-duc.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "AGENTS.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-point-distance"
+      ]
+    },
+    {
+      "id": "cmd-up-can-build-line",
+      "command_name": "up-can-build-line",
+      "family_id": "economy",
+      "validation_status": "mixed",
+      "preconditions": [
+        "The candidate build point must already be computed."
+      ],
+      "validated_patterns": [
+        "Use it as a placement-stage guard before up-build-line."
+      ],
+      "known_failure_modes": [
+        "A passing can-build check is not proof that multiple close build requests will yield separate useful foundations."
+      ],
+      "anti_patterns": [
+        "Treating a positive can-build result as enough evidence to skip separation checks between consecutive buildings."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-can-build-line"
+      ]
+    },
+    {
+      "id": "cmd-up-assign-builders",
+      "command_name": "up-assign-builders",
+      "family_id": "economy",
+      "validation_status": "mixed",
+      "preconditions": [
+        "A build request is about to be issued for the same building type."
+      ],
+      "validated_patterns": [
+        "Set the intended builder count immediately before the build command.",
+        "Use explicit sequencing when multiple opening builds are involved."
+      ],
+      "known_failure_modes": [
+        "Later build requests can absorb builders in unexpected ways if build steps overlap too much."
+      ],
+      "anti_patterns": [
+        "Assuming builder assignment remains stable across overlapping opening build requests without serialization."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md",
+        "docs/history/component-reference.md"
+      ],
+      "lookup_terms": [
+        "up-assign-builders"
+      ]
+    },
+    {
+      "id": "cmd-up-reset-placement",
+      "command_name": "up-reset-placement",
+      "family_id": "economy",
+      "validation_status": "mixed",
+      "preconditions": [
+        "A placement-oriented build sequence is about to begin."
+      ],
+      "validated_patterns": [
+        "Call it in the exact-build sequence before up-build-line."
+      ],
+      "known_failure_modes": [
+        "If omitted, placement state can be contaminated by earlier build attempts or implicit placement behavior."
+      ],
+      "anti_patterns": [
+        "Treating it as optional in a precise multi-step placement probe."
+      ],
+      "source_urls": [
+        "https://airef.github.io/commands/commands-index.html"
+      ],
+      "local_reference_files": [
+        "docs/reference/command-reference.md",
+        "docs/history/command-experiments.md"
+      ],
+      "lookup_terms": [
+        "up-reset-placement"
+      ]
+    }
+  ]
+}

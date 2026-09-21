@@ -1,0 +1,821 @@
+{
+  "entries": [
+    {
+      "aliases": [],
+      "de_id": "-1",
+      "description": "All Units class. Counts all objects, including buildings.",
+      "legacy_id": "-1",
+      "symbol": "all-units-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "900",
+      "description": "Foot archer class.",
+      "legacy_id": "900",
+      "symbol": "archery-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "901",
+      "description": "Monument class. Mostly includes convertible objects like Monuments.",
+      "legacy_id": "901",
+      "symbol": "monument-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "bare-token-missing-identifier",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "in-game bare-token compile probe",
+          "notes": [
+            "Direct bare-token compile failed with ERR2004 Missing identifier."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "902",
+      "description": "Trade Cog class.",
+      "legacy_id": "902",
+      "symbol": "trade-cog-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "903",
+      "description": "Buildings class. Doesn't include all buildings, like towers and walls.",
+      "legacy_id": "903",
+      "symbol": "building-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "904",
+      "description": "Villager class.",
+      "legacy_id": "904",
+      "symbol": "villager-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "905",
+      "description": "Ocean fish class. Excludes shore fish.",
+      "legacy_id": "905",
+      "symbol": "ocean-fish-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "906",
+      "description": "Infantry class.",
+      "legacy_id": "906",
+      "symbol": "infantry-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "907",
+      "description": "Forage class. Includes forage and fruit bushes.",
+      "legacy_id": "907",
+      "symbol": "forage-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "908",
+      "description": "Stone Mine class.",
+      "legacy_id": "908",
+      "symbol": "stone-mine-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "909",
+      "description": "Prey Animal class. Includes deer and its variants.",
+      "legacy_id": "909",
+      "symbol": "prey-animal-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "910",
+      "description": "Predator Animal class. Includes boar, boar variants, and wolves.",
+      "legacy_id": "910",
+      "symbol": "predator-animal-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "911",
+      "description": "Miscellaneous class. Includes flares. Mostly dead versions of units and eye candy.",
+      "legacy_id": "911",
+      "symbol": "miscellaneous-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "912",
+      "description": "Cavalry class. Doesn't scout cavalry, light cavalry, or hussar, although it includes light cavalry or hussars (not scout cavalry) that are placed at the start of the game in scenarios.",
+      "legacy_id": "912",
+      "symbol": "cavalry-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "913",
+      "description": "Siege Weapons class. Doesn't include trebuchets, scorpions, or petards.",
+      "legacy_id": "913",
+      "symbol": "siege-weapon-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "914",
+      "description": "Terrain class. Map objects like mountains, bridges, and flowers.",
+      "legacy_id": "914",
+      "symbol": "terrain-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "915",
+      "description": "Tree class.",
+      "legacy_id": "915",
+      "symbol": "tree-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "918",
+      "description": "Monastery class. Includes monks and missionaries. Doesn't include monasteries. Doesn't include monks carrying relics.",
+      "legacy_id": "918",
+      "symbol": "monastery-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "919",
+      "description": "Trade Cart class.",
+      "legacy_id": "919",
+      "symbol": "trade-cart-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "920",
+      "description": "Transport Ship class.",
+      "legacy_id": "920",
+      "symbol": "transport-ship-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "921",
+      "description": "Fishing Ship Class.",
+      "legacy_id": "921",
+      "symbol": "fishing-ship-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "922",
+      "description": "Warship class.",
+      "legacy_id": "922",
+      "symbol": "warship-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "923",
+      "description": "Cavalry Cannon class. Includes Conquistadors and Arambai.",
+      "legacy_id": "923",
+      "symbol": "cavalry-cannon-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "927",
+      "description": "Wall class.",
+      "legacy_id": "927",
+      "symbol": "wall-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "930",
+      "description": "Flag class. Includes flags and map revealers.",
+      "legacy_id": "930",
+      "symbol": "flag-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "932",
+      "description": "Gold Mine class.",
+      "legacy_id": "932",
+      "symbol": "gold-mine-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "933",
+      "description": "Shore Fish class.",
+      "legacy_id": "933",
+      "symbol": "shore-fish-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "935",
+      "description": "Petard class.",
+      "legacy_id": "935",
+      "symbol": "petard-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "936",
+      "description": "Cavalry Archer class.",
+      "legacy_id": "936",
+      "symbol": "cavalry-archer-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "939",
+      "description": "Gate class.",
+      "legacy_id": "939",
+      "symbol": "gate-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "942",
+      "description": "Relic class.",
+      "legacy_id": "942",
+      "symbol": "relic-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "943",
+      "description": "Monk With Relic class.",
+      "legacy_id": "943",
+      "symbol": "monk-with-relic-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "944",
+      "description": "Archery Cannon class. Includes Hand Cannoneers and Janissaries.",
+      "legacy_id": "944",
+      "symbol": "archery-cannon-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "947",
+      "description": "Scout Cavalry class. Includes scout cavalry, light cavalry, and hussar, although it doesn't include light cavalry or hussars (not scout cavalry) that are placed at the start of the game in scenarios.",
+      "legacy_id": "947",
+      "symbol": "scout-cavalry-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "949",
+      "description": "Farm class. Includes Fish Traps.",
+      "legacy_id": "949",
+      "symbol": "farm-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "951",
+      "description": "Packed Trebuchet class.",
+      "legacy_id": "951",
+      "symbol": "packed-trebuchet-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "952",
+      "description": "Tower class.",
+      "legacy_id": "952",
+      "symbol": "tower-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "954",
+      "description": "Unpacked Trebuchet class.",
+      "legacy_id": "954",
+      "symbol": "unpacked-trebuchet-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "955",
+      "description": "Scorpion class.",
+      "legacy_id": "955",
+      "symbol": "scorpion-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "958",
+      "description": "Livestock class.",
+      "legacy_id": "958",
+      "symbol": "livestock-class",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "959",
+      "description": "King class.",
+      "legacy_id": "959",
+      "symbol": "king-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only",
+        "builtin_exposure": {
+          "status": "built-in-confirmed",
+          "validated_at": "2026-05-07T17:58:52",
+          "source": "userpatch-objectid-constants + in-game bare-token compile probe",
+          "notes": [
+            "Bare-token compile/exposure confirmed in class_builtin_present probe set."
+          ]
+        }
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "961",
+      "description": "Controlled animal class.",
+      "legacy_id": "961",
+      "symbol": "controlled-animal-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    },
+    {
+      "aliases": [],
+      "de_id": "963",
+      "description": "Gold fish class. Includes oysters and whales.",
+      "legacy_id": "963",
+      "symbol": "gold-fish-class*",
+      "validation": {
+        "contexts": [],
+        "evidence": [],
+        "notes": [],
+        "status": "unvalidated",
+        "validation_tier": "inventory-only"
+      }
+    }
+  ],
+  "metadata": {
+    "entry_count": 43,
+    "fetched_at": "2026-04-29T09:36:59Z",
+    "name": "airef-class-inventory",
+    "notes": [
+      "This file is the canonical machine-readable source of truth for this symbol type.",
+      "Validation state is written back here directly."
+    ],
+    "parameter_name": "ClassId",
+    "scrape_method": "Derived local inventory from AIRef parameter value lists and operator lists",
+    "source": "https://airef.github.io/parameters/parameters-details.html",
+    "source_dir": "docs\\extracted\\sources\\airef-source",
+    "source_inventory": "docs\\extracted\\inventories\\airef-value-family-inventory.json",
+    "status": "inventory-backed"
+  }
+}

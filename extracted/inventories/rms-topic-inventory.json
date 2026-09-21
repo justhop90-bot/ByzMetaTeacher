@@ -1,0 +1,392 @@
+{
+  "metadata": {
+    "source": "https://docs.google.com/document/d/1jnhZXoeL9mkRUJxcGlKnO98fIwFKStP_OBozpr0CHXo/edit",
+    "fetched_at": "2026-04-28T04:30:37Z",
+    "topic_count": 39,
+    "guide_path": "docs\\extracted\\rms-reference-google-doc.txt"
+  },
+  "topics": [
+    {
+      "name": "Introduction",
+      "level": 1,
+      "path": [
+        "Introduction"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Syntax Overview",
+      "level": 1,
+      "path": [
+        "Syntax Overview"
+      ],
+      "summary": "A random map script contains up to seven different sections.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Syntax Skeleton",
+      "level": 1,
+      "path": [
+        "Syntax Skeleton"
+      ],
+      "summary": "This section shows all the possible syntax, so you can see which attributes and commands are available. It also acts as a table of contents. Explanations are in the next chapter.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "PLAYER_SETUP",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "PLAYER_SETUP"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "LAND_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "LAND_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "ELEVATION_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "ELEVATION_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "CLIFF_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "CLIFF_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "TERRAIN_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "TERRAIN_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "CONNECTION_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "CONNECTION_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "OBJECTS_GENERATION",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "OBJECTS_GENERATION"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Global Syntax",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Global Syntax"
+      ],
+      "summary": "There are some additional pieces of syntax that can be used across all sections.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Random Code",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Random Code"
+      ],
+      "summary": "Can be used just about anywhere to add an element of randomness to your script.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Conditionals",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Conditionals"
+      ],
+      "summary": "Conditionals are pieces of code that will be executed based on whether a specified condition is fulfilled. The game has predefined most lobby settings as conditions. Below is the full set of conditions available.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Map Sizes",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Map Sizes"
+      ],
+      "summary": "Scaling uses map area, not side length. Scaling of elevation (set_scale_by_size / set_scale_by_groups), terrains (set_scale_by_size / set_scale_by_groups), and objects (set_scaling_to_map_size) use a 100x100 = 10000 tile reference. This is smaller than the tiny map size. Multiply your chosen number by the area ratio listed for a given map size to determine how many tiles/clumps/objects will be generated.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Math Expressions",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Math Expressions"
+      ],
+      "summary": "Math operations were added to DE in April 2025 and are not available in earlier versions of the game. Numbers can now be saved with #const, and constants will be interpreted as their numeric value when inside a math expression. Addition, subtraction, multiplication and division can be performed.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Walls",
+      "level": 2,
+      "path": [
+        "Syntax Skeleton",
+        "Walls"
+      ],
+      "summary": "* When placing walls with set_place_for_every_player it is not necessary to specify number_of_objects",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Constant Reference",
+      "level": 1,
+      "path": [
+        "Constant Reference"
+      ],
+      "summary": "All constants that are predefined by the game can be found in random_map.def",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Terrains",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Terrains"
+      ],
+      "summary": "I have created a spreadsheet detailing all the terrains, their graphics, and their names in the various scenario editors.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Objects",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Objects"
+      ],
+      "summary": "Definitive Constants List - the spreadsheet may have some typos. Check out the sub sheets for a list of animals, trees and other resources.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Effects",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Effects"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Attributes",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Attributes"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Resources",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Resources"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Technologies",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Technologies"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Classes",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Classes"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Miscellaneous",
+      "level": 2,
+      "path": [
+        "Constant Reference",
+        "Miscellaneous"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Scripting and Testing",
+      "level": 1,
+      "path": [
+        "Scripting and Testing"
+      ],
+      "summary": "Standard Units and Resources",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Standard Units and Resources",
+      "level": 2,
+      "path": [
+        "Scripting and Testing",
+        "Standard Units and Resources"
+      ],
+      "summary": "In DE, you will find the object generation contained within the GeneratingObjects.inc file, with map scripts activating specific parts of it. However, it is much easier to look at land_resources.inc which is where the AoC objects generation was stored. That isn't as balanced, but is much more readable.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Game Mode Support",
+      "level": 2,
+      "path": [
+        "Scripting and Testing",
+        "Game Mode Support"
+      ],
+      "summary": "The only game-mode that you absolutely must support is regicide, otherwise players will instantly lose because they lack a king. Nomad will be more streamlined if you follow the advice here. Death Match and Infinite Resources will be less cluttered if you take the time to remove unnecessary stuff. Empire Wars is implemented on a per-map basis, so will play out like random map unless you manually code for the units and buildings.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Testing",
+      "level": 2,
+      "path": [
+        "Scripting and Testing",
+        "Testing"
+      ],
+      "summary": "You can generate maps in the scenario editor (UP/HD/DE). Custom maps are shown in the map list. You do not need to restart the game; just save changes to your script and hit \"generate map\" to observe the changes. You can specify a specific seed to debug said seed or to observe the exact effect of changing some part of your script. The usual process of random map scripting involves having both the map script and the scenario editor open, and repeatedly generating your script as you work on it.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Publishing a Map",
+      "level": 2,
+      "path": [
+        "Scripting and Testing",
+        "Publishing a Map"
+      ],
+      "summary": "If you are just making a map for friends, you just could send them the file and have them manually place it in their game directory. For any other cases, it makes sense to upload your map as a mod.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Updating an Old Map for DE",
+      "level": 2,
+      "path": [
+        "Scripting and Testing",
+        "Updating an Old Map for DE"
+      ],
+      "summary": "Theoretically, an old map script should run on DE without having to change anything, however there are a few things to look out for.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Links and Resources",
+      "level": 1,
+      "path": [
+        "Links and Resources"
+      ],
+      "summary": "TheMadCADer has a bunch of videos that are well worth watching; here is a link to the playlist",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Videos",
+      "level": 2,
+      "path": [
+        "Links and Resources",
+        "Videos"
+      ],
+      "summary": "TheMadCADer has a bunch of videos that are well worth watching; here is a link to the playlist",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "General Guides",
+      "level": 2,
+      "path": [
+        "Links and Resources",
+        "General Guides"
+      ],
+      "summary": "* AoE2DE UGC Guide has guides on xs scripting, scenario triggers, and game data attributes",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Example Scripts",
+      "level": 2,
+      "path": [
+        "Links and Resources",
+        "Example Scripts"
+      ],
+      "summary": "You can also open up any existing map script and take a look. A lot can be learned by modifying an existing map and observing the effects of your changes.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Syntax Highlighting",
+      "level": 2,
+      "path": [
+        "Links and Resources",
+        "Syntax Highlighting"
+      ],
+      "summary": "Getting an RMS syntax highlighter for your text editor of choice will help you spot typos and generally improve the scripting experience. The community has syntax highlighters for numerous text editors, most of which have not been updated since DE was released in 2019.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Appendix",
+      "level": 1,
+      "path": [
+        "Appendix"
+      ],
+      "summary": "DE Update Changelogs",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "DE Update Changelogs",
+      "level": 2,
+      "path": [
+        "Appendix",
+        "DE Update Changelogs"
+      ],
+      "summary": "Updates/changes/fixes/bugs (relevant to map scripting) from all DE updates are listed here for easy reference.",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    },
+    {
+      "name": "Introduction",
+      "level": 1,
+      "path": [
+        "Introduction"
+      ],
+      "summary": "",
+      "source": "docs/extracted/raw/rms/rms-reference-google-doc.txt"
+    }
+  ]
+}

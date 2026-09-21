@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "source": "rms",
+    "fetched_at": "2026-04-29T09:54:23Z",
+    "fixture_count": 1
+  },
+  "fixtures": [
+    {
+      "name": "rms_test_villager_base_f.rms",
+      "path": "rms/rms_test_villager_base_f.rms",
+      "title": "Verify direct one-villager offset placement with VILLAGER_BASE_F.",
+      "summary": "Verify direct one-villager offset placement with VILLAGER_BASE_F.",
+      "map_type": "ARABIA",
+      "create_objects": [
+        "TOWN_CENTER",
+        "VILLAGER_BASE_F"
+      ],
+      "sections": [
+        "PLAYER_SETUP",
+        "LAND_GENERATION",
+        "OBJECTS_GENERATION"
+      ],
+      "tags": [
+        "arabia",
+        "fixture"
+      ],
+      "use_cases": [],
+      "recommended_probe": ""
+    }
+  ]
+}
