@@ -137,6 +137,13 @@
 (defconst bt-tc2-watchdog-timer 16)
 (defconst bt-tc3-watchdog-timer 17)
 
+; Script-local research/age watchdog timer.
+(defconst bt-research-watchdog-timer 18)
+
+; Watchdog interval is controller tuning, not an engine constant.
+; It must exceed the longest legitimate research time it guards.
+(defconst bt-research-watchdog-seconds 240)
+
 ; Community land-exploration group.
 (defconst bt-land-explore-group 101)
 
@@ -240,6 +247,7 @@
     (disable-timer bt-retreat-timer)
     (disable-timer bt-tc2-watchdog-timer)
     (disable-timer bt-tc3-watchdog-timer)
+    (disable-timer bt-research-watchdog-timer)
     (disable-self)
 )
 
@@ -265,6 +273,7 @@
 =>
     (set-strategic-number sn-resource-control ri-loom)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-loom)
 )
 
@@ -272,10 +281,15 @@
 ;
 ; research-pending is not enough.
 ; The completion witness is research-complete.
+; Q: "What proves the Loom claim is finished?"
+;
+; research-complete is the terminal witness. The watchdog is stopped
+; before the shared mutex is released.
 (defrule
     (strategic-number sn-resource-control == ri-loom)
     (up-research-status c: ri-loom == research-complete)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
 
@@ -320,16 +334,22 @@
     (set-goal train-civ-goal -1)
     (release-escrow food)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research feudal-age)
 )
 
 ; Q: "What proves the age transition actually happened?"
 ;
 ; current-age is the world-state witness.
+; Q: "What proves the Feudal claim is finished?"
+;
+; current-age is the world-state witness. Only then is the
+; research watchdog stopped and normal villager production restored.
 (defrule
     (strategic-number sn-resource-control == feudal-age)
     (current-age >= feudal-age)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -347,13 +367,19 @@
     (set-goal train-civ-goal -1)
     (release-escrow food)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research castle-age)
 )
 
+; Q: "What proves the Castle claim is finished?"
+;
+; current-age is the world-state witness. The normal villager goal
+; stays disabled until the age transition is actually complete.
 (defrule
     (strategic-number sn-resource-control == castle-age)
     (current-age >= castle-age)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -376,13 +402,19 @@
     (set-goal train-civ-goal -1)
     (release-escrow food)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research imperial-age)
 )
 
+; Q: "What proves the Imperial claim is finished?"
+;
+; current-age is the world-state witness. The watchdog is not allowed
+; to release a still-running age transition.
 (defrule
     (strategic-number sn-resource-control == imperial-age)
     (current-age >= imperial-age)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -606,13 +638,18 @@
     (set-strategic-number sn-resource-control ri-horse-collar)
     (release-escrow food)
     (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-horse-collar)
 )
 
+; Q: "What proves the Horse Collar claim is finished?"
+;
+; research-complete is the terminal witness for the technology claim.
 (defrule
     (strategic-number sn-resource-control == ri-horse-collar)
     (up-research-status c: ri-horse-collar == research-complete)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
 
@@ -1898,13 +1935,18 @@
     (set-strategic-number sn-resource-control ri-pikeman)
     (release-escrow food)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-pikeman)
 )
 
+; Q: "What proves the Pikeman claim is finished?"
+;
+; research-complete is the terminal witness.
 (defrule
     (strategic-number sn-resource-control == ri-pikeman)
     (up-research-status c: ri-pikeman == research-complete)
 =>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
 
@@ -1929,13 +1971,119 @@
     (set-strategic-number sn-resource-control ri-elite-skirmisher)
     (release-escrow food)
     (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-elite-skirmisher)
 )
 
+; Q: "What proves the Elite Skirmisher claim is finished?"
+;
+; research-complete is the terminal witness.
 (defrule
     (strategic-number sn-resource-control == ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
 =>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; RESEARCH / AGE CLAIM WATCHDOG RECOVERY
+;================================================================
+; Q: "When should a research claim be released without success?"
+;
+; Only when the timer expires AND the claimed research is no longer
+; pending.  A pending research remains owner of the shared mutex.
+;
+; research-available = 1
+; research-pending   = 2
+; research-complete  = 3
+;
+; Therefore status <= research-available means the research is not
+; pending and has not completed. The watchdog is recovery only.
+; It never retries research or starts another claim.
+;
+; Age recovery also restores normal villager production because the
+; age-claim path disabled train-civ-goal during the attempt.
+;----------------------------------------------------------------
+; LOOM WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-loom)
+    (up-research-status c: ri-loom <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; FEUDAL AGE WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == feudal-age)
+    (current-age < feudal-age)
+    (up-research-status c: feudal-age <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;----------------------------------------------------------------
+; CASTLE AGE WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == castle-age)
+    (current-age < castle-age)
+    (up-research-status c: castle-age <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;----------------------------------------------------------------
+; IMPERIAL AGE WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == imperial-age)
+    (current-age < imperial-age)
+    (up-research-status c: imperial-age <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;----------------------------------------------------------------
+; HORSE COLLAR WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-horse-collar)
+    (up-research-status c: ri-horse-collar <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; PIKEMAN WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-pikeman)
+    (up-research-status c: ri-pikeman <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; ELITE SKIRMISHER WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
 
