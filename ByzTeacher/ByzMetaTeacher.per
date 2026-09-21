@@ -714,7 +714,7 @@
 (defrule
     (current-age >= imperial-age)
     (up-research-status c: ri-heavy-plow >= research-complete)
-    (building-type-count-total farm >= 12)
+    (building-type-count-total farm >= bt-farm-castle-cap)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-crop-rotation)
 =>
