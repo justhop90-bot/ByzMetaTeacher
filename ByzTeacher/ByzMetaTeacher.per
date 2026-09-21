@@ -4480,7 +4480,7 @@
 =>
     (disable-timer bt-tc2-watchdog-timer)
     (up-reset-placement c: town-center)
-    (set-goal bt-tc-failure-goal bt-tc-failure-strategic-cancel)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal 0)
@@ -4502,7 +4502,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 1)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 30)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-1-seconds)
 )
 
 (defrule
@@ -4521,7 +4521,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 1)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 30)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-1-seconds)
 )
 
 (defrule
@@ -4539,7 +4539,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 2)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 60)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-2-seconds)
 )
 
 (defrule
@@ -4558,7 +4558,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 2)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 60)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-2-seconds)
 )
 
 (defrule
@@ -4576,7 +4576,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 3)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 120)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-3-seconds)
 )
 
 (defrule
@@ -4595,7 +4595,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 3)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 120)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-3-seconds)
 )
 
 (defrule
@@ -4613,7 +4613,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 4)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 240)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-4-seconds)
 )
 
 (defrule
@@ -4632,7 +4632,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 4)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc2-watchdog-timer 240)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-4-seconds)
 )
 
 (defrule
@@ -4825,7 +4825,7 @@
 =>
     (disable-timer bt-tc3-watchdog-timer)
     (up-reset-placement c: town-center)
-    (set-goal bt-tc-failure-goal bt-tc-failure-strategic-cancel)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal 0)
@@ -4847,7 +4847,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 1)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 30)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-1-seconds)
 )
 
 (defrule
@@ -4866,7 +4866,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 1)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 30)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-1-seconds)
 )
 
 (defrule
@@ -4884,7 +4884,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 2)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 60)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-2-seconds)
 )
 
 (defrule
@@ -4903,7 +4903,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 2)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 60)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-2-seconds)
 )
 
 (defrule
@@ -4921,7 +4921,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 3)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 120)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-3-seconds)
 )
 
 (defrule
@@ -4940,7 +4940,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 3)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 120)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-3-seconds)
 )
 
 (defrule
@@ -4958,7 +4958,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (set-goal bt-tc-retry-goal 4)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 240)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-4-seconds)
 )
 
 (defrule
@@ -4977,7 +4977,7 @@
     (set-goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
     (set-goal bt-tc-retry-goal 4)
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
-    (enable-timer bt-tc3-watchdog-timer 240)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-4-seconds)
 )
 
 (defrule
@@ -5070,6 +5070,44 @@
     (set-goal bt-tc-failure-goal 0)
 )
 
+
+; Terminal TC2 foundation stall retains a diagnostic state but can be cleared
+; when BOOM is abandoned or the world-state target is already reached.
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-stalled)
+    (goal bt-tc-retry-goal 4)
+    (or
+        (not (goal strategy-goal bt-strategy-boom))
+        (building-type-count town-center >= 2)
+    )
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+)
+
+; Terminal TC3 foundation stall retains a diagnostic state but can be cleared
+; when BOOM is abandoned or the world-state target is already reached.
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-stalled)
+    (goal bt-tc-retry-goal 4)
+    (or
+        (not (goal strategy-goal bt-strategy-boom))
+        (building-type-count town-center >= 3)
+    )
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal 0)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
+)
 
 ;================================================================
 ; 18. SCOUTING -> ATTACK-GROUP GATHERING
