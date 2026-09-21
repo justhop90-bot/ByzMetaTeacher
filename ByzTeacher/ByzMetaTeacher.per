@@ -3532,6 +3532,16 @@
     (build castle)
 )
 
+; Imperial prerequisite retry backoff recovery.
+; Timeout releases the cooldown state; it never reclaims the mutex.
+(defrule
+    (goal bt-imperial-prereq-backoff-goal 1)
+    (timer-triggered bt-imperial-prereq-backoff-timer)
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+)
+
 ;---------------------------------------------------------------
 ; 15H. CASTLE -> IMPERIAL PREREQUISITE: SIEGE WORKSHOP
 ;---------------------------------------------------------------
