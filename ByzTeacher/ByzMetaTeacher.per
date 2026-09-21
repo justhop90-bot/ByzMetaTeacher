@@ -3995,6 +3995,32 @@
     (set-strategic-number sn-resource-control 0)
 )
 
+;----------------------------------------------------------------
+; STONE MINING WATCHDOG EXPIRY
+;----------------------------------------------------------------
+(defrule
+    (strategic-number sn-resource-control == ri-stone-mining)
+    (up-research-status c: ri-stone-mining <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-stone-mining-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; STONE SHAFT MINING WATCHDOG EXPIRY
+;----------------------------------------------------------------
+(defrule
+    (strategic-number sn-resource-control == ri-stone-shaft-mining)
+    (up-research-status c: ri-stone-shaft-mining <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-stone-shaft-mining-demand-goal 0)
+)
+
 ;================================================================
 ; 24. END-OF-FILE TEACHING MAP
 ;================================================================
