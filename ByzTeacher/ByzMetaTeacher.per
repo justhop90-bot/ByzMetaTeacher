@@ -238,6 +238,15 @@
 (defconst bt-standing-army-range-scratch-goal 517)
 (defconst bt-standing-army-stable-scratch-goal 518)
 (defconst bt-standing-army-deficit-goal 519)
+(defconst bt-standing-spear-target-goal 527)
+(defconst bt-standing-skirm-target-goal 528)
+(defconst bt-standing-archer-target-goal 529)
+(defconst bt-standing-camel-target-goal 530)
+(defconst bt-halberdier-demand-goal 531)
+(defconst bt-heavy-camel-demand-goal 532)
+(defconst bt-attack-reserve-goal 533)
+(defconst bt-attack-gather-watchdog-timer 23)
+(defconst bt-attack-gather-watchdog-seconds 30)
 (defconst bt-flush-army-floor-feudal 12)
 (defconst bt-flush-army-floor-castle 20)
 (defconst bt-flush-army-floor-imperial 30)
@@ -399,6 +408,13 @@
     (set-goal bt-spear-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
+    (set-goal bt-standing-spear-target-goal 0)
+    (set-goal bt-standing-skirm-target-goal 0)
+    (set-goal bt-standing-archer-target-goal 0)
+    (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-halberdier-demand-goal 0)
+    (set-goal bt-heavy-camel-demand-goal 0)
+    (set-goal bt-attack-reserve-goal 0)
     (set-goal bt-resource-mode-goal bt-resource-mode-dark)
     (set-goal bt-gold-mining-demand-goal 0)
     (set-goal bt-double-bit-axe-demand-goal 0)
@@ -432,6 +448,13 @@
     (set-goal bt-standing-army-range-scratch-goal 0)
     (set-goal bt-standing-army-stable-scratch-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
+    (set-goal bt-standing-spear-target-goal 0)
+    (set-goal bt-standing-skirm-target-goal 0)
+    (set-goal bt-standing-archer-target-goal 0)
+    (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-halberdier-demand-goal 0)
+    (set-goal bt-heavy-camel-demand-goal 0)
+    (set-goal bt-attack-reserve-goal 0)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal 0)
     (set-goal bt-tc-retry-goal 0)
@@ -449,6 +472,7 @@
     (set-strategic-number sn-minimum-attack-group-size 10)
     (set-strategic-number sn-attack-group-gather-spacing 5)
     (set-strategic-number sn-percent-attack-soldiers 70)
+    (set-strategic-number sn-do-not-scale-for-difficulty-level 1)
     (set-strategic-number sn-attack-group-size-randomness 0)
     (set-strategic-number sn-scale-minimum-attack-group-size 0)
     (set-strategic-number sn-scale-maximum-attack-group-size 0)
@@ -456,6 +480,7 @@
     (enable-timer bt-scouting-timer 120)
     (enable-timer bt-attack-timer 900)
     (disable-timer bt-retreat-timer)
+    (disable-timer bt-attack-gather-watchdog-timer)
     (disable-timer bt-tc2-watchdog-timer)
     (disable-timer bt-tc3-watchdog-timer)
     (disable-timer bt-research-watchdog-timer)
@@ -1826,8 +1851,14 @@
 (defrule
     (current-age >= imperial-age)
     (goal strategy-goal bt-strategy-boom)
-    (players-unit-type-count any-enemy militia-line >= 6)
     (unit-type-count-total cataphract-line < 6)
+    (or
+        (players-unit-type-count any-enemy militia-line >= 6)
+        (and
+            (players-unit-type-count any-enemy militia-line >= 4)
+            (goal bt-spear-threat-goal 1)
+        )
+    )
 =>
     (set-goal bt-cataphract-demand-goal 1)
 )
@@ -4171,6 +4202,89 @@
     (up-compare-goal bt-standing-army-floor-goal < bt-flush-army-floor-imperial)
 =>
     (set-goal bt-standing-army-floor-goal bt-flush-army-floor-imperial)
+)
+
+;---------------------------------------------------------------
+; 15Z.1 ROLE-AWARE STANDING TARGETS
+;---------------------------------------------------------------
+(defrule
+    (true)
+=>
+    (set-goal bt-standing-spear-target-goal 0)
+    (set-goal bt-standing-skirm-target-goal 0)
+    (set-goal bt-standing-archer-target-goal 0)
+    (set-goal bt-standing-camel-target-goal 0)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 6) =>
+    (set-goal bt-standing-spear-target-goal 3)
+    (set-goal bt-standing-skirm-target-goal 3)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 12) =>
+    (set-goal bt-standing-spear-target-goal 6)
+    (set-goal bt-standing-skirm-target-goal 6)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 16) =>
+    (set-goal bt-standing-spear-target-goal 6)
+    (set-goal bt-standing-skirm-target-goal 6)
+    (set-goal bt-standing-archer-target-goal 4)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 20) =>
+    (set-goal bt-standing-spear-target-goal 8)
+    (set-goal bt-standing-skirm-target-goal 8)
+    (set-goal bt-standing-archer-target-goal 4)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 26) =>
+    (set-goal bt-standing-spear-target-goal 10)
+    (set-goal bt-standing-skirm-target-goal 10)
+    (set-goal bt-standing-archer-target-goal 6)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 30) =>
+    (set-goal bt-standing-spear-target-goal 12)
+    (set-goal bt-standing-skirm-target-goal 10)
+    (set-goal bt-standing-archer-target-goal 8)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 34) =>
+    (set-goal bt-standing-spear-target-goal 14)
+    (set-goal bt-standing-skirm-target-goal 12)
+    (set-goal bt-standing-archer-target-goal 8)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 42) =>
+    (set-goal bt-standing-spear-target-goal 18)
+    (set-goal bt-standing-skirm-target-goal 16)
+    (set-goal bt-standing-archer-target-goal 8)
+)
+(defrule (up-compare-goal bt-cavalry-counter-level-goal >= 1) =>
+    (up-modify-goal bt-standing-spear-target-goal c:max bt-spear-target-1)
+)
+(defrule (up-compare-goal bt-cavalry-counter-level-goal >= 2) =>
+    (up-modify-goal bt-standing-spear-target-goal c:max bt-spear-target-2)
+)
+(defrule (up-compare-goal bt-cavalry-counter-level-goal >= 3) =>
+    (up-modify-goal bt-standing-spear-target-goal c:max bt-spear-target-3)
+)
+(defrule (up-compare-goal bt-ranged-counter-level-goal >= 1) =>
+    (up-modify-goal bt-standing-skirm-target-goal c:max bt-skirm-target-1)
+)
+(defrule (up-compare-goal bt-ranged-counter-level-goal >= 2) =>
+    (up-modify-goal bt-standing-skirm-target-goal c:max bt-skirm-target-2)
+)
+(defrule (up-compare-goal bt-ranged-counter-level-goal >= 3) =>
+    (up-modify-goal bt-standing-skirm-target-goal c:max bt-skirm-target-3)
+)
+(defrule (up-compare-goal bt-spear-counter-level-goal >= 1) =>
+    (up-modify-goal bt-standing-archer-target-goal c:max 3)
+)
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+=>
+    (set-goal bt-standing-camel-target-goal 4)
+)
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-noncav-cavalry-level-goal >= 2)
+=>
+    (set-goal bt-standing-camel-target-goal 8)
 )
 
 (defrule
