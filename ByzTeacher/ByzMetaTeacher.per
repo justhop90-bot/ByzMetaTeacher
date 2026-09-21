@@ -765,7 +765,7 @@
 )
 
 (defrule
-    (current-age >= castle-age)
+    (current-age == castle-age)
     (food-amount < bt-farm-castle-food-threshold)
     (idle-farm-count == 0)
     (or
