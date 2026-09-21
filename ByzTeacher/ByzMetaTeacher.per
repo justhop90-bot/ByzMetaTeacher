@@ -645,7 +645,9 @@
 )
 
 (defrule
+    (strategic-number sn-resource-control == 0)
     (building-type-count-total mill == 0)
+    (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
     (can-build mill)
 =>
