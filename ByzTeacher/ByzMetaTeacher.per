@@ -2366,6 +2366,51 @@
 )
 
 ;================================================================
+; 14J. GOLD SHAFT MINING RESEARCH
+;================================================================
+;
+; Gold Shaft Mining is a direct Castle BOOM economic investment.
+; The existing Gold Mining completion proves the prerequisite tech
+; lifecycle is finished, TC2 proves the first Castle expansion has
+; matured, and Imperial preparation retains priority.
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (up-research-status c: ri-gold-mining >= research-complete)
+    (building-type-count-total town-center >= 2)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-gold-shaft-mining)
+=>
+    (set-strategic-number sn-resource-control ri-gold-shaft-mining)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-gold-shaft-mining)
+)
+
+; research-complete is the terminal witness for the Gold Shaft Mining claim.
+(defrule
+    (strategic-number sn-resource-control == ri-gold-shaft-mining)
+    (up-research-status c: ri-gold-shaft-mining == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; GOLD SHAFT MINING WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-gold-shaft-mining)
+    (up-research-status c: ri-gold-shaft-mining <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
 ; 15. PRODUCTION CAPACITY
 ;================================================================
 ;================================================================
