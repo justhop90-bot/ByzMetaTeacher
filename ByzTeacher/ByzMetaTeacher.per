@@ -187,6 +187,13 @@
 ; The current build rules do not establish a prerequisite-blocked or
 ; builder-starved cause, so those states are intentionally not claimed.
 (defconst bt-castle-prereq-reason-timeout 1)
+(defconst bt-standing-army-floor-goal 513)
+(defconst bt-standing-army-demand-goal 514)
+(defconst bt-standing-army-infra-goal 515)
+(defconst bt-standing-army-barracks-scratch-goal 516)
+(defconst bt-standing-army-range-scratch-goal 517)
+(defconst bt-standing-army-stable-scratch-goal 518)
+(defconst bt-standing-army-deficit-goal 519)
 
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
@@ -363,6 +370,13 @@
     (set-goal bt-imperial-prereq-retry-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
+    (set-goal bt-standing-army-floor-goal 0)
+    (set-goal bt-standing-army-demand-goal 0)
+    (set-goal bt-standing-army-infra-goal 0)
+    (set-goal bt-standing-army-barracks-scratch-goal 0)
+    (set-goal bt-standing-army-range-scratch-goal 0)
+    (set-goal bt-standing-army-stable-scratch-goal 0)
+    (set-goal bt-standing-army-deficit-goal 0)
     (disable-timer bt-castle-prereq-backoff-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
@@ -3132,6 +3146,66 @@
 ;---------------------------------------------------------------
 ; 15A. BARRACK CAPACITY
 ;---------------------------------------------------------------
+; Standing-army demand supplies the persistent late-game capacity
+; signal.  It does not replace threat-driven FLUSH capacity.
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age == feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 1)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age == castle-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 16)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 2)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age == castle-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 20)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 3)
+    (can-build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 26)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 4)
+    (can-build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 34)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 6)
+    (can-build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 42)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 8)
+    (can-build barracks)
+)
+
+
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (or
@@ -3741,6 +3815,149 @@
 )
 
 ;================================================================
+; 15Z. STANDING ARMY FLOOR
+;================================================================
+; The floor is a derived requirement, not a strategy.
+; It scales only when age, civilian economy, and existing military
+; infrastructure prove that the economy can support the larger army.
+;
+; Infrastructure = completed + queued Barracks + Archery Ranges +
+; Stable capacity, using building-type-count-total.
+;
+; Controller tuning:
+;   Feudal:                    6
+;   Castle:                   12
+;   Castle mature:            16
+;   Castle late:              20
+;   Imperial:                 26
+;   Imperial mature:          34
+;   Imperial late:            42
+;
+; These are standing-force targets, not attack-group sizes.
+(defrule
+    (current-age < feudal-age)
+=>
+    (set-goal bt-standing-army-floor-goal 0)
+)
+
+(defrule
+    (current-age == feudal-age)
+=>
+    (set-goal bt-standing-army-floor-goal 6)
+)
+
+(defrule
+    (current-age == castle-age)
+    (unit-type-count villager < 45)
+=>
+    (set-goal bt-standing-army-floor-goal 12)
+)
+
+(defrule
+    (current-age == castle-age)
+    (unit-type-count villager >= 45)
+    (up-compare-goal bt-standing-army-infra-goal >= 2)
+    (unit-type-count villager < 60)
+=>
+    (set-goal bt-standing-army-floor-goal 16)
+)
+
+(defrule
+    (current-age == castle-age)
+    (unit-type-count villager >= 60)
+    (up-compare-goal bt-standing-army-infra-goal >= 3)
+=>
+    (set-goal bt-standing-army-floor-goal 20)
+)
+
+(defrule
+    (current-age == castle-age)
+    (or
+        (unit-type-count villager < 45)
+        (up-compare-goal bt-standing-army-infra-goal < 2)
+    )
+    (unit-type-count villager >= 45)
+=>
+    (set-goal bt-standing-army-floor-goal 12)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count villager < 60)
+=>
+    (set-goal bt-standing-army-floor-goal 26)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count villager >= 60)
+    (up-compare-goal bt-standing-army-infra-goal >= 4)
+    (unit-type-count villager < 80)
+=>
+    (set-goal bt-standing-army-floor-goal 34)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count villager >= 80)
+    (up-compare-goal bt-standing-army-infra-goal >= 6)
+    (unit-type-count villager < 100)
+=>
+    (set-goal bt-standing-army-floor-goal 42)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count villager >= 100)
+    (up-compare-goal bt-standing-army-infra-goal >= 8)
+=>
+    (set-goal bt-standing-army-floor-goal 42)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count villager >= 80)
+    (up-compare-goal bt-standing-army-infra-goal >= 6)
+    (unit-type-count villager < 100)
+=>
+    (set-goal bt-standing-army-floor-goal 34)
+)
+
+(defrule
+    (true)
+=>
+    (up-get-fact building-type-count-total barracks bt-standing-army-barracks-scratch-goal)
+    (up-get-fact building-type-count-total archery-range bt-standing-army-range-scratch-goal)
+    (up-get-fact building-type-count-total stable bt-standing-army-stable-scratch-goal)
+    (set-goal bt-standing-army-infra-goal 0)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-barracks-scratch-goal)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-range-scratch-goal)
+    (up-modify-goal bt-standing-army-infra-goal g:+ bt-standing-army-stable-scratch-goal)
+    (up-get-fact soldier-count 0 bt-standing-army-deficit-goal)
+    (up-modify-goal bt-standing-army-deficit-goal g:- bt-standing-army-floor-goal)
+)
+
+(defrule
+    (current-age >= feudal-age)
+    (up-compare-goal bt-standing-army-deficit-goal < 0)
+=>
+    (set-goal bt-standing-army-demand-goal 1)
+)
+
+(defrule
+    (current-age >= feudal-age)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+=>
+    (set-goal bt-standing-army-demand-goal 0)
+)
+
+(defrule
+    (current-age < feudal-age)
+=>
+    (set-goal bt-standing-army-demand-goal 0)
+)
+
+;================================================================
 ; 16. MILITARY PRODUCTION ARBITRATION
 ;================================================================
 ;
@@ -3811,7 +4028,7 @@
 (defrule
     (goal strategy-goal bt-strategy-boom)
     (current-age >= feudal-age)
-    (military-population < 6)
+    (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 1)
     (can-build barracks)
@@ -3823,9 +4040,10 @@
     (goal strategy-goal bt-strategy-boom)
     (current-age >= feudal-age)
     (goal unit-goal bt-unit-mix)
-    (military-population < 6)
+    (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
+    (unit-type-count-total spearman-line < bt-standing-army-floor-goal)
     (can-train spearman-line)
 =>
     (train spearman-line)
@@ -3847,7 +4065,7 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (current-age >= feudal-age)
-    (military-population < 6)
+    (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 1)
     (can-build barracks)
@@ -3858,9 +4076,10 @@
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (current-age >= feudal-age)
-    (military-population < 6)
+    (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
+    (unit-type-count-total spearman-line < bt-standing-army-floor-goal)
     (can-train spearman-line)
 =>
     (train spearman-line)
