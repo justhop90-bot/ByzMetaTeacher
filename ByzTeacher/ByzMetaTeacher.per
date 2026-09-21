@@ -147,7 +147,9 @@
 
 ; Script-local Feudal -> Castle prerequisite-build watchdog.
 (defconst bt-castle-prereq-watchdog-timer 19)
+(defconst bt-castle-prereq-backoff-timer 20)
 (defconst bt-castle-prereq-watchdog-seconds 120)
+(defconst bt-castle-prereq-backoff-seconds 30)
 
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
@@ -203,6 +205,7 @@
 (defconst bt-scout-target-player-goal 55)
 (defconst bt-scout-pressure-demand-goal 56)
 (defconst bt-natural-food-state-goal 57)
+(defconst bt-castle-prereq-backoff-goal 58)
 (defconst bt-natural-food-stable 0)
 (defconst bt-natural-food-transition 1)
 (defconst bt-natural-food-depleted 2)
@@ -314,6 +317,8 @@
     (set-goal bt-stone-shaft-mining-demand-goal 0)
     (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-scout-pressure-demand-goal 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (disable-timer bt-castle-prereq-backoff-timer)
     (disable-self)
 )
 
@@ -3251,6 +3256,7 @@
 ; TC, and other capital-consuming systems.
 (defrule
     (current-age == feudal-age)
+    (goal bt-castle-prereq-backoff-goal 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total blacksmith < 1)
     (up-pending-objects c: blacksmith == 0)
@@ -3280,6 +3286,8 @@
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
 )
 
 ;---------------------------------------------------------------
@@ -3290,6 +3298,7 @@
 ; no redundant Market is forced.
 (defrule
     (current-age == feudal-age)
+    (goal bt-castle-prereq-backoff-goal 0)
     (building-type-count-total blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total market < 1)
@@ -3320,6 +3329,18 @@
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
+)
+
+; Castle prerequisite retry backoff recovery.
+; Timeout releases the cooldown state; it never reclaims the mutex.
+(defrule
+    (goal bt-castle-prereq-backoff-goal 1)
+    (timer-triggered bt-castle-prereq-backoff-timer)
+=>
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-backoff-goal 0)
 )
 
 ;---------------------------------------------------------------
