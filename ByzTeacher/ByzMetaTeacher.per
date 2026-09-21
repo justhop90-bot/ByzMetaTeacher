@@ -191,6 +191,8 @@
 (defconst bt-two-man-saw-demand-goal 52)
 (defconst bt-stone-mining-demand-goal 53)
 (defconst bt-stone-shaft-mining-demand-goal 54)
+(defconst bt-scout-target-player-goal 55)
+(defconst bt-scout-pressure-demand-goal 56)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -217,6 +219,12 @@
 (defconst bt-stone-shaft-villagers 60)
 (defconst bt-stone-shaft-food-buffer 700)
 (defconst bt-stone-shaft-wood-buffer 400)
+
+; Scout-pressure tuning. These values are controller policy, not engine constants.
+(defconst bt-scout-feudal-cap 4)
+(defconst bt-scout-safe-food 200)
+(defconst bt-scout-stable-wood 150)
+(defconst bt-scout-pressure-window 600)
 
 ; Farm-tech lifecycle tuning.
 (defconst bt-farm-feudal-cap 6)
@@ -291,6 +299,8 @@
     (set-goal bt-two-man-saw-demand-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
+    (set-goal bt-scout-target-player-goal 0)
+    (set-goal bt-scout-pressure-demand-goal 0)
     (disable-self)
 )
 
@@ -853,15 +863,52 @@
 ;
 ; up-send-scout directs a land/water scout to a strategic location.
 ;
-; The community uses scout-flank for the opening search and
-; scout-enemy after the enemy's town has actually been located.
+; Community pattern:
+;   - one exploration group is the normal baseline;
+;   - scout-flank performs the opening search;
+;   - scout-enemy is used only after the target player's location is known;
+;   - extra Scout production is a finite Feudal pressure commitment.
+;
 ;---------------------------------------------------------------
-; 12A. INITIAL / REPEATED ENEMY SEARCH
+; 12A. TARGET SELECTION
 ;---------------------------------------------------------------
+; The controller already consumes target-player throughout military
+; interpretation and attack readiness, but previously had no local
+; writer.  Select the closest active enemy once enemy information exists,
+; then copy that player number into the engine's target-player selector.
+;
+; This is intentionally minimal.  In 1v1, the result is deterministic.
+; In team games, closest-enemy remains the repository's simple policy;
+; it is not a full multi-enemy threat allocator.
+(defrule
+    (players-building-count any-enemy > 0)
+    (or
+        (strategic-number sn-target-player-number <= 0)
+        (not (player-in-game target-player))
+    )
+=>
+    (up-find-player enemy find-closest bt-scout-target-player-goal)
+)
+
+(defrule
+    (goal bt-scout-target-player-goal > 0)
+    (strategic-number sn-target-player-number != bt-scout-target-player-goal)
+=>
+    (up-modify-sn sn-target-player-number g:= bt-scout-target-player-goal)
+)
+
+;---------------------------------------------------------------
+; 12B. INITIAL / REPEATED ENEMY SEARCH
+;---------------------------------------------------------------
+; Search remains timer-driven.  The target-specific witness prevents
+; another enemy's visible building from authorizing targeted scouting.
+; scout-cavalry-line is used only as an availability witness so an
+; upgraded Light Cavalry/Hussar scout remains a mobile reconnaissance asset.
 (defrule
     (timer-triggered bt-scouting-timer)
     (game-time >= 120)
-    (players-building-count any-enemy <= 0)
+    (players-building-count target-player <= 0)
+    (unit-type-count-total scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-flank)
@@ -869,19 +916,72 @@
 )
 
 ;---------------------------------------------------------------
-; 12B. TARGETED ENEMY SCOUTING
+; 12C. TARGETED ENEMY SCOUTING
 ;---------------------------------------------------------------
 ;
-; scout-enemy is legal only after the target enemy has actually
-; been located.
+; scout-enemy is legal only after target-player has an actual known
+; building witness.  any-enemy is deliberately not used here.
 (defrule
     (timer-triggered bt-scouting-timer)
     (game-time >= 120)
-    (players-building-count any-enemy > 0)
+    (players-building-count target-player > 0)
+    (unit-type-count-total scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-enemy)
     (enable-timer bt-scouting-timer 180)
+)
+
+;---------------------------------------------------------------
+; 12D. FEUDAL SCOUT-PRESSURE DEMAND
+;---------------------------------------------------------------
+; This is a narrow opening demand, not a new strategy system.
+;
+; It activates only when the controller is still in its early Feudal
+; BOOM posture, is not currently able to research Castle Age, has
+; located the target, and has not already invested in an Archer-heavy
+; or Barracks-heavy Feudal plan.  The demand owns the finite four-Scout
+; investment and disappears when a higher-priority plan takes over.
+(defrule
+    (goal bt-scout-pressure-demand-goal 0)
+    (current-age == feudal-age)
+    (game-time < bt-scout-pressure-window)
+    (goal strategy-goal bt-strategy-boom)
+    (players-building-count target-player > 0)
+    (not (town-under-attack))
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+    (building-type-count-total archery-range == 0)
+    (unit-type-count-total archer-line == 0)
+    (building-type-count-total barracks < 2)
+    (unit-type-count-total spearman-line < 3)
+    (unit-type-count-total scout-cavalry >= 1)
+    (unit-type-count-total scout-cavalry < bt-scout-feudal-cap)
+    (food-amount >= bt-scout-safe-food)
+    (wood-amount >= bt-scout-stable-wood)
+    (can-build stable)
+=>
+    (set-goal bt-scout-pressure-demand-goal 1)
+)
+
+; Stop producing Scouts as soon as the finite Feudal investment has
+; reached its cap or another strategic priority has become authoritative.
+(defrule
+    (goal bt-scout-pressure-demand-goal 1)
+    (or
+        (current-age >= castle-age)
+        (can-research-with-escrow castle-age)
+        (goal strategy-goal bt-strategy-flush)
+        (goal strategy-goal bt-strategy-rush)
+        (building-type-count-total archery-range >= 1)
+        (building-type-count-total barracks >= 2)
+        (unit-type-count-total scout-cavalry >= bt-scout-feudal-cap)
+        (unit-type-count-total spearman-line >= 3)
+        (food-amount < bt-scout-safe-food)
+        (not (players-building-count target-player > 0))
+    )
+=> 
+    (set-goal bt-scout-pressure-demand-goal 0)
 )
 
 ;================================================================
@@ -2964,6 +3064,23 @@
 )
 
 ;---------------------------------------------------------------
+; 15C. FEUDAL STABLE CAPABILITY FOR SCOUT PRESSURE
+;---------------------------------------------------------------
+; The Scout demand owns this one direct capability edge.  It does not
+; alter the Castle stable-capacity rules below.
+(defrule
+    (goal bt-scout-pressure-demand-goal 1)
+    (current-age == feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+    (building-type-count-total stable < 1)
+    (wood-amount >= bt-scout-stable-wood)
+    (can-build stable)
+=>
+    (build stable)
+)
+
+;---------------------------------------------------------------
 ; 15C. STABLE CAPACITY
 ;---------------------------------------------------------------
 (defrule
@@ -3010,7 +3127,28 @@
 ;================================================================
 ;
 ;---------------------------------------------------------------
-; 16A. CATAPHRact PRODUCTION
+; 16A. FEUDAL SCOUT PRESSURE PRODUCTION
+;---------------------------------------------------------------
+; This is the sole direct Scout-production authority.
+; unit-type-count-total scout-cavalry is intentionally exact here:
+; it counts Scout Cavalry, including queued objects, without treating
+; later Light Cavalry/Hussar as unfinished Scout production.
+(defrule
+    (goal bt-scout-pressure-demand-goal 1)
+    (current-age == feudal-age)
+    (not (town-under-attack))
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+    (building-type-count-total stable >= 1)
+    (unit-type-count-total scout-cavalry < bt-scout-feudal-cap)
+    (food-amount >= bt-scout-safe-food)
+    (can-train scout-cavalry)
+=>
+    (train scout-cavalry)
+)
+
+;---------------------------------------------------------------
+; 16B. CATAPHRact PRODUCTION
 ;---------------------------------------------------------------
 ;
 ; Cataphract production consumes the explicit strategic demand.
@@ -3044,7 +3182,7 @@
 ; they use the aggregate military-population fact rather than a
 ; unit-specific queued count.
 ;---------------------------------------------------------------
-; 16A. PERSISTENT BOOM MILITARY FLOOR
+; 16C. PERSISTENT BOOM MILITARY FLOOR
 ;---------------------------------------------------------------
 ; BOOM prioritizes economic expansion, but it does not abandon a
 ; minimum defensive army.  This floor is independent of transient
@@ -3074,7 +3212,7 @@
     (train spearman-line)
 )
 
-; 16B. PERSISTENT FLUSH MILITARY FLOOR
+; 16D. PERSISTENT FLUSH MILITARY FLOOR
 ;---------------------------------------------------------------
 ; FLUSH is a defensive posture, not a momentary reaction to a
 ; currently visible enemy unit. Once entered, the bot must rebuild
@@ -3110,7 +3248,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16C. EXPLICIT SPEAR GOAL
+; 16E. EXPLICIT SPEAR GOAL
 ;---------------------------------------------------------------
 (defrule
     (goal strategy-goal bt-strategy-flush)
@@ -3144,7 +3282,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16D. EXPLICIT SKIRMISHER GOAL
+; 16F. EXPLICIT SKIRMISHER GOAL
 (defrule
     (goal strategy-goal bt-strategy-flush)
     (goal unit-goal skirmisher-line)
@@ -3180,7 +3318,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16E. EXPLICIT ARCHER GOAL
+; 16G. EXPLICIT ARCHER GOAL
 (defrule
     (or
     (goal strategy-goal bt-strategy-rush)
@@ -3212,7 +3350,7 @@
 )
 
 ;---------------------------------------------------------------
-; 16F. MIXED COMPOSITION
+; 16H. MIXED COMPOSITION
 ; MIX #1: cheap cavalry cover first.
 (defrule
     (goal strategy-goal bt-strategy-flush)
