@@ -183,6 +183,7 @@
 (defconst bt-resource-mode-food-crisis 18)
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
+(defconst bt-gold-mining-demand-goal 47)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -263,6 +264,7 @@
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-resource-mode-goal bt-resource-mode-dark)
+    (set-goal bt-gold-mining-demand-goal 0)
     (disable-self)
 )
 
@@ -1987,6 +1989,107 @@
 )
 
 ;================================================================
+; 14E. GOLD MINING DEMAND
+;================================================================
+;
+; Gold Mining is downstream of SUSTAINED premium-gold demand.
+;
+; "Sustained" means an existing gold-paying consumer remains active:
+;   - Cataphract demand
+;   - existing Castle mixed-composition Camel demand
+;
+; It is NOT driven by:
+;   - low gold stockpile
+;   - Castle Age by itself
+;   - an age-up gold bank
+;   - the resource allocator inventing a new strategy
+;
+; Imperial-age preparation is explicitly excluded while the age is
+; researchable. The existing age-up rule remains the only authority
+; that spends the bank for the age transition.
+;
+; This is a technology-demand state. It creates no strategy, unit-goal,
+; Cataphract demand, or resource claim.
+(defrule
+    (true)
+=>
+    (set-goal bt-gold-mining-demand-goal 0)
+)
+
+; Existing premium consumer -> Gold Mining demand.
+(defrule
+    (current-age >= castle-age)
+    (or
+        (goal bt-cataphract-demand-goal 1)
+        (and
+            (goal strategy-goal bt-strategy-flush)
+            (goal unit-goal bt-unit-mix)
+            (unit-type-count-total spearman-line >= bt-spear-target-1)
+            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+            (building-type-count-total stable >= 1)
+            (unit-type-count-total camel-line < bt-camel-target-1)
+        )
+    )
+    (not (can-research-with-escrow imperial-age))
+    (strategic-number sn-resource-control != imperial-age)
+=>
+    (set-goal bt-gold-mining-demand-goal 1)
+)
+
+; When premium demand disappears, the technology-demand signal clears.
+; An already active research claim is never cancelled here.
+(defrule
+    (goal bt-gold-mining-demand-goal 1)
+    (not
+        (or
+            (goal bt-cataphract-demand-goal 1)
+            (and
+                (current-age >= castle-age)
+                (goal strategy-goal bt-strategy-flush)
+                (goal unit-goal bt-unit-mix)
+                (unit-type-count-total spearman-line >= bt-spear-target-1)
+                (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                (building-type-count-total stable >= 1)
+                (unit-type-count-total camel-line < bt-camel-target-1)
+            )
+        )
+    )
+=>
+    (set-goal bt-gold-mining-demand-goal 0)
+)
+
+;================================================================
+; 14F. GOLD MINING RESEARCH LIFECYCLE
+;================================================================
+;
+; Existing sn-resource-control arbitration remains authoritative.
+; can-research-with-escrow remains the final research feasibility gate.
+(defrule
+    (goal bt-gold-mining-demand-goal 1)
+    (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (can-research-with-escrow ri-gold-mining)
+=>
+    (set-strategic-number sn-resource-control ri-gold-mining)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-gold-mining)
+)
+
+; Completion witness releases only the Gold Mining claim.
+(defrule
+    (strategic-number sn-resource-control == ri-gold-mining)
+    (up-research-status c: ri-gold-mining == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
 ; 15. PRODUCTION CAPACITY
 ;================================================================
 ;================================================================
@@ -3152,6 +3255,18 @@
 (defrule
     (strategic-number sn-resource-control == ri-pikeman)
     (up-research-status c: ri-pikeman <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; GOLD MINING WATCHDOG EXPIRY
+;----------------------------------------------------------------
+(defrule
+    (strategic-number sn-resource-control == ri-gold-mining)
+    (up-research-status c: ri-gold-mining <= research-available)
     (timer-triggered bt-research-watchdog-timer)
 =>
     (disable-timer bt-research-watchdog-timer)
