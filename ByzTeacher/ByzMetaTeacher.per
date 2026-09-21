@@ -125,6 +125,10 @@
 (defconst bt-tc2-claim 510)
 (defconst bt-tc3-claim 509)
 
+; Castle -> Imperial prerequisite build claims.
+(defconst bt-imperial-siege-claim 512)
+(defconst bt-imperial-university-claim 511)
+
 ; Feudal -> Castle prerequisite build claims.
 ; Separate claims let the watchdog identify which building stalled.
 (defconst bt-castle-blacksmith-claim 508)
@@ -148,11 +152,18 @@
 ; Script-local Feudal -> Castle prerequisite-build watchdog.
 (defconst bt-castle-prereq-watchdog-timer 19)
 (defconst bt-castle-prereq-backoff-timer 20)
+(defconst bt-imperial-prereq-watchdog-timer 21)
+(defconst bt-imperial-prereq-backoff-timer 22)
 (defconst bt-castle-prereq-watchdog-seconds 120)
+(defconst bt-imperial-prereq-watchdog-seconds 120)
 (defconst bt-castle-prereq-backoff-seconds 30)
 (defconst bt-castle-prereq-backoff-2-seconds 60)
 (defconst bt-castle-prereq-backoff-3-seconds 120)
 (defconst bt-castle-prereq-backoff-cap-seconds 240)
+(defconst bt-imperial-prereq-backoff-seconds 30)
+(defconst bt-imperial-prereq-backoff-2-seconds 60)
+(defconst bt-imperial-prereq-backoff-3-seconds 120)
+(defconst bt-imperial-prereq-backoff-cap-seconds 240)
 
 ; Permanent Castle-prerequisite failure diagnostic.
 ;   0 = no terminal failure
@@ -162,6 +173,12 @@
 (defconst bt-castle-prereq-diagnostic-goal 61)
 (defconst bt-castle-prereq-failure-blacksmith 1)
 (defconst bt-castle-prereq-failure-market 2)
+(defconst bt-imperial-prereq-failure-goal 62)
+(defconst bt-imperial-prereq-diagnostic-goal 63)
+(defconst bt-imperial-prereq-retry-goal 64)
+(defconst bt-imperial-prereq-backoff-goal 65)
+(defconst bt-imperial-prereq-failure-siege 1)
+(defconst bt-imperial-prereq-failure-university 2)
 (defconst bt-castle-prereq-manual-reset-trigger 60)
 
 ; Permanent-failure diagnostic reason.
@@ -341,8 +358,14 @@
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-retry-goal 0)
     (set-goal bt-castle-prereq-failure-goal 0)
+    (set-goal bt-imperial-prereq-failure-goal 0)
+    (set-goal bt-imperial-prereq-diagnostic-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
     (disable-timer bt-castle-prereq-backoff-timer)
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
     (disable-self)
 )
 
@@ -3279,7 +3302,10 @@
 ; the reset can safely release the mutex.
 (defrule
     (event-detected trigger bt-castle-prereq-manual-reset-trigger)
-    (goal bt-castle-prereq-failure-goal != 0)
+    (or
+        (goal bt-castle-prereq-failure-goal != 0)
+        (goal bt-imperial-prereq-failure-goal != 0)
+    )
     (strategic-number sn-resource-control == 0)
 =>
     (acknowledge-event trigger bt-castle-prereq-manual-reset-trigger)
@@ -3290,6 +3316,10 @@
     (set-goal bt-castle-prereq-diagnostic-goal 0)
     (set-goal bt-castle-prereq-retry-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-failure-goal 0)
+    (set-goal bt-imperial-prereq-diagnostic-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
 )
 
 ;---------------------------------------------------------------
@@ -3498,6 +3528,182 @@
     (can-build castle)
 =>
     (build castle)
+)
+
+;---------------------------------------------------------------
+; 15H. CASTLE -> IMPERIAL PREREQUISITE: SIEGE WORKSHOP
+;---------------------------------------------------------------
+; Deterministic Imperial path:
+;   Siege Workshop -> University.
+;
+; Imperial feasibility is the demand witness. A Castle is the
+; alternate Imperial prerequisite, so these buildings are not forced
+; when a Castle already satisfies the engine requirement.
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total castle < 1)
+    (not (can-research-with-escrow imperial-age))
+    (building-type-count-total siege-workshop < 1)
+    (up-pending-objects c: siege-workshop == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build siege-workshop)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-siege-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (build siege-workshop)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (building-type-count-total siege-workshop >= 1)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; A timed-out foundation may finish after the watchdog released the
+; mutex. Reset retry history without touching a newer resource claim.
+(defrule
+    (building-type-count-total siege-workshop >= 1)
+    (up-compare-goal bt-imperial-prereq-retry-goal >= 1)
+    (goal bt-imperial-prereq-failure-goal 0)
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+)
+
+;---------------------------------------------------------------
+; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY
+;---------------------------------------------------------------
+; University is downstream of Siege Workshop so the two-building
+; Imperial path is serialized and deterministic.
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total siege-workshop >= 1)
+    (not (can-research-with-escrow imperial-age))
+    (building-type-count-total university < 1)
+    (up-pending-objects c: university == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build university)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-university-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (build university)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (building-type-count-total university >= 1)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; A timed-out University foundation may finish after the watchdog
+; released the mutex. Reset retry history without touching a newer claim.
+(defrule
+    (building-type-count-total university >= 1)
+    (up-compare-goal bt-imperial-prereq-retry-goal >= 1)
+    (goal bt-imperial-prereq-failure-goal 0)
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-retry-goal 0)
+)
+
+;---------------------------------------------------------------
+; 15J. CASTLE -> IMPERIAL PREREQUISITE WATCHDOG
+;---------------------------------------------------------------
+; Same bounded retry lifecycle as the validated Feudal -> Castle pair:
+; 30 -> 60 -> 120 -> 240 seconds, then permanent failure.
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (up-compare-goal bt-imperial-prereq-retry-goal >= 4)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-failure-goal bt-imperial-prereq-failure-siege)
+    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (up-compare-goal bt-imperial-prereq-retry-goal >= 4)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-failure-goal bt-imperial-prereq-failure-university)
+    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
+    (goal bt-imperial-prereq-retry-goal 2)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (set-goal bt-imperial-prereq-retry-goal 3)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-3-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
+    (goal bt-imperial-prereq-retry-goal 1)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (set-goal bt-imperial-prereq-retry-goal 2)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-2-seconds)
+)
+
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
+    (goal bt-imperial-prereq-retry-goal 0)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (set-goal bt-imperial-prereq-retry-goal 1)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-seconds)
+)
+
+; The current rules establish only repeated construction timeout.
+(defrule
+    (goal bt-imperial-prereq-diagnostic-goal 0)
+    (goal bt-imperial-prereq-failure-goal != 0)
+=>
+    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
 
 ;================================================================
