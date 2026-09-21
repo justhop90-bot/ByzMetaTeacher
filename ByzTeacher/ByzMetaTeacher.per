@@ -1955,6 +1955,24 @@
     (set-goal bt-counter-veto-goal 1)
 )
 
+; GUNPOWDER-CAVALRY FAMILY.
+; Dedicated Conquistador/Arambai branch. These are mounted gunpowder
+; specialists, not ordinary bow-ranged cavalry. At exact parity,
+; require at least minimal skirmisher presence before attack authority.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player conquistador-line >= 3)
+            (players-unit-type-count target-player arambai-line >= 3)
+        )
+        (unit-type-count-total skirmisher-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
 ; SPEAR / ANTI-CAVALRY INFANTRY FAMILY.
 ; Generic Spearman -> Pikeman -> Halberdier line.
 (defrule
