@@ -1867,7 +1867,10 @@
                                             (players-unit-type-count target-player monaspa-line >= 3)
                                             (or
                                                 (players-unit-type-count target-player centurion-line >= 3)
-                                                (players-unit-type-count target-player ratha-melee-line >= 3)
+                                                (or
+                                                    (players-unit-type-count target-player ratha-melee-line >= 3)
+                                                    (players-unit-type-count target-player tiger-cavalry-line >= 3)
+                                                )
                                             )
                                         )
                                     )
@@ -1904,7 +1907,10 @@
                                 (players-unit-type-count target-player genoese-crossbowman-line >= 3)
                                 (or
                                     (players-unit-type-count target-player rattan-archer-line >= 3)
-                                    (players-unit-type-count target-player blackwood-archer-line >= 3)
+                                    (or
+                                        (players-unit-type-count target-player blackwood-archer-line >= 3)
+                                        (players-unit-type-count target-player fire-archer-line >= 3)
+                                    )
                                 )
                             )
                         )
@@ -1973,13 +1979,30 @@
     (set-goal bt-counter-veto-goal 1)
 )
 
-; SPEAR / ANTI-CAVALRY INFANTRY FAMILY.
-; Generic Spearman -> Pikeman -> Halberdier line.
+; MAMELUKE FAMILY.
+; Mamelukes are cavalry-class but function as ranged anti-cavalry specialists.
+; At exact parity, require minimum archer-line presence before attack authority.
 (defrule
     (players-building-count target-player > 0)
     (up-compare-goal bt-relative-force-goal == 0)
     (and
-        (players-unit-type-count target-player spearman-line >= 4)
+        (players-unit-type-count target-player mameluke-line >= 3)
+        (unit-type-count-total archer-line < 3)
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; SPEAR / ANTI-CAVALRY INFANTRY FAMILY.
+; Generic Spearman -> Pikeman -> Halberdier plus the Kamayuk specialist.
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (and
+        (or
+            (players-unit-type-count target-player spearman-line >= 4)
+            (players-unit-type-count target-player kamayuk-line >= 3)
+        )
         (unit-type-count-total archer-line < 3)
     )
 =>
