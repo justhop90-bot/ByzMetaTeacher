@@ -1116,8 +1116,12 @@
     )
     (building-type-count-total farm < bt-farm-feudal-cap)
     (wood-amount >= bt-farm-build-wood)
-    (can-build farm)
+    ; Wood escrow is intentionally usable by the farm action once the
+    ; shared resource mutex is free. This is the same escrow-aware
+    ; feasibility model used by TC/research construction.
+    (can-build-with-escrow farm)
 =>
+    (release-escrow wood)
     (build farm)
 )
 
@@ -1146,8 +1150,11 @@
     )
     (building-type-count-total farm < bt-farm-castle-cap)
     (wood-amount >= bt-farm-build-wood)
-    (can-build farm)
+    ; Farm construction is escrow-aware, so the rule cannot stall merely
+    ; because the controller is carrying reserved wood.
+    (can-build-with-escrow farm)
 =>
+    (release-escrow wood)
     (build farm)
 )
 
@@ -1179,8 +1186,12 @@
     )
     (building-type-count-total farm < bt-farm-imperial-cap)
     (wood-amount >= bt-farm-build-wood)
-    (can-build farm)
+    ; Preserve the same feasibility semantics through Imperial: the
+    ; physical farm may consume reserved wood only when no higher-priority
+    ; resource claim currently owns the bank.
+    (can-build-with-escrow farm)
 =>
+    (release-escrow wood)
     (build farm)
 )
 
