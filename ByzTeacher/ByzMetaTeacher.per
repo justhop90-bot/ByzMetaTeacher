@@ -936,7 +936,7 @@
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
             (food-amount < bt-farm-imperial-food-threshold)
-            (idle-farm-count == 0)
+            (idle-farm-count <= 1)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
