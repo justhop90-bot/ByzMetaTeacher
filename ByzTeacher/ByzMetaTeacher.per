@@ -186,6 +186,7 @@
 (defconst bt-gold-mining-demand-goal 47)
 (defconst bt-wheelbarrow-demand-goal 48)
 (defconst bt-hand-cart-demand-goal 49)
+(defconst bt-bow-saw-demand-goal 50)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -269,6 +270,7 @@
     (set-goal bt-gold-mining-demand-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
     (set-goal bt-hand-cart-demand-goal 0)
+    (set-goal bt-bow-saw-demand-goal 0)
     (disable-self)
 )
 
@@ -2276,6 +2278,91 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-hand-cart-demand-goal 0)
+)
+
+;================================================================
+; 14I. BOW SAW DEMAND / RESEARCH LIFECYCLE
+;================================================================
+;
+; Bow Saw is the first Castle BOOM wood-efficiency investment. The
+; controller's existing two-Town-Center milestone is the maturity
+; witness: it proves the economy has crossed from Castle transition
+; into sustained expansion before spending Food + Wood on the upgrade.
+;
+; The shared resource-control mutex still protects active TC projects
+; and age banks. Immediate Imperial feasibility and Imperial-bank-prep
+; retain priority over the economic upgrade.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (building-type-count-total town-center >= 2)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-research-status c: ri-bow-saw == research-available)
+=>
+    (set-goal bt-bow-saw-demand-goal 1)
+)
+
+; Withdraw only a pending Bow Saw demand when its maturity or resource
+; priority disappears. An active claim owns sn-resource-control until
+; completion or watchdog recovery.
+(defrule
+    (goal bt-bow-saw-demand-goal 1)
+    (strategic-number sn-resource-control != ri-bow-saw)
+    (or
+        (can-research-with-escrow imperial-age)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (not
+            (and
+                (current-age >= castle-age)
+                (goal strategy-goal bt-strategy-boom)
+                (building-type-count-total town-center >= 2)
+                (not (can-research-with-escrow imperial-age))
+                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+                (up-research-status c: ri-bow-saw == research-available)
+            )
+        )
+    )
+=>
+    (set-goal bt-bow-saw-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-bow-saw-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (can-research-with-escrow ri-bow-saw)
+=>
+    (set-strategic-number sn-resource-control ri-bow-saw)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-bow-saw)
+)
+
+; research-complete is the terminal witness for the Bow Saw claim.
+(defrule
+    (strategic-number sn-resource-control == ri-bow-saw)
+    (up-research-status c: ri-bow-saw == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-bow-saw-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; BOW SAW WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-bow-saw)
+    (up-research-status c: ri-bow-saw <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-bow-saw-demand-goal 0)
 )
 
 ;================================================================
