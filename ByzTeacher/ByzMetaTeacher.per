@@ -4783,6 +4783,14 @@
             (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
             (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
         )
+        (and
+            (goal bt-tc-stage-goal bt-tc-stage-blocked)
+            (up-compare-goal bt-tc-retry-goal > 0)
+            (or
+                (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+                (goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+            )
+        )
     )
     (not (goal strategy-goal bt-strategy-boom))
     (building-type-count-total town-center < 2)
@@ -5322,6 +5330,14 @@
         (or
             (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
             (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        )
+        (and
+            (goal bt-tc-stage-goal bt-tc-stage-blocked)
+            (up-compare-goal bt-tc-retry-goal > 0)
+            (or
+                (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+                (goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
+            )
         )
     )
     (not (goal strategy-goal bt-strategy-boom))
