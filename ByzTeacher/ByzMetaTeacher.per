@@ -264,9 +264,7 @@
 (defconst bt-any-threat-goal 36)
 (defconst bt-cavalry-level-goal 37)
 (defconst bt-cavalry-counter-level-goal 42)
-(defconst bt-ranged-level-goal 38)
 (defconst bt-ranged-counter-level-goal 43)
-(defconst bt-spear-level-goal 39)
 (defconst bt-spear-counter-level-goal 44)
 (defconst bt-noncav-cavalry-level-goal 41)
 (defconst bt-target-military-scratch-goal 505)
@@ -403,9 +401,7 @@
     (set-goal bt-any-threat-goal 0)
     (set-goal bt-cavalry-level-goal 0)
     (set-goal bt-cavalry-counter-level-goal 0)
-    (set-goal bt-ranged-level-goal 0)
     (set-goal bt-ranged-counter-level-goal 0)
-    (set-goal bt-spear-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-standing-spear-target-goal 0)
@@ -1361,9 +1357,7 @@
     (set-goal bt-any-threat-goal 0)
     (set-goal bt-cavalry-level-goal 0)
     (set-goal bt-cavalry-counter-level-goal 0)
-    (set-goal bt-ranged-level-goal 0)
     (set-goal bt-ranged-counter-level-goal 0)
-    (set-goal bt-spear-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-cataphract-demand-goal 0)
@@ -1400,41 +1394,6 @@
 =>
     (set-goal bt-spear-threat-goal 1)
     (set-goal bt-any-threat-goal 1)
-)
-; Capacity levels: ranged 6/15/25, spears 8/12.
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 6)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 6)
-    )
-=>
-    (set-goal bt-ranged-level-goal 1)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 15)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 15)
-    )
-=>
-    (set-goal bt-ranged-level-goal 2)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 25)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 25)
-    )
-=>
-    (set-goal bt-ranged-level-goal 3)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 8)
-=>
-    (set-goal bt-spear-level-goal 1)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 12)
-=>
-    (set-goal bt-spear-level-goal 2)
 )
 ; Counter levels preserve original military-response thresholds.
 (defrule
@@ -4524,121 +4483,24 @@
 
 
 ;---------------------------------------------------------------
-; 16E. EXPLICIT SPEAR GOAL
-;---------------------------------------------------------------
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal spearman-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-    (unit-type-count-total spearman-line < bt-spear-target-1)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-)
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal spearman-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
-    (unit-type-count-total spearman-line < bt-spear-target-2)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-)
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal spearman-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
-    (unit-type-count-total spearman-line < bt-spear-target-3)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-)
-
-;---------------------------------------------------------------
-; 16F. EXPLICIT SKIRMISHER GOAL
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (goal bt-ranged-threat-goal 1)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total skirmisher-line < bt-skirm-target-1)
-    (can-train skirmisher-line)
-=>
-    (train skirmisher-line)
-)
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-ranged-counter-level-goal >= 2)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total skirmisher-line < bt-skirm-target-2)
-    (can-train skirmisher-line)
-=>
-    (train skirmisher-line)
-)
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal skirmisher-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-ranged-counter-level-goal >= 3)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total skirmisher-line < bt-skirm-target-3)
-    (can-train skirmisher-line)
-=>
-    (train skirmisher-line)
-)
-
-;---------------------------------------------------------------
 ; 16G. EXPLICIT ARCHER GOAL
 (defrule
-    (or
     (goal strategy-goal bt-strategy-rush)
-    (goal strategy-goal bt-strategy-flush)
-    )
     (goal unit-goal archer-line)
     (strategic-number sn-resource-control == 0)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total archer-line < 10)
-    (or
-    (goal strategy-goal bt-strategy-rush)
-    (goal bt-spear-threat-goal 1)
-    )
-    (can-train archer-line)
-=>
-    (train archer-line)
-)
-; RUSH target is ten archers; attack readiness is military-population >= 10.
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal archer-line)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-spear-counter-level-goal >= 2)
     (building-type-count-total archery-range >= 1)
     (unit-type-count-total archer-line < 10)
     (can-train archer-line)
 =>
     (train archer-line)
 )
+; RUSH is the explicit unit-goal exception. FLUSH/BOOM standing
+; production is owned by the role-target producers above.
 
 ;---------------------------------------------------------------
-; 16H. MIXED COMPOSITION
-; MIX #1: cheap cavalry cover first.
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
-    (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-    (unit-type-count-total spearman-line < bt-spear-target-1)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-)
-; Camel support is a direct role demand, not a MIX side effect.
+; 16H. DIRECT CAMEL ROLE
+;---------------------------------------------------------------
+; Camel support is a direct standing-role demand, independent of MIX.
 (defrule
     (current-age >= castle-age)
     (strategic-number sn-resource-control == 0)
@@ -4648,30 +4510,6 @@
     (can-train camel)
 =>
     (train camel)
-)
-; MIX #3: ranged coverage.
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
-    (strategic-number sn-resource-control == 0)
-    (goal bt-ranged-threat-goal 1)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total skirmisher-line < bt-skirm-target-1)
-    (can-train skirmisher-line)
-=>
-    (train skirmisher-line)
-)
-; MIX #4: Archer support against Spears.
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
-    (strategic-number sn-resource-control == 0)
-    (goal bt-spear-threat-goal 1)
-    (building-type-count-total archery-range >= 1)
-    (unit-type-count-total archer-line < 6)
-    (can-train archer-line)
-=>
-    (train archer-line)
 )
 
 ;================================================================
@@ -6068,7 +5906,7 @@
 ;
 ; minimum group size = 10
 ; gather spacing      = 5
-; attack allocation   = 70%
+; attack allocation   = floor-tier policy targeting the 10-unit attack package.
 ; Q: "When should the first deliberate attack happen?"
 ;
 ; After:
