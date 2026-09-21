@@ -1548,7 +1548,21 @@
     (current-age == feudal-age)
     (game-time >= 600)
     (players-building-count any-enemy > 0)
-    (military-population >= 6)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (or
+        (and
+            (current-age == feudal-age)
+            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
+        )
+        (and
+            (current-age == castle-age)
+            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-castle)
+        )
+        (and
+            (current-age >= imperial-age)
+            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-imperial)
+        )
+    )
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
 =>
@@ -1565,8 +1579,18 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
-    (not (current-age == feudal-age))
-    (military-population >= 6)
+    (current-age >= castle-age)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (or
+        (and
+            (current-age == castle-age)
+            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-castle)
+        )
+        (and
+            (current-age >= imperial-age)
+            (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-imperial)
+        )
+    )
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1575,9 +1599,8 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
-    (current-age == feudal-age)
-    (not (game-time >= 600))
-    (military-population >= 6)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1586,10 +1609,8 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
-    (current-age == feudal-age)
-    (game-time >= 600)
-    (players-building-count any-enemy <= 0)
-    (military-population >= 6)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1598,10 +1619,8 @@
     (goal strategy-goal bt-strategy-flush)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
-    (current-age == feudal-age)
-    (game-time >= 600)
-    (players-building-count any-enemy > 0)
-    (military-population >= 6)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
