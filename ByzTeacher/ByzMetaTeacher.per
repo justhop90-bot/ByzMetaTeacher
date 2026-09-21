@@ -176,6 +176,16 @@
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
 
+; Farm-tech lifecycle tuning.
+(defconst bt-farm-feudal-cap 6)
+(defconst bt-farm-castle-cap 12)
+(defconst bt-farm-imperial-cap 24)
+(defconst bt-farm-feudal-emergency-food 150)
+(defconst bt-farm-castle-food-threshold 500)
+(defconst bt-farm-castle-emergency-food 200)
+(defconst bt-farm-imperial-food-threshold 700)
+(defconst bt-farm-build-wood 60)
+
 ; Military composition targets.
 (defconst bt-spear-target-1 6)
 (defconst bt-spear-target-2 16)
@@ -666,9 +676,9 @@
     (current-age >= castle-age)
     (up-research-status c: ri-horse-collar >= research-complete)
     (or
-        (building-type-count-total farm >= 6)
+        (building-type-count-total farm >= bt-farm-feudal-cap)
         (and
-            (food-amount < 500)
+            (food-amount < bt-farm-castle-food-threshold)
             (or
                 (dropsite-min-distance deer-hunting == -1)
                 (dropsite-min-distance deer-hunting == 255)
@@ -745,10 +755,10 @@
     )
     (or
         (up-research-status c: ri-horse-collar >= research-pending)
-        (food-amount < 150)
+        (food-amount < bt-farm-feudal-emergency-food)
     )
-    (building-type-count-total farm < 6)
-    (wood-amount >= 60)
+    (building-type-count-total farm < bt-farm-feudal-cap)
+    (wood-amount >= bt-farm-build-wood)
     (can-build farm)
 =>
     (build farm)
@@ -756,7 +766,7 @@
 
 (defrule
     (current-age >= castle-age)
-    (food-amount < 500)
+    (food-amount < bt-farm-castle-food-threshold)
     (idle-farm-count == 0)
     (or
         (dropsite-min-distance deer-hunting == -1)
@@ -765,10 +775,10 @@
     )
     (or
         (up-research-status c: ri-heavy-plow >= research-pending)
-        (food-amount < 200)
+        (food-amount < bt-farm-castle-emergency-food)
     )
-    (building-type-count-total farm < 12)
-    (wood-amount >= 60)
+    (building-type-count-total farm < bt-farm-castle-cap)
+    (wood-amount >= bt-farm-build-wood)
     (can-build farm)
 =>
     (build farm)
@@ -779,15 +789,15 @@
 (defrule
     (current-age >= imperial-age)
     (up-research-status c: ri-crop-rotation == research-complete)
-    (food-amount < 700)
+    (food-amount < bt-farm-imperial-food-threshold)
     (idle-farm-count == 0)
     (or
         (dropsite-min-distance deer-hunting == -1)
         (dropsite-min-distance deer-hunting == 255)
         (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
     )
-    (building-type-count-total farm < 24)
-    (wood-amount >= 60)
+    (building-type-count-total farm < bt-farm-imperial-cap)
+    (wood-amount >= bt-farm-build-wood)
     (can-build farm)
 =>
     (build farm)
