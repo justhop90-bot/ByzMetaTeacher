@@ -158,6 +158,8 @@
 (defconst bt-spear-level-goal 39)
 (defconst bt-spear-counter-level-goal 44)
 (defconst bt-noncav-cavalry-level-goal 41)
+(defconst bt-target-military-scratch-goal 505)
+(defconst bt-relative-force-goal 506)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -1781,6 +1783,14 @@
 ;================================================================
 ; 18. SCOUTING -> ATTACK-GROUP GATHERING
 ;================================================================
+(defrule
+    (players-building-count target-player > 0)
+=>
+    (up-get-fact military-population 0 bt-relative-force-goal)
+    (up-get-target-fact military-population 0 bt-target-military-scratch-goal)
+    (up-modify-goal bt-relative-force-goal g:- bt-target-military-scratch-goal)
+)
+
 ;
 ; Q: "How does the AI actually form an army?"
 ;
@@ -1803,7 +1813,9 @@
     (timer-triggered bt-attack-timer)
     (current-age >= feudal-age)
     (players-building-count any-enemy > 0)
+    (players-building-count target-player > 0)
     (military-population >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
@@ -1866,7 +1878,13 @@
 (defrule
     (goal attack-goal 1)
     (goal retreat-now-goal 0)
-    (town-under-attack)
+    (or
+        (town-under-attack)
+        (and
+            (players-building-count target-player > 0)
+            (up-compare-goal bt-relative-force-goal < -5)
+        )
+    )
     (attack-soldier-count >= 6)
 =>
     (set-goal retreat-now-goal 1)
