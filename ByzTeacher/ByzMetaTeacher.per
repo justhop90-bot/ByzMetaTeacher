@@ -976,7 +976,6 @@
         (building-type-count-total archery-range >= 1)
         (building-type-count-total barracks >= 2)
         (unit-type-count-total scout-cavalry >= bt-scout-feudal-cap)
-        (unit-type-count-total spearman-line >= 3)
         (food-amount < bt-scout-safe-food)
         (not (players-building-count target-player > 0))
     )
@@ -3164,7 +3163,8 @@
     (train cataphract-line)
 )
 
-; ONLY this section directly trains military units.
+; Scout and Cataphract production are explicit capability exceptions;
+; the composition goals below own the remaining military queue.
 ;
 ; The goals above decide what is wanted.
 ; These rules decide what actually gets queued.
