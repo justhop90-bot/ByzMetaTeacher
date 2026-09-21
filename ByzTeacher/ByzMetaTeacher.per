@@ -1419,6 +1419,37 @@
 ;
 ; This is the arbitration layer.
 ;---------------------------------------------------------------
+;---------------------------------------------------------------
+; 16A. PERSISTENT BOOM MILITARY FLOOR
+;---------------------------------------------------------------
+; BOOM prioritizes economic expansion, but it does not abandon a
+; minimum defensive army.  This floor is independent of transient
+; enemy observation and remains separate from the attack lifecycle.
+;
+; Six military units is the same minimum floor used by FLUSH recovery.
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= feudal-age)
+    (military-population < 6)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 1)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= feudal-age)
+    (goal unit-goal bt-unit-mix)
+    (military-population < 6)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks >= 1)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+)
+
 ; 16A. PERSISTENT FLUSH MILITARY FLOOR
 ;---------------------------------------------------------------
 ; FLUSH is a defensive posture, not a momentary reaction to a
