@@ -164,13 +164,12 @@
 (defconst bt-castle-prereq-failure-market 2)
 (defconst bt-castle-prereq-manual-reset-trigger 60)
 
-; Permanent-failure diagnostic reasons.
-;   1 = construction watchdog timeout
-;   2 = blocked building prerequisite
-;   3 = no builder allocation available
+; Permanent-failure diagnostic reason.
+;   1 = repeated construction watchdog timeout
+;
+; The current build rules do not establish a prerequisite-blocked or
+; builder-starved cause, so those states are intentionally not claimed.
 (defconst bt-castle-prereq-reason-timeout 1)
-(defconst bt-castle-prereq-reason-blocked 2)
-(defconst bt-castle-prereq-reason-builder 3)
 
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
@@ -3353,6 +3352,7 @@
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
+    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
 
 (defrule
@@ -3365,6 +3365,7 @@
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-market)
+    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
 
 (defrule
@@ -3425,44 +3426,6 @@
     (set-goal bt-castle-prereq-backoff-goal 1)
     (set-goal bt-castle-prereq-retry-goal 1)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
-)
-
-; Permanent-failure reason resolution.
-; building-available is the engine prerequisite witness. Builder
-; starvation is represented only by an explicit zero builder
-; allocation; otherwise the terminal state is a construction timeout.
-(defrule
-    (goal bt-castle-prereq-diagnostic-goal 0)
-    (or
-        (and
-            (goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
-            (not (building-available blacksmith))
-        )
-        (and
-            (goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-market)
-            (not (building-available market))
-        )
-    )
-=>
-    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-blocked)
-)
-
-(defrule
-    (goal bt-castle-prereq-diagnostic-goal 0)
-    (goal bt-castle-prereq-failure-goal != 0)
-    (or
-        (strategic-number sn-cap-civilian-builders <= 0)
-        (strategic-number sn-percent-civilian-builders <= 0)
-    )
-=>
-    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-builder)
-)
-
-(defrule
-    (goal bt-castle-prereq-diagnostic-goal 0)
-    (goal bt-castle-prereq-failure-goal != 0)
-=>
-    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
 
 ;---------------------------------------------------------------
