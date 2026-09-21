@@ -154,6 +154,14 @@
 (defconst bt-castle-prereq-backoff-3-seconds 120)
 (defconst bt-castle-prereq-backoff-cap-seconds 240)
 
+; Permanent Castle-prerequisite failure diagnostic.
+;   0 = no terminal failure
+;   1 = Blacksmith construction failed repeatedly
+;   2 = Market construction failed repeatedly
+(defconst bt-castle-prereq-failure-goal 60)
+(defconst bt-castle-prereq-failure-blacksmith 1)
+(defconst bt-castle-prereq-failure-market 2)
+
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
 (defconst bt-research-watchdog-seconds 240)
@@ -323,6 +331,7 @@
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-retry-goal 0)
+    (set-goal bt-castle-prereq-failure-goal 0)
     (disable-timer bt-castle-prereq-backoff-timer)
     (disable-self)
 )
@@ -3261,6 +3270,7 @@
 ; TC, and other capital-consuming systems.
 (defrule
     (current-age == feudal-age)
+    (goal bt-castle-prereq-failure-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total blacksmith < 1)
@@ -3299,19 +3309,31 @@
 ; Blacksmith watchdog recovery.
 ; Timeout only releases the stale claim. Retry delay doubles after
 ; each repeated failure and caps at the configured maximum.
+; Permanent failure cutoff after the capped retry has also timed out.
+; This is terminal for the prerequisite subsystem: release the mutex,
+; stop its timers, and leave a diagnostic witness. No retry follows.
 (defrule
-    (or
-        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-        (strategic-number sn-resource-control == bt-castle-market-claim)
-    )
+    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
     (up-compare-goal bt-castle-prereq-retry-goal >= 3)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
+    (disable-timer bt-castle-prereq-backoff-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-backoff-goal 1)
-    (set-goal bt-castle-prereq-retry-goal 3)
-    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-cap-seconds)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-market-claim)
+    (up-compare-goal bt-castle-prereq-retry-goal >= 3)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-market)
 )
 
 (defrule
@@ -3367,6 +3389,7 @@
 ; no redundant Market is forced.
 (defrule
     (current-age == feudal-age)
+    (goal bt-castle-prereq-failure-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
     (building-type-count-total blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
@@ -3397,6 +3420,7 @@
 (defrule
     (building-type-count-total market >= 1)
     (up-compare-goal bt-castle-prereq-retry-goal >= 1)
+    (goal bt-castle-prereq-failure-goal 0)
 =>
     (disable-timer bt-castle-prereq-backoff-timer)
     (set-goal bt-castle-prereq-backoff-goal 0)
