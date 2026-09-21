@@ -3531,7 +3531,10 @@
 (defrule
     (or
         (goal bt-standing-army-demand-goal 1)
-        (goal strategy-goal bt-strategy-rush)
+        (and
+            (goal strategy-goal bt-strategy-rush)
+            (goal unit-goal archer-line)
+        )
     )
     (or
         (up-compare-goal bt-standing-skirm-target-goal > 0)
@@ -3546,7 +3549,10 @@
 (defrule
     (or
         (goal bt-standing-army-demand-goal 1)
-        (goal strategy-goal bt-strategy-rush)
+        (and
+            (goal strategy-goal bt-strategy-rush)
+            (goal unit-goal archer-line)
+        )
     )
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 7)
@@ -3561,7 +3567,10 @@
 (defrule
     (or
         (goal bt-standing-army-demand-goal 1)
-        (goal strategy-goal bt-strategy-rush)
+        (and
+            (goal strategy-goal bt-strategy-rush)
+            (goal unit-goal archer-line)
+        )
     )
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 13)
@@ -3576,7 +3585,10 @@
 (defrule
     (or
         (goal bt-standing-army-demand-goal 1)
-        (goal strategy-goal bt-strategy-rush)
+        (and
+            (goal strategy-goal bt-strategy-rush)
+            (goal unit-goal archer-line)
+        )
     )
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 21)
