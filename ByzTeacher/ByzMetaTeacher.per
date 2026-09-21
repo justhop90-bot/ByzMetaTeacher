@@ -2453,6 +2453,38 @@
 )
 
 ;----------------------------------------------------------------
+; COMPLETED AGE RESEARCH WITHOUT AGE-STATE ADVANCE
+;
+; A completed age research normally implies that current-age advances.
+; If the research is already complete but the world-state witness has
+; not advanced when the watchdog fires, release only the controller
+; claim. Do not cancel/reset research.
+(defrule
+    (timer-triggered bt-research-watchdog-timer)
+    (or
+        (and
+            (strategic-number sn-resource-control == feudal-age)
+            (current-age < feudal-age)
+            (up-research-status c: feudal-age == research-complete)
+        )
+        (and
+            (strategic-number sn-resource-control == castle-age)
+            (current-age < castle-age)
+            (up-research-status c: castle-age == research-complete)
+        )
+        (and
+            (strategic-number sn-resource-control == imperial-age)
+            (current-age < imperial-age)
+            (up-research-status c: imperial-age == research-complete)
+        )
+    )
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
+)
+
+;----------------------------------------------------------------
 ; HORSE COLLAR WATCHDOG EXPIRY
 (defrule
     (strategic-number sn-resource-control == ri-horse-collar)
