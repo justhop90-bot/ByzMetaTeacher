@@ -3494,19 +3494,6 @@
     (set-goal bt-castle-prereq-retry-goal 0)
 )
 
-; Market watchdog recovery.
-; Timeout only releases the stale claim. It never retries the build.
-(defrule
-    (strategic-number sn-resource-control == bt-castle-market-claim)
-    (building-type-count-total market < 1)
-    (timer-triggered bt-castle-prereq-watchdog-timer)
-=>
-    (disable-timer bt-castle-prereq-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-backoff-goal 1)
-    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
-)
-
 ; Castle prerequisite retry backoff recovery.
 ; Timeout releases the cooldown state; it never reclaims the mutex.
 (defrule
