@@ -161,6 +161,7 @@
 (defconst bt-target-military-scratch-goal 505)
 (defconst bt-relative-force-goal 506)
 (defconst bt-counter-veto-goal 504)
+(defconst bt-cataphract-demand-goal 45)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -853,6 +854,7 @@
     (set-goal bt-spear-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
+    (set-goal bt-cataphract-demand-goal 0)
 )
 (defrule
     (or
@@ -1294,6 +1296,32 @@
 )
 
 ;================================================================
+; 13G. CATAPHRACT DEMAND
+;================================================================
+;
+; Cataphract demand is a strategic decision, not enemy observation.
+; BOOM is the existing safe economic Castle+ posture. A six-unit
+; queue-inclusive Cataphract target is controller policy.
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (unit-type-count-total cataphract-line < 6)
+=>
+    (set-goal bt-cataphract-demand-goal 1)
+)
+
+; Demand lifecycle release. Do not cancel already queued units.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (or
+        (not (goal strategy-goal bt-strategy-boom))
+        (unit-type-count-total cataphract-line >= 6)
+    )
+=>
+    (set-goal bt-cataphract-demand-goal 0)
+)
+
+;================================================================
 ; 14. UNIT-GOAL SELECTION
 ;================================================================
 ;
@@ -1550,10 +1578,43 @@
     (build stable)
 )
 
+;---------------------------------------------------------------
+; 15D. CASTLE CAPABILITY FOR CATAPHRACT PRODUCTION
+;---------------------------------------------------------------
+;
+; Cataphract demand owns the strategic decision. This rule only
+; closes the required Castle construction capability edge.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total castle < 1)
+    (building-available castle)
+    (can-build castle)
+=>
+    (build castle)
+)
+
 ;================================================================
 ; 16. MILITARY PRODUCTION ARBITRATION
 ;================================================================
 ;
+;---------------------------------------------------------------
+; 16A. CATAPHRact PRODUCTION
+;---------------------------------------------------------------
+;
+; Cataphract production consumes the explicit strategic demand.
+; The Castle is the production capability; no Stable is required.
+; unit-type-count-total is queue-inclusive.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count castle >= 1)
+    (unit-type-count-total cataphract-line < 6)
+    (can-train cataphract-line)
+=>
+    (train cataphract-line)
+)
+
 ; ONLY this section directly trains military units.
 ;
 ; The goals above decide what is wanted.
