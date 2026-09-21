@@ -2010,12 +2010,10 @@
 ;
 ; This is a technology-demand state. It creates no strategy, unit-goal,
 ; Cataphract demand, or resource claim.
-(defrule
-    (true)
-=>
-    (set-goal bt-gold-mining-demand-goal 0)
-)
-
+;
+; Initial value is established once in section 2 initialization.
+; This section owns only demand/release transitions.
+;
 ; Existing premium consumer -> Gold Mining demand.
 (defrule
     (current-age >= castle-age)
@@ -2037,20 +2035,26 @@
 )
 
 ; When premium demand disappears, the technology-demand signal clears.
-; An already active research claim is never cancelled here.
+; An active Gold Mining claim keeps the demand alive until completion or
+; watchdog recovery. The demand layer never cancels research.
 (defrule
     (goal bt-gold-mining-demand-goal 1)
-    (not
-        (or
-            (goal bt-cataphract-demand-goal 1)
-            (and
-                (current-age >= castle-age)
-                (goal strategy-goal bt-strategy-flush)
-                (goal unit-goal bt-unit-mix)
-                (unit-type-count-total spearman-line >= bt-spear-target-1)
-                (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
-                (building-type-count-total stable >= 1)
-                (unit-type-count-total camel-line < bt-camel-target-1)
+    (strategic-number sn-resource-control != ri-gold-mining)
+    (or
+        (can-research-with-escrow imperial-age)
+        (strategic-number sn-resource-control == imperial-age)
+        (not
+            (or
+                (goal bt-cataphract-demand-goal 1)
+                (and
+                    (current-age >= castle-age)
+                    (goal strategy-goal bt-strategy-flush)
+                    (goal unit-goal bt-unit-mix)
+                    (unit-type-count-total spearman-line >= bt-spear-target-1)
+                    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                    (building-type-count-total stable >= 1)
+                    (unit-type-count-total camel-line < bt-camel-target-1)
+                )
             )
         )
     )
@@ -2087,6 +2091,7 @@
 =>
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-gold-mining-demand-goal 0)
 )
 
 ;================================================================
@@ -3271,6 +3276,7 @@
 =>
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-gold-mining-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
