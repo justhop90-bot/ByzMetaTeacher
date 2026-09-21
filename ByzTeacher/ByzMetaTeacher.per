@@ -322,7 +322,13 @@
     (population-headroom > 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
-    (not (can-research-with-escrow imperial-age))
+    (or
+        (not (can-research-with-escrow imperial-age))
+        (and
+            (strategic-number sn-resource-control == 0)
+            (unit-type-count-total villager < bt-imperial-villagers)
+        )
+    )
 =>
     (train villager)
 )
