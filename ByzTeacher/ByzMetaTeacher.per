@@ -194,6 +194,9 @@
 (defconst bt-standing-army-range-scratch-goal 517)
 (defconst bt-standing-army-stable-scratch-goal 518)
 (defconst bt-standing-army-deficit-goal 519)
+(defconst bt-flush-army-floor-feudal 12)
+(defconst bt-flush-army-floor-castle 20)
+(defconst bt-flush-army-floor-imperial 30)
 
 ; Watchdog interval is controller tuning, not an engine constant.
 ; It must exceed the longest legitimate research time it guards.
@@ -377,6 +380,9 @@
     (set-goal bt-standing-army-range-scratch-goal 0)
     (set-goal bt-standing-army-stable-scratch-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
+    (set-goal bt-flush-army-floor-feudal 0)
+    (set-goal bt-flush-army-floor-castle 0)
+    (set-goal bt-flush-army-floor-imperial 0)
     (disable-timer bt-castle-prereq-backoff-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
@@ -3160,6 +3166,18 @@
 
 (defrule
     (goal bt-standing-army-demand-goal 1)
+    (goal strategy-goal bt-strategy-flush)
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks < 2)
+    (can-build barracks)
+=>
+    (build barracks)
+)
+
+(defrule
+    (goal bt-standing-army-demand-goal 1)
     (current-age == castle-age)
     (up-compare-goal bt-standing-army-floor-goal >= 16)
     (strategic-number sn-resource-control == 0)
@@ -3859,12 +3877,14 @@
 
 (defrule
     (current-age == feudal-age)
+    (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal bt-standing-army-floor-goal 6)
 )
 
 (defrule
     (current-age == castle-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (or
         (unit-type-count villager < 45)
         (and
@@ -3878,6 +3898,7 @@
 
 (defrule
     (current-age == castle-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (unit-type-count villager >= 45)
     (up-compare-goal bt-standing-army-infra-goal >= 2)
     (or
@@ -3890,6 +3911,7 @@
 
 (defrule
     (current-age == castle-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (unit-type-count villager >= 60)
     (up-compare-goal bt-standing-army-infra-goal >= 3)
 =>
@@ -3898,6 +3920,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (or
         (unit-type-count villager < 60)
         (up-compare-goal bt-standing-army-infra-goal < 4)
@@ -3908,6 +3931,7 @@
 
 (defrule
     (current-age >= imperial-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (unit-type-count villager >= 60)
     (up-compare-goal bt-standing-army-infra-goal >= 4)
     (or
@@ -3920,10 +3944,39 @@
 
 (defrule
     (current-age >= imperial-age)
+    (not (goal strategy-goal bt-strategy-flush))
     (unit-type-count villager >= 80)
     (up-compare-goal bt-standing-army-infra-goal >= 6)
 =>
     (set-goal bt-standing-army-floor-goal 42)
+)
+
+; FLUSH reinforcement floor.
+; This is deliberately independent of enemy counter classification.
+; Once the town enters FLUSH, the standing requirement cannot collapse
+; back to the six-unit Feudal baseline while the enemy is still in the
+; decisive-attack posture.
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age == feudal-age)
+=>
+    (set-goal bt-standing-army-floor-goal bt-flush-army-floor-feudal)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age == castle-age)
+    (up-compare-goal bt-standing-army-floor-goal < bt-flush-army-floor-castle)
+=>
+    (set-goal bt-standing-army-floor-goal bt-flush-army-floor-castle)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-flush)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-standing-army-floor-goal < bt-flush-army-floor-imperial)
+=>
+    (set-goal bt-standing-army-floor-goal bt-flush-army-floor-imperial)
 )
 
 (defrule
