@@ -3622,6 +3622,15 @@
 ;---------------------------------------------------------------
 ; 15D. STABLE CAPACITY
 ;---------------------------------------------------------------
+; Camel capability edge:
+;
+;   bt-standing-camel-target-goal > 0
+;       -> one Stable capability
+;       -> existing Camel train authority in section 16H
+;
+; The Camel target is the sole Camel demand authority. These rules
+; provide production capability only; they do not create a second
+; Camel demand state.
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-standing-camel-target-goal > 0)
@@ -4403,41 +4412,7 @@
 ; is heavily reduced by Cataphract cavalry armor, so Cataphracts
 ; should not be treated as ordinary Camel targets.
 
-;---------------------------------------------------------------
-; 15Z.1.7 CAMEL CAPABILITY GATE
-;---------------------------------------------------------------
-; Capability lifecycle:
-;
-;   Camel target > 0
-;       -> Stable capability
-;       -> existing Camel train authority
-;
-; The Camel target remains the sole demand authority. No second
-; persistent Camel-demand goal is introduced.
-;
-; Any positive Camel target requires one Stable.
-(defrule
-    (current-age >= castle-age)
-    (up-compare-goal bt-standing-camel-target-goal > 0)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total stable < 1)
-    (can-build stable)
-=>
-    (build stable)
-)
 
-; A Camel target of five or more requires a second Stable.
-; Current witness packages are four and eight, so this activates
-; only for the eight-Camel state.
-(defrule
-    (current-age >= castle-age)
-    (up-compare-goal bt-standing-camel-target-goal >= 5)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total stable < 2)
-    (can-build stable)
-=>
-    (build stable)
-)
 
 (defrule
     (true)
