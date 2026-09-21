@@ -885,14 +885,17 @@
 ; age caps, so an extra pending-object guard is not added here.
 ;
 ; A healthy natural-food state preserves the old conservative
-; food-stock trigger. As natural food weakens, an exhausted farm
-; capacity can prepare the transition before starvation.
+; food-stock trigger. Transition/depleted states are deliberately
+; still bounded by a higher preemptive food buffer and a food-heavy
+; gatherer policy, so the AI prepares farms before the old threshold
+; without turning one missing deer into a farm flood.
 ;
 ;----------------------------------------------------------------
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
 (defrule
     (current-age >= feudal-age)
+    (up-pending-objects c: farm == 0)
     (or
         (and
             (food-amount < 350)
@@ -900,10 +903,14 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-castle-food-threshold)
             (idle-farm-count == 0)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-castle-food-threshold)
             (idle-farm-count <= 1)
         )
     )
@@ -919,6 +926,7 @@
 ;----------------------------------------------------------------
 (defrule
     (current-age == castle-age)
+    (up-pending-objects c: farm == 0)
     (or
         (and
             (food-amount < bt-farm-castle-food-threshold)
@@ -926,10 +934,14 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count == 0)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count <= 1)
         )
     )
@@ -948,6 +960,7 @@
 ; signal; farm capacity remains the hard completion witness.
 (defrule
     (current-age >= imperial-age)
+    (up-pending-objects c: farm == 0)
     (or
         (and
             (food-amount < bt-farm-imperial-food-threshold)
@@ -955,10 +968,14 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count == 0)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (strategic-number sn-food-gatherer-percentage >= 50)
+            (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count <= 1)
         )
     )
