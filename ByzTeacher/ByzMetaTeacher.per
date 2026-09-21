@@ -188,6 +188,7 @@
 (defconst bt-wheelbarrow-demand-goal 49)
 (defconst bt-hand-cart-demand-goal 50)
 (defconst bt-bow-saw-demand-goal 51)
+(defconst bt-two-man-saw-demand-goal 52)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -279,6 +280,7 @@
     (set-goal bt-wheelbarrow-demand-goal 0)
     (set-goal bt-hand-cart-demand-goal 0)
     (set-goal bt-bow-saw-demand-goal 0)
+    (set-goal bt-two-man-saw-demand-goal 0)
     (disable-self)
 )
 
@@ -2443,6 +2445,81 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-bow-saw-demand-goal 0)
+)
+
+;================================================================
+; 14K. TWO-MAN SAW DEMAND / RESEARCH LIFECYCLE
+;================================================================
+;
+; Two-Man Saw is the terminal Imperial wood-productivity investment.
+; Imperial BOOM is the maturity witness. Active Cataphract demand keeps
+; the Imperial resource bank focused on the power-unit priority.
+(defrule
+    (current-age >= imperial-age)
+    (goal strategy-goal bt-strategy-boom)
+    (not (goal bt-cataphract-demand-goal 1))
+    (research-available ri-two-man-saw)
+=>
+    (set-goal bt-two-man-saw-demand-goal 1)
+)
+
+; Withdraw only a pending demand when Imperial power demand takes
+; priority or the technology is no longer available. An active
+; Two-Man Saw claim remains protected by sn-resource-control.
+(defrule
+    (goal bt-two-man-saw-demand-goal 1)
+    (strategic-number sn-resource-control != ri-two-man-saw)
+    (or
+        (goal bt-cataphract-demand-goal 1)
+        (not
+            (and
+                (current-age >= imperial-age)
+                (goal strategy-goal bt-strategy-boom)
+                (not (goal bt-cataphract-demand-goal 1))
+                (research-available ri-two-man-saw)
+            )
+        )
+    )
+=>
+    (set-goal bt-two-man-saw-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-two-man-saw-demand-goal 1)
+    (current-age >= imperial-age)
+    (goal strategy-goal bt-strategy-boom)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-cataphract-demand-goal 1))
+    (can-research-with-escrow ri-two-man-saw)
+=>
+    (set-strategic-number sn-resource-control ri-two-man-saw)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-two-man-saw)
+)
+
+; research-complete is the terminal witness for the Two-Man Saw claim.
+(defrule
+    (strategic-number sn-resource-control == ri-two-man-saw)
+    (up-research-status c: ri-two-man-saw == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-two-man-saw-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; TWO-MAN SAW WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-two-man-saw)
+    (up-research-status c: ri-two-man-saw <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-two-man-saw-demand-goal 0)
 )
 
 ;================================================================
