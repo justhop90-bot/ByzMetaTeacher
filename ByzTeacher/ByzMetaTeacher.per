@@ -4771,6 +4771,11 @@
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
 )
 
+; TC2 retry-4 terminal cooldown:
+; Four failed recovery attempts terminate this project instance rather
+; than parking it forever. Reuse the maximum retry interval as a
+; bounded re-evaluation delay, then allow normal TC2 demand to recreate
+; a fresh project under current world-state conditions.
 (defrule
     (goal bt-tc-project-goal 2)
     (goal bt-tc-stage-goal bt-tc-stage-blocked)
@@ -4778,6 +4783,24 @@
     (timer-triggered bt-tc2-watchdog-timer)
 =>
     (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal bt-tc-stage-idle)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-4-seconds)
+)
+
+; TC2 terminal cooldown release:
+; Do not let a failed project immediately recreate itself. The normal
+; demand rule may run again only after the bounded re-evaluation delay.
+(defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (timer-triggered bt-tc2-watchdog-timer)
+=>
+    (disable-timer bt-tc2-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
 )
 
 (defrule
@@ -5286,6 +5309,11 @@
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
 )
 
+; TC3 retry-4 terminal cooldown:
+; Four failed recovery attempts terminate this project instance rather
+; than parking it forever. Reuse the maximum retry interval as a
+; bounded re-evaluation delay, then allow normal TC3 demand to recreate
+; a fresh project under current world-state conditions.
 (defrule
     (goal bt-tc-project-goal 3)
     (goal bt-tc-stage-goal bt-tc-stage-blocked)
@@ -5293,6 +5321,24 @@
     (timer-triggered bt-tc3-watchdog-timer)
 =>
     (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-project-goal 0)
+    (set-goal bt-tc-stage-goal bt-tc-stage-idle)
+    (set-goal bt-tc-retry-goal 0)
+    (set-goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-retry-4-seconds)
+)
+
+; TC3 terminal cooldown release:
+; Do not let a failed project immediately recreate itself. The normal
+; demand rule may run again only after the bounded re-evaluation delay.
+(defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
+    (timer-triggered bt-tc3-watchdog-timer)
+=>
+    (disable-timer bt-tc3-watchdog-timer)
+    (set-goal bt-tc-failure-goal bt-tc-failure-none)
 )
 
 (defrule
