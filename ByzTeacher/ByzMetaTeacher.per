@@ -193,6 +193,10 @@
 (defconst bt-stone-shaft-mining-demand-goal 54)
 (defconst bt-scout-target-player-goal 55)
 (defconst bt-scout-pressure-demand-goal 56)
+(defconst bt-natural-food-state-goal 57)
+(defconst bt-natural-food-stable 0)
+(defconst bt-natural-food-transition 1)
+(defconst bt-natural-food-depleted 2)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -700,6 +704,79 @@
     (set-strategic-number sn-minimum-boar-hunt-group-size 0)
     (set-strategic-number sn-maximum-hunt-drop-distance 8)
 )
+;----------------------------------------------------------------
+; 10F. NATURAL-FOOD TRANSITION STATE
+;----------------------------------------------------------------
+; Farm logic must not treat deer as the definition of "natural food."
+; The engine already handles normal food-source selection. This small
+; derived state only answers how aggressively the farm-capacity layer
+; should replace natural land food.
+;
+; STATE 0: STABLE
+;   Boar control is active, or both deer and nearby sheep/forage remain
+;   viable. Existing food-stock rules remain conservative.
+;
+; STATE 1: TRANSITION
+;   No active boar hunt, and exactly one of the two major land-food
+;   witnesses has become unavailable: deer or nearby sheep/forage.
+;
+; STATE 2: DEPLETED
+;   No active boar hunt, deer is unavailable, and nearby sheep/forage
+;   is also unavailable.
+;
+; Fish is deliberately not made a hard farm predicate. No current
+; controller fact is strong enough to make "shore fish gone" equivalent
+; to "natural food depleted." Fish therefore remains inside the engine's
+; normal food-source selection.
+;
+; The deer threshold is evaluated here once. The mutable hunt-distance
+; SN remains owned by the boar subsystem; farm rules consume only this
+; derived state instead of inheriting that coupling directly.
+(defrule
+    (true)
+=>
+    (set-goal bt-natural-food-state-goal bt-natural-food-stable)
+)
+
+(defrule
+    (strategic-number sn-enable-boar-hunting != 2)
+    (or
+        (and
+            (sheep-and-forage-too-far)
+            (not
+                (or
+                    (dropsite-min-distance deer-hunting == -1)
+                    (dropsite-min-distance deer-hunting == 255)
+                    (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+                )
+            )
+        )
+        (and
+            (not (sheep-and-forage-too-far))
+            (or
+                (dropsite-min-distance deer-hunting == -1)
+                (dropsite-min-distance deer-hunting == 255)
+                (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+            )
+        )
+    )
+=>
+    (set-goal bt-natural-food-state-goal bt-natural-food-transition)
+)
+
+(defrule
+    (strategic-number sn-enable-boar-hunting != 2)
+    (sheep-and-forage-too-far)
+    (or
+        (dropsite-min-distance deer-hunting == -1)
+        (dropsite-min-distance deer-hunting == 255)
+        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+    )
+=>
+    (set-goal bt-natural-food-state-goal bt-natural-food-depleted)
+)
+
+
 
 ;================================================================
 ; 11. HORSE COLLAR
@@ -789,26 +866,50 @@
 ;================================================================
 ; 11. FARM TRANSITION
 ;================================================================
-; Farm expansion follows the Mill technology lifecycle.
+; Farm construction consumes three existing signals without creating
+; a second economy:
 ;
-; Normal farm expansion is allowed once the relevant farm technology
-; is pending or complete. The pending state is intentional: farms
-; already under construction can finish after the technology completes.
+;   - food policy / stockpile pressure
+;   - natural-food transition state
+;   - idle-farm capacity
 ;
-; A low-food emergency bypass remains available so the AI cannot starve
-; merely because the technology claim has not yet been reached.
+; Natural-food state is derived by section 10/10F:
+;   STABLE     = boar active, or both deer + sheep/forage are viable
+;   TRANSITION = one major land-food source has become unavailable
+;   DEPLETED   = both major land-food sources are unavailable and boar
+;                hunting is no longer active
+;
+; Farms are food capacity. Horse Collar / Heavy Plow / Crop Rotation
+; are efficiency technologies, not universal prerequisites for the
+; physical existence of a farm. Their research lifecycle remains
+; owned by section 11 and sn-resource-control.
+;
+; building-type-count-total farm already includes farms under
+; construction. That is the construction witness used with the fixed
+; age caps, so an extra pending-object guard is not added here.
+;
+; A healthy natural-food state preserves the old conservative
+; food-stock trigger. As natural food weakens, an exhausted farm
+; capacity can prepare the transition before starvation.
+;
+;----------------------------------------------------------------
+; 11A. FEUDAL FARM CAPACITY
+;----------------------------------------------------------------
 (defrule
     (current-age >= feudal-age)
-    (food-amount < 350)
-    (idle-farm-count == 0)
     (or
-        (dropsite-min-distance deer-hunting == -1)
-        (dropsite-min-distance deer-hunting == 255)
-        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
-    )
-    (or
-        (up-research-status c: ri-horse-collar >= research-pending)
-        (food-amount < bt-farm-feudal-emergency-food)
+        (and
+            (food-amount < 350)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (idle-farm-count <= 1)
+        )
     )
     (building-type-count-total farm < bt-farm-feudal-cap)
     (wood-amount >= bt-farm-build-wood)
@@ -817,18 +918,24 @@
     (build farm)
 )
 
+;----------------------------------------------------------------
+; 11B. CASTLE FARM CAPACITY
+;----------------------------------------------------------------
 (defrule
     (current-age == castle-age)
-    (food-amount < bt-farm-castle-food-threshold)
-    (idle-farm-count == 0)
     (or
-        (dropsite-min-distance deer-hunting == -1)
-        (dropsite-min-distance deer-hunting == 255)
-        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
-    )
-    (or
-        (up-research-status c: ri-heavy-plow >= research-pending)
-        (food-amount < bt-farm-castle-emergency-food)
+        (and
+            (food-amount < bt-farm-castle-food-threshold)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (idle-farm-count <= 1)
+        )
     )
     (building-type-count-total farm < bt-farm-castle-cap)
     (wood-amount >= bt-farm-build-wood)
@@ -837,17 +944,27 @@
     (build farm)
 )
 
-; Imperial farm expansion consumes Crop Rotation completion as its
-; authority and raises the existing 12-farm Castle ceiling.
+;----------------------------------------------------------------
+; 11C. IMPERIAL FARM CAPACITY
+;----------------------------------------------------------------
+; Imperial no longer waits for Crop Rotation or deer extinction before
+; maintaining food capacity. Natural-food state becomes a soft urgency
+; signal; farm capacity remains the hard completion witness.
 (defrule
     (current-age >= imperial-age)
-    (up-research-status c: ri-crop-rotation == research-complete)
-    (food-amount < bt-farm-imperial-food-threshold)
-    (idle-farm-count == 0)
     (or
-        (dropsite-min-distance deer-hunting == -1)
-        (dropsite-min-distance deer-hunting == 255)
-        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+        (and
+            (food-amount < bt-farm-imperial-food-threshold)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-transition)
+            (idle-farm-count == 0)
+        )
+        (and
+            (goal bt-natural-food-state-goal bt-natural-food-depleted)
+            (idle-farm-count <= 1)
+        )
     )
     (building-type-count-total farm < bt-farm-imperial-cap)
     (wood-amount >= bt-farm-build-wood)
