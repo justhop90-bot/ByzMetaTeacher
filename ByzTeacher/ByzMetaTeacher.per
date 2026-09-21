@@ -1562,7 +1562,8 @@
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
 )
 
-; P2 CASTLE STONE. Stone exists only while the Castle project is unfunded.
+; P2 CASTLE STONE. Stone exists only while an existing
+; Castle-oriented military project has earned the stone allocation.
 (defrule
     (goal bt-resource-mode-goal 0)
     (current-age >= castle-age)
@@ -1585,6 +1586,7 @@
 
 (defrule
     (goal bt-resource-mode-goal 0)
+    (goal bt-cataphract-demand-goal 1)
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (stone-amount < 650)
@@ -2616,7 +2618,6 @@
     (research-available ri-stone-mining)
     (or
         (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
-        (goal bt-resource-mode-goal bt-resource-mode-castle-stone)
         (and
             (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
             (building-type-count-total castle >= 1)
@@ -2654,7 +2655,6 @@
         (not
             (or
                 (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
-                (goal bt-resource-mode-goal bt-resource-mode-castle-stone)
                 (and
                     (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
                     (building-type-count-total castle >= 1)
