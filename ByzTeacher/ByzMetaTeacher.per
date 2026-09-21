@@ -160,6 +160,7 @@
 (defconst bt-noncav-cavalry-level-goal 41)
 (defconst bt-target-military-scratch-goal 505)
 (defconst bt-relative-force-goal 506)
+(defconst bt-counter-veto-goal 504)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -1791,6 +1792,51 @@
     (up-modify-goal bt-relative-force-goal g:- bt-target-military-scratch-goal)
 )
 
+; Composition readiness is a parity-only attack veto.
+; Positive relative force bypasses composition mismatch.
+; Negative relative force is already blocked by the 506 gate.
+(defrule
+    (true)
+=>
+    (set-goal bt-counter-veto-goal 0)
+)
+
+(defrule
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-relative-force-goal == 0)
+    (or
+        (and
+            (or
+                (players-unit-type-count target-player knight-line >= 3)
+                (or
+                    (players-unit-type-count target-player camel-line >= 3)
+                    (or
+                        (players-unit-type-count target-player cataphract-line >= 3)
+                        (or
+                            (players-unit-type-count target-player scout-cavalry-line >= 3)
+                            (players-unit-type-count target-player war-elephant-line >= 3)
+                        )
+                    )
+                )
+            )
+            (unit-type-count-total spearman-line < 3)
+        )
+        (and
+            (or
+                (players-unit-type-count target-player archer-line >= 3)
+                (players-unit-type-count target-player cavalry-archer-line >= 3)
+            )
+            (unit-type-count-total skirmisher-line < 3)
+        )
+        (and
+            (players-unit-type-count target-player spearman-line >= 4)
+            (unit-type-count-total archer-line < 3)
+        )
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
 ;
 ; Q: "How does the AI actually form an army?"
 ;
@@ -1816,6 +1862,7 @@
     (players-building-count target-player > 0)
     (military-population >= 10)
     (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
