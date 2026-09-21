@@ -3486,6 +3486,7 @@
 ; 15A.1 ROLE-TARGET BARRACK CAPACITY
 ;---------------------------------------------------------------
 (defrule
+    (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal > 0)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 1)
@@ -3494,6 +3495,7 @@
     (build barracks)
 )
 (defrule
+    (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 7)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 2)
@@ -3502,6 +3504,7 @@
     (build barracks)
 )
 (defrule
+    (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 13)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 3)
@@ -3510,6 +3513,7 @@
     (build barracks)
 )
 (defrule
+    (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 21)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 4)
@@ -3517,19 +3521,18 @@
 =>
     (build barracks)
 )
-(defrule
-    (up-compare-goal bt-standing-spear-target-goal >= 25)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total barracks < 5)
-    (can-build barracks)
-=>
-    (build barracks)
-)
+
 
 ;---------------------------------------------------------------
 ; 15B. ARCHERY-RANGE CAPACITY
+; Standing roles require active standing demand. RUSH Archer is the
+; explicit non-standing consumer of this shared Range capability.
 ;---------------------------------------------------------------
 (defrule
+    (or
+        (goal bt-standing-army-demand-goal 1)
+        (goal strategy-goal bt-strategy-rush)
+    )
     (or
         (up-compare-goal bt-standing-skirm-target-goal > 0)
         (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -3542,6 +3545,10 @@
 )
 (defrule
     (or
+        (goal bt-standing-army-demand-goal 1)
+        (goal strategy-goal bt-strategy-rush)
+    )
+    (or
         (up-compare-goal bt-standing-skirm-target-goal >= 7)
         (up-compare-goal bt-standing-archer-target-goal >= 7)
     )
@@ -3552,6 +3559,10 @@
     (build archery-range)
 )
 (defrule
+    (or
+        (goal bt-standing-army-demand-goal 1)
+        (goal strategy-goal bt-strategy-rush)
+    )
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 13)
         (up-compare-goal bt-standing-archer-target-goal >= 13)
@@ -3564,6 +3575,10 @@
 )
 (defrule
     (or
+        (goal bt-standing-army-demand-goal 1)
+        (goal strategy-goal bt-strategy-rush)
+    )
+    (or
         (up-compare-goal bt-standing-skirm-target-goal >= 21)
         (up-compare-goal bt-standing-archer-target-goal >= 21)
     )
@@ -3573,17 +3588,7 @@
 =>
     (build archery-range)
 )
-(defrule
-    (or
-        (up-compare-goal bt-standing-skirm-target-goal >= 25)
-        (up-compare-goal bt-standing-archer-target-goal >= 25)
-    )
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total archery-range < 5)
-    (can-build archery-range)
-=>
-    (build archery-range)
-)
+
 
 ;---------------------------------------------------------------
 ; 15C. FEUDAL STABLE CAPABILITY FOR SCOUT PRESSURE
