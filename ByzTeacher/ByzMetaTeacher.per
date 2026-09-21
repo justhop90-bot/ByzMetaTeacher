@@ -134,6 +134,10 @@
 (defconst bt-castle-blacksmith-claim 508)
 (defconst bt-castle-market-claim 507)
 
+; First-mill resource claim. The mill is an owner of the existing
+; sn-resource-control mutex while its construction is in flight.
+(defconst bt-mill-claim 513)
+
 ; Community mixed-composition value.
 (defconst bt-unit-mix 1)
 
@@ -651,6 +655,7 @@
     (civilian-population >= 10)
     (can-build mill)
 =>
+    (set-strategic-number sn-resource-control bt-mill-claim)
     (build mill)
 )
 
@@ -6206,6 +6211,21 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; MILL CONSTRUCTION COMPLETION
+;----------------------------------------------------------------
+; The mill claim remains held for the whole construction lifecycle.
+; Completion of the physical mill is the release witness. This rule is
+; intentionally after every other sn-resource-control claimant so a
+; newly completed mill cannot release the mutex and then allow a later
+; claimant in the same pass to outrank that completion boundary.
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (building-type-count-total mill >= 1)
+=>
+    (set-strategic-number sn-resource-control 0)
 )
 
 ;================================================================
