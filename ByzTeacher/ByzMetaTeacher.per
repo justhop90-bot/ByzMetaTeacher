@@ -4331,16 +4331,20 @@
 ;---------------------------------------------------------------
 ; 15Z.1.2 KNIGHT-LINE CAMEL WITNESSES
 ;---------------------------------------------------------------
-; 10+ enemy Knight-line units require a four-Camel package.
+; Camel targets are RESPONSE PACKAGES, not parity targets.
+; The four- and eight-Camel values are minimum standing responses;
+; they do not mean the bot is trying to match the enemy unit count.
+;
+; 6+ enemy Knight-line units -> four Camels.
 (defrule
-    (players-unit-type-count any-enemy knight-line >= 10)
+    (players-unit-type-count any-enemy knight-line >= 6)
 =>
     (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
 )
 
-; 20+ enemy Knight-line units justify the eight-Camel package.
+; 12+ enemy Knight-line units -> eight Camels.
 (defrule
-    (players-unit-type-count any-enemy knight-line >= 20)
+    (players-unit-type-count any-enemy knight-line >= 12)
 =>
     (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-2)
 )
@@ -4348,15 +4352,21 @@
 ;---------------------------------------------------------------
 ; 15Z.1.3 WAR ELEPHANT-LINE CAMEL WITNESSES
 ;---------------------------------------------------------------
-; War Elephants are strategically significant at a lower observed
-; count than ordinary cavalry.
+; War Elephants use the same four/eight response packages, but their
+; threat thresholds are lower because each Elephant is a much larger
+; strategic investment than ordinary cavalry.
+;
+; These are RESPONSE PACKAGE triggers, not parity claims:
+; four Camels are not asserted to be a direct numerical equivalent
+; to three Elephants, nor are eight Camels asserted to be equal to
+; six Elephants in combat.
 (defrule
     (players-unit-type-count any-enemy war-elephant-line >= 3)
 =>
     (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
 )
 
-; Six+ enemy War Elephants justify the eight-Camel package.
+; 6+ enemy War Elephants -> eight Camels.
 (defrule
     (players-unit-type-count any-enemy war-elephant-line >= 6)
 =>
@@ -4374,18 +4384,22 @@
 ; Castle Age. That is a known classifier limitation, not a Camel
 ; lifecycle failure.
 ;
-; 15+ Scout/Light Cavalry/Hussar line units -> four Camels.
+; The four/eight values are RESPONSE PACKAGES, not parity targets.
+; They are minimum standing Camel commitments once the Light
+; Cavalry/Hussar mass is large enough to matter.
+;
+; 10+ Scout/Light Cavalry/Hussar line units -> four Camels.
 (defrule
     (current-age >= castle-age)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 15)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
 =>
     (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-1)
 )
 
-; 30+ Scout/Light Cavalry/Hussar line units -> eight Camels.
+; 20+ Scout/Light Cavalry/Hussar line units -> eight Camels.
 (defrule
     (current-age >= castle-age)
-    (players-unit-type-count any-enemy scout-cavalry-line >= 30)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 20)
 =>
     (up-modify-goal bt-standing-camel-target-goal c:max bt-camel-target-2)
 )
