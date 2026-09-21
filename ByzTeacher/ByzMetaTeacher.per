@@ -411,7 +411,6 @@
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
-    (set-goal bt-resource-mode-goal bt-resource-mode-dark)
     (set-goal bt-gold-mining-demand-goal 0)
     (set-goal bt-double-bit-axe-demand-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
@@ -427,7 +426,6 @@
 (defrule
     (true)
 =>
-    (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-retry-goal 0)
@@ -440,9 +438,6 @@
     (set-goal bt-standing-army-floor-goal 0)
     (set-goal bt-standing-army-demand-goal 0)
     (set-goal bt-standing-army-infra-goal 0)
-    (set-goal bt-standing-army-barracks-scratch-goal 0)
-    (set-goal bt-standing-army-range-scratch-goal 0)
-    (set-goal bt-standing-army-stable-scratch-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
     (set-goal bt-standing-spear-target-goal 0)
     (set-goal bt-standing-skirm-target-goal 0)
@@ -3231,8 +3226,8 @@
     (set-goal bt-stone-shaft-mining-demand-goal 1)
 )
 
-; Withdraw pending Shaft demand when the late-Castle stone project,
-; Imperial priority, or prerequisite disappears. An active Shaft claim
+; Withdraw pending Shaft demand when an immediate late-Castle
+; prerequisite or safety condition disappears. Active Shaft research
 ; remains protected by sn-resource-control.
 (defrule
     (goal bt-stone-shaft-mining-demand-goal 1)
@@ -3246,31 +3241,40 @@
         (not (goal strategy-goal bt-strategy-boom))
         (not (up-research-status c: ri-stone-mining == research-complete))
         (not (research-available ri-stone-shaft-mining))
-        (not
-            (or
-                (and
-                    (current-age == castle-age)
-                    (goal strategy-goal bt-strategy-boom)
-                    (not (town-under-attack))
-                    (up-research-status c: ri-stone-mining == research-complete)
-                    (research-available ri-stone-shaft-mining)
-                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
-                    (building-type-count-total town-center >= 2)
-                    (unit-type-count villager >= bt-stone-shaft-villagers)
-                    (food-amount >= bt-stone-shaft-food-buffer)
-                    (wood-amount >= bt-stone-shaft-wood-buffer)
-                    (not (can-research-with-escrow imperial-age))
-                    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-                )
-                (and
-                    (building-type-count-total castle >= 2)
-                    (unit-type-count villager >= bt-stone-shaft-villagers)
-                    (food-amount >= bt-stone-shaft-food-buffer)
-                    (wood-amount >= bt-stone-shaft-wood-buffer)
-                    (stone-amount < 650)
-                    (not (can-research-with-escrow imperial-age))
-                    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-                )
+    )
+=>
+    (set-goal bt-stone-shaft-mining-demand-goal 0)
+)
+
+; Withdraw pending Shaft demand when neither accepted Castle/TC stone
+; maturity path remains valid.
+(defrule
+    (goal bt-stone-shaft-mining-demand-goal 1)
+    (strategic-number sn-resource-control != ri-stone-shaft-mining)
+    (not
+        (or
+            (and
+                (current-age == castle-age)
+                (goal strategy-goal bt-strategy-boom)
+                (not (town-under-attack))
+                (up-research-status c: ri-stone-mining == research-complete)
+                (research-available ri-stone-shaft-mining)
+                (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+                (building-type-count-total town-center >= 2)
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (food-amount >= bt-stone-shaft-food-buffer)
+                (wood-amount >= bt-stone-shaft-wood-buffer)
+                (not (can-research-with-escrow imperial-age))
+                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+            )
+            (and
+                (building-type-count-total castle >= 2)
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (food-amount >= bt-stone-shaft-food-buffer)
+                (wood-amount >= bt-stone-shaft-wood-buffer)
+                (stone-amount < 650)
+                (not (can-research-with-escrow imperial-age))
+                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
             )
         )
     )
@@ -3658,8 +3662,8 @@
 (defrule
     (event-detected trigger bt-castle-prereq-manual-reset-trigger)
     (or
-        (goal bt-castle-prereq-failure-goal != 0)
-        (goal bt-imperial-prereq-failure-goal != 0)
+        (up-compare-goal bt-castle-prereq-failure-goal != 0)
+        (up-compare-goal bt-imperial-prereq-failure-goal != 0)
     )
     (strategic-number sn-resource-control == 0)
 =>
@@ -4090,7 +4094,7 @@
 ; The current rules establish only repeated construction timeout.
 (defrule
     (goal bt-imperial-prereq-diagnostic-goal 0)
-    (goal bt-imperial-prereq-failure-goal != 0)
+    (up-compare-goal bt-imperial-prereq-failure-goal != 0)
 =>
     (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
