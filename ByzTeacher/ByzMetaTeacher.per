@@ -184,6 +184,7 @@
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
 (defconst bt-gold-mining-demand-goal 47)
+(defconst bt-double-bit-axe-demand-goal 48)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -198,6 +199,12 @@
 
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
+
+; Double-Bit Axe demand buffers.
+; 900 food and 225 wood are conservative Stock/community-style
+; investment buffers, not engine constants.
+(defconst bt-double-bit-axe-food-buffer 900)
+(defconst bt-double-bit-axe-wood-buffer 225)
 
 ; Farm-tech lifecycle tuning.
 (defconst bt-farm-feudal-cap 6)
@@ -265,6 +272,7 @@
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-resource-mode-goal bt-resource-mode-dark)
     (set-goal bt-gold-mining-demand-goal 0)
+    (set-goal bt-double-bit-axe-demand-goal 0)
     (disable-self)
 )
 
@@ -1990,6 +1998,77 @@
 )
 
 ;================================================================
+; 14E. DOUBLE-BIT AXE DEMAND
+;================================================================
+;
+; DBA demand is an explicit Feudal wood-productivity investment.
+; The predicate uses only existing world state plus fixed tuning buffers:
+;   - Feudal age
+;   - 900 food
+;   - 225 wood
+;   - Castle is not immediately researchable
+;   - technology is still available
+;
+; The demand signal does not own sn-resource-control. The existing
+; research lifecycle below remains the only claim/action authority.
+(defrule
+    (goal bt-double-bit-axe-demand-goal 0)
+    (current-age == feudal-age)
+    (up-research-status c: ri-double-bit-axe == research-available)
+    (food-amount >= bt-double-bit-axe-food-buffer)
+    (wood-amount >= bt-double-bit-axe-wood-buffer)
+    (not (can-research-with-escrow castle-age))
+=>
+    (set-goal bt-double-bit-axe-demand-goal 1)
+)
+
+; Demand release is allowed to clear only when no DBA claim owns the
+; shared resource register. An active DBA research attempt stays alive
+; until completion or watchdog recovery.
+(defrule
+    (goal bt-double-bit-axe-demand-goal 1)
+    (strategic-number sn-resource-control != ri-double-bit-axe)
+    (or
+        (current-age != feudal-age)
+        (not (food-amount >= bt-double-bit-axe-food-buffer))
+        (not (wood-amount >= bt-double-bit-axe-wood-buffer))
+        (can-research-with-escrow castle-age)
+        (up-research-status c: ri-double-bit-axe >= research-pending)
+    )
+=>
+    (set-goal bt-double-bit-axe-demand-goal 0)
+)
+
+;================================================================
+; 14E-B. DOUBLE-BIT AXE RESEARCH LIFECYCLE
+;================================================================
+;
+; Existing claim -> escrow -> watchdog -> research -> completion
+; control remains authoritative. Demand never performs the action.
+(defrule
+    (goal bt-double-bit-axe-demand-goal 1)
+    (current-age == feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+    (can-research-with-escrow ri-double-bit-axe)
+=>
+    (set-strategic-number sn-resource-control ri-double-bit-axe)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-double-bit-axe)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-double-bit-axe)
+    (up-research-status c: ri-double-bit-axe == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-double-bit-axe-demand-goal 0)
+)
+
+;================================================================
 ; 14E. GOLD MINING DEMAND
 ;================================================================
 ;
@@ -3279,6 +3358,20 @@
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-gold-mining-demand-goal 0)
 )
+
+;----------------------------------------------------------------
+; DOUBLE-BIT AXE WATCHDOG EXPIRY
+;----------------------------------------------------------------
+(defrule
+    (strategic-number sn-resource-control == ri-double-bit-axe)
+    (up-research-status c: ri-double-bit-axe <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-double-bit-axe-demand-goal 0)
+)
+
 
 ;----------------------------------------------------------------
 ; ELITE SKIRMISHER WATCHDOG EXPIRY
