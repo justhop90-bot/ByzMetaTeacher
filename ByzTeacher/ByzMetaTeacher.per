@@ -657,14 +657,73 @@
 )
 
 ;================================================================
+; 11A. CASTLE FARM TECHNOLOGY
+;================================================================
+; Heavy Plow is the Castle-age continuation of the Mill farm lifecycle.
+; Castle Age itself still has priority: if Imperial is immediately
+; researchable, the age claim keeps the shared resource bank.
+(defrule
+    (current-age >= castle-age)
+    (up-research-status c: ri-horse-collar >= research-complete)
+    (building-type-count-total farm >= 6)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow imperial-age))
+    (can-research-with-escrow ri-heavy-plow)
+=>
+    (set-strategic-number sn-resource-control ri-heavy-plow)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-heavy-plow)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-heavy-plow)
+    (up-research-status c: ri-heavy-plow == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
+; 11B. IMPERIAL FARM TECHNOLOGY
+;================================================================
+; Crop Rotation is the final Mill farm lifecycle step. At Imperial,
+; there is no later age claim to outrank it, but the shared resource
+; mutex still prevents it from colliding with every other technology.
+(defrule
+    (current-age >= imperial-age)
+    (up-research-status c: ri-heavy-plow >= research-complete)
+    (building-type-count-total farm >= 12)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-crop-rotation)
+=>
+    (set-strategic-number sn-resource-control ri-crop-rotation)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-crop-rotation)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-crop-rotation)
+    (up-research-status c: ri-crop-rotation == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
 ; 11. FARM TRANSITION
 ;================================================================
-; Deer remains part of the engine's normal natural-food phase.
-; deer-hunting is used only as a minimal witness that huntable deer
-; remain. We do not manually assign deer hunters or build a deer model.
-; Ask the simple question: "Can the native hunt system still reach deer
-; without sending villagers too far?" If no, and food is low, farms can
-; take over. Deer remain part of normal native hunting.
+; Farm expansion follows the Mill technology lifecycle.
+;
+; Normal farm expansion is allowed once the relevant farm technology
+; is pending or complete. The pending state is intentional: farms
+; already under construction can finish after the technology completes.
+;
+; A low-food emergency bypass remains available so the AI cannot starve
+; merely because the technology claim has not yet been reached.
 (defrule
     (current-age >= feudal-age)
     (food-amount < 350)
@@ -673,6 +732,10 @@
         (dropsite-min-distance deer-hunting == -1)
         (dropsite-min-distance deer-hunting == 255)
         (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+    )
+    (or
+        (up-research-status c: ri-horse-collar >= research-pending)
+        (food-amount < 150)
     )
     (building-type-count-total farm < 6)
     (wood-amount >= 60)
@@ -689,6 +752,10 @@
         (dropsite-min-distance deer-hunting == -1)
         (dropsite-min-distance deer-hunting == 255)
         (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+    )
+    (or
+        (up-research-status c: ri-heavy-plow >= research-pending)
+        (food-amount < 200)
     )
     (building-type-count-total farm < 12)
     (wood-amount >= 60)
@@ -2359,6 +2426,24 @@
 (defrule
     (strategic-number sn-resource-control == ri-horse-collar)
     (up-research-status c: ri-horse-collar <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-heavy-plow)
+    (up-research-status c: ri-heavy-plow <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-crop-rotation)
+    (up-research-status c: ri-crop-rotation <= research-available)
     (timer-triggered bt-research-watchdog-timer)
 =>
     (disable-timer bt-research-watchdog-timer)
