@@ -665,7 +665,17 @@
 (defrule
     (current-age >= castle-age)
     (up-research-status c: ri-horse-collar >= research-complete)
-    (building-type-count-total farm >= 6)
+    (or
+        (building-type-count-total farm >= 6)
+        (and
+            (food-amount < 500)
+            (or
+                (dropsite-min-distance deer-hunting == -1)
+                (dropsite-min-distance deer-hunting == 255)
+                (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
+            )
+        )
+    )
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (can-research-with-escrow ri-heavy-plow)
