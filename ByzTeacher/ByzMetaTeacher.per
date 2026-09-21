@@ -619,7 +619,7 @@
     (or
         (dropsite-min-distance deer-hunting == -1)
         (dropsite-min-distance deer-hunting == 255)
-        (dropsite-min-distance deer-hunting > 8)
+        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
     )
     (building-type-count-total farm < 6)
     (wood-amount >= 60)
@@ -635,7 +635,7 @@
     (or
         (dropsite-min-distance deer-hunting == -1)
         (dropsite-min-distance deer-hunting == 255)
-        (dropsite-min-distance deer-hunting > 8)
+        (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
     )
     (building-type-count-total farm < 12)
     (wood-amount >= 60)
