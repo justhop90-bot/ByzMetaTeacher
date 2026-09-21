@@ -673,19 +673,8 @@
 ; Castle Age itself still has priority: if Imperial is immediately
 ; researchable, the age claim keeps the shared resource bank.
 (defrule
-    (current-age >= castle-age)
+    (current-age == castle-age)
     (up-research-status c: ri-horse-collar >= research-complete)
-    (or
-        (building-type-count-total farm >= bt-farm-feudal-cap)
-        (and
-            (food-amount < bt-farm-castle-food-threshold)
-            (or
-                (dropsite-min-distance deer-hunting == -1)
-                (dropsite-min-distance deer-hunting == 255)
-                (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance)
-            )
-        )
-    )
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (can-research-with-escrow ri-heavy-plow)
@@ -714,7 +703,6 @@
 (defrule
     (current-age >= imperial-age)
     (up-research-status c: ri-heavy-plow >= research-complete)
-    (building-type-count-total farm >= bt-farm-castle-cap)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-crop-rotation)
 =>
