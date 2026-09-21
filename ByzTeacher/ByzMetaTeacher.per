@@ -4285,13 +4285,13 @@
 )
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
 =>
     (set-goal bt-standing-camel-target-goal 4)
 )
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-noncav-cavalry-level-goal >= 2)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
 =>
     (set-goal bt-standing-camel-target-goal 8)
 )
@@ -6061,7 +6061,7 @@
 (defrule (up-compare-goal bt-standing-army-floor-goal == 42)
 => (set-strategic-number sn-percent-attack-soldiers 20))
 
-; Normalized primary counter deficits remain a hard attack veto even
+; Normalized primary counter deficits are hard attack vetoes even
 ; when relative force is positive.
 (defrule
     (or
@@ -6070,8 +6070,24 @@
             (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-1)
         )
         (and
+            (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+            (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-2)
+        )
+        (and
+            (up-compare-goal bt-cavalry-counter-level-goal >= 3)
+            (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-3)
+        )
+        (and
             (up-compare-goal bt-ranged-counter-level-goal >= 1)
             (up-compare-goal bt-standing-skirm-target-goal < bt-skirm-target-1)
+        )
+        (and
+            (up-compare-goal bt-ranged-counter-level-goal >= 2)
+            (up-compare-goal bt-standing-skirm-target-goal < bt-skirm-target-2)
+        )
+        (and
+            (up-compare-goal bt-ranged-counter-level-goal >= 3)
+            (up-compare-goal bt-standing-skirm-target-goal < bt-skirm-target-3)
         )
     )
 =>
@@ -6105,6 +6121,13 @@
 
 )
 
+; Once the package exists, the gather watchdog is no longer relevant.
+(defrule
+    (goal attack-goal 1)
+    (attack-soldier-count >= 10)
+=>
+    (disable-timer bt-attack-gather-watchdog-timer)
+)
 ; If attack-now fails to assemble the minimum package, release the
 ; cycle instead of leaving attack-goal latched for the long reset.
 (defrule
