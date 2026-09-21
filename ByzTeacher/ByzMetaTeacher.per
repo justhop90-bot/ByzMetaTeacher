@@ -6230,6 +6230,100 @@
 )
 
 ;================================================================
+; 23. MATURE MILITARY RESEARCH
+;================================================================
+; Spear and Camel production already consume their unit lines. These
+; research lifecycles therefore upgrade the existing production stream
+; rather than introducing new unit-goal state.
+(defrule
+    (goal bt-halberdier-demand-goal 0)
+    (current-age >= imperial-age)
+    (up-research-status c: ri-pikeman == research-complete)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+    (research-available ri-halberdier)
+=>
+    (set-goal bt-halberdier-demand-goal 1)
+)
+(defrule
+    (goal bt-halberdier-demand-goal 1)
+    (strategic-number sn-resource-control != ri-halberdier)
+    (or
+        (not (research-available ri-halberdier))
+        (current-age < imperial-age)
+        (up-compare-goal bt-cavalry-counter-level-goal < 2)
+        (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-2)
+    )
+=>
+    (set-goal bt-halberdier-demand-goal 0)
+)
+(defrule
+    (goal bt-halberdier-demand-goal 1)
+    (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-halberdier)
+=>
+    (set-strategic-number sn-resource-control ri-halberdier)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-halberdier)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-halberdier)
+    (up-research-status c: ri-halberdier == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-halberdier-demand-goal 0)
+)
+
+(defrule
+    (goal bt-heavy-camel-demand-goal 0)
+    (current-age >= imperial-age)
+    (building-type-count-total stable >= 1)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (up-compare-goal bt-standing-camel-target-goal >= bt-camel-target-1)
+    (unit-type-count-total camel-line >= bt-camel-target-1)
+    (research-available ri-heavy-camel)
+=>
+    (set-goal bt-heavy-camel-demand-goal 1)
+)
+(defrule
+    (goal bt-heavy-camel-demand-goal 1)
+    (strategic-number sn-resource-control != ri-heavy-camel)
+    (or
+        (not (research-available ri-heavy-camel))
+        (current-age < imperial-age)
+        (up-compare-goal bt-cavalry-counter-level-goal < 2)
+        (up-compare-goal bt-standing-camel-target-goal < bt-camel-target-1)
+        (unit-type-count-total camel-line < bt-camel-target-1)
+    )
+=>
+    (set-goal bt-heavy-camel-demand-goal 0)
+)
+(defrule
+    (goal bt-heavy-camel-demand-goal 1)
+    (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-heavy-camel)
+=>
+    (set-strategic-number sn-resource-control ri-heavy-camel)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-heavy-camel)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-heavy-camel)
+    (up-research-status c: ri-heavy-camel == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-heavy-camel-demand-goal 0)
+)
+
+;================================================================
 ; RESEARCH / AGE CLAIM WATCHDOG RECOVERY
 ;================================================================
 ; Q: "When should a research claim be released without success?"
