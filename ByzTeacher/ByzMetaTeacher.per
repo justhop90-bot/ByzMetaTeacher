@@ -3670,6 +3670,23 @@
     (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
 )
 
+; Imperial prerequisite retry stage 3 -> stage 4.
+; Mirrors the validated Castle retry ladder and preserves the 240-second cap.
+(defrule
+    (or
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
+    (goal bt-imperial-prereq-retry-goal 3)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (set-goal bt-imperial-prereq-retry-goal 4)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-cap-seconds)
+)
+
 (defrule
     (or
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
