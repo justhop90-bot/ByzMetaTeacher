@@ -891,7 +891,7 @@
 )
 
 (defrule
-    (goal bt-scout-target-player-goal > 0)
+    (up-compare-goal bt-scout-target-player-goal > 0)
     (strategic-number sn-target-player-number != bt-scout-target-player-goal)
 =>
     (up-modify-sn sn-target-player-number g:= bt-scout-target-player-goal)
