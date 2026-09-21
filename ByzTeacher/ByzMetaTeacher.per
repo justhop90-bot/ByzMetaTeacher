@@ -1052,6 +1052,7 @@
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
     (not (current-age == feudal-age))
+    (military-population >= 6)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1062,6 +1063,7 @@
     (not (goal bt-any-threat-goal 1))
     (current-age == feudal-age)
     (not (game-time >= 600))
+    (military-population >= 6)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1073,6 +1075,7 @@
     (current-age == feudal-age)
     (game-time >= 600)
     (players-building-count any-enemy <= 0)
+    (military-population >= 6)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1084,7 +1087,7 @@
     (current-age == feudal-age)
     (game-time >= 600)
     (players-building-count any-enemy > 0)
-    (military-population < 6)
+    (military-population >= 6)
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
