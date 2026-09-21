@@ -184,6 +184,7 @@
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
 (defconst bt-gold-mining-demand-goal 47)
+(defconst bt-wheelbarrow-demand-goal 48)
 
 ;================================================================
 ; 1. TEACHING CONSTANTS
@@ -265,6 +266,7 @@
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-resource-mode-goal bt-resource-mode-dark)
     (set-goal bt-gold-mining-demand-goal 0)
+    (set-goal bt-wheelbarrow-demand-goal 0)
     (disable-self)
 )
 
@@ -2093,6 +2095,92 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-gold-mining-demand-goal 0)
+)
+
+;================================================================
+; 14G. WHEELBARROW DEMAND / RESEARCH LIFECYCLE
+;================================================================
+;
+; Wheelbarrow is downstream of the existing mature Castle BOOM state.
+; The demand writer is deliberately conservative: three Town Centers
+; and the existing 12-farm Castle ceiling prove that the controller's
+; current TC/farm expansion program has reached its intended BOOM
+; maturity. Immediate Imperial feasibility retains priority.
+;
+; The demand is a state, not the research action. The existing shared
+; sn-resource-control mutex remains the sole research owner.
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (building-type-count-total town-center >= 3)
+    (building-type-count-total farm >= bt-farm-castle-cap)
+    (not (can-research-with-escrow imperial-age))
+    (up-research-status c: ri-wheel-barrow == research-available)
+=>
+    (set-goal bt-wheelbarrow-demand-goal 1)
+)
+
+; If the mature BOOM witness disappears or Imperial becomes immediately
+; feasible, withdraw only the pending demand. An active Wheelbarrow claim
+; owns the shared mutex until completion or watchdog recovery.
+(defrule
+    (goal bt-wheelbarrow-demand-goal 1)
+    (strategic-number sn-resource-control != ri-wheel-barrow)
+    (or
+        (can-research-with-escrow imperial-age)
+        (strategic-number sn-resource-control == imperial-age)
+        (not
+            (and
+                (current-age == castle-age)
+                (goal strategy-goal bt-strategy-boom)
+                (building-type-count-total town-center >= 3)
+                (building-type-count-total farm >= bt-farm-castle-cap)
+                (not (can-research-with-escrow imperial-age))
+                (up-research-status c: ri-wheel-barrow == research-available)
+            )
+        )
+    )
+=>
+    (set-goal bt-wheelbarrow-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-wheelbarrow-demand-goal 1)
+    (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (can-research-with-escrow ri-wheel-barrow)
+=>
+    (set-strategic-number sn-resource-control ri-wheel-barrow)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-wheel-barrow)
+)
+
+; research-complete is the terminal world-state witness for the claim.
+(defrule
+    (strategic-number sn-resource-control == ri-wheel-barrow)
+    (up-research-status c: ri-wheel-barrow == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-wheelbarrow-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; WHEELBARROW WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-wheel-barrow)
+    (up-research-status c: ri-wheel-barrow <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-wheelbarrow-demand-goal 0)
 )
 
 ;================================================================
