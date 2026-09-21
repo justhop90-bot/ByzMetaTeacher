@@ -3527,43 +3527,56 @@
 ; 15B. ARCHERY-RANGE CAPACITY
 ;---------------------------------------------------------------
 (defrule
-    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
-    (or (goal strategy-goal bt-strategy-rush) (goal strategy-goal bt-strategy-flush))
+    (or
+        (up-compare-goal bt-standing-skirm-target-goal > 0)
+        (up-compare-goal bt-standing-archer-target-goal > 0)
+    )
     (strategic-number sn-resource-control == 0)
-    (or (goal bt-ranged-threat-goal 1) (or (goal bt-spear-threat-goal 1) (goal strategy-goal bt-strategy-rush)))
     (building-type-count-total archery-range < 1)
     (can-build archery-range)
 =>
     (build archery-range)
 )
 (defrule
-    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
-    (not (goal strategy-goal bt-strategy-boom))
+    (or
+        (up-compare-goal bt-standing-skirm-target-goal >= 7)
+        (up-compare-goal bt-standing-archer-target-goal >= 7)
+    )
     (strategic-number sn-resource-control == 0)
-    (or (up-compare-goal bt-ranged-level-goal >= 1) (up-compare-goal bt-spear-level-goal >= 1))
     (building-type-count-total archery-range < 2)
     (can-build archery-range)
 =>
     (build archery-range)
 )
 (defrule
-    (current-age >= castle-age)
-    (goal strategy-goal bt-strategy-flush)
-    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
+    (or
+        (up-compare-goal bt-standing-skirm-target-goal >= 13)
+        (up-compare-goal bt-standing-archer-target-goal >= 13)
+    )
     (strategic-number sn-resource-control == 0)
-    (or (up-compare-goal bt-ranged-level-goal >= 2) (up-compare-goal bt-spear-level-goal >= 2))
+    (building-type-count-total archery-range < 3)
+    (can-build archery-range)
+=>
+    (build archery-range)
+)
+(defrule
+    (or
+        (up-compare-goal bt-standing-skirm-target-goal >= 21)
+        (up-compare-goal bt-standing-archer-target-goal >= 21)
+    )
+    (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 4)
     (can-build archery-range)
 =>
     (build archery-range)
 )
 (defrule
-    (current-age >= imperial-age)
-    (goal strategy-goal bt-strategy-flush)
-    (or (goal unit-goal skirmisher-line) (or (goal unit-goal archer-line) (goal unit-goal bt-unit-mix)))
+    (or
+        (up-compare-goal bt-standing-skirm-target-goal >= 25)
+        (up-compare-goal bt-standing-archer-target-goal >= 25)
+    )
     (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-ranged-level-goal >= 3)
-    (building-type-count-total archery-range < 6)
+    (building-type-count-total archery-range < 5)
     (can-build archery-range)
 =>
     (build archery-range)
@@ -3591,10 +3604,8 @@
 ;---------------------------------------------------------------
 (defrule
     (current-age >= castle-age)
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
+    (up-compare-goal bt-standing-camel-target-goal > 0)
     (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
     (building-type-count-total stable < 1)
     (can-build stable)
 =>
@@ -3602,10 +3613,8 @@
 )
 (defrule
     (current-age >= castle-age)
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
+    (up-compare-goal bt-standing-camel-target-goal >= 5)
     (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-noncav-cavalry-level-goal >= 2)
     (building-type-count-total stable < 2)
     (can-build stable)
 =>
@@ -4400,16 +4409,46 @@
 )
 
 (defrule
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (current-age >= feudal-age)
-    (goal unit-goal bt-unit-mix)
     (goal bt-standing-army-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
-    (unit-type-count-total spearman-line < bt-standing-army-floor-goal)
+    (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
     (can-train spearman-line)
 =>
     (train spearman-line)
+)
+(defrule
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (current-age >= feudal-age)
+    (goal bt-standing-army-demand-goal 1)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+)
+(defrule
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (current-age >= feudal-age)
+    (goal bt-standing-army-demand-goal 1)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total archer-line < bt-standing-archer-target-goal)
+    (can-train archer-line)
+=>
+    (train archer-line)
 )
 
 ; 16D. PERSISTENT FLUSH MILITARY FLOOR
@@ -4436,17 +4475,9 @@
     (build barracks)
 )
 
-(defrule
-    (goal strategy-goal bt-strategy-flush)
-    (current-age >= feudal-age)
-    (goal bt-standing-army-demand-goal 1)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total barracks >= 1)
-    (up-compare-goal bt-standing-army-deficit-goal < 0)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-)
+; The FLUSH reserve is now served by the shared role-target producers.
+; No quantity-only Spear fallback remains.
+
 
 ;---------------------------------------------------------------
 ; 16E. EXPLICIT SPEAR GOAL
@@ -4563,16 +4594,13 @@
 =>
     (train spearman-line)
 )
-; MIX #2: Camel support after the cheap spear floor.
+; Camel support is a direct role demand, not a MIX side effect.
 (defrule
     (current-age >= castle-age)
-    (goal strategy-goal bt-strategy-flush)
-    (goal unit-goal bt-unit-mix)
     (strategic-number sn-resource-control == 0)
-    (unit-type-count-total spearman-line >= bt-spear-target-1)
-    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+    (up-compare-goal bt-standing-camel-target-goal > 0)
     (building-type-count-total stable >= 1)
-    (unit-type-count-total camel-line < bt-camel-target-1)
+    (unit-type-count-total camel-line < bt-standing-camel-target-goal)
     (can-train camel)
 =>
     (train camel)
