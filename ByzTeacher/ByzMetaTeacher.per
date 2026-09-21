@@ -888,7 +888,7 @@
 ; A healthy natural-food state preserves the old conservative
 ; food-stock trigger. Transition/depleted states use the actual food
 ; gatherer policy instead of an arbitrary minimum food percentage, so
-; 45%% food modes can still maintain farm capacity when natural land
+; 45% food modes can still maintain farm capacity when natural land
 ; food weakens. The pending guard prevents a farm flood.
 ;
 ;----------------------------------------------------------------
@@ -910,7 +910,6 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-castle-food-threshold)
             (idle-farm-count <= 1)
         )
@@ -936,13 +935,11 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count == 0)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count <= 1)
         )
@@ -971,13 +968,11 @@
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-transition)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count == 0)
         )
         (and
             (goal bt-natural-food-state-goal bt-natural-food-depleted)
-            (strategic-number sn-food-gatherer-percentage >= 50)
             (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count <= 1)
         )
