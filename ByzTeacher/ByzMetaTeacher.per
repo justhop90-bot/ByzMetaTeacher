@@ -1742,6 +1742,7 @@
     (players-building-count any-enemy > 0)
     (up-compare-goal bt-standing-army-deficit-goal >= 0)
     (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
+    (not (goal strategy-goal bt-strategy-rush))
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -1771,6 +1772,25 @@
 ;---------------------------------------------------------------
 ; Explicitly exclude both active pressure states.  BOOM can no
 ; longer overwrite RUSH or FLUSH.
+;---------------------------------------------------------------
+; 13E. FEUDAL RUSH EXPIRY -> BOOM
+;---------------------------------------------------------------
+; RUSH is a Feudal pressure posture. Once Castle Age is reached,
+; a safe RUSH must yield to the existing BOOM posture so Castle
+; economic consumers (TC expansion, Castle BOOM resource mode, and
+; related maturity rules) are not permanently starved by stale
+; Feudal strategy state. Active pressure is already claimed by
+; FLUSH above, so this rule only fires when the current threat
+; snapshot is clear.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
 (defrule
     (current-age >= castle-age)
     (not (town-under-attack))
