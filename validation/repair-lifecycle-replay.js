@@ -258,7 +258,7 @@ requireRule(
 );
 requireRule(
   "Pike capability-loss cleanup",
-  "(goal bt-research-barracks-claim-goal != 0)",
+  "(up-compare-goal bt-research-barracks-claim-goal != 0)",
   "(building-type-count barracks == 0)",
   "(set-goal bt-research-barracks-claim-goal 0)",
   "(set-goal bt-research-cavalry-counter-package-goal 0)",
