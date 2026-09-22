@@ -4057,7 +4057,15 @@ cataphract-line < bt-cataphract-target-1)))))
     (goal bt-cataphract-demand-goal 1)
     (strategic-number sn-resource-control != ri-logistica)
     (strategic-number sn-resource-control != ri-elite-cataphract)
-    (or (current-age < imperial-age) (or (not
+    (current-age < imperial-age)
+=>
+    (set-goal bt-cataphract-demand-goal 0)
+)
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control != ri-logistica)
+    (strategic-number sn-resource-control != ri-elite-cataphract)
+    (or (not
             (or
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-flush)
@@ -4066,7 +4074,7 @@ cataphract-line < bt-cataphract-target-1)))))
 militiaman-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line >= bt-cataphract-target-1))) (or (and (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count
 any-enemy militiaman-line < bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-2) (up-research-status c: ri-logistica == research-complete)))) (and (players-unit-type-count any-enemy
 militiaman-line >= bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-3) (and (up-research-status c: ri-logistica == research-complete) (up-research-status c: ri-elite-cataphract ==
-research-complete)))))))))
+research-complete))))))))
 =>
     (set-goal bt-cataphract-demand-goal 0)
 )
@@ -5107,19 +5115,33 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
 (defrule
     (goal bt-bow-saw-demand-goal 1)
     (strategic-number sn-resource-control != ri-bow-saw)
-    (or (can-research-with-escrow imperial-age) (or (and
+    (can-research-with-escrow imperial-age)
+=>
+    (set-goal bt-bow-saw-demand-goal 0)
+)
+(defrule
+    (goal bt-bow-saw-demand-goal 1)
+    (strategic-number sn-resource-control != ri-bow-saw)
+    (and
             (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
             (not
                 (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal
 bt-bow-saw-bank-delta-gold-goal >= 0))))
             )
-        ) (not
+        )
+=>
+    (set-goal bt-bow-saw-demand-goal 0)
+)
+(defrule
+    (goal bt-bow-saw-demand-goal 1)
+    (strategic-number sn-resource-control != ri-bow-saw)
+    (not
             (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (building-type-count-total town-center >= 2) (and (not (can-research-with-escrow imperial-age)) (and (or
                     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
                     (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal
 bt-bow-saw-bank-delta-gold-goal >= 0))))
                 ) (up-research-status c: ri-bow-saw == research-available))))))
-        )))
+        )
 =>
     (set-goal bt-bow-saw-demand-goal 0)
 )
@@ -5345,8 +5367,46 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal strategy-goal bt-strategy-boom)
     (not (town-under-attack))
     (research-available ri-stone-mining)
-    (or (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium) (or (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium) (and (building-type-count-total castle >= 1) (unit-type-count villager >=
-bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers)))))
+    (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0) (up-compare-goal
+bt-stone-mining-bank-delta-gold-goal >= 0))))
+    )
+    (strategic-number sn-resource-control != imperial-age)
+=>
+    (set-goal bt-stone-mining-demand-goal 1)
+)
+(defrule
+    (goal bt-stone-mining-demand-goal 0)
+    (current-age >= feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (not (town-under-attack))
+    (research-available ri-stone-mining)
+    (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium) (and (building-type-count-total castle >= 1) (unit-type-count villager >=
+bt-imperial-villagers)))
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0) (up-compare-goal
+bt-stone-mining-bank-delta-gold-goal >= 0))))
+    )
+    (strategic-number sn-resource-control != imperial-age)
+=>
+    (set-goal bt-stone-mining-demand-goal 1)
+)
+(defrule
+    (goal bt-stone-mining-demand-goal 0)
+    (current-age >= feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (not (town-under-attack))
+    (research-available ri-stone-mining)
+    (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers)))
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
     (not (can-research-with-escrow imperial-age))
