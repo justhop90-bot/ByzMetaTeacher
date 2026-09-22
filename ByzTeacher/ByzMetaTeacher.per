@@ -1625,17 +1625,51 @@
 ; food weakens. The pending guard prevents a farm flood.
 ;
 ;----------------------------------------------------------------
+; 11A. FOOD-DEMAND BANDS
+;----------------------------------------------------------------
+; Current food demand is approximated from the live food-gatherer
+; percentage and civilian population. The engine does not expose a
+; convenient integer multiplication primitive, so the thresholds are
+; coarse, age-specific capacity witnesses rather than exact arithmetic.
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 28) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 3))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 28) (civilian-population < 37) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 37) (civilian-population < 46) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 46) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 30) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 3))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 30) (civilian-population < 40) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 40) (civilian-population < 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 30) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 30) (civilian-population < 41) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 5))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 41) (civilian-population < 52) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 52) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 9))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 33) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 33) (civilian-population < 45) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 5))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 45) (civilian-population < 57) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 57) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 9))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 38) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 38) (civilian-population < 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 50) (civilian-population < 64) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 8))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 64) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 6) (set-goal bt-farm-depleted-reserve-goal 10))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 42) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 42) (civilian-population < 55) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 55) (civilian-population < 70) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 8))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 70) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 6) (set-goal bt-farm-depleted-reserve-goal 10))
+
+;----------------------------------------------------------------
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
 (defrule
     (current-age >= feudal-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < 350)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount <
-bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < 350) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-feudal-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Wood escrow is intentionally usable by the farm action once the
@@ -1654,11 +1688,13 @@ bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
     (current-age == castle-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < bt-farm-castle-food-threshold)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount
-< bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-castle-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Farm construction is escrow-aware, so the rule cannot stall merely
@@ -1679,11 +1715,13 @@ bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
     (current-age >= imperial-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < bt-farm-imperial-food-threshold)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount
-< bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-imperial-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Preserve the same feasibility semantics through Imperial: the
