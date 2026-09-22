@@ -377,6 +377,20 @@
 (defconst bt-relative-force-goal 506)
 (defconst bt-counter-veto-goal 504)
 (defconst bt-cataphract-demand-goal 45)
+; Pre-Imperial Castle capability demand for an infantry-driven Cataphract plan.
+; This is deliberately separate from the Imperial Cataphract production demand:
+; it means "secure the Castle capability before Imperial", not "train Cataphracts now".
+(defconst bt-castle-cataphract-demand-goal 585)
+(defconst bt-castle-cataphract-failure-goal 586)
+(defconst bt-castle-cataphract-retry-goal 587)
+(defconst bt-castle-cataphract-backoff-goal 588)
+(defconst bt-castle-cataphract-claim 589)
+(defconst bt-castle-cataphract-watchdog-timer 36)
+(defconst bt-castle-cataphract-backoff-timer 37)
+(defconst bt-castle-cataphract-watchdog-seconds 120)
+(defconst bt-castle-cataphract-backoff-1-seconds 30)
+(defconst bt-castle-cataphract-backoff-2-seconds 60)
+(defconst bt-castle-cataphract-backoff-3-seconds 120)
 (defconst bt-resource-mode-goal 46)
 (defconst bt-resource-mode-dark 1)
 (defconst bt-resource-mode-feudal-rush 2)
@@ -942,6 +956,82 @@
 ; Byzantine teaching thresholds:
 ;   667 food
 ;   536 gold
+
+;================================================================
+; 6A. PRE-IMPERIAL CASTLE CAPABILITY FOR CATAPHRACTS
+;================================================================
+; This demand is created in Castle Age, before Imperial authority is
+; evaluated below. It is strategic intent, not production authorization.
+;
+; Trigger:
+;   - Castle Age
+;   - boom or flush posture
+;   - six or more enemy infantry
+;   - fewer than six completed/queued Cataphracts
+;   - no existing Castle
+;
+; The Castle is justified by the future Cataphract capability. The Imperial
+; prerequisite shortcut is a secondary benefit, not the reason to spend 650
+; stone on a building that exists only to save 400 wood elsewhere.
+(defrule
+    (current-age == castle-age)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-failure-goal 0)
+    (building-type-count-total castle < 1)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1)
+    (unit-type-count-total cataphract-line < bt-cataphract-target-1)
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
+)
+
+; Withdraw an unclaimed project when the strategic reason disappears.
+; A real pending Castle foundation is never abandoned by this rule.
+(defrule
+    (goal bt-castle-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control != bt-castle-cataphract-claim)
+    (up-pending-objects c: castle == 0)
+    (or
+        (building-type-count-total castle >= 1)
+        (current-age >= imperial-age)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (goal strategy-goal bt-strategy-flush))
+        )
+        (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-1)
+        (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+    )
+=>
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+)
+
+; Terminal construction failure is only a failure of this attempt. Once the
+; strategic trigger disappears, the failure witness is cleared for future use.
+(defrule
+    (goal bt-castle-cataphract-failure-goal 1)
+    (or
+        (current-age >= imperial-age)
+        (building-type-count-total castle >= 1)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (goal strategy-goal bt-strategy-flush))
+        )
+        (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-1)
+        (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+    )
+=>
+    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+)
+
+; Yield Imperial age authority while an active Castle capability project
+; exists. Castle completion clears the demand and reopens this rule.
 (defrule
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
@@ -2305,6 +2395,7 @@ town-center >= 2)))))
 (defrule
     (goal bt-resource-mode-goal 0)
     (current-age == castle-age)
+    (goal bt-castle-cataphract-demand-goal 0)
     (unit-type-count villager >= bt-imperial-villagers)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
@@ -2318,6 +2409,7 @@ town-center >= 2)))))
     (building-type-count-total castle < 1)
     (stone-amount < 650)
     (or
+        (goal bt-castle-cataphract-demand-goal 1)
         (goal bt-cataphract-demand-goal 1)
         (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total
 stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))
@@ -2328,7 +2420,10 @@ stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (goal bt-cataphract-demand-goal 1)
+    (or
+        (goal bt-castle-cataphract-demand-goal 1)
+        (goal bt-cataphract-demand-goal 1)
+    )
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (stone-amount < 650)
@@ -4079,19 +4174,128 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 )
 
 ;---------------------------------------------------------------
-; 15G. CASTLE CAPABILITY FOR CATAPHRACT PRODUCTION
+; 15G. PRE-IMPERIAL CASTLE CAPABILITY FOR CATAPHRACTS
 ;---------------------------------------------------------------
-;
-; Cataphract demand owns the strategic decision. This rule only
-; closes the required Castle construction capability edge.
+; The Castle project is a real resource owner, not a naked build command.
+; It uses the same lifecycle shape proven elsewhere in this controller:
+; persistent demand -> mutex claim -> escrow-aware action -> completion
+; witness -> bounded watchdog retries -> terminal failure.
 (defrule
-    (goal bt-cataphract-demand-goal 1)
-    (current-age >= castle-age)
+    (goal bt-castle-cataphract-demand-goal 1)
+    (goal bt-castle-cataphract-failure-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (up-compare-goal bt-castle-cataphract-retry-goal < 4)
+    (current-age == castle-age)
     (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (strategic-number sn-resource-control == 0)
     (building-available castle)
-    (can-build castle)
+    (can-build-with-escrow castle)
 =>
+    (set-strategic-number sn-resource-control bt-castle-cataphract-claim)
+    (release-escrow stone)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
     (build castle)
+)
+
+; Completed Castle is the actual capability witness.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (building-type-count castle >= 1)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; A Castle foundation can finish after a watchdog released the mutex.
+; Reset the retry ladder without touching a newer owner of the mutex.
+(defrule
+    (building-type-count castle >= 1)
+    (up-compare-goal bt-castle-cataphract-retry-goal >= 1)
+    (goal bt-castle-cataphract-failure-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    )
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+)
+
+; Timeout 0 -> retry 1 after 30 seconds.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 0)
+    (up-pending-objects c: castle == 0)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-retry-goal 1)
+    (set-goal bt-castle-cataphract-backoff-goal 1)
+    (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-1-seconds)
+)
+
+; Timeout 1 -> retry 2 after 60 seconds.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 1)
+    (up-pending-objects c: castle == 0)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-retry-goal 2)
+    (set-goal bt-castle-cataphract-backoff-goal 1)
+    (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-2-seconds)
+)
+
+; Timeout 2 -> retry 3 after 120 seconds.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 2)
+    (up-pending-objects c: castle == 0)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-retry-goal 3)
+    (set-goal bt-castle-cataphract-backoff-goal 1)
+    (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-3-seconds)
+)
+
+; Fourth failed attempt is terminal. Release the mutex and yield to the
+; generic Imperial prerequisite path instead of deadlocking Imperial forever.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 3)
+    (up-pending-objects c: castle == 0)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-retry-goal 4)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-failure-goal 1)
+)
+
+; Backoff is cooldown only. It never claims the resource mutex.
+(defrule
+    (goal bt-castle-cataphract-backoff-goal 1)
+    (timer-triggered bt-castle-cataphract-backoff-timer)
+=>
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
 )
 
 ; Imperial prerequisite retry backoff recovery.
@@ -4117,6 +4321,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (current-age == castle-age)
     (goal bt-imperial-prereq-failure-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
+    (goal bt-castle-cataphract-demand-goal 0)
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
     (or
@@ -4169,6 +4374,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (current-age == castle-age)
     (goal bt-imperial-prereq-failure-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
+    (goal bt-castle-cataphract-demand-goal 0)
     (building-type-count siege-workshop >= 1)
     (not (can-research-with-escrow imperial-age))
     (building-type-count-total university < 1)
