@@ -509,6 +509,7 @@
 (defconst bt-castle-cataphract-backoff-1-seconds 30)
 (defconst bt-castle-cataphract-backoff-2-seconds 60)
 (defconst bt-castle-cataphract-backoff-3-seconds 120)
+(defconst bt-castle-cataphract-backoff-cap-seconds 240)
 (defconst bt-resource-mode-goal 46)
 (defconst bt-resource-mode-dark 1)
 (defconst bt-resource-mode-feudal-rush 2)
@@ -7073,8 +7074,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-3-seconds)
 )
 
-; Fourth failed attempt is terminal. Release the mutex and yield to the
-; generic Imperial prerequisite path instead of deadlocking Imperial forever.
+; Fourth failed placement is a bounded cooldown, not strategic death.
+; The Castle demand remains live. After the 240-second cap, the retry ladder
+; resets and the same persistent demand is allowed to request the capability
+; again. This is the construction analogue of the persistent research doctrine.
 (defrule
     (strategic-number sn-resource-control == bt-castle-cataphract-claim)
     (goal bt-castle-cataphract-retry-goal 3)
@@ -7082,12 +7085,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-castle-cataphract-watchdog-timer)
 =>
     (disable-timer bt-castle-cataphract-watchdog-timer)
-    (disable-timer bt-castle-cataphract-backoff-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-castle-cataphract-retry-goal 4)
-    (set-goal bt-castle-cataphract-backoff-goal 0)
-    (set-goal bt-castle-cataphract-demand-goal 0)
-    (set-goal bt-castle-cataphract-failure-goal 1)
+    (set-goal bt-castle-cataphract-backoff-goal 1)
+    (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-cap-seconds)
 )
 
 ; Backoff is cooldown only. It never claims the resource mutex.
@@ -7108,6 +7109,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+    (set-goal bt-castle-cataphract-failure-goal 0)
 )
 
 ; Imperial prerequisite retry backoff recovery.
