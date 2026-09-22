@@ -1112,8 +1112,10 @@
     )
     (or
         (players-unit-type-count target-player monk < 1)
+        (or
         (up-research-status c: ri-atonement == research-complete)
         (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
+            )
     )
     (up-compare-goal bt-research-monk-redemption-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-redemption)
@@ -1128,20 +1130,32 @@
     (unit-type-count-total monk >= 2)
     (or
         (players-unit-type-count target-player monk < 1)
+        (or
         (up-research-status c: ri-atonement == research-complete)
         (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
+            )
     )
     (or
         (and
             (players-unit-type-count target-player mangonel-line < 1)
+            (and
             (players-unit-type-count target-player scorpion-line < 1)
+            (and
             (players-unit-type-count target-player battering-ram-line < 1)
+            (and
             (players-unit-type-count target-player siege-tower < 1)
+            (and
             (players-unit-type-count target-player bombard-cannon-line < 1)
             (players-unit-type-count target-player trebuchet-set < 1)
+                    )
+                    )
+                    )
+                    )
         )
+        (or
         (up-research-status c: ri-redemption == research-complete)
         (up-compare-goal bt-research-monk-redemption-retry-goal >= bt-monk-research-max-retries)
+            )
     )
     (up-compare-goal bt-research-monk-sanctity-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-sanctity)
@@ -1436,10 +1450,12 @@
     (current-age >= castle-age)
     (up-compare-goal bt-ranged-counter-level-goal >= 1)
     (not (and
-        (goal strategy-goal bt-strategy-boom)
-        (goal bt-any-threat-goal 0)
-        (up-compare-goal bt-standing-crossbow-target-goal > 0)
-    ))
+             (goal strategy-goal bt-strategy-boom)
+             (and
+             (goal bt-any-threat-goal 0)
+             (up-compare-goal bt-standing-crossbow-target-goal > 0)
+                      )
+         ))
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
     (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
@@ -1477,10 +1493,12 @@
     (current-age >= castle-age)
     (up-research-status c: ri-fletching == research-complete)
     (not (and
-        (goal strategy-goal bt-strategy-boom)
-        (goal bt-any-threat-goal 0)
-        (up-compare-goal bt-standing-crossbow-target-goal > 0)
-    ))
+             (goal strategy-goal bt-strategy-boom)
+             (and
+             (goal bt-any-threat-goal 0)
+             (up-compare-goal bt-standing-crossbow-target-goal > 0)
+                      )
+         ))
     (up-compare-goal bt-ranged-counter-level-goal >= 1)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
@@ -1527,16 +1545,22 @@
                 (unit-type-count-total arbalester >= bt-crossbow-target-castle)
             )
         )
+        (or
         (and
             (goal bt-ranged-threat-goal 1)
+            (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
             (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+                    )
         )
         (and
             (goal bt-ranged-threat-goal 1)
+            (and
             (up-compare-goal bt-standing-archer-target-goal >= 3)
             (unit-type-count-total archer-line >= 3)
+                    )
         )
+            )
     )
     (up-compare-goal bt-research-blacksmith-bodkin-arrow-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
@@ -1573,17 +1597,21 @@
     (or
         (and
             (goal unit-goal crossbowman)
+            (and
             (up-research-status c: ri-arbalest == research-complete)
             (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+                    )
         )
+        (or
         (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+            (and
             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
             (up-compare-goal bt-ranged-counter-level-goal >= 2)
+                    )
         )
-        (and
-            (unit-type-count-total cavalry-archer >= 6)
-        )
+        (unit-type-count-total cavalry-archer >= 6)
+            )
     )
     (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
@@ -1602,26 +1630,36 @@
     (current-age >= imperial-age)
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (not (and
-        (up-compare-goal bt-ranged-counter-level-goal >= 1)
-        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
-        (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
-        (up-research-status c: ri-elite-skirmisher < research-complete)
-    ))
+             (up-compare-goal bt-ranged-counter-level-goal >= 1)
+             (and
+             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+             (and
+             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+             (up-research-status c: ri-elite-skirmisher < research-complete)
+                      )
+                      )
+         ))
     (or
         (and
             (goal unit-goal crossbowman)
+            (and
             (up-research-status c: ri-arbalest == research-complete)
             (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+                    )
         )
+        (or
         (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+            (and
             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
             (up-compare-goal bt-ranged-counter-level-goal >= 2)
+                    )
         )
         (and
             (unit-type-count-total cavalry-archer >= 6)
             (goal bt-ranged-threat-goal 1)
         )
+            )
     )
     (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
@@ -1653,11 +1691,15 @@
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (not (and
-        (current-age >= castle-age)
-        (up-compare-goal bt-ranged-counter-level-goal >= 1)
-        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
-        (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-    ))
+             (current-age >= castle-age)
+             (and
+             (up-compare-goal bt-ranged-counter-level-goal >= 1)
+             (and
+             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+             (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+                      )
+                      )
+         ))
     (up-research-status c: ri-fletching == research-complete)
     (or
         (and
@@ -1716,16 +1758,18 @@
     (or
         (and
             (goal unit-goal crossbowman)
+            (and
             (up-research-status c: ri-arbalest == research-complete)
             (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+                    )
         )
+        (or
         (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
         )
-        (and
-            (unit-type-count-total cavalry-archer >= 6)
-        )
+        (unit-type-count-total cavalry-archer >= 6)
+            )
     )
     (up-compare-goal bt-research-blacksmith-ring-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-ring-archer-armor)
@@ -1814,11 +1858,19 @@
 (defrule
     (or
         (goal bt-research-ranged-counter-package-goal ri-fletching)
+        (or
         (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+        (or
         (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
+        (or
         (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
+        (or
         (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
         (goal bt-research-ranged-counter-package-goal ri-bracer)
+            )
+            )
+            )
+            )
     )
     (goal bt-ranged-threat-goal 0)
 =>
@@ -1843,9 +1895,13 @@
     (goal bt-research-ranged-counter-package-goal ri-arbalest)
     (or
         (goal bt-arbalest-demand-goal 0)
+        (or
         (goal bt-any-threat-goal 1)
+        (or
         (goal strategy-goal bt-strategy-flush)
         (goal strategy-goal bt-strategy-rush)
+            )
+            )
     )
 =>
     (set-goal bt-research-ranged-counter-package-goal 0)
@@ -1856,9 +1912,13 @@
     (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
     (or
         (goal bt-any-threat-goal 1)
+        (or
         (goal strategy-goal bt-strategy-flush)
+        (or
         (goal strategy-goal bt-strategy-rush)
         (up-compare-goal bt-resource-mode-goal != bt-resource-mode-castle-boom)
+            )
+            )
     )
 =>
     (set-goal bt-research-ranged-counter-package-goal 0)
@@ -2446,15 +2506,21 @@
     (up-pending-objects c: castle == 0)
     (or
         (building-type-count-total castle >= 1)
+        (or
         (current-age >= imperial-age)
+        (or
         (not
             (or
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-flush)
             )
         )
+        (or
         (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-1)
         (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+            )
+            )
+            )
     )
 =>
     (disable-timer bt-castle-cataphract-backoff-timer)
@@ -2469,15 +2535,21 @@
     (goal bt-castle-cataphract-failure-goal 1)
     (or
         (current-age >= imperial-age)
+        (or
         (building-type-count-total castle >= 1)
+        (or
         (not
             (or
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-flush)
             )
         )
+        (or
         (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-1)
         (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+            )
+            )
+            )
     )
 =>
     (set-goal bt-castle-cataphract-failure-goal 0)
@@ -2856,9 +2928,13 @@
         (strategic-number sn-enable-boar-hunting == 2)
         (and
             (not (sheep-and-forage-too-far))
+            (and
             (not (dropsite-min-distance deer-hunting == -1))
+            (and
             (not (dropsite-min-distance deer-hunting == 255))
             (not (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance))
+                    )
+                    )
         )
     )
 =>
@@ -3280,10 +3356,12 @@
     (up-pending-objects c: farm == 0)
     (or
         (and (food-amount < 350) (idle-farm-count == 0))
+        (or
         (and (goal bt-natural-food-state-goal bt-natural-food-transition)
              (idle-farm-count <= bt-farm-transition-reserve-goal))
         (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
              (idle-farm-count <= bt-farm-depleted-reserve-goal))
+            )
     )
     (building-type-count-total farm < bt-farm-feudal-cap)
     (wood-amount >= bt-farm-build-wood)
@@ -3305,10 +3383,12 @@
     (up-pending-objects c: farm == 0)
     (or
         (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))
+        (or
         (and (goal bt-natural-food-state-goal bt-natural-food-transition)
              (idle-farm-count <= bt-farm-transition-reserve-goal))
         (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
              (idle-farm-count <= bt-farm-depleted-reserve-goal))
+            )
     )
     (building-type-count-total farm < bt-farm-castle-cap)
     (wood-amount >= bt-farm-build-wood)
@@ -3332,10 +3412,12 @@
     (up-pending-objects c: farm == 0)
     (or
         (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))
+        (or
         (and (goal bt-natural-food-state-goal bt-natural-food-transition)
              (idle-farm-count <= bt-farm-transition-reserve-goal))
         (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
              (idle-farm-count <= bt-farm-depleted-reserve-goal))
+            )
     )
     (building-type-count-total farm < bt-farm-imperial-cap)
     (wood-amount >= bt-farm-build-wood)
@@ -4180,9 +4262,11 @@ town-center >= 2)))))
     (stone-amount < 650)
     (or
         (goal bt-castle-cataphract-demand-goal 1)
+        (or
         (goal bt-cataphract-demand-goal 1)
         (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total
-stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))
+        stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))
+            )
     )
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
@@ -11275,8 +11359,10 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
     (or
         (current-age > castle-age)
+        (or
         (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
         (and (current-age == feudal-age) (not (can-research-with-escrow castle-age)))
+            )
     )
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
@@ -11490,8 +11576,10 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
         (or
             (and
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+                (and
                 (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
                 (goal bt-ranged-threat-goal 1)
+                            )
             )
             (and
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
@@ -11711,8 +11799,10 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
                 (and
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+                    (and
                     (up-compare-goal bt-ranged-counter-level-goal >= 2)
                     (goal bt-ranged-threat-goal 1)
+                                    )
                 )
             )
             (and
@@ -11927,8 +12017,10 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (or
         (current-age > castle-age)
+        (or
         (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
         (and (current-age == feudal-age) (not (can-research-with-escrow castle-age)))
+            )
     )
     (up-research-status c: ri-scale-barding < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -12554,8 +12646,10 @@ camel-line < bt-camel-target-1)))))
 (defrule
     (or
         (goal bt-research-blacksmith-claim-goal != 0)
+        (or
         (goal bt-research-cavalry-counter-package-goal != 0)
         (goal bt-research-ranged-counter-package-goal != 0)
+            )
     )
     (building-type-count blacksmith == 0)
 =>
@@ -13369,6 +13463,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 1)
             (building-type-count mill >= 1)
         )
+        (or
         (and
             (goal bt-mill-project-goal 2)
             (building-type-count mill >= 2)
@@ -13377,6 +13472,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 3)
             (building-type-count mill >= 3)
         )
+            )
     )
 =>
     (disable-timer bt-mill-watchdog-timer)
@@ -13444,6 +13540,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 1)
             (building-type-count mill < 1)
         )
+        (or
         (and
             (goal bt-mill-project-goal 2)
             (building-type-count mill < 2)
@@ -13452,6 +13549,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 3)
             (building-type-count mill < 3)
         )
+            )
     )
     (up-pending-objects c: mill == 0)
 =>
@@ -13467,6 +13565,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 1)
             (building-type-count mill >= 1)
         )
+        (or
         (and
             (goal bt-mill-project-goal 2)
             (building-type-count mill >= 2)
@@ -13475,6 +13574,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 3)
             (building-type-count mill >= 3)
         )
+            )
     )
 =>
     (disable-timer bt-mill-watchdog-timer)
