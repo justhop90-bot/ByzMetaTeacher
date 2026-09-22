@@ -9094,31 +9094,8 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-tc-stage-goal bt-tc-stage-idle)
 )
 
-;------------------------------
-; Completion witnesses.
-;------------------------------
-(defrule
-    (goal bt-tc-project-goal 2)
-    (building-type-count town-center >= 2)
-=>
-    (disable-timer bt-tc2-watchdog-timer)
-    (up-reset-placement c: town-center)
-    (set-goal bt-tc-project-goal 0)
-    (set-goal bt-tc-stage-goal bt-tc-stage-idle)
-)
-
-(defrule
-    (goal bt-tc-project-goal 3)
-    (building-type-count town-center >= 3)
-=>
-    (disable-timer bt-tc3-watchdog-timer)
-    (up-reset-placement c: town-center)
-    (set-goal bt-tc-project-goal 0)
-    (set-goal bt-tc-stage-goal bt-tc-stage-idle)
-)
-
-; Resource mutex cleanup is isolated so a completion reset can never
-; accidentally clear an unrelated owner.
+; Resource mutex cleanup runs before the project reset so the
+; completion witness cannot erase the state needed by the cleanup rule.
 (defrule
     (goal bt-tc-project-goal 2)
     (building-type-count town-center >= 2)
@@ -9156,24 +9133,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (up-reset-placement c: town-center)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal bt-tc-stage-idle)
-)
-
-; Resource mutex cleanup is isolated so a completion reset can never
-; accidentally clear an unrelated owner.
-(defrule
-    (goal bt-tc-project-goal 2)
-    (building-type-count town-center >= 2)
-    (strategic-number sn-resource-control == bt-tc2-claim)
-=>
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (goal bt-tc-project-goal 3)
-    (building-type-count town-center >= 3)
-    (strategic-number sn-resource-control == bt-tc3-claim)
-=>
-    (set-strategic-number sn-resource-control 0)
 )
 
 ;================================================================
