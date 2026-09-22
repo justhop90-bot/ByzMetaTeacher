@@ -1886,9 +1886,11 @@
         (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
     )
     (up-research-status c: ri-crossbow == research-complete)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
     (or
-        (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
-        (unit-type-count-total arbalester >= bt-crossbow-target-castle)
+        ; Keep Thumb Ring behind the first real Castle ranged mass.
+        (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
     )
     (up-compare-goal bt-research-university-thumb-ring-retry-goal < bt-university-research-max-retries)
     (up-compare-goal bt-research-university-failure-backoff-goal != ri-thumb-ring)
