@@ -260,6 +260,7 @@
 (defconst bt-heavy-camel-demand-goal 532)
 (defconst bt-attack-reserve-goal 533)
 (defconst bt-mangonel-demand-goal 535)
+(defconst bt-scorpion-demand-goal 545)
 (defconst bt-bombard-cannon-demand-goal 541)
 (defconst bt-onager-demand-goal 540)
 (defconst bt-ram-demand-goal 539)
@@ -426,6 +427,11 @@
 ; Finite execution ceiling for an active attack package.
 (defconst bt-ram-response-target 2)
 
+; Castle-age anti-infantry Scorpion response package.
+; This is a finite response package, not parity with enemy infantry mass.
+(defconst bt-scorpion-response-target 4)
+(defconst bt-scorpion-trigger-infantry 6)
+
 ; Production-capacity ceilings.
 ;
 ; These are teaching/controller tuning values, not engine constants.
@@ -510,6 +516,7 @@
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
     (set-goal bt-mangonel-demand-goal 0)
+    (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-onager-demand-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-tc-project-goal 0)
@@ -529,6 +536,7 @@
     (set-goal bt-military-siege-workshop-retry-goal 0)
     (set-goal bt-military-siege-workshop-backoff-goal 0)
     (set-goal bt-ram-demand-goal 0)
+    (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
     (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
@@ -4633,6 +4641,28 @@
     (train mangonel-line)
 )
 
+;---------------------------------------------------------------
+; 16B.1A. SCORPION RESPONSE PRODUCTION
+;---------------------------------------------------------------
+; Queue-aware target prevents repeated train commands while Scorpions are
+; already in the Workshop queue. Escrow-aware feasibility matches the BBC
+; production standard: release the resources actually consumed by this train,
+; then issue the engine action.
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count-total scorpion-line < bt-scorpion-response-target)
+    (not (town-under-attack))
+    (not (goal retreat-now-goal 1))
+    (can-train-with-escrow scorpion-line)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (train scorpion-line)
+)
+
 ; Imperial escalation keeps the existing anti-ranged demand alive long enough
 ; to build the predecessor mass required for Onager. Queue-aware counting is
 ; deliberate: queued Mangonels count toward the four-unit execution ceiling.
@@ -6363,6 +6393,78 @@
 )
 
 ;---------------------------------------------------------------
+; 18A.2. SCORPION RESPONSE PACKAGE
+;---------------------------------------------------------------
+; Strategic purpose:
+;   Castle-age enemy infantry mass is the direct witness.
+;
+; Explicit exclusions:
+;   * no demand before Castle Age;
+;   * no demand when the selected target player has lost its infantry or buildings;
+;   * no demand during active Mangonel/Onager/BBC/Ram packages;
+;   * no demand at high cavalry-counter pressure;
+;   * no demand during Imperial bank preparation;
+;   * no demand while retreating or under direct town attack.
+;
+; This is a finite four-Scorpion response package. Four Scorpions are a
+; minimum combat-support package, not an attempt to match enemy infantry count.
+(defrule
+    (goal bt-scorpion-demand-goal 0)
+    (current-age >= castle-age)
+    (players-unit-type-count target-player militia-line >= bt-scorpion-trigger-infantry)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 2)
+    (up-compare-goal bt-ranged-counter-level-goal < 2)
+    (players-unit-type-count target-player mangonel-line < 2)
+    (players-unit-type-count target-player scorpion-line < 4)
+    (goal bt-mangonel-demand-goal 0)
+    (goal bt-onager-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-ram-demand-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (unit-type-count-total scorpion-line < bt-scorpion-response-target)
+=>
+    (set-goal bt-scorpion-demand-goal 1)
+)
+
+; Scorpion demand is persistent through temporary resource contention and
+; Workshop absence. Reassess only the strategic purpose and explicit exclusions.
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (or
+        (current-age < castle-age)
+        (players-unit-type-count target-player militia-line < bt-scorpion-trigger-infantry)
+        (players-building-count target-player == 0)
+        (not (player-in-game target-player))
+        (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+        (up-compare-goal bt-ranged-counter-level-goal >= 2)
+        (players-unit-type-count target-player mangonel-line >= 2)
+        (players-unit-type-count target-player scorpion-line >= 4)
+        (goal bt-mangonel-demand-goal 1)
+        (goal bt-onager-demand-goal 1)
+        (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-ram-demand-goal 1)
+        (goal retreat-now-goal 1)
+        (town-under-attack)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+    )
+=>
+    (set-goal bt-scorpion-demand-goal 0)
+)
+
+; Package completion uses actual Scorpions, not queued units.
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (unit-type-count scorpion-line >= bt-scorpion-response-target)
+=>
+    (set-goal bt-scorpion-demand-goal 0)
+)
+
+;---------------------------------------------------------------
 ; 18A.1. MANGONEL RESPONSE PACKAGE COMPLETION
 ;---------------------------------------------------------------
 ; This is the terminal witness for the configured response package.
@@ -6754,7 +6856,10 @@
 (defrule
     (or
         (goal bt-mangonel-demand-goal 1)
+        (goal bt-scorpion-demand-goal 1)
         (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-onager-demand-goal 1)
+        (goal bt-ram-demand-goal 1)
     )
     (up-compare-goal bt-military-siege-workshop-retry-goal < 4)
     (goal bt-military-siege-workshop-backoff-goal 0)
