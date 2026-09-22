@@ -166,6 +166,68 @@ function workshopScenario() {
 assert.ok(source.includes("(defconst bt-research-barracks-max-retries 2)"));
 assert.ok(source.includes("(defconst bt-stable-research-max-retries 2)"));
 assert.ok(source.includes("(defconst bt-siege-research-max-retries 2)"));
+assert.ok(source.includes("(defconst bt-gold-shaft-mining-demand-goal 687)"));
+assert.ok(source.includes("(defconst bt-research-mining-camp-gold-shaft-mining-retry-goal 686)"));
+
+requireRule(
+  "Gold Shaft strategic demand",
+  "(goal bt-gold-shaft-mining-demand-goal 0)",
+  "(current-age == castle-age)",
+  "(goal strategy-goal bt-strategy-boom)",
+  "(up-research-status c: ri-gold-mining >= research-complete)",
+  "(building-type-count-total town-center >= 2)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 1)",
+);
+requireRule(
+  "Gold Shaft strategic cancellation",
+  "(goal bt-gold-shaft-mining-demand-goal 1)",
+  "(strategic-number sn-resource-control != ri-gold-shaft-mining)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
+);
+requireRule(
+  "Gold Shaft executor retry cap",
+  "(goal bt-gold-shaft-mining-demand-goal 1)",
+  "(up-compare-goal bt-research-mining-camp-gold-shaft-mining-retry-goal < bt-economic-research-max-retries)",
+  "(can-research-with-escrow ri-gold-shaft-mining)",
+  "(set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+);
+const goldShaftFailureRule = requireRule(
+  "Gold Shaft watchdog",
+  "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+  "(up-research-status c: ri-gold-shaft-mining <= research-available)",
+  "(up-modify-goal bt-research-mining-camp-gold-shaft-mining-retry-goal g:+ 1)",
+  "(set-goal bt-research-mining-camp-claim-goal 0)",
+);
+assert.ok(
+  !goldShaftFailureRule.includes("(set-goal bt-gold-shaft-mining-demand-goal 0)"),
+  "[Gold Shaft] engine failure must not cancel strategic demand",
+);
+requireRule(
+  "Gold Shaft completion",
+  "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+  "(up-research-status c: ri-gold-shaft-mining == research-complete)",
+  "(set-goal bt-research-mining-camp-claim-goal 0)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
+);
+requireRule(
+  "Gold Shaft retry reset",
+  "(goal bt-gold-shaft-mining-demand-goal 0)",
+  "(goal bt-research-mining-camp-claim-goal 0)",
+  "(set-goal bt-research-mining-camp-gold-shaft-mining-retry-goal 0)",
+);
+
+const goldShaftTrace = transition(
+  "Gold Shaft Mining",
+  { demand: 1, package: 0, claim: "ri-gold-shaft-mining", retry: 0, backoff: 1 },
+  (state) => { state.retry += 1; state.claim = 0; state.package = 0; },
+  (state) => { state.backoff = 0; },
+  (state) => state.demand === 1 && state.claim === 0 && state.package === 0 && state.backoff === 0 && state.retry < 2,
+  (state) => state.retry === 2 && state.demand === 1 && state.claim === 0 && state.package === 0,
+  (state) => { state.demand = 0; state.claim = 0; state.package = 0; },
+  (state) => { if (state.demand === 0 && state.claim === 0 && state.package === 0) state.retry = 0; },
+  (state) => { state.demand = 1; return state.retry === 0 && state.claim === 0 && state.package === 0; },
+);
+
 
 requireRule(
   "Pike failure",
@@ -405,6 +467,7 @@ const scenarios = {
   cappedRam: cappedRamTrace,
   siegeRam: siegeRamTrace,
   workshop: workshopTrace,
+  goldShaft: goldShaftTrace,
 };
 
 console.log(JSON.stringify({
