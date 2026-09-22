@@ -209,7 +209,9 @@
 (defconst bt-imperial-prereq-watchdog-timer 21)
 (defconst bt-imperial-prereq-backoff-timer 22)
 (defconst bt-bombard-university-watchdog-timer 26)
+(defconst bt-bombard-trebuchet-target-timer 27)
 (defconst bt-bombard-university-watchdog-seconds 120)
+(defconst bt-bombard-trebuchet-target-interval 2)
 (defconst bt-castle-prereq-watchdog-seconds 120)
 (defconst bt-imperial-prereq-watchdog-seconds 120)
 (defconst bt-castle-prereq-backoff-seconds 30)
@@ -263,6 +265,20 @@
 (defconst bt-ram-demand-goal 539)
 (defconst bt-military-siege-workshop-retry-goal 537)
 (defconst bt-military-siege-workshop-backoff-goal 538)
+
+; BBC DUC combat-consumer state.
+; armed = 1 means the retarget timer owns the next DUC probe.
+; stage = 0 idle, 1 Trebuchet probe result, 2 building fallback result.
+(defconst bt-bombard-trebuchet-duc-armed-goal 543)
+(defconst bt-bombard-trebuchet-duc-stage-goal 544)
+(defconst bt-bombard-trebuchet-search-state-goal 548)
+(defconst bt-bombard-building-search-state-goal 552)
+(defconst bt-bombard-trebuchet-remote-count-goal 550)
+(defconst bt-bombard-building-remote-count-goal 554)
+(defconst bt-bombard-trebuchet-duc-stage-idle 0)
+(defconst bt-bombard-trebuchet-duc-stage-trebuchet-probe 1)
+(defconst bt-bombard-trebuchet-duc-stage-building-probe 2)
+
 (defconst bt-attack-gather-watchdog-timer 23)
 (defconst bt-attack-gather-watchdog-seconds 30)
 (defconst bt-flush-army-floor-feudal 12)
@@ -514,7 +530,10 @@
     (set-goal bt-military-siege-workshop-backoff-goal 0)
     (set-goal bt-ram-demand-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
+    (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
     (disable-timer bt-bombard-university-watchdog-timer)
+    (disable-timer bt-bombard-trebuchet-target-timer)
     (disable-timer bt-military-siege-workshop-watchdog-timer)
     (disable-timer bt-military-siege-workshop-backoff-timer)
     (disable-self)
@@ -6556,6 +6575,166 @@
     (unit-type-count bombard-cannon-line >= bt-bombard-cannon-response-target)
 =>
     (set-goal bt-bombard-cannon-demand-goal 0)
+)
+
+
+;---------------------------------------------------------------
+; 18A.5. BBC -> TREBUCHET DIRECT TARGETING
+;---------------------------------------------------------------
+; DUC is a combat consumer, not a second strategic decision layer.
+; Strategic Trebuchet existence remains the demand authority.
+;
+; DUC stages:
+;   0 = idle
+;   1 = Trebuchet search results ready
+;   2 = building fallback search results ready
+;
+; up-get-search-state writes four consecutive goals:
+;   base     = local total
+;   base + 1 = local results added by the search
+;   base + 2 = remote total
+;   base + 3 = remote results added by the search
+;
+; Search bases:
+;   548..551 = Trebuchet probe
+;   552..555 = building fallback probe
+;
+; The fallback searches generic building class 903, not enemy military units.
+; If neither a visible Trebuchet nor a visible enemy building exists, no DUC
+; command is issued and the next timed probe is scheduled.
+;
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-armed-goal 0)
+    (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line >= 1)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (not (town-under-attack))
+=>
+    (set-goal bt-bombard-trebuchet-duc-armed-goal 1)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+    (enable-timer bt-bombard-trebuchet-target-timer 1)
+)
+
+; Probe for a currently actionable Trebuchet.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+    (timer-triggered bt-bombard-trebuchet-target-timer)
+    (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line >= 1)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (not (town-under-attack))
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-local c: bombard-cannon-line c: 240)
+    (up-find-remote c: trebuchet-line c: 40)
+    (up-get-search-state bt-bombard-trebuchet-search-state-goal)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-trebuchet-probe)
+    (disable-timer bt-bombard-trebuchet-target-timer)
+)
+
+; Direct BBC -> Trebuchet consumer when DUC has an actionable target.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-trebuchet-probe)
+    (up-compare-goal bt-bombard-trebuchet-remote-count-goal >= 1)
+    (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line >= 1)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (not (town-under-attack))
+=>
+    (up-target-objects 0 action-default -1 -1)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (enable-timer bt-bombard-trebuchet-target-timer bt-bombard-trebuchet-target-interval)
+)
+
+; No Trebuchet is currently actionable. Search visible enemy buildings as a
+; positioning fallback, using the same selected target player.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-trebuchet-probe)
+    (up-compare-goal bt-bombard-trebuchet-remote-count-goal == 0)
+    (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line >= 1)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (not (town-under-attack))
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-local c: bombard-cannon-line c: 240)
+    (up-find-remote c: building-class c: 40)
+    (up-get-search-state bt-bombard-building-search-state-goal)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-building-probe)
+)
+
+; Move the BBCs toward visible enemy buildings. The next timed probe will
+; retarget an actual Trebuchet when it becomes actionable again.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-building-probe)
+    (up-compare-goal bt-bombard-building-remote-count-goal >= 1)
+    (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line >= 1)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (not (town-under-attack))
+=>
+    (up-target-objects 0 action-move -1 -1)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (enable-timer bt-bombard-trebuchet-target-timer bt-bombard-trebuchet-target-interval)
+)
+
+; No actionable Trebuchet and no visible enemy building. Do not issue DUC and
+; do not clear the strategic BBC demand. Rearm the next probe.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-building-probe)
+    (up-compare-goal bt-bombard-building-remote-count-goal == 0)
+=>
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (enable-timer bt-bombard-trebuchet-target-timer bt-bombard-trebuchet-target-interval)
+)
+
+; Defense takes precedence over direct BBC DUC targeting. Disarm locally while
+; the town is under attack; the arm rule restarts probing after it ends.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-armed-goal 1)
+    (town-under-attack)
+=>
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+)
+
+; Demand cleanup owns all BBC DUC state.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 0)
+    (or
+        (goal bt-bombard-trebuchet-duc-armed-goal 1)
+        (goal bt-bombard-trebuchet-duc-stage-goal != bt-bombard-trebuchet-duc-stage-idle)
+    )
+=>
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
 )
 
 ;---------------------------------------------------------------
