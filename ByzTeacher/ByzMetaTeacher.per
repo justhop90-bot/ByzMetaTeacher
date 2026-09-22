@@ -8554,16 +8554,17 @@ cataphract-line < bt-cataphract-target-1)))))
 )
 
 ; TC2 terminal cooldown release:
-; Do not let a failed project immediately recreate itself. The normal
-; demand rule may run again only after the bounded re-evaluation delay.
+; The terminal project remains blocked while its strategic BOOM demand
+; remains active. Cooldown releases only the timer; cancellation or
+; completion witnesses are responsible for clearing the terminal state.
 (defrule
-    (goal bt-tc-project-goal 0)
-    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
     (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (timer-triggered bt-tc2-watchdog-timer)
 =>
     (disable-timer bt-tc2-watchdog-timer)
-    (set-goal bt-tc-failure-goal bt-tc-failure-none)
 )
 
 (defrule
@@ -9096,16 +9097,17 @@ cataphract-line < bt-cataphract-target-1)))))
 )
 
 ; TC3 terminal cooldown release:
-; Do not let a failed project immediately recreate itself. The normal
-; demand rule may run again only after the bounded re-evaluation delay.
+; The terminal project remains blocked while its strategic BOOM demand
+; remains active. Cooldown releases only the timer; cancellation or
+; completion witnesses are responsible for clearing the terminal state.
 (defrule
-    (goal bt-tc-project-goal 0)
-    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-blocked)
+    (goal bt-tc-retry-goal 4)
     (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
     (timer-triggered bt-tc3-watchdog-timer)
 =>
     (disable-timer bt-tc3-watchdog-timer)
-    (set-goal bt-tc-failure-goal bt-tc-failure-none)
 )
 
 (defrule
