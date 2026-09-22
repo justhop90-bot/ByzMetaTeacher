@@ -326,6 +326,14 @@
 (defconst bt-research-monk-package-goal 641)
 (defconst bt-research-monastery-claim-goal 642)
 (defconst bt-research-monastery-failure-backoff-goal 643)
+; Monk research bounded-start retry state. A retry is consumed only when a
+; research command was issued but the engine still reports research-available.
+; The existing 30-second fairness timer remains cooldown only, not a scheduler.
+(defconst bt-monk-research-max-retries 2)
+(defconst bt-research-monk-atonement-retry-goal 644)
+(defconst bt-research-monk-redemption-retry-goal 645)
+(defconst bt-research-monk-sanctity-retry-goal 646)
+(defconst bt-research-monk-block-printing-retry-goal 647)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -1031,6 +1039,8 @@
     (goal bt-monk-demand-goal 1)
     (unit-type-count-total monk >= 2)
     (players-unit-type-count target-player monk >= 1)
+    (up-compare-goal bt-research-monk-atonement-retry-goal < bt-monk-research-max-retries)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-atonement)
     (up-research-status c: ri-atonement < research-complete)
     (research-available ri-atonement)
 =>
@@ -1059,7 +1069,10 @@
     (or
         (players-unit-type-count target-player monk < 1)
         (up-research-status c: ri-atonement == research-complete)
+        (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
     )
+    (up-compare-goal bt-research-monk-redemption-retry-goal < bt-monk-research-max-retries)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-redemption)
     (up-research-status c: ri-redemption < research-complete)
     (research-available ri-redemption)
 =>
@@ -1072,6 +1085,7 @@
     (or
         (players-unit-type-count target-player monk < 1)
         (up-research-status c: ri-atonement == research-complete)
+        (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
     )
     (or
         (and
@@ -1083,7 +1097,10 @@
             (players-unit-type-count target-player trebuchet-set < 1)
         )
         (up-research-status c: ri-redemption == research-complete)
+        (up-compare-goal bt-research-monk-redemption-retry-goal >= bt-monk-research-max-retries)
     )
+    (up-compare-goal bt-research-monk-sanctity-retry-goal < bt-monk-research-max-retries)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-sanctity)
     (up-research-status c: ri-sanctity < research-complete)
     (research-available ri-sanctity)
 =>
@@ -1102,34 +1119,88 @@
         )
     )
     (up-research-status c: ri-redemption == research-complete)
-    (up-research-status c: ri-sanctity == research-complete)
+    (or
+        (up-research-status c: ri-sanctity == research-complete)
+        (up-compare-goal bt-research-monk-sanctity-retry-goal >= bt-monk-research-max-retries)
+    )
+    (up-compare-goal bt-research-monk-block-printing-retry-goal < bt-monk-research-max-retries)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-block-printing)
     (up-research-status c: ri-block-printing < research-complete)
     (research-available ri-block-printing)
 =>
     (set-goal bt-research-monk-package-goal ri-block-printing)
 )
+; Monk retry budgets reset only when their operational reason disappears.
+; Active research claims retain their failure history until the transaction
+; completes or capability-loss recovery explicitly releases the claim.
+(defrule
+    (goal bt-monk-demand-goal 0)
+=>
+    (set-goal bt-research-monk-atonement-retry-goal 0)
+    (set-goal bt-research-monk-redemption-retry-goal 0)
+    (set-goal bt-research-monk-sanctity-retry-goal 0)
+    (set-goal bt-research-monk-block-printing-retry-goal 0)
+)
+(defrule
+    (players-unit-type-count target-player monk < 1)
+    (goal bt-research-monastery-claim-goal 0)
+=>
+    (set-goal bt-research-monk-atonement-retry-goal 0)
+)
+(defrule
+    (players-unit-type-count target-player mangonel-line < 1)
+    (players-unit-type-count target-player scorpion-line < 1)
+    (players-unit-type-count target-player battering-ram-line < 1)
+    (players-unit-type-count target-player siege-tower < 1)
+    (players-unit-type-count target-player bombard-cannon-line < 1)
+    (players-unit-type-count target-player trebuchet-set < 1)
+    (goal bt-research-monastery-claim-goal 0)
+=>
+    (set-goal bt-research-monk-redemption-retry-goal 0)
+)
+(defrule
+    (current-age >= imperial-age)
+    (unit-type-count-total monk < 4)
+    (goal bt-research-monastery-claim-goal 0)
+=>
+    (set-goal bt-research-monk-block-printing-retry-goal 0)
+)
+(defrule
+    (current-age >= imperial-age)
+    (players-unit-type-count target-player mangonel-line < 1)
+    (players-unit-type-count target-player bombard-cannon-line < 1)
+    (players-unit-type-count target-player trebuchet-set < 1)
+    (goal bt-research-monastery-claim-goal 0)
+=>
+    (set-goal bt-research-monk-block-printing-retry-goal 0)
+)
+
 (defrule
     (goal bt-research-monk-package-goal ri-atonement)
     (up-research-status c: ri-atonement == research-complete)
 =>
+    (set-goal bt-research-monk-atonement-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-redemption)
     (up-research-status c: ri-redemption == research-complete)
 =>
+    (set-goal bt-research-monk-redemption-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-sanctity)
     (up-research-status c: ri-sanctity == research-complete)
 =>
+    (set-goal bt-research-monk-sanctity-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-block-printing)
     (up-research-status c: ri-block-printing == research-complete)
 =>
+    (set-goal bt-research-monk-block-printing-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
@@ -11697,33 +11768,41 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-monastery-claim-goal ri-atonement)
     (up-research-status c: ri-atonement <= research-available)
 =>
+    (up-modify-goal bt-research-monk-atonement-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-atonement)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monastery-claim-goal ri-redemption)
     (up-research-status c: ri-redemption <= research-available)
 =>
+    (up-modify-goal bt-research-monk-redemption-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-redemption)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monastery-claim-goal ri-sanctity)
     (up-research-status c: ri-sanctity <= research-available)
 =>
+    (up-modify-goal bt-research-monk-sanctity-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-sanctity)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monastery-claim-goal ri-block-printing)
     (up-research-status c: ri-block-printing <= research-available)
 =>
+    (up-modify-goal bt-research-monk-block-printing-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-block-printing)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
 )
 
 ;----------------------------------------------------------------
