@@ -991,6 +991,17 @@
     (set-goal bt-monk-demand-goal 1)
 )
 (defrule
+    (current-age >= imperial-age)
+    (players-unit-type-count target-player mangonel-line >= 1)
+    (or
+        (players-unit-type-count target-player bombard-cannon-line >= 1)
+        (players-unit-type-count target-player trebuchet-set >= 1)
+    )
+=>
+    (set-goal bt-monk-target-goal 4)
+    (set-goal bt-monk-demand-goal 1)
+)
+(defrule
     (goal bt-monk-demand-goal 1)
     (players-unit-type-count target-player monk < 1)
     (players-unit-type-count target-player mangonel-line < 1)
@@ -1084,17 +1095,8 @@
     (or
         (players-unit-type-count target-player mangonel-line >= 1)
         (or
-            (players-unit-type-count target-player scorpion-line >= 1)
-            (or
-                (players-unit-type-count target-player battering-ram-line >= 1)
-                (or
-                    (players-unit-type-count target-player siege-tower >= 1)
-                    (or
-                        (players-unit-type-count target-player bombard-cannon-line >= 1)
-                        (players-unit-type-count target-player trebuchet-set >= 1)
-                    )
-                )
-            )
+            (players-unit-type-count target-player bombard-cannon-line >= 1)
+            (players-unit-type-count target-player trebuchet-set >= 1)
         )
     )
     (up-research-status c: ri-redemption == research-complete)
