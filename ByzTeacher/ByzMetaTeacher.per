@@ -274,7 +274,8 @@
 (defconst bt-siege-tower-failure-goal 565)
 (defconst bt-siege-tower-failure-retry-goal 566)
 (defconst bt-siege-tower-cycle-complete-goal 567)
-(defconst bt-siege-tower-execution-search-state-goal 568)
+(defconst bt-siege-tower-spare-army-goal 572)
+(defconst bt-siege-tower-execution-search-state-goal 573)
 
 (defconst bt-siege-tower-stage-idle 0)
 (defconst bt-siege-tower-stage-wall-probe 1)
@@ -290,6 +291,7 @@
 (defconst bt-siege-tower-wall-class 927)
 (defconst bt-siege-tower-payload-min 6)
 (defconst bt-siege-tower-max-wall-attempts 3)
+(defconst bt-siege-tower-last-wall-attempt 2)
 (defconst bt-siege-tower-failure-retry-cap 3)
 (defconst bt-siege-tower-wall-probe-interval 60)
 (defconst bt-siege-tower-retry-interval 20)
@@ -299,7 +301,9 @@
 (defconst bt-siege-tower-unload-watchdog-timer 31)
 (defconst bt-siege-tower-assault-watchdog-timer 32)
 (defconst bt-siege-tower-retry-timer 33)
+(defconst bt-siege-tower-payload-watchdog-timer 34)
 (defconst bt-siege-tower-tower-watchdog-seconds 120)
+(defconst bt-siege-tower-payload-watchdog-seconds 45)
 (defconst bt-siege-tower-garrison-watchdog-seconds 30)
 (defconst bt-siege-tower-approach-watchdog-seconds 45)
 (defconst bt-siege-tower-unload-watchdog-seconds 30)
@@ -592,6 +596,7 @@
     (set-goal bt-siege-tower-failure-goal 0)
     (set-goal bt-siege-tower-failure-retry-goal 0)
     (set-goal bt-siege-tower-cycle-complete-goal 0)
+    (set-goal bt-siege-tower-spare-army-goal 0)
     (set-goal bt-siege-tower-execution-search-state-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
@@ -601,6 +606,7 @@
     (disable-timer bt-military-siege-workshop-watchdog-timer)
     (disable-timer bt-military-siege-workshop-backoff-timer)
     (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
     (disable-timer bt-siege-tower-garrison-watchdog-timer)
     (disable-timer bt-siege-tower-approach-watchdog-timer)
     (disable-timer bt-siege-tower-unload-watchdog-timer)
@@ -4597,6 +4603,16 @@
     (up-modify-goal bt-standing-army-deficit-goal g:- bt-standing-army-floor-goal)
 )
 
+; Siege Tower payload availability is current soldiers above the standing
+; army floor.  A non-negative army deficit does not itself prove that six
+; infantry can be detached without collapsing the standing requirement.
+(defrule
+    (true)
+=>
+    (up-get-fact soldier-count 0 bt-siege-tower-spare-army-goal)
+    (up-modify-goal bt-siege-tower-spare-army-goal g:- bt-standing-army-floor-goal)
+)
+
 ; Standing-army demand stays live until both constraints are
 ; satisfied: the aggregate military floor AND every live role target.
 ; The floor answers "how many soldiers?" while the role targets answer
@@ -6968,7 +6984,7 @@
     (player-in-game target-player)
     (up-compare-goal bt-scout-target-player-goal > 0)
     (unit-type-count infantry-class >= bt-siege-tower-payload-min)
-    (up-compare-goal bt-standing-army-deficit-goal <= 0)
+    (up-compare-goal bt-siege-tower-spare-army-goal >= bt-siege-tower-payload-min)
     (up-compare-goal bt-attack-reserve-goal >= 10)
     (goal bt-counter-veto-goal 0)
     (goal bt-mangonel-demand-goal 0)
@@ -7005,6 +7021,7 @@
     )
 =>
     (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
     (disable-timer bt-siege-tower-garrison-watchdog-timer)
     (disable-timer bt-siege-tower-approach-watchdog-timer)
     (disable-timer bt-siege-tower-unload-watchdog-timer)
@@ -7029,16 +7046,40 @@
     (up-get-search-state bt-siege-tower-wall-search-state-goal)
 )
 
-; Pick a bounded wall candidate and persist its point. The index stored in
-; bt-siege-tower-wall-attempt-goal advances after failed wall approaches.
+; Pick a bounded wall candidate and persist its point.  The .per
+; comparison language does not compare one goal against another goal, so the
+; three legal candidate indices are explicit rules.
 (defrule
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
-    (up-compare-goal bt-siege-tower-wall-search-state-goal > 0)
-    (up-compare-goal bt-siege-tower-wall-search-state-goal c:>= bt-siege-tower-wall-attempt-goal)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal == 0)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal >= 1)
 =>
-    (up-set-target-object search-remote g: bt-siege-tower-wall-attempt-goal)
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object bt-siege-tower-wall-point-goal)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (enable-timer bt-siege-tower-tower-watchdog-timer bt-siege-tower-tower-watchdog-seconds)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal == 1)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal >= 2)
+=>
+    (up-set-target-object search-remote c: 1)
+    (up-get-point position-object bt-siege-tower-wall-point-goal)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (enable-timer bt-siege-tower-tower-watchdog-timer bt-siege-tower-tower-watchdog-seconds)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal == bt-siege-tower-last-wall-attempt)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal >= 3)
+=>
+    (up-set-target-object search-remote c: 2)
     (up-get-point position-object bt-siege-tower-wall-point-goal)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
     (enable-timer bt-siege-tower-tower-watchdog-timer bt-siege-tower-tower-watchdog-seconds)
@@ -7049,11 +7090,30 @@
 (defrule
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
-    (or
-        (up-compare-goal bt-siege-tower-wall-search-state-goal == 0)
-        (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts)
-        (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-wall-search-state-goal)
-    )
+    (up-compare-goal bt-siege-tower-wall-attempt-goal == 0)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal == 0)
+=>
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-wall-no-target-failure)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-wall-probe-interval)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal == 1)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal < 2)
+=>
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-wall-no-target-failure)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-wall-probe-interval)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (goal bt-siege-tower-wall-attempt-goal bt-siege-tower-last-wall-attempt)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal < 3)
 =>
     (set-goal bt-siege-tower-failure-goal bt-siege-tower-wall-no-target-failure)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
@@ -7068,6 +7128,7 @@
     (unit-type-count siege-tower >= 1)
 =>
     (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (enable-timer bt-siege-tower-payload-watchdog-timer bt-siege-tower-payload-watchdog-seconds)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
 )
 
@@ -7101,15 +7162,43 @@
     (set-goal bt-siege-tower-cycle-complete-goal 1)
 )
 
+; A completed tower can stall in payload-ready while the army rebuilds.
+; Bound that wait so the project cannot permanently own the attack cycle.
+(defrule
+    (timer-triggered bt-siege-tower-payload-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
+    (up-compare-goal bt-siege-tower-failure-retry-goal < bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-garrison-timeout-failure)
+    (up-modify-goal bt-siege-tower-failure-retry-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
+)
+
+(defrule
+    (timer-triggered bt-siege-tower-payload-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
+    (up-compare-goal bt-siege-tower-failure-retry-goal >= bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-garrison-timeout-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
 ; Payload is valid only when enough infantry exists and the standing army
 ; can spare the complete six-unit package without violating its floor.
 (defrule
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
     (unit-type-count infantry-class >= bt-siege-tower-payload-min)
-    (up-compare-goal bt-standing-army-deficit-goal <= 0)
-    (soldier-count >= 6)
+    (up-compare-goal bt-siege-tower-spare-army-goal >= bt-siege-tower-payload-min)
 =>
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
     (set-strategic-number sn-number-garrison-units bt-siege-tower-payload-min)
     (set-strategic-number sn-maximum-garrison-fill bt-siege-tower-payload-min)
     (up-garrison siege-tower c: infantry-class)
@@ -7204,7 +7293,7 @@
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
     (up-compare-goal bt-siege-tower-execution-search-state-goal == 0)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-last-wall-attempt)
 =>
     (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
@@ -7216,7 +7305,7 @@
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
     (up-compare-goal bt-siege-tower-execution-search-state-goal == 0)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-last-wall-attempt)
 =>
     (set-goal bt-siege-tower-failure-goal bt-siege-tower-approach-exhausted-failure)
     (set-goal bt-siege-tower-demand-goal 0)
@@ -7230,9 +7319,12 @@
     (timer-triggered bt-siege-tower-approach-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (up-ungarrison siege-tower)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
     (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
     (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
@@ -7242,7 +7334,7 @@
     (timer-triggered bt-siege-tower-approach-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-approach-watchdog-timer)
     (set-goal bt-siege-tower-failure-goal bt-siege-tower-approach-exhausted-failure)
@@ -7305,9 +7397,12 @@
     (timer-triggered bt-siege-tower-unload-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (up-ungarrison siege-tower)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
     (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
     (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
@@ -7317,7 +7412,7 @@
     (timer-triggered bt-siege-tower-unload-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
-    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-unload-watchdog-timer)
     (set-goal bt-siege-tower-failure-goal bt-siege-tower-unload-exhausted-failure)
@@ -7350,8 +7445,32 @@
     (set-goal bt-siege-tower-cycle-complete-goal 1)
 )
 
-; Retry/re-probe transition. All retry paths return to wall identification,
-; which is the only stage allowed to establish a fresh wall point.
+; Retry/re-probe transition. Wall execution failures preserve the
+; candidate index so the next probe selects the next wall. Production,
+; payload, and no-target failures reset to candidate zero because the
+; selected wall has not been proven unusable.
+(defrule
+    (timer-triggered bt-siege-tower-retry-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (goal bt-siege-tower-failure-goal bt-siege-tower-approach-exhausted-failure)
+=>
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+)
+
+(defrule
+    (timer-triggered bt-siege-tower-retry-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (goal bt-siege-tower-failure-goal bt-siege-tower-unload-exhausted-failure)
+=>
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+)
+
 (defrule
     (timer-triggered bt-siege-tower-retry-timer)
     (goal bt-siege-tower-demand-goal 1)
@@ -7374,6 +7493,7 @@
     )
 =>
     (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
     (disable-timer bt-siege-tower-garrison-watchdog-timer)
     (disable-timer bt-siege-tower-approach-watchdog-timer)
     (disable-timer bt-siege-tower-unload-watchdog-timer)
