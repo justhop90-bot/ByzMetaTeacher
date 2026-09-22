@@ -14066,6 +14066,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (set-goal bt-research-castle-failure-backoff-goal ri-logistica)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-cataphract-package-goal 0)
 )
 
 (defrule
@@ -14075,6 +14076,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (set-goal bt-research-castle-failure-backoff-goal ri-elite-cataphract)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-cataphract-package-goal 0)
 )
 
 ;----------------------------------------------------------------
