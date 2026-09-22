@@ -11117,6 +11117,90 @@ camel-line < bt-camel-target-1)))))
     (set-goal bt-research-stable-claim-goal 0)
 )
 
+;================================================================
+; RESEARCH CAPABILITY LOSS
+;================================================================
+; A capability-local claim dies when every instance of its research
+; building disappears. This is world-state cleanup, not a research-action
+; failure. The package/demand layer remains live and can reassert the tech
+; after the capability is rebuilt. No global strategic claim is touched.
+(defrule
+    (goal bt-research-town-center-claim-goal != 0)
+    (building-type-count town-center == 0)
+=>
+    (set-goal bt-research-town-center-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-mill-claim-goal != 0)
+    (building-type-count mill == 0)
+=>
+    (set-goal bt-research-mill-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-lumber-camp-claim-goal != 0)
+    (building-type-count lumber-camp == 0)
+=>
+    (set-goal bt-research-lumber-camp-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-mining-camp-claim-goal != 0)
+    (building-type-count mining-camp == 0)
+=>
+    (set-goal bt-research-mining-camp-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-blacksmith-claim-goal != 0)
+    (building-type-count blacksmith == 0)
+=>
+    (set-goal bt-research-blacksmith-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-university-claim-goal != 0)
+    (building-type-count university == 0)
+=>
+    (set-goal bt-research-university-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-castle-claim-goal != 0)
+    (building-type-count castle == 0)
+=>
+    (set-goal bt-research-castle-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-barracks-claim-goal != 0)
+    (building-type-count barracks == 0)
+=>
+    (set-goal bt-research-barracks-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-archery-range-claim-goal != 0)
+    (building-type-count archery-range == 0)
+=>
+    (set-goal bt-research-archery-range-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-stable-claim-goal != 0)
+    (building-type-count stable == 0)
+=>
+    (set-goal bt-research-stable-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-siege-workshop-claim-goal != 0)
+    (building-type-count siege-workshop == 0)
+=>
+    (set-goal bt-research-siege-workshop-claim-goal 0)
+)
+
 ;----------------------------------------------------------------
 ; RESEARCH FAILURE FAIRNESS BACKOFF
 ;
