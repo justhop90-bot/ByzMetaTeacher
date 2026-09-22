@@ -349,6 +349,24 @@
 (defconst bt-research-archery-range-crossbow-retry-goal 652)
 (defconst bt-research-archery-range-elite-skirmisher-retry-goal 653)
 (defconst bt-research-archery-range-arbalest-retry-goal 654)
+; Blacksmith research bounded-start retry state.
+; Each technology owns a finite failed-start budget. The shared research
+; failure timer remains cooldown/fairness state only.
+(defconst bt-blacksmith-research-max-retries 2)
+(defconst bt-research-blacksmith-scale-mail-retry-goal 655)
+(defconst bt-research-blacksmith-chain-mail-retry-goal 656)
+(defconst bt-research-blacksmith-fletching-retry-goal 657)
+(defconst bt-research-blacksmith-bodkin-arrow-retry-goal 658)
+(defconst bt-research-blacksmith-padded-archer-armor-retry-goal 659)
+(defconst bt-research-blacksmith-leather-archer-armor-retry-goal 660)
+(defconst bt-research-blacksmith-bracer-retry-goal 661)
+(defconst bt-research-blacksmith-ring-archer-armor-retry-goal 662)
+(defconst bt-research-blacksmith-forging-retry-goal 663)
+(defconst bt-research-blacksmith-iron-casting-retry-goal 664)
+(defconst bt-research-blacksmith-scale-barding-retry-goal 665)
+(defconst bt-research-blacksmith-chain-barding-retry-goal 666)
+(defconst bt-research-blacksmith-plate-barding-retry-goal 667)
+(defconst bt-research-blacksmith-plate-mail-retry-goal 668)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -1237,6 +1255,8 @@
 ; CAVALRY COUNTER PACKAGE
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
+    (up-compare-goal bt-research-blacksmith-scale-mail-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
     (up-compare-goal bt-cavalry-counter-level-goal >= 1)
     (up-research-status c: ri-scale-mail < research-complete)
 =>
@@ -1246,6 +1266,8 @@
     (goal bt-research-cavalry-counter-package-goal 0)
     (up-compare-goal bt-cavalry-counter-level-goal >= 1)
     (up-research-status c: ri-scale-mail == research-complete)
+    (up-compare-goal bt-research-blacksmith-chain-mail-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-mail)
     (up-research-status c: ri-chain-mail < research-complete)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)
@@ -1274,6 +1296,8 @@
     (current-age >= imperial-age)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
     (up-research-status c: ri-halberdier == research-complete)
+    (up-compare-goal bt-research-blacksmith-plate-mail-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-plate-mail)
     (up-research-status c: ri-plate-mail < research-complete)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
@@ -1281,6 +1305,8 @@
 (defrule
     (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail == research-complete)
+    (up-compare-goal bt-research-blacksmith-chain-mail-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-mail)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)
 )
@@ -1305,6 +1331,8 @@
     (current-age >= imperial-age)
     (up-compare-goal bt-cavalry-counter-level-goal >= 2)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+    (up-compare-goal bt-research-blacksmith-plate-mail-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-plate-mail)
     (up-research-status c: ri-plate-mail < research-complete)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
@@ -1328,6 +1356,8 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
+    (up-compare-goal bt-research-blacksmith-fletching-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (up-research-status c: ri-fletching < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-fletching)
@@ -1342,6 +1372,20 @@
     (up-research-status c: ri-crossbow < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-crossbow)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal > 0)
+    (up-compare-goal bt-standing-skirm-target-goal < bt-skirm-target-1)
+    (unit-type-count-total archer-line >= 3)
+    (up-compare-goal bt-research-blacksmith-padded-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-padded-archer-armor)
+    (up-research-status c: ri-padded-archer-armor < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
 )
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
@@ -1411,6 +1455,8 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-crossbow)
     (up-research-status c: ri-crossbow == research-complete)
+    (up-compare-goal bt-research-blacksmith-bodkin-arrow-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
@@ -1418,6 +1464,8 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
+    (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
     (up-research-status c: ri-bracer < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-bracer)
@@ -1445,6 +1493,30 @@
     (research-available ri-thumb-ring)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-thumb-ring)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
+    (up-research-status c: ri-padded-archer-armor == research-complete)
+    (up-compare-goal bt-research-blacksmith-leather-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-leather-archer-armor)
+    (up-research-status c: ri-leather-archer-armor < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
+    (up-research-status c: ri-leather-archer-armor == research-complete)
+    (up-compare-goal bt-research-blacksmith-ring-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-ring-archer-armor)
+    (up-research-status c: ri-ring-archer-armor < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
+    (up-research-status c: ri-ring-archer-armor == research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-bracer)
@@ -1478,6 +1550,61 @@
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
+; BLACKSMITH TERMINAL PACKAGE CLEANUP
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
+    (up-compare-goal bt-research-blacksmith-scale-mail-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+    (up-compare-goal bt-research-blacksmith-chain-mail-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+    (up-compare-goal bt-research-blacksmith-plate-mail-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-compare-goal bt-research-blacksmith-fletching-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+    (up-compare-goal bt-research-blacksmith-bodkin-arrow-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
+    (up-compare-goal bt-research-blacksmith-padded-archer-armor-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
+    (up-compare-goal bt-research-blacksmith-leather-archer-armor-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-bracer)
+    (up-compare-goal bt-research-blacksmith-bracer-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
+    (up-compare-goal bt-research-blacksmith-ring-archer-armor-retry-goal >= bt-blacksmith-research-max-retries)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
 ; CATAPHRACT PREMIUM PACKAGE
 (defrule
     (goal bt-research-cataphract-package-goal 0)
@@ -10631,6 +10758,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
+    (up-compare-goal bt-research-blacksmith-scale-mail-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
     (strategic-number sn-resource-control == 0)
     (or
@@ -10654,6 +10782,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail == research-complete)
 =>
+    (set-goal bt-research-blacksmith-scale-mail-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -10668,6 +10797,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail == research-complete)
     (up-research-status c: ri-chain-mail < research-pending)
+    (up-compare-goal bt-research-blacksmith-chain-mail-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-mail)
     (strategic-number sn-resource-control == 0)
     (or
@@ -10692,6 +10822,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-chain-mail)
     (up-research-status c: ri-chain-mail == research-complete)
 =>
+    (set-goal bt-research-blacksmith-chain-mail-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -10714,6 +10845,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (not (can-research-with-escrow castle-age))
     (up-research-status c: ri-fletching < research-pending)
+    (up-compare-goal bt-research-blacksmith-fletching-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
@@ -10735,6 +10867,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-fletching < research-pending)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (up-compare-goal bt-research-blacksmith-fletching-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
@@ -10752,6 +10885,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-fletching)
     (up-research-status c: ri-fletching == research-complete)
 =>
+    (set-goal bt-research-blacksmith-fletching-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -10776,6 +10910,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-fletching-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
@@ -10847,6 +10982,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-bodkin-arrow-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bodkin-arrow)
@@ -10864,6 +11000,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow == research-complete)
 =>
+    (set-goal bt-research-blacksmith-bodkin-arrow-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -10887,6 +11024,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (can-research-with-escrow castle-age))
     (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-padded-archer-armor < research-pending)
+    (up-compare-goal bt-research-blacksmith-padded-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-padded-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
@@ -10903,6 +11041,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-padded-archer-armor-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -10928,6 +11067,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-padded-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-padded-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
@@ -10976,6 +11116,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-leather-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-leather-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-leather-archer-armor)
@@ -10993,6 +11134,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-leather-archer-armor-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11062,6 +11204,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bracer)
@@ -11079,6 +11222,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-bracer)
     (up-research-status c: ri-bracer == research-complete)
 =>
+    (set-goal bt-research-blacksmith-bracer-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11111,6 +11255,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-ring-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-ring-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-ring-archer-armor)
@@ -11128,6 +11273,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)
     (up-research-status c: ri-ring-archer-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-ring-archer-armor-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11140,6 +11286,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (can-research-with-escrow castle-age))
     (unit-type-count-total scout-cavalry >= 3)
     (up-research-status c: ri-forging < research-pending)
+    (up-compare-goal bt-research-blacksmith-forging-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
@@ -11157,6 +11304,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-forging)
     (up-research-status c: ri-forging == research-complete)
 =>
+    (set-goal bt-research-blacksmith-forging-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11177,6 +11325,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-forging-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
@@ -11208,6 +11357,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-iron-casting-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-iron-casting)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-iron-casting)
@@ -11226,6 +11376,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-iron-casting)
     (up-research-status c: ri-iron-casting == research-complete)
 =>
+    (set-goal bt-research-blacksmith-iron-casting-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11261,6 +11412,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-scale-barding-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-scale-barding-armor)
@@ -11278,6 +11430,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-scale-barding-armor)
     (up-research-status c: ri-scale-barding-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-scale-barding-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11300,6 +11453,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-chain-barding-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-chain-barding-armor)
@@ -11318,6 +11472,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-chain-barding-armor)
     (up-research-status c: ri-chain-barding-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-chain-barding-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11338,6 +11493,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-plate-barding-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-plate-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-barding-armor)
@@ -11356,6 +11512,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-blacksmith-claim-goal ri-plate-barding-armor)
     (up-research-status c: ri-plate-barding-armor == research-complete)
 =>
+    (set-goal bt-research-blacksmith-plate-barding-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11697,6 +11854,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-research-blacksmith-plate-mail-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-plate-mail)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-mail)
@@ -11715,6 +11873,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (goal bt-research-blacksmith-claim-goal ri-plate-mail)
     (up-research-status c: ri-plate-mail == research-complete)
 =>
+    (set-goal bt-research-blacksmith-plate-mail-retry-goal 0)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -11867,7 +12026,146 @@ camel-line < bt-camel-target-1)))))
     (building-type-count blacksmith == 0)
 =>
     (set-goal bt-research-blacksmith-claim-goal 0)
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
+; Blacksmith retry budgets reset only when their operational reason and
+; active package/claim ownership are both gone.
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+=>
+    (set-goal bt-research-blacksmith-fletching-retry-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+=>
+    (set-goal bt-research-blacksmith-bodkin-arrow-retry-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+    (goal bt-crossbow-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-padded-archer-armor-retry-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+    (goal bt-crossbow-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-leather-archer-armor-retry-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+    (goal bt-crossbow-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-bracer-retry-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (up-compare-goal bt-standing-archer-target-goal == 0)
+    (up-compare-goal bt-standing-skirm-target-goal == 0)
+    (goal bt-crossbow-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-ring-archer-armor-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-scale-mail-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-chain-mail-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 2)
+    (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-2)
+=>
+    (set-goal bt-research-blacksmith-plate-mail-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-scout-pressure-demand-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-forging-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-scout-pressure-demand-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-iron-casting-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-scout-pressure-demand-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-scale-barding-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-scout-pressure-demand-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-chain-barding-retry-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-scout-pressure-demand-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-blacksmith-plate-barding-retry-goal 0)
+)
+
 
 ; University retry budgets reset when their operational reason disappears.
 ; Capability loss does not reset retry history. It only releases the active
@@ -12227,6 +12525,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-fletching)
     (up-research-status c: ri-fletching <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-fletching-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-fletching)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12247,6 +12546,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-bodkin-arrow-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-bodkin-arrow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12256,6 +12556,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-padded-archer-armor-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-padded-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12265,6 +12566,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-leather-archer-armor-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-leather-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12285,6 +12587,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-bracer)
     (up-research-status c: ri-bracer <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-bracer-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-bracer)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12294,6 +12597,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)
     (up-research-status c: ri-ring-archer-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-ring-archer-armor-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-ring-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12303,6 +12607,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-forging)
     (up-research-status c: ri-forging <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-forging-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-forging)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12311,6 +12616,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-scale-mail-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-scale-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12320,6 +12626,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-chain-mail)
     (up-research-status c: ri-chain-mail <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-chain-mail-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-chain-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12330,6 +12637,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-iron-casting)
     (up-research-status c: ri-iron-casting <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-iron-casting-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-iron-casting)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12339,6 +12647,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-scale-barding-armor)
     (up-research-status c: ri-scale-barding-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-scale-barding-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-scale-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12348,6 +12657,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-chain-barding-armor)
     (up-research-status c: ri-chain-barding-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-chain-barding-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-chain-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12357,6 +12667,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-plate-barding-armor)
     (up-research-status c: ri-plate-barding-armor <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-plate-barding-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-plate-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
@@ -12470,6 +12781,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-blacksmith-claim-goal ri-plate-mail)
     (up-research-status c: ri-plate-mail <= research-available)
 =>
+    (up-modify-goal bt-research-blacksmith-plate-mail-retry-goal g:+ 1)
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-plate-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
