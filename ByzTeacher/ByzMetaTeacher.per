@@ -81,7 +81,8 @@
 ;   feudal-age   = Feudal claim owns the bank
 ;   castle-age   = Castle claim owns the bank
 ;   imperial-age = Imperial claim owns the bank
-;   ri-*         = specific technology owns the bank
+;   ri-*         = technology owns the bank only for the start action; the
+;                  global claim is released immediately after research is issued
 ;
 (defconst sn-resource-control 191)
 
@@ -279,6 +280,21 @@
 (defconst bt-research-failure-backoff-goal 594)
 (defconst bt-research-failure-backoff-timer 41)
 (defconst bt-research-failure-backoff-seconds 30)
+(defconst bt-research-town-center-claim-goal 608)
+(defconst bt-research-mill-claim-goal 609)
+(defconst bt-research-lumber-camp-claim-goal 610)
+(defconst bt-research-mining-camp-claim-goal 611)
+(defconst bt-research-blacksmith-claim-goal 612)
+(defconst bt-research-university-claim-goal 613)
+(defconst bt-research-castle-claim-goal 614)
+(defconst bt-research-barracks-claim-goal 615)
+(defconst bt-research-archery-range-claim-goal 616)
+(defconst bt-research-stable-claim-goal 617)
+(defconst bt-research-siege-workshop-claim-goal 618)
+(defconst bt-research-cavalry-counter-package-goal 619)
+(defconst bt-research-ranged-counter-package-goal 620)
+(defconst bt-research-cataphract-package-goal 621)
+(defconst bt-research-siege-package-goal 622)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -887,17 +903,105 @@
 )
 
 ;================================================================
+; RESEARCH PACKAGE PRIORITY
+;================================================================
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+        (goal bt-halberdier-demand-goal 1)
+    )
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 1)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 1)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (goal bt-cavalry-threat-goal 0)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-research-ranged-counter-package-goal 1)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 1)
+    (goal bt-ranged-threat-goal 0)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-cataphract-demand-goal 1)
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-research-cataphract-package-goal 1)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal 1)
+    (goal bt-cataphract-demand-goal 0)
+=>
+    (set-goal bt-research-cataphract-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (or
+        (goal bt-mangonel-demand-goal 1)
+        (or
+            (goal bt-onager-demand-goal 1)
+            (or
+                (goal bt-bombard-cannon-demand-goal 1)
+                (or
+                    (goal bt-ram-demand-goal 1)
+                    (goal bt-scorpion-ballistics-demand-goal 1)
+                )
+            )
+        )
+    )
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-research-siege-package-goal 1)
+)
+(defrule
+    (goal bt-research-siege-package-goal 1)
+    (goal bt-mangonel-demand-goal 0)
+    (goal bt-onager-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-ram-demand-goal 0)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+=>
+    (set-goal bt-research-siege-package-goal 0)
+)
+
+;================================================================
 ; 3. LOOM
 ;================================================================
 ; Q: "How do I write a technology rule?"
 ;
 ;   CONDITION
 ;       ->
-;   CLAIM RESOURCE
+;   START AUTHORITY
 ;       ->
 ;   RELEASE ESCROW
 ;       ->
 ;   RESEARCH
+;       ->
+;   RELEASE GLOBAL CLAIM
+;       ->
+;   RESEARCH-PENDING / COMPLETE
 ;
 ; Loom costs gold, so gold escrow is released.
 (defrule
@@ -905,28 +1009,32 @@
     (unit-type-count villager >= 7)
     (up-compare-goal bt-research-failure-backoff-goal != ri-loom)
     (strategic-number sn-resource-control == 0)
+    (building-type-count town-center >= 1)
     (can-research-with-escrow ri-loom)
+    (goal bt-research-town-center-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-loom)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-loom)
+    (set-goal bt-research-town-center-claim-goal ri-loom)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Q: "How do I know the technology actually completed?"
 ;
 ; research-pending is not enough.
 ; The completion witness is research-complete.
+; The capability-local claim remains live while Loom researches, but the
+; global strategic mutex is already free for unrelated actions.
 ; Q: "What proves the Loom claim is finished?"
 ;
 ; research-complete is the terminal witness. The watchdog is stopped
 ; before the shared mutex is released.
 (defrule
-    (strategic-number sn-resource-control == ri-loom)
+    (goal bt-research-town-center-claim-goal ri-loom)
     (up-research-status c: ri-loom == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
 )
 
 ;================================================================
@@ -1532,24 +1640,30 @@
     (up-compare-goal bt-research-failure-backoff-goal != ri-horse-collar)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow castle-age))
+    (building-type-count mill >= 1)
     (can-research-with-escrow ri-horse-collar)
+    (goal bt-research-mill-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-horse-collar)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-horse-collar)
+    (set-goal bt-research-mill-claim-goal ri-horse-collar)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Q: "What proves the Horse Collar claim is finished?"
 ;
 ; research-complete is the terminal witness for the technology claim.
 (defrule
-    (strategic-number sn-resource-control == ri-horse-collar)
+    (goal bt-research-mill-claim-goal ri-horse-collar)
     (up-research-status c: ri-horse-collar == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 ;================================================================
@@ -1565,21 +1679,27 @@
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (building-type-count mill >= 1)
     (can-research-with-escrow ri-heavy-plow)
+    (goal bt-research-mill-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-heavy-plow)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-heavy-plow)
+    (set-goal bt-research-mill-claim-goal ri-heavy-plow)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-heavy-plow)
+    (goal bt-research-mill-claim-goal ri-heavy-plow)
     (up-research-status c: ri-heavy-plow == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 ;================================================================
@@ -1593,21 +1713,27 @@
     (up-research-status c: ri-heavy-plow >= research-complete)
     (up-compare-goal bt-research-failure-backoff-goal != ri-crop-rotation)
     (strategic-number sn-resource-control == 0)
+    (building-type-count mill >= 1)
     (can-research-with-escrow ri-crop-rotation)
+    (goal bt-research-mill-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-crop-rotation)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-crop-rotation)
+    (set-goal bt-research-mill-claim-goal ri-crop-rotation)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-crop-rotation)
+    (goal bt-research-mill-claim-goal ri-crop-rotation)
     (up-research-status c: ri-crop-rotation == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 ;================================================================
@@ -3007,21 +3133,27 @@ research-pending)))))
     (up-compare-goal bt-research-failure-backoff-goal != ri-double-bit-axe)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow castle-age))
+    (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-double-bit-axe)
+    (goal bt-research-lumber-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-double-bit-axe)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-double-bit-axe)
+    (set-goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-double-bit-axe)
+    (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
     (up-research-status c: ri-double-bit-axe == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-double-bit-axe-demand-goal 0)
 )
 
@@ -3097,22 +3229,28 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
     (not (can-research-with-escrow imperial-age))
+    (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-gold-mining)
+    (goal bt-research-mining-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-gold-mining)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-gold-mining)
+    (set-goal bt-research-mining-camp-claim-goal ri-gold-mining)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Completion witness releases only the Gold Mining claim.
 (defrule
-    (strategic-number sn-resource-control == ri-gold-mining)
+    (goal bt-research-mining-camp-claim-goal ri-gold-mining)
     (up-research-status c: ri-gold-mining == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-gold-mining-demand-goal 0)
 )
 
@@ -3162,36 +3300,40 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
     (not (can-research-with-escrow imperial-age))
+    (building-type-count town-center >= 1)
     (can-research-with-escrow ri-wheel-barrow)
+    (goal bt-research-town-center-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-wheel-barrow)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-wheel-barrow)
+    (set-goal bt-research-town-center-claim-goal ri-wheel-barrow)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal world-state witness for the claim.
 (defrule
-    (strategic-number sn-resource-control == ri-wheel-barrow)
+    (goal bt-research-town-center-claim-goal ri-wheel-barrow)
     (up-research-status c: ri-wheel-barrow == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; WHEELBARROW WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-wheel-barrow)
+    (goal bt-research-town-center-claim-goal ri-wheel-barrow)
     (up-research-status c: ri-wheel-barrow <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-wheel-barrow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
 )
 
@@ -3316,36 +3458,40 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (building-type-count town-center >= 1)
     (can-research-with-escrow ri-hand-cart)
+    (goal bt-research-town-center-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-hand-cart)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-hand-cart)
+    (set-goal bt-research-town-center-claim-goal ri-hand-cart)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal witness for the Hand Cart claim.
 (defrule
-    (strategic-number sn-resource-control == ri-hand-cart)
+    (goal bt-research-town-center-claim-goal ri-hand-cart)
     (up-research-status c: ri-hand-cart == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
     (set-goal bt-hand-cart-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; HAND CART WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-hand-cart)
+    (goal bt-research-town-center-claim-goal ri-hand-cart)
     (up-research-status c: ri-hand-cart <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-hand-cart)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
     (set-goal bt-hand-cart-demand-goal 0)
 )
 
@@ -3410,36 +3556,40 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
         (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal bt-bow-saw-bank-delta-gold-goal
 >= 0))))
     )
+    (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-bow-saw)
+    (goal bt-research-lumber-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-bow-saw)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-bow-saw)
+    (set-goal bt-research-lumber-camp-claim-goal ri-bow-saw)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal witness for the Bow Saw claim.
 (defrule
-    (strategic-number sn-resource-control == ri-bow-saw)
+    (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
     (up-research-status c: ri-bow-saw == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-bow-saw-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; BOW SAW WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-bow-saw)
+    (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
     (up-research-status c: ri-bow-saw <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-bow-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-bow-saw-demand-goal 0)
 )
 
@@ -3483,36 +3633,40 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (up-compare-goal bt-research-failure-backoff-goal != ri-two-man-saw)
     (strategic-number sn-resource-control == 0)
     (not (goal bt-cataphract-demand-goal 1))
+    (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-two-man-saw)
+    (goal bt-research-lumber-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-two-man-saw)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-two-man-saw)
+    (set-goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal witness for the Two-Man Saw claim.
 (defrule
-    (strategic-number sn-resource-control == ri-two-man-saw)
+    (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
     (up-research-status c: ri-two-man-saw == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-two-man-saw-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; TWO-MAN SAW WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-two-man-saw)
+    (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
     (up-research-status c: ri-two-man-saw <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-two-man-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-two-man-saw-demand-goal 0)
 )
 
@@ -3533,35 +3687,39 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-failure-backoff-goal != ri-gold-shaft-mining)
     (strategic-number sn-resource-control == 0)
+    (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-gold-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-gold-shaft-mining)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-gold-shaft-mining)
+    (set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal witness for the Gold Shaft Mining claim.
 (defrule
-    (strategic-number sn-resource-control == ri-gold-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
     (up-research-status c: ri-gold-shaft-mining == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; GOLD SHAFT MINING WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-gold-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
     (up-research-status c: ri-gold-shaft-mining <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-gold-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
 ;================================================================
@@ -3654,22 +3812,28 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         (and (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0) (up-compare-goal
 bt-stone-mining-bank-delta-gold-goal >= 0))))
     )
+    (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-stone-mining)
+    (goal bt-research-mining-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-stone-mining)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-stone-mining)
+    (set-goal bt-research-mining-camp-claim-goal ri-stone-mining)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal world-state witness.
 (defrule
-    (strategic-number sn-resource-control == ri-stone-mining)
+    (goal bt-research-mining-camp-claim-goal ri-stone-mining)
     (up-research-status c: ri-stone-mining == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
 )
 
@@ -3743,22 +3907,28 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-stone-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-stone-shaft-mining)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-stone-shaft-mining)
+    (set-goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; research-complete is the terminal witness for Stone Shaft Mining.
 (defrule
-    (strategic-number sn-resource-control == ri-stone-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
     (up-research-status c: ri-stone-shaft-mining == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
 )
 
@@ -7652,21 +7822,23 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-failure-backoff-goal != ri-ballistics)
     (strategic-number sn-resource-control == 0)
+    (building-type-count university >= 1)
     (can-research-with-escrow ri-ballistics)
+    (goal bt-research-university-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-ballistics)
     (release-escrow wood)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-ballistics)
+    (set-goal bt-research-university-claim-goal ri-ballistics)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-ballistics)
+    (goal bt-research-university-claim-goal ri-ballistics)
     (up-research-status c: ri-ballistics == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-scorpion-ballistics-demand-goal 0)
 )
 
@@ -7737,23 +7909,25 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-failure-backoff-goal != ri-onager)
     (strategic-number sn-resource-control == 0)
+    (building-type-count university >= 1)
     (can-research-with-escrow ri-onager)
+    (goal bt-research-university-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-onager)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-onager)
+    (set-goal bt-research-university-claim-goal ri-onager)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Research completion releases only the Onager resource claim. Demand stays
 ; active so the completed upgrade can feed the finite production package.
 (defrule
-    (strategic-number sn-resource-control == ri-onager)
+    (goal bt-research-university-claim-goal ri-onager)
     (up-research-status c: ri-onager == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
 )
 
 ; Two actual Onagers close the finite Imperial response package.
@@ -8003,20 +8177,21 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-compare-goal bt-research-failure-backoff-goal != ri-chemistry)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-chemistry)
+    (goal bt-research-university-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-chemistry)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-chemistry)
+    (set-goal bt-research-university-claim-goal ri-chemistry)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-chemistry)
+    (goal bt-research-university-claim-goal ri-chemistry)
     (up-research-status c: ri-chemistry == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
 )
 
 ; Two actual Bombard Cannons close the precision-siege package. Queued BBCs
@@ -9372,20 +9547,21 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-capped-ram)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-capped-ram)
+    (goal bt-research-siege-workshop-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-capped-ram)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-capped-ram)
+    (set-goal bt-research-siege-workshop-claim-goal ri-capped-ram)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-capped-ram)
+    (goal bt-research-siege-workshop-claim-goal ri-capped-ram)
     (up-research-status c: ri-capped-ram == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 ; Siege Ram is the second-stage investment. Four actual Rams plus completed
@@ -9404,20 +9580,21 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-siege-ram)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-siege-ram)
+    (goal bt-research-siege-workshop-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-siege-ram)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-siege-ram)
+    (set-goal bt-research-siege-workshop-claim-goal ri-siege-ram)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-siege-ram)
+    (goal bt-research-siege-workshop-claim-goal ri-siege-ram)
     (up-research-status c: ri-siege-ram == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 (defrule
@@ -9467,19 +9644,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (up-compare-goal bt-scale-mail-bank-delta-gold-goal >= 0))))
     )
     (can-research-with-escrow ri-scale-mail)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-scale-mail)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-scale-mail)
+    (set-goal bt-research-blacksmith-claim-goal ri-scale-mail)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-scale-mail)
+    (goal bt-research-blacksmith-claim-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 
@@ -9502,20 +9680,21 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (up-compare-goal bt-chain-mail-bank-delta-gold-goal >= 0))))
     )
     (can-research-with-escrow ri-chain-mail)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-chain-mail)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-chain-mail)
+    (set-goal bt-research-blacksmith-claim-goal ri-chain-mail)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-chain-mail)
+    (goal bt-research-blacksmith-claim-goal ri-chain-mail)
     (up-research-status c: ri-chain-mail == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Crossbow support: Fletching -> Crossbow -> Bodkin.
@@ -9540,12 +9719,14 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-fletching)
+    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
@@ -9558,19 +9739,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-fletching)
+    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-fletching)
+    (goal bt-research-blacksmith-claim-goal ri-fletching)
     (up-research-status c: ri-fletching == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Castle catch-up for a previously skipped ranged foundation.
@@ -9597,12 +9779,14 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-fletching)
+    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
+    (set-strategic-number sn-resource-control 0)
 )
 
 
@@ -9616,19 +9800,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-crossbow)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-crossbow)
+    (goal bt-research-archery-range-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-crossbow)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-crossbow)
+    (set-goal bt-research-archery-range-claim-goal ri-crossbow)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-crossbow)
+    (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 (defrule
@@ -9662,19 +9847,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-bodkin-arrow)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bodkin-arrow)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-bodkin-arrow)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-bodkin-arrow)
+    (set-goal bt-research-blacksmith-claim-goal ri-bodkin-arrow)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-bodkin-arrow)
+    (goal bt-research-blacksmith-claim-goal ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 
@@ -9700,18 +9886,19 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-padded-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-padded-archer-armor)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-padded-archer-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-padded-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Castle catch-up closes the Padded -> Leather -> Ring armor chain
@@ -9739,11 +9926,13 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-padded-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-padded-archer-armor)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-padded-archer-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 
 
@@ -9784,19 +9973,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-leather-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-leather-archer-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-leather-archer-armor)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-leather-archer-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-leather-archer-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-leather-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
@@ -9814,20 +10004,22 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (up-compare-goal bt-research-failure-backoff-goal != ri-thumb-ring)
     (strategic-number sn-resource-control == 0)
+    (building-type-count university >= 1)
     (can-research-with-escrow ri-thumb-ring)
+    (goal bt-research-university-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-thumb-ring)
     (release-escrow food)
     (release-escrow wood)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-thumb-ring)
+    (set-goal bt-research-university-claim-goal ri-thumb-ring)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-thumb-ring)
+    (goal bt-research-university-claim-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
 )
 
 (defrule
@@ -9865,19 +10057,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-bracer)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bracer)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-bracer)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-bracer)
+    (set-goal bt-research-blacksmith-claim-goal ri-bracer)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-bracer)
+    (goal bt-research-blacksmith-claim-goal ri-bracer)
     (up-research-status c: ri-bracer == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
@@ -9912,19 +10105,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-ring-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-ring-archer-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-ring-archer-armor)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-ring-archer-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-ring-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)
     (up-research-status c: ri-ring-archer-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Knight support: Forging -> Iron Casting and cavalry armor.
@@ -9939,18 +10133,19 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-forging)
+    (set-goal bt-research-blacksmith-claim-goal ri-forging)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-forging)
+    (goal bt-research-blacksmith-claim-goal ri-forging)
     (up-research-status c: ri-forging == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Castle catch-up for a previously skipped Forging investment.
@@ -9973,11 +10168,13 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-forging)
+    (set-goal bt-research-blacksmith-claim-goal ri-forging)
+    (set-strategic-number sn-resource-control 0)
 )
 
 
@@ -10000,19 +10197,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-iron-casting)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-iron-casting)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-iron-casting)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-iron-casting)
+    (set-goal bt-research-blacksmith-claim-goal ri-iron-casting)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-iron-casting)
+    (goal bt-research-blacksmith-claim-goal ri-iron-casting)
     (up-research-status c: ri-iron-casting == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Feudal Scale Barding is a defensive Scout investment against ranged fire.
@@ -10050,18 +10248,19 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-scale-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-scale-barding-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-scale-barding-armor)
     (release-escrow food)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-scale-barding-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-scale-barding-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-scale-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-scale-barding-armor)
     (up-research-status c: ri-scale-barding-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Castle Chain Barding closes the Knight package once the
@@ -10086,19 +10285,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-chain-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-chain-barding-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-chain-barding-armor)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-chain-barding-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-chain-barding-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-chain-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-chain-barding-armor)
     (up-research-status c: ri-chain-barding-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Imperial cavalry armor cap before/alongside the Knight-line upgrade.
@@ -10121,19 +10321,20 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-compare-goal bt-research-failure-backoff-goal != ri-plate-barding-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-barding-armor)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-plate-barding-armor)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-plate-barding-armor)
+    (set-goal bt-research-blacksmith-claim-goal ri-plate-barding-armor)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-plate-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-plate-barding-armor)
     (up-research-status c: ri-plate-barding-armor == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ; Imperial Knight transition: Cavalier.
@@ -10166,20 +10367,22 @@ bt-resource-mode-food-crisis) (goal bt-resource-mode-goal bt-resource-mode-gold-
     (goal unit-goal knight-line)
     (up-compare-goal bt-research-failure-backoff-goal != ri-cavalier)
     (strategic-number sn-resource-control == 0)
+    (building-type-count stable >= 1)
     (can-research-with-escrow ri-cavalier)
+    (goal bt-research-stable-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-cavalier)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-cavalier)
+    (set-goal bt-research-stable-claim-goal ri-cavalier)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-cavalier)
+    (goal bt-research-stable-claim-goal ri-cavalier)
     (up-research-status c: ri-cavalier == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
     (set-goal bt-cavalier-demand-goal 0)
 )
 
@@ -10214,20 +10417,22 @@ bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (or (goal bt-resource
     (current-age >= imperial-age)
     (up-compare-goal bt-research-failure-backoff-goal != ri-paladin)
     (strategic-number sn-resource-control == 0)
+    (building-type-count stable >= 1)
     (can-research-with-escrow ri-paladin)
+    (goal bt-research-stable-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-paladin)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-paladin)
+    (set-goal bt-research-stable-claim-goal ri-paladin)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-paladin)
+    (goal bt-research-stable-claim-goal ri-paladin)
     (up-research-status c: ri-paladin == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
     (set-goal bt-paladin-demand-goal 0)
 )
 
@@ -10260,20 +10465,22 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (current-age >= imperial-age)
     (up-compare-goal bt-research-failure-backoff-goal != ri-arbalest)
     (strategic-number sn-resource-control == 0)
+    (building-type-count archery-range >= 1)
     (can-research-with-escrow ri-arbalest)
+    (goal bt-research-archery-range-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-arbalest)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-arbalest)
+    (set-goal bt-research-archery-range-claim-goal ri-arbalest)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-arbalest)
+    (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
 )
 
@@ -10293,19 +10500,20 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-compare-goal bt-research-failure-backoff-goal != ri-logistica)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-logistica)
+    (goal bt-research-castle-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-logistica)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-logistica)
+    (set-goal bt-research-castle-claim-goal ri-logistica)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-logistica)
+    (goal bt-research-castle-claim-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-castle-claim-goal 0)
 )
 (defrule
     (goal bt-cataphract-demand-goal 1)
@@ -10321,19 +10529,20 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-compare-goal bt-research-failure-backoff-goal != ri-elite-cataphract)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-elite-cataphract)
+    (goal bt-research-castle-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-elite-cataphract)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-elite-cataphract)
+    (set-goal bt-research-castle-claim-goal ri-elite-cataphract)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-elite-cataphract)
+    (goal bt-research-castle-claim-goal ri-elite-cataphract)
     (up-research-status c: ri-elite-cataphract == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-castle-claim-goal 0)
 )
 
 ;================================================================
@@ -10371,24 +10580,26 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
             )
         )
     )
+    (building-type-count barracks >= 1)
     (can-research-with-escrow ri-pikeman)
+    (goal bt-research-barracks-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-pikeman)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-pikeman)
+    (set-goal bt-research-barracks-claim-goal ri-pikeman)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Q: "What proves the Pikeman claim is finished?"
 ;
 ; research-complete is the terminal witness.
 (defrule
-    (strategic-number sn-resource-control == ri-pikeman)
+    (goal bt-research-barracks-claim-goal ri-pikeman)
     (up-research-status c: ri-pikeman == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 ;================================================================
@@ -10417,24 +10628,26 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
             )
         )
     )
+    (building-type-count archery-range >= 1)
     (can-research-with-escrow ri-elite-skirmisher)
+    (goal bt-research-archery-range-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-elite-skirmisher)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-elite-skirmisher)
+    (set-goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ; Q: "What proves the Elite Skirmisher claim is finished?"
 ;
 ; research-complete is the terminal witness.
 (defrule
-    (strategic-number sn-resource-control == ri-elite-skirmisher)
+    (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 ; Plate Mail closes the mature Spear/Halberdier armor package.
@@ -10458,20 +10671,21 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-compare-goal bt-research-failure-backoff-goal != ri-plate-mail)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-mail)
+    (goal bt-research-blacksmith-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-plate-mail)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-plate-mail)
+    (set-goal bt-research-blacksmith-claim-goal ri-plate-mail)
+    (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-plate-mail)
+    (goal bt-research-blacksmith-claim-goal ri-plate-mail)
     (up-research-status c: ri-plate-mail == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ;================================================================
@@ -10502,20 +10716,22 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (current-age >= imperial-age)
     (up-compare-goal bt-research-failure-backoff-goal != ri-halberdier)
     (strategic-number sn-resource-control == 0)
+    (building-type-count barracks >= 1)
     (can-research-with-escrow ri-halberdier)
+    (goal bt-research-barracks-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-halberdier)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-halberdier)
+    (set-goal bt-research-barracks-claim-goal ri-halberdier)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-halberdier)
+    (goal bt-research-barracks-claim-goal ri-halberdier)
     (up-research-status c: ri-halberdier == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-barracks-claim-goal 0)
     (set-goal bt-halberdier-demand-goal 0)
 )
 
@@ -10543,43 +10759,41 @@ camel-line < bt-camel-target-1)))))
     (current-age >= imperial-age)
     (up-compare-goal bt-research-failure-backoff-goal != ri-heavy-camel)
     (strategic-number sn-resource-control == 0)
+    (building-type-count stable >= 1)
     (can-research-with-escrow ri-heavy-camel)
+    (goal bt-research-stable-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-heavy-camel)
     (release-escrow food)
     (release-escrow gold)
-    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-heavy-camel)
+    (set-goal bt-research-stable-claim-goal ri-heavy-camel)
+    (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-heavy-camel)
+    (goal bt-research-stable-claim-goal ri-heavy-camel)
     (up-research-status c: ri-heavy-camel == research-complete)
 =>
-    (disable-timer bt-research-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-halberdier)
+    (goal bt-research-barracks-claim-goal ri-halberdier)
     (up-research-status c: ri-halberdier <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-halberdier)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-heavy-camel)
+    (goal bt-research-stable-claim-goal ri-heavy-camel)
     (up-research-status c: ri-heavy-camel <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-heavy-camel)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -10617,14 +10831,12 @@ camel-line < bt-camel-target-1)))))
 ;----------------------------------------------------------------
 ; LOOM WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-loom)
+    (goal bt-research-town-center-claim-goal ri-loom)
     (up-research-status c: ri-loom <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-loom)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-town-center-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -10692,358 +10904,298 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ;----------------------------------------------------------------
 ; HORSE COLLAR WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-horse-collar)
+    (goal bt-research-mill-claim-goal ri-horse-collar)
     (up-research-status c: ri-horse-collar <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-horse-collar)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-heavy-plow)
+    (goal bt-research-mill-claim-goal ri-heavy-plow)
     (up-research-status c: ri-heavy-plow <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-heavy-plow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-crop-rotation)
+    (goal bt-research-mill-claim-goal ri-crop-rotation)
     (up-research-status c: ri-crop-rotation <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-crop-rotation)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mill-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; CAPPED RAM WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-capped-ram)
+    (goal bt-research-siege-workshop-claim-goal ri-capped-ram)
     (up-research-status c: ri-capped-ram <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-capped-ram)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; SIEGE RAM WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-siege-ram)
+    (goal bt-research-siege-workshop-claim-goal ri-siege-ram)
     (up-research-status c: ri-siege-ram <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-siege-ram)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; ONAGER WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-onager)
+    (goal bt-research-university-claim-goal ri-onager)
     (up-research-status c: ri-onager <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-onager)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-onager-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; BALLISTICS WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-ballistics)
+    (goal bt-research-university-claim-goal ri-ballistics)
     (up-research-status c: ri-ballistics <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-ballistics)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-scorpion-ballistics-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; CHEMISTRY WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-chemistry)
+    (goal bt-research-university-claim-goal ri-chemistry)
     (up-research-status c: ri-chemistry <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-chemistry)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; PRIMARY MILITARY RESEARCH WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-fletching)
+    (goal bt-research-blacksmith-claim-goal ri-fletching)
     (up-research-status c: ri-fletching <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-fletching)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-crossbow)
+    (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-crossbow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-bodkin-arrow)
+    (goal bt-research-blacksmith-claim-goal ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-bodkin-arrow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-padded-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-padded-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-leather-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-leather-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-thumb-ring)
+    (goal bt-research-university-claim-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-thumb-ring)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-university-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-bracer)
+    (goal bt-research-blacksmith-claim-goal ri-bracer)
     (up-research-status c: ri-bracer <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-bracer)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-ring-archer-armor)
+    (goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)
     (up-research-status c: ri-ring-archer-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-ring-archer-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-forging)
+    (goal bt-research-blacksmith-claim-goal ri-forging)
     (up-research-status c: ri-forging <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-forging)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 (defrule
-    (strategic-number sn-resource-control == ri-scale-mail)
+    (goal bt-research-blacksmith-claim-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-scale-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-chain-mail)
+    (goal bt-research-blacksmith-claim-goal ri-chain-mail)
     (up-research-status c: ri-chain-mail <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-chain-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 
 (defrule
-    (strategic-number sn-resource-control == ri-iron-casting)
+    (goal bt-research-blacksmith-claim-goal ri-iron-casting)
     (up-research-status c: ri-iron-casting <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-iron-casting)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-scale-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-scale-barding-armor)
     (up-research-status c: ri-scale-barding-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-scale-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-chain-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-chain-barding-armor)
     (up-research-status c: ri-chain-barding-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-chain-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-plate-barding-armor)
+    (goal bt-research-blacksmith-claim-goal ri-plate-barding-armor)
     (up-research-status c: ri-plate-barding-armor <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-plate-barding-armor)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-cavalier)
+    (goal bt-research-stable-claim-goal ri-cavalier)
     (up-research-status c: ri-cavalier <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-cavalier)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
     (set-goal bt-cavalier-demand-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-paladin)
+    (goal bt-research-stable-claim-goal ri-paladin)
     (up-research-status c: ri-paladin <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-paladin)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-stable-claim-goal 0)
     (set-goal bt-paladin-demand-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-arbalest)
+    (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-arbalest)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; CATAPHRACT PREMIUM RESEARCH WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-logistica)
+    (goal bt-research-castle-claim-goal ri-logistica)
     (up-research-status c: ri-logistica <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-logistica)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-castle-claim-goal 0)
 )
 
 (defrule
-    (strategic-number sn-resource-control == ri-elite-cataphract)
+    (goal bt-research-castle-claim-goal ri-elite-cataphract)
     (up-research-status c: ri-elite-cataphract <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-elite-cataphract)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-castle-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; PIKEMAN WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-pikeman)
+    (goal bt-research-barracks-claim-goal ri-pikeman)
     (up-research-status c: ri-pikeman <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-pikeman)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; GOLD MINING WATCHDOG EXPIRY
 ;----------------------------------------------------------------
 (defrule
-    (strategic-number sn-resource-control == ri-gold-mining)
+    (goal bt-research-mining-camp-claim-goal ri-gold-mining)
     (up-research-status c: ri-gold-mining <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-gold-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-gold-mining-demand-goal 0)
 )
 
@@ -11051,14 +11203,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; DOUBLE-BIT AXE WATCHDOG EXPIRY
 ;----------------------------------------------------------------
 (defrule
-    (strategic-number sn-resource-control == ri-double-bit-axe)
+    (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
     (up-research-status c: ri-double-bit-axe <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-double-bit-axe)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-lumber-camp-claim-goal 0)
     (set-goal bt-double-bit-axe-demand-goal 0)
 )
 
@@ -11066,41 +11216,35 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ;----------------------------------------------------------------
 ; ELITE SKIRMISHER WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-elite-skirmisher)
+    (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-elite-skirmisher)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; PLATE MAIL WATCHDOG EXPIRY
 (defrule
-    (strategic-number sn-resource-control == ri-plate-mail)
+    (goal bt-research-blacksmith-claim-goal ri-plate-mail)
     (up-research-status c: ri-plate-mail <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-plate-mail)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; STONE MINING WATCHDOG EXPIRY
 ;----------------------------------------------------------------
 (defrule
-    (strategic-number sn-resource-control == ri-stone-mining)
+    (goal bt-research-mining-camp-claim-goal ri-stone-mining)
     (up-research-status c: ri-stone-mining <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-stone-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
 )
 
@@ -11108,14 +11252,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; STONE SHAFT MINING WATCHDOG EXPIRY
 ;----------------------------------------------------------------
 (defrule
-    (strategic-number sn-resource-control == ri-stone-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
     (up-research-status c: ri-stone-shaft-mining <= research-available)
-    (timer-triggered bt-research-watchdog-timer)
 =>
-    (disable-timer bt-research-watchdog-timer)
     (set-goal bt-research-failure-backoff-goal ri-stone-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-research-mining-camp-claim-goal 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
 )
 
