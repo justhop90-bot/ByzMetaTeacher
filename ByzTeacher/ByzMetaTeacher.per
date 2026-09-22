@@ -6689,6 +6689,7 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (goal bt-mangonel-demand-goal 0)
     (current-age >= castle-age)
+    (unit-type-count mangonel-line < bt-mangonel-response-target)
     (up-compare-goal bt-ranged-counter-level-goal >= 2)
     (players-building-count target-player > 0)
     (up-compare-goal bt-attack-reserve-goal >= 10)
@@ -6860,6 +6861,7 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
 (defrule
     (goal bt-onager-demand-goal 0)
     (current-age >= imperial-age)
+    (unit-type-count onager-line < bt-onager-response-target)
     (up-compare-goal bt-ranged-counter-level-goal >= 2)
     (players-building-count target-player > 0)
     (unit-type-count mangonel-line >= bt-mangonel-response-target)
@@ -6935,6 +6937,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 (defrule
     (goal bt-bombard-cannon-demand-goal 0)
     (current-age >= imperial-age)
+    (unit-type-count bombard-cannon-line < bt-bombard-cannon-response-target)
     (players-unit-type-count target-player trebuchet-set >= 1)
     (players-building-count target-player > 0)
     (goal attack-goal 1)
@@ -7967,6 +7970,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; Attack authority already proves the army package is active. This state
 ; narrows that attack to the building-assault purpose.
 (defrule
+    ; Ram demand is finite. Do not recreate a completed Castle package or
+    ; a fully upgraded Imperial building-pressure package.
     (goal bt-ram-demand-goal 0)
     (goal attack-goal 1)
     (players-building-count target-player > 0)
@@ -7975,6 +7980,19 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-counter-veto-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
+    (not
+        (or
+            (and
+                (current-age == castle-age)
+                (unit-type-count battering-ram-line >= bt-ram-response-target)
+            )
+            (and
+                (current-age >= imperial-age)
+                (unit-type-count battering-ram-line >= bt-ram-imperial-response-target)
+                (up-research-status c: ri-siege-ram == research-complete)
+            )
+        )
+    )
 =>
     (set-goal bt-ram-demand-goal 1)
 )
@@ -8155,6 +8173,26 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 =>
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    ; Castle Ram package is complete at the actual two-Ram response target.
+    (goal bt-ram-demand-goal 1)
+    (current-age == castle-age)
+    (unit-type-count battering-ram-line >= bt-ram-response-target)
+=>
+    (set-goal bt-ram-demand-goal 0)
+)
+
+(defrule
+    ; Imperial Ram package remains live through Capped/Siege Ram research.
+    ; Completion requires the full four-Ram package and completed Siege Ram.
+    (goal bt-ram-demand-goal 1)
+    (current-age >= imperial-age)
+    (unit-type-count battering-ram-line >= bt-ram-imperial-response-target)
+    (up-research-status c: ri-siege-ram == research-complete)
+=>
+    (set-goal bt-ram-demand-goal 0)
 )
 
 ;================================================================
