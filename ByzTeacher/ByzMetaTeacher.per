@@ -378,6 +378,17 @@
 (defconst bt-research-barracks-max-retries 2)
 (defconst bt-research-barracks-pikeman-retry-goal 674)
 (defconst bt-research-barracks-halberdier-retry-goal 675)
+; Economic research bounded-start retry state. Each technology owns its
+; own failed-start budget; shared backoff remains cooldown/fairness only.
+(defconst bt-economic-research-max-retries 2)
+(defconst bt-research-town-center-wheel-barrow-retry-goal 676)
+(defconst bt-research-town-center-hand-cart-retry-goal 677)
+(defconst bt-research-lumber-camp-double-bit-axe-retry-goal 678)
+(defconst bt-research-mining-camp-gold-mining-retry-goal 679)
+(defconst bt-research-lumber-camp-bow-saw-retry-goal 680)
+(defconst bt-research-lumber-camp-two-man-saw-retry-goal 681)
+(defconst bt-research-mining-camp-stone-mining-retry-goal 682)
+(defconst bt-research-mining-camp-stone-shaft-mining-retry-goal 683)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -4720,6 +4731,7 @@ research-pending)))))
     (goal bt-double-bit-axe-demand-goal 1)
     (current-age == feudal-age)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
+    (up-compare-goal bt-research-lumber-camp-double-bit-axe-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count lumber-camp >= 1)
@@ -4815,6 +4827,7 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (goal bt-gold-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-mining)
+    (up-compare-goal bt-research-mining-camp-gold-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -4887,6 +4900,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-wheelbarrow-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-wheel-barrow)
+    (up-compare-goal bt-research-town-center-wheel-barrow-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -4923,6 +4937,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-town-center-claim-goal ri-wheel-barrow)
     (up-research-status c: ri-wheel-barrow <= research-available)
 =>
+    (up-modify-goal bt-research-town-center-wheel-barrow-retry-goal g:+ 1)
     (set-goal bt-research-town-center-failure-backoff-goal ri-wheel-barrow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
@@ -5046,6 +5061,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-hand-cart-demand-goal 1)
     (current-age >= castle-age)
     (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-hand-cart)
+    (up-compare-goal bt-research-town-center-hand-cart-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -5081,6 +5097,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-town-center-claim-goal ri-hand-cart)
     (up-research-status c: ri-hand-cart <= research-available)
 =>
+    (up-modify-goal bt-research-town-center-hand-cart-retry-goal g:+ 1)
     (set-goal bt-research-town-center-failure-backoff-goal ri-hand-cart)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
@@ -5154,6 +5171,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-bow-saw-demand-goal 1)
     (current-age >= castle-age)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-bow-saw)
+    (up-compare-goal bt-research-lumber-camp-bow-saw-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (or
@@ -5193,6 +5211,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
     (up-research-status c: ri-bow-saw <= research-available)
 =>
+    (up-modify-goal bt-research-lumber-camp-bow-saw-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-bow-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -5236,6 +5255,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (current-age >= imperial-age)
     (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
+    (up-compare-goal bt-research-lumber-camp-two-man-saw-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (goal bt-cataphract-demand-goal 1))
     (building-type-count lumber-camp >= 1)
@@ -5270,6 +5290,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
     (up-research-status c: ri-two-man-saw <= research-available)
 =>
+    (up-modify-goal bt-research-lumber-camp-two-man-saw-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-two-man-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -5482,6 +5503,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-stone-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)
+    (up-compare-goal bt-research-mining-camp-stone-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -5507,6 +5529,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-stone-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)
+    (up-compare-goal bt-research-mining-camp-stone-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -5667,6 +5690,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-stone-mining == research-complete)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-shaft-mining)
+    (up-compare-goal bt-research-mining-camp-stone-shaft-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -5698,6 +5722,59 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 ;================================================================
 ;================================================================
+
+
+; Economic research retry state resets only after the strategic demand
+; disappears and no provider claim remains active.
+(defrule
+    (goal bt-wheelbarrow-demand-goal 0)
+    (goal bt-research-town-center-claim-goal 0)
+=>
+    (set-goal bt-research-town-center-wheel-barrow-retry-goal 0)
+)
+(defrule
+    (goal bt-hand-cart-demand-goal 0)
+    (goal bt-research-town-center-claim-goal 0)
+=>
+    (set-goal bt-research-town-center-hand-cart-retry-goal 0)
+)
+(defrule
+    (goal bt-double-bit-axe-demand-goal 0)
+    (goal bt-research-lumber-camp-claim-goal 0)
+=>
+    (set-goal bt-research-lumber-camp-double-bit-axe-retry-goal 0)
+)
+(defrule
+    (goal bt-gold-mining-demand-goal 0)
+    (goal bt-research-mining-camp-claim-goal 0)
+=>
+    (set-goal bt-research-mining-camp-gold-mining-retry-goal 0)
+)
+(defrule
+    (goal bt-bow-saw-demand-goal 0)
+    (goal bt-research-lumber-camp-claim-goal 0)
+=>
+    (set-goal bt-research-lumber-camp-bow-saw-retry-goal 0)
+)
+(defrule
+    (goal bt-two-man-saw-demand-goal 0)
+    (goal bt-research-lumber-camp-claim-goal 0)
+=>
+    (set-goal bt-research-lumber-camp-two-man-saw-retry-goal 0)
+)
+(defrule
+    (goal bt-stone-mining-demand-goal 0)
+    (goal bt-research-mining-camp-claim-goal 0)
+=>
+    (set-goal bt-research-mining-camp-stone-mining-retry-goal 0)
+)
+(defrule
+    (goal bt-stone-shaft-mining-demand-goal 0)
+    (goal bt-research-mining-camp-claim-goal 0)
+=>
+    (set-goal bt-research-mining-camp-stone-shaft-mining-retry-goal 0)
+)
+
 ; 15. PRODUCTION CAPACITY
 ;================================================================
 ;================================================================
@@ -14099,6 +14176,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-gold-mining)
     (up-research-status c: ri-gold-mining <= research-available)
 =>
+    (up-modify-goal bt-research-mining-camp-gold-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -14111,6 +14189,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
     (up-research-status c: ri-double-bit-axe <= research-available)
 =>
+    (up-modify-goal bt-research-lumber-camp-double-bit-axe-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-double-bit-axe)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -14149,6 +14228,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-stone-mining)
     (up-research-status c: ri-stone-mining <= research-available)
 =>
+    (up-modify-goal bt-research-mining-camp-stone-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -14161,6 +14241,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
     (up-research-status c: ri-stone-shaft-mining <= research-available)
 =>
+    (up-modify-goal bt-research-mining-camp-stone-shaft-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
