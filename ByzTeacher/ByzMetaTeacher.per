@@ -424,6 +424,19 @@
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
 
+; Engine-native composite-cost witness goals.
+; Cost-data commands require extended goals 41-508. These ranges are unused.
+(defconst bt-bow-saw-bank-cost-goal 480)
+(defconst bt-bow-saw-bank-delta-food-goal 484)
+(defconst bt-bow-saw-bank-delta-wood-goal 485)
+(defconst bt-bow-saw-bank-delta-stone-goal 486)
+(defconst bt-bow-saw-bank-delta-gold-goal 487)
+(defconst bt-stone-mining-bank-cost-goal 488)
+(defconst bt-stone-mining-bank-delta-food-goal 492)
+(defconst bt-stone-mining-bank-delta-wood-goal 493)
+(defconst bt-stone-mining-bank-delta-stone-goal 494)
+(defconst bt-stone-mining-bank-delta-gold-goal 495)
+
 ; Double-Bit Axe demand buffers.
 ; 900 food and 225 wood are conservative Stock/community-style
 ; investment buffers, not engine constants.
@@ -3053,6 +3066,33 @@
 )
 
 ;================================================================
+; 14G-A. IMPERIAL BANK-SAFE RESEARCH COST WITNESS
+;================================================================
+; UserPatch/DE cost-data support calculates the exact composite obligation
+; from engine-defined technology costs. The delta is raw player resources
+; minus that composite cost; it does not account for escrow semantics.
+; The research action therefore retains can-research-with-escrow as its
+; final execution feasibility witness.
+;
+; Bow Saw safe delta = resources - (Imperial Age + Bow Saw).
+; Stone Mining safe delta = resources - (Imperial Age + Stone Mining).
+;
+; Cost data is recalculated every pass. The four delta goals are persistent
+; derived witnesses consumed by the bank-prep exception rules below.
+(defrule
+    (true)
+=>
+    (up-setup-cost-data 1 bt-bow-saw-bank-cost-goal)
+    (up-add-research-cost c: imperial-age c: 1)
+    (up-add-research-cost c: ri-bow-saw c: 1)
+    (up-get-cost-delta bt-bow-saw-bank-delta-food-goal)
+    (up-setup-cost-data 1 bt-stone-mining-bank-cost-goal)
+    (up-add-research-cost c: imperial-age c: 1)
+    (up-add-research-cost c: ri-stone-mining c: 1)
+    (up-get-cost-delta bt-stone-mining-bank-delta-food-goal)
+)
+
+;================================================================
 ; 14H. HAND CART DEMAND / RESEARCH LIFECYCLE
 ;================================================================
 ;
@@ -3154,15 +3194,22 @@
 ; witness: it proves the economy has crossed from Castle transition
 ; into sustained expansion before spending Food + Wood on the upgrade.
 ;
-; The shared resource-control mutex still protects active TC projects
-; and age banks. Immediate Imperial feasibility and Imperial-bank-prep
-; retain priority over the economic upgrade.
+; During Imperial-bank-prep, Bow Saw is allowed only when the exact
+; composite obligation Imperial Age + Bow Saw remains fundable.
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-boom)
     (building-type-count-total town-center >= 2)
     (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and
+            (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
+        )
+    )
     (up-research-status c: ri-bow-saw == research-available)
 =>
     (set-goal bt-bow-saw-demand-goal 1)
@@ -3176,14 +3223,32 @@
     (strategic-number sn-resource-control != ri-bow-saw)
     (or
         (can-research-with-escrow imperial-age)
-        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+            (not
+                (and
+                    (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
+                    (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
+                    (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
+                    (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
+                )
+            )
+        )
         (not
             (and
                 (current-age >= castle-age)
                 (goal strategy-goal bt-strategy-boom)
                 (building-type-count-total town-center >= 2)
                 (not (can-research-with-escrow imperial-age))
-                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+                (or
+                    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+                    (and
+                        (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
+                        (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
+                        (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
+                        (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
+                    )
+                )
                 (up-research-status c: ri-bow-saw == research-available)
             )
         )
@@ -3198,7 +3263,15 @@
     (current-age >= castle-age)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and
+            (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
+            (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
+        )
+    )
     (can-research-with-escrow ri-bow-saw)
 =>
     (set-strategic-number sn-resource-control ri-bow-saw)
@@ -3352,6 +3425,136 @@
 
 ;================================================================
 ; 14L. STONE MINING / STONE SHAFT MINING
+;================================================================
+;
+; Stone technology is a project-economics investment, not a generic
+; age-based economic upgrade.
+;
+; The existing resource-mode controller is the stone-project witness.
+; During Imperial-bank-prep, the additional composite-cost witness prevents
+; Stone Mining from consuming any part of the protected Imperial obligation.
+;
+;----------------------------------------------------------------
+; 14L-A. STONE MINING DEMAND
+;----------------------------------------------------------------
+(defrule
+    (goal bt-stone-mining-demand-goal 0)
+    (current-age >= feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (not (town-under-attack))
+    (research-available ri-stone-mining)
+    (or
+        (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
+            (building-type-count-total castle >= 1)
+            (unit-type-count villager >= bt-imperial-villagers)
+        )
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+            (building-type-count-total castle >= 1)
+            (unit-type-count villager >= bt-imperial-villagers)
+        )
+    )
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and
+            (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-gold-goal >= 0)
+        )
+    )
+    (strategic-number sn-resource-control != imperial-age)
+=>
+    (set-goal bt-stone-mining-demand-goal 1)
+)
+
+; Withdraw pending demand when the project or its economic priority
+; disappears. An active claim remains protected by sn-resource-control.
+(defrule
+    (goal bt-stone-mining-demand-goal 1)
+    (strategic-number sn-resource-control != ri-stone-mining)
+    (or
+        (can-research-with-escrow feudal-age)
+        (can-research-with-escrow castle-age)
+        (can-research-with-escrow imperial-age)
+        (strategic-number sn-resource-control == imperial-age)
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+            (not
+                (and
+                    (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0)
+                    (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0)
+                    (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0)
+                    (up-compare-goal bt-stone-mining-bank-delta-gold-goal >= 0)
+                )
+            )
+        )
+        (not (goal strategy-goal bt-strategy-boom))
+        (town-under-attack)
+        (not (research-available ri-stone-mining))
+        (not
+            (or
+                (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+                (and
+                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
+                    (building-type-count-total castle >= 1)
+                    (unit-type-count villager >= bt-imperial-villagers)
+                )
+                (and
+                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+                    (building-type-count-total castle >= 1)
+                    (unit-type-count villager >= bt-imperial-villagers)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-stone-mining-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; 14L-B. STONE MINING RESEARCH
+;----------------------------------------------------------------
+(defrule
+    (goal bt-stone-mining-demand-goal 1)
+    (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+        (and
+            (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0)
+            (up-compare-goal bt-stone-mining-bank-delta-gold-goal >= 0)
+        )
+    )
+    (can-research-with-escrow ri-stone-mining)
+=>
+    (set-strategic-number sn-resource-control ri-stone-mining)
+    (release-escrow food)
+    (release-escrow wood)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-stone-mining)
+)
+
+; research-complete is the terminal world-state witness.
+(defrule
+    (strategic-number sn-resource-control == ri-stone-mining)
+    (up-research-status c: ri-stone-mining == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-stone-mining-demand-goal 0)
+)
+
 ;================================================================
 ;
 ; Stone technology is a project-economics investment, not a generic
