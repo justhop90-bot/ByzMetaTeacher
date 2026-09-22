@@ -316,18 +316,17 @@
 (defconst bt-research-monastery-failure-backoff-goal 643)
 ; Monk research uses persistent package demand plus capability-local bounded cooldown. A failed research start clears only the claim and package; strategic monk demand remains valid for later reevaluation.
 ; University research uses capability-local cooldown and persistent package demand.
-; Each technology owns its own failure budget. The existing 30-second
-; fairness timer remains cooldown only, never a retry scheduler.
+; The existing 30-second failure timer is cooldown/fairness state only; it is
+; never a scheduler or terminal research budget.
 ; Archery Range research uses persistent package demand plus capability-local bounded cooldown. Crossbow, Elite Skirmisher, and Arbalest re-enter after cooldown when their strategic predicates remain valid.
 ; Blacksmith research uses capability-local cooldown.
-; Each technology owns a finite failed-start budget. The shared research
-; failure timer remains cooldown/fairness state only.
+; The shared research failure timer remains cooldown/fairness state only; each
+; technology keeps its strategic demand separate from execution failure.
 ; Stable, Siege, and Barracks research use persistent demand plus capability-local bounded cooldown. Failure never destroys a still-valid technology reason.
 ; Economic research uses persistent demand plus capability-local bounded cooldown. The shared failure timer is fairness state only.
-; Gold Shaft Mining economic research bounded-start retry state.
-; It is deliberately separate from Gold Mining because Shaft Mining has its
-; own Castle BOOM strategic owner and must preserve demand across a failed
-; research start without confusing it with Gold Mining demand.
+; Gold Shaft Mining economic research owns a persistent Castle BOOM demand.
+; It remains separate from Gold Mining because Shaft Mining has its own
+; strategic owner and must preserve demand across failed research starts.
 (defconst bt-gold-shaft-mining-demand-goal 687)
 ; Castle Cataphract research uses persistent premium demand plus capability-local bounded cooldown.
 
@@ -1169,9 +1168,8 @@
 =>
     (set-goal bt-research-monk-package-goal ri-block-printing)
 )
-; Monk retry budgets reset only when their operational reason disappears.
-; Active research claims retain their failure history until the transaction
-; completes or capability-loss recovery explicitly releases the claim.
+; Monk package state resets from research completion, demand loss, or capability
+; loss. Failed starts release only the active claim and enter bounded cooldown.
 
 (defrule
     (goal bt-research-monk-package-goal ri-atonement)
@@ -5553,8 +5551,8 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 ;   + Imperial preparation is not currently taking precedence
 ;
 ; Demand persists through temporary resource contention and provider loss.
-; The Mining Camp claim remains execution state; retry history remains owned
-; by this technology until the strategic demand disappears.
+; The Mining Camp claim remains execution state; failure cooldown is local to
+; this capability until the strategic demand disappears.
 (defrule
     (goal bt-gold-shaft-mining-demand-goal 0)
     (current-age == castle-age)
@@ -6004,11 +6002,9 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 )
 
 ;================================================================
-;================================================================
 
-
-; Economic research retry state resets only after the strategic demand
-; disappears and no provider claim remains active.
+; Economic research demand resets only after the strategic demand disappears
+; and no provider claim remains active.
 
 ; 15. PRODUCTION CAPACITY
 ;================================================================
