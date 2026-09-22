@@ -5132,7 +5132,7 @@
     (not (town-under-attack))
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow castle-age))
-    (building-type-count-total stable >= 1)
+    (building-type-count stable >= 1)
     (unit-type-count-total scout-cavalry < bt-scout-feudal-cap)
     (food-amount >= bt-scout-safe-food)
     (can-train scout-cavalry)
@@ -5448,7 +5448,7 @@
 (defrule
     (goal bt-knight-demand-goal 1)
     (current-age >= castle-age)
-    (building-type-count-total stable >= 1)
+    (building-type-count stable >= 1)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total knight-line < bt-standing-knight-target-goal)
@@ -5514,7 +5514,7 @@
     (current-age >= castle-age)
     (strategic-number sn-resource-control == 0)
     (up-compare-goal bt-standing-camel-target-goal > 0)
-    (building-type-count-total stable >= 1)
+    (building-type-count stable >= 1)
     (unit-type-count-total camel-line < bt-standing-camel-target-goal)
     (can-train camel)
 =>
@@ -9256,7 +9256,7 @@
 (defrule
     (goal bt-heavy-camel-demand-goal 0)
     (current-age >= imperial-age)
-    (building-type-count-total stable >= 1)
+    (building-type-count stable >= 1)
     (up-compare-goal bt-cavalry-counter-level-goal >= 2)
     (up-compare-goal bt-standing-camel-target-goal >= bt-camel-target-1)
     (unit-type-count-total camel-line >= bt-camel-target-1)
