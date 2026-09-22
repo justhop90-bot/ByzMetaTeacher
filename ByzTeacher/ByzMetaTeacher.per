@@ -1427,6 +1427,64 @@
     (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
 )
 
+; FLETCHING -> CROSSBOW: retain the explicit Castle BOOM role after
+; the prerequisite completes.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (goal bt-crossbow-demand-goal 1)
+    (goal strategy-goal bt-strategy-boom)
+    (goal bt-any-threat-goal 0)
+    (current-age >= castle-age)
+    (up-research-status c: ri-fletching == research-complete)
+    (up-compare-goal bt-standing-crossbow-target-goal > 0)
+    (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-crossbow)
+    (up-research-status c: ri-crossbow < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-crossbow)
+)
+
+; FLETCHING -> ELITE SKIRMISHER: primary Byzantine ranged counter.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (current-age >= castle-age)
+    (up-research-status c: ri-fletching == research-complete)
+    (up-compare-goal bt-ranged-counter-level-goal >= 1)
+    (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+    (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+    (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+)
+
+; FLETCHING -> PADDED ARMOR: defensive support when the primary counter
+; branch does not own the package.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (up-research-status c: ri-fletching == research-complete)
+    (or
+        (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
+            (unit-type-count-total archer-line >= 3)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
+        )
+    )
+    (up-compare-goal bt-research-blacksmith-padded-archer-armor-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-padded-archer-armor)
+    (up-research-status c: ri-padded-archer-armor < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
+)
+
 ; BODKIN SUPPORT FROM CROSSBOW.
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-crossbow)
@@ -1578,7 +1636,6 @@
     (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (goal bt-ranged-threat-goal 1)
-    (up-compare-goal bt-standing-archer-target-goal > 0)
     (or
         (and
             (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -1629,6 +1686,7 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (goal bt-arbalest-demand-goal 0)
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
     (building-type-count archery-range >= 1)
