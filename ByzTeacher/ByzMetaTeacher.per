@@ -342,6 +342,13 @@
 (defconst bt-research-university-onager-retry-goal 649)
 (defconst bt-research-university-chemistry-retry-goal 650)
 (defconst bt-research-university-thumb-ring-retry-goal 651)
+; Archery Range research bounded-start retry state.
+; Each technology owns a finite failed-start budget. The shared research
+; failure timer remains cooldown/fairness state only.
+(defconst bt-archery-range-research-max-retries 2)
+(defconst bt-research-archery-range-crossbow-retry-goal 652)
+(defconst bt-research-archery-range-elite-skirmisher-retry-goal 653)
+(defconst bt-research-archery-range-arbalest-retry-goal 654)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -1328,6 +1335,8 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
+    (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-crossbow)
     (up-research-status c: ri-fletching == research-complete)
     (goal bt-crossbow-demand-goal 1)
     (up-research-status c: ri-crossbow < research-complete)
@@ -1338,7 +1347,12 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
     (up-research-status c: ri-fletching == research-complete)
-    (goal bt-crossbow-demand-goal 0)
+    (or
+        (goal bt-crossbow-demand-goal 0)
+        (up-compare-goal bt-research-archery-range-crossbow-retry-goal >= bt-archery-range-research-max-retries)
+    )
+    (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (up-research-status c: ri-elite-skirmisher < research-complete)
 =>
@@ -1364,6 +1378,8 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
     (goal bt-arbalest-demand-goal 1)
+    (up-compare-goal bt-research-archery-range-arbalest-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-arbalest)
     (up-research-status c: ri-arbalest < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-arbalest)
@@ -1372,6 +1388,8 @@
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (up-research-status c: ri-fletching == research-complete)
     (goal bt-crossbow-demand-goal 1)
+    (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-crossbow)
     (up-research-status c: ri-crossbow < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-crossbow)
@@ -1379,7 +1397,12 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (up-research-status c: ri-fletching == research-complete)
-    (goal bt-crossbow-demand-goal 0)
+    (or
+        (goal bt-crossbow-demand-goal 0)
+        (up-compare-goal bt-research-archery-range-crossbow-retry-goal >= bt-archery-range-research-max-retries)
+    )
+    (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (up-research-status c: ri-elite-skirmisher < research-complete)
 =>
@@ -10792,6 +10815,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow == research-complete)
 =>
+    (set-goal bt-research-archery-range-crossbow-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
 )
 
@@ -11479,6 +11503,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest == research-complete)
 =>
+    (set-goal bt-research-archery-range-arbalest-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
 )
@@ -11650,6 +11675,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
 =>
+    (set-goal bt-research-archery-range-elite-skirmisher-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
 )
 
@@ -11895,11 +11921,32 @@ camel-line < bt-camel-target-1)))))
     (set-goal bt-research-barracks-claim-goal 0)
 )
 
+; Archery Range retry budgets reset when their operational reason disappears.
+(defrule
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-research-archery-range-claim-goal 0)
+=>
+    (set-goal bt-research-archery-range-crossbow-retry-goal 0)
+)
+(defrule
+    (goal bt-ranged-threat-goal 0)
+    (goal bt-research-archery-range-claim-goal 0)
+=>
+    (set-goal bt-research-archery-range-elite-skirmisher-retry-goal 0)
+)
+(defrule
+    (goal bt-arbalest-demand-goal 0)
+    (goal bt-research-archery-range-claim-goal 0)
+=>
+    (set-goal bt-research-archery-range-arbalest-retry-goal 0)
+)
+
 (defrule
     (goal bt-research-archery-range-claim-goal != 0)
     (building-type-count archery-range == 0)
 =>
     (set-goal bt-research-archery-range-claim-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 (defrule
@@ -12189,9 +12236,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow <= research-available)
 =>
+    (up-modify-goal bt-research-archery-range-crossbow-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-crossbow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 (defrule
@@ -12337,9 +12386,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest <= research-available)
 =>
+    (up-modify-goal bt-research-archery-range-arbalest-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-arbalest)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
 )
 
@@ -12407,9 +12458,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher <= research-available)
 =>
+    (up-modify-goal bt-research-archery-range-elite-skirmisher-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-elite-skirmisher)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 ;----------------------------------------------------------------
