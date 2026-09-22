@@ -6200,6 +6200,7 @@ cataphract-line < bt-cataphract-target-1)))))
     ; stall must not park the TC project forever while BOOM remains active.
     (set-goal bt-tc-stage-goal bt-tc-stage-blocked)
     (set-strategic-number sn-resource-control 0)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-retry-4-seconds)
 )
 
 ; TC2 foundation-loss recovery:
@@ -6274,6 +6275,7 @@ cataphract-line < bt-cataphract-target-1)))))
     (goal bt-tc-project-goal 2)
     (goal bt-tc-stage-goal bt-tc-stage-blocked)
     (goal bt-tc-retry-goal 4)
+    (timer-triggered bt-tc2-watchdog-timer)
     (or
         (not (goal strategy-goal bt-strategy-boom))
         (building-type-count town-center >= 2)
