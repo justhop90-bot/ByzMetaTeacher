@@ -8910,6 +8910,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
     (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (building-type-count blacksmith >= 1)
     (up-research-status c: ri-crossbow == research-complete)
     (or
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
