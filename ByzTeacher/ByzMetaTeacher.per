@@ -6043,6 +6043,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 )
 (defrule
     (goal bt-monastery-backoff-goal 1)
+    (up-compare-goal bt-monastery-retry-goal < 4)
     (timer-triggered bt-monastery-backoff-timer)
 =>
     (disable-timer bt-monastery-backoff-timer)
