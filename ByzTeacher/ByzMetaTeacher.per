@@ -314,59 +314,22 @@
 (defconst bt-research-monk-package-goal 641)
 (defconst bt-research-monastery-claim-goal 642)
 (defconst bt-research-monastery-failure-backoff-goal 643)
-; Monk research bounded-start retry state. A retry is consumed only when a
-; research command was issued but the engine still reports research-available.
-; The existing 30-second fairness timer remains cooldown only, not a scheduler.
-(defconst bt-monk-research-max-retries 2)
-(defconst bt-research-monk-atonement-retry-goal 644)
-(defconst bt-research-monk-redemption-retry-goal 645)
-(defconst bt-research-monk-sanctity-retry-goal 646)
-(defconst bt-research-monk-block-printing-retry-goal 647)
-; University research bounded-start retry state.
+; Monk research uses persistent package demand plus capability-local bounded cooldown. A failed research start clears only the claim and package; strategic monk demand remains valid for later reevaluation.
+; University research uses capability-local cooldown and persistent package demand.
 ; Each technology owns its own failure budget. The existing 30-second
 ; fairness timer remains cooldown only, never a retry scheduler.
-; Archery Range research bounded-start retry state.
+; Archery Range research uses persistent package demand plus capability-local bounded cooldown. Crossbow, Elite Skirmisher, and Arbalest re-enter after cooldown when their strategic predicates remain valid.
+; Blacksmith research uses capability-local cooldown.
 ; Each technology owns a finite failed-start budget. The shared research
 ; failure timer remains cooldown/fairness state only.
-(defconst bt-archery-range-research-max-retries 2)
-(defconst bt-research-archery-range-crossbow-retry-goal 652)
-(defconst bt-research-archery-range-elite-skirmisher-retry-goal 653)
-(defconst bt-research-archery-range-arbalest-retry-goal 654)
-; Blacksmith research bounded-start retry state.
-; Each technology owns a finite failed-start budget. The shared research
-; failure timer remains cooldown/fairness state only.
-; Stable/Siege/Barracks research bounded-start retry state. Shared backoff is cooldown only.
-(defconst bt-stable-research-max-retries 2)
-(defconst bt-research-stable-cavalier-retry-goal 669)
-(defconst bt-research-stable-paladin-retry-goal 670)
-(defconst bt-research-stable-heavy-camel-retry-goal 671)
-(defconst bt-siege-research-max-retries 2)
-(defconst bt-research-siege-capped-ram-retry-goal 672)
-(defconst bt-research-siege-ram-retry-goal 673)
-(defconst bt-research-barracks-max-retries 2)
-(defconst bt-research-barracks-pikeman-retry-goal 674)
-(defconst bt-research-barracks-halberdier-retry-goal 675)
-; Economic research bounded-start retry state. Each technology owns its
-; own failed-start budget; shared backoff remains cooldown/fairness only.
-(defconst bt-economic-research-max-retries 2)
-(defconst bt-research-town-center-wheel-barrow-retry-goal 676)
-(defconst bt-research-town-center-hand-cart-retry-goal 677)
-(defconst bt-research-lumber-camp-double-bit-axe-retry-goal 678)
-(defconst bt-research-mining-camp-gold-mining-retry-goal 679)
-(defconst bt-research-lumber-camp-bow-saw-retry-goal 680)
-(defconst bt-research-lumber-camp-two-man-saw-retry-goal 681)
-(defconst bt-research-mining-camp-stone-mining-retry-goal 682)
-(defconst bt-research-mining-camp-stone-shaft-mining-retry-goal 683)
+; Stable, Siege, and Barracks research use persistent demand plus capability-local bounded cooldown. Failure never destroys a still-valid technology reason.
+; Economic research uses persistent demand plus capability-local bounded cooldown. The shared failure timer is fairness state only.
 ; Gold Shaft Mining economic research bounded-start retry state.
 ; It is deliberately separate from Gold Mining because Shaft Mining has its
 ; own Castle BOOM strategic owner and must preserve demand across a failed
 ; research start without confusing it with Gold Mining demand.
-(defconst bt-research-mining-camp-gold-shaft-mining-retry-goal 686)
 (defconst bt-gold-shaft-mining-demand-goal 687)
-; Castle Cataphract research bounded-start retry state.
-(defconst bt-castle-research-max-retries 2)
-(defconst bt-research-castle-logistica-retry-goal 684)
-(defconst bt-research-castle-elite-cataphract-retry-goal 685)
+; Castle Cataphract research uses persistent premium demand plus capability-local bounded cooldown.
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -1109,7 +1072,6 @@
     (goal bt-monk-demand-goal 1)
     (unit-type-count-total monk >= 2)
     (players-unit-type-count target-player monk >= 1)
-    (up-compare-goal bt-research-monk-atonement-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-atonement)
     (up-research-status c: ri-atonement < research-complete)
     (research-available ri-atonement)
@@ -1140,10 +1102,8 @@
         (players-unit-type-count target-player monk < 1)
         (or
         (up-research-status c: ri-atonement == research-complete)
-        (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
             )
     )
-    (up-compare-goal bt-research-monk-redemption-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-redemption)
     (up-research-status c: ri-redemption < research-complete)
     (research-available ri-redemption)
@@ -1158,7 +1118,6 @@
         (players-unit-type-count target-player monk < 1)
         (or
         (up-research-status c: ri-atonement == research-complete)
-        (up-compare-goal bt-research-monk-atonement-retry-goal >= bt-monk-research-max-retries)
             )
     )
     (or
@@ -1180,10 +1139,8 @@
         )
         (or
         (up-research-status c: ri-redemption == research-complete)
-        (up-compare-goal bt-research-monk-redemption-retry-goal >= bt-monk-research-max-retries)
             )
     )
-    (up-compare-goal bt-research-monk-sanctity-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-sanctity)
     (up-research-status c: ri-sanctity < research-complete)
     (research-available ri-sanctity)
@@ -1205,9 +1162,7 @@
     (up-research-status c: ri-redemption == research-complete)
     (or
         (up-research-status c: ri-sanctity == research-complete)
-        (up-compare-goal bt-research-monk-sanctity-retry-goal >= bt-monk-research-max-retries)
     )
-    (up-compare-goal bt-research-monk-block-printing-retry-goal < bt-monk-research-max-retries)
     (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-block-printing)
     (up-research-status c: ri-block-printing < research-complete)
     (research-available ri-block-printing)
@@ -1217,75 +1172,29 @@
 ; Monk retry budgets reset only when their operational reason disappears.
 ; Active research claims retain their failure history until the transaction
 ; completes or capability-loss recovery explicitly releases the claim.
-(defrule
-    (goal bt-monk-demand-goal 0)
-    (goal bt-research-monastery-claim-goal 0)
-=>
-    (set-goal bt-research-monk-atonement-retry-goal 0)
-    (set-goal bt-research-monk-redemption-retry-goal 0)
-    (set-goal bt-research-monk-sanctity-retry-goal 0)
-    (set-goal bt-research-monk-block-printing-retry-goal 0)
-)
-(defrule
-    (players-unit-type-count target-player monk < 1)
-    (goal bt-research-monastery-claim-goal 0)
-=>
-    (set-goal bt-research-monk-atonement-retry-goal 0)
-)
-(defrule
-    (players-unit-type-count target-player mangonel-line < 1)
-    (players-unit-type-count target-player scorpion-line < 1)
-    (players-unit-type-count target-player battering-ram-line < 1)
-    (players-unit-type-count target-player siege-tower < 1)
-    (players-unit-type-count target-player bombard-cannon-line < 1)
-    (players-unit-type-count target-player trebuchet-set < 1)
-    (goal bt-research-monastery-claim-goal 0)
-=>
-    (set-goal bt-research-monk-redemption-retry-goal 0)
-)
-(defrule
-    (current-age >= imperial-age)
-    (unit-type-count-total monk < 4)
-    (goal bt-research-monastery-claim-goal 0)
-=>
-    (set-goal bt-research-monk-block-printing-retry-goal 0)
-)
-(defrule
-    (current-age >= imperial-age)
-    (players-unit-type-count target-player mangonel-line < 1)
-    (players-unit-type-count target-player bombard-cannon-line < 1)
-    (players-unit-type-count target-player trebuchet-set < 1)
-    (goal bt-research-monastery-claim-goal 0)
-=>
-    (set-goal bt-research-monk-block-printing-retry-goal 0)
-)
 
 (defrule
     (goal bt-research-monk-package-goal ri-atonement)
     (up-research-status c: ri-atonement == research-complete)
 =>
-    (set-goal bt-research-monk-atonement-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-redemption)
     (up-research-status c: ri-redemption == research-complete)
 =>
-    (set-goal bt-research-monk-redemption-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-sanctity)
     (up-research-status c: ri-sanctity == research-complete)
 =>
-    (set-goal bt-research-monk-sanctity-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
     (goal bt-research-monk-package-goal ri-block-printing)
     (up-research-status c: ri-block-printing == research-complete)
 =>
-    (set-goal bt-research-monk-block-printing-retry-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
@@ -1328,7 +1237,6 @@
     (up-research-status c: ri-chain-mail == research-complete)
     (current-age >= castle-age)
     (up-research-status c: ri-pikeman < research-complete)
-    (up-compare-goal bt-research-barracks-pikeman-retry-goal < bt-research-barracks-max-retries)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-pikeman)
 )
@@ -1337,7 +1245,6 @@
     (goal bt-halberdier-demand-goal 1)
     (up-research-status c: ri-pikeman == research-complete)
     (up-research-status c: ri-halberdier < research-complete)
-    (up-compare-goal bt-research-barracks-halberdier-retry-goal < bt-research-barracks-max-retries)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-halberdier)
 )
@@ -1364,7 +1271,6 @@
     (up-research-status c: ri-chain-mail == research-complete)
     (current-age >= castle-age)
     (up-research-status c: ri-pikeman < research-complete)
-    (up-compare-goal bt-research-barracks-pikeman-retry-goal < bt-research-barracks-max-retries)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-pikeman)
 )
@@ -1455,7 +1361,6 @@
     (current-age >= castle-age)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
     (up-research-status c: ri-fletching == research-complete)
-    (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-crossbow)
     (up-research-status c: ri-crossbow < research-complete)
 =>
@@ -1481,7 +1386,6 @@
          ))
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-    (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher < research-complete)
 =>
@@ -1503,7 +1407,6 @@
     (current-age >= castle-age)
     (up-research-status c: ri-fletching == research-complete)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
-    (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-crossbow)
     (up-research-status c: ri-crossbow < research-complete)
 =>
@@ -1528,7 +1431,6 @@
     (up-compare-goal bt-ranged-counter-level-goal >= 1)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-    (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher < research-complete)
 =>
@@ -1859,7 +1761,6 @@
     (current-age >= imperial-age)
     (up-research-status c: ri-crossbow == research-complete)
     (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
-    (up-compare-goal bt-research-archery-range-arbalest-retry-goal < bt-archery-range-research-max-retries)
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-arbalest)
     (up-research-status c: ri-arbalest < research-complete)
 =>
@@ -1985,7 +1886,6 @@
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
-    (up-compare-goal bt-research-castle-logistica-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-logistica < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-logistica)
@@ -1993,7 +1893,6 @@
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
-    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-logistica == research-complete)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
@@ -2002,7 +1901,6 @@
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
-    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-elite-cataphract)
@@ -2068,7 +1966,6 @@
     (goal bt-research-siege-package-goal 0)
     (goal bt-ram-demand-goal 1)
     (up-research-status c: ri-capped-ram < research-complete)
-    (up-compare-goal bt-research-siege-capped-ram-retry-goal < bt-siege-research-max-retries)
 =>
     (set-goal bt-research-siege-package-goal ri-capped-ram)
 )
@@ -2078,7 +1975,6 @@
     (goal bt-ram-demand-goal 1)
     (up-research-status c: ri-capped-ram == research-complete)
     (up-research-status c: ri-siege-ram < research-complete)
-    (up-compare-goal bt-research-siege-ram-retry-goal < bt-siege-research-max-retries)
 =>
     (set-goal bt-research-siege-package-goal ri-siege-ram)
 )
@@ -5087,7 +4983,6 @@ research-pending)))))
     (goal bt-double-bit-axe-demand-goal 1)
     (current-age == feudal-age)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
-    (up-compare-goal bt-research-lumber-camp-double-bit-axe-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count lumber-camp >= 1)
@@ -5183,7 +5078,6 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (goal bt-gold-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-mining)
-    (up-compare-goal bt-research-mining-camp-gold-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -5256,7 +5150,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-wheelbarrow-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-wheel-barrow)
-    (up-compare-goal bt-research-town-center-wheel-barrow-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -5293,7 +5186,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-town-center-claim-goal ri-wheel-barrow)
     (up-research-status c: ri-wheel-barrow <= research-available)
 =>
-    (up-modify-goal bt-research-town-center-wheel-barrow-retry-goal g:+ 1)
     (set-goal bt-research-town-center-failure-backoff-goal ri-wheel-barrow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
@@ -5417,7 +5309,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-hand-cart-demand-goal 1)
     (current-age >= castle-age)
     (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-hand-cart)
-    (up-compare-goal bt-research-town-center-hand-cart-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -5453,7 +5344,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-town-center-claim-goal ri-hand-cart)
     (up-research-status c: ri-hand-cart <= research-available)
 =>
-    (up-modify-goal bt-research-town-center-hand-cart-retry-goal g:+ 1)
     (set-goal bt-research-town-center-failure-backoff-goal ri-hand-cart)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
@@ -5527,7 +5417,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-bow-saw-demand-goal 1)
     (current-age >= castle-age)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-bow-saw)
-    (up-compare-goal bt-research-lumber-camp-bow-saw-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (or
@@ -5567,7 +5456,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
     (up-research-status c: ri-bow-saw <= research-available)
 =>
-    (up-modify-goal bt-research-lumber-camp-bow-saw-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-bow-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -5611,7 +5499,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (current-age >= imperial-age)
     (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
-    (up-compare-goal bt-research-lumber-camp-two-man-saw-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (goal bt-cataphract-demand-goal 1))
     (building-type-count lumber-camp >= 1)
@@ -5646,7 +5533,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
     (up-research-status c: ri-two-man-saw <= research-available)
 =>
-    (up-modify-goal bt-research-lumber-camp-two-man-saw-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-two-man-saw)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -5710,7 +5596,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 (defrule
     (goal bt-gold-shaft-mining-demand-goal 1)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)
-    (up-compare-goal bt-research-mining-camp-gold-shaft-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-gold-shaft-mining)
@@ -5744,7 +5629,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
     (up-research-status c: ri-gold-shaft-mining <= research-available)
 =>
-    (up-modify-goal bt-research-mining-camp-gold-shaft-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -5905,7 +5789,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-stone-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)
-    (up-compare-goal bt-research-mining-camp-stone-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -5931,7 +5814,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-stone-mining-demand-goal 1)
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)
-    (up-compare-goal bt-research-mining-camp-stone-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (can-research-with-escrow castle-age))
@@ -6092,7 +5974,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-stone-mining == research-complete)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-shaft-mining)
-    (up-compare-goal bt-research-mining-camp-stone-shaft-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -6128,60 +6009,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 ; Economic research retry state resets only after the strategic demand
 ; disappears and no provider claim remains active.
-(defrule
-    (goal bt-wheelbarrow-demand-goal 0)
-    (goal bt-research-town-center-claim-goal 0)
-=>
-    (set-goal bt-research-town-center-wheel-barrow-retry-goal 0)
-)
-(defrule
-    (goal bt-hand-cart-demand-goal 0)
-    (goal bt-research-town-center-claim-goal 0)
-=>
-    (set-goal bt-research-town-center-hand-cart-retry-goal 0)
-)
-(defrule
-    (goal bt-double-bit-axe-demand-goal 0)
-    (goal bt-research-lumber-camp-claim-goal 0)
-=>
-    (set-goal bt-research-lumber-camp-double-bit-axe-retry-goal 0)
-)
-(defrule
-    (goal bt-gold-mining-demand-goal 0)
-    (goal bt-research-mining-camp-claim-goal 0)
-=>
-    (set-goal bt-research-mining-camp-gold-mining-retry-goal 0)
-)
-(defrule
-    (goal bt-bow-saw-demand-goal 0)
-    (goal bt-research-lumber-camp-claim-goal 0)
-=>
-    (set-goal bt-research-lumber-camp-bow-saw-retry-goal 0)
-)
-(defrule
-    (goal bt-two-man-saw-demand-goal 0)
-    (goal bt-research-lumber-camp-claim-goal 0)
-=>
-    (set-goal bt-research-lumber-camp-two-man-saw-retry-goal 0)
-)
-(defrule
-    (goal bt-stone-mining-demand-goal 0)
-    (goal bt-research-mining-camp-claim-goal 0)
-=>
-    (set-goal bt-research-mining-camp-stone-mining-retry-goal 0)
-)
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 0)
-    (goal bt-research-mining-camp-claim-goal 0)
-=>
-    (set-goal bt-research-mining-camp-stone-shaft-mining-retry-goal 0)
-)
-(defrule
-    (goal bt-gold-shaft-mining-demand-goal 0)
-    (goal bt-research-mining-camp-claim-goal 0)
-=>
-    (set-goal bt-research-mining-camp-gold-shaft-mining-retry-goal 0)
-)
 
 ; 15. PRODUCTION CAPACITY
 ;================================================================
@@ -11385,7 +11212,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal retreat-now-goal 0)
     (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-capped-ram)
     (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-research-siege-capped-ram-retry-goal < bt-siege-research-max-retries)
     (can-research-with-escrow ri-capped-ram)
     (goal bt-research-siege-workshop-claim-goal 0)
     (goal bt-research-siege-package-goal ri-capped-ram)
@@ -11420,7 +11246,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal retreat-now-goal 0)
     (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-siege-ram)
     (strategic-number sn-resource-control == 0)
-    (up-compare-goal bt-research-siege-ram-retry-goal < bt-siege-research-max-retries)
     (can-research-with-escrow ri-siege-ram)
     (goal bt-research-siege-workshop-claim-goal 0)
     (goal bt-research-siege-package-goal ri-siege-ram)
@@ -11711,7 +11536,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow == research-complete)
 =>
-    (set-goal bt-research-archery-range-crossbow-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
 )
 
@@ -12655,7 +12479,6 @@ bt-resource-mode-food-crisis) (goal bt-resource-mode-goal bt-resource-mode-gold-
     (up-compare-goal bt-research-stable-failure-backoff-goal != ri-cavalier)
     (strategic-number sn-resource-control == 0)
     (building-type-count stable >= 1)
-    (up-compare-goal bt-research-stable-cavalier-retry-goal < bt-stable-research-max-retries)
     (can-research-with-escrow ri-cavalier)
     (goal bt-research-stable-claim-goal 0)
 =>
@@ -12706,7 +12529,6 @@ bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (or (goal bt-resource
     (up-compare-goal bt-research-stable-failure-backoff-goal != ri-paladin)
     (strategic-number sn-resource-control == 0)
     (building-type-count stable >= 1)
-    (up-compare-goal bt-research-stable-paladin-retry-goal < bt-stable-research-max-retries)
     (can-research-with-escrow ri-paladin)
     (goal bt-research-stable-claim-goal 0)
 =>
@@ -12770,7 +12592,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest == research-complete)
 =>
-    (set-goal bt-research-archery-range-arbalest-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
 )
@@ -12789,7 +12610,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     ; veto here would make the demand unable to complete. Escrow feasibility
     ; remains the final resource guard.
     (up-compare-goal bt-research-castle-failure-backoff-goal != ri-logistica)
-    (up-compare-goal bt-research-castle-logistica-retry-goal < bt-castle-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-logistica)
     (goal bt-research-castle-claim-goal 0)
@@ -12807,7 +12627,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-logistica == research-complete)
 =>
     (set-goal bt-research-castle-claim-goal 0)
-    (set-goal bt-research-castle-logistica-retry-goal 0)
 )
 (defrule
     (goal bt-cataphract-demand-goal 1)
@@ -12821,7 +12640,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     ; mode is not allowed to veto the demand that created the package;
     ; escrow feasibility remains authoritative.
     (up-compare-goal bt-research-castle-failure-backoff-goal != ri-elite-cataphract)
-    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-elite-cataphract)
     (goal bt-research-castle-claim-goal 0)
@@ -12839,16 +12657,8 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-elite-cataphract == research-complete)
 =>
     (set-goal bt-research-castle-claim-goal 0)
-    (set-goal bt-research-castle-elite-cataphract-retry-goal 0)
 )
 
-(defrule
-    (goal bt-cataphract-demand-goal 0)
-    (goal bt-research-castle-claim-goal 0)
-=>
-    (set-goal bt-research-castle-logistica-retry-goal 0)
-    (set-goal bt-research-castle-elite-cataphract-retry-goal 0)
-)
 
 ;================================================================
 ; 23. PIKEMAN RESEARCH
@@ -12883,7 +12693,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
         )
     )
     (building-type-count barracks >= 1)
-    (up-compare-goal bt-research-barracks-pikeman-retry-goal < bt-research-barracks-max-retries)
     (can-research-with-escrow ri-pikeman)
     (goal bt-research-barracks-claim-goal 0)
     (goal bt-research-cavalry-counter-package-goal ri-pikeman)
@@ -12920,7 +12729,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
         )
     )
     (building-type-count barracks >= 1)
-    (up-compare-goal bt-research-barracks-pikeman-retry-goal < bt-research-barracks-max-retries)
     (can-research-with-escrow ri-pikeman)
     (goal bt-research-barracks-claim-goal 0)
     (goal bt-research-cavalry-counter-package-goal ri-pikeman)
@@ -12989,7 +12797,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
 =>
-    (set-goal bt-research-archery-range-elite-skirmisher-retry-goal 0)
     (set-goal bt-research-archery-range-claim-goal 0)
 )
 
@@ -13061,7 +12868,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-compare-goal bt-research-barracks-failure-backoff-goal != ri-halberdier)
     (strategic-number sn-resource-control == 0)
     (building-type-count barracks >= 1)
-    (up-compare-goal bt-research-barracks-halberdier-retry-goal < bt-research-barracks-max-retries)
     (can-research-with-escrow ri-halberdier)
     (goal bt-research-barracks-claim-goal 0)
     (goal bt-research-cavalry-counter-package-goal ri-halberdier)
@@ -13106,7 +12912,6 @@ camel-line < bt-camel-target-1)))))
     (up-compare-goal bt-research-stable-failure-backoff-goal != ri-heavy-camel)
     (strategic-number sn-resource-control == 0)
     (building-type-count stable >= 1)
-    (up-compare-goal bt-research-stable-heavy-camel-retry-goal < bt-stable-research-max-retries)
     (can-research-with-escrow ri-heavy-camel)
     (goal bt-research-stable-claim-goal 0)
 =>
@@ -13129,7 +12934,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-barracks-claim-goal ri-halberdier)
     (up-research-status c: ri-halberdier <= research-available)
 =>
-    (up-modify-goal bt-research-barracks-halberdier-retry-goal g:+ 1)
     (set-goal bt-research-barracks-failure-backoff-goal ri-halberdier)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-barracks-claim-goal 0)
@@ -13140,7 +12944,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-stable-claim-goal ri-heavy-camel)
     (up-research-status c: ri-heavy-camel <= research-available)
 =>
-    (up-modify-goal bt-research-stable-heavy-camel-retry-goal g:+ 1)
     (set-goal bt-research-stable-failure-backoff-goal ri-heavy-camel)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
@@ -13227,24 +13030,6 @@ camel-line < bt-camel-target-1)))))
 )
 
 ; Archery Range retry budgets reset when their operational reason disappears.
-(defrule
-    (goal bt-crossbow-demand-goal 0)
-    (goal bt-research-archery-range-claim-goal 0)
-=>
-    (set-goal bt-research-archery-range-crossbow-retry-goal 0)
-)
-(defrule
-    (goal bt-ranged-threat-goal 0)
-    (goal bt-research-archery-range-claim-goal 0)
-=>
-    (set-goal bt-research-archery-range-elite-skirmisher-retry-goal 0)
-)
-(defrule
-    (goal bt-arbalest-demand-goal 0)
-    (goal bt-research-archery-range-claim-goal 0)
-=>
-    (set-goal bt-research-archery-range-arbalest-retry-goal 0)
-)
 
 (defrule
     (up-compare-goal bt-research-archery-range-claim-goal != 0)
@@ -13284,7 +13069,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-monastery-claim-goal ri-atonement)
     (up-research-status c: ri-atonement <= research-available)
 =>
-    (up-modify-goal bt-research-monk-atonement-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-atonement)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
@@ -13294,7 +13078,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-monastery-claim-goal ri-redemption)
     (up-research-status c: ri-redemption <= research-available)
 =>
-    (up-modify-goal bt-research-monk-redemption-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-redemption)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
@@ -13304,7 +13087,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-monastery-claim-goal ri-sanctity)
     (up-research-status c: ri-sanctity <= research-available)
 =>
-    (up-modify-goal bt-research-monk-sanctity-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-sanctity)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
@@ -13314,7 +13096,6 @@ camel-line < bt-camel-target-1)))))
     (goal bt-research-monastery-claim-goal ri-block-printing)
     (up-research-status c: ri-block-printing <= research-available)
 =>
-    (up-modify-goal bt-research-monk-block-printing-retry-goal g:+ 1)
     (set-goal bt-research-monastery-failure-backoff-goal ri-block-printing)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
@@ -13473,7 +13254,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-siege-workshop-claim-goal ri-capped-ram)
     (up-research-status c: ri-capped-ram <= research-available)
 =>
-    (up-modify-goal bt-research-siege-capped-ram-retry-goal g:+ 1)
     (set-goal bt-research-siege-workshop-failure-backoff-goal ri-capped-ram)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-siege-workshop-claim-goal 0)
@@ -13486,7 +13266,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-siege-workshop-claim-goal ri-siege-ram)
     (up-research-status c: ri-siege-ram <= research-available)
 =>
-    (up-modify-goal bt-research-siege-ram-retry-goal g:+ 1)
     (set-goal bt-research-siege-workshop-failure-backoff-goal ri-siege-ram)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-siege-workshop-claim-goal 0)
@@ -13544,7 +13323,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-crossbow)
     (up-research-status c: ri-crossbow <= research-available)
 =>
-    (up-modify-goal bt-research-archery-range-crossbow-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-crossbow)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
@@ -13673,7 +13451,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-stable-claim-goal ri-cavalier)
     (up-research-status c: ri-cavalier <= research-available)
 =>
-    (up-modify-goal bt-research-stable-cavalier-retry-goal g:+ 1)
     (set-goal bt-research-stable-failure-backoff-goal ri-cavalier)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
@@ -13683,7 +13460,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-stable-claim-goal ri-paladin)
     (up-research-status c: ri-paladin <= research-available)
 =>
-    (up-modify-goal bt-research-stable-paladin-retry-goal g:+ 1)
     (set-goal bt-research-stable-failure-backoff-goal ri-paladin)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
@@ -13693,7 +13469,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-arbalest)
     (up-research-status c: ri-arbalest <= research-available)
 =>
-    (up-modify-goal bt-research-archery-range-arbalest-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-arbalest)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
@@ -13706,7 +13481,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-castle-claim-goal ri-logistica)
     (up-research-status c: ri-logistica <= research-available)
 =>
-    (up-modify-goal bt-research-castle-logistica-retry-goal g:+ 1)
     (set-goal bt-research-castle-failure-backoff-goal ri-logistica)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
@@ -13717,7 +13491,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-castle-claim-goal ri-elite-cataphract)
     (up-research-status c: ri-elite-cataphract <= research-available)
 =>
-    (up-modify-goal bt-research-castle-elite-cataphract-retry-goal g:+ 1)
     (set-goal bt-research-castle-failure-backoff-goal ri-elite-cataphract)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
@@ -13730,7 +13503,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-barracks-claim-goal ri-pikeman)
     (up-research-status c: ri-pikeman <= research-available)
 =>
-    (up-modify-goal bt-research-barracks-pikeman-retry-goal g:+ 1)
     (set-goal bt-research-barracks-failure-backoff-goal ri-pikeman)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-barracks-claim-goal 0)
@@ -13744,7 +13516,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-gold-mining)
     (up-research-status c: ri-gold-mining <= research-available)
 =>
-    (up-modify-goal bt-research-mining-camp-gold-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -13757,7 +13528,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
     (up-research-status c: ri-double-bit-axe <= research-available)
 =>
-    (up-modify-goal bt-research-lumber-camp-double-bit-axe-retry-goal g:+ 1)
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-double-bit-axe)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
@@ -13770,7 +13540,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-archery-range-claim-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher <= research-available)
 =>
-    (up-modify-goal bt-research-archery-range-elite-skirmisher-retry-goal g:+ 1)
     (set-goal bt-research-archery-range-failure-backoff-goal ri-elite-skirmisher)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
@@ -13795,7 +13564,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-stone-mining)
     (up-research-status c: ri-stone-mining <= research-available)
 =>
-    (up-modify-goal bt-research-mining-camp-stone-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -13808,7 +13576,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
     (up-research-status c: ri-stone-shaft-mining <= research-available)
 =>
-    (up-modify-goal bt-research-mining-camp-stone-shaft-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -13960,47 +13727,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 
 
 ;----------------------------------------------------------------
-; TERMINAL RESEARCH RETRY RESET
-; Failed-start budgets survive cooldown. They reset only when the strategic
-; owner disappears, returning the lifecycle to a clean IDLE state.
-(defrule
-    (goal bt-cavalier-demand-goal 0)
-    (goal bt-research-stable-claim-goal 0)
-=>
-    (set-goal bt-research-stable-cavalier-retry-goal 0)
-)
-(defrule
-    (goal bt-paladin-demand-goal 0)
-    (goal bt-research-stable-claim-goal 0)
-=>
-    (set-goal bt-research-stable-paladin-retry-goal 0)
-)
-(defrule
-    (goal bt-heavy-camel-demand-goal 0)
-    (goal bt-research-stable-claim-goal 0)
-=>
-    (set-goal bt-research-stable-heavy-camel-retry-goal 0)
-)
-(defrule
-    (goal bt-halberdier-demand-goal 0)
-    (goal bt-research-barracks-claim-goal 0)
-=>
-    (set-goal bt-research-barracks-halberdier-retry-goal 0)
-)
-(defrule
-    (goal bt-research-cavalry-counter-package-goal 0)
-    (goal bt-research-barracks-claim-goal 0)
-    (up-compare-goal bt-cavalry-counter-level-goal < 1)
-=>
-    (set-goal bt-research-barracks-pikeman-retry-goal 0)
-)
-(defrule
-    (goal bt-ram-demand-goal 0)
-    (goal bt-research-siege-workshop-claim-goal 0)
-=>
-    (set-goal bt-research-siege-capped-ram-retry-goal 0)
-    (set-goal bt-research-siege-ram-retry-goal 0)
-)
+; RESEARCH FAILURE RESET POLICY
+;----------------------------------------------------------------
+; Ordinary research has no terminal failed-start budget. Each failed start
+; releases its capability-local claim, records bounded cooldown, and leaves
+; strategic demand/package selection alive for reevaluation after cooldown.
 
 ;================================================================
 ; 24. END-OF-FILE TEACHING MAP
