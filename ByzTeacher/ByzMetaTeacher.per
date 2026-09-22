@@ -7970,9 +7970,9 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; Attack authority already proves the army package is active. This state
 ; narrows that attack to the building-assault purpose.
 (defrule
-    ; Ram demand is finite. Do not recreate a completed Castle package or
-    ; a fully upgraded Imperial building-pressure package.
+    ; Castle-age Ram pressure is a finite two-Ram package.
     (goal bt-ram-demand-goal 0)
+    (current-age == castle-age)
     (goal attack-goal 1)
     (players-building-count target-player > 0)
     (up-compare-goal bt-attack-reserve-goal >= 10)
@@ -7980,18 +7980,26 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-counter-veto-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
-    (not
-        (or
-            (and
-                (current-age == castle-age)
-                (unit-type-count battering-ram-line >= bt-ram-response-target)
-            )
-            (and
-                (current-age >= imperial-age)
-                (unit-type-count battering-ram-line >= bt-ram-imperial-response-target)
-                (up-research-status c: ri-siege-ram == research-complete)
-            )
-        )
+    (unit-type-count battering-ram-line < bt-ram-response-target)
+=>
+    (set-goal bt-ram-demand-goal 1)
+)
+
+(defrule
+    ; Imperial Ram pressure remains live until the four-Ram package and
+    ; the final Siege Ram upgrade are both complete.
+    (goal bt-ram-demand-goal 0)
+    (current-age >= imperial-age)
+    (goal attack-goal 1)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+    (or
+        (unit-type-count battering-ram-line < bt-ram-imperial-response-target)
+        (not (up-research-status c: ri-siege-ram == research-complete))
     )
 =>
     (set-goal bt-ram-demand-goal 1)
