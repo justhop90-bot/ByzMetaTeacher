@@ -8591,6 +8591,33 @@
 )
 
 
+; Castle Chain Mail continues the standing Spear package after Scale Mail.
+; The package must be real before the 200 food / 100 gold investment is made.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count blacksmith >= 1)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (unit-type-count-total spearman-line >= bt-spear-target-1)
+    (up-research-status c: ri-scale-mail == research-complete)
+    (up-research-status c: ri-chain-mail < research-pending)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-chain-mail)
+=>
+    (set-strategic-number sn-resource-control ri-chain-mail)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-chain-mail)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-chain-mail)
+    (up-research-status c: ri-chain-mail == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
 ; Crossbow support: Fletching -> Crossbow -> Bodkin.
 ; Feudal ranged packages earn Fletching before Castle transition.
 ; Standing targets identify the intended ranged role; the queue-inclusive
