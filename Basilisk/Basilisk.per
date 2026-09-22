@@ -6718,8 +6718,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; 15J. CASTLE -> IMPERIAL PREREQUISITE WATCHDOG
 ;---------------------------------------------------------------
 
-; Imperial prerequisite retry stage 3 -> stage 4.
-; Mirrors the validated Castle retry ladder and preserves the 240-second cap.
 
 ; Live Imperial-prerequisite foundations remain owned construction
 ; obligations. Keep the claim and continue builder support indefinitely.
@@ -9958,7 +9956,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; Clear stale cooldown state when all Workshop demand disappears and no foundation remains.
 (defrule
     ; No Workshop demand owner remains.  Only then may a stale construction
-    ; retry ladder be discarded.
+    ; stale cooldown state be discarded.
     (goal bt-mangonel-demand-goal 0)
     (goal bt-scorpion-demand-goal 0)
     (goal bt-onager-demand-goal 0)
