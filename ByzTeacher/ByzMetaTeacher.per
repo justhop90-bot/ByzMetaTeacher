@@ -2711,15 +2711,7 @@
     (or (can-research-with-escrow imperial-age) (or (strategic-number sn-resource-control == imperial-age) (not
             (or
                 (goal bt-cataphract-demand-goal 1)
-                (and
-                    (current-age >= castle-age)
-                    (goal strategy-goal bt-strategy-flush)
-                    (goal unit-goal bt-unit-mix)
-                    (unit-type-count-total spearman-line >= bt-spear-target-1)
-                    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
-                    (building-type-count-total stable >= 1)
-                    (unit-type-count-total camel-line < bt-camel-target-1)
-                )
+                (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1)))))))
             )
         )))
 =>
@@ -2788,14 +2780,7 @@
     (goal bt-wheelbarrow-demand-goal 1)
     (strategic-number sn-resource-control != ri-wheel-barrow)
     (or (can-research-with-escrow imperial-age) (or (strategic-number sn-resource-control == imperial-age) (not
-            (and
-                (current-age == castle-age)
-                (goal strategy-goal bt-strategy-boom)
-                (building-type-count-total town-center >= 3)
-                (building-type-count-total farm >= bt-farm-castle-cap)
-                (not (can-research-with-escrow imperial-age))
-                (up-research-status c: ri-wheel-barrow == research-available)
-            )
+            (and (current-age == castle-age) (and (goal strategy-goal bt-strategy-boom) (and (building-type-count-total town-center >= 3) (and (building-type-count-total farm >= bt-farm-castle-cap) (and (not (can-research-with-escrow imperial-age)) (up-research-status c: ri-wheel-barrow == research-available))))))
         )))
 =>
     (set-goal bt-wheelbarrow-demand-goal 0)
@@ -2923,18 +2908,10 @@
     (goal bt-hand-cart-demand-goal 1)
     (strategic-number sn-resource-control != ri-hand-cart)
     (or (can-research-with-escrow imperial-age) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (not
-            (and
-                (current-age >= castle-age)
-                (goal strategy-goal bt-strategy-boom)
-                (up-research-status c: ri-wheel-barrow >= research-complete)
-                (or
+            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (up-research-status c: ri-wheel-barrow >= research-complete) (and (or
                     (building-type-count-total town-center >= 3)
                     (unit-type-count villager >= bt-imperial-villagers)
-                )
-                (not (can-research-with-escrow imperial-age))
-                (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-                (up-research-status c: ri-hand-cart == research-available)
-            )
+                ) (and (not (can-research-with-escrow imperial-age)) (and (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)) (up-research-status c: ri-hand-cart == research-available)))))))
         )))
 =>
     (set-goal bt-hand-cart-demand-goal 0)
@@ -3012,20 +2989,10 @@
     (or (can-research-with-escrow imperial-age) (or (and
             (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
             (not
-                (and
-                    (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
-                    (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
-                    (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
-                    (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
-                )
+                (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0))))
             )
         ) (not
-            (and
-                (current-age >= castle-age)
-                (goal strategy-goal bt-strategy-boom)
-                (building-type-count-total town-center >= 2)
-                (not (can-research-with-escrow imperial-age))
-                (or
+            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (building-type-count-total town-center >= 2) (and (not (can-research-with-escrow imperial-age)) (and (or
                     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
                     (and
                         (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
@@ -3033,15 +3000,7 @@
                         (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
                         (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
                     )
-                )
-                (up-research-status c: ri-bow-saw == research-available)
-            )
-        )))
-=>
-    (set-goal bt-bow-saw-demand-goal 0)
-)
-
-; Demand -> claim -> release Food + Wood escrow -> research.
+                ) (up-research-status c: ri-bow-saw == research-available))))))w -> research.
 (defrule
     (goal bt-bow-saw-demand-goal 1)
     (current-age >= castle-age)
@@ -3258,34 +3217,10 @@
     (or (can-research-with-escrow feudal-age) (or (can-research-with-escrow castle-age) (or (can-research-with-escrow imperial-age) (or (strategic-number sn-resource-control == imperial-age) (or (and
             (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
             (not
-                (and
-                    (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0)
-                    (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0)
-                    (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0)
-                    (up-compare-goal bt-stone-mining-bank-delta-gold-goal >= 0)
-                )
+                (and (up-compare-goal bt-stone-mining-bank-delta-food-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-stone-mining-bank-delta-stone-goal >= 0) (up-compare-goal bt-stone-mining-bank-delta-gold-goal >= 0))))
             )
         ) (or (not (goal strategy-goal bt-strategy-boom)) (or (town-under-attack) (or (not (research-available ri-stone-mining)) (not
-            (or
-                (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
-                (and
-                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
-                    (building-type-count-total castle >= 1)
-                    (unit-type-count villager >= bt-imperial-villagers)
-                )
-                (and
-                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
-                    (building-type-count-total castle >= 1)
-                    (unit-type-count villager >= bt-imperial-villagers)
-                )
-            )
-        )))))))))
-=>
-    (set-goal bt-stone-mining-demand-goal 0)
-)
-
-;----------------------------------------------------------------
-; 14L-B. STONE MINING RESEARCH
+            (or (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium) (or (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers)))))B. STONE MINING RESEARCH
 ;----------------------------------------------------------------
 (defrule
     (goal bt-stone-mining-demand-goal 1)
