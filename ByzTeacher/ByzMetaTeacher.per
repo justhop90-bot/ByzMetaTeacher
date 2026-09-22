@@ -334,6 +334,14 @@
 (defconst bt-research-monk-redemption-retry-goal 645)
 (defconst bt-research-monk-sanctity-retry-goal 646)
 (defconst bt-research-monk-block-printing-retry-goal 647)
+; University research bounded-start retry state.
+; Each technology owns its own failure budget. The existing 30-second
+; fairness timer remains cooldown only, never a retry scheduler.
+(defconst bt-university-research-max-retries 2)
+(defconst bt-research-university-ballistics-retry-goal 648)
+(defconst bt-research-university-onager-retry-goal 649)
+(defconst bt-research-university-chemistry-retry-goal 650)
+(defconst bt-research-university-thumb-ring-retry-goal 651)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -1395,6 +1403,8 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
     (goal unit-goal crossbowman)
+    (up-compare-goal bt-research-university-thumb-ring-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-thumb-ring)
     (current-age >= castle-age)
     (or
         (current-age > castle-age)
@@ -1423,6 +1433,7 @@
     (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring == research-complete)
 =>
+    (set-goal bt-research-university-thumb-ring-retry-goal 0)
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
 (defrule
@@ -1484,14 +1495,21 @@
 (defrule
     (goal bt-research-siege-package-goal 0)
     (goal bt-scorpion-ballistics-demand-goal 1)
+    (up-compare-goal bt-research-university-ballistics-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-ballistics)
     (up-research-status c: ri-ballistics < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-ballistics)
 )
 (defrule
     (goal bt-research-siege-package-goal 0)
-    (goal bt-scorpion-ballistics-demand-goal 0)
+    (or
+        (goal bt-scorpion-ballistics-demand-goal 0)
+        (up-compare-goal bt-research-university-ballistics-retry-goal >= bt-university-research-max-retries)
+    )
     (goal bt-onager-demand-goal 1)
+    (up-compare-goal bt-research-university-chemistry-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-chemistry)
     (up-research-status c: ri-chemistry < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-chemistry)
@@ -1508,6 +1526,8 @@
 (defrule
     (goal bt-research-siege-package-goal 0)
     (goal bt-bombard-cannon-demand-goal 1)
+    (up-compare-goal bt-research-university-chemistry-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-chemistry)
     (up-research-status c: ri-chemistry < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-chemistry)
@@ -1531,6 +1551,8 @@
     (goal bt-research-siege-package-goal ri-chemistry)
     (up-research-status c: ri-chemistry == research-complete)
     (goal bt-onager-demand-goal 1)
+    (up-compare-goal bt-research-university-onager-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
     (up-research-status c: ri-onager < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-onager)
@@ -1548,6 +1570,7 @@
     (goal bt-scorpion-ballistics-demand-goal 0)
     (goal bt-onager-demand-goal 0)
 =>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
 (defrule
@@ -1556,12 +1579,14 @@
     (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
 =>
+    (set-goal bt-research-university-chemistry-retry-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
 (defrule
     (goal bt-research-siege-package-goal ri-onager)
     (up-research-status c: ri-onager == research-complete)
 =>
+    (set-goal bt-research-university-onager-retry-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
 (defrule
@@ -11752,11 +11777,42 @@ camel-line < bt-camel-target-1)))))
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
+; University retry budgets reset when their operational reason disappears.
+; Capability loss does not reset retry history. It only releases the active
+; claim/package so a rebuilt University resumes the same operation budget.
+(defrule
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-research-university-claim-goal 0)
+=>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
+)
+(defrule
+    (goal bt-onager-demand-goal 0)
+    (goal bt-research-university-claim-goal 0)
+=>
+    (set-goal bt-research-university-onager-retry-goal 0)
+)
+(defrule
+    (goal bt-onager-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-research-university-claim-goal 0)
+=>
+    (set-goal bt-research-university-chemistry-retry-goal 0)
+)
+(defrule
+    (goal bt-ranged-threat-goal 0)
+    (goal bt-research-university-claim-goal 0)
+=>
+    (set-goal bt-research-university-thumb-ring-retry-goal 0)
+)
+
 (defrule
     (goal bt-research-university-claim-goal != 0)
     (building-type-count university == 0)
 =>
     (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 (defrule
@@ -12019,10 +12075,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-university-claim-goal ri-onager)
     (up-research-status c: ri-onager <= research-available)
 =>
+    (up-modify-goal bt-research-university-onager-retry-goal g:+ 1)
     (set-goal bt-research-university-failure-backoff-goal ri-onager)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
-    (set-goal bt-onager-demand-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -12031,10 +12088,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-university-claim-goal ri-ballistics)
     (up-research-status c: ri-ballistics <= research-available)
 =>
+    (up-modify-goal bt-research-university-ballistics-retry-goal g:+ 1)
     (set-goal bt-research-university-failure-backoff-goal ri-ballistics)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
-    (set-goal bt-scorpion-ballistics-demand-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -12043,10 +12101,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-university-claim-goal ri-chemistry)
     (up-research-status c: ri-chemistry <= research-available)
 =>
+    (up-modify-goal bt-research-university-chemistry-retry-goal g:+ 1)
     (set-goal bt-research-university-failure-backoff-goal ri-chemistry)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
-    (set-goal bt-bombard-cannon-demand-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -12100,9 +12159,11 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-university-claim-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring <= research-available)
 =>
+    (up-modify-goal bt-research-university-thumb-ring-retry-goal g:+ 1)
     (set-goal bt-research-university-failure-backoff-goal ri-thumb-ring)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 (defrule
