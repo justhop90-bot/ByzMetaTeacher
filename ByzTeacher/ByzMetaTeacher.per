@@ -211,6 +211,8 @@
 (defconst bt-tc-placement-zone-size 12)
 (defconst bt-tc-placement-distance -12)
 (defconst bt-tc-builder-count 3)
+(defconst bt-foundation-stall-builder-count 3)
+(defconst bt-mill-retry-goal 607)(defconst bt-tc-builder-count 3)
 
 ; Script-local research/age watchdog timer.
 (defconst bt-research-watchdog-timer 18)
@@ -4210,6 +4212,56 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
     (goal bt-blacksmith-repair-retry-goal 0)
     (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-blacksmith-repair-retry-goal 1)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 1)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-blacksmith-repair-retry-goal 2)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 2)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-blacksmith-repair-retry-goal 3)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 3)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 4)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 1)
+    (enable-timer bt-blacksmith-repair-failure-timer bt-blacksmith-repair-failure-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 0)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
     (up-pending-objects c: blacksmith == 0)
 =>
     (disable-timer bt-blacksmith-repair-watchdog-timer)
@@ -4278,6 +4330,18 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 )
 
 ; Repair backoff is an isolated cooldown; it never claims the mutex.
+(defrule
+    (building-type-count blacksmith >= 1)
+    (up-compare-goal bt-blacksmith-repair-retry-goal >= 1)
+    (goal bt-blacksmith-repair-failure-goal 1)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (disable-timer bt-blacksmith-repair-backoff-timer)
+    (disable-timer bt-blacksmith-repair-failure-timer)
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+)
 (defrule
     (goal bt-blacksmith-repair-backoff-goal 1)
     (timer-triggered bt-blacksmith-repair-backoff-timer)
@@ -4408,6 +4472,93 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-castle-prereq-backoff-goal 1)
     (set-goal bt-castle-prereq-retry-goal 2)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-2-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    (goal bt-castle-prereq-retry-goal 0)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 1)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    (goal bt-castle-prereq-retry-goal 1)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 2)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    (goal bt-castle-prereq-retry-goal 2)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: blacksmith > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 3)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-market-claim)
+    (goal bt-castle-prereq-retry-goal 0)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: market > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: market c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 1)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-market-claim)
+    (goal bt-castle-prereq-retry-goal 1)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: market > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: market c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 2)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-market-claim)
+    (goal bt-castle-prereq-retry-goal 2)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: market > 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (up-assign-builders c: market c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-prereq-retry-goal 3)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+)
+
+(defrule
+    (or
+        (and (strategic-number sn-resource-control == bt-castle-blacksmith-claim) (up-pending-objects c: blacksmith > 0))
+        (and (strategic-number sn-resource-control == bt-castle-market-claim) (up-pending-objects c: market > 0))
+    )
+    (goal bt-castle-prereq-retry-goal 3)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-retry-goal 4)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-cap-seconds)
 )
 
 (defrule
@@ -4553,6 +4704,56 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 (defrule
     (strategic-number sn-resource-control == bt-castle-cataphract-claim)
     (goal bt-castle-cataphract-retry-goal 0)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+    (up-pending-objects c: castle > 0)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (up-assign-builders c: castle c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-cataphract-retry-goal 1)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 1)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+    (up-pending-objects c: castle > 0)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (up-assign-builders c: castle c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-cataphract-retry-goal 2)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 2)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+    (up-pending-objects c: castle > 0)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (up-assign-builders c: castle c: bt-foundation-stall-builder-count)
+    (set-goal bt-castle-cataphract-retry-goal 3)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 3)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+    (up-pending-objects c: castle > 0)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-retry-goal 4)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-failure-goal 1)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (goal bt-castle-cataphract-retry-goal 0)
     (up-pending-objects c: castle == 0)
     (timer-triggered bt-castle-cataphract-watchdog-timer)
 =>
@@ -4609,6 +4810,17 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 )
 
 ; Backoff is cooldown only. It never claims the resource mutex.
+(defrule
+    (building-type-count castle >= 1)
+    (up-compare-goal bt-castle-cataphract-retry-goal >= 1)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-retry-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+)
 (defrule
     (goal bt-castle-cataphract-backoff-goal 1)
     (timer-triggered bt-castle-cataphract-backoff-timer)
@@ -4832,6 +5044,93 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-imperial-prereq-backoff-goal 1)
     (set-goal bt-imperial-prereq-retry-goal 2)
     (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-2-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (goal bt-imperial-prereq-retry-goal 0)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 1)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (goal bt-imperial-prereq-retry-goal 1)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 2)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (goal bt-imperial-prereq-retry-goal 2)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 3)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (goal bt-imperial-prereq-retry-goal 0)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 1)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (goal bt-imperial-prereq-retry-goal 1)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 2)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (goal bt-imperial-prereq-retry-goal 2)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-imperial-prereq-retry-goal 3)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (or
+        (and (strategic-number sn-resource-control == bt-imperial-siege-claim) (up-pending-objects c: siege-workshop > 0))
+        (and (strategic-number sn-resource-control == bt-imperial-university-claim) (up-pending-objects c: university > 0))
+    )
+    (goal bt-imperial-prereq-retry-goal 3)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-retry-goal 4)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-cap-seconds)
 )
 
 (defrule
@@ -7541,6 +7840,15 @@ bt-resource-mode-imperial-bank-prep)))))
 )
  
 (defrule
+    (building-type-count university >= 1)
+    (up-compare-goal bt-bombard-university-retry-goal >= 1)
+=>
+    (disable-timer bt-bombard-university-watchdog-timer)
+    (disable-timer bt-bombard-university-backoff-timer)
+    (set-goal bt-bombard-university-retry-goal 0)
+    (set-goal bt-bombard-university-backoff-goal 0)
+)
+(defrule
     (goal bt-bombard-university-retry-goal >= 4)
     (goal bt-bombard-university-backoff-goal 1)
     (timer-triggered bt-bombard-university-backoff-timer)
@@ -7569,6 +7877,55 @@ bt-resource-mode-imperial-bank-prep)))))
     (set-goal bt-bombard-university-backoff-goal 0)
 )
 
+
+(defrule
+    (strategic-number sn-resource-control == bt-bombard-university-claim)
+    (goal bt-bombard-university-retry-goal 0)
+    (timer-triggered bt-bombard-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-bombard-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-bombard-university-retry-goal 1)
+    (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-bombard-university-claim)
+    (goal bt-bombard-university-retry-goal 1)
+    (timer-triggered bt-bombard-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-bombard-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-bombard-university-retry-goal 2)
+    (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-bombard-university-claim)
+    (goal bt-bombard-university-retry-goal 2)
+    (timer-triggered bt-bombard-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-bombard-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-bombard-university-retry-goal 3)
+    (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-bombard-university-claim)
+    (goal bt-bombard-university-retry-goal 3)
+    (timer-triggered bt-bombard-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-bombard-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-bombard-university-retry-goal 4)
+    (set-goal bt-bombard-university-backoff-goal 1)
+    (enable-timer bt-bombard-university-backoff-timer bt-bombard-university-backoff-cap-seconds)
+)
 
 (defrule
     (strategic-number sn-resource-control == bt-bombard-university-claim)
@@ -8478,6 +8835,55 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 (defrule
     (strategic-number sn-resource-control == bt-university-claim)
+    (goal bt-university-retry-goal 0)
+    (timer-triggered bt-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-university-retry-goal 1)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (goal bt-university-retry-goal 1)
+    (timer-triggered bt-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-university-retry-goal 2)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (goal bt-university-retry-goal 2)
+    (timer-triggered bt-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (set-goal bt-university-retry-goal 3)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (goal bt-university-retry-goal 3)
+    (timer-triggered bt-university-watchdog-timer)
+    (up-pending-objects c: university > 0)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 4)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-cap-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
     (up-pending-objects c: university == 0)
     (goal bt-university-retry-goal 0)
     (timer-triggered bt-university-watchdog-timer)
@@ -8695,6 +9101,55 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 
 ; First military Workshop timeout -> retry stage 1.
+(defrule
+    (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
+    (goal bt-military-siege-workshop-retry-goal 0)
+    (timer-triggered bt-military-siege-workshop-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-military-siege-workshop-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-military-siege-workshop-retry-goal 1)
+    (enable-timer bt-military-siege-workshop-watchdog-timer bt-military-siege-workshop-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
+    (goal bt-military-siege-workshop-retry-goal 1)
+    (timer-triggered bt-military-siege-workshop-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-military-siege-workshop-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-military-siege-workshop-retry-goal 2)
+    (enable-timer bt-military-siege-workshop-watchdog-timer bt-military-siege-workshop-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
+    (goal bt-military-siege-workshop-retry-goal 2)
+    (timer-triggered bt-military-siege-workshop-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-military-siege-workshop-watchdog-timer)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (set-goal bt-military-siege-workshop-retry-goal 3)
+    (enable-timer bt-military-siege-workshop-watchdog-timer bt-military-siege-workshop-watchdog-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
+    (goal bt-military-siege-workshop-retry-goal 3)
+    (timer-triggered bt-military-siege-workshop-watchdog-timer)
+    (up-pending-objects c: siege-workshop > 0)
+=>
+    (disable-timer bt-military-siege-workshop-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-military-siege-workshop-retry-goal 4)
+    (set-goal bt-military-siege-workshop-backoff-goal 1)
+    (enable-timer bt-military-siege-workshop-backoff-timer bt-military-siege-workshop-backoff-cap-seconds)
+)
+
 (defrule
     (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
     (goal bt-military-siege-workshop-retry-goal 0)
@@ -10701,6 +11156,51 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; before the completion witness is observed.
 (defrule
     (strategic-number sn-resource-control == bt-mill-claim)
+    (goal bt-mill-retry-goal 0)
+    (timer-triggered bt-mill-watchdog-timer)
+    (up-pending-objects c: mill > 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
+    (up-assign-builders c: mill c: bt-foundation-stall-builder-count)
+    (set-goal bt-mill-retry-goal 1)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (goal bt-mill-retry-goal 1)
+    (timer-triggered bt-mill-watchdog-timer)
+    (up-pending-objects c: mill > 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
+    (up-assign-builders c: mill c: bt-foundation-stall-builder-count)
+    (set-goal bt-mill-retry-goal 2)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (goal bt-mill-retry-goal 2)
+    (timer-triggered bt-mill-watchdog-timer)
+    (up-pending-objects c: mill > 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
+    (up-assign-builders c: mill c: bt-foundation-stall-builder-count)
+    (set-goal bt-mill-retry-goal 3)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (goal bt-mill-retry-goal 3)
+    (timer-triggered bt-mill-watchdog-timer)
+    (up-pending-objects c: mill > 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-mill-backoff-goal 1)
+    (enable-timer bt-mill-backoff-timer bt-mill-backoff-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
     (timer-triggered bt-mill-watchdog-timer)
     (or
         (and
@@ -10725,11 +11225,22 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 )
 
 (defrule
+    (building-type-count mill >= 1)
+    (up-compare-goal bt-mill-project-goal > 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
+    (disable-timer bt-mill-backoff-timer)
+    (set-goal bt-mill-project-goal 0)
+    (set-goal bt-mill-retry-goal 0)
+    (set-goal bt-mill-backoff-goal 0)
+)
+(defrule
     (goal bt-mill-backoff-goal 1)
     (timer-triggered bt-mill-backoff-timer)
 =>
     (disable-timer bt-mill-backoff-timer)
     (set-goal bt-mill-backoff-goal 0)
+    (set-goal bt-mill-retry-goal 0)
 )
 
 ;================================================================
