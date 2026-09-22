@@ -250,6 +250,17 @@
 ; The current build rules do not establish a prerequisite-blocked or
 ; builder-starved cause, so those states are intentionally not claimed.
 (defconst bt-castle-prereq-reason-timeout 1)
+(defconst bt-blacksmith-repair-claim 590)
+(defconst bt-blacksmith-repair-retry-goal 591)
+(defconst bt-blacksmith-repair-backoff-goal 592)
+(defconst bt-blacksmith-repair-failure-goal 593)
+(defconst bt-blacksmith-repair-watchdog-timer 38)
+(defconst bt-blacksmith-repair-backoff-timer 39)
+(defconst bt-blacksmith-repair-watchdog-seconds 120)
+(defconst bt-blacksmith-repair-backoff-seconds 30)
+(defconst bt-blacksmith-repair-backoff-2-seconds 60)
+(defconst bt-blacksmith-repair-backoff-3-seconds 120)
+
 (defconst bt-standing-army-floor-goal 513)
 (defconst bt-standing-army-demand-goal 514)
 (defconst bt-standing-army-infra-goal 515)
@@ -3933,7 +3944,10 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (event-detected trigger bt-castle-prereq-manual-reset-trigger)
     (or
         (up-compare-goal bt-castle-prereq-failure-goal != 0)
-        (up-compare-goal bt-imperial-prereq-failure-goal != 0)
+        (or
+            (up-compare-goal bt-imperial-prereq-failure-goal != 0)
+            (up-compare-goal bt-blacksmith-repair-failure-goal != 0)
+        )
     )
     (strategic-number sn-resource-control == 0)
 =>
@@ -3949,6 +3963,11 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-imperial-prereq-diagnostic-goal 0)
     (set-goal bt-imperial-prereq-retry-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (disable-timer bt-blacksmith-repair-backoff-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
 )
@@ -3967,11 +3986,127 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (building-type-count-total blacksmith < 1)
     (up-pending-objects c: blacksmith == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build blacksmith)
+    (can-build-with-escrow blacksmith)
 =>
     (set-strategic-number sn-resource-control bt-castle-blacksmith-claim)
+    (release-escrow wood)
     (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
     (build blacksmith)
+)
+
+;---------------------------------------------------------------
+; CASTLE/IMPERIAL BLACKSMITH CAPABILITY RECOVERY
+;---------------------------------------------------------------
+; The normal Blacksmith is a Feudal -> Castle prerequisite. After Castle Age,
+; losing that building creates a different lifecycle: all downstream
+; Blacksmith technologies and Siege Workshop capability become permanently
+; unreachable unless the capability is rebuilt. This repair lifecycle is
+; isolated from the Castle-age prerequisite failure state so a failed Feudal
+; construction cannot poison post-Castle recovery, and a post-Castle timeout
+; cannot reset itself forever.
+(defrule
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (goal bt-blacksmith-repair-failure-goal 0)
+    (goal bt-blacksmith-repair-backoff-goal 0)
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow blacksmith)
+=>
+    (set-strategic-number sn-resource-control bt-blacksmith-repair-claim)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (release-escrow wood)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
+    (build blacksmith)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (building-type-count blacksmith >= 1)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 0)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 1)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 1)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 2)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-2-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 2)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 3)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-3-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 3)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 4)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 1)
+)
+
+; Terminal failure is a cooldown witness, not a permanent death state.
+; Re-arm automatically once the world can actually fund another Blacksmith.
+(defrule
+    (current-age >= castle-age)
+    (goal bt-blacksmith-repair-failure-goal 1)
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (not (town-under-attack))
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow blacksmith)
+=>
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+)
+
+; Repair backoff is an isolated cooldown; it never claims the mutex.
+(defrule
+    (goal bt-blacksmith-repair-backoff-goal 1)
+    (timer-triggered bt-blacksmith-repair-backoff-timer)
+=>
+    (disable-timer bt-blacksmith-repair-backoff-timer)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
 )
 
 ; Blacksmith completion is the world-state witness.
@@ -8433,6 +8568,11 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (or
+        (current-age > castle-age)
+        (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
+        (and (current-age == feudal-age) (not (can-research-with-escrow castle-age)))
+    )
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8465,6 +8605,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail == research-complete)
     (up-research-status c: ri-chain-mail < research-pending)
@@ -8509,6 +8650,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (unit-type-count-total skirmisher-line >= 3)
         )
     )
+    (not (can-research-with-escrow castle-age))
     (up-research-status c: ri-fletching < research-pending)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
@@ -8523,6 +8665,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-fletching < research-pending)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
@@ -8542,6 +8685,38 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
+
+; Castle catch-up for a previously skipped ranged foundation.
+; Fletching is required by Bodkin and also benefits Skirmishers, so a fast
+; Castle transition must not permanently strand the ranged upgrade chain.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count blacksmith >= 1)
+    (or
+        (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
+            (unit-type-count-total archer-line >= 3)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
+        )
+    )
+    (up-research-status c: ri-fletching < research-pending)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-fletching)
+=>
+    (set-strategic-number sn-resource-control ri-fletching)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-fletching)
+)
+
 
 (defrule
     (goal bt-crossbow-demand-goal 1)
@@ -8582,6 +8757,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (and
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
                 (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+                (goal bt-ranged-threat-goal 1)
             )
             (and
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
@@ -8589,6 +8765,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             )
         )
     )
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
@@ -8627,6 +8804,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (unit-type-count-total skirmisher-line >= 3)
         )
     )
+    (not (can-research-with-escrow castle-age))
     (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-padded-archer-armor < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8645,7 +8823,40 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-strategic-number sn-resource-control 0)
 )
 
+; Castle catch-up closes the Padded -> Leather -> Ring armor chain
+; when the Feudal defensive investment was skipped during a fast age-up.
 (defrule
+    (current-age >= castle-age)
+    (building-type-count blacksmith >= 1)
+    (goal bt-ranged-threat-goal 1)
+    (or
+        (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
+            (unit-type-count-total archer-line >= 3)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
+        )
+    )
+    (up-research-status c: ri-fletching == research-complete)
+    (up-research-status c: ri-padded-archer-armor < research-pending)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-padded-archer-armor)
+=>
+    (set-strategic-number sn-resource-control ri-padded-archer-armor)
+    (release-escrow food)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-padded-archer-armor)
+)
+
+
+(defrule
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (or
@@ -8698,6 +8909,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (building-type-count blacksmith >= 1)
     (up-research-status c: ri-crossbow == research-complete)
     (or
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
@@ -8741,6 +8954,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (and
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
                     (up-compare-goal bt-ranged-counter-level-goal >= 2)
+                    (goal bt-ranged-threat-goal 1)
                 )
             )
             (and
@@ -8823,6 +9037,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
+    (not (can-research-with-escrow castle-age))
     (unit-type-count-total scout-cavalry >= 3)
     (up-research-status c: ri-forging < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8841,8 +9056,36 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-strategic-number sn-resource-control 0)
 )
 
+; Castle catch-up for a previously skipped Forging investment.
+; Without it, Iron Casting becomes unreachable after a fast Castle transition.
 (defrule
     (current-age >= castle-age)
+    (building-type-count blacksmith >= 1)
+    (or
+        (unit-type-count-total knight-line >= bt-knight-target-castle)
+        (or
+            (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+            (unit-type-count-total camel-line >= bt-camel-target-1)
+        )
+    )
+    (up-research-status c: ri-forging < research-pending)
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-forging)
+=>
+    (set-strategic-number sn-resource-control ri-forging)
+    (release-escrow food)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-forging)
+)
+
+
+(defrule
+    (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-forging == research-complete)
     (or
@@ -8896,6 +9139,11 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             )
         )
     )
+    (or
+        (current-age > castle-age)
+        (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
+        (and (current-age == feudal-age) (not (can-research-with-escrow castle-age)))
+    )
     (up-research-status c: ri-scale-barding-armor < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
@@ -8921,6 +9169,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; at the target, so it cannot be a prerequisite for the upgrade.
 (defrule
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-scale-barding-armor == research-complete)
     (or
