@@ -6718,7 +6718,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; 15J. CASTLE -> IMPERIAL PREREQUISITE WATCHDOG
 ;---------------------------------------------------------------
 
-
 ; Live Imperial-prerequisite foundations remain owned construction
 ; obligations. Keep the claim and continue builder support indefinitely.
 
@@ -12653,33 +12652,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 
 ; is pending: doing so could let the claim layer issue a duplicate Mill
 ; before the completion witness is observed.
-
-(defrule
-    (strategic-number sn-resource-control == bt-mill-claim)
-    (timer-triggered bt-mill-watchdog-timer)
-    (or
-        (and
-            (goal bt-mill-project-goal 1)
-            (building-type-count mill < 1)
-        )
-        (or
-        (and
-            (goal bt-mill-project-goal 2)
-            (building-type-count mill < 2)
-        )
-        (and
-            (goal bt-mill-project-goal 3)
-            (building-type-count mill < 3)
-        )
-            )
-    )
-    (up-pending-objects c: mill == 0)
-=>
-    (disable-timer bt-mill-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-mill-backoff-goal 1)
-    (enable-timer bt-mill-backoff-timer bt-mill-backoff-seconds)
-)
 
 (defrule
     (or
