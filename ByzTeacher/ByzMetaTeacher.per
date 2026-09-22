@@ -3974,6 +3974,38 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (build blacksmith)
 )
 
+; A Feudal Blacksmith failure witness becomes stale once Castle Age has
+; already been reached without a surviving Blacksmith. That state means the
+; prerequisite existed and was later lost, so reopen the capability lifecycle.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
+=>
+    (set-goal bt-castle-prereq-failure-goal 0)
+    (set-goal bt-castle-prereq-diagnostic-goal 0)
+    (set-goal bt-castle-prereq-retry-goal 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+)
+
+; Castle/Imperial Blacksmith recovery reuses the existing prerequisite
+; claim and watchdog. No second resource-control mechanism is invented.
+(defrule
+    (current-age >= castle-age)
+    (goal bt-castle-prereq-failure-goal 0)
+    (goal bt-castle-prereq-backoff-goal 0)
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow blacksmith)
+=>
+    (set-strategic-number sn-resource-control bt-castle-blacksmith-claim)
+    (set-goal bt-castle-prereq-retry-goal 0)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+    (build blacksmith)
+)
+
 ; Blacksmith completion is the world-state witness.
 (defrule
     (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
@@ -8433,6 +8465,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (or (current-age > feudal-age) (not (can-research-with-escrow castle-age)))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8465,6 +8498,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail == research-complete)
     (up-research-status c: ri-chain-mail < research-pending)
@@ -8508,6 +8542,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (up-compare-goal bt-standing-skirm-target-goal > 0)
             (unit-type-count-total skirmisher-line >= 3)
         )
+    (not (can-research-with-escrow castle-age))
     )
     (up-research-status c: ri-fletching < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8523,6 +8558,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-fletching < research-pending)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
@@ -8583,11 +8619,13 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
                 (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
             )
+                    (goal bt-ranged-threat-goal 1)
             (and
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
                 (unit-type-count-total archer-line >= 3)
             )
         )
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     )
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -8626,6 +8664,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             (up-compare-goal bt-standing-skirm-target-goal > 0)
             (unit-type-count-total skirmisher-line >= 3)
         )
+    (not (can-research-with-escrow castle-age))
     )
     (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-padded-archer-armor < research-pending)
@@ -8646,6 +8685,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 
 (defrule
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (or
@@ -8741,6 +8781,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (and
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
                     (up-compare-goal bt-ranged-counter-level-goal >= 2)
+                    (goal bt-ranged-threat-goal 1)
                 )
             )
             (and
@@ -8823,6 +8864,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
+    (not (can-research-with-escrow castle-age))
     (unit-type-count-total scout-cavalry >= 3)
     (up-research-status c: ri-forging < research-pending)
     (strategic-number sn-resource-control == 0)
@@ -8843,6 +8885,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 
 (defrule
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-forging == research-complete)
     (or
@@ -8895,6 +8938,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 )
             )
         )
+    (or (current-age > feudal-age) (not (can-research-with-escrow castle-age)))
     )
     (up-research-status c: ri-scale-barding-armor < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -8921,6 +8965,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; at the target, so it cannot be a prerequisite for the upgrade.
 (defrule
     (current-age >= castle-age)
+    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-scale-barding-armor == research-complete)
     (or
