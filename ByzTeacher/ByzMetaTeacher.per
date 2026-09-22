@@ -4384,7 +4384,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-siege-claim)
-    (building-type-count-total siege-workshop >= 1)
+    (building-type-count siege-workshop >= 1)
 =>
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
@@ -4396,9 +4396,13 @@
 ; A timed-out foundation may finish after the watchdog released the
 ; mutex. Reset retry history without touching a newer resource claim.
 (defrule
-    (building-type-count-total siege-workshop >= 1)
+    (building-type-count siege-workshop >= 1)
     (up-compare-goal bt-imperial-prereq-retry-goal >= 1)
     (goal bt-imperial-prereq-failure-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    )
 =>
     (disable-timer bt-imperial-prereq-backoff-timer)
     (set-goal bt-imperial-prereq-backoff-goal 0)
@@ -4461,6 +4465,7 @@
 ; 30 -> 60 -> 120 -> 240 seconds, then permanent failure.
 (defrule
     (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (up-pending-objects c: siege-workshop == 0)
     (up-compare-goal bt-imperial-prereq-retry-goal >= 4)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
 =>
@@ -4490,7 +4495,10 @@
 ; Mirrors the validated Castle retry ladder and preserves the 240-second cap.
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-pending-objects c: siege-workshop == 0)
+        )
         (and
             (strategic-number sn-resource-control == bt-imperial-university-claim)
             (up-pending-objects c: university == 0)
@@ -4508,7 +4516,10 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-pending-objects c: siege-workshop == 0)
+        )
         (and
             (strategic-number sn-resource-control == bt-imperial-university-claim)
             (up-pending-objects c: university == 0)
@@ -4526,7 +4537,10 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-pending-objects c: siege-workshop == 0)
+        )
         (and
             (strategic-number sn-resource-control == bt-imperial-university-claim)
             (up-pending-objects c: university == 0)
@@ -4544,7 +4558,10 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-pending-objects c: siege-workshop == 0)
+        )
         (and
             (strategic-number sn-resource-control == bt-imperial-university-claim)
             (up-pending-objects c: university == 0)
