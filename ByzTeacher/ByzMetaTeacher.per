@@ -245,6 +245,7 @@
 (defconst bt-halberdier-demand-goal 531)
 (defconst bt-heavy-camel-demand-goal 532)
 (defconst bt-attack-reserve-goal 533)
+(defconst bt-mangonel-demand-goal 535)
 (defconst bt-attack-gather-watchdog-timer 23)
 (defconst bt-attack-gather-watchdog-seconds 30)
 (defconst bt-flush-army-floor-feudal 12)
@@ -446,6 +447,7 @@
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
+    (set-goal bt-mangonel-demand-goal 0)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal 0)
     (set-goal bt-tc-retry-goal 0)
@@ -6138,6 +6140,52 @@
     )
 =>
     (set-goal bt-counter-veto-goal 1)
+)
+
+;---------------------------------------------------------------
+; 18A. PERSISTENT MANGONEL DEMAND
+;---------------------------------------------------------------
+; This is strategic demand only. It deliberately executes after the
+; final attack-readiness evidence is derived below it in source order:
+; ranged pressure is observed earlier, while relative force, attack
+; reserve, and the final counter veto are current by this point.
+;
+; Production remains in the earlier military-production section and will
+; consume this persistent demand on the following pass. That one-pass
+; latency is intentional and bounded by the next reassessment.
+(defrule
+    (goal bt-mangonel-demand-goal 0)
+    (current-age >= castle-age)
+    (up-compare-goal bt-ranged-counter-level-goal >= 2)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
+    (goal attack-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+=>
+    (set-goal bt-mangonel-demand-goal 1)
+)
+
+; Clear only when the strategic package is no longer relevant.
+; Resource contention, missing Workshop, attack-state changes, and other
+; temporary execution blockers do not clear persistent demand.
+;
+; retreat-now-goal may be written later in this source pass. In that case
+; this invalidation sees the prior value and the demand may survive until
+; the next reassessment. That is an intentional one-pass source-order
+; consequence, not an ownership race.
+(defrule
+    (goal bt-mangonel-demand-goal 1)
+    (or
+        (up-compare-goal bt-ranged-counter-level-goal < 2)
+        (players-building-count target-player == 0)
+        (town-under-attack)
+        (goal retreat-now-goal 1)
+    )
+=>
+    (set-goal bt-mangonel-demand-goal 0)
 )
 
 (defrule
