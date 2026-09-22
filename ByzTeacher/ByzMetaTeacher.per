@@ -3986,9 +3986,10 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (building-type-count-total blacksmith < 1)
     (up-pending-objects c: blacksmith == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build blacksmith)
+    (can-build-with-escrow blacksmith)
 =>
     (set-strategic-number sn-resource-control bt-castle-blacksmith-claim)
+    (release-escrow wood)
     (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
     (build blacksmith)
 )
@@ -4015,6 +4016,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 =>
     (set-strategic-number sn-resource-control bt-blacksmith-repair-claim)
     (set-goal bt-blacksmith-repair-retry-goal 0)
+    (release-escrow wood)
     (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
     (build blacksmith)
 )
