@@ -1516,9 +1516,14 @@
 )
 (defrule
     (goal bt-research-siege-package-goal 0)
-    (goal bt-scorpion-ballistics-demand-goal 0)
+    (or
+        (goal bt-scorpion-ballistics-demand-goal 0)
+        (up-compare-goal bt-research-university-ballistics-retry-goal >= bt-university-research-max-retries)
+    )
     (goal bt-onager-demand-goal 1)
     (up-research-status c: ri-chemistry == research-complete)
+    (up-compare-goal bt-research-university-onager-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
     (up-research-status c: ri-onager < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-onager)
@@ -1568,7 +1573,52 @@
     (goal bt-research-siege-package-goal ri-ballistics)
     (up-research-status c: ri-ballistics == research-complete)
     (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-compare-goal bt-research-university-chemistry-retry-goal < bt-university-research-max-retries)
+    (up-research-status c: ri-chemistry < research-complete)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-chemistry)
+=>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
+    (set-goal bt-research-siege-package-goal ri-chemistry)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-ballistics)
+    (up-research-status c: ri-ballistics == research-complete)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-research-status c: ri-chemistry == research-complete)
+    (up-compare-goal bt-research-university-onager-retry-goal < bt-university-research-max-retries)
+    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
+=>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
+    (set-goal bt-research-siege-package-goal ri-onager)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-ballistics)
+    (up-research-status c: ri-ballistics == research-complete)
+    (goal bt-scorpion-ballistics-demand-goal 0)
     (goal bt-onager-demand-goal 0)
+=>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-ballistics)
+    (up-research-status c: ri-ballistics == research-complete)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-compare-goal bt-research-university-chemistry-retry-goal >= bt-university-research-max-retries)
+=>
+    (set-goal bt-research-university-ballistics-retry-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-ballistics)
+    (up-research-status c: ri-ballistics == research-complete)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-research-status c: ri-chemistry == research-complete)
+    (up-compare-goal bt-research-university-onager-retry-goal >= bt-university-research-max-retries)
 =>
     (set-goal bt-research-university-ballistics-retry-goal 0)
     (set-goal bt-research-siege-package-goal 0)
@@ -1577,7 +1627,23 @@
     (goal bt-research-siege-package-goal ri-chemistry)
     (up-research-status c: ri-chemistry == research-complete)
     (goal bt-onager-demand-goal 0)
-    (goal bt-bombard-cannon-demand-goal 0)
+=>
+    (set-goal bt-research-university-chemistry-retry-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-chemistry)
+    (up-research-status c: ri-chemistry == research-complete)
+    (goal bt-onager-demand-goal 1)
+    (up-compare-goal bt-research-university-onager-retry-goal >= bt-university-research-max-retries)
+=>
+    (set-goal bt-research-university-chemistry-retry-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-chemistry)
+    (up-research-status c: ri-chemistry == research-complete)
+    (up-research-status c: ri-onager == research-complete)
 =>
     (set-goal bt-research-university-chemistry-retry-goal 0)
     (set-goal bt-research-siege-package-goal 0)
