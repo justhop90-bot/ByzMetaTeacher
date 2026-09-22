@@ -250,6 +250,16 @@
 ; The current build rules do not establish a prerequisite-blocked or
 ; builder-starved cause, so those states are intentionally not claimed.
 (defconst bt-castle-prereq-reason-timeout 1)
+(defconst bt-blacksmith-repair-claim 590)
+(defconst bt-blacksmith-repair-retry-goal 591)
+(defconst bt-blacksmith-repair-backoff-goal 592)
+(defconst bt-blacksmith-repair-failure-goal 593)
+(defconst bt-blacksmith-repair-watchdog-timer 38)
+(defconst bt-blacksmith-repair-watchdog-seconds 120)
+(defconst bt-blacksmith-repair-backoff-seconds 30)
+(defconst bt-blacksmith-repair-backoff-2-seconds 60)
+(defconst bt-blacksmith-repair-backoff-3-seconds 120)
+
 (defconst bt-standing-army-floor-goal 513)
 (defconst bt-standing-army-demand-goal 514)
 (defconst bt-standing-army-infra-goal 515)
@@ -3933,7 +3943,10 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (event-detected trigger bt-castle-prereq-manual-reset-trigger)
     (or
         (up-compare-goal bt-castle-prereq-failure-goal != 0)
-        (up-compare-goal bt-imperial-prereq-failure-goal != 0)
+        (or
+            (up-compare-goal bt-imperial-prereq-failure-goal != 0)
+            (up-compare-goal bt-blacksmith-repair-failure-goal != 0)
+        )
     )
     (strategic-number sn-resource-control == 0)
 =>
@@ -3949,6 +3962,10 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-imperial-prereq-diagnostic-goal 0)
     (set-goal bt-imperial-prereq-retry-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
 )
@@ -3974,36 +3991,102 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (build blacksmith)
 )
 
-; A Feudal Blacksmith failure witness becomes stale once Castle Age has
-; already been reached without a surviving Blacksmith. That state means the
-; prerequisite existed and was later lost, so reopen the capability lifecycle.
+;---------------------------------------------------------------
+; CASTLE/IMPERIAL BLACKSMITH CAPABILITY RECOVERY
+;---------------------------------------------------------------
+; The normal Blacksmith is a Feudal -> Castle prerequisite. After Castle Age,
+; losing that building creates a different lifecycle: all downstream
+; Blacksmith technologies and Siege Workshop capability become permanently
+; unreachable unless the capability is rebuilt. This repair lifecycle is
+; isolated from the Castle-age prerequisite failure state so a failed Feudal
+; construction cannot poison post-Castle recovery, and a post-Castle timeout
+; cannot reset itself forever.
 (defrule
     (current-age >= castle-age)
-    (building-type-count-total blacksmith < 1)
-    (up-pending-objects c: blacksmith == 0)
-    (goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
-=>
-    (set-goal bt-castle-prereq-failure-goal 0)
-    (set-goal bt-castle-prereq-diagnostic-goal 0)
-    (set-goal bt-castle-prereq-retry-goal 0)
-    (set-goal bt-castle-prereq-backoff-goal 0)
-)
-
-; Castle/Imperial Blacksmith recovery reuses the existing prerequisite
-; claim and watchdog. No second resource-control mechanism is invented.
-(defrule
-    (current-age >= castle-age)
-    (goal bt-castle-prereq-failure-goal 0)
-    (goal bt-castle-prereq-backoff-goal 0)
+    (goal bt-blacksmith-repair-failure-goal 0)
+    (goal bt-blacksmith-repair-backoff-goal 0)
     (building-type-count-total blacksmith < 1)
     (up-pending-objects c: blacksmith == 0)
     (strategic-number sn-resource-control == 0)
     (can-build-with-escrow blacksmith)
 =>
-    (set-strategic-number sn-resource-control bt-castle-blacksmith-claim)
-    (set-goal bt-castle-prereq-retry-goal 0)
-    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+    (set-strategic-number sn-resource-control bt-blacksmith-repair-claim)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
     (build blacksmith)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (building-type-count blacksmith >= 1)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 0)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 1)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 1)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 2)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-2-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 2)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 3)
+    (set-goal bt-blacksmith-repair-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-3-seconds)
+)
+
+(defrule
+    (strategic-number sn-resource-control == bt-blacksmith-repair-claim)
+    (goal bt-blacksmith-repair-retry-goal 3)
+    (timer-triggered bt-blacksmith-repair-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-blacksmith-repair-retry-goal 4)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-failure-goal 1)
+)
+
+; The shared Castle-prerequisite backoff timer is already part of the
+; controller, so repair retries do not introduce another timer resource.
+(defrule
+    (goal bt-blacksmith-repair-backoff-goal 1)
+    (timer-triggered bt-castle-prereq-backoff-timer)
+=>
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
 )
 
 ; Blacksmith completion is the world-state witness.
