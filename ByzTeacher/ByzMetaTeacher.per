@@ -476,6 +476,7 @@
 (defconst bt-cavalier-demand-goal 581)
 (defconst bt-paladin-demand-goal 582)
 (defconst bt-arbalest-demand-goal 583)
+(defconst bt-primary-capacity-scratch-goal 584)
 
 ; Primary-package target tuning. These are finite standing/pressure
 ; commitments, not "train forever" dials.
@@ -5183,6 +5184,8 @@
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total knight-line < bt-standing-knight-target-goal)
     (can-train knight-line)
+    (up-get-fact building-type-count-total stable bt-primary-capacity-scratch-goal)
+    (up-pending-objects c: knight-line g:< bt-primary-capacity-scratch-goal)
 =>
     (train knight-line)
 )
@@ -5196,6 +5199,8 @@
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
     (can-train crossbowman)
+    (up-get-fact building-type-count-total archery-range bt-primary-capacity-scratch-goal)
+    (up-pending-objects c: crossbowman g:< bt-primary-capacity-scratch-goal)
 =>
     (train crossbowman)
 )
