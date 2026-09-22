@@ -6615,6 +6615,7 @@
 ; watchdog resolves the active construction attempt.
 (defrule
     (goal bt-mangonel-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
     (strategic-number sn-resource-control != bt-military-siege-workshop-claim)
     (up-pending-objects c: siege-workshop == 0)
 =>
