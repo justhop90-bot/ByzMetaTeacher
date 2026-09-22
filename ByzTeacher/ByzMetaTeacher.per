@@ -3787,6 +3787,7 @@
     (or
         (up-compare-goal bt-standing-skirm-target-goal > 0)
         (up-compare-goal bt-standing-archer-target-goal > 0)
+        (up-compare-goal bt-standing-crossbow-target-goal > 0)
     )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 1)
@@ -3805,6 +3806,7 @@
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 7)
         (up-compare-goal bt-standing-archer-target-goal >= 7)
+        (up-compare-goal bt-standing-crossbow-target-goal >= 8)
     )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 2)
@@ -3823,6 +3825,7 @@
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 13)
         (up-compare-goal bt-standing-archer-target-goal >= 13)
+        (up-compare-goal bt-standing-crossbow-target-goal >= 12)
     )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 3)
@@ -3881,7 +3884,10 @@
 ; Camel demand state.
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-standing-camel-target-goal > 0)
+    (or
+        (up-compare-goal bt-standing-camel-target-goal > 0)
+        (up-compare-goal bt-standing-knight-target-goal > 0)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total stable < 1)
     (can-build stable)
@@ -3890,9 +3896,22 @@
 )
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-standing-camel-target-goal >= 5)
+    (or
+        (up-compare-goal bt-standing-camel-target-goal >= 5)
+        (up-compare-goal bt-standing-knight-target-goal >= 8)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total stable < 2)
+    (can-build stable)
+=>
+    (build stable)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-standing-knight-target-goal >= 12)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total stable < 3)
     (can-build stable)
 =>
     (build stable)
@@ -4812,6 +4831,8 @@
         (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
         (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
         (unit-type-count-total archer-line < bt-standing-archer-target-goal)
+        (unit-type-count-total knight-line < bt-standing-knight-target-goal)
+        (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
     )
 =>
     (set-goal bt-standing-army-demand-goal 1)
@@ -4831,6 +4852,8 @@
             (unit-type-count-total spearman-line >= bt-standing-spear-target-goal)
             (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal)
             (unit-type-count-total archer-line >= bt-standing-archer-target-goal)
+            (unit-type-count-total knight-line >= bt-standing-knight-target-goal)
+            (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
         )
     )
 =>
@@ -5147,6 +5170,32 @@
 )
 ; RUSH is the explicit unit-goal exception. FLUSH/BOOM standing
 ; production is owned by the role-target producers above.
+
+;---------------------------------------------------------------
+; 16H. PRIMARY CASTLE MILITARY PRODUCTION
+;---------------------------------------------------------------
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total stable >= 1)
+    (strategic-number sn-resource-control == 0)
+    (unit-type-count-total knight-line < bt-standing-knight-target-goal)
+    (can-train knight-line)
+=>
+    (train knight-line)
+)
+
+(defrule
+    (goal bt-crossbow-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total archery-range >= 1)
+    (up-research-status c: ri-crossbow == research-complete)
+    (strategic-number sn-resource-control == 0)
+    (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+    (can-train crossbowman)
+=>
+    (train crossbowman)
+)
 
 ;---------------------------------------------------------------
 ; 16H. DIRECT CAMEL ROLE
