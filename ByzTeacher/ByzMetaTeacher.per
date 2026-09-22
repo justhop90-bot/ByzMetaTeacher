@@ -992,10 +992,12 @@
 )
 (defrule
     (current-age >= imperial-age)
-    (players-unit-type-count target-player mangonel-line >= 1)
     (or
-        (players-unit-type-count target-player bombard-cannon-line >= 1)
-        (players-unit-type-count target-player trebuchet-set >= 1)
+        (players-unit-type-count target-player mangonel-line >= 1)
+        (or
+            (players-unit-type-count target-player bombard-cannon-line >= 1)
+            (players-unit-type-count target-player trebuchet-set >= 1)
+        )
     )
 =>
     (set-goal bt-monk-target-goal 4)
