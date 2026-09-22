@@ -389,6 +389,11 @@
 (defconst bt-research-lumber-camp-two-man-saw-retry-goal 681)
 (defconst bt-research-mining-camp-stone-mining-retry-goal 682)
 (defconst bt-research-mining-camp-stone-shaft-mining-retry-goal 683)
+; Gold Shaft Mining economic research bounded-start retry state.
+; It is deliberately separate from Gold Mining because Shaft Mining has its
+; own Castle BOOM strategic owner and must preserve demand across a failed
+; research start without confusing it with Gold Mining demand.
+(defconst bt-research-mining-camp-gold-shaft-mining-retry-goal 686)
 ; Castle Cataphract research bounded-start retry state.
 (defconst bt-castle-research-max-retries 2)
 (defconst bt-research-castle-logistica-retry-goal 684)
@@ -5304,21 +5309,64 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 )
 
 ;================================================================
-; 14J. GOLD SHAFT MINING RESEARCH
+; 14J. GOLD SHAFT MINING DEMAND / RESEARCH
 ;================================================================
 ;
-; Gold Shaft Mining is a direct Castle BOOM economic investment.
-; The existing Gold Mining completion proves the prerequisite tech
-; lifecycle is finished, TC2 proves the first Castle expansion has
-; matured, and Imperial preparation retains priority.
+; Gold Shaft Mining has a real strategic owner now.  The demand state is
+; deliberately separate from the research claim so a failed engine action
+; does not become a false strategic cancellation.
+;
+; Strategic witness:
+;   Castle BOOM
+;   + Gold Mining complete
+;   + TC2 matured
+;   + Imperial preparation is not currently taking precedence
+;
+; Demand persists through temporary resource contention and provider loss.
+; The Mining Camp claim remains execution state; retry history remains owned
+; by this technology until the strategic demand disappears.
 (defrule
+    (goal bt-gold-shaft-mining-demand-goal 0)
     (current-age == castle-age)
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-gold-mining >= research-complete)
     (building-type-count-total town-center >= 2)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-research-status c: ri-gold-shaft-mining < research-complete)
+=>
+    (set-goal bt-gold-shaft-mining-demand-goal 1)
+)
+
+; Strategic invalidation only.  Do not cancel because the Mining Camp is
+; temporarily absent or resources are temporarily insufficient.
+(defrule
+    (goal bt-gold-shaft-mining-demand-goal 1)
+    (strategic-number sn-resource-control != ri-gold-shaft-mining)
+    (or
+        (current-age > castle-age)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (or
+                (up-research-status c: ri-gold-mining < research-complete)
+                (or
+                    (can-research-with-escrow imperial-age)
+                    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+                )
+            )
+        )
+    )
+=> 
+    (set-goal bt-gold-shaft-mining-demand-goal 0)
+)
+
+; Execution is reliability-owned.  The strategic demand above is the only
+; policy witness this provider consumes; feasibility/claim/package gates
+; remain engine-execution constraints.
+(defrule
+    (goal bt-gold-shaft-mining-demand-goal 1)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)
+    (up-compare-goal bt-research-mining-camp-gold-shaft-mining-retry-goal < bt-economic-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-gold-shaft-mining)
@@ -5343,6 +5391,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (up-research-status c: ri-gold-shaft-mining == research-complete)
 =>
     (set-goal bt-research-mining-camp-claim-goal 0)
+    (set-goal bt-gold-shaft-mining-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -5351,10 +5400,12 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
     (up-research-status c: ri-gold-shaft-mining <= research-available)
 =>
+    (up-modify-goal bt-research-mining-camp-gold-shaft-mining-retry-goal g:+ 1)
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
+
 
 ;================================================================
 ; 14L. STONE MINING / STONE SHAFT MINING
@@ -5780,6 +5831,12 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal bt-research-mining-camp-claim-goal 0)
 =>
     (set-goal bt-research-mining-camp-stone-shaft-mining-retry-goal 0)
+)
+(defrule
+    (goal bt-gold-shaft-mining-demand-goal 0)
+    (goal bt-research-mining-camp-claim-goal 0)
+=>
+    (set-goal bt-research-mining-camp-gold-shaft-mining-retry-goal 0)
 )
 
 ; 15. PRODUCTION CAPACITY
