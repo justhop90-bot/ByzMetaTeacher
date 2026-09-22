@@ -10259,6 +10259,16 @@ cataphract-line < bt-cataphract-target-1)))))
     (players-building-count target-player > 0)
     (up-compare-goal bt-attack-reserve-goal >= 10)
     (up-compare-goal bt-relative-force-goal >= 0)
+    ; Castle-Power uses the shared attack lifecycle only after its selected
+    ; Crossbow mass actually exists. Queue-inclusive targets are not enough
+    ; for an attack composition witness.
+    (or
+        (not (goal strategy-goal bt-strategy-castle-power))
+        (and
+            (up-compare-goal bt-standing-crossbow-target-goal > 0)
+            (unit-type-count crossbowman >= bt-standing-crossbow-target-goal)
+        )
+    )
     (goal bt-counter-veto-goal 0)
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
