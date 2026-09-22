@@ -2385,6 +2385,7 @@ town-center >= 2)))))
 (defrule
     (goal bt-resource-mode-goal 0)
     (current-age == feudal-age)
+    (goal bt-castle-cataphract-demand-goal 0)
     (unit-type-count villager >= bt-castle-villagers)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)
