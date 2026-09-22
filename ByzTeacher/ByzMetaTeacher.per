@@ -9847,8 +9847,6 @@ camel-line < bt-camel-target-1)))))
 castle-age) (up-research-status c: castle-age == research-complete))) (and (strategic-number sn-resource-control == imperial-age) (and (current-age < imperial-age) (up-research-status c: imperial-age == research-complete)))))
 =>
     (disable-timer bt-research-watchdog-timer)
-    (set-goal bt-research-failure-backoff-goal feudal-age)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
