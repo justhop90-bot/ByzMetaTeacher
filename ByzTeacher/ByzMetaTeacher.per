@@ -1135,6 +1135,7 @@
 ; completes or capability-loss recovery explicitly releases the claim.
 (defrule
     (goal bt-monk-demand-goal 0)
+    (goal bt-research-monastery-claim-goal 0)
 =>
     (set-goal bt-research-monk-atonement-retry-goal 0)
     (set-goal bt-research-monk-redemption-retry-goal 0)
