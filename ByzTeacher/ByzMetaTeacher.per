@@ -4430,10 +4430,11 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (building-type-count-total market < 1)
     (up-pending-objects c: market == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build market)
+    (can-build-with-escrow market)
 =>
     (set-strategic-number sn-resource-control bt-castle-market-claim)
     (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+    (release-escrow wood)
     (build market)
 )
 
