@@ -2134,6 +2134,34 @@
     (set-goal unit-goal bt-unit-mix)
 )
 
+;---------------------------------------------------------------
+; 14C.1 CASTLE PRIMARY MILITARY SELECTION
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (unit-type-count-total archer-line >= 4)
+    (food-amount >= 350)
+    (gold-amount >= 150)
+    (research-available ri-crossbow)
+=>
+    (set-goal unit-goal crossbowman)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (unit-type-count-total archer-line < 4)
+    (food-amount >= 350)
+    (gold-amount >= 150)
+=>
+    (set-goal unit-goal knight-line)
+)
+
 ;================================================================
 ; 14D. BYZANTINE RESOURCE ALLOCATION
 ;================================================================
@@ -4472,6 +4500,8 @@
     (set-goal bt-standing-skirm-target-goal 0)
     (set-goal bt-standing-archer-target-goal 0)
     (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-standing-knight-target-goal 0)
+    (set-goal bt-standing-crossbow-target-goal 0)
 )
 (defrule (up-compare-goal bt-standing-army-floor-goal == 6) =>
     (set-goal bt-standing-spear-target-goal 3)
@@ -4532,6 +4562,107 @@
 (defrule (up-compare-goal bt-spear-counter-level-goal >= 1) =>
     (up-modify-goal bt-standing-archer-target-goal c:max 3)
 )
+;---------------------------------------------------------------
+; 15Z.1.0 PRIMARY MILITARY ROLE TARGETS
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal knight-line)
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal bt-standing-knight-target-goal bt-knight-target-castle)
+)
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal knight-line)
+    (unit-type-count villager >= 45)
+=>
+    (up-modify-goal bt-standing-knight-target-goal c:max bt-knight-target-mature)
+)
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal knight-line)
+    (unit-type-count villager >= 60)
+=>
+    (up-modify-goal bt-standing-knight-target-goal c:max bt-knight-target-late)
+)
+
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal crossbowman)
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal bt-standing-crossbow-target-goal bt-crossbow-target-castle)
+)
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal crossbowman)
+    (unit-type-count villager >= 45)
+=>
+    (up-modify-goal bt-standing-crossbow-target-goal c:max bt-crossbow-target-mature)
+)
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (goal unit-goal crossbowman)
+    (unit-type-count villager >= 60)
+=>
+    (up-modify-goal bt-standing-crossbow-target-goal c:max bt-crossbow-target-late)
+)
+
+(defrule
+    (goal bt-knight-demand-goal 0)
+    (up-compare-goal bt-standing-knight-target-goal > 0)
+    (unit-type-count-total knight-line < bt-standing-knight-target-goal)
+    (goal strategy-goal bt-strategy-boom)
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal bt-knight-demand-goal 1)
+)
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (or
+        (goal strategy-goal bt-strategy-flush)
+        (goal strategy-goal bt-strategy-rush)
+        (current-age < castle-age)
+        (goal bt-any-threat-goal 1)
+        (up-compare-goal bt-standing-knight-target-goal == 0)
+        (unit-type-count-total knight-line >= bt-standing-knight-target-goal)
+        (not (goal unit-goal knight-line))
+    )
+=>
+    (set-goal bt-knight-demand-goal 0)
+)
+
+(defrule
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-crossbow-target-goal > 0)
+    (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+    (goal strategy-goal bt-strategy-boom)
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal bt-crossbow-demand-goal 1)
+)
+(defrule
+    (goal bt-crossbow-demand-goal 1)
+    (or
+        (goal strategy-goal bt-strategy-flush)
+        (goal strategy-goal bt-strategy-rush)
+        (current-age < castle-age)
+        (goal bt-any-threat-goal 1)
+        (up-compare-goal bt-standing-crossbow-target-goal == 0)
+        (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+        (not (goal unit-goal crossbowman))
+    )
+=>
+    (set-goal bt-crossbow-demand-goal 0)
+)
+
 ;---------------------------------------------------------------
 ; 15Z.1.1 CAMEL TARGET RESET ASSUMPTION
 ;---------------------------------------------------------------
