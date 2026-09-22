@@ -6635,7 +6635,7 @@
     (up-full-reset-search)
     (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
     (up-find-local c: bombard-cannon-line c: 240)
-    (up-find-remote c: trebuchet-line c: 40)
+    (up-find-remote c: unpacked-trebuchet-class c: 40)
     (up-get-search-state bt-bombard-trebuchet-search-state-goal)
     (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-trebuchet-probe)
     (disable-timer bt-bombard-trebuchet-target-timer)
@@ -6729,7 +6729,8 @@
     (goal bt-bombard-cannon-demand-goal 0)
     (or
         (goal bt-bombard-trebuchet-duc-armed-goal 1)
-        (goal bt-bombard-trebuchet-duc-stage-goal != bt-bombard-trebuchet-duc-stage-idle)
+        (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-trebuchet-probe)
+        (goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-building-probe)
     )
 =>
     (disable-timer bt-bombard-trebuchet-target-timer)
