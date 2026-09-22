@@ -389,6 +389,10 @@
 (defconst bt-research-lumber-camp-two-man-saw-retry-goal 681)
 (defconst bt-research-mining-camp-stone-mining-retry-goal 682)
 (defconst bt-research-mining-camp-stone-shaft-mining-retry-goal 683)
+; Castle Cataphract research bounded-start retry state.
+(defconst bt-castle-research-max-retries 2)
+(defconst bt-research-castle-logistica-retry-goal 684)
+(defconst bt-research-castle-elite-cataphract-retry-goal 685)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -2020,6 +2024,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
+    (up-compare-goal bt-research-castle-logistica-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-logistica < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-logistica)
@@ -2027,6 +2032,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
+    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-logistica == research-complete)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
@@ -2035,6 +2041,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
+    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-elite-cataphract)
@@ -13055,6 +13062,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     ; veto here would make the demand unable to complete. Escrow feasibility
     ; remains the final resource guard.
     (up-compare-goal bt-research-castle-failure-backoff-goal != ri-logistica)
+    (up-compare-goal bt-research-castle-logistica-retry-goal < bt-castle-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-logistica)
     (goal bt-research-castle-claim-goal 0)
@@ -13072,6 +13080,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-logistica == research-complete)
 =>
     (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-castle-logistica-retry-goal 0)
 )
 (defrule
     (goal bt-cataphract-demand-goal 1)
@@ -13085,6 +13094,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     ; mode is not allowed to veto the demand that created the package;
     ; escrow feasibility remains authoritative.
     (up-compare-goal bt-research-castle-failure-backoff-goal != ri-elite-cataphract)
+    (up-compare-goal bt-research-castle-elite-cataphract-retry-goal < bt-castle-research-max-retries)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-elite-cataphract)
     (goal bt-research-castle-claim-goal 0)
@@ -13102,6 +13112,15 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-elite-cataphract == research-complete)
 =>
     (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-castle-elite-cataphract-retry-goal 0)
+)
+
+(defrule
+    (goal bt-cataphract-demand-goal 0)
+    (goal bt-research-castle-claim-goal 0)
+=>
+    (set-goal bt-research-castle-logistica-retry-goal 0)
+    (set-goal bt-research-castle-elite-cataphract-retry-goal 0)
 )
 
 ;================================================================
@@ -14140,6 +14159,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-castle-claim-goal ri-logistica)
     (up-research-status c: ri-logistica <= research-available)
 =>
+    (up-modify-goal bt-research-castle-logistica-retry-goal g:+ 1)
     (set-goal bt-research-castle-failure-backoff-goal ri-logistica)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
@@ -14150,6 +14170,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-research-castle-claim-goal ri-elite-cataphract)
     (up-research-status c: ri-elite-cataphract <= research-available)
 =>
+    (up-modify-goal bt-research-castle-elite-cataphract-retry-goal g:+ 1)
     (set-goal bt-research-castle-failure-backoff-goal ri-elite-cataphract)
     (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
