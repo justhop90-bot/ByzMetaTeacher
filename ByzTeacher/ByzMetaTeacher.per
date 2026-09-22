@@ -165,6 +165,11 @@
 (defconst bt-mill-second-farm-threshold-1tc 18)
 (defconst bt-mill-second-farm-threshold-2tc 20)
 
+; Mill construction watchdog. It detects a failed build order without
+; releasing ownership while a real Mill foundation is still pending.
+(defconst bt-mill-watchdog-timer 35)
+(defconst bt-mill-watchdog-seconds 120)
+
 ; Community mixed-composition value.
 (defconst bt-unit-mix 1)
 
@@ -626,6 +631,7 @@
     (set-goal bt-tc-failure-goal 0)
     (set-goal bt-mill-target-goal 0)
     (set-goal bt-mill-project-goal 0)
+    (disable-timer bt-mill-watchdog-timer)
     (disable-self)
 )
 
@@ -990,6 +996,7 @@
 =>
     (set-strategic-number sn-resource-control bt-mill-claim)
     (release-escrow wood)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
     (build mill)
 )
 
@@ -9638,25 +9645,48 @@
 ;----------------------------------------------------------------
 ; MILL CONSTRUCTION COMPLETION
 ;----------------------------------------------------------------
-; The project target is the terminal world-state witness. A generic
-; "mill >= 1" witness would falsely complete every later mill project.
-; This rule remains after every other sn-resource-control claimant so a
-; completed mill cannot release the mutex and then allow a later claimant
-; in the same pass to outrank the completion boundary.
+; The project target is the terminal completed-building witness.
+; building-type-count-total includes construction foundations, so it is
+; deliberately not used to release the Mill claim.
 (defrule
     (strategic-number sn-resource-control == bt-mill-claim)
     (or
         (and
             (goal bt-mill-project-goal 1)
-            (building-type-count-total mill >= 1)
+            (building-type-count mill >= 1)
         )
         (and
             (goal bt-mill-project-goal 2)
-            (building-type-count-total mill >= 2)
+            (building-type-count mill >= 2)
         )
     )
 =>
+    (disable-timer bt-mill-watchdog-timer)
     (set-goal bt-mill-project-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; A failed Mill build order leaves no pending foundation. Release the claim
+; after the bounded watchdog interval and let the existing demand/project
+; path retry on a later pass. Do not release while a real Mill foundation
+; is pending: doing so could let the claim layer issue a duplicate Mill
+; before the completion witness is observed.
+(defrule
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (timer-triggered bt-mill-watchdog-timer)
+    (or
+        (and
+            (goal bt-mill-project-goal 1)
+            (building-type-count mill < 1)
+        )
+        (and
+            (goal bt-mill-project-goal 2)
+            (building-type-count mill < 2)
+        )
+    )
+    (up-pending-objects c: mill == 0)
+=>
+    (disable-timer bt-mill-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
 
