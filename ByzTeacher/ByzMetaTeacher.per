@@ -383,6 +383,11 @@
 (defconst bt-camel-target-1 4)
 (defconst bt-camel-target-2 8)
 
+; Mangonel response target.
+; This finite queue ceiling is the execution cap for the current persistent
+; demand. Package completion/reset remains a later lifecycle edge.
+(defconst bt-mangonel-response-target 2)
+
 ; Production-capacity ceilings.
 ;
 ; These are teaching/controller tuning values, not engine constants.
@@ -4553,6 +4558,31 @@
     (can-train cataphract-line)
 =>
     (train cataphract-line)
+)
+
+;---------------------------------------------------------------
+; 16B.1. MANGONEL RESPONSE PRODUCTION
+;---------------------------------------------------------------
+; Persistent demand is the strategic authority; this rule is only the
+; queueing edge after the completed Workshop capability exists.
+;
+; unit-type-count-total is deliberately used here because it counts the
+; existing Mangonels plus queued Mangonel production. Without that witness,
+; a persistent demand would issue repeated train commands while the queue
+; is still filling.
+;
+; The response target stops at two Mangonels for this repair. The later
+; package-completion/reset lifecycle will own what happens after the target
+; is reached.
+(defrule
+    (goal bt-mangonel-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count-total mangonel-line < bt-mangonel-response-target)
+    (can-train mangonel-line)
+=>
+    (train mangonel-line)
 )
 
 ; Scout and Cataphract production are explicit capability exceptions;
