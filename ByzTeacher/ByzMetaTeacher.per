@@ -12022,7 +12022,11 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-blacksmith-claim-goal != 0)
+    (or
+        (goal bt-research-blacksmith-claim-goal != 0)
+        (goal bt-research-cavalry-counter-package-goal != 0)
+        (goal bt-research-ranged-counter-package-goal != 0)
+    )
     (building-type-count blacksmith == 0)
 =>
     (set-goal bt-research-blacksmith-claim-goal 0)
