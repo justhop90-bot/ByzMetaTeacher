@@ -307,6 +307,26 @@
 (defconst bt-research-ranged-counter-package-goal 620)
 (defconst bt-research-cataphract-package-goal 621)
 (defconst bt-research-siege-package-goal 622)
+; Monastery/Monk capability lifecycle.
+(defconst bt-monastery-demand-goal 634)
+(defconst bt-monastery-retry-goal 635)
+(defconst bt-monastery-backoff-goal 636)
+(defconst bt-monastery-failure-goal 637)
+(defconst bt-monastery-claim 638)
+(defconst bt-monastery-watchdog-timer 48)
+(defconst bt-monastery-backoff-timer 49)
+(defconst bt-monastery-failure-timer 50)
+(defconst bt-monastery-watchdog-seconds 120)
+(defconst bt-monastery-backoff-seconds 30)
+(defconst bt-monastery-backoff-2-seconds 60)
+(defconst bt-monastery-backoff-3-seconds 120)
+(defconst bt-monastery-backoff-cap-seconds 240)
+(defconst bt-monastery-failure-seconds 240)
+(defconst bt-monk-demand-goal 639)
+(defconst bt-monk-target-goal 640)
+(defconst bt-research-monk-package-goal 641)
+(defconst bt-research-monastery-claim-goal 642)
+(defconst bt-research-monastery-failure-backoff-goal 643)
 
 ; University capability state.
 (defconst bt-university-demand-goal 595)
@@ -745,6 +765,15 @@
     (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
     (set-goal bt-research-failure-backoff-goal 0)
+    (set-goal bt-monastery-demand-goal 0)
+    (set-goal bt-monastery-retry-goal 0)
+    (set-goal bt-monastery-backoff-goal 0)
+    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monk-demand-goal 0)
+    (set-goal bt-monk-target-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monastery-failure-backoff-goal 0)
     (set-goal bt-research-town-center-failure-backoff-goal 0)
     (set-goal bt-research-mill-failure-backoff-goal 0)
     (set-goal bt-research-lumber-camp-failure-backoff-goal 0)
@@ -921,11 +950,156 @@
     (disable-timer bt-tc3-watchdog-timer)
     (disable-timer bt-research-watchdog-timer)
     (disable-timer bt-research-failure-backoff-timer)
+    (disable-timer bt-monastery-watchdog-timer)
+    (disable-timer bt-monastery-backoff-timer)
+    (disable-timer bt-monastery-failure-timer)
     (disable-timer bt-castle-prereq-watchdog-timer)
     (disable-self)
 )
 
 ;================================================================
+
+;================================================================
+; MONASTERY / MONK DEMAND
+;================================================================
+(defrule
+    (current-age >= castle-age)
+    (players-unit-type-count target-player monk >= 1)
+=>
+    (set-goal bt-monk-target-goal 3)
+    (set-goal bt-monk-demand-goal 1)
+)
+(defrule
+    (current-age >= castle-age)
+    (players-unit-type-count target-player monk < 1)
+    (or
+        (players-unit-type-count target-player mangonel-line >= 1)
+        (or
+            (players-unit-type-count target-player scorpion-line >= 1)
+            (or
+                (players-unit-type-count target-player battering-ram-line >= 1)
+                (or
+                    (players-unit-type-count target-player siege-tower >= 1)
+                    (or
+                        (players-unit-type-count target-player bombard-cannon-line >= 1)
+                        (players-unit-type-count target-player trebuchet-set >= 1)
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-monk-target-goal 2)
+    (set-goal bt-monk-demand-goal 1)
+)
+(defrule
+    (goal bt-monk-demand-goal 1)
+    (players-unit-type-count target-player monk < 1)
+    (players-unit-type-count target-player mangonel-line < 1)
+    (players-unit-type-count target-player scorpion-line < 1)
+    (players-unit-type-count target-player battering-ram-line < 1)
+    (players-unit-type-count target-player siege-tower < 1)
+    (players-unit-type-count target-player bombard-cannon-line < 1)
+    (players-unit-type-count target-player trebuchet-set < 1)
+=>
+    (set-goal bt-monk-demand-goal 0)
+    (set-goal bt-monk-target-goal 0)
+)
+
+; MONK RESEARCH PACKAGE
+;================================================================
+(defrule
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-monk-demand-goal 1)
+    (unit-type-count-total monk >= 2)
+    (players-unit-type-count target-player monk >= 1)
+    (up-research-status c: ri-faith < research-complete)
+    (research-available ri-faith)
+=>
+    (set-goal bt-research-monk-package-goal ri-faith)
+)
+(defrule
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-monk-demand-goal 1)
+    (unit-type-count-total monk >= 2)
+    (or
+        (players-unit-type-count target-player mangonel-line >= 1)
+        (or
+            (players-unit-type-count target-player scorpion-line >= 1)
+            (or
+                (players-unit-type-count target-player battering-ram-line >= 1)
+                (players-unit-type-count target-player siege-tower >= 1)
+            )
+        )
+    )
+    (up-research-status c: ri-redemption < research-complete)
+    (research-available ri-redemption)
+=>
+    (set-goal bt-research-monk-package-goal ri-redemption)
+)
+(defrule
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-monk-demand-goal 1)
+    (unit-type-count-total monk >= 2)
+    (up-research-status c: ri-sanctity < research-complete)
+    (research-available ri-sanctity)
+=>
+    (set-goal bt-research-monk-package-goal ri-sanctity)
+)
+(defrule
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-monk-demand-goal 1)
+    (unit-type-count-total monk >= 4)
+    (up-research-status c: ri-block-printing < research-complete)
+    (research-available ri-block-printing)
+=>
+    (set-goal bt-research-monk-package-goal ri-block-printing)
+)
+(defrule
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-monk-demand-goal 1)
+    (unit-type-count-total monk >= 4)
+    (up-research-status c: ri-theocracy < research-complete)
+    (research-available ri-theocracy)
+=>
+    (set-goal bt-research-monk-package-goal ri-theocracy)
+)
+(defrule
+    (goal bt-research-monk-package-goal ri-faith)
+    (up-research-status c: ri-faith == research-complete)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monk-package-goal ri-redemption)
+    (up-research-status c: ri-redemption == research-complete)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monk-package-goal ri-sanctity)
+    (up-research-status c: ri-sanctity == research-complete)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monk-package-goal ri-block-printing)
+    (up-research-status c: ri-block-printing == research-complete)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monk-package-goal ri-theocracy)
+    (up-research-status c: ri-theocracy == research-complete)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monk-package-goal != 0)
+    (goal bt-monk-demand-goal 0)
+=>
+    (set-goal bt-research-monk-package-goal 0)
+)
 
 ; RESEARCH PACKAGE PRIORITY
 ;================================================================
@@ -1268,6 +1442,143 @@
     (goal bt-scorpion-ballistics-demand-goal 0)
 =>
     (set-goal bt-research-siege-package-goal 0)
+)
+
+; MONASTERY RESEARCH EXECUTOR
+;================================================================
+(defrule
+    (goal bt-research-monk-package-goal ri-faith)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-faith)
+    (goal bt-research-monastery-claim-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (can-research-with-escrow ri-faith)
+=>
+    (set-strategic-number sn-resource-control ri-faith)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-faith)
+    (set-goal bt-research-monastery-claim-goal ri-faith)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-faith)
+    (up-research-status c: ri-faith == research-complete)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+)
+
+(defrule
+    (goal bt-research-monk-package-goal ri-redemption)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-redemption)
+    (goal bt-research-monastery-claim-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (can-research-with-escrow ri-redemption)
+=>
+    (set-strategic-number sn-resource-control ri-redemption)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-redemption)
+    (set-goal bt-research-monastery-claim-goal ri-redemption)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-redemption)
+    (up-research-status c: ri-redemption == research-complete)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+)
+
+(defrule
+    (goal bt-research-monk-package-goal ri-sanctity)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-sanctity)
+    (goal bt-research-monastery-claim-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (can-research-with-escrow ri-sanctity)
+=>
+    (set-strategic-number sn-resource-control ri-sanctity)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-sanctity)
+    (set-goal bt-research-monastery-claim-goal ri-sanctity)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-sanctity)
+    (up-research-status c: ri-sanctity == research-complete)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+)
+
+(defrule
+    (goal bt-research-monk-package-goal ri-block-printing)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-block-printing)
+    (goal bt-research-monastery-claim-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (can-research-with-escrow ri-block-printing)
+=>
+    (set-strategic-number sn-resource-control ri-block-printing)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-block-printing)
+    (set-goal bt-research-monastery-claim-goal ri-block-printing)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-block-printing)
+    (up-research-status c: ri-block-printing == research-complete)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+)
+
+(defrule
+    (goal bt-research-monk-package-goal ri-theocracy)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-research-monastery-failure-backoff-goal != ri-theocracy)
+    (goal bt-research-monastery-claim-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (can-research-with-escrow ri-theocracy)
+=>
+    (set-strategic-number sn-resource-control ri-theocracy)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-theocracy)
+    (set-goal bt-research-monastery-claim-goal ri-theocracy)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-theocracy)
+    (up-research-status c: ri-theocracy == research-complete)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
 )
 
 ;================================================================
@@ -1931,6 +2242,7 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-horse-collar)
     (release-escrow food)
@@ -1970,6 +2282,7 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-heavy-plow)
     (release-escrow food)
@@ -2004,6 +2317,7 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-crop-rotation)
     (release-escrow food)
@@ -3424,6 +3738,7 @@ research-pending)))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-double-bit-axe)
     (release-escrow food)
@@ -3520,6 +3835,7 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-gold-mining)
     (release-escrow food)
@@ -3591,6 +3907,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-wheel-barrow)
     (release-escrow food)
@@ -3749,6 +4066,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-hand-cart)
     (release-escrow food)
@@ -3847,6 +4165,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-bow-saw)
     (release-escrow food)
@@ -3924,6 +4243,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-two-man-saw)
     (release-escrow food)
@@ -3978,6 +4298,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-gold-shaft-mining)
     (release-escrow food)
@@ -4103,6 +4424,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-stone-mining)
     (release-escrow food)
@@ -4198,6 +4520,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-stone-shaft-mining)
     (release-escrow food)
@@ -5617,6 +5940,136 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 )
 
 ;================================================================
+; MONASTERY CAPABILITY LIFECYCLE
+;================================================================
+(defrule
+    (goal bt-monk-demand-goal 1)
+    (current-age >= castle-age)
+    (goal bt-monastery-failure-goal 0)
+    (goal bt-monastery-backoff-goal 0)
+    (up-compare-goal bt-monastery-retry-goal < 4)
+    (building-type-count-total monastery < 1)
+    (up-pending-objects c: monastery == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow monastery)
+=>
+    (set-strategic-number sn-resource-control bt-monastery-claim)
+    (release-escrow wood)
+    (enable-timer bt-monastery-watchdog-timer bt-monastery-watchdog-seconds)
+    (build monastery)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (building-type-count monastery >= 1)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (disable-timer bt-monastery-backoff-timer)
+    (disable-timer bt-monastery-failure-timer)
+    (set-goal bt-monastery-retry-goal 0)
+    (set-goal bt-monastery-backoff-goal 0)
+    (set-goal bt-monastery-failure-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (building-type-count monastery >= 1)
+    (up-compare-goal bt-monastery-retry-goal >= 1)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-monastery-claim)
+    )
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (disable-timer bt-monastery-backoff-timer)
+    (set-goal bt-monastery-retry-goal 0)
+    (set-goal bt-monastery-backoff-goal 0)
+    (set-goal bt-monastery-failure-goal 0)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (goal bt-monastery-retry-goal 0)
+    (timer-triggered bt-monastery-watchdog-timer)
+    (up-pending-objects c: monastery > 0)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (up-assign-builders c: monastery c: bt-foundation-stall-builder-count)
+    (set-goal bt-monastery-retry-goal 1)
+    (enable-timer bt-monastery-watchdog-timer bt-monastery-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (goal bt-monastery-retry-goal 1)
+    (timer-triggered bt-monastery-watchdog-timer)
+    (up-pending-objects c: monastery > 0)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (up-assign-builders c: monastery c: bt-foundation-stall-builder-count)
+    (set-goal bt-monastery-retry-goal 2)
+    (enable-timer bt-monastery-watchdog-timer bt-monastery-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (goal bt-monastery-retry-goal 2)
+    (timer-triggered bt-monastery-watchdog-timer)
+    (up-pending-objects c: monastery > 0)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (up-assign-builders c: monastery c: bt-foundation-stall-builder-count)
+    (set-goal bt-monastery-retry-goal 3)
+    (enable-timer bt-monastery-watchdog-timer bt-monastery-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (goal bt-monastery-retry-goal 3)
+    (timer-triggered bt-monastery-watchdog-timer)
+    (up-pending-objects c: monastery > 0)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-monastery-retry-goal 4)
+    (set-goal bt-monastery-backoff-goal 1)
+    (enable-timer bt-monastery-backoff-timer bt-monastery-backoff-cap-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-monastery-claim)
+    (goal bt-monastery-retry-goal 0)
+    (timer-triggered bt-monastery-watchdog-timer)
+    (up-pending-objects c: monastery == 0)
+=>
+    (disable-timer bt-monastery-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-monastery-retry-goal 1)
+    (set-goal bt-monastery-backoff-goal 1)
+    (enable-timer bt-monastery-backoff-timer bt-monastery-backoff-seconds)
+)
+(defrule
+    (goal bt-monastery-backoff-goal 1)
+    (timer-triggered bt-monastery-backoff-timer)
+=>
+    (disable-timer bt-monastery-backoff-timer)
+    (set-goal bt-monastery-backoff-goal 0)
+    (set-goal bt-monastery-retry-goal 0)
+)
+(defrule
+    (goal bt-monastery-retry-goal 4)
+    (goal bt-monastery-failure-goal 0)
+    (timer-triggered bt-monastery-backoff-timer)
+=>
+    (disable-timer bt-monastery-backoff-timer)
+    (set-goal bt-monastery-failure-goal 1)
+    (enable-timer bt-monastery-failure-timer bt-monastery-failure-seconds)
+)
+(defrule
+    (goal bt-monastery-failure-goal 1)
+    (goal bt-monk-demand-goal 1)
+    (building-type-count monastery < 1)
+    (timer-triggered bt-monastery-failure-timer)
+=>
+    (disable-timer bt-monastery-failure-timer)
+    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monastery-retry-goal 0)
+    (set-goal bt-monastery-backoff-goal 0)
+)
+;================================================================
 ; 15Z. STANDING ARMY FLOOR
 ;================================================================
 ; The floor is a derived requirement, not a strategy.
@@ -6160,6 +6613,23 @@ cataphract-line < bt-cataphract-target-1)))))
     (release-escrow food)
     (release-escrow gold)
     (train cataphract-line)
+)
+
+; 16B.0. MONK RESPONSE PRODUCTION
+;---------------------------------------------------------------
+(defrule
+    (goal bt-monk-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count monastery >= 1)
+    (unit-type-count-total monk < bt-monk-target-goal)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-train-with-escrow monk)
+=>
+    (release-escrow gold)
+    (train monk)
 )
 
 ; 16B.1. MANGONEL RESPONSE PRODUCTION
@@ -11202,6 +11672,61 @@ camel-line < bt-camel-target-1)))))
 )
 
 ;----------------------------------------------------------------
+; MONASTERY RESEARCH CAPABILITY LOSS / FAILURE RECOVERY
+;----------------------------------------------------------------
+(defrule
+    (goal bt-research-monastery-claim-goal != 0)
+    (building-type-count monastery == 0)
+=>
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+)
+(defrule
+    (goal bt-research-monastery-claim-goal ri-faith)
+    (up-research-status c: ri-faith <= research-available)
+=>
+    (set-goal bt-research-monastery-failure-backoff-goal ri-faith)
+    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-monastery-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-monastery-claim-goal ri-redemption)
+    (up-research-status c: ri-redemption <= research-available)
+=>
+    (set-goal bt-research-monastery-failure-backoff-goal ri-redemption)
+    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-monastery-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-monastery-claim-goal ri-sanctity)
+    (up-research-status c: ri-sanctity <= research-available)
+=>
+    (set-goal bt-research-monastery-failure-backoff-goal ri-sanctity)
+    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-monastery-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-monastery-claim-goal ri-block-printing)
+    (up-research-status c: ri-block-printing <= research-available)
+=>
+    (set-goal bt-research-monastery-failure-backoff-goal ri-block-printing)
+    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-monastery-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-monastery-claim-goal ri-theocracy)
+    (up-research-status c: ri-theocracy <= research-available)
+=>
+    (set-goal bt-research-monastery-failure-backoff-goal ri-theocracy)
+    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-monastery-claim-goal 0)
+)
+
+;----------------------------------------------------------------
 ; RESEARCH FAILURE FAIRNESS BACKOFF
 ;
 ; A failed Blacksmith research action leaves the technology at
@@ -11224,6 +11749,7 @@ camel-line < bt-camel-target-1)))))
     (set-goal bt-research-archery-range-failure-backoff-goal 0)
     (set-goal bt-research-stable-failure-backoff-goal 0)
     (set-goal bt-research-siege-workshop-failure-backoff-goal 0)
+    (set-goal bt-research-monastery-failure-backoff-goal 0)
 )
 
 ;================================================================
