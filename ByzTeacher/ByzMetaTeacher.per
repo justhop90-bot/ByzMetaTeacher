@@ -8979,6 +8979,110 @@
 )
 
 ;----------------------------------------------------------------
+; PRIMARY MILITARY RESEARCH WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-fletching)
+    (up-research-status c: ri-fletching <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-crossbow)
+    (up-research-status c: ri-crossbow <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-bodkin-arrow)
+    (up-research-status c: ri-bodkin-arrow <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-forging)
+    (up-research-status c: ri-forging <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-iron-casting)
+    (up-research-status c: ri-iron-casting <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-scale-barding-armor)
+    (up-research-status c: ri-scale-barding-armor <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-chain-barding-armor)
+    (up-research-status c: ri-chain-barding-armor <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-plate-barding-armor)
+    (up-research-status c: ri-plate-barding-armor <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-cavalier)
+    (up-research-status c: ri-cavalier <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-cavalier-demand-goal 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-paladin)
+    (up-research-status c: ri-paladin <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-paladin-demand-goal 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-arbalest)
+    (up-research-status c: ri-arbalest <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-arbalest-demand-goal 0)
+)
+
+;----------------------------------------------------------------
 ; PIKEMAN WATCHDOG EXPIRY
 (defrule
     (strategic-number sn-resource-control == ri-pikeman)
