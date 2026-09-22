@@ -1,0 +1,769 @@
+============================================================
+BYZANTINE AUTHORITATIVE MANIFEST
+============================================================
+CivTechTrees ID: BYZANTINES
+DAT civilization: Byzantine
+DAT tech_tree_id: 256
+Buildings: 28
+Units/tech nodes: 145
+
+============================================================
+BUILDINGS
+============================================================
+87 | Archery Range | TYPE=BuildingTech | USE=Building | STATUS=ResearchRequired | AGE=2 | BUILDING=87 | LINK=12 | TRIGGER=<MISSING>
+12 | Barracks | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>
+101 | Stable | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=101 | LINK=12 | TRIGGER=<MISSING>
+49 | Siege Workshop | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=49 | LINK=103 | TRIGGER=<MISSING>
+103 | Blacksmith | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+45 | Dock | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+209 | University | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+598 | Outpost | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=598 | LINK=<MISSING> | TRIGGER=<MISSING>
+79 | Watch Tower | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=79 | LINK=598 | TRIGGER=<MISSING>
+234 | Guard Tower | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchRequired | AGE=3 | BUILDING=234 | LINK=79 | TRIGGER=<MISSING>
+235 | Keep | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchRequired | AGE=4 | BUILDING=235 | LINK=234 | TRIGGER=<MISSING>
+236 | Bombard Tower | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchRequired | AGE=4 | BUILDING=236 | LINK=235 | TRIGGER=<MISSING>
+72 | Palisade Wall | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=72 | LINK=<MISSING> | TRIGGER=<MISSING>
+792 | Palisade Gate | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=792 | LINK=<MISSING> | TRIGGER=<MISSING>
+487 | Gate | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=487 | LINK=<MISSING> | TRIGGER=<MISSING>
+117 | Stone Wall | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=117 | LINK=487 | TRIGGER=<MISSING>
+155 | Fortified Wall | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchRequired | AGE=3 | BUILDING=155 | LINK=117 | TRIGGER=<MISSING>
+82 | Castle | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+104 | Monastery | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+109 | Town Center | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+70 | House | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=70 | LINK=<MISSING> | TRIGGER=<MISSING>
+621 | Town Center | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=621 | LINK=<MISSING> | TRIGGER=<MISSING>
+276 | Wonder | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=4 | BUILDING=276 | LINK=<MISSING> | TRIGGER=<MISSING>
+584 | Mining Camp | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=584 | LINK=<MISSING> | TRIGGER=<MISSING>
+562 | Lumber Camp | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=562 | LINK=<MISSING> | TRIGGER=<MISSING>
+84 | Market | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=84 | LINK=68 | TRIGGER=<MISSING>
+68 | Mill | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=68 | LINK=<MISSING> | TRIGGER=<MISSING>
+50 | Farm | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=68 | LINK=68 | TRIGGER=<MISSING>
+
+============================================================
+AVAILABLE UNIT / TECH NODES
+============================================================
+4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+24 | Crossbowman | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=87 | LINK=4 | TRIGGER=100
+492 | Arbalester | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=87 | LINK=24 | TRIGGER=237
+7 | Skirmisher | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+6 | Elite Skirmisher | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=87 | LINK=7 | TRIGGER=98
+5 | Hand Cannoneer | TYPE=Unit | USE=Unit | STATUS=ResearchRequired | AGE=4 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+39 | Cavalry Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+474 | Heavy Cavalry Archer | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=87 | LINK=39 | TRIGGER=218
+437 | Thumb Ring | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+74 | Militia | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>
+75 | Man-at-Arms | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=12 | LINK=74 | TRIGGER=222
+77 | Long Swordsman | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=12 | LINK=75 | TRIGGER=207
+473 | Two-Handed Swordsman | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=12 | LINK=77 | TRIGGER=217
+567 | Champion | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=12 | LINK=473 | TRIGGER=264
+93 | Spearman | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>
+358 | Pikeman | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=12 | LINK=93 | TRIGGER=197
+359 | Halberdier | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=12 | LINK=358 | TRIGGER=429
+602 | Arson | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>
+875 | Gambesons | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>
+215 | Squires | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=12 | LINK=875 | TRIGGER=<MISSING>
+448 | Scout Cavalry | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=101 | LINK=<MISSING> | TRIGGER=<MISSING>
+546 | Light Cavalry | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=101 | LINK=448 | TRIGGER=254
+441 | Hussar | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=101 | LINK=546 | TRIGGER=428
+38 | Knight | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=101 | LINK=<MISSING> | TRIGGER=<MISSING>
+283 | Cavalier | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=101 | LINK=38 | TRIGGER=209
+569 | Paladin | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=101 | LINK=283 | TRIGGER=265
+329 | Camel Rider | TYPE=RegionalUnit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=101 | LINK=<MISSING> | TRIGGER=<MISSING>
+330 | Heavy Camel Rider | TYPE=RegionalUnit | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=101 | LINK=329 | TRIGGER=236
+39 | Husbandry | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=101 | LINK=435 | TRIGGER=<MISSING>
+1258 | Battering Ram | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=49 | LINK=<MISSING> | TRIGGER=<MISSING>
+422 | Capped Ram | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=49 | LINK=1258 | TRIGGER=96
+548 | Siege Ram | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=49 | LINK=422 | TRIGGER=255
+280 | Mangonel | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=49 | LINK=<MISSING> | TRIGGER=<MISSING>
+550 | Onager | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=49 | LINK=280 | TRIGGER=257
+279 | Scorpion | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=49 | LINK=<MISSING> | TRIGGER=<MISSING>
+1105 | Siege Tower | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=49 | LINK=<MISSING> | TRIGGER=<MISSING>
+36 | Bombard Cannon | TYPE=Unit | USE=Unit | STATUS=ResearchRequired | AGE=4 | BUILDING=49 | LINK=<MISSING> | TRIGGER=<MISSING>
+211 | Padded Archer Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+212 | Leather Archer Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=103 | LINK=211 | TRIGGER=<MISSING>
+219 | Ring Archer Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=103 | LINK=212 | TRIGGER=<MISSING>
+199 | Fletching | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+200 | Bodkin Arrow | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=103 | LINK=199 | TRIGGER=<MISSING>
+201 | Bracer | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=103 | LINK=200 | TRIGGER=<MISSING>
+67 | Forging | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+68 | Iron Casting | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=103 | LINK=67 | TRIGGER=<MISSING>
+81 | Scale Barding Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+82 | Chain Barding Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=103 | LINK=81 | TRIGGER=<MISSING>
+80 | Plate Barding Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=103 | LINK=82 | TRIGGER=<MISSING>
+74 | Scale Mail Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=103 | LINK=<MISSING> | TRIGGER=<MISSING>
+76 | Chain Mail Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=103 | LINK=74 | TRIGGER=<MISSING>
+77 | Plate Mail Armor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=103 | LINK=76 | TRIGGER=<MISSING>
+13 | Fishing Ship | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=1 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+199 | Fish Trap | TYPE=BuildingNonTech | USE=Building | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=13 | TRIGGER=<MISSING>
+545 | Transport Ship | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=1 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+1103 | Fire Galley | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+529 | Fire Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=3 | BUILDING=45 | LINK=1103 | TRIGGER=34
+532 | Fast Fire Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=4 | BUILDING=45 | LINK=529 | TRIGGER=246
+906 | Fishing Lines | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=199 | TRIGGER=<MISSING>
+65 | Gillnets | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=45 | LINK=906 | TRIGGER=<MISSING>
+539 | Galley | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+21 | War Galley | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=3 | BUILDING=45 | LINK=539 | TRIGGER=34
+442 | Galleon | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=4 | BUILDING=45 | LINK=21 | TRIGGER=35
+2626 | Hulk | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+2627 | War Hulk | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=3 | BUILDING=45 | LINK=2626 | TRIGGER=34
+2628 | Carrack | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchRequired | AGE=4 | BUILDING=45 | LINK=2627 | TRIGGER=904
+1104 | Demolition Raft | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+527 | Demolition Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=45 | LINK=1104 | TRIGGER=905
+528 | Heavy Demolition Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=45 | LINK=527 | TRIGGER=244
+17 | Trade Cog | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+34 | Warships | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=45 | LINK=17 | TRIGGER=<MISSING>
+35 | Heavy Warships | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=45 | LINK=34 | TRIGGER=<MISSING>
+1795 | Dromon | TYPE=RegionalUnit | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=45 | LINK=532 | TRIGGER=<MISSING>
+194 | Fortified Wall | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+47 | Chemistry | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+64 | Bombard Tower | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=47 | TRIGGER=<MISSING>
+93 | Ballistics | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+140 | Guard Tower | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+63 | Keep | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=140 | TRIGGER=<MISSING>
+608 | Arrowslits | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+322 | Murder Holes | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+374 | Careening | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+375 | Dry Dock | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=374 | TRIGGER=<MISSING>
+908 | Clinker Construction | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+907 | Carvel Hull | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=908 | TRIGGER=<MISSING>
+909 | Siphons | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+373 | Shipwright | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+54 | Treadmill Crane | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+40 | Cataphract | TYPE=UniqueUnit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+553 | Elite Cataphract | TYPE=UniqueUnit | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=40 | TRIGGER=361
+440 | Petard | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+331 | Trebuchet (Packed) | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+464 | Greek Fire | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+61 | Logistica | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+379 | Hoardings | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+315 | Conscription | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=<MISSING> | TRIGGER=<MISSING>
+408 | Spies/Treason | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=315 | TRIGGER=<MISSING>
+125 | Monk | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+46 | Devotion | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+45 | Faith | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=104 | LINK=46 | TRIGGER=<MISSING>
+316 | Redemption | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+233 | Illumination | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+319 | Atonement | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+230 | Block Printing | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+438 | Theocracy | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+439 | Heresy | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+231 | Sanctity | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+252 | Fervor | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+83 | Villager | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=1 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+8 | Town Watch | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+280 | Town Patrol | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=109 | LINK=8 | TRIGGER=<MISSING>
+101 | Feudal Age | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=1 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+102 | Castle Age | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=109 | LINK=101 | TRIGGER=<MISSING>
+103 | Imperial Age | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=109 | LINK=102 | TRIGGER=<MISSING>
+22 | Loom | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=1 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+213 | Wheelbarrow | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=109 | LINK=<MISSING> | TRIGGER=<MISSING>
+249 | Hand Cart | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=109 | LINK=213 | TRIGGER=<MISSING>
+55 | Gold Mining | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=584 | LINK=<MISSING> | TRIGGER=<MISSING>
+182 | Gold Shaft Mining | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=584 | LINK=55 | TRIGGER=<MISSING>
+278 | Stone Mining | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=584 | LINK=<MISSING> | TRIGGER=<MISSING>
+279 | Stone Shaft Mining | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=584 | LINK=278 | TRIGGER=<MISSING>
+202 | Double-Bit Axe | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=562 | LINK=<MISSING> | TRIGGER=<MISSING>
+203 | Bow Saw | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=562 | LINK=202 | TRIGGER=<MISSING>
+221 | Two-Man Saw | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=562 | LINK=203 | TRIGGER=<MISSING>
+128 | Trade Cart | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=84 | LINK=<MISSING> | TRIGGER=<MISSING>
+48 | Caravan | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=84 | LINK=<MISSING> | TRIGGER=<MISSING>
+23 | Coinage | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=84 | LINK=48 | TRIGGER=<MISSING>
+17 | Banking | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=84 | LINK=23 | TRIGGER=<MISSING>
+15 | Guilds | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=84 | LINK=17 | TRIGGER=<MISSING>
+14 | Horse Collar | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=2 | BUILDING=68 | LINK=50 | TRIGGER=<MISSING>
+13 | Heavy Plow | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=3 | BUILDING=68 | LINK=14 | TRIGGER=<MISSING>
+12 | Crop Rotation | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=68 | LINK=13 | TRIGGER=<MISSING>
+
+============================================================
+NOT AVAILABLE UNIT / TECH NODES
+============================================================
+436 | Parthian Tactics | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+435 | Bloodlines | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=2 | BUILDING=101 | LINK=<MISSING> | TRIGGER=<MISSING>
+588 | Siege Onager | TYPE=UnitUpgrade | USE=Unit | STATUS=NotAvailable | AGE=4 | BUILDING=49 | LINK=550 | TRIGGER=320
+542 | Heavy Scorpion | TYPE=UnitUpgrade | USE=Unit | STATUS=NotAvailable | AGE=4 | BUILDING=49 | LINK=279 | TRIGGER=239
+75 | Blast Furnace | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=103 | LINK=68 | TRIGGER=<MISSING>
+420 | Cannon Galleon | TYPE=Unit | USE=Unit | STATUS=NotAvailable | AGE=4 | BUILDING=45 | LINK=<MISSING> | TRIGGER=<MISSING>
+691 | Elite Cannon Galleon | TYPE=<MISSING> | USE=Unit | STATUS=NotAvailable | AGE=4 | BUILDING=45 | LINK=420 | TRIGGER=376
+50 | Masonry | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+51 | Architecture | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=209 | LINK=50 | TRIGGER=<MISSING>
+377 | Siege Engineers | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+380 | Heated Shot | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=3 | BUILDING=209 | LINK=<MISSING> | TRIGGER=<MISSING>
+910 | Incendiaries | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=209 | LINK=909 | TRIGGER=<MISSING>
+321 | Sappers | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=82 | LINK=379 | TRIGGER=<MISSING>
+441 | Herbal Medicine | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=3 | BUILDING=104 | LINK=<MISSING> | TRIGGER=<MISSING>
+
+============================================================
+DAT OBJECT CROSS-REFERENCE
+============================================================
+BUILDING NODE 87 | Archery Range | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Spearman (make avail)' civ=-1 effect=87 required=(101, 950, -1, -1, -1, -1)
+BUILDING NODE 12 | Barracks | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Crop rotation' civ=-1 effect=12 required=(103, 13, 766, -1, -1, -1)
+BUILDING NODE 101 | Stable | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Middle Age' civ=-1 effect=101 required=(104, 659, -1, -1, -1, -1)
+BUILDING NODE 49 | Siege Workshop | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=200,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Bogsveigar' civ=11 effect=467 required=(103, -1, -1, -1, -1, -1)
+BUILDING NODE 103 | Blacksmith | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=150,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Imperial Age' civ=-1 effect=103 required=(102, 661, -1, -1, -1, -1)
+BUILDING NODE 45 | Dock | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=1 creatable=-1
+  COSTS: type=1,amount=150,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Faith' civ=-1 effect=45 required=(103, 46, 1138, -1, -1, -1)
+BUILDING NODE 209 | University | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=200,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Cavalier' civ=-1 effect=175 required=(103, 166, 768, -1, -1, -1)
+BUILDING NODE 598 | Outpost | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=25,flag=1 ; type=2,amount=5,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Genitour (make avail)' civ=27 effect=624 required=(102, 266, -1, -1, -1, -1)
+BUILDING NODE 79 | Watch Tower | UNIT=YES | TECH=YES
+  UNIT: class=52 enabled=0 creatable=-1
+  COSTS: type=2,amount=125,flag=1 ; type=1,amount=35,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Disable Regionals' civ=-1 effect=79 required=(-1, -1, -1, -1, -1, -1)
+BUILDING NODE 234 | Guard Tower | UNIT=YES | TECH=YES
+  UNIT: class=52 enabled=0 creatable=-1
+  COSTS: type=2,amount=125,flag=1 ; type=1,amount=35,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Conversion enabler' civ=-1 effect=223 required=(104, -1, -1, -1, -1, -1)
+BUILDING NODE 235 | Keep | UNIT=YES | TECH=YES
+  UNIT: class=52 enabled=0 creatable=-1
+  COSTS: type=2,amount=125,flag=1 ; type=1,amount=35,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Make Camels Available' civ=-1 effect=224 required=(102, 858, -1, -1, -1, -1)
+BUILDING NODE 236 | Bombard Tower | UNIT=YES | TECH=YES
+  UNIT: class=52 enabled=0 creatable=-1
+  COSTS: type=3,amount=100,flag=1 ; type=2,amount=125,flag=1 ; type=1,amount=0,flag=1
+  TECH: name='Heavy Camel' civ=-1 effect=225 required=(103, 235, -1, -1, -1, -1)
+BUILDING NODE 72 | Palisade Wall | UNIT=YES | TECH=YES
+  UNIT: class=27 enabled=0 creatable=-1
+  COSTS: type=1,amount=3,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Palisade Walls HP feudal age' civ=-1 effect=293 required=(101, -1, -1, -1, -1, -1)
+BUILDING NODE 792 | Palisade Gate | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=0 creatable=-1
+  COSTS: type=1,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='C-Bonus, Villager regeneration' civ=38 effect=815 required=(307, 20, -1, -1, -1, -1)
+BUILDING NODE 487 | Gate | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=0 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Mongols UT' civ=12 effect=542 required=(102, -1, -1, -1, -1, -1)
+BUILDING NODE 117 | Stone Wall | UNIT=YES | TECH=YES
+  UNIT: class=27 enabled=0 creatable=-1
+  COSTS: type=2,amount=5,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Disable Spies (Regicide only)' civ=-1 effect=117 required=(-1, -1, -1, -1, -1, -1)
+BUILDING NODE 155 | Fortified Wall | UNIT=YES | TECH=YES
+  UNIT: class=27 enabled=0 creatable=-1
+  COSTS: type=2,amount=5,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='C-Bonus, Military cost -30%' civ=21 effect=160 required=(103, -1, -1, -1, -1, -1)
+BUILDING NODE 82 | Castle | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=2,amount=650,flag=1 ; type=1,amount=0,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Chain Barding Armor' civ=-1 effect=82 required=(102, 81, -1, -1, -1, -1)
+BUILDING NODE 104 | Monastery | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Dark Age' civ=-1 effect=104 required=(-1, -1, -1, -1, -1, -1)
+BUILDING NODE 109 | Town Center | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=275,flag=1 ; type=2,amount=100,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Farm -- Age One' civ=-1 effect=109 required=(-1, -1, -1, -1, -1, -1)
+BUILDING NODE 70 | House | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=1 creatable=-1
+  COSTS: type=1,amount=25,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='C-Bonus, start with eagle' civ=21 effect=40 required=(-1, -1, -1, -1, -1, -1)
+BUILDING NODE 621 | Town Center | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=275,flag=1 ; type=2,amount=100,flag=1 ; type=-1,amount=0,flag=0
+  TECH: name='Elite Rattan Archer' civ=31 effect=661 required=(103, 620, -1, -1, -1, -1)
+BUILDING NODE 276 | Wonder | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=1000,flag=1 ; type=3,amount=1000,flag=1 ; type=2,amount=1000,flag=1
+  TECH: name='Teutonic Knight (make avail)' civ=4 effect=273 required=(102, 266, -1, -1, -1, -1)
+BUILDING NODE 584 | Mining Camp | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='C-Bonus, Villagers 5% faster' civ=27 effect=609 required=(104, -1, -1, -1, -1, -1)
+BUILDING NODE 562 | Lumber Camp | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Organ Gun (make avail)' civ=24 effect=591 required=(102, -1, -1, -1, -1, -1)
+BUILDING NODE 84 | Market | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Missionary (avail)' civ=14 effect=496 required=(102, -1, -1, -1, -1, -1)
+BUILDING NODE 68 | Mill | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Iron casting' civ=-1 effect=68 required=(102, 67, -1, -1, -1, -1)
+BUILDING NODE 50 | Farm | UNIT=YES | TECH=YES
+  UNIT: class=49 enabled=0 creatable=-1
+  COSTS: type=1,amount=60,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Masonry' civ=-1 effect=50 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 4 | Archer | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=1,amount=25,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Mayan El Dorado' civ=16 effect=456 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 24 | Crossbowman | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=1,amount=25,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Aztec Garland Wars' civ=15 effect=465 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 492 | Arbalester | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=1,amount=25,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Spanish UT' civ=14 effect=547 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 7 | Skirmisher | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=0,amount=25,flag=1 ; type=1,amount=35,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Citadels' civ=8 effect=458 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 6 | Elite Skirmisher | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=0,amount=25,flag=1 ; type=1,amount=35,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Mongol Siege Drill' civ=12 effect=457 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 5 | Hand Cannoneer | UNIT=YES | TECH=YES
+  UNIT: class=44 enabled=0 creatable=4
+  COSTS: type=0,amount=45,flag=1 ; type=3,amount=50,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Celtic Furor Celtica' civ=13 effect=239 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 39 | Cavalry Archer | UNIT=YES | TECH=YES
+  UNIT: class=36 enabled=0 creatable=3
+  COSTS: type=1,amount=40,flag=1 ; type=3,amount=60,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Husbandry' civ=-1 effect=39 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 474 | Heavy Cavalry Archer | UNIT=YES | TECH=YES
+  UNIT: class=36 enabled=0 creatable=3
+  COSTS: type=1,amount=40,flag=1 ; type=3,amount=60,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus Vil Forging' civ=21 effect=529 required=(67, 113, -1, -1, -1, -1)
+UNIT NODE 437 | Thumb Ring | UNIT=YES | TECH=YES
+  UNIT: class=36 enabled=0 creatable=3
+  COSTS: type=1,amount=40,flag=1 ; type=3,amount=65,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Thumb Ring' civ=-1 effect=451 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 436 | Parthian Tactics | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=300,flag=1 ; type=3,amount=200,flag=1 ; type=4,amount=4,flag=0
+  TECH: name='Parthian Tactics' civ=-1 effect=452 required=(103, 57, -1, -1, -1, -1)
+UNIT NODE 74 | Militia | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=1 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Scale Mail Armor' civ=-1 effect=74 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 75 | Man-at-Arms | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Blast Furnace' civ=-1 effect=75 required=(103, 68, -1, -1, -1, -1)
+UNIT NODE 77 | Long Swordsman | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Plate Mail Armor' civ=-1 effect=77 required=(103, 76, -1, -1, -1, -1)
+UNIT NODE 473 | Two-Handed Swordsman | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus Lcav Cheaper' civ=22 effect=524 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 567 | Champion | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Elite Mali Unit' civ=26 effect=597 required=(103, 566, -1, -1, -1, -1)
+UNIT NODE 93 | Spearman | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=35,flag=1 ; type=1,amount=25,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Ballistics' civ=-1 effect=93 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 358 | Pikeman | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=35,flag=1 ; type=1,amount=25,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Mangonel' civ=-1 effect=167 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 359 | Halberdier | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=35,flag=1 ; type=1,amount=25,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Sub-Shadow Age4' civ=-1 effect=357 required=(138, 107, 146, 266, -1, -1)
+UNIT NODE 602 | Arson | UNIT=YES | TECH=YES
+  UNIT: class=30 enabled=0 creatable=None
+  TECH: name='Arson' civ=-1 effect=628 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 875 | Gambesons | UNIT=YES | TECH=YES
+  UNIT: class=36 enabled=0 creatable=3
+  COSTS: type=0,amount=60,flag=1 ; type=3,amount=80,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Gambesons' civ=-1 effect=886 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 215 | Squires | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Squires' civ=-1 effect=204 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 448 | Scout Cavalry | UNIT=YES | TECH=YES
+  UNIT: class=47 enabled=0 creatable=1
+  COSTS: type=0,amount=80,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Elite Turtle Ship' civ=18 effect=501 required=(103, 447, -1, -1, -1, -1)
+UNIT NODE 546 | Light Cavalry | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=80,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Koreans' civ=18 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 441 | Hussar | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=80,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Herbal Medicine' civ=-1 effect=41 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 38 | Knight | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=60,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, +5 monk HP' civ=15 effect=470 required=(103, 230, -1, -1, -1, -1)
+UNIT NODE 283 | Cavalier | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=60,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, Building HP x1.5' civ=7 effect=282 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 569 | Paladin | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=60,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Elite Ethiopia Unit' civ=25 effect=599 required=(103, 568, -1, -1, -1, -1)
+UNIT NODE 329 | Camel Rider | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=55,flag=1 ; type=3,amount=60,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, Inf v Building Age4' civ=3 effect=328 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 330 | Heavy Camel Rider | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=55,flag=1 ; type=3,amount=60,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, Castle 25% cheaper' civ=2 effect=329 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 435 | Bloodlines | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Bloodlines' civ=-1 effect=450 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 1258 | Battering Ram | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Achaemenids full tech tree' civ=46 effect=-1 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 422 | Capped Ram | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus' civ=5 effect=434 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 548 | Siege Ram | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Hindustanis' civ=20 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 280 | Mangonel | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=135,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Town Patrol' civ=-1 effect=280 required=(102, 8, -1, -1, -1, -1)
+UNIT NODE 550 | Onager | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=135,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Magyars' civ=22 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 588 | Siege Onager | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=135,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, +100f, +100g in age3' civ=25 effect=614 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 279 | Scorpion | UNIT=YES | TECH=YES
+  UNIT: class=55 enabled=0 creatable=4
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Stone Shaft Mining' civ=-1 effect=279 required=(102, 278, 765, -1, -1, -1)
+UNIT NODE 542 | Heavy Scorpion | UNIT=YES | TECH=YES
+  UNIT: class=55 enabled=0 creatable=4
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Spanish' civ=14 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 1105 | Siege Tower | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=100,flag=1 ; type=3,amount=120,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='' civ=-1 effect=-1 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 36 | Bombard Cannon | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=225,flag=1 ; type=3,amount=225,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, +5 monk HP' civ=15 effect=470 required=(103, 233, -1, -1, -1, -1)
+UNIT NODE 211 | Padded Archer Armor | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Padded Archer Armor' civ=-1 effect=202 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 212 | Leather Archer Armor | UNIT=YES | TECH=YES
+  UNIT: class=4 enabled=0 creatable=0
+  COSTS: type=0,amount=50,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Leather Archer Armor' civ=-1 effect=203 required=(102, 211, -1, -1, -1, -1)
+UNIT NODE 219 | Ring Archer Armor | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Ring Archer Armor' civ=-1 effect=208 required=(103, 212, -1, -1, -1, -1)
+UNIT NODE 199 | Fletching | UNIT=YES | TECH=YES
+  UNIT: class=49 enabled=0 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Fletching' civ=-1 effect=192 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 200 | Bodkin Arrow | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=1,amount=35,flag=1 ; type=3,amount=40,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Bodkin Arrow' civ=-1 effect=193 required=(102, 199, -1, -1, -1, -1)
+UNIT NODE 201 | Bracer | UNIT=YES | TECH=YES
+  UNIT: class=30 enabled=0 creatable=None
+  TECH: name='Bracer' civ=-1 effect=194 required=(103, 200, -1, -1, -1, -1)
+UNIT NODE 67 | Forging | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=1 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Forging' civ=-1 effect=67 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 81 | Scale Barding Armor | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=1 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Scale Barding Armor' civ=-1 effect=81 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 80 | Plate Barding Armor | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=1 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Plate Barding Armor' civ=-1 effect=80 required=(103, 82, -1, -1, -1, -1)
+UNIT NODE 76 | Chain Mail Armor | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=65,flag=1 ; type=3,amount=25,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Chain Mail Armor' civ=-1 effect=76 required=(102, 74, -1, -1, -1, -1)
+UNIT NODE 13 | Fishing Ship | UNIT=YES | TECH=YES
+  UNIT: class=21 enabled=1 creatable=0
+  COSTS: type=1,amount=75,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Heavy plow' civ=-1 effect=13 required=(102, 14, 761, -1, -1, -1)
+UNIT NODE 545 | Transport Ship | UNIT=YES | TECH=YES
+  UNIT: class=20 enabled=1 creatable=5
+  COSTS: type=1,amount=125,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Huns' civ=17 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 1103 | Fire Galley | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=2
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Achaemenids Static Bonuses' civ=46 effect=1103 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 529 | Fire Ship | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=2
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Britons' civ=1 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 532 | Fast Fire Ship | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=2
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=45,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Teutons' civ=4 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 906 | Fishing Lines | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Fishing Lines' civ=-1 effect=913 required=(101, 758, -1, -1, -1, -1)
+UNIT NODE 65 | Gillnets | UNIT=NO | TECH=YES
+  TECH: name='Gillnets' civ=-1 effect=24 required=(102, 912, 906, -1, -1, -1)
+UNIT NODE 539 | Galley | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=90,flag=1 ; type=3,amount=30,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Vikings' civ=11 effect=-1 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 21 | War Galley | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=90,flag=1 ; type=3,amount=30,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Hun Atheism' civ=17 effect=464 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 442 | Galleon | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=90,flag=1 ; type=3,amount=30,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='New Research' civ=0 effect=0 required=(0, 0, 0, 0, 0, 0)
+UNIT NODE 2626 | Hulk | UNIT=YES | TECH=NO
+  UNIT: class=22 enabled=0 creatable=1
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=35,flag=1 ; type=4,amount=1,flag=0
+UNIT NODE 2627 | War Hulk | UNIT=YES | TECH=NO
+  UNIT: class=22 enabled=0 creatable=1
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=35,flag=1 ; type=4,amount=1,flag=0
+UNIT NODE 2628 | Carrack | UNIT=YES | TECH=NO
+  UNIT: class=22 enabled=0 creatable=1
+  COSTS: type=1,amount=75,flag=1 ; type=3,amount=35,flag=1 ; type=4,amount=1,flag=0
+UNIT NODE 1104 | Demolition Raft | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=6
+  COSTS: type=1,amount=45,flag=1 ; type=3,amount=80,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='' civ=-1 effect=-1 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 527 | Demolition Ship | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=6
+  COSTS: type=1,amount=45,flag=1 ; type=3,amount=80,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='[FTT] Disable Paladin' civ=8 effect=583 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 528 | Heavy Demolition Ship | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=6
+  COSTS: type=1,amount=45,flag=1 ; type=3,amount=80,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Slinger (make avail)' civ=-1 effect=582 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 17 | Trade Cog | UNIT=YES | TECH=YES
+  UNIT: class=2 enabled=0 creatable=5
+  COSTS: type=1,amount=100,flag=1 ; type=3,amount=50,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Banking' civ=-1 effect=17 required=(103, 23, -1, -1, -1, -1)
+UNIT NODE 34 | Warships | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='War Galley' civ=-1 effect=155 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 35 | Heavy Warships | UNIT=YES | TECH=YES
+  UNIT: class=13 enabled=0 creatable=5
+  COSTS: type=1,amount=160,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Galleon' civ=-1 effect=-1 required=(103, 34, -1, -1, -1, -1)
+UNIT NODE 420 | Cannon Galleon | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=5
+  COSTS: type=1,amount=200,flag=1 ; type=3,amount=150,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus' civ=5 effect=432 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 691 | Elite Cannon Galleon | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=5
+  COSTS: type=1,amount=200,flag=1 ; type=3,amount=150,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Vietnamese UT' civ=35 effect=728 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 1795 | Dromon | UNIT=YES | TECH=NO
+  UNIT: class=22 enabled=0 creatable=5
+  COSTS: type=1,amount=175,flag=1 ; type=3,amount=150,flag=1 ; type=4,amount=1,flag=0
+UNIT NODE 51 | Architecture | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=150,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Architecture' civ=-1 effect=51 required=(103, 50, -1, -1, -1, -1)
+UNIT NODE 194 | Fortified Wall | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Fortified Wall' civ=-1 effect=187 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 47 | Chemistry | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=150,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Chemistry' civ=-1 effect=47 required=(103, 800, -1, -1, -1, -1)
+UNIT NODE 64 | Bombard Tower | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=1 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Bombard Tower' civ=-1 effect=64 required=(103, 47, 285, -1, -1, -1)
+UNIT NODE 377 | Siege Engineers | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Siege Engineers' civ=-1 effect=375 required=(103, 978, -1, -1, -1, -1)
+UNIT NODE 140 | Guard Tower | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Guard Tower' civ=-1 effect=139 required=(102, 127, -1, -1, -1, -1)
+UNIT NODE 63 | Keep | UNIT=YES | TECH=YES
+  UNIT: class=39 enabled=1 creatable=-1
+  COSTS: type=2,amount=30,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Keep' civ=-1 effect=63 required=(103, 140, -1, -1, -1, -1)
+UNIT NODE 380 | Heated Shot | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Heated Shot' civ=-1 effect=378 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 608 | Arrowslits | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Arrowslits' civ=-1 effect=633 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 322 | Murder Holes | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Murder Holes' civ=-1 effect=236 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 374 | Careening | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Careening' civ=-1 effect=372 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 375 | Dry Dock | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Dry Dock' civ=-1 effect=373 required=(103, 374, -1, -1, -1, -1)
+UNIT NODE 908 | Clinker Construction | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Clinker Construction' civ=-1 effect=908 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 907 | Carvel Hull | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Carvel Hull' civ=-1 effect=909 required=(103, 908, -1, -1, -1, -1)
+UNIT NODE 909 | Siphons | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=1 creatable=-1
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Carvel Hull' civ=-1 effect=915 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 910 | Incendiaries | UNIT=YES | TECH=YES
+  UNIT: class=14 enabled=0 creatable=None
+  TECH: name='Clinker Construction' civ=-1 effect=916 required=(103, 909, -1, -1, -1, -1)
+UNIT NODE 373 | Shipwright | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Shipwright' civ=-1 effect=371 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 54 | Treadmill Crane | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Stone cutting' civ=-1 effect=54 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 40 | Cataphract | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=70,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, +5 monk HP' civ=15 effect=470 required=(102, 439, -1, -1, -1, -1)
+UNIT NODE 553 | Elite Cataphract | UNIT=YES | TECH=YES
+  UNIT: class=12 enabled=0 creatable=1
+  COSTS: type=0,amount=70,flag=1 ; type=3,amount=75,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='C-Bonus, Villager cost Age4' civ=20 effect=585 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 440 | Petard | UNIT=YES | TECH=YES
+  UNIT: class=35 enabled=0 creatable=5
+  COSTS: type=0,amount=65,flag=1 ; type=3,amount=20,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Spanish Supremacy' civ=14 effect=495 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 331 | Trebuchet (Packed) | UNIT=YES | TECH=YES
+  UNIT: class=51 enabled=0 creatable=5
+  COSTS: type=1,amount=200,flag=1 ; type=3,amount=200,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='New Research' civ=0 effect=0 required=(0, 0, 0, 0, 0, 0)
+UNIT NODE 464 | Greek Fire | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=25,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Byzantines Greek Fire' civ=7 effect=518 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 61 | Logistica | UNIT=YES | TECH=YES
+  UNIT: class=5 enabled=1 creatable=None
+  TECH: name='Byzantine Logistica' civ=7 effect=493 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 379 | Hoardings | UNIT=NO | TECH=YES
+  TECH: name='Hoardings' civ=-1 effect=377 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 315 | Conscription | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Conscription' civ=-1 effect=315 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 321 | Sappers | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Sappers' civ=-1 effect=321 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 408 | Spies/Treason | UNIT=NO | TECH=YES
+  TECH: name='Spy Technology' civ=-1 effect=420 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 125 | Monk | UNIT=YES | TECH=YES
+  UNIT: class=18 enabled=0 creatable=5
+  COSTS: type=3,amount=100,flag=1 ; type=0,amount=0,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Shadow Dock -- Age Two' civ=-1 effect=124 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 46 | Devotion | UNIT=YES | TECH=YES
+  UNIT: class=44 enabled=0 creatable=4
+  COSTS: type=0,amount=60,flag=1 ; type=3,amount=55,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Devotion' civ=-1 effect=46 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 316 | Redemption | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Redemption' civ=-1 effect=316 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 233 | Illumination | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Illumination' civ=-1 effect=219 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 319 | Atonement | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Atonement' civ=-1 effect=319 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 230 | Block Printing | UNIT=YES | TECH=YES
+  UNIT: class=59 enabled=0 creatable=5
+  COSTS: type=0,amount=50,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Block Printing' civ=-1 effect=220 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 438 | Theocracy | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=100,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Theocracy' civ=-1 effect=494 required=(103, -1, -1, -1, -1, -1)
+UNIT NODE 439 | Heresy | UNIT=YES | TECH=YES
+  UNIT: class=6 enabled=0 creatable=2
+  COSTS: type=0,amount=50,flag=1 ; type=3,amount=35,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Heresy' civ=-1 effect=188 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 231 | Sanctity | UNIT=YES | TECH=YES
+  UNIT: class=27 enabled=0 creatable=-1
+  COSTS: type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Sanctity' civ=-1 effect=221 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 252 | Fervor | UNIT=NO | TECH=YES
+  TECH: name='Fervor' civ=-1 effect=241 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 83 | Villager | UNIT=YES | TECH=YES
+  UNIT: class=4 enabled=1 creatable=0
+  COSTS: type=0,amount=50,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Frankish Bearded Axe' civ=2 effect=291 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 8 | Town Watch | UNIT=YES | TECH=YES
+  UNIT: class=0 enabled=0 creatable=3
+  COSTS: type=1,amount=35,flag=1 ; type=3,amount=40,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Town Watch' civ=-1 effect=8 required=(101, -1, -1, -1, -1, -1)
+UNIT NODE 102 | Castle Age | UNIT=NO | TECH=YES
+  TECH: name='Feudal Age' civ=-1 effect=102 required=(101, 660, -1, -1, -1, -1)
+UNIT NODE 22 | Loom | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Loom' civ=-1 effect=22 required=(104, -1, -1, -1, -1, -1)
+UNIT NODE 213 | Wheelbarrow | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Wheel Barrow' civ=-1 effect=200 required=(101, 758, -1, -1, -1, -1)
+UNIT NODE 249 | Hand Cart | UNIT=NO | TECH=YES
+  TECH: name='Hand Cart' civ=-1 effect=238 required=(102, 213, 763, -1, -1, -1)
+UNIT NODE 55 | Gold Mining | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Gold Mining' civ=-1 effect=55 required=(101, 758, -1, -1, -1, -1)
+UNIT NODE 182 | Gold Shaft Mining | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=1000,flag=1 ; type=3,amount=1000,flag=1 ; type=2,amount=1000,flag=1
+  TECH: name='Gold Shaft Mining' civ=-1 effect=178 required=(102, 55, 764, -1, -1, -1)
+UNIT NODE 278 | Stone Mining | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=-1
+  COSTS: type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Stone Mining' civ=-1 effect=278 required=(101, 758, -1, -1, -1, -1)
+UNIT NODE 202 | Double-Bit Axe | UNIT=NO | TECH=YES
+  TECH: name='Double Bit Axe' civ=-1 effect=195 required=(101, 758, -1, -1, -1, -1)
+UNIT NODE 203 | Bow Saw | UNIT=YES | TECH=YES
+  UNIT: class=22 enabled=0 creatable=3
+  COSTS: type=1,amount=90,flag=1 ; type=3,amount=40,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Bow Saw' civ=-1 effect=196 required=(102, 202, 762, -1, -1, -1)
+UNIT NODE 221 | Two-Man Saw | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Two Man Saw' civ=-1 effect=210 required=(103, 203, 767, -1, -1, -1)
+UNIT NODE 128 | Trade Cart | UNIT=YES | TECH=YES
+  UNIT: class=19 enabled=0 creatable=5
+  COSTS: type=1,amount=100,flag=1 ; type=3,amount=50,flag=1 ; type=4,amount=1,flag=0
+  TECH: name='Shadow Market -- Age Two' civ=-1 effect=127 required=(-1, -1, -1, -1, -1, -1)
+UNIT NODE 48 | Caravan | UNIT=NO | TECH=YES
+  TECH: name='Caravan' civ=-1 effect=482 required=(102, 759, -1, -1, -1, -1)
+UNIT NODE 23 | Coinage | UNIT=YES | TECH=YES
+  UNIT: class=11 enabled=0 creatable=None
+  TECH: name='Coinage' civ=-1 effect=23 required=(102, -1, -1, -1, -1, -1)
+UNIT NODE 15 | Guilds | UNIT=YES | TECH=YES
+  UNIT: class=2 enabled=0 creatable=5
+  COSTS: type=0,amount=50,flag=1 ; type=-1,amount=0,flag=0 ; type=4,amount=1,flag=0
+  TECH: name='Guilds' civ=-1 effect=15 required=(103, 760, -1, -1, -1, -1)
+UNIT NODE 14 | Horse Collar | UNIT=YES | TECH=YES
+  UNIT: class=3 enabled=0 creatable=-1
+  COSTS: type=1,amount=175,flag=1 ; type=-1,amount=0,flag=0 ; type=-1,amount=0,flag=0
+  TECH: name='Horse collar' civ=-1 effect=14 required=(101, 758, -1, -1, -1, -1)
