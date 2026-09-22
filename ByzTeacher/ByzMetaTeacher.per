@@ -467,8 +467,6 @@
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
     (set-goal bt-mangonel-demand-goal 0)
-    (set-goal bt-military-siege-workshop-retry-goal 0)
-    (set-goal bt-military-siege-workshop-backoff-goal 0)
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal 0)
     (set-goal bt-tc-retry-goal 0)
@@ -476,6 +474,16 @@
     (set-goal bt-mill-target-goal 0)
     (set-goal bt-mill-project-goal 0)
     (disable-self)
+
+; Initialize military Workshop execution state separately so the larger
+; general initialization rule stays within the controller's rule-size ceiling.
+(defrule
+    (true)
+=>
+    (set-goal bt-military-siege-workshop-retry-goal 0)
+    (set-goal bt-military-siege-workshop-backoff-goal 0)
+    (disable-self)
+)
 )
 
 (defrule
