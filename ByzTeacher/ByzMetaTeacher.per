@@ -255,6 +255,7 @@
 (defconst bt-blacksmith-repair-backoff-goal 592)
 (defconst bt-blacksmith-repair-failure-goal 593)
 (defconst bt-blacksmith-repair-watchdog-timer 38)
+(defconst bt-blacksmith-repair-backoff-timer 39)
 (defconst bt-blacksmith-repair-watchdog-seconds 120)
 (defconst bt-blacksmith-repair-backoff-seconds 30)
 (defconst bt-blacksmith-repair-backoff-2-seconds 60)
@@ -3966,6 +3967,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-blacksmith-repair-retry-goal 0)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
     (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (disable-timer bt-blacksmith-repair-backoff-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
 )
@@ -4003,6 +4005,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 ; cannot reset itself forever.
 (defrule
     (current-age >= castle-age)
+    (not (town-under-attack))
     (goal bt-blacksmith-repair-failure-goal 0)
     (goal bt-blacksmith-repair-backoff-goal 0)
     (building-type-count-total blacksmith < 1)
@@ -4037,7 +4040,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-blacksmith-repair-retry-goal 1)
     (set-goal bt-blacksmith-repair-backoff-goal 1)
-    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-seconds)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-seconds)
 )
 
 (defrule
@@ -4050,7 +4053,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-blacksmith-repair-retry-goal 2)
     (set-goal bt-blacksmith-repair-backoff-goal 1)
-    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-2-seconds)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-2-seconds)
 )
 
 (defrule
@@ -4063,7 +4066,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-blacksmith-repair-retry-goal 3)
     (set-goal bt-blacksmith-repair-backoff-goal 1)
-    (enable-timer bt-castle-prereq-backoff-timer bt-blacksmith-repair-backoff-3-seconds)
+    (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-3-seconds)
 )
 
 (defrule
@@ -4083,9 +4086,9 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
 ; controller, so repair retries do not introduce another timer resource.
 (defrule
     (goal bt-blacksmith-repair-backoff-goal 1)
-    (timer-triggered bt-castle-prereq-backoff-timer)
+    (timer-triggered bt-blacksmith-repair-backoff-timer)
 =>
-    (disable-timer bt-castle-prereq-backoff-timer)
+    (disable-timer bt-blacksmith-repair-backoff-timer)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
 )
 
