@@ -1036,6 +1036,9 @@
 =>
     (set-strategic-number sn-number-explore-groups 1)
     (set-strategic-number sn-total-number-explorers 1)
+    ; Community-proven gatherer handoff behavior.
+    (set-strategic-number sn-intelligent-gathering 1)
+    (set-strategic-number sn-retask-gather-amount 0)
     (set-strategic-number sn-minimum-attack-group-size 10)
     (set-strategic-number sn-attack-group-gather-spacing 5)
     (set-strategic-number sn-percent-attack-soldiers 0)
@@ -12880,9 +12883,12 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-crossbow == research-complete)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
     (or
-        (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
-        (unit-type-count-total arbalester >= bt-crossbow-target-castle)
+        ; Four Crossbows are the Castle transition package. Thumb Ring waits
+        ; for the controller's mature eight-unit ranged mass.
+        (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
     )
     (building-type-count archery-range >= 1)
     (up-research-status c: ri-thumb-ring < research-pending)
