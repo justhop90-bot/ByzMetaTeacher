@@ -235,29 +235,29 @@
 (defconst bt-castle-prereq-backoff-seconds 30)
 (defconst bt-imperial-prereq-backoff-seconds 30)
 
-; Castle-prerequisite failure diagnostic/cooldown state.
+; Castle-prerequisite execution-failure history and cooldown state.
 ;   0 = no active execution failure
 ;   1 = Blacksmith construction failed
 ;   2 = Market construction failed
-(defconst bt-castle-prereq-failure-goal 60)
-(defconst bt-castle-prereq-diagnostic-goal 61)
+(defconst bt-castle-prereq-failure-history-goal 60)
+(defconst bt-castle-prereq-failure-reason-goal 61)
 (defconst bt-castle-prereq-failure-blacksmith 1)
 (defconst bt-castle-prereq-failure-market 2)
-(defconst bt-imperial-prereq-failure-goal 62)
-(defconst bt-imperial-prereq-diagnostic-goal 63)
+(defconst bt-imperial-prereq-failure-history-goal 62)
+(defconst bt-imperial-prereq-failure-reason-goal 63)
 (defconst bt-imperial-prereq-backoff-goal 65)
 (defconst bt-imperial-prereq-failure-siege 1)
 (defconst bt-imperial-prereq-failure-university 2)
 (defconst bt-castle-prereq-manual-reset-trigger 60)
 
-; Permanent-failure diagnostic reason.
-;   1 = repeated construction watchdog timeout
+; Construction-failure reason retained as execution history.
+;   1 = construction watchdog timeout
 ;
-; These values identify the last bounded construction-failure cause.
+; These values identify the last construction execution-failure cause.
 (defconst bt-castle-prereq-reason-timeout 1)
 (defconst bt-blacksmith-repair-claim 590)
 (defconst bt-blacksmith-repair-backoff-goal 592)
-(defconst bt-blacksmith-repair-failure-goal 593)
+(defconst bt-blacksmith-repair-failure-history-goal 593)
 (defconst bt-blacksmith-repair-watchdog-timer 38)
 (defconst bt-blacksmith-repair-backoff-timer 39)
 (defconst bt-blacksmith-repair-watchdog-seconds 120)
@@ -311,7 +311,7 @@
 (defconst bt-research-siege-package-goal 622)
 ; Monastery/Monk capability lifecycle.
 (defconst bt-monastery-backoff-goal 636)
-(defconst bt-monastery-failure-goal 637)
+(defconst bt-monastery-failure-history-goal 637)
 (defconst bt-monastery-claim 638)
 (defconst bt-monastery-watchdog-timer 48)
 (defconst bt-monastery-backoff-timer 49)
@@ -483,7 +483,7 @@
 ; This is deliberately separate from the Imperial Cataphract production demand:
 ; it means "secure the Castle capability before Imperial", not "train Cataphracts now".
 (defconst bt-castle-cataphract-demand-goal 585)
-(defconst bt-castle-cataphract-failure-goal 586)
+(defconst bt-castle-cataphract-failure-history-goal 586)
 (defconst bt-castle-cataphract-backoff-goal 588)
 (defconst bt-castle-cataphract-claim 589)
 (defconst bt-castle-cataphract-watchdog-timer 36)
@@ -784,14 +784,14 @@
 =>
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
-    (set-goal bt-castle-prereq-failure-goal 0)
-    (set-goal bt-imperial-prereq-failure-goal 0)
-    (set-goal bt-imperial-prereq-diagnostic-goal 0)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-failure-reason-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
-    (set-goal bt-castle-prereq-diagnostic-goal 0)
+    (set-goal bt-castle-prereq-failure-reason-goal 0)
     (set-goal bt-research-age-failure-backoff-goal 0)
     (set-goal bt-monastery-backoff-goal 0)
-    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monastery-failure-history-goal 0)
     (set-goal bt-monk-demand-goal 0)
     (set-goal bt-monk-target-goal 0)
     (set-goal bt-research-monk-package-goal 0)
@@ -2346,7 +2346,7 @@
 (defrule
     (current-age == castle-age)
     (goal bt-castle-cataphract-demand-goal 0)
-    (goal bt-castle-cataphract-failure-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
     (building-type-count-total castle < 1)
     (or
         (goal strategy-goal bt-strategy-boom)
@@ -2388,10 +2388,10 @@
     (set-goal bt-castle-cataphract-backoff-goal 0)
 )
 
-; Terminal construction failure is only a failure of this attempt. Once the
-; strategic trigger disappears, the failure witness is cleared for future use.
+; Construction failure is temporary execution state. Once the
+; strategic trigger disappears, the failure-history witness is cleared for future use.
 (defrule
-    (goal bt-castle-cataphract-failure-goal 1)
+    (goal bt-castle-cataphract-failure-history-goal 1)
     (or
         (current-age >= imperial-age)
         (or
@@ -2411,7 +2411,7 @@
             )
     )
 =>
-    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
 )
 
 ; Yield Imperial age authority while an active Castle capability project
@@ -6350,10 +6350,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 (defrule
     (event-detected trigger bt-castle-prereq-manual-reset-trigger)
     (or
-        (up-compare-goal bt-castle-prereq-failure-goal != 0)
+        (up-compare-goal bt-castle-prereq-failure-history-goal != 0)
         (or
-            (up-compare-goal bt-imperial-prereq-failure-goal != 0)
-            (up-compare-goal bt-blacksmith-repair-failure-goal != 0)
+            (up-compare-goal bt-imperial-prereq-failure-history-goal != 0)
+            (up-compare-goal bt-blacksmith-repair-failure-history-goal != 0)
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -6362,13 +6362,13 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (disable-timer bt-castle-prereq-watchdog-timer)
     (disable-timer bt-castle-prereq-backoff-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-failure-goal 0)
-    (set-goal bt-castle-prereq-diagnostic-goal 0)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-castle-prereq-failure-reason-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
-    (set-goal bt-imperial-prereq-failure-goal 0)
-    (set-goal bt-imperial-prereq-diagnostic-goal 0)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-failure-reason-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
-    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-failure-history-goal 0)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
     (disable-timer bt-blacksmith-repair-watchdog-timer)
     (disable-timer bt-blacksmith-repair-backoff-timer)
@@ -6384,7 +6384,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; TC, and other capital-consuming systems.
 (defrule
     (current-age == feudal-age)
-    (goal bt-castle-prereq-failure-goal 0)
+    (goal bt-castle-prereq-failure-history-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total blacksmith < 1)
@@ -6411,7 +6411,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 (defrule
     (current-age >= castle-age)
     (not (town-under-attack))
-    (goal bt-blacksmith-repair-failure-goal 0)
+    (goal bt-blacksmith-repair-failure-history-goal 0)
     (goal bt-blacksmith-repair-backoff-goal 0)
     (building-type-count-total blacksmith < 1)
     (up-pending-objects c: blacksmith == 0)
@@ -6430,7 +6430,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-blacksmith-repair-watchdog-timer)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
-    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-failure-history-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
@@ -6439,11 +6439,11 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; Repair backoff is an isolated cooldown; it never claims the mutex.
 (defrule
     (building-type-count blacksmith >= 1)
-    (goal bt-blacksmith-repair-failure-goal 1)
+    (goal bt-blacksmith-repair-failure-history-goal 1)
 =>
     (disable-timer bt-blacksmith-repair-watchdog-timer)
     (disable-timer bt-blacksmith-repair-backoff-timer)
-    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-failure-history-goal 0)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
 )
 
@@ -6465,7 +6465,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-blacksmith-repair-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-blacksmith-repair-failure-goal 1)
+    (set-goal bt-blacksmith-repair-failure-history-goal 1)
     (set-goal bt-blacksmith-repair-backoff-goal 1)
     (enable-timer bt-blacksmith-repair-backoff-timer bt-blacksmith-repair-backoff-seconds)
 )
@@ -6474,7 +6474,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-blacksmith-repair-backoff-timer)
 =>
     (disable-timer bt-blacksmith-repair-backoff-timer)
-    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-failure-history-goal 0)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
 )
 
@@ -6497,7 +6497,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; no redundant Market is forced.
 (defrule
     (current-age == feudal-age)
-    (goal bt-castle-prereq-failure-goal 0)
+    (goal bt-castle-prereq-failure-history-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
     (building-type-count blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
@@ -6529,7 +6529,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 (defrule
     (goal bt-castle-cataphract-demand-goal 1)
-    (goal bt-castle-cataphract-failure-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
     (current-age == castle-age)
     (building-type-count-total castle < 1)
@@ -6552,14 +6552,14 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (disable-timer bt-castle-cataphract-watchdog-timer)
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-demand-goal 0)
-    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
     (set-goal bt-castle-cataphract-backoff-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
     (building-type-count castle >= 1)
-    (goal bt-castle-cataphract-failure-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
     (or
         (strategic-number sn-resource-control == 0)
         (strategic-number sn-resource-control == bt-castle-cataphract-claim)
@@ -6577,7 +6577,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (disable-timer bt-castle-cataphract-watchdog-timer)
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-demand-goal 0)
-    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
     (set-goal bt-castle-cataphract-backoff-goal 0)
 )
 
@@ -6602,7 +6602,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-castle-cataphract-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-cataphract-failure-goal 1)
+    (set-goal bt-castle-cataphract-failure-history-goal 1)
     (set-goal bt-castle-cataphract-backoff-goal 1)
     (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-seconds)
 )
@@ -6612,7 +6612,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-backoff-goal 0)
-    (set-goal bt-castle-cataphract-failure-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
 )
 
 ;---------------------------------------------------------------
@@ -6626,7 +6626,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; when a Castle already satisfies the engine requirement.
 (defrule
     (current-age == castle-age)
-    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
     (goal bt-castle-cataphract-demand-goal 0)
     (building-type-count-total castle < 1)
@@ -6658,7 +6658,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 (defrule
     (building-type-count siege-workshop >= 1)
-    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-failure-history-goal 0)
     (or
         (strategic-number sn-resource-control == 0)
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
@@ -6675,7 +6675,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; Imperial path is serialized and deterministic.
 (defrule
     (current-age == castle-age)
-    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
     (goal bt-castle-cataphract-demand-goal 0)
     (building-type-count siege-workshop >= 1)
@@ -6704,7 +6704,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 (defrule
     (building-type-count university >= 1)
-    (goal bt-imperial-prereq-failure-goal 0)
+    (goal bt-imperial-prereq-failure-history-goal 0)
     (or
         (strategic-number sn-resource-control == 0)
         (strategic-number sn-resource-control == bt-imperial-university-claim)
@@ -6721,18 +6721,18 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; Live Imperial-prerequisite foundations remain owned construction
 ; obligations. Keep the claim and continue builder support indefinitely.
 
-; The current rules establish only repeated construction timeout.
+; The current rules record the last construction execution timeout only.
 (defrule
-    (goal bt-imperial-prereq-diagnostic-goal 0)
-    (up-compare-goal bt-imperial-prereq-failure-goal != 0)
+    (goal bt-imperial-prereq-failure-reason-goal 0)
+    (up-compare-goal bt-imperial-prereq-failure-history-goal != 0)
 =>
-    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+    (set-goal bt-imperial-prereq-failure-reason-goal bt-castle-prereq-reason-timeout)
 )
 
 ;----------------------------------------------------------------
 ; CASTLE PREREQUISITE CONSTRUCTION WATCHDOG
 ; Blacksmith and Market use one transient prerequisite claim. The claim
-; identifies the live provider; the foundation itself is the retry state.
+; identifies the live provider; the foundation itself is the execution state.
 (defrule
     (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
     (timer-triggered bt-castle-prereq-watchdog-timer)
@@ -6758,8 +6758,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-blacksmith)
-    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+    (set-goal bt-castle-prereq-failure-history-goal bt-castle-prereq-failure-blacksmith)
+    (set-goal bt-castle-prereq-failure-reason-goal bt-castle-prereq-reason-timeout)
     (set-goal bt-castle-prereq-backoff-goal 1)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
 )
@@ -6770,8 +6770,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-failure-goal bt-castle-prereq-failure-market)
-    (set-goal bt-castle-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+    (set-goal bt-castle-prereq-failure-history-goal bt-castle-prereq-failure-market)
+    (set-goal bt-castle-prereq-failure-reason-goal bt-castle-prereq-reason-timeout)
     (set-goal bt-castle-prereq-backoff-goal 1)
     (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
 )
@@ -6780,15 +6780,15 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-castle-prereq-backoff-timer)
 =>
     (disable-timer bt-castle-prereq-backoff-timer)
-    (set-goal bt-castle-prereq-failure-goal 0)
-    (set-goal bt-castle-prereq-diagnostic-goal 0)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-castle-prereq-failure-reason-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
 )
 
 ;----------------------------------------------------------------
 ; IMPERIAL PREREQUISITE CONSTRUCTION WATCHDOG
 ; Siege Workshop and University are serialized capability providers. Their
-; live foundation is sufficient state; no retry counter is needed.
+; live foundation is sufficient execution state; no counter is needed.
 (defrule
     (strategic-number sn-resource-control == bt-imperial-siege-claim)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
@@ -6814,8 +6814,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-imperial-prereq-failure-goal bt-imperial-prereq-failure-siege)
-    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+    (set-goal bt-imperial-prereq-failure-history-goal bt-imperial-prereq-failure-siege)
+    (set-goal bt-imperial-prereq-failure-reason-goal bt-castle-prereq-reason-timeout)
     (set-goal bt-imperial-prereq-backoff-goal 1)
     (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-seconds)
 )
@@ -6826,8 +6826,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-imperial-prereq-failure-goal bt-imperial-prereq-failure-university)
-    (set-goal bt-imperial-prereq-diagnostic-goal bt-castle-prereq-reason-timeout)
+    (set-goal bt-imperial-prereq-failure-history-goal bt-imperial-prereq-failure-university)
+    (set-goal bt-imperial-prereq-failure-reason-goal bt-castle-prereq-reason-timeout)
     (set-goal bt-imperial-prereq-backoff-goal 1)
     (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-seconds)
 )
@@ -6836,8 +6836,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-imperial-prereq-backoff-timer)
 =>
     (disable-timer bt-imperial-prereq-backoff-timer)
-    (set-goal bt-imperial-prereq-failure-goal 0)
-    (set-goal bt-imperial-prereq-diagnostic-goal 0)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-failure-reason-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
 )
 
@@ -6859,7 +6859,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 =>
     (disable-timer bt-monastery-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
-    (set-goal bt-monastery-failure-goal 1)
+    (set-goal bt-monastery-failure-history-goal 1)
     (set-goal bt-monastery-backoff-goal 1)
     (enable-timer bt-monastery-backoff-timer bt-monastery-backoff-seconds)
 )
@@ -6868,7 +6868,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-monastery-backoff-timer)
 =>
     (disable-timer bt-monastery-backoff-timer)
-    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monastery-failure-history-goal 0)
     (set-goal bt-monastery-backoff-goal 0)
 )
 
@@ -6878,7 +6878,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 (defrule
     (goal bt-monk-demand-goal 1)
     (current-age >= castle-age)
-    (goal bt-monastery-failure-goal 0)
+    (goal bt-monastery-failure-history-goal 0)
     (goal bt-monastery-backoff-goal 0)
     (building-type-count-total monastery < 1)
     (up-pending-objects c: monastery == 0)
@@ -6897,7 +6897,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (disable-timer bt-monastery-watchdog-timer)
     (disable-timer bt-monastery-backoff-timer)
     (set-goal bt-monastery-backoff-goal 0)
-    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monastery-failure-history-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
@@ -6910,7 +6910,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (disable-timer bt-monastery-watchdog-timer)
     (disable-timer bt-monastery-backoff-timer)
     (set-goal bt-monastery-backoff-goal 0)
-    (set-goal bt-monastery-failure-goal 0)
+    (set-goal bt-monastery-failure-history-goal 0)
 )
 
 ;================================================================
@@ -8074,7 +8074,7 @@ cataphract-line < bt-cataphract-target-1)))))
 ; Foundation support.
 ;------------------------------
 ; A live foundation is a construction obligation. Never turn a stalled
-; foundation into a strategic retry counter. Reassign builders and keep
+; foundation into strategic failure history. Reassign builders and keep
 ; the project alive until completion or an explicit strategic veto.
 (defrule
     (goal bt-tc-project-goal 2)
@@ -8101,7 +8101,7 @@ cataphract-line < bt-cataphract-target-1)))))
 )
 
 ; If a foundation is genuinely lost, return to demand. There is no
-; retry counter to exhaust and no strategic state to erase.
+; failure history to exhaust and no strategic state to erase.
 (defrule
     (goal bt-tc-project-goal 2)
     (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
