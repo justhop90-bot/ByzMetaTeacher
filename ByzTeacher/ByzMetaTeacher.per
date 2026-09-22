@@ -8582,6 +8582,15 @@
     (research ri-scale-mail)
 )
 
+(defrule
+    (strategic-number sn-resource-control == ri-scale-mail)
+    (up-research-status c: ri-scale-mail == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+
 ; Crossbow support: Fletching -> Crossbow -> Bodkin.
 ; Feudal ranged packages earn Fletching before Castle transition.
 ; Standing targets identify the intended ranged role; the queue-inclusive
@@ -9645,6 +9654,16 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
 )
+(defrule
+    (strategic-number sn-resource-control == ri-scale-mail)
+    (up-research-status c: ri-scale-mail <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+
 
 (defrule
     (strategic-number sn-resource-control == ri-iron-casting)
