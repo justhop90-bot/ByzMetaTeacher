@@ -3425,10 +3425,34 @@
 
 ;================================================================
 ; 14L. STONE MINING / STONE SHAFT MINING
+;================================================================
+;
+; Stone technology is a project-economics investment, not a generic
+; age-based economic upgrade.
 ;
 ; The existing resource-mode controller is the stone-project witness.
 ; During Imperial-bank-prep, the additional composite-cost witness prevents
 ; Stone Mining from consuming any part of the protected Imperial obligation.
+;
+; STONE MINING:
+;   - Castle-stone modes are direct evidence of an active Castle project.
+;   - Late TC expansion after a Castle is a secondary sustained-project
+;     witness once the economy has reached the existing 50-villager mark.
+;   - The current controller has no Feudal stone-allocation mode, so the
+;     Feudal branch remains intentionally dormant until a real stone
+;     project can feed it. Do not invent a predictive stone subsystem.
+;
+; STONE SHAFT MINING:
+;   - Requires completed Stone Mining.
+;   - Requires Castle BOOM.
+;   - Requires the existing late TC3 stone-project witness:
+;       TC >= 2, villagers >= 50, TC stone mode active.
+;   - This is deliberately much stricter than Stone Mining.
+;   - The current controller has no persistent multi-Castle demand signal,
+;     so do not synthesize one merely to force the technology.
+;
+; Both lifecycles use the existing resource-control mutex, escrow release,
+; research-complete witness, and research watchdog.
 ;
 ;----------------------------------------------------------------
 ; 14L-A. STONE MINING DEMAND
