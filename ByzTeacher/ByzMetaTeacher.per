@@ -2199,6 +2199,7 @@
     (goal bt-resource-mode-goal 0)
     (current-age == imperial-age)
     (or
+        (goal bt-bombard-cannon-demand-goal 1)
         (goal bt-cataphract-demand-goal 1)
         (and
             (goal strategy-goal bt-strategy-flush)
@@ -2216,6 +2217,7 @@
 (defrule
     (goal bt-resource-mode-goal 0)
     (or
+        (goal bt-bombard-cannon-demand-goal 1)
         (goal bt-cataphract-demand-goal 1)
         (and
             (current-age >= castle-age)
@@ -4650,8 +4652,11 @@
     (up-research-status c: ri-chemistry == research-complete)
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total bombard-cannon-line < bt-bombard-cannon-response-target)
-    (can-train bombard-cannon-line)
+    (players-unit-type-count target-player trebuchet-set >= 1)
+    (can-train-with-escrow bombard-cannon-line)
 =>
+    (release-escrow wood)
+    (release-escrow gold)
     (train bombard-cannon-line)
 )
 
@@ -6493,10 +6498,11 @@
     (building-type-count-total university < 1)
     (up-pending-objects c: university == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build university)
+    (can-build-with-escrow university)
 =>
     (set-strategic-number sn-resource-control bt-bombard-university-claim)
     (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
+    (release-escrow wood)
     (build university)
 )
 
