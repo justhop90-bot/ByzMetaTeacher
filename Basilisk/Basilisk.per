@@ -13288,6 +13288,20 @@ camel-line < bt-camel-target-1)))))
 )
 
 ;----------------------------------------------------------------
+; AGE RESEARCH FAILURE COOLDOWN EXPIRY
+;
+; A failed Feudal/Castle/Imperial start is an execution failure, not
+; permanent strategic invalidation.  The age selectors block only while
+; this capability-local cooldown is active.  Expiry clears the failed-age
+; marker and reopens the same persistent age demand on a later evaluation.
+(defrule
+    (timer-triggered bt-research-age-failure-backoff-timer)
+=>
+    (disable-timer bt-research-age-failure-backoff-timer)
+    (set-goal bt-research-age-failure-backoff-goal 0)
+)
+
+;----------------------------------------------------------------
 ; COMPLETED AGE RESEARCH WITHOUT AGE-STATE ADVANCE
 ;
 ; A completed age research normally implies that current-age advances.
