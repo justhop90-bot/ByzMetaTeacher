@@ -6434,8 +6434,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (set-strategic-number sn-resource-control 0)
 )
 
-; Terminal failure is a bounded cooldown witness, not a permanent death state.
-; Re-arm after the cooldown; the normal demand rule still requires actual feasibility.
+; Construction failure is temporary execution state. The flat cooldown reopens the normal feasibility path.
 
 ; Repair backoff is an isolated cooldown; it never claims the mutex.
 (defrule
@@ -6489,8 +6488,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
-
-; A completed foundation is already handled by the world-state completion witness; no retry history is required.
 
 ;---------------------------------------------------------------
 ; 15F. CASTLE PREREQUISITE: MARKET
@@ -6705,8 +6702,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (set-strategic-number sn-resource-control 0)
 )
 
-; A timed-out University foundation may finish after the watchdog
-; released the mutex. Reset retry history without touching a newer claim.
 (defrule
     (building-type-count university >= 1)
     (goal bt-imperial-prereq-failure-goal 0)
@@ -9960,10 +9955,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-goal bt-military-siege-workshop-backoff-goal 0)
 )
 
-; If strategic demand clears while no Workshop foundation remains, discard
-
-; A pending foundation is intentionally left alone until completion or the
-; watchdog resolves the active construction attempt.
+; Clear stale cooldown state when all Workshop demand disappears and no foundation remains.
 (defrule
     ; No Workshop demand owner remains.  Only then may a stale construction
     ; retry ladder be discarded.
@@ -9980,15 +9972,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-goal bt-military-siege-workshop-backoff-goal 0)
 )
 
-; Military Workshop retry stage 3 -> stage 4.
-
-; Military Workshop retry stage 2 -> stage 3.
-
-; Military Workshop retry stage 1 -> stage 2.
-
-; First military Workshop timeout -> retry stage 1.
-
-; Backoff is cooldown only. It never reclaims the resource mutex.
+; Backoff is a flat cooldown only. It never claims the resource mutex.
 (defrule
     (goal bt-military-siege-workshop-backoff-goal 1)
     (timer-triggered bt-military-siege-workshop-backoff-timer)
