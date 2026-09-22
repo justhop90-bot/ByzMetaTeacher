@@ -11225,8 +11225,20 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 )
 
 (defrule
-    (building-type-count mill >= 1)
-    (up-compare-goal bt-mill-project-goal > 0)
+    (or
+        (and
+            (goal bt-mill-project-goal 1)
+            (building-type-count mill >= 1)
+        )
+        (and
+            (goal bt-mill-project-goal 2)
+            (building-type-count mill >= 2)
+        )
+        (and
+            (goal bt-mill-project-goal 3)
+            (building-type-count mill >= 3)
+        )
+    )
 =>
     (disable-timer bt-mill-watchdog-timer)
     (disable-timer bt-mill-backoff-timer)
