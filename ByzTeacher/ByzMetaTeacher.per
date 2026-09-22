@@ -164,6 +164,8 @@
 (defconst bt-mill-project-goal 526)
 (defconst bt-mill-second-farm-threshold-1tc 18)
 (defconst bt-mill-second-farm-threshold-2tc 20)
+(defconst bt-mill-third-farm-threshold-3tc 22)
+(defconst bt-mill-third-farm-threshold-4tc 24)
 
 ; Mill construction watchdog. It detects a failed build order without
 ; releasing ownership while a real Mill foundation is still pending.
@@ -265,6 +267,27 @@
 (defconst bt-research-failure-backoff-goal 594)
 (defconst bt-research-failure-backoff-timer 41)
 (defconst bt-research-failure-backoff-seconds 30)
+
+; University capability state.
+(defconst bt-university-demand-goal 595)
+(defconst bt-university-retry-goal 596)
+(defconst bt-university-backoff-goal 597)
+(defconst bt-university-claim 598)
+(defconst bt-university-watchdog-timer 44)
+(defconst bt-university-backoff-timer 45)
+(defconst bt-university-watchdog-seconds 120)
+(defconst bt-university-backoff-seconds 30)
+(defconst bt-university-backoff-2-seconds 60)
+(defconst bt-university-backoff-3-seconds 120)
+(defconst bt-university-backoff-cap-seconds 240)
+
+(defconst bt-farm-demand-band-goal 601)
+(defconst bt-farm-transition-reserve-goal 602)
+(defconst bt-farm-depleted-reserve-goal 603)
+(defconst bt-farm-demand-low 0)
+(defconst bt-farm-demand-medium 1)
+(defconst bt-farm-demand-high 2)
+(defconst bt-farm-demand-very-high 3)
 (defconst bt-blacksmith-repair-backoff-seconds 30)
 (defconst bt-blacksmith-repair-backoff-2-seconds 60)
 (defconst bt-blacksmith-repair-backoff-3-seconds 120)
@@ -682,6 +705,12 @@
     (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
     (set-goal bt-research-failure-backoff-goal 0)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-goal bt-farm-demand-band-goal bt-farm-demand-low)
+    (set-goal bt-farm-transition-reserve-goal 2)
+    (set-goal bt-farm-depleted-reserve-goal 3)
     (set-goal bt-standing-army-floor-goal 0)
     (disable-self)
 )
@@ -705,6 +734,12 @@
 (defrule
     (true)
 =>
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-goal bt-farm-demand-band-goal bt-farm-demand-low)
+    (set-goal bt-farm-transition-reserve-goal 2)
+    (set-goal bt-farm-depleted-reserve-goal 3)
     (set-goal bt-mangonel-demand-goal 0)
     (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-onager-demand-goal 0)
@@ -722,6 +757,8 @@
     (true)
 =>
     (disable-timer bt-mill-watchdog-timer)
+    (disable-timer bt-university-watchdog-timer)
+    (disable-timer bt-university-backoff-timer)
     (disable-self)
 )
 
@@ -1156,6 +1193,23 @@
     (set-goal bt-mill-target-goal 2)
 )
 
+(defrule
+    (goal bt-mill-target-goal 2)
+    (building-type-count mill >= 2)
+    (building-type-count town-center >= 3)
+    (building-type-count-total farm >= bt-mill-third-farm-threshold-3tc)
+=>
+    (set-goal bt-mill-target-goal 3)
+)
+(defrule
+    (goal bt-mill-target-goal 2)
+    (building-type-count mill >= 2)
+    (building-type-count town-center >= 4)
+    (building-type-count-total farm >= bt-mill-third-farm-threshold-4tc)
+=>
+    (set-goal bt-mill-target-goal 3)
+)
+
 ; Demand is distinct from action. The project remains pending while another
 ; resource claim owns the bank. No second request is emitted while a mill
 ; object is already pending.
@@ -1175,6 +1229,15 @@
     (up-pending-objects c: mill == 0)
 =>
     (set-goal bt-mill-project-goal 2)
+)
+
+(defrule
+    (goal bt-mill-target-goal 3)
+    (goal bt-mill-project-goal 0)
+    (building-type-count-total mill < 3)
+    (up-pending-objects c: mill == 0)
+=>
+    (set-goal bt-mill-project-goal 3)
 )
 
 ; Resource authority is acquired before the engine action.
@@ -1392,6 +1455,26 @@
     (set-goal bt-natural-food-state-goal bt-natural-food-stable)
 )
 
+; Recovery closes the natural-food lifecycle. The transition/depleted
+; writers require hunting to be off, preventing same-pass oscillation.
+(defrule
+    (or
+        (goal bt-natural-food-state-goal bt-natural-food-transition)
+        (goal bt-natural-food-state-goal bt-natural-food-depleted)
+    )
+    (or
+        (strategic-number sn-enable-boar-hunting == 2)
+        (and
+            (not (sheep-and-forage-too-far))
+            (not (dropsite-min-distance deer-hunting == -1))
+            (not (dropsite-min-distance deer-hunting == 255))
+            (not (dropsite-min-distance deer-hunting s:> sn-maximum-hunt-drop-distance))
+        )
+    )
+=>
+    (set-goal bt-natural-food-state-goal bt-natural-food-stable)
+)
+
 (defrule
     (strategic-number sn-enable-boar-hunting != 2)
     (sheep-and-forage-too-far)
@@ -1542,17 +1625,51 @@
 ; food weakens. The pending guard prevents a farm flood.
 ;
 ;----------------------------------------------------------------
+; 11A. FOOD-DEMAND BANDS
+;----------------------------------------------------------------
+; Current food demand is approximated from the live food-gatherer
+; percentage and civilian population. The engine does not expose a
+; convenient integer multiplication primitive, so the thresholds are
+; coarse, age-specific capacity witnesses rather than exact arithmetic.
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 28) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 3))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 28) (civilian-population < 37) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 37) (civilian-population < 46) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 46) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 30) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 3))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 30) (civilian-population < 40) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 40) (civilian-population < 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age == feudal-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 30) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 30) (civilian-population < 41) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 5))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 41) (civilian-population < 52) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 52) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 9))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 33) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 33) (civilian-population < 45) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 5))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 45) (civilian-population < 57) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 4) (set-goal bt-farm-depleted-reserve-goal 7))
+(defrule (current-age == castle-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 57) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 9))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population < 38) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 38) (civilian-population < 50) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 50) (civilian-population < 64) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 8))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage >= 55) (civilian-population >= 64) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 6) (set-goal bt-farm-depleted-reserve-goal 10))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population < 42) => (set-goal bt-farm-demand-band-goal bt-farm-demand-low) (set-goal bt-farm-transition-reserve-goal 2) (set-goal bt-farm-depleted-reserve-goal 4))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 42) (civilian-population < 55) => (set-goal bt-farm-demand-band-goal bt-farm-demand-medium) (set-goal bt-farm-transition-reserve-goal 3) (set-goal bt-farm-depleted-reserve-goal 6))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 55) (civilian-population < 70) => (set-goal bt-farm-demand-band-goal bt-farm-demand-high) (set-goal bt-farm-transition-reserve-goal 5) (set-goal bt-farm-depleted-reserve-goal 8))
+(defrule (current-age >= imperial-age) (strategic-number sn-food-gatherer-percentage < 55) (civilian-population >= 70) => (set-goal bt-farm-demand-band-goal bt-farm-demand-very-high) (set-goal bt-farm-transition-reserve-goal 6) (set-goal bt-farm-depleted-reserve-goal 10))
+
+;----------------------------------------------------------------
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
 (defrule
     (current-age >= feudal-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < 350)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount <
-bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < 350) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-feudal-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Wood escrow is intentionally usable by the farm action once the
@@ -1571,11 +1688,13 @@ bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
     (current-age == castle-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < bt-farm-castle-food-threshold)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount
-< bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-castle-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Farm construction is escrow-aware, so the rule cannot stall merely
@@ -1596,11 +1715,13 @@ bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
     (current-age >= imperial-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
-    (or (and
-            (food-amount < bt-farm-imperial-food-threshold)
-            (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount
-< bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (or
+        (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))
+        (and (goal bt-natural-food-state-goal bt-natural-food-transition)
+             (idle-farm-count <= bt-farm-transition-reserve-goal))
+        (and (goal bt-natural-food-state-goal bt-natural-food-depleted)
+             (idle-farm-count <= bt-farm-depleted-reserve-goal))
+    )
     (building-type-count-total farm < bt-farm-imperial-cap)
     (wood-amount >= bt-farm-build-wood)
     ; Preserve the same feasibility semantics through Imperial: the
@@ -7188,7 +7309,6 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
     (goal retreat-now-goal 0)
     (not (town-under-attack))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (building-type-count university >= 1)
     (up-research-status c: ri-ballistics == research-available)
 =>
     (set-goal bt-scorpion-ballistics-demand-goal 1)
@@ -7208,7 +7328,7 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
 (defrule
     (goal bt-scorpion-ballistics-demand-goal 1)
     (current-age >= castle-age)
-    (building-type-count university >= 1)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-failure-backoff-goal != ri-ballistics)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-ballistics)
@@ -8182,7 +8302,134 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
  
 ;---------------------------------------------------------------
-; 18B. MILITARY SIEGE WORKSHOP CAPABILITY
+; 18B. UNIVERSITY CAPABILITY
+;---------------------------------------------------------------
+; Ballistics is a Castle-age University dependency. Chemistry already
+; owns its own University capability lifecycle below.
+(defrule
+    (goal bt-scorpion-ballistics-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total university == 0)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-backoff-goal 0)
+    (up-compare-goal bt-university-retry-goal < 4)
+=>
+    (set-goal bt-university-demand-goal 1)
+)
+(defrule
+    (goal bt-university-demand-goal 1)
+    (building-type-count-total university >= 1)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+(defrule
+    (goal bt-university-demand-goal 1)
+    (goal bt-university-backoff-goal 0)
+    (up-compare-goal bt-university-retry-goal < 4)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (strategic-number sn-resource-control == 0)
+    (up-pending-objects c: university == 0)
+    (can-build-with-escrow university)
+=>
+    (set-strategic-number sn-resource-control bt-university-claim)
+    (release-escrow wood)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
+    (build university)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (building-type-count university >= 1)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 0)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 1)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 1)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 2)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-2-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 2)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 3)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-3-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 3)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 4)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-cap-seconds)
+)
+(defrule
+    (goal bt-university-retry-goal >= 4)
+    (goal bt-university-backoff-goal 1)
+    (timer-triggered bt-university-backoff-timer)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+
+; Intermediate retry cooldown release. Without this edge, the first
+; failed attempt would set backoff forever and make the University
+; project a permanent dead end.
+(defrule
+    (up-compare-goal bt-university-retry-goal < 4)
+    (goal bt-university-backoff-goal 1)
+    (timer-triggered bt-university-backoff-timer)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-backoff-goal 0)
+)
+(defrule
+    (goal bt-university-demand-goal 0)
+    (up-pending-objects c: university == 0)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+
+;---------------------------------------------------------------
+; 18C. MILITARY SIEGE WORKSHOP CAPABILITY
 ;---------------------------------------------------------------
 ; Any siege demand can own the Workshop capability edge. This block is the
 ; single construction provider for every current Workshop consumer.
@@ -8264,8 +8511,18 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (timer-triggered bt-military-siege-workshop-watchdog-timer)
 =>
     (disable-timer bt-military-siege-workshop-watchdog-timer)
-    (disable-timer bt-military-siege-workshop-backoff-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-military-siege-workshop-backoff-goal 1)
+    (enable-timer bt-military-siege-workshop-backoff-timer bt-military-siege-workshop-backoff-cap-seconds)
+)
+
+(defrule
+    (goal bt-military-siege-workshop-retry-goal >= 4)
+    (goal bt-military-siege-workshop-backoff-goal 1)
+    (timer-triggered bt-military-siege-workshop-backoff-timer)
+=>
+    (disable-timer bt-military-siege-workshop-backoff-timer)
+    (set-goal bt-military-siege-workshop-retry-goal 0)
     (set-goal bt-military-siege-workshop-backoff-goal 0)
 )
 
@@ -10298,6 +10555,10 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 2)
             (building-type-count mill >= 2)
         )
+        (and
+            (goal bt-mill-project-goal 3)
+            (building-type-count mill >= 3)
+        )
     )
 =>
     (disable-timer bt-mill-watchdog-timer)
@@ -10321,6 +10582,10 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
         (and
             (goal bt-mill-project-goal 2)
             (building-type-count mill < 2)
+        )
+        (and
+            (goal bt-mill-project-goal 3)
+            (building-type-count mill < 3)
         )
     )
     (up-pending-objects c: mill == 0)
