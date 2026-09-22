@@ -313,17 +313,54 @@ const pikeTrace = transition(
   (s) => { s.demand = 1; s.counterLevel = 1; return s.retry === 0 && s.package === 0 && s.claim === 0; },
 );
 
-const stableTrace = transition(
-  "Stable/Cavalier",
-  { demand: 1, package: 0, claim: "ri-cavalier", retry: 0, backoff: 1 },
-  (s) => { s.retry += 1; s.claim = 0; s.package = 0; },
-  (s) => { s.backoff = 0; },
-  (s) => s.demand === 1 && s.claim === 0 && s.package === 0 && s.backoff === 0 && s.retry < 2,
-  (s) => s.retry === 2 && s.demand === 1 && s.claim === 0 && s.package === 0,
-  (s) => { s.demand = 0; s.claim = 0; s.package = 0; },
-  (s) => { if (s.demand === 0 && s.claim === 0) s.retry = 0; },
-  (s) => { s.demand = 1; return s.retry === 0 && s.claim === 0; },
-);
+const stableTrace = (() => {
+  const s = { demand: 1, claim: "ri-cavalier", retry: 0, backoff: 1 };
+  const trace = [];
+  const snap = (event) => trace.push({ event, ...s });
+
+  snap("initial");
+  s.retry += 1;
+  s.claim = 0;
+  snap("failure-1");
+  assert.equal(s.claim, 0, "[Stable/Cavalier] stale Stable claim after first failure");
+  assert.equal(s.retry, 1, "[Stable/Cavalier] first failure did not consume exactly one retry");
+
+  s.backoff = 0;
+  snap("cooldown-1-expired");
+  assert.equal(s.retry, 1, "[Stable/Cavalier] cooldown mutated retry history");
+  assert.ok(
+    s.demand === 1 && s.claim === 0 && s.backoff === 0 && s.retry < 2,
+    "[Stable/Cavalier] retry-1 should be reissuable",
+  );
+
+  s.retry += 1;
+  s.claim = 0;
+  snap("failure-2");
+  assert.equal(s.claim, 0, "[Stable/Cavalier] stale Stable claim after terminal failure");
+  assert.equal(s.retry, 2, "[Stable/Cavalier] second failure did not reach retry cap");
+
+  s.backoff = 0;
+  snap("terminal-cooldown-expired");
+  assert.equal(s.retry, 2, "[Stable/Cavalier] terminal cooldown changed retry history");
+  assert.ok(
+    !(s.demand === 1 && s.claim === 0 && s.backoff === 0 && s.retry < 2),
+    "[Stable/Cavalier] terminal state re-entered without strategic reset",
+  );
+
+  s.demand = 0;
+  s.claim = 0;
+  if (s.demand === 0 && s.claim === 0) s.retry = 0;
+  snap("owner-cancelled-and-reset");
+  assert.equal(s.retry, 0, "[Stable/Cavalier] terminal retry state did not reset after demand cancellation");
+  assert.equal(s.claim, 0, "[Stable/Cavalier] stale Stable claim survived demand cancellation");
+  s.demand = 1;
+  assert.ok(
+    s.retry === 0 && s.claim === 0,
+    "[Stable/Cavalier] clean strategic reassessment could not re-enter",
+  );
+
+  return trace;
+})();
 
 const cappedRamTrace = transition(
   "Capped Ram",
