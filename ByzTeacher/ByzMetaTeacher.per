@@ -7329,7 +7329,6 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
 (defrule
     (goal bt-scorpion-ballistics-demand-goal 1)
     (current-age >= castle-age)
-    (building-type-count university >= 1)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-failure-backoff-goal != ri-ballistics)
     (strategic-number sn-resource-control == 0)
@@ -8304,7 +8303,122 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
  
 ;---------------------------------------------------------------
-; 18B. MILITARY SIEGE WORKSHOP CAPABILITY
+; 18B. UNIVERSITY CAPABILITY
+;---------------------------------------------------------------
+; Ballistics is a Castle-age University dependency. Chemistry already
+; owns its own University capability lifecycle below.
+(defrule
+    (goal bt-scorpion-ballistics-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total university == 0)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-backoff-goal 0)
+    (up-compare-goal bt-university-retry-goal < 4)
+=>
+    (set-goal bt-university-demand-goal 1)
+)
+(defrule
+    (goal bt-university-demand-goal 1)
+    (building-type-count-total university >= 1)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-university-demand-goal 1)
+    (goal bt-university-backoff-goal 0)
+    (up-compare-goal bt-university-retry-goal < 4)
+    (strategic-number sn-resource-control == 0)
+    (up-pending-objects c: university == 0)
+    (can-build-with-escrow university)
+=>
+    (set-strategic-number sn-resource-control bt-university-claim)
+    (release-escrow wood)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
+    (build university)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (building-type-count university >= 1)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 0)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 1)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 1)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 2)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-2-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 2)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 3)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-3-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-university-claim)
+    (up-pending-objects c: university == 0)
+    (goal bt-university-retry-goal 3)
+    (timer-triggered bt-university-watchdog-timer)
+=>
+    (disable-timer bt-university-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-university-retry-goal 4)
+    (set-goal bt-university-backoff-goal 1)
+    (enable-timer bt-university-backoff-timer bt-university-backoff-cap-seconds)
+)
+(defrule
+    (goal bt-university-retry-goal >= 4)
+    (goal bt-university-backoff-goal 1)
+    (timer-triggered bt-university-backoff-timer)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+(defrule
+    (goal bt-university-demand-goal 0)
+    (up-pending-objects c: university == 0)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+
+;---------------------------------------------------------------
+; 18C. MILITARY SIEGE WORKSHOP CAPABILITY
 ;---------------------------------------------------------------
 ; Any siege demand can own the Workshop capability edge. This block is the
 ; single construction provider for every current Workshop consumer.
