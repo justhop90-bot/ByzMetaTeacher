@@ -6249,6 +6249,22 @@
     (set-goal bt-mangonel-demand-goal 0)
 )
 
+;---------------------------------------------------------------
+; 18A.1. MANGONEL RESPONSE PACKAGE COMPLETION
+;---------------------------------------------------------------
+; This is the terminal witness for the configured response package.
+; Use unit-type-count rather than unit-type-count-total: queued Mangonels
+; satisfy the production cap, but they do not satisfy package completion.
+;
+; Reset persistent demand only after the configured number of Mangonels
+; actually exists. Workshop construction and production authorization are
+; deliberately untouched by this completion edge.
+(defrule
+    (goal bt-mangonel-demand-goal 1)
+    (unit-type-count mangonel-line >= bt-mangonel-response-target)
+=>
+    (set-goal bt-mangonel-demand-goal 0)
+)
 
 ;---------------------------------------------------------------
 ; 18B. MILITARY SIEGE WORKSHOP CAPABILITY
