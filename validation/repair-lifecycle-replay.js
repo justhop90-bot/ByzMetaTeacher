@@ -788,6 +788,97 @@ assert.equal(
   "[Opening I] any-enemy leaked into opening selection",
 );
 assert.equal(openingPolicy(openingCases.I).plan, 1, "[Opening I] suspected target pressure should fall back to Arabia Standard");
+// CASTLE-POWER STRATEGY TRANSITION VALIDATION
+assert.ok(source.includes("(defconst bt-strategy-castle-power 203)"));
+requireRule(
+  "RUSH -> Castle-power",
+  "(goal strategy-goal bt-strategy-rush)",
+  "(current-age >= castle-age)",
+  "(players-building-count target-player > 0)",
+  "(unit-type-count-total archer-line >= 4)",
+  "(set-goal strategy-goal bt-strategy-castle-power)",
+);
+requireRule(
+  "Castle fallback excludes Castle-power",
+  "(current-age >= castle-age)",
+  "(not (goal strategy-goal bt-strategy-castle-power))",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+requireRule(
+  "Castle-power Crossbow role",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(unit-type-count-total archer-line >= 4)",
+  "(set-goal unit-goal crossbowman)",
+);
+requireRule(
+  "Castle-power standing target",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(goal unit-goal crossbowman)",
+  "(set-goal bt-standing-crossbow-target-goal bt-crossbow-target-castle)",
+);
+requireRule(
+  "Castle-power standing demand",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(set-goal bt-standing-army-demand-goal 1)",
+);
+requireRule(
+  "Castle-power Crossbow demand",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(set-goal bt-crossbow-demand-goal 1)",
+);
+requireRule(
+  "Castle-power premium-gold resource mode",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(set-goal bt-resource-mode-goal bt-resource-mode-premium-gold)",
+);
+requireRule(
+  "Castle-power Crossbow research package",
+  "(goal bt-crossbow-demand-goal 1)",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(set-goal bt-research-ranged-counter-package-goal ri-crossbow)",
+);
+requireRule(
+  "Castle-power Crossbow executor",
+  "(goal bt-crossbow-demand-goal 1)",
+  "(goal bt-resource-mode-goal bt-resource-mode-premium-gold)",
+  "(train crossbowman)",
+);
+requireRule(
+  "Castle-power Imperial expiry",
+  "(goal strategy-goal bt-strategy-castle-power)",
+  "(current-age >= imperial-age)",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+
+const castlePowerTcConsumers = rules.filter((rule) => {
+  const rendered = renderRule(rule);
+  return rendered.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+    rendered.includes("bt-tc-project-goal");
+});
+assert.equal(castlePowerTcConsumers.length, 0, "[Castle-power] BOOM-only TC expansion leaked into Castle-power");
+
+function castlePowerPolicy(input) {
+  if (input.age >= input.imperialAge && input.safe) return "boom";
+  if (input.strategy === "rush" && input.age >= input.castleAge && input.safe &&
+      input.targetAlive && input.archers >= 4) return "castle-power";
+  if (input.age >= input.castleAge && input.safe && !["boom", "rush", "flush", "castle-power"].includes(input.strategy)) {
+    return "boom";
+  }
+  return input.strategy;
+}
+
+assert.equal(castlePowerPolicy({
+  strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
+}), "castle-power", "[Castle-power A] surviving Feudal pressure did not continue into Castle-power");
+assert.equal(castlePowerPolicy({
+  strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 2,
+}), "boom", "[Castle-power B] dead/insufficient Feudal pressure did not fall back to BOOM");
+assert.equal(castlePowerPolicy({
+  strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: false, archers: 4,
+}), "boom", "[Castle-power C] lost target did not fall back to BOOM");
+assert.equal(castlePowerPolicy({
+  strategy: "castle-power", age: 4, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
+}), "boom", "[Castle-power D] Imperial expiry did not return to BOOM");
 console.log(JSON.stringify({
   controller: path.relative(process.cwd(), controllerPath),
   rules: rules.length,

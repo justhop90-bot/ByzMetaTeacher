@@ -120,6 +120,7 @@
 (defconst bt-strategy-flush 200)
 (defconst bt-strategy-rush 201)
 (defconst bt-strategy-boom 202)
+(defconst bt-strategy-castle-power 203)
 
 ; TC resource-claim values use currently unused high strategic-number IDs.
 ; They are state values stored in the existing sn-resource-control mutex.
@@ -1476,14 +1477,17 @@
     (set-goal bt-research-ranged-counter-package-goal ri-fletching)
 )
 
-; CROSSBOW: separate Castle BOOM ranged-role branch.
+; CROSSBOW: separate Castle BOOM / CASTLE-POWER ranged-role branch.
 ; It cannot activate from enemy ranged threat because the standing
 ; Crossbow role is explicitly a no-immediate-threat investment.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-crossbow-demand-goal 1)
     (goal bt-arbalest-demand-goal 0)
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (goal bt-any-threat-goal 0)
     (goal bt-ranged-threat-goal 0)
     (current-age >= castle-age)
@@ -1522,13 +1526,16 @@
     (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
 )
 
-; FLETCHING -> CROSSBOW: retain the explicit Castle BOOM role after
+; FLETCHING -> CROSSBOW: retain the explicit Castle BOOM / CASTLE-POWER role after
 ; the prerequisite completes.
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (goal bt-crossbow-demand-goal 1)
     (goal bt-arbalest-demand-goal 0)
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (goal bt-any-threat-goal 0)
     (goal bt-ranged-threat-goal 0)
     (current-age >= castle-age)
@@ -1859,7 +1866,10 @@
 ; THUMB RING: Castle BOOM ranged support, not a counter response.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (goal bt-any-threat-goal 0)
     (goal bt-ranged-threat-goal 0)
     (goal bt-crossbow-demand-goal 0)
@@ -1868,7 +1878,10 @@
     (current-age >= castle-age)
     (building-type-count archery-range >= 1)
     (building-type-count university >= 1)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (or
+        (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+        (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
+    )
     (up-research-status c: ri-crossbow == research-complete)
     (or
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
@@ -1994,7 +2007,12 @@
         (goal strategy-goal bt-strategy-flush)
         (or
         (goal strategy-goal bt-strategy-rush)
-        (up-compare-goal bt-resource-mode-goal != bt-resource-mode-castle-boom)
+        (not
+            (or
+                (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+                (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
+            )
+        )
             )
             )
     )
@@ -4380,10 +4398,13 @@
 (defrule
     (goal strategy-goal bt-strategy-rush)
     (current-age >= castle-age)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (unit-type-count-total archer-line >= 4)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
 =>
-    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal strategy-goal bt-strategy-castle-power)
 )
 
 (defrule
@@ -4393,6 +4414,19 @@
     (not (goal strategy-goal bt-strategy-boom))
     (not (goal strategy-goal bt-strategy-rush))
     (not (goal strategy-goal bt-strategy-flush))
+    (not (goal strategy-goal bt-strategy-castle-power))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+; Castle-power is a Castle-only pressure posture. Once Imperial Age is
+; actually reached, return to the existing Imperial/BOOM consumers rather
+; than leave the strategy state stranded.
+(defrule
+    (goal strategy-goal bt-strategy-castle-power)
+    (current-age >= imperial-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -4610,6 +4644,19 @@ research-complete))))))))
     (goal strategy-goal bt-strategy-boom)
 =>
     (set-goal unit-goal bt-unit-mix)
+)
+
+;---------------------------------------------------------------
+; 14C.1 CASTLE-POWER PRIMARY MILITARY SELECTION
+;---------------------------------------------------------------
+(defrule
+    (goal strategy-goal bt-strategy-castle-power)
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+    (unit-type-count-total archer-line >= 4)
+=>
+    (set-goal unit-goal crossbowman)
 )
 
 ;---------------------------------------------------------------
@@ -4861,8 +4908,8 @@ town-center >= 2)))))
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line
->= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1)))))))))
+    (or (goal strategy-goal bt-strategy-castle-power) (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line
+>= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))))))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-premium-gold)
 )
@@ -8044,7 +8091,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 )
 
 (defrule
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (current-age >= castle-age)
     (goal unit-goal crossbowman)
     (not (goal bt-any-threat-goal 1))
@@ -8052,7 +8102,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (set-goal bt-standing-crossbow-target-goal bt-crossbow-target-castle)
 )
 (defrule
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (current-age >= castle-age)
     (goal unit-goal crossbowman)
     (unit-type-count villager >= 45)
@@ -8060,7 +8113,10 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (up-modify-goal bt-standing-crossbow-target-goal c:max bt-crossbow-target-mature)
 )
 (defrule
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (current-age >= castle-age)
     (goal unit-goal crossbowman)
     (unit-type-count villager >= 60)
@@ -8098,7 +8154,10 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
             (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
         )
     )
-    (goal strategy-goal bt-strategy-boom)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-castle-power)
+    )
     (not (goal bt-any-threat-goal 1))
 =>
     (set-goal bt-crossbow-demand-goal 1)
@@ -8258,7 +8317,10 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
     (current-age >= feudal-age)
     (or
         (goal strategy-goal bt-strategy-boom)
-        (goal strategy-goal bt-strategy-flush)
+        (or
+            (goal strategy-goal bt-strategy-flush)
+            (goal strategy-goal bt-strategy-castle-power)
+        )
     )
     (or (up-compare-goal bt-standing-army-deficit-goal < 0) (or (unit-type-count-total spearman-line < bt-standing-spear-target-goal) (or (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal) (or (unit-type-count-total
 archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-line < bt-standing-knight-target-goal) (or (and
@@ -8276,7 +8338,10 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
     (or (current-age < feudal-age) (or (not
             (or
                 (goal strategy-goal bt-strategy-boom)
-                (goal strategy-goal bt-strategy-flush)
+                (or
+                    (goal strategy-goal bt-strategy-flush)
+                    (goal strategy-goal bt-strategy-castle-power)
+                )
             )
         ) (and (up-compare-goal bt-standing-army-deficit-goal >= 0) (and (unit-type-count-total spearman-line >= bt-standing-spear-target-goal) (and (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal) (and
 (unit-type-count-total archer-line >= bt-standing-archer-target-goal) (and (unit-type-count-total knight-line >= bt-standing-knight-target-goal) (or
@@ -8645,7 +8710,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= castle-age)
     (building-type-count archery-range >= 1)
     (up-research-status c: ri-crossbow == research-complete)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (or
+        (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+        (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
+    )
     (strategic-number sn-resource-control == 0)
     (up-research-status c: ri-arbalest != research-complete)
     (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
