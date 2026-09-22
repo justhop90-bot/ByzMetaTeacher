@@ -4125,7 +4125,7 @@
 ; Blacksmith completion is the world-state witness.
 (defrule
     (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-    (building-type-count-total blacksmith >= 1)
+    (building-type-count blacksmith >= 1)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (disable-timer bt-castle-prereq-backoff-timer)
@@ -4137,8 +4137,12 @@
 ; A timed-out foundation may finish after the watchdog released the
 ; mutex. Reset retry history without touching a newer resource claim.
 (defrule
-    (building-type-count-total blacksmith >= 1)
+    (building-type-count blacksmith >= 1)
     (up-compare-goal bt-castle-prereq-retry-goal >= 1)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    )
 =>
     (disable-timer bt-castle-prereq-backoff-timer)
     (set-goal bt-castle-prereq-backoff-goal 0)
@@ -4153,6 +4157,7 @@
 ; stop its timers, and leave a diagnostic witness. No retry follows.
 (defrule
     (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    (up-pending-objects c: blacksmith == 0)
     (up-compare-goal bt-castle-prereq-retry-goal >= 4)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
@@ -4166,6 +4171,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-castle-market-claim)
+    (up-pending-objects c: market == 0)
     (up-compare-goal bt-castle-prereq-retry-goal >= 4)
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
@@ -4179,8 +4185,14 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-        (strategic-number sn-resource-control == bt-castle-market-claim)
+        (and
+            (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+            (up-pending-objects c: blacksmith == 0)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-castle-market-claim)
+            (up-pending-objects c: market == 0)
+        )
     )
     (goal bt-castle-prereq-retry-goal 2)
     (timer-triggered bt-castle-prereq-watchdog-timer)
@@ -4194,8 +4206,14 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-        (strategic-number sn-resource-control == bt-castle-market-claim)
+        (and
+            (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+            (up-pending-objects c: blacksmith == 0)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-castle-market-claim)
+            (up-pending-objects c: market == 0)
+        )
     )
     (goal bt-castle-prereq-retry-goal 3)
     (timer-triggered bt-castle-prereq-watchdog-timer)
@@ -4209,8 +4227,14 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-        (strategic-number sn-resource-control == bt-castle-market-claim)
+        (and
+            (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+            (up-pending-objects c: blacksmith == 0)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-castle-market-claim)
+            (up-pending-objects c: market == 0)
+        )
     )
     (goal bt-castle-prereq-retry-goal 1)
     (timer-triggered bt-castle-prereq-watchdog-timer)
@@ -4224,8 +4248,14 @@
 
 (defrule
     (or
-        (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
-        (strategic-number sn-resource-control == bt-castle-market-claim)
+        (and
+            (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+            (up-pending-objects c: blacksmith == 0)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-castle-market-claim)
+            (up-pending-objects c: market == 0)
+        )
     )
     (goal bt-castle-prereq-retry-goal 0)
     (timer-triggered bt-castle-prereq-watchdog-timer)
@@ -4247,7 +4277,7 @@
     (current-age == feudal-age)
     (goal bt-castle-prereq-failure-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
-    (building-type-count-total blacksmith >= 1)
+    (building-type-count blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total market < 1)
     (up-pending-objects c: market == 0)
@@ -4262,7 +4292,7 @@
 ; Market completion is the world-state witness.
 (defrule
     (strategic-number sn-resource-control == bt-castle-market-claim)
-    (building-type-count-total market >= 1)
+    (building-type-count market >= 1)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
     (disable-timer bt-castle-prereq-backoff-timer)
@@ -4274,9 +4304,13 @@
 ; A timed-out foundation may finish after the watchdog released the
 ; mutex. Reset retry history without touching a newer resource claim.
 (defrule
-    (building-type-count-total market >= 1)
+    (building-type-count market >= 1)
     (up-compare-goal bt-castle-prereq-retry-goal >= 1)
     (goal bt-castle-prereq-failure-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-castle-market-claim)
+    )
 =>
     (disable-timer bt-castle-prereq-backoff-timer)
     (set-goal bt-castle-prereq-backoff-goal 0)
