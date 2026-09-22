@@ -256,6 +256,8 @@
 (defconst bt-blacksmith-repair-failure-goal 593)
 (defconst bt-blacksmith-repair-watchdog-timer 38)
 (defconst bt-blacksmith-repair-backoff-timer 39)
+(defconst bt-blacksmith-repair-failure-timer 40)
+(defconst bt-blacksmith-repair-failure-seconds 240)
 (defconst bt-blacksmith-repair-watchdog-seconds 120)
 (defconst bt-blacksmith-repair-backoff-seconds 30)
 (defconst bt-blacksmith-repair-backoff-2-seconds 60)
@@ -3968,6 +3970,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-blacksmith-repair-backoff-goal 0)
     (disable-timer bt-blacksmith-repair-watchdog-timer)
     (disable-timer bt-blacksmith-repair-backoff-timer)
+    (disable-timer bt-blacksmith-repair-failure-timer)
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
 )
@@ -4082,6 +4085,7 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-blacksmith-repair-retry-goal 4)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
     (set-goal bt-blacksmith-repair-failure-goal 1)
+    (enable-timer bt-blacksmith-repair-failure-timer bt-blacksmith-repair-failure-seconds)
 )
 
 ; Terminal failure is a cooldown witness, not a permanent death state.
@@ -4093,8 +4097,10 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (up-pending-objects c: blacksmith == 0)
     (not (town-under-attack))
     (strategic-number sn-resource-control == 0)
+    (timer-triggered bt-blacksmith-repair-failure-timer)
     (can-build-with-escrow blacksmith)
 =>
+    (disable-timer bt-blacksmith-repair-failure-timer)
     (set-goal bt-blacksmith-repair-failure-goal 0)
     (set-goal bt-blacksmith-repair-retry-goal 0)
     (set-goal bt-blacksmith-repair-backoff-goal 0)
