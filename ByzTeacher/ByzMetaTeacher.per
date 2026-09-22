@@ -7394,7 +7394,7 @@
 (defrule
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
-    (up-compare-goal bt-siege-tower-execution-remote-count-goal >= 1)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
 =>
     (disable-timer bt-siege-tower-approach-watchdog-timer)
     (enable-timer bt-siege-tower-unload-watchdog-timer bt-siege-tower-unload-watchdog-seconds)
@@ -7419,7 +7419,7 @@
 (defrule
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
-    (up-compare-goal bt-siege-tower-execution-remote-count-goal >= 1)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
 =>
     (disable-timer bt-siege-tower-unload-watchdog-timer)
     (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
@@ -7431,7 +7431,7 @@
 (defrule
     (timer-triggered bt-siege-tower-unload-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
-    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
     (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-unload-watchdog-timer)
@@ -7446,7 +7446,7 @@
 (defrule
     (timer-triggered bt-siege-tower-unload-watchdog-timer)
     (goal bt-siege-tower-demand-goal 1)
-    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
     (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-last-wall-attempt)
 =>
     (disable-timer bt-siege-tower-unload-watchdog-timer)
