@@ -590,6 +590,12 @@
     (set-goal bt-any-threat-goal 0)
     (set-goal bt-cavalry-level-goal 0)
     (set-goal bt-cavalry-counter-level-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal bt-ranged-counter-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
@@ -600,6 +606,12 @@
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal bt-gold-mining-demand-goal 0)
     (set-goal bt-double-bit-axe-demand-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
@@ -625,6 +637,12 @@
     (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
     (set-goal bt-standing-army-floor-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal bt-standing-army-demand-goal 0)
     (set-goal bt-standing-army-infra-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
@@ -635,6 +653,12 @@
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal bt-mangonel-demand-goal 0)
     (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-onager-demand-goal 0)
@@ -645,6 +669,12 @@
     (set-goal bt-tc-failure-goal 0)
     (set-goal bt-mill-target-goal 0)
     (set-goal bt-mill-project-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (disable-timer bt-mill-watchdog-timer)
     (disable-self)
 )
@@ -699,6 +729,12 @@
     (set-goal bt-siege-tower-failure-retry-goal 0)
     (set-goal bt-siege-tower-cycle-complete-goal 0)
     (set-goal bt-siege-tower-spare-army-goal 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal bt-siege-tower-execution-search-state-goal 0)
     (set-goal bt-siege-tower-execution-remote-count-goal 0)
     (disable-timer bt-siege-tower-tower-watchdog-timer)
@@ -709,6 +745,12 @@
     (disable-timer bt-siege-tower-assault-watchdog-timer)
     (disable-timer bt-siege-tower-retry-timer)
     (set-strategic-number sn-number-garrison-units 0)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-strategic-number sn-maximum-garrison-fill 0)
     (disable-self)
 )
@@ -726,6 +768,12 @@
     (set-strategic-number sn-scale-minimum-attack-group-size 0)
     (set-strategic-number sn-scale-maximum-attack-group-size 0)
     (set-strategic-number sn-gather-defense-units 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (enable-timer bt-scouting-timer 120)
     (enable-timer bt-attack-timer 900)
     (disable-timer bt-retreat-timer)
@@ -2848,25 +2896,50 @@
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-bow-saw c: 1)
     (up-get-cost-delta bt-bow-saw-bank-delta-food-goal)
+)
+
+(defrule
+    (true)
+=>
     (up-setup-cost-data 1 bt-stone-mining-bank-cost-goal)
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-stone-mining c: 1)
     (up-get-cost-delta bt-stone-mining-bank-delta-food-goal)
+)
+
+(defrule
+    (true)
+=>
     (up-setup-cost-data 1 bt-scale-mail-bank-cost-goal)
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-scale-mail c: 1)
     (up-get-cost-delta bt-scale-mail-bank-delta-food-goal)
     (up-get-cost-delta bt-scale-mail-bank-delta-gold-goal)
+)
+
+(defrule
+    (true)
+=>
     (up-setup-cost-data 1 bt-chain-mail-bank-cost-goal)
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-chain-mail c: 1)
     (up-get-cost-delta bt-chain-mail-bank-delta-food-goal)
     (up-get-cost-delta bt-chain-mail-bank-delta-gold-goal)
+)
+
+(defrule
+    (true)
+=>
     (up-setup-cost-data 1 bt-pikeman-bank-cost-goal)
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-pikeman c: 1)
     (up-get-cost-delta bt-pikeman-bank-delta-food-goal)
     (up-get-cost-delta bt-pikeman-bank-delta-gold-goal)
+)
+
+(defrule
+    (true)
+=>
     (up-setup-cost-data 1 bt-elite-skirmisher-bank-cost-goal)
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-elite-skirmisher c: 1)
