@@ -8565,7 +8565,7 @@
 ;================================================================
 
 ; Scale Mail belongs to a real Spear response package.
-; It waits for both strategic demand and an actual six-Spear package,
+; It waits for both strategic demand and a queue-inclusive six-Spear package,
 ; and remains reachable in Castle when the Feudal prerequisite was skipped.
 (defrule
     (current-age >= feudal-age)
@@ -8592,7 +8592,7 @@
 
 
 ; Castle Chain Mail continues the standing Spear package after Scale Mail.
-; The package must be real before the 200 food / 100 gold investment is made.
+; A queue-inclusive six-Spear package must exist before the investment is made.
 (defrule
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
