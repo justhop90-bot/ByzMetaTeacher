@@ -1263,7 +1263,7 @@
     (set-goal bt-research-monk-package-goal 0)
 )
 (defrule
-    (goal bt-research-monk-package-goal != 0)
+    (up-compare-goal bt-research-monk-package-goal != 0)
     (goal bt-monk-demand-goal 0)
 =>
     (set-goal bt-research-monk-package-goal 0)
@@ -1372,7 +1372,7 @@
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
 (defrule
-    (goal bt-research-cavalry-counter-package-goal != 0)
+    (up-compare-goal bt-research-cavalry-counter-package-goal != 0)
     (up-compare-goal bt-cavalry-counter-level-goal < 1)
     (goal bt-cavalry-threat-goal 0)
     (goal bt-halberdier-demand-goal 0)
@@ -2009,7 +2009,7 @@
     (set-goal bt-research-cataphract-package-goal 0)
 )
 (defrule
-    (goal bt-research-cataphract-package-goal != 0)
+    (up-compare-goal bt-research-cataphract-package-goal != 0)
     (goal bt-cataphract-demand-goal 0)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
@@ -2189,7 +2189,7 @@
     (set-goal bt-research-siege-package-goal 0)
 )
 (defrule
-    (goal bt-research-siege-package-goal != 0)
+    (up-compare-goal bt-research-siege-package-goal != 0)
     (goal bt-mangonel-demand-goal 0)
     (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
@@ -9737,7 +9737,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (set-goal bt-bombard-university-backoff-goal 0)
 )
 (defrule
-    (goal bt-bombard-university-retry-goal >= 4)
+    (up-compare-goal bt-bombard-university-retry-goal >= 4)
     (goal bt-bombard-university-backoff-goal 1)
     (timer-triggered bt-bombard-university-backoff-timer)
 =>
@@ -10832,7 +10832,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (enable-timer bt-university-backoff-timer bt-university-backoff-cap-seconds)
 )
 (defrule
-    (goal bt-university-retry-goal >= 4)
+    (up-compare-goal bt-university-retry-goal >= 4)
     (goal bt-university-backoff-goal 1)
     (timer-triggered bt-university-backoff-timer)
 =>
@@ -10950,7 +10950,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 
 (defrule
-    (goal bt-military-siege-workshop-retry-goal >= 4)
+    (up-compare-goal bt-military-siege-workshop-retry-goal >= 4)
     (goal bt-military-siege-workshop-backoff-goal 1)
     (timer-triggered bt-military-siege-workshop-backoff-timer)
 =>
@@ -12616,28 +12616,28 @@ camel-line < bt-camel-target-1)))))
 ; failure. The package/demand layer remains live and can reassert the tech
 ; after the capability is rebuilt. No global strategic claim is touched.
 (defrule
-    (goal bt-research-town-center-claim-goal != 0)
+    (up-compare-goal bt-research-town-center-claim-goal != 0)
     (building-type-count town-center == 0)
 =>
     (set-goal bt-research-town-center-claim-goal 0)
 )
 
 (defrule
-    (goal bt-research-mill-claim-goal != 0)
+    (up-compare-goal bt-research-mill-claim-goal != 0)
     (building-type-count mill == 0)
 =>
     (set-goal bt-research-mill-claim-goal 0)
 )
 
 (defrule
-    (goal bt-research-lumber-camp-claim-goal != 0)
+    (up-compare-goal bt-research-lumber-camp-claim-goal != 0)
     (building-type-count lumber-camp == 0)
 =>
     (set-goal bt-research-lumber-camp-claim-goal 0)
 )
 
 (defrule
-    (goal bt-research-mining-camp-claim-goal != 0)
+    (up-compare-goal bt-research-mining-camp-claim-goal != 0)
     (building-type-count mining-camp == 0)
 =>
     (set-goal bt-research-mining-camp-claim-goal 0)
@@ -12645,10 +12645,10 @@ camel-line < bt-camel-target-1)))))
 
 (defrule
     (or
-        (goal bt-research-blacksmith-claim-goal != 0)
+        (up-compare-goal bt-research-blacksmith-claim-goal != 0)
         (or
-        (goal bt-research-cavalry-counter-package-goal != 0)
-        (goal bt-research-ranged-counter-package-goal != 0)
+        (up-compare-goal bt-research-cavalry-counter-package-goal != 0)
+        (up-compare-goal bt-research-ranged-counter-package-goal != 0)
             )
     )
     (building-type-count blacksmith == 0)
@@ -12825,7 +12825,7 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-university-claim-goal != 0)
+    (up-compare-goal bt-research-university-claim-goal != 0)
     (building-type-count university == 0)
 =>
     (set-goal bt-research-university-claim-goal 0)
@@ -12834,14 +12834,14 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-castle-claim-goal != 0)
+    (up-compare-goal bt-research-castle-claim-goal != 0)
     (building-type-count castle == 0)
 =>
     (set-goal bt-research-castle-claim-goal 0)
 )
 
 (defrule
-    (goal bt-research-barracks-claim-goal != 0)
+    (up-compare-goal bt-research-barracks-claim-goal != 0)
     (building-type-count barracks == 0)
 =>
     (set-goal bt-research-barracks-claim-goal 0)
@@ -12869,7 +12869,7 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-archery-range-claim-goal != 0)
+    (up-compare-goal bt-research-archery-range-claim-goal != 0)
     (building-type-count archery-range == 0)
 =>
     (set-goal bt-research-archery-range-claim-goal 0)
@@ -12877,7 +12877,7 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-stable-claim-goal != 0)
+    (up-compare-goal bt-research-stable-claim-goal != 0)
     (building-type-count stable == 0)
 =>
     (set-goal bt-research-stable-claim-goal 0)
@@ -12885,7 +12885,7 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (goal bt-research-siege-workshop-claim-goal != 0)
+    (up-compare-goal bt-research-siege-workshop-claim-goal != 0)
     (building-type-count siege-workshop == 0)
 =>
     (set-goal bt-research-siege-workshop-claim-goal 0)
@@ -12896,7 +12896,7 @@ camel-line < bt-camel-target-1)))))
 ; MONASTERY RESEARCH CAPABILITY LOSS / FAILURE RECOVERY
 ;----------------------------------------------------------------
 (defrule
-    (goal bt-research-monastery-claim-goal != 0)
+    (up-compare-goal bt-research-monastery-claim-goal != 0)
     (building-type-count monastery == 0)
 =>
     (set-goal bt-research-monastery-claim-goal 0)
