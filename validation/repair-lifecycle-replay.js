@@ -221,6 +221,17 @@ for (const tech of ["ri-cavalier", "ri-paladin", "ri-heavy-camel"]) {
     `(up-compare-goal ${retryGoal} < bt-stable-research-max-retries)`,
     `(can-research-with-escrow ${tech})`,
   );
+  const stableFailureRule = requireRule(
+    `Stable ${tech} failure`,
+    `(goal bt-research-stable-claim-goal ${tech})`,
+    `(up-research-status c: ${tech} <= research-available)`,
+    `(up-modify-goal ${retryGoal} g:+ 1)`,
+    "(set-goal bt-research-stable-claim-goal 0)",
+  );
+  assert.ok(
+    !stableFailureRule.includes("bt-research-cavalry-counter-package-goal"),
+    `[Stable ${tech}] failure rule must not mutate the Barracks-owned package cursor`,
+  );
   requireRule(
     `Stable ${tech} terminal reset`,
     tech === "ri-cavalier"
