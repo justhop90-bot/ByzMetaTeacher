@@ -10850,11 +10850,12 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (timer-triggered bt-university-watchdog-timer)
     (up-pending-objects c: university > 0)
 =>
+    ; A live University foundation remains an owned construction obligation.
+    ; Keep the claim and continue builder support instead of releasing into a
+    ; backoff state that cannot issue another build while the foundation exists.
     (disable-timer bt-university-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-university-retry-goal 4)
-    (set-goal bt-university-backoff-goal 1)
-    (enable-timer bt-university-backoff-timer bt-university-backoff-cap-seconds)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (enable-timer bt-university-watchdog-timer bt-university-watchdog-seconds)
 )
 
 (defrule
@@ -10915,9 +10916,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-goal bt-university-backoff-goal 0)
 )
 
-; Intermediate retry cooldown release. Without this edge, the first
-; failed attempt would set backoff forever and make the University
-; project a permanent dead end.
+; Intermediate cooldown release applies only when there is no live
+; University foundation. A live foundation stays under construction support.
 (defrule
     (up-compare-goal bt-university-retry-goal < 4)
     (goal bt-university-backoff-goal 1)
@@ -13860,10 +13860,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (timer-triggered bt-mill-watchdog-timer)
     (up-pending-objects c: mill > 0)
 =>
+    ; A live Mill foundation remains an owned construction obligation.
+    ; Keep the claim and continue builder support; do not turn foundation
+    ; stall into an open-loop state with no later builder authority.
     (disable-timer bt-mill-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-mill-backoff-goal 1)
-    (enable-timer bt-mill-backoff-timer bt-mill-backoff-seconds)
+    (up-assign-builders c: mill c: bt-foundation-stall-builder-count)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
 )
 
 (defrule
