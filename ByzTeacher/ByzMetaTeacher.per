@@ -464,6 +464,28 @@
 (defconst bt-camel-target-1 4)
 (defconst bt-camel-target-2 8)
 
+; Castle-age primary military role targets.
+(defconst bt-standing-knight-target-goal 577)
+(defconst bt-standing-crossbow-target-goal 578)
+
+; Primary military package state.
+(defconst bt-knight-demand-goal 579)
+(defconst bt-crossbow-demand-goal 580)
+
+; Imperial primary-line upgrade state.
+(defconst bt-cavalier-demand-goal 581)
+(defconst bt-paladin-demand-goal 582)
+(defconst bt-arbalest-demand-goal 583)
+
+; Primary-package target tuning. These are finite standing/pressure
+; commitments, not "train forever" dials.
+(defconst bt-knight-target-castle 4)
+(defconst bt-knight-target-mature 8)
+(defconst bt-knight-target-late 12)
+(defconst bt-crossbow-target-castle 4)
+(defconst bt-crossbow-target-mature 8)
+(defconst bt-crossbow-target-late 12)
+
 ; Mangonel response target.
 ; This finite queue ceiling is the execution cap for the current persistent
 ; demand. Package completion/reset remains a later lifecycle edge.
@@ -534,6 +556,13 @@
     (set-goal bt-standing-skirm-target-goal 0)
     (set-goal bt-standing-archer-target-goal 0)
     (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-standing-knight-target-goal 0)
+    (set-goal bt-standing-crossbow-target-goal 0)
+    (set-goal bt-knight-demand-goal 0)
+    (set-goal bt-crossbow-demand-goal 0)
+    (set-goal bt-cavalier-demand-goal 0)
+    (set-goal bt-paladin-demand-goal 0)
+    (set-goal bt-arbalest-demand-goal 0)
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
@@ -569,6 +598,13 @@
     (set-goal bt-standing-skirm-target-goal 0)
     (set-goal bt-standing-archer-target-goal 0)
     (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-standing-knight-target-goal 0)
+    (set-goal bt-standing-crossbow-target-goal 0)
+    (set-goal bt-knight-demand-goal 0)
+    (set-goal bt-crossbow-demand-goal 0)
+    (set-goal bt-cavalier-demand-goal 0)
+    (set-goal bt-paladin-demand-goal 0)
+    (set-goal bt-arbalest-demand-goal 0)
     (set-goal bt-halberdier-demand-goal 0)
     (set-goal bt-heavy-camel-demand-goal 0)
     (set-goal bt-attack-reserve-goal 0)
