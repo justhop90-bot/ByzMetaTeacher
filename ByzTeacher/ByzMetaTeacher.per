@@ -8565,6 +8565,33 @@
 ;================================================================
 
 ; Crossbow support: Fletching -> Crossbow -> Bodkin.
+; Feudal ranged packages earn Fletching before Castle transition.
+; Standing targets identify the intended ranged role; the queue-inclusive
+; unit count prevents spending the tech for a merely declared role.
+(defrule
+    (current-age == feudal-age)
+    (building-type-count blacksmith >= 1)
+    (or
+        (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
+            (unit-type-count-total archer-line >= 3)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
+        )
+    )
+    (up-research-status c: ri-fletching < research-pending)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-fletching)
+=>
+    (set-strategic-number sn-resource-control ri-fletching)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-fletching)
+)
+
 (defrule
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
@@ -8638,12 +8665,24 @@
 )
 
 
+; Feudal Padded Armor is defensive: require real ranged pressure
+; after Fletching and an actual ranged package are present.
 (defrule
-    (goal unit-goal crossbowman)
-    (current-age >= castle-age)
+    (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
+    (goal bt-ranged-threat-goal 1)
+    (or
+        (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
+            (unit-type-count-total archer-line >= 3)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
+        )
+    )
+    (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-padded-archer-armor < research-pending)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
 =>
@@ -8775,18 +8814,18 @@
 )
 
 ; Knight support: Forging -> Iron Casting and cavalry armor.
+; Feudal Forging belongs to a real Scout-pressure package.
 (defrule
-    (goal bt-knight-demand-goal 1)
-    (current-age >= castle-age)
+    (goal bt-scout-pressure-demand-goal 1)
+    (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
+    (unit-type-count-total scout-cavalry >= 3)
     (up-research-status c: ri-forging < research-pending)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
-    (release-escrow gold)
     (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-forging)
 )
@@ -8823,18 +8862,19 @@
     (set-strategic-number sn-resource-control 0)
 )
 
+; Feudal Scale Barding is a defensive Scout investment against ranged fire.
 (defrule
-    (goal bt-knight-demand-goal 1)
-    (current-age >= castle-age)
-    (up-research-status c: ri-scale-barding-armor < research-pending)
+    (goal bt-scout-pressure-demand-goal 1)
+    (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (unit-type-count-total scout-cavalry >= 3)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-scale-barding-armor < research-pending)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-scale-barding-armor)
 =>
     (set-strategic-number sn-resource-control ri-scale-barding-armor)
     (release-escrow food)
-    (release-escrow gold)
     (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
     (research ri-scale-barding-armor)
 )
@@ -8846,8 +8886,10 @@
     (set-strategic-number sn-resource-control 0)
 )
 
+; Castle Chain Barding closes the Knight package once the
+; Castle Knight mass exists; Knight demand itself is already released
+; at the target, so it cannot be a prerequisite for the upgrade.
 (defrule
-    (goal bt-knight-demand-goal 1)
     (current-age >= castle-age)
     (unit-type-count-total knight-line >= bt-knight-target-castle)
     (up-research-status c: ri-scale-barding-armor == research-complete)
