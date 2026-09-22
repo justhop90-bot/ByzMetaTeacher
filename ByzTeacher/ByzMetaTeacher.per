@@ -430,7 +430,10 @@
 (defconst bt-imperial-gold 536)
 
 ; Engine-native composite-cost witness goals.
-; Cost-data commands require extended goals 41-508. These ranges are unused.
+; Cost-data commands require extended goals 41-508 and write four consecutive
+; goals in Food/Wood/Stone/Gold order. Bow Saw and Stone Mining keep their
+; existing legal blocks. Response technologies use dedicated legal blocks
+; for composite cost data and persistent resource deltas.
 (defconst bt-bow-saw-bank-cost-goal 480)
 (defconst bt-bow-saw-bank-delta-food-goal 484)
 (defconst bt-bow-saw-bank-delta-wood-goal 485)
@@ -442,19 +445,28 @@
 (defconst bt-stone-mining-bank-delta-stone-goal 494)
 (defconst bt-stone-mining-bank-delta-gold-goal 495)
 ; Castle/Imperial response-tech bank witnesses.
-; Each pair is raw-resource delta after reserving Imperial Age + the tech.
-(defconst bt-scale-mail-bank-cost-goal 585)
-(defconst bt-chain-mail-bank-cost-goal 586)
-(defconst bt-pikeman-bank-cost-goal 587)
-(defconst bt-elite-skirmisher-bank-cost-goal 588)
-(defconst bt-scale-mail-bank-delta-food-goal 589)
-(defconst bt-chain-mail-bank-delta-food-goal 590)
-(defconst bt-pikeman-bank-delta-food-goal 591)
-(defconst bt-elite-skirmisher-bank-delta-food-goal 592)
-(defconst bt-scale-mail-bank-delta-gold-goal 593)
-(defconst bt-chain-mail-bank-delta-gold-goal 594)
-(defconst bt-pikeman-bank-delta-gold-goal 595)
-(defconst bt-elite-skirmisher-bank-delta-gold-goal 596)
+; Every technology owns eight consecutive legal goals:
+;   cost-data Food/Wood/Stone/Gold, then delta Food/Wood/Stone/Gold.
+(defconst bt-scale-mail-bank-cost-goal 448)
+(defconst bt-scale-mail-bank-delta-food-goal 452)
+(defconst bt-scale-mail-bank-delta-wood-goal 453)
+(defconst bt-scale-mail-bank-delta-stone-goal 454)
+(defconst bt-scale-mail-bank-delta-gold-goal 455)
+(defconst bt-chain-mail-bank-cost-goal 456)
+(defconst bt-chain-mail-bank-delta-food-goal 460)
+(defconst bt-chain-mail-bank-delta-wood-goal 461)
+(defconst bt-chain-mail-bank-delta-stone-goal 462)
+(defconst bt-chain-mail-bank-delta-gold-goal 463)
+(defconst bt-pikeman-bank-cost-goal 464)
+(defconst bt-pikeman-bank-delta-food-goal 468)
+(defconst bt-pikeman-bank-delta-wood-goal 469)
+(defconst bt-pikeman-bank-delta-stone-goal 470)
+(defconst bt-pikeman-bank-delta-gold-goal 471)
+(defconst bt-elite-skirmisher-bank-cost-goal 472)
+(defconst bt-elite-skirmisher-bank-delta-food-goal 476)
+(defconst bt-elite-skirmisher-bank-delta-wood-goal 477)
+(defconst bt-elite-skirmisher-bank-delta-stone-goal 478)
+(defconst bt-elite-skirmisher-bank-delta-gold-goal 479)
 
 ; Double-Bit Axe demand buffers.
 ; 900 food and 225 wood are conservative Stock/community-style
@@ -2951,7 +2963,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-scale-mail c: 1)
     (up-get-cost-delta bt-scale-mail-bank-delta-food-goal)
-    (up-get-cost-delta bt-scale-mail-bank-delta-gold-goal)
 )
 
 (defrule
@@ -2961,7 +2972,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-chain-mail c: 1)
     (up-get-cost-delta bt-chain-mail-bank-delta-food-goal)
-    (up-get-cost-delta bt-chain-mail-bank-delta-gold-goal)
 )
 
 (defrule
@@ -2971,7 +2981,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-pikeman c: 1)
     (up-get-cost-delta bt-pikeman-bank-delta-food-goal)
-    (up-get-cost-delta bt-pikeman-bank-delta-gold-goal)
 )
 
 (defrule
@@ -2981,7 +2990,6 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-add-research-cost c: imperial-age c: 1)
     (up-add-research-cost c: ri-elite-skirmisher c: 1)
     (up-get-cost-delta bt-elite-skirmisher-bank-delta-food-goal)
-    (up-get-cost-delta bt-elite-skirmisher-bank-delta-gold-goal)
 )
 
 ;================================================================
@@ -8219,7 +8227,9 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-        (and (up-compare-goal bt-cavalry-counter-level-goal >= 1) (and (up-compare-goal bt-scale-mail-bank-delta-food-goal >= 0) (up-compare-goal bt-scale-mail-bank-delta-gold-goal >= 0)))
+        (and (up-compare-goal bt-cavalry-counter-level-goal >= 1) (and (up-compare-goal bt-scale-mail-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-scale-mail-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-scale-mail-bank-delta-gold-goal >= 0)))
     )
     (can-research-with-escrow ri-scale-mail)
 =>
@@ -8250,7 +8260,9 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-        (and (up-compare-goal bt-cavalry-counter-level-goal >= 1) (and (up-compare-goal bt-chain-mail-bank-delta-food-goal >= 0) (up-compare-goal bt-chain-mail-bank-delta-gold-goal >= 0)))
+        (and (up-compare-goal bt-cavalry-counter-level-goal >= 1) (and (up-compare-goal bt-chain-mail-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-chain-mail-bank-delta-wood-goal >= 0)
+            (up-compare-goal bt-chain-mail-bank-delta-gold-goal >= 0)))
     )
     (can-research-with-escrow ri-chain-mail)
 =>
@@ -8870,6 +8882,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
         (and
             (up-compare-goal bt-pikeman-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-pikeman-bank-delta-wood-goal >= 0)
             (up-compare-goal bt-pikeman-bank-delta-gold-goal >= 0)
         )
     )
@@ -8913,6 +8926,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
         (and
             (up-compare-goal bt-elite-skirmisher-bank-delta-food-goal >= 0)
+            (up-compare-goal bt-elite-skirmisher-bank-delta-wood-goal >= 0)
             (up-compare-goal bt-elite-skirmisher-bank-delta-gold-goal >= 0)
         )
     )
