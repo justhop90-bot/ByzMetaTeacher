@@ -4683,10 +4683,11 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (building-type-count-total monastery < 1)
     (up-pending-objects c: university == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build university)
+    (can-build-with-escrow university)
 =>
     (set-strategic-number sn-resource-control bt-imperial-university-claim)
     (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
     (build university)
 )
 
