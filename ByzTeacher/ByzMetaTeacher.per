@@ -7572,6 +7572,36 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal bt-imperial-prereq-retry-goal 3)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
 =>
+    ; A live Imperial-prerequisite foundation remains an owned construction
+    ; obligation. Keep the claim and continue builder support indefinitely.
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (or
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+        )
+    )
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+
+(defrule
+    (or
+        (and
+            (strategic-number sn-resource-control == bt-imperial-siege-claim)
+            (up-pending-objects c: siege-workshop == 0)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-pending-objects c: university == 0)
+        )
+    )
+    (goal bt-imperial-prereq-retry-goal 3)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+=>
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-imperial-prereq-retry-goal 4)
