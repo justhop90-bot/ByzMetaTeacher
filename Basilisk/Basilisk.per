@@ -12451,35 +12451,10 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (set-strategic-number sn-resource-control 0)
 )
 
-; A failed Mill build order leaves no pending foundation. Release the claim
-; after the bounded watchdog interval and let the existing demand/project
-
-; is pending: doing so could let the claim layer issue a duplicate Mill
-; before the completion witness is observed.
-
-(defrule
-    (or
-        (and
-            (goal bt-mill-project-goal 1)
-            (building-type-count mill >= 1)
-        )
-        (or
-        (and
-            (goal bt-mill-project-goal 2)
-            (building-type-count mill >= 2)
-        )
-        (and
-            (goal bt-mill-project-goal 3)
-            (building-type-count mill >= 3)
-        )
-            )
-    )
-=>
-    (disable-timer bt-mill-watchdog-timer)
-    (disable-timer bt-mill-backoff-timer)
-    (set-goal bt-mill-project-goal 0)
-    (set-goal bt-mill-backoff-goal 0)
-)
+; Completed Mills are closed only by the claim-owning completion rule above.
+; The watchdog and failure cooldown retain sole ownership of the live
+; foundation and failed execution paths; no second completion cleanup rule
+; may clear bt-mill-project-goal.
 
 ;----------------------------------------------------------------
 ; MILL CONSTRUCTION WATCHDOG
