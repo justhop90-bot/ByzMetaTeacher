@@ -264,9 +264,23 @@
 (defconst bt-blacksmith-repair-watchdog-seconds 120)
 ; Age-research failed-start memory. Non-age research now has capability-local
 ; fairness slots so unrelated research failures cannot overwrite each other.
-(defconst bt-research-failure-backoff-goal 594)
-(defconst bt-research-failure-backoff-timer 41)
+; Age-research failed-start memory. Age transitions have their own cooldown so an ordinary technology failure cannot interfere.
+(defconst bt-research-age-failure-backoff-goal 644)
+(defconst bt-research-age-failure-backoff-timer 63)
 (defconst bt-research-failure-backoff-seconds 30)
+; Capability-local failed-start timers.
+(defconst bt-research-town-center-failure-backoff-timer 51)
+(defconst bt-research-mill-failure-backoff-timer 52)
+(defconst bt-research-lumber-camp-failure-backoff-timer 53)
+(defconst bt-research-mining-camp-failure-backoff-timer 54)
+(defconst bt-research-blacksmith-failure-backoff-timer 55)
+(defconst bt-research-university-failure-backoff-timer 56)
+(defconst bt-research-castle-failure-backoff-timer 57)
+(defconst bt-research-barracks-failure-backoff-timer 58)
+(defconst bt-research-archery-range-failure-backoff-timer 59)
+(defconst bt-research-stable-failure-backoff-timer 60)
+(defconst bt-research-siege-workshop-failure-backoff-timer 61)
+(defconst bt-research-monastery-failure-backoff-timer 62)
 ; Capability-local failed-start memory. These goals prevent one failed
 ; capability from overwriting another capability's bounded fairness delay.
 (defconst bt-research-town-center-failure-backoff-goal 623)
@@ -797,7 +811,7 @@
     (set-goal bt-imperial-prereq-retry-goal 0)
     (set-goal bt-imperial-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-diagnostic-goal 0)
-    (set-goal bt-research-failure-backoff-goal 0)
+    (set-goal bt-research-age-failure-backoff-goal 0)
     (set-goal bt-monastery-retry-goal 0)
     (set-goal bt-monastery-backoff-goal 0)
     (set-goal bt-monastery-failure-goal 0)
@@ -987,7 +1001,19 @@
     (disable-timer bt-tc2-watchdog-timer)
     (disable-timer bt-tc3-watchdog-timer)
     (disable-timer bt-research-watchdog-timer)
-    (disable-timer bt-research-failure-backoff-timer)
+    (disable-timer bt-research-age-failure-backoff-timer)
+    (disable-timer bt-research-town-center-failure-backoff-timer)
+    (disable-timer bt-research-mill-failure-backoff-timer)
+    (disable-timer bt-research-lumber-camp-failure-backoff-timer)
+    (disable-timer bt-research-mining-camp-failure-backoff-timer)
+    (disable-timer bt-research-blacksmith-failure-backoff-timer)
+    (disable-timer bt-research-university-failure-backoff-timer)
+    (disable-timer bt-research-castle-failure-backoff-timer)
+    (disable-timer bt-research-barracks-failure-backoff-timer)
+    (disable-timer bt-research-archery-range-failure-backoff-timer)
+    (disable-timer bt-research-stable-failure-backoff-timer)
+    (disable-timer bt-research-siege-workshop-failure-backoff-timer)
+    (disable-timer bt-research-monastery-failure-backoff-timer)
     (disable-timer bt-monastery-watchdog-timer)
     (disable-timer bt-monastery-backoff-timer)
     (disable-timer bt-monastery-failure-timer)
@@ -2263,7 +2289,7 @@
 (defrule
     (current-age == dark-age)
     (unit-type-count villager >= bt-feudal-villagers)
-    (up-compare-goal bt-research-failure-backoff-goal != feudal-age)
+    (up-compare-goal bt-research-age-failure-backoff-goal != feudal-age)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow feudal-age)
 =>
@@ -2297,7 +2323,7 @@
 (defrule
     (current-age == feudal-age)
     (unit-type-count villager >= bt-castle-villagers)
-    (up-compare-goal bt-research-failure-backoff-goal != castle-age)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow castle-age)
 =>
@@ -2423,7 +2449,7 @@
 (defrule
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
-    (up-compare-goal bt-research-failure-backoff-goal != imperial-age)
+    (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
     (strategic-number sn-resource-control == 0)
     (goal bt-castle-cataphract-demand-goal 0)
     (can-research-with-escrow imperial-age)
@@ -5185,7 +5211,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-research-status c: ri-wheel-barrow <= research-available)
 =>
     (set-goal bt-research-town-center-failure-backoff-goal ri-wheel-barrow)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-town-center-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
 )
 
@@ -5343,7 +5369,7 @@ imperial-age)) (up-research-status c: ri-wheel-barrow == research-available)))))
     (up-research-status c: ri-hand-cart <= research-available)
 =>
     (set-goal bt-research-town-center-failure-backoff-goal ri-hand-cart)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-town-center-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
 )
 
@@ -5455,7 +5481,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (up-research-status c: ri-bow-saw <= research-available)
 =>
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-bow-saw)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-lumber-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
 )
 
@@ -5532,7 +5558,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (up-research-status c: ri-two-man-saw <= research-available)
 =>
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-two-man-saw)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-lumber-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
 )
 
@@ -5628,7 +5654,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (up-research-status c: ri-gold-shaft-mining <= research-available)
 =>
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
@@ -12926,7 +12952,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-halberdier <= research-available)
 =>
     (set-goal bt-research-barracks-failure-backoff-goal ri-halberdier)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-barracks-claim-goal 0)
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
@@ -12936,7 +12962,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-heavy-camel <= research-available)
 =>
     (set-goal bt-research-stable-failure-backoff-goal ri-heavy-camel)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-stable-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
 )
 
@@ -13061,7 +13087,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-atonement <= research-available)
 =>
     (set-goal bt-research-monastery-failure-backoff-goal ri-atonement)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-monastery-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
@@ -13070,7 +13096,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-redemption <= research-available)
 =>
     (set-goal bt-research-monastery-failure-backoff-goal ri-redemption)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-monastery-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
@@ -13079,7 +13105,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-sanctity <= research-available)
 =>
     (set-goal bt-research-monastery-failure-backoff-goal ri-sanctity)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-monastery-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
@@ -13088,7 +13114,7 @@ camel-line < bt-camel-target-1)))))
     (up-research-status c: ri-block-printing <= research-available)
 =>
     (set-goal bt-research-monastery-failure-backoff-goal ri-block-printing)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-monastery-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-monastery-claim-goal 0)
     (set-goal bt-research-monk-package-goal 0)
 )
@@ -13100,51 +13126,98 @@ camel-line < bt-camel-target-1)))))
 ; research-available. The watchdog records that technology here for a
 ; bounded 30-second exclusion so another eligible research claim can own the
 ; shared research mutex. This is fairness state, not a retry scheduler.
+; RESEARCH FAILURE FAIRNESS BACKOFF
+; Each research capability owns its own bounded failed-start exclusion.
+
 (defrule
-    (timer-triggered bt-research-failure-backoff-timer)
+    (timer-triggered bt-research-town-center-failure-backoff-timer)
 =>
-    (disable-timer bt-research-failure-backoff-timer)
-    (set-goal bt-research-failure-backoff-goal 0)
+    (disable-timer bt-research-town-center-failure-backoff-timer)
     (set-goal bt-research-town-center-failure-backoff-goal 0)
-    (set-goal bt-research-mill-failure-backoff-goal 0)
-    (set-goal bt-research-lumber-camp-failure-backoff-goal 0)
-    (set-goal bt-research-mining-camp-failure-backoff-goal 0)
-    (set-goal bt-research-blacksmith-failure-backoff-goal 0)
-    (set-goal bt-research-university-failure-backoff-goal 0)
-    (set-goal bt-research-castle-failure-backoff-goal 0)
-    (set-goal bt-research-barracks-failure-backoff-goal 0)
-    (set-goal bt-research-archery-range-failure-backoff-goal 0)
-    (set-goal bt-research-stable-failure-backoff-goal 0)
-    (set-goal bt-research-siege-workshop-failure-backoff-goal 0)
-    (set-goal bt-research-monastery-failure-backoff-goal 0)
 )
 
-;================================================================
-; RESEARCH / AGE CLAIM WATCHDOG RECOVERY
-;================================================================
-; Q: "When should a research claim be released without success?"
-;
-; Only when the timer expires AND the claimed research is no longer
-; pending.  A pending research remains owner of the shared mutex.
-;
-; research-available = 1
-; research-pending   = 2
-; research-complete  = 3
-;
-; Therefore status <= research-available means the research is not
-; pending and has not completed. The watchdog is recovery only.
-; It never retries research or starts another claim.
-;
-; Age recovery also restores normal villager production because the
-; age-claim path disabled train-civ-goal during the attempt.
-;----------------------------------------------------------------
-; LOOM WATCHDOG EXPIRY
+(defrule
+    (timer-triggered bt-research-mill-failure-backoff-timer)
+=>
+    (disable-timer bt-research-mill-failure-backoff-timer)
+    (set-goal bt-research-mill-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-lumber-camp-failure-backoff-timer)
+=>
+    (disable-timer bt-research-lumber-camp-failure-backoff-timer)
+    (set-goal bt-research-lumber-camp-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-mining-camp-failure-backoff-timer)
+=>
+    (disable-timer bt-research-mining-camp-failure-backoff-timer)
+    (set-goal bt-research-mining-camp-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-blacksmith-failure-backoff-timer)
+=>
+    (disable-timer bt-research-blacksmith-failure-backoff-timer)
+    (set-goal bt-research-blacksmith-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-university-failure-backoff-timer)
+=>
+    (disable-timer bt-research-university-failure-backoff-timer)
+    (set-goal bt-research-university-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-castle-failure-backoff-timer)
+=>
+    (disable-timer bt-research-castle-failure-backoff-timer)
+    (set-goal bt-research-castle-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-barracks-failure-backoff-timer)
+=>
+    (disable-timer bt-research-barracks-failure-backoff-timer)
+    (set-goal bt-research-barracks-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-archery-range-failure-backoff-timer)
+=>
+    (disable-timer bt-research-archery-range-failure-backoff-timer)
+    (set-goal bt-research-archery-range-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-stable-failure-backoff-timer)
+=>
+    (disable-timer bt-research-stable-failure-backoff-timer)
+    (set-goal bt-research-stable-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-siege-workshop-failure-backoff-timer)
+=>
+    (disable-timer bt-research-siege-workshop-failure-backoff-timer)
+    (set-goal bt-research-siege-workshop-failure-backoff-goal 0)
+)
+
+(defrule
+    (timer-triggered bt-research-monastery-failure-backoff-timer)
+=>
+    (disable-timer bt-research-monastery-failure-backoff-timer)
+    (set-goal bt-research-monastery-failure-backoff-goal 0)
+)
 (defrule
     (goal bt-research-town-center-claim-goal ri-loom)
     (up-research-status c: ri-loom <= research-available)
 =>
     (set-goal bt-research-town-center-failure-backoff-goal ri-loom)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-town-center-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-town-center-claim-goal 0)
 )
 
@@ -13157,8 +13230,8 @@ camel-line < bt-camel-target-1)))))
     (timer-triggered bt-research-watchdog-timer)
 =>
     (disable-timer bt-research-watchdog-timer)
-    (set-goal bt-research-failure-backoff-goal feudal-age)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-age-failure-backoff-goal feudal-age)
+    (enable-timer bt-research-age-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -13172,8 +13245,8 @@ camel-line < bt-camel-target-1)))))
     (timer-triggered bt-research-watchdog-timer)
 =>
     (disable-timer bt-research-watchdog-timer)
-    (set-goal bt-research-failure-backoff-goal castle-age)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-age-failure-backoff-goal castle-age)
+    (enable-timer bt-research-age-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -13187,8 +13260,8 @@ camel-line < bt-camel-target-1)))))
     (timer-triggered bt-research-watchdog-timer)
 =>
     (disable-timer bt-research-watchdog-timer)
-    (set-goal bt-research-failure-backoff-goal imperial-age)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-age-failure-backoff-goal imperial-age)
+    (enable-timer bt-research-age-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-strategic-number sn-resource-control 0)
     (set-goal train-civ-goal 1)
 )
@@ -13217,7 +13290,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-horse-collar <= research-available)
 =>
     (set-goal bt-research-mill-failure-backoff-goal ri-horse-collar)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mill-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mill-claim-goal 0)
 )
 
@@ -13226,7 +13299,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-heavy-plow <= research-available)
 =>
     (set-goal bt-research-mill-failure-backoff-goal ri-heavy-plow)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mill-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mill-claim-goal 0)
 )
 
@@ -13235,7 +13308,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-crop-rotation <= research-available)
 =>
     (set-goal bt-research-mill-failure-backoff-goal ri-crop-rotation)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mill-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mill-claim-goal 0)
 )
 
@@ -13246,7 +13319,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-capped-ram <= research-available)
 =>
     (set-goal bt-research-siege-workshop-failure-backoff-goal ri-capped-ram)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-siege-workshop-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-siege-workshop-claim-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
@@ -13258,7 +13331,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-siege-ram <= research-available)
 =>
     (set-goal bt-research-siege-workshop-failure-backoff-goal ri-siege-ram)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-siege-workshop-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-siege-workshop-claim-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
@@ -13270,7 +13343,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-onager <= research-available)
 =>
     (set-goal bt-research-university-failure-backoff-goal ri-onager)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
@@ -13282,7 +13355,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-ballistics <= research-available)
 =>
     (set-goal bt-research-university-failure-backoff-goal ri-ballistics)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
@@ -13294,7 +13367,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-chemistry <= research-available)
 =>
     (set-goal bt-research-university-failure-backoff-goal ri-chemistry)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-research-siege-package-goal 0)
 )
@@ -13306,7 +13379,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-fletching <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-fletching)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13315,7 +13388,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-crossbow <= research-available)
 =>
     (set-goal bt-research-archery-range-failure-backoff-goal ri-crossbow)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-archery-range-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
@@ -13325,7 +13398,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-bodkin-arrow <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-bodkin-arrow)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13334,7 +13407,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-padded-archer-armor <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-padded-archer-armor)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13343,7 +13416,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-leather-archer-armor <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-leather-archer-armor)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13352,7 +13425,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-thumb-ring <= research-available)
 =>
     (set-goal bt-research-university-failure-backoff-goal ri-thumb-ring)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-university-claim-goal 0)
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
@@ -13362,7 +13435,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-bracer <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-bracer)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13371,7 +13444,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-ring-archer-armor <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-ring-archer-armor)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13380,7 +13453,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-forging <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-forging)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 (defrule
@@ -13388,7 +13461,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-scale-mail <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-scale-mail)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13397,7 +13470,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-chain-mail <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-chain-mail)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13407,7 +13480,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-iron-casting <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-iron-casting)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13416,7 +13489,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-scale-barding <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-scale-barding)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13425,7 +13498,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-chain-barding <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-chain-barding)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13434,7 +13507,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-plate-barding <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-plate-barding)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13443,7 +13516,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-cavalier <= research-available)
 =>
     (set-goal bt-research-stable-failure-backoff-goal ri-cavalier)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-stable-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
 )
 
@@ -13452,7 +13525,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-paladin <= research-available)
 =>
     (set-goal bt-research-stable-failure-backoff-goal ri-paladin)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-stable-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-stable-claim-goal 0)
 )
 
@@ -13461,7 +13534,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-arbalest <= research-available)
 =>
     (set-goal bt-research-archery-range-failure-backoff-goal ri-arbalest)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-archery-range-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
@@ -13473,7 +13546,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-logistica <= research-available)
 =>
     (set-goal bt-research-castle-failure-backoff-goal ri-logistica)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
     (set-goal bt-research-cataphract-package-goal 0)
 )
@@ -13483,7 +13556,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-elite-cataphract <= research-available)
 =>
     (set-goal bt-research-castle-failure-backoff-goal ri-elite-cataphract)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-castle-claim-goal 0)
     (set-goal bt-research-cataphract-package-goal 0)
 )
@@ -13495,7 +13568,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-pikeman <= research-available)
 =>
     (set-goal bt-research-barracks-failure-backoff-goal ri-pikeman)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-barracks-claim-goal 0)
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
@@ -13508,7 +13581,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-gold-mining <= research-available)
 =>
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-mining)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
@@ -13520,7 +13593,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-double-bit-axe <= research-available)
 =>
     (set-goal bt-research-lumber-camp-failure-backoff-goal ri-double-bit-axe)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-lumber-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-lumber-camp-claim-goal 0)
 )
 
@@ -13532,7 +13605,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-elite-skirmisher <= research-available)
 =>
     (set-goal bt-research-archery-range-failure-backoff-goal ri-elite-skirmisher)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-archery-range-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-archery-range-claim-goal 0)
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
@@ -13544,7 +13617,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-plate-mail <= research-available)
 =>
     (set-goal bt-research-blacksmith-failure-backoff-goal ri-plate-mail)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-blacksmith-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-blacksmith-claim-goal 0)
 )
 
@@ -13556,7 +13629,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-stone-mining <= research-available)
 =>
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-mining)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
@@ -13568,7 +13641,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (up-research-status c: ri-stone-shaft-mining <= research-available)
 =>
     (set-goal bt-research-mining-camp-failure-backoff-goal ri-stone-shaft-mining)
-    (enable-timer bt-research-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
