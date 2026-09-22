@@ -13025,7 +13025,7 @@ camel-line < bt-camel-target-1)))))
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
 
-; Archery Range retry budgets reset when their operational reason disappears.
+; Archery Range package state resets from completion, demand loss, or capability loss. Failed starts use bounded cooldown only.
 
 (defrule
     (up-compare-goal bt-research-archery-range-claim-goal != 0)
