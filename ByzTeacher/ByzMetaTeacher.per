@@ -4414,7 +4414,7 @@
     (current-age == castle-age)
     (goal bt-imperial-prereq-failure-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
-    (building-type-count-total siege-workshop >= 1)
+    (building-type-count siege-workshop >= 1)
     (not (can-research-with-escrow imperial-age))
     (building-type-count-total university < 1)
     (building-type-count-total monastery < 1)
@@ -4429,7 +4429,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-university-claim)
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
 =>
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (disable-timer bt-imperial-prereq-backoff-timer)
@@ -4441,9 +4441,13 @@
 ; A timed-out University foundation may finish after the watchdog
 ; released the mutex. Reset retry history without touching a newer claim.
 (defrule
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
     (up-compare-goal bt-imperial-prereq-retry-goal >= 1)
     (goal bt-imperial-prereq-failure-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
 =>
     (disable-timer bt-imperial-prereq-backoff-timer)
     (set-goal bt-imperial-prereq-backoff-goal 0)
@@ -4470,6 +4474,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (up-pending-objects c: university == 0)
     (up-compare-goal bt-imperial-prereq-retry-goal >= 4)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
 =>
@@ -4486,7 +4491,10 @@
 (defrule
     (or
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
-        (strategic-number sn-resource-control == bt-imperial-university-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-pending-objects c: university == 0)
+        )
     )
     (goal bt-imperial-prereq-retry-goal 3)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
@@ -4501,7 +4509,10 @@
 (defrule
     (or
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
-        (strategic-number sn-resource-control == bt-imperial-university-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-pending-objects c: university == 0)
+        )
     )
     (goal bt-imperial-prereq-retry-goal 2)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
@@ -4516,7 +4527,10 @@
 (defrule
     (or
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
-        (strategic-number sn-resource-control == bt-imperial-university-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-pending-objects c: university == 0)
+        )
     )
     (goal bt-imperial-prereq-retry-goal 1)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
@@ -4531,7 +4545,10 @@
 (defrule
     (or
         (strategic-number sn-resource-control == bt-imperial-siege-claim)
-        (strategic-number sn-resource-control == bt-imperial-university-claim)
+        (and
+            (strategic-number sn-resource-control == bt-imperial-university-claim)
+            (up-pending-objects c: university == 0)
+        )
     )
     (goal bt-imperial-prereq-retry-goal 0)
     (timer-triggered bt-imperial-prereq-watchdog-timer)
@@ -7072,7 +7089,7 @@
     (goal retreat-now-goal 0)
     (not (town-under-attack))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
     (up-research-status c: ri-ballistics == research-available)
 =>
     (set-goal bt-scorpion-ballistics-demand-goal 1)
@@ -7101,7 +7118,7 @@
 (defrule
     (goal bt-scorpion-ballistics-demand-goal 1)
     (current-age >= castle-age)
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-ballistics)
 =>
@@ -7287,7 +7304,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-bombard-university-claim)
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
 =>
     (disable-timer bt-bombard-university-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
@@ -7295,6 +7312,7 @@
 
 (defrule
     (strategic-number sn-resource-control == bt-bombard-university-claim)
+    (up-pending-objects c: university == 0)
     (timer-triggered bt-bombard-university-watchdog-timer)
 =>
     (disable-timer bt-bombard-university-watchdog-timer)
@@ -7307,7 +7325,7 @@
 (defrule
     (goal bt-bombard-cannon-demand-goal 1)
     (current-age >= imperial-age)
-    (building-type-count-total university >= 1)
+    (building-type-count university >= 1)
     (not (goal bt-cataphract-demand-goal 1))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (strategic-number sn-resource-control == 0)
