@@ -8329,6 +8329,16 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 (defrule
     (goal bt-university-demand-goal 1)
+    (strategic-number sn-resource-control != bt-university-claim)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+=>
+    (disable-timer bt-university-backoff-timer)
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-retry-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+)
+(defrule
+    (goal bt-university-demand-goal 1)
     (goal bt-university-backoff-goal 0)
     (up-compare-goal bt-university-retry-goal < 4)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
