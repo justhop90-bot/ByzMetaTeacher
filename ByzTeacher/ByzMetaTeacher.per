@@ -9821,8 +9821,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ;---------------------------------------------------------------
 ; 18B. UNIVERSITY CAPABILITY
 ;---------------------------------------------------------------
-; Ballistics is a Castle-age University dependency. Chemistry already
-; owns its own University capability lifecycle below.
+; University is a shared capability provider for the live Castle/Imperial
+; research packages that explicitly require this building.
 (defrule
     (goal bt-university-demand-goal 0)
     (current-age >= castle-age)
