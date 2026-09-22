@@ -946,7 +946,7 @@
 ; One TC requires 18 farms; two or more require 20 farms.
 (defrule
     (goal bt-mill-target-goal 1)
-    (building-type-count-total mill >= 1)
+    (building-type-count mill >= 1)
     (building-type-count town-center == 1)
     (building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)
 =>
@@ -955,7 +955,7 @@
 
 (defrule
     (goal bt-mill-target-goal 1)
-    (building-type-count-total mill >= 1)
+    (building-type-count mill >= 1)
     (building-type-count town-center >= 2)
     (building-type-count-total farm >= bt-mill-second-farm-threshold-2tc)
 =>
