@@ -3098,8 +3098,10 @@
 ;
 ; Bow Saw safe delta = resources - (Imperial Age + Bow Saw).
 ; Stone Mining safe delta = resources - (Imperial Age + Stone Mining).
+; Response-tech deltas use the same obligation model for Scale Mail,
+; Chain Mail, Pikeman, and Elite Skirmisher.
 ;
-; Cost data is recalculated every pass. The four delta goals are persistent
+; Cost data is recalculated every pass. These delta goals are persistent
 ; derived witnesses consumed by the bank-prep exception rules below.
 (defrule
     (true)
