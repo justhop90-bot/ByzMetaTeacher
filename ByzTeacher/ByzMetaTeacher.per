@@ -7645,8 +7645,8 @@
 ;---------------------------------------------------------------
 ; 18B. MILITARY SIEGE WORKSHOP CAPABILITY
 ;---------------------------------------------------------------
-; Persistent Mangonel demand is strategic state. This block closes only
-; the missing Workshop capability/construction edge.
+; Any siege demand can own the Workshop capability edge. This block is the
+; single construction provider for every current Workshop consumer.
 ;
 ; The military Workshop claim is transient execution state. It uses the
 ; existing resource mutex but never reuses the Imperial prerequisite claim,
@@ -7659,7 +7659,9 @@
     (or
         (goal bt-mangonel-demand-goal 1)
         (goal bt-scorpion-demand-goal 1)
+        (goal bt-onager-demand-goal 1)
         (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-ram-demand-goal 1)
         (goal bt-siege-tower-demand-goal 1)
     )
     (up-compare-goal bt-military-siege-workshop-retry-goal < 4)
@@ -7667,9 +7669,10 @@
     (building-type-count siege-workshop == 0)
     (up-pending-objects c: siege-workshop == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build siege-workshop)
+    (can-build-with-escrow siege-workshop)
 =>
     (set-strategic-number sn-resource-control bt-military-siege-workshop-claim)
+    (release-escrow wood)
     (enable-timer bt-military-siege-workshop-watchdog-timer bt-military-siege-workshop-watchdog-seconds)
     (build siege-workshop)
 )
@@ -7703,8 +7706,14 @@
 ; A pending foundation is intentionally left alone until completion or the
 ; watchdog resolves the active construction attempt.
 (defrule
+    ; No Workshop demand owner remains.  Only then may a stale construction
+    ; retry ladder be discarded.
     (goal bt-mangonel-demand-goal 0)
+    (goal bt-scorpion-demand-goal 0)
+    (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-ram-demand-goal 0)
+    (goal bt-siege-tower-demand-goal 0)
     (strategic-number sn-resource-control != bt-military-siege-workshop-claim)
     (up-pending-objects c: siege-workshop == 0)
 =>
@@ -7714,8 +7723,8 @@
 )
 
 ; Terminal military Workshop construction timeout. Retry 4 is the bounded
-; terminal state for this execution edge; no separate failure subsystem is
-; needed because Mangonel demand remains the strategic owner.
+; terminal state for this execution edge; strategic demand owners remain
+; responsible for deciding whether another attempt is worthwhile.
 (defrule
     (strategic-number sn-resource-control == bt-military-siege-workshop-claim)
     (up-compare-goal bt-military-siege-workshop-retry-goal >= 4)
