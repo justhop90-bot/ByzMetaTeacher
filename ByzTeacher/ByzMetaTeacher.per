@@ -8564,6 +8564,24 @@
 ; 22. CASTLE / IMPERIAL PRIMARY MILITARY RESEARCH
 ;================================================================
 
+; Feudal Scale Mail belongs to a real Spear response package.
+; It waits for both strategic demand and an actual six-Spear package,
+; avoiding a blind Feudal food spend on incidental Spearmen.
+(defrule
+    (current-age == feudal-age)
+    (building-type-count blacksmith >= 1)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (unit-type-count-total spearman-line >= bt-spear-target-1)
+    (up-research-status c: ri-scale-mail < research-pending)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-scale-mail)
+=>
+    (set-strategic-number sn-resource-control ri-scale-mail)
+    (release-escrow food)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-scale-mail)
+)
+
 ; Crossbow support: Fletching -> Crossbow -> Bodkin.
 ; Feudal ranged packages earn Fletching before Castle transition.
 ; Standing targets identify the intended ranged role; the queue-inclusive
