@@ -482,8 +482,9 @@
 =>
     (set-goal bt-military-siege-workshop-retry-goal 0)
     (set-goal bt-military-siege-workshop-backoff-goal 0)
+    (disable-timer bt-military-siege-workshop-watchdog-timer)
+    (disable-timer bt-military-siege-workshop-backoff-timer)
     (disable-self)
-)
 )
 
 (defrule
