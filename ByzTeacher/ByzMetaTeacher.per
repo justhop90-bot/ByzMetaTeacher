@@ -262,6 +262,53 @@
 (defconst bt-mangonel-demand-goal 535)
 (defconst bt-scorpion-demand-goal 545)
 (defconst bt-bombard-cannon-demand-goal 541)
+; Siege Tower wall-crossing project state.
+; One project owns one finite wall-crossing attempt.  The existing attack
+; system remains the strategic authority; this state machine owns only the
+; tower, wall target, payload, execution watchdogs, and bounded retries.
+(defconst bt-siege-tower-demand-goal 556)
+(defconst bt-siege-tower-stage-goal 557)
+(defconst bt-siege-tower-wall-search-state-goal 558)
+(defconst bt-siege-tower-wall-point-goal 562)
+(defconst bt-siege-tower-wall-attempt-goal 564)
+(defconst bt-siege-tower-failure-goal 565)
+(defconst bt-siege-tower-failure-retry-goal 566)
+(defconst bt-siege-tower-cycle-complete-goal 567)
+(defconst bt-siege-tower-execution-search-state-goal 568)
+
+(defconst bt-siege-tower-stage-idle 0)
+(defconst bt-siege-tower-stage-wall-probe 1)
+(defconst bt-siege-tower-stage-tower-pending 2)
+(defconst bt-siege-tower-stage-payload-ready 3)
+(defconst bt-siege-tower-stage-garrisoning 4)
+(defconst bt-siege-tower-stage-loaded 5)
+(defconst bt-siege-tower-stage-approach 6)
+(defconst bt-siege-tower-stage-unload-pending 7)
+(defconst bt-siege-tower-stage-assault 8)
+(defconst bt-siege-tower-stage-retry-wait 9)
+
+(defconst bt-siege-tower-wall-class 927)
+(defconst bt-siege-tower-payload-min 6)
+(defconst bt-siege-tower-max-wall-attempts 3)
+(defconst bt-siege-tower-failure-retry-cap 3)
+(defconst bt-siege-tower-wall-probe-interval 60)
+(defconst bt-siege-tower-retry-interval 20)
+(defconst bt-siege-tower-tower-watchdog-timer 28)
+(defconst bt-siege-tower-garrison-watchdog-timer 29)
+(defconst bt-siege-tower-approach-watchdog-timer 30)
+(defconst bt-siege-tower-unload-watchdog-timer 31)
+(defconst bt-siege-tower-assault-watchdog-timer 32)
+(defconst bt-siege-tower-retry-timer 33)
+(defconst bt-siege-tower-tower-watchdog-seconds 120)
+(defconst bt-siege-tower-garrison-watchdog-seconds 30)
+(defconst bt-siege-tower-approach-watchdog-seconds 45)
+(defconst bt-siege-tower-unload-watchdog-seconds 30)
+(defconst bt-siege-tower-assault-watchdog-seconds 45)
+(defconst bt-siege-tower-wall-no-target-failure 1)
+(defconst bt-siege-tower-tower-timeout-failure 2)
+(defconst bt-siege-tower-garrison-timeout-failure 3)
+(defconst bt-siege-tower-approach-exhausted-failure 4)
+(defconst bt-siege-tower-unload-exhausted-failure 5)
 (defconst bt-onager-demand-goal 540)
 (defconst bt-ram-demand-goal 539)
 (defconst bt-military-siege-workshop-retry-goal 537)
@@ -537,6 +584,15 @@
     (set-goal bt-military-siege-workshop-backoff-goal 0)
     (set-goal bt-ram-demand-goal 0)
     (set-goal bt-scorpion-demand-goal 0)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-wall-search-state-goal 0)
+    (set-goal bt-siege-tower-wall-point-goal 0)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-failure-retry-goal 0)
+    (set-goal bt-siege-tower-cycle-complete-goal 0)
+    (set-goal bt-siege-tower-execution-search-state-goal 0)
     (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
     (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
@@ -544,6 +600,14 @@
     (disable-timer bt-bombard-trebuchet-target-timer)
     (disable-timer bt-military-siege-workshop-watchdog-timer)
     (disable-timer bt-military-siege-workshop-backoff-timer)
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
     (disable-self)
 )
 
@@ -4741,6 +4805,20 @@
     (train battering-ram-line)
 )
 
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count-total siege-tower < 1)
+    (can-train-with-escrow siege-tower)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (train siege-tower)
+)
+
 ; Scout and Cataphract production are explicit capability exceptions;
 ; the composition goals below own the remaining military queue.
 ;
@@ -6854,6 +6932,464 @@
 )
 
 ;---------------------------------------------------------------
+; 18B. SIEGE TOWER WALL-CROSSING PROJECT
+;---------------------------------------------------------------
+; This is a finite transport project, not a second attack controller.
+;
+; Lifecycle:
+;   demand -> wall probe -> wall selected -> tower pending
+;   -> payload ready -> garrisoning -> loaded -> wall approach
+;   -> unload pending -> assault -> complete/reset.
+;
+; The wall search uses class 927.  The selected wall's point is persisted
+; because later DUC rules are allowed to reset the search lists.
+;
+; The native Siege Tower wall action is an attack/default command against
+; the wall.  Manual ungarrison is NOT used for the crossing itself.
+;
+; up-garrison is deliberately capped at six units through the existing
+; garrison control strategic numbers.  Those values are restored to 0
+; immediately after the operation, because this controller has no other
+; owner for those settings.
+;
+; Wall-specific failures may advance to another selected wall.  Tower and
+; garrison execution failures use a bounded retry ladder.  Three exhausted
+; failures terminate this project for the current attack cycle rather than
+; allowing a broken tower to become a permanent DUC loop.
+
+; Open one wall-crossing project from an active attack cycle.
+(defrule
+    (goal bt-siege-tower-demand-goal 0)
+    (goal bt-siege-tower-cycle-complete-goal 0)
+    (goal bt-siege-tower-failure-goal 0)
+    (goal attack-goal 1)
+    (current-age >= castle-age)
+    (players-building-count target-player > 0)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (unit-type-count infantry-class >= bt-siege-tower-payload-min)
+    (up-compare-goal bt-standing-army-deficit-goal <= 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (goal bt-counter-veto-goal 0)
+    (goal bt-mangonel-demand-goal 0)
+    (goal bt-onager-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-ram-demand-goal 0)
+    (goal bt-scorpion-demand-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+=>
+    (set-goal bt-siege-tower-demand-goal 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+    (set-goal bt-siege-tower-failure-retry-goal 0)
+)
+
+; Strategic invalidation owns the abort edge.  Do not tear down a valid
+; payload merely because transient production conditions changed later.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (or
+        (goal attack-goal 0)
+        (players-building-count target-player == 0)
+        (not (player-in-game target-player))
+        (goal retreat-now-goal 1)
+        (town-under-attack)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (goal bt-mangonel-demand-goal 1)
+        (goal bt-onager-demand-goal 1)
+        (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-ram-demand-goal 1)
+        (goal bt-scorpion-demand-goal 1)
+    )
+=>
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+)
+
+; Wall probe. The focus player is the already-selected attack target.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-remote c: bt-siege-tower-wall-class c: 40)
+    (up-get-search-state bt-siege-tower-wall-search-state-goal)
+)
+
+; Pick a bounded wall candidate and persist its point. The index stored in
+; bt-siege-tower-wall-attempt-goal advances after failed wall approaches.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal > 0)
+    (up-compare-goal bt-siege-tower-wall-search-state-goal c:>= bt-siege-tower-wall-attempt-goal)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts)
+=>
+    (up-set-target-object search-remote g: bt-siege-tower-wall-attempt-goal)
+    (up-get-point position-object bt-siege-tower-wall-point-goal)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (enable-timer bt-siege-tower-tower-watchdog-timer bt-siege-tower-tower-watchdog-seconds)
+)
+
+; No currently usable wall at the current bounded index. Re-probe after a
+; short interval so a newly sighted wall can become actionable.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+    (or
+        (up-compare-goal bt-siege-tower-wall-search-state-goal == 0)
+        (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts)
+        (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-wall-search-state-goal)
+    )
+=>
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-wall-no-target-failure)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-wall-probe-interval)
+)
+
+; A real tower is the capability witness. Queued towers do not satisfy this
+; transition; unit-type-count-total is used only by the production edge.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (unit-type-count siege-tower >= 1)
+=>
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
+)
+
+; Tower production failure is bounded separately from wall geometry failure.
+(defrule
+    (timer-triggered bt-siege-tower-tower-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (up-compare-goal bt-siege-tower-failure-retry-goal < bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-tower-timeout-failure)
+    (up-modify-goal bt-siege-tower-failure-retry-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-wall-probe-interval)
+)
+
+; Third failed tower acquisition is terminal for this attack cycle.
+(defrule
+    (timer-triggered bt-siege-tower-tower-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
+    (up-compare-goal bt-siege-tower-failure-retry-goal >= bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-tower-timeout-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Payload is valid only when enough infantry exists and the standing army
+; can spare the complete six-unit package without violating its floor.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-payload-ready)
+    (unit-type-count infantry-class >= bt-siege-tower-payload-min)
+    (up-compare-goal bt-standing-army-deficit-goal <= 0)
+    (soldier-count >= 6)
+=>
+    (set-strategic-number sn-number-garrison-units bt-siege-tower-payload-min)
+    (set-strategic-number sn-maximum-garrison-fill bt-siege-tower-payload-min)
+    (up-garrison siege-tower c: infantry-class)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-garrisoning)
+    (enable-timer bt-siege-tower-garrison-watchdog-timer bt-siege-tower-garrison-watchdog-seconds)
+)
+
+; Verify the native garrison operation produced a real loaded tower.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-garrisoning)
+=>
+    (up-full-reset-search)
+    (up-filter-garrison c: -1 c: bt-siege-tower-payload-min)
+    (up-find-local c: siege-tower c: 1)
+    (up-get-search-state bt-siege-tower-execution-search-state-goal)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-garrisoning)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
+=>
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-loaded)
+)
+
+; Failed garrisoning is retried through the project failure ladder.
+(defrule
+    (timer-triggered bt-siege-tower-garrison-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-garrisoning)
+    (up-compare-goal bt-siege-tower-failure-retry-goal < bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-garrison-timeout-failure)
+    (up-modify-goal bt-siege-tower-failure-retry-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-wall-probe-interval)
+)
+
+(defrule
+    (timer-triggered bt-siege-tower-garrison-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-garrisoning)
+    (up-compare-goal bt-siege-tower-failure-retry-goal >= bt-siege-tower-failure-retry-cap)
+=>
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-garrison-timeout-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Loaded tower -> wall approach. Rebuild the DUC lists from the persisted
+; wall point because other controller DUC consumers are allowed to reset them.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-loaded)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-local c: siege-tower c: 1)
+    (up-set-target-point bt-siege-tower-wall-point-goal)
+    (up-filter-distance c: -1 c: 4)
+    (up-find-remote c: bt-siege-tower-wall-class c: 4)
+    (up-get-search-state bt-siege-tower-execution-search-state-goal)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
+)
+
+; Attack the selected wall. For a Siege Tower this is the native wall-crossing
+; behavior: the tower travels to the wall and unloads its payload across it.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
+=>
+    (up-target-objects 0 action-default -1 -1)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (enable-timer bt-siege-tower-approach-watchdog-timer bt-siege-tower-approach-watchdog-seconds)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+)
+
+; A wall target disappeared or was not reusable. Advance to the next wall.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal == 0)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+=>
+    (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
+)
+
+; If no replacement wall remains, terminate the project for this attack cycle.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-approach)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal == 0)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+=>
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-approach-exhausted-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Approach watchdog: if the loaded tower never reaches the selected wall,
+; move on to the next candidate rather than repeatedly issuing the same order.
+(defrule
+    (timer-triggered bt-siege-tower-approach-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+=>
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
+)
+
+(defrule
+    (timer-triggered bt-siege-tower-approach-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+=>
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-approach-exhausted-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Check whether the loaded tower has actually arrived at the wall.  Arrival
+; alone does not count as crossing; that is the next unload-pending state.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+=>
+    (up-full-reset-search)
+    (up-set-target-point bt-siege-tower-wall-point-goal)
+    (up-filter-distance c: -1 c: 8)
+    (up-find-local c: siege-tower c: 1)
+    (up-get-search-state bt-siege-tower-execution-search-state-goal)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
+=>
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (enable-timer bt-siege-tower-unload-watchdog-timer bt-siege-tower-unload-watchdog-seconds)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+)
+
+; Once the native wall-target behavior empties the tower, the crossing action
+; has completed.  Stage 8 then gives the normal attack system time to own the
+; delivered infantry.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+=>
+    (up-full-reset-search)
+    (up-set-target-point bt-siege-tower-wall-point-goal)
+    (up-filter-distance c: -1 c: 8)
+    (up-filter-garrison c: 0 c: 0)
+    (up-find-local c: siege-tower c: 1)
+    (up-get-search-state bt-siege-tower-execution-search-state-goal)
+)
+
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-unload-pending)
+    (up-compare-goal bt-siege-tower-execution-search-state-goal >= 1)
+=>
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (enable-timer bt-siege-tower-assault-watchdog-timer bt-siege-tower-assault-watchdog-seconds)
+)
+
+; Unload watchdog: try another wall if the tower reached the first wall but
+; never completed its native cross-wall unload.
+(defrule
+    (timer-triggered bt-siege-tower-unload-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal < bt-siege-tower-max-wall-attempts - 1)
+=>
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (up-modify-goal bt-siege-tower-wall-attempt-goal g:+ 1)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+    (enable-timer bt-siege-tower-retry-timer bt-siege-tower-retry-interval)
+)
+
+(defrule
+    (timer-triggered bt-siege-tower-unload-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (up-compare-goal bt-siege-tower-wall-attempt-goal >= bt-siege-tower-max-wall-attempts - 1)
+=>
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (set-goal bt-siege-tower-failure-goal bt-siege-tower-unload-exhausted-failure)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; A delivered payload is now owned by the ordinary attack lifecycle.
+(defrule
+    (timer-triggered bt-siege-tower-assault-watchdog-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+=>
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Target collapse ends the project early.
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-assault)
+    (players-building-count target-player == 0)
+=>
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-cycle-complete-goal 1)
+)
+
+; Retry/re-probe transition. All retry paths return to wall identification,
+; which is the only stage allowed to establish a fresh wall point.
+(defrule
+    (timer-triggered bt-siege-tower-retry-timer)
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-siege-tower-stage-goal bt-siege-tower-stage-retry-wait)
+=>
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-wall-probe)
+)
+
+; The attack cycle itself owns the final reset. This releases cycle-complete
+; so the next attack may create a fresh project.
+(defrule
+    (goal attack-goal 0)
+    (or
+        (goal bt-siege-tower-demand-goal 1)
+        (up-compare-goal bt-siege-tower-stage-goal > 0)
+        (up-compare-goal bt-siege-tower-cycle-complete-goal == 1)
+    )
+=>
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-failure-retry-goal 0)
+    (set-goal bt-siege-tower-cycle-complete-goal 0)
+)
+ 
+;---------------------------------------------------------------
 ; 18B. MILITARY SIEGE WORKSHOP CAPABILITY
 ;---------------------------------------------------------------
 ; Persistent Mangonel demand is strategic state. This block closes only
@@ -6871,6 +7407,7 @@
         (goal bt-mangonel-demand-goal 1)
         (goal bt-scorpion-demand-goal 1)
         (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-siege-tower-demand-goal 1)
     )
     (up-compare-goal bt-military-siege-workshop-retry-goal < 4)
     (goal bt-military-siege-workshop-backoff-goal 0)
