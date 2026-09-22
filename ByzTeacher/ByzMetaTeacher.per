@@ -464,6 +464,14 @@
 (defconst bt-camel-target-1 4)
 (defconst bt-camel-target-2 8)
 
+; Cataphract anti-infantry response tiers.
+(defconst bt-cataphract-enemy-threshold-1 6)
+(defconst bt-cataphract-enemy-threshold-2 10)
+(defconst bt-cataphract-enemy-threshold-3 20)
+(defconst bt-cataphract-target-1 6)
+(defconst bt-cataphract-target-2 8)
+(defconst bt-cataphract-target-3 12)
+
 ; Castle-age primary military role targets.
 (defconst bt-standing-knight-target-goal 577)
 (defconst bt-standing-crossbow-target-goal 578)
@@ -620,6 +628,7 @@
     (set-goal bt-cavalier-demand-goal 0)
     (set-goal bt-paladin-demand-goal 0)
     (set-goal bt-arbalest-demand-goal 0)
+    (set-goal bt-cataphract-demand-goal 0)
     (disable-self)
 )
 
@@ -1571,7 +1580,6 @@
     (set-goal bt-ranged-counter-level-goal 0)
     (set-goal bt-spear-counter-level-goal 0)
     (set-goal bt-noncav-cavalry-level-goal 0)
-    (set-goal bt-cataphract-demand-goal 0)
 )
 (defrule
     (or
@@ -2015,30 +2023,69 @@
 ; 13G. CATAPHRACT DEMAND
 ;================================================================
 ;
-; Cataphract demand is a strategic decision, not enemy observation.
-; BOOM is the existing safe economic Castle+ posture. A six-unit
-; queue-inclusive Cataphract target is controller policy.
+; Cataphract demand is a strategic response package. It persists until
+; the current enemy tier is satisfied and its required premium technology
+; is complete. Queue-inclusive totals drive execution; actual completed
+; Cataphracts drive expensive upgrade qualification.
 (defrule
     (current-age >= imperial-age)
-    (goal strategy-goal bt-strategy-boom)
-    (unit-type-count-total cataphract-line < 6)
     (or
-        (players-unit-type-count any-enemy militia-line >= 6)
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (or
         (and
-            (players-unit-type-count any-enemy militia-line >= 4)
-            (goal bt-spear-threat-goal 1)
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-3)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-2)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-1)
         )
     )
 =>
     (set-goal bt-cataphract-demand-goal 1)
 )
 
-; Demand lifecycle release. Do not cancel already queued units.
+; Demand stays live through a required premium upgrade. This prevents the
+; 10/20-unit package from self-canceling when queue-inclusive production
+; reaches its target before Logistica or Elite Cataphract can claim.
 (defrule
     (goal bt-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control != ri-logistica)
+    (strategic-number sn-resource-control != ri-elite-cataphract)
     (or
-        (not (goal strategy-goal bt-strategy-boom))
-        (unit-type-count-total cataphract-line >= 6)
+        (current-age < imperial-age)
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-flush)
+            )
+        )
+        (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-1)
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2)
+            (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line >= bt-cataphract-target-2)
+            (up-research-status c: ri-logistica == research-complete)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line >= bt-cataphract-target-3)
+            (up-research-status c: ri-logistica == research-complete)
+            (up-research-status c: ri-elite-cataphract == research-complete)
+        )
     )
 =>
     (set-goal bt-cataphract-demand-goal 0)
@@ -4925,18 +4972,34 @@
 ;
 ; Cataphract production consumes the explicit strategic demand.
 ; The Castle is the production capability; no Stable is required.
-; unit-type-count-total is queue-inclusive.
+; unit-type-count-total is queue-inclusive and follows the active enemy tier.
 (defrule
     (goal bt-cataphract-demand-goal 1)
     (strategic-number sn-resource-control == 0)
     (building-type-count castle >= 1)
-    (unit-type-count-total cataphract-line < 6)
-    (can-train cataphract-line)
+    (or
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-3)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-2)
+        )
+        (and
+            (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1)
+            (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2)
+            (unit-type-count-total cataphract-line < bt-cataphract-target-1)
+        )
+    )
+    (can-train-with-escrow cataphract-line)
 =>
+    (release-escrow food)
+    (release-escrow gold)
     (train cataphract-line)
 )
 
-;---------------------------------------------------------------
 ; 16B.1. MANGONEL RESPONSE PRODUCTION
 ;---------------------------------------------------------------
 ; Persistent demand is the strategic authority; this rule is only the
@@ -8747,7 +8810,6 @@
     (up-research-status c: ri-crossbow == research-complete)
     (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
     (up-research-status c: ri-arbalest < research-pending)
-    (goal bt-cataphract-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -8764,7 +8826,6 @@
         (up-research-status c: ri-crossbow != research-complete)
         (unit-type-count-total crossbowman < bt-crossbow-target-mature)
         (not (up-research-status c: ri-arbalest < research-pending))
-        (goal bt-cataphract-demand-goal 1)
         (goal bt-bombard-cannon-demand-goal 1)
         (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
         (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
@@ -8793,6 +8854,64 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-arbalest-demand-goal 0)
+)
+
+; Cataphract premium research. Actual completed Cataphracts qualify the
+; upgrade; queue-inclusive totals remain the production/completion witness.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2)
+    (unit-type-count cataphract-line >= bt-cataphract-target-1)
+    (up-research-status c: ri-logistica < research-pending)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-logistica)
+=>
+    (set-strategic-number sn-resource-control ri-logistica)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-logistica)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-logistica)
+    (up-research-status c: ri-logistica == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count-total castle >= 1)
+    (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
+    (unit-type-count cataphract-line >= bt-cataphract-target-2)
+    (up-research-status c: ri-logistica == research-complete)
+    (up-research-status c: ri-elite-cataphract < research-pending)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-elite-cataphract)
+=>
+    (set-strategic-number sn-resource-control ri-elite-cataphract)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-elite-cataphract)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-elite-cataphract)
+    (up-research-status c: ri-elite-cataphract == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ;================================================================
@@ -9321,6 +9440,26 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-arbalest-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; CATAPHRACT PREMIUM RESEARCH WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-logistica)
+    (up-research-status c: ri-logistica <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-elite-cataphract)
+    (up-research-status c: ri-elite-cataphract <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
 )
 
 ;----------------------------------------------------------------
