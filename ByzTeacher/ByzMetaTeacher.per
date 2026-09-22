@@ -4663,7 +4663,16 @@
 (defrule
     (goal bt-crossbow-demand-goal 0)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
-    (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+    (or
+        (and
+            (up-research-status c: ri-arbalest != research-complete)
+            (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+        )
+        (and
+            (up-research-status c: ri-arbalest == research-complete)
+            (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
+        )
+    )
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-any-threat-goal 1))
 =>
@@ -4677,7 +4686,14 @@
         (current-age < castle-age)
         (goal bt-any-threat-goal 1)
         (up-compare-goal bt-standing-crossbow-target-goal == 0)
-        (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+        (and
+            (up-research-status c: ri-arbalest != research-complete)
+            (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+        )
+        (and
+            (up-research-status c: ri-arbalest == research-complete)
+            (unit-type-count-total arbalester >= bt-standing-crossbow-target-goal)
+        )
         (not (goal unit-goal crossbowman))
     )
 =>
@@ -4834,7 +4850,14 @@
         (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
         (unit-type-count-total archer-line < bt-standing-archer-target-goal)
         (unit-type-count-total knight-line < bt-standing-knight-target-goal)
-        (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+        (and
+            (up-research-status c: ri-arbalest != research-complete)
+            (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
+        )
+        (and
+            (up-research-status c: ri-arbalest == research-complete)
+            (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
+        )
     )
 =>
     (set-goal bt-standing-army-demand-goal 1)
@@ -4855,7 +4878,16 @@
             (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal)
             (unit-type-count-total archer-line >= bt-standing-archer-target-goal)
             (unit-type-count-total knight-line >= bt-standing-knight-target-goal)
-            (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+            (or
+                (and
+                    (up-research-status c: ri-arbalest != research-complete)
+                    (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+                )
+                (and
+                    (up-research-status c: ri-arbalest == research-complete)
+                    (unit-type-count-total arbalester >= bt-standing-crossbow-target-goal)
+                )
+            )
         )
     )
 =>
@@ -5197,6 +5229,7 @@
     (up-research-status c: ri-crossbow == research-complete)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (strategic-number sn-resource-control == 0)
+    (up-research-status c: ri-arbalest != research-complete)
     (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
     (can-train crossbowman)
     (up-get-fact building-type-count-total archery-range bt-primary-capacity-scratch-goal)
