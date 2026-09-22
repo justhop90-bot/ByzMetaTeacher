@@ -4084,8 +4084,23 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (set-goal bt-blacksmith-repair-failure-goal 1)
 )
 
-; The shared Castle-prerequisite backoff timer is already part of the
-; controller, so repair retries do not introduce another timer resource.
+; Terminal failure is a cooldown witness, not a permanent death state.
+; Re-arm automatically once the world can actually fund another Blacksmith.
+(defrule
+    (current-age >= castle-age)
+    (goal bt-blacksmith-repair-failure-goal 1)
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (not (town-under-attack))
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow blacksmith)
+=>
+    (set-goal bt-blacksmith-repair-failure-goal 0)
+    (set-goal bt-blacksmith-repair-retry-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+)
+
+; Repair backoff is an isolated cooldown; it never claims the mutex.
 (defrule
     (goal bt-blacksmith-repair-backoff-goal 1)
     (timer-triggered bt-blacksmith-repair-backoff-timer)
