@@ -903,80 +903,341 @@
 )
 
 ;================================================================
+
 ; RESEARCH PACKAGE PRIORITY
 ;================================================================
+; Package goal value:
+;   0     = inactive
+;   ri-*  = persistent technology cursor
+; The cursor follows the existing Shadow progression-pause idea without
+; introducing a universal scheduler. Existing research rules remain the
+; executor and retain escrow, age, prerequisite, and failure gates.
+
+; CAVALRY COUNTER PACKAGE
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
-    (or
-        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-        (goal bt-halberdier-demand-goal 1)
-    )
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
-    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (up-research-status c: ri-scale-mail < research-complete)
 =>
-    (set-goal bt-research-cavalry-counter-package-goal 1)
+    (set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)
 )
 (defrule
-    (goal bt-research-cavalry-counter-package-goal 1)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (up-research-status c: ri-scale-mail == research-complete)
+    (up-research-status c: ri-chain-mail < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (up-research-status c: ri-scale-mail == research-complete)
+    (up-research-status c: ri-chain-mail == research-complete)
+    (current-age >= castle-age)
+    (up-research-status c: ri-pikeman < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-pikeman)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-halberdier-demand-goal 1)
+    (up-research-status c: ri-pikeman == research-complete)
+    (up-research-status c: ri-halberdier < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-halberdier)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+    (up-research-status c: ri-halberdier == research-complete)
+    (up-research-status c: ri-plate-mail < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
+    (up-research-status c: ri-scale-mail == research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+    (up-research-status c: ri-chain-mail == research-complete)
+    (current-age >= castle-age)
+    (up-research-status c: ri-pikeman < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-pikeman)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-pikeman)
+    (up-research-status c: ri-pikeman == research-complete)
+    (goal bt-halberdier-demand-goal 1)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-halberdier)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-halberdier)
+    (up-research-status c: ri-halberdier == research-complete)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+    (up-research-status c: ri-plate-mail < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+    (up-research-status c: ri-plate-mail == research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal != 0)
     (up-compare-goal bt-cavalry-counter-level-goal < 1)
     (goal bt-cavalry-threat-goal 0)
     (goal bt-halberdier-demand-goal 0)
 =>
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
+
+; RANGED COUNTER PACKAGE
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
-    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (up-research-status c: ri-fletching < research-complete)
 =>
-    (set-goal bt-research-ranged-counter-package-goal 1)
+    (set-goal bt-research-ranged-counter-package-goal ri-fletching)
 )
 (defrule
-    (goal bt-research-ranged-counter-package-goal 1)
-    (goal bt-ranged-threat-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 1)
+    (up-research-status c: ri-crossbow < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-crossbow)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+    (up-research-status c: ri-elite-skirmisher < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-crossbow == research-complete)
+    (up-research-status c: ri-bodkin-arrow < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (up-research-status c: ri-elite-skirmisher == research-complete)
+    (up-research-status c: ri-bracer < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bracer)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (goal bt-arbalest-demand-goal 1)
+    (up-research-status c: ri-arbalest < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-arbalest)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 1)
+    (up-research-status c: ri-crossbow < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-crossbow)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 0)
+    (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+    (up-research-status c: ri-elite-skirmisher < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-crossbow)
+    (up-research-status c: ri-crossbow == research-complete)
+    (up-research-status c: ri-bodkin-arrow < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher == research-complete)
+    (up-research-status c: ri-bracer < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bracer)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-bracer)
+    (up-research-status c: ri-bracer == research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
 (defrule
-    (goal bt-research-cataphract-package-goal 0)
-    (goal bt-cataphract-demand-goal 1)
-    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
-    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
 =>
-    (set-goal bt-research-cataphract-package-goal 1)
+    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 (defrule
-    (goal bt-research-cataphract-package-goal 1)
-    (goal bt-cataphract-demand-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-arbalest)
+    (up-research-status c: ri-arbalest == research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal != 0)
+    (goal bt-ranged-threat-goal 0)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+
+; CATAPHRACT PREMIUM PACKAGE
+(defrule
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-cataphract-demand-goal 1)
+    (up-research-status c: ri-logistica < research-complete)
+=>
+    (set-goal bt-research-cataphract-package-goal ri-logistica)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-cataphract-demand-goal 1)
+    (up-research-status c: ri-logistica == research-complete)
+    (up-research-status c: ri-elite-cataphract < research-complete)
+=>
+    (set-goal bt-research-cataphract-package-goal ri-elite-cataphract)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal ri-logistica)
+    (up-research-status c: ri-logistica == research-complete)
+    (up-research-status c: ri-elite-cataphract < research-complete)
+=>
+    (set-goal bt-research-cataphract-package-goal ri-elite-cataphract)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal ri-elite-cataphract)
+    (up-research-status c: ri-elite-cataphract == research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
 (defrule
-    (goal bt-research-siege-package-goal 0)
-    (or
-        (goal bt-mangonel-demand-goal 1)
-        (or
-            (goal bt-onager-demand-goal 1)
-            (or
-                (goal bt-bombard-cannon-demand-goal 1)
-                (or
-                    (goal bt-ram-demand-goal 1)
-                    (goal bt-scorpion-ballistics-demand-goal 1)
-                )
-            )
-        )
-    )
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
-    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (goal bt-research-cataphract-package-goal != 0)
+    (goal bt-cataphract-demand-goal 0)
 =>
-    (set-goal bt-research-siege-package-goal 1)
+    (set-goal bt-research-cataphract-package-goal 0)
+)
+
+; SIEGE ESCALATION PACKAGE
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-scorpion-ballistics-demand-goal 1)
+    (up-research-status c: ri-ballistics < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-ballistics)
 )
 (defrule
-    (goal bt-research-siege-package-goal 1)
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-research-status c: ri-chemistry < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-chemistry)
+)
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 1)
+    (up-research-status c: ri-chemistry == research-complete)
+    (up-research-status c: ri-onager < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-onager)
+)
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-bombard-cannon-demand-goal 1)
+    (up-research-status c: ri-chemistry < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-chemistry)
+)
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-ram-demand-goal 1)
+    (up-research-status c: ri-capped-ram < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-capped-ram)
+)
+(defrule
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-ram-demand-goal 1)
+    (up-research-status c: ri-capped-ram == research-complete)
+    (up-research-status c: ri-siege-ram < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-siege-ram)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-chemistry)
+    (up-research-status c: ri-chemistry == research-complete)
+    (goal bt-onager-demand-goal 1)
+    (up-research-status c: ri-onager < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-onager)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-capped-ram)
+    (up-research-status c: ri-capped-ram == research-complete)
+    (up-research-status c: ri-siege-ram < research-complete)
+=>
+    (set-goal bt-research-siege-package-goal ri-siege-ram)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-ballistics)
+    (up-research-status c: ri-ballistics == research-complete)
+    (goal bt-scorpion-ballistics-demand-goal 0)
+    (goal bt-onager-demand-goal 0)
+=>
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-chemistry)
+    (up-research-status c: ri-chemistry == research-complete)
+    (goal bt-onager-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+=>
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-onager)
+    (up-research-status c: ri-onager == research-complete)
+=>
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal ri-siege-ram)
+    (up-research-status c: ri-siege-ram == research-complete)
+=>
+    (set-goal bt-research-siege-package-goal 0)
+)
+(defrule
+    (goal bt-research-siege-package-goal != 0)
     (goal bt-mangonel-demand-goal 0)
     (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
@@ -7825,6 +8086,7 @@ bt-resource-mode-imperial-bank-prep)))))))))))))))
     (building-type-count university >= 1)
     (can-research-with-escrow ri-ballistics)
     (goal bt-research-university-claim-goal 0)
+    (goal bt-research-siege-package-goal ri-ballistics)
 =>
     (set-strategic-number sn-resource-control ri-ballistics)
     (release-escrow wood)
@@ -7912,6 +8174,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (building-type-count university >= 1)
     (can-research-with-escrow ri-onager)
     (goal bt-research-university-claim-goal 0)
+    (goal bt-research-siege-package-goal ri-onager)
 =>
     (set-strategic-number sn-resource-control ri-onager)
     (release-escrow food)
@@ -8178,6 +8441,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-chemistry)
     (goal bt-research-university-claim-goal 0)
+    (goal bt-research-siege-package-goal ri-chemistry)
 =>
     (set-strategic-number sn-resource-control ri-chemistry)
     (release-escrow food)
@@ -9548,6 +9812,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-capped-ram)
     (goal bt-research-siege-workshop-claim-goal 0)
+    (goal bt-research-siege-package-goal ri-capped-ram)
 =>
     (set-strategic-number sn-resource-control ri-capped-ram)
     (release-escrow food)
@@ -9581,6 +9846,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-siege-ram)
     (goal bt-research-siege-workshop-claim-goal 0)
+    (goal bt-research-siege-package-goal ri-siege-ram)
 =>
     (set-strategic-number sn-resource-control ri-siege-ram)
     (release-escrow food)
@@ -9645,6 +9911,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (can-research-with-escrow ri-scale-mail)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
 =>
     (set-strategic-number sn-resource-control ri-scale-mail)
     (release-escrow food)
@@ -9681,6 +9948,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (can-research-with-escrow ri-chain-mail)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
 =>
     (set-strategic-number sn-resource-control ri-chain-mail)
     (release-escrow food)
@@ -9720,6 +9988,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
@@ -9740,6 +10009,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
@@ -9780,6 +10050,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
     (release-escrow food)
@@ -9801,6 +10072,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-crossbow)
     (goal bt-research-archery-range-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-crossbow)
 =>
     (set-strategic-number sn-resource-control ri-crossbow)
     (release-escrow food)
@@ -9848,6 +10120,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bodkin-arrow)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
 =>
     (set-strategic-number sn-resource-control ri-bodkin-arrow)
     (release-escrow food)
@@ -9887,6 +10160,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
 =>
     (set-strategic-number sn-resource-control ri-padded-archer-armor)
     (release-escrow food)
@@ -9927,6 +10201,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
 =>
     (set-strategic-number sn-resource-control ri-padded-archer-armor)
     (release-escrow food)
@@ -9974,6 +10249,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-leather-archer-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
 =>
     (set-strategic-number sn-resource-control ri-leather-archer-armor)
     (release-escrow food)
@@ -10007,6 +10283,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (building-type-count university >= 1)
     (can-research-with-escrow ri-thumb-ring)
     (goal bt-research-university-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
 =>
     (set-strategic-number sn-resource-control ri-thumb-ring)
     (release-escrow food)
@@ -10058,6 +10335,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-bracer)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-bracer)
 =>
     (set-strategic-number sn-resource-control ri-bracer)
     (release-escrow food)
@@ -10106,6 +10384,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-ring-archer-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
 =>
     (set-strategic-number sn-resource-control ri-ring-archer-armor)
     (release-escrow food)
@@ -10134,6 +10413,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
@@ -10169,6 +10450,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
@@ -10198,6 +10481,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-iron-casting)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-iron-casting)
     (release-escrow food)
@@ -10249,6 +10534,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-scale-barding-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-scale-barding-armor)
     (release-escrow food)
@@ -10286,6 +10573,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-chain-barding-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-chain-barding-armor)
     (release-escrow food)
@@ -10322,6 +10611,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-barding-armor)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-plate-barding-armor)
     (release-escrow food)
@@ -10468,6 +10759,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (building-type-count archery-range >= 1)
     (can-research-with-escrow ri-arbalest)
     (goal bt-research-archery-range-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-arbalest)
 =>
     (set-strategic-number sn-resource-control ri-arbalest)
     (release-escrow food)
@@ -10501,6 +10793,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-logistica)
     (goal bt-research-castle-claim-goal 0)
+    (goal bt-research-cataphract-package-goal ri-logistica)
 =>
     (set-strategic-number sn-resource-control ri-logistica)
     (release-escrow food)
@@ -10530,6 +10823,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-elite-cataphract)
     (goal bt-research-castle-claim-goal 0)
+    (goal bt-research-cataphract-package-goal ri-elite-cataphract)
 =>
     (set-strategic-number sn-resource-control ri-elite-cataphract)
     (release-escrow food)
@@ -10583,6 +10877,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (building-type-count barracks >= 1)
     (can-research-with-escrow ri-pikeman)
     (goal bt-research-barracks-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal ri-pikeman)
 =>
     (set-strategic-number sn-resource-control ri-pikeman)
     (release-escrow food)
@@ -10631,6 +10926,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (building-type-count archery-range >= 1)
     (can-research-with-escrow ri-elite-skirmisher)
     (goal bt-research-archery-range-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
 =>
     (set-strategic-number sn-resource-control ri-elite-skirmisher)
     (release-escrow food)
@@ -10672,6 +10968,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-plate-mail)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal ri-plate-mail)
 =>
     (set-strategic-number sn-resource-control ri-plate-mail)
     (release-escrow food)
@@ -10719,6 +11016,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (building-type-count barracks >= 1)
     (can-research-with-escrow ri-halberdier)
     (goal bt-research-barracks-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal ri-halberdier)
 =>
     (set-strategic-number sn-resource-control ri-halberdier)
     (release-escrow food)
