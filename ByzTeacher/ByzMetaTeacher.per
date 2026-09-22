@@ -252,6 +252,7 @@
 (defconst bt-heavy-camel-demand-goal 532)
 (defconst bt-attack-reserve-goal 533)
 (defconst bt-mangonel-demand-goal 535)
+(defconst bt-ram-demand-goal 539)
 (defconst bt-military-siege-workshop-retry-goal 537)
 (defconst bt-military-siege-workshop-backoff-goal 538)
 (defconst bt-attack-gather-watchdog-timer 23)
@@ -388,6 +389,10 @@
 ; demand. Package completion/reset remains a later lifecycle edge.
 (defconst bt-mangonel-response-target 2)
 
+; Attack/building-pressure ram package.
+; Finite execution ceiling for an active attack package.
+(defconst bt-ram-response-target 2)
+
 ; Production-capacity ceilings.
 ;
 ; These are teaching/controller tuning values, not engine constants.
@@ -488,6 +493,7 @@
 =>
     (set-goal bt-military-siege-workshop-retry-goal 0)
     (set-goal bt-military-siege-workshop-backoff-goal 0)
+    (set-goal bt-ram-demand-goal 0)
     (disable-timer bt-military-siege-workshop-watchdog-timer)
     (disable-timer bt-military-siege-workshop-backoff-timer)
     (disable-self)
@@ -4585,6 +4591,26 @@
     (train mangonel-line)
 )
 
+
+;---------------------------------------------------------------
+; 16B.2. RAM RESPONSE PRODUCTION
+;---------------------------------------------------------------
+; Attack/building-pressure demand is the strategic authority. This rule
+; only queues the finite ram package through the completed Workshop.
+;
+; unit-type-count-total is deliberately queue-aware: completed plus queued
+; Rams count against bt-ram-response-target, preventing duplicate orders.
+(defrule
+    (goal bt-ram-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count-total battering-ram-line < bt-ram-response-target)
+    (can-train battering-ram-line)
+=>
+    (train battering-ram-line)
+)
+
 ; Scout and Cataphract production are explicit capability exceptions;
 ; the composition goals below own the remaining military queue.
 ;
@@ -6433,6 +6459,37 @@
 
 )
 
+
+;---------------------------------------------------------------
+; 18A.2. ATTACK / BUILDING-PRESSURE RAM DEMAND
+;---------------------------------------------------------------
+; Attack authority already proves the army package is active. This state
+; narrows that attack to the building-assault purpose.
+(defrule
+    (goal bt-ram-demand-goal 0)
+    (goal attack-goal 1)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+=>
+    (set-goal bt-ram-demand-goal 1)
+)
+
+(defrule
+    (goal bt-ram-demand-goal 1)
+    (or
+        (goal attack-goal 0)
+        (players-building-count target-player == 0)
+        (town-under-attack)
+        (goal retreat-now-goal 1)
+    )
+=>
+    (set-goal bt-ram-demand-goal 0)
+)
+
 ; Once the package exists, the gather watchdog is no longer relevant.
 (defrule
     (goal attack-goal 1)
@@ -6545,8 +6602,72 @@
 )
 
 ;================================================================
+; 22. RAM UPGRADES
+;================================================================
+; Capped Ram is the first building-pressure investment. Two actual Rams
+; plus live attack/building pressure justify the Imperial upgrade.
+(defrule
+    (goal bt-ram-demand-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count battering-ram-line >= 2)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-capped-ram)
+=>
+    (set-strategic-number sn-resource-control ri-capped-ram)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-capped-ram)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-capped-ram)
+    (up-research-status c: ri-capped-ram == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; Siege Ram is the second-stage investment. Four actual Rams plus completed
+; Capped Ram establish an actual building-assault package before the larger
+; Imperial upgrade is purchased.
+(defrule
+    (goal bt-ram-demand-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count siege-workshop >= 1)
+    (unit-type-count battering-ram-line >= 4)
+    (up-research-status c: ri-capped-ram == research-complete)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-siege-ram)
+=>
+    (set-strategic-number sn-resource-control ri-siege-ram)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-siege-ram)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-siege-ram)
+    (up-research-status c: ri-siege-ram == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;================================================================
 ; 22. PIKEMAN RESEARCH
 ;================================================================
+
 ;
 ; Q: "When does the composition earn its upgrade?"
 ;
@@ -6847,6 +6968,28 @@
 )
 
 ;----------------------------------------------------------------
+; CAPPED RAM WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-capped-ram)
+    (up-research-status c: ri-capped-ram <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
+; SIEGE RAM WATCHDOG EXPIRY
+(defrule
+    (strategic-number sn-resource-control == ri-siege-ram)
+    (up-research-status c: ri-siege-ram <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+;----------------------------------------------------------------
 ; PIKEMAN WATCHDOG EXPIRY
 (defrule
     (strategic-number sn-resource-control == ri-pikeman)
@@ -6998,19 +7141,3 @@
 ; COMPOSITION:
 ;   spearman-line
 ;   skirmisher-line
-;   archer-line
-;   mix
-;
-; PRODUCTION:
-;   barracks
-;   archery-range
-;   stable
-;
-; RESOURCE ARBITRATION:
-;   sn-resource-control
-;   escrow
-;   train-civ-goal
-;
-; This is still intentionally a teaching controller.
-; It is not a full Stock AI replacement.
-;================================================================
