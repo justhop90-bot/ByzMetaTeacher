@@ -1399,6 +1399,7 @@
     (goal bt-crossbow-demand-goal 1)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (current-age >= castle-age)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
     (up-research-status c: ri-fletching == research-complete)
     (up-compare-goal bt-research-archery-range-crossbow-retry-goal < bt-archery-range-research-max-retries)
@@ -1464,6 +1465,7 @@
     (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
     (goal bt-ranged-threat-goal 1)
+    (current-age >= castle-age)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
     (up-compare-goal bt-research-blacksmith-bodkin-arrow-retry-goal < bt-blacksmith-research-max-retries)
@@ -1471,6 +1473,35 @@
     (up-research-status c: ri-bodkin-arrow < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+)
+
+; ELITE -> BRACER when Bodkin already exists.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher == research-complete)
+    (goal bt-ranged-threat-goal 1)
+    (current-age >= imperial-age)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
+    (or
+        (and
+            (goal unit-goal crossbowman)
+            (up-research-status c: ri-arbalest == research-complete)
+            (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+        )
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+            (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+            (up-compare-goal bt-ranged-counter-level-goal >= 2)
+        )
+        (and
+            (unit-type-count-total cavalry-archer >= 6)
+        )
+    )
+    (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
+    (up-research-status c: ri-bracer < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bracer)
 )
 
 ; BRACER: mature ranged army, active ranged threat, and Bodkin already
@@ -1550,6 +1581,7 @@
     (up-compare-goal bt-standing-archer-target-goal > 0)
     (or
         (and
+            (up-compare-goal bt-standing-archer-target-goal > 0)
             (unit-type-count-total archer-line >= 3)
         )
         (and
@@ -1711,7 +1743,7 @@
         (goal bt-any-threat-goal 1)
         (goal strategy-goal bt-strategy-flush)
         (goal strategy-goal bt-strategy-rush)
-        (goal bt-resource-mode-goal != bt-resource-mode-castle-boom)
+        (up-compare-goal bt-resource-mode-goal != bt-resource-mode-castle-boom)
     )
 =>
     (set-goal bt-research-ranged-counter-package-goal 0)
