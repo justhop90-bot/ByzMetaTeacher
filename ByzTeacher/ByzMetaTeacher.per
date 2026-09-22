@@ -143,6 +143,7 @@
 ; Mill resource claim. The mill is an owner of the existing
 ; sn-resource-control mutex while its construction is in flight.
 (defconst bt-mill-claim 524)
+(defconst bt-mill-backoff-goal 606)
 
 ; Military Mangonel Workshop claim. This is a transient owner of the
 ; existing sn-resource-control mutex while the required Workshop build
@@ -172,7 +173,9 @@
 ; Mill construction watchdog. It detects a failed build order without
 ; releasing ownership while a real Mill foundation is still pending.
 (defconst bt-mill-watchdog-timer 35)
+(defconst bt-mill-backoff-timer 47)
 (defconst bt-mill-watchdog-seconds 120)
+(defconst bt-mill-backoff-seconds 30)
 
 ; Community mixed-composition value.
 (defconst bt-unit-mix 1)
@@ -798,10 +801,12 @@
     (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-bombard-university-retry-goal 0)
     (set-goal bt-bombard-university-backoff-goal 0)
+    (set-goal bt-mill-backoff-goal 0)
     (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
     (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
     (disable-timer bt-bombard-university-watchdog-timer)
     (disable-timer bt-bombard-university-backoff-timer)
+    (disable-timer bt-mill-backoff-timer)
     (disable-timer bt-bombard-trebuchet-target-timer)
     (disable-timer bt-military-siege-workshop-watchdog-timer)
     (disable-timer bt-military-siege-workshop-backoff-timer)
@@ -1256,6 +1261,7 @@
 ; pattern without changing the global escrow percentage.
 (defrule
     (up-compare-goal bt-mill-project-goal > 0)
+    (goal bt-mill-backoff-goal 0)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
@@ -10682,7 +10688,9 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     )
 =>
     (disable-timer bt-mill-watchdog-timer)
+    (disable-timer bt-mill-backoff-timer)
     (set-goal bt-mill-project-goal 0)
+    (set-goal bt-mill-backoff-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
@@ -10712,6 +10720,16 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 =>
     (disable-timer bt-mill-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
+    (set-goal bt-mill-backoff-goal 1)
+    (enable-timer bt-mill-backoff-timer bt-mill-backoff-seconds)
+)
+
+(defrule
+    (goal bt-mill-backoff-goal 1)
+    (timer-triggered bt-mill-backoff-timer)
+=>
+    (disable-timer bt-mill-backoff-timer)
+    (set-goal bt-mill-backoff-goal 0)
 )
 
 ;================================================================
