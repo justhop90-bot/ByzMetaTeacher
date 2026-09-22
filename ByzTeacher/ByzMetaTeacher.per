@@ -1397,8 +1397,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-crossbow-demand-goal 1)
+    (goal bt-arbalest-demand-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (goal bt-ranged-threat-goal 0)
     (current-age >= castle-age)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
     (up-research-status c: ri-fletching == research-complete)
@@ -1416,8 +1418,14 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
     (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
     (current-age >= castle-age)
     (up-compare-goal bt-ranged-counter-level-goal >= 1)
+    (not (and
+        (goal strategy-goal bt-strategy-boom)
+        (goal bt-any-threat-goal 0)
+        (up-compare-goal bt-standing-crossbow-target-goal > 0)
+    ))
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
     (up-compare-goal bt-research-archery-range-elite-skirmisher-retry-goal < bt-archery-range-research-max-retries)
@@ -1432,8 +1440,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (goal bt-crossbow-demand-goal 1)
+    (goal bt-arbalest-demand-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (goal bt-ranged-threat-goal 0)
     (current-age >= castle-age)
     (up-research-status c: ri-fletching == research-complete)
     (up-compare-goal bt-standing-crossbow-target-goal > 0)
@@ -1449,8 +1459,14 @@
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (goal bt-ranged-threat-goal 1)
     (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
     (current-age >= castle-age)
     (up-research-status c: ri-fletching == research-complete)
+    (not (and
+        (goal strategy-goal bt-strategy-boom)
+        (goal bt-any-threat-goal 0)
+        (up-compare-goal bt-standing-crossbow-target-goal > 0)
+    ))
     (up-compare-goal bt-ranged-counter-level-goal >= 1)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
@@ -1567,8 +1583,16 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
     (up-research-status c: ri-bodkin-arrow == research-complete)
+    (not (and
+        (up-compare-goal bt-ranged-counter-level-goal >= 1)
+        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+        (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+        (up-research-status c: ri-elite-skirmisher < research-complete)
+    ))
     (or
         (and
             (goal unit-goal crossbowman)
@@ -1613,6 +1637,13 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-ranged-threat-goal 1)
     (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
+    (not (and
+        (current-age >= castle-age)
+        (up-compare-goal bt-ranged-counter-level-goal >= 1)
+        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
+        (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+    ))
     (up-research-status c: ri-fletching == research-complete)
     (or
         (and
@@ -1636,6 +1667,8 @@
     (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
     (or
         (and
             (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -1659,6 +1692,12 @@
     (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor == research-complete)
     (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
+    (not (and
+        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+        (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+    ))
     (current-age >= imperial-age)
     (or
         (and
@@ -1686,6 +1725,8 @@
     (goal bt-research-ranged-counter-package-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (goal bt-ranged-threat-goal 0)
+    (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (goal unit-goal crossbowman)
     (current-age >= castle-age)
@@ -1708,8 +1749,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-arbalest-demand-goal 1)
+    (goal bt-crossbow-demand-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (goal bt-any-threat-goal 0)
+    (goal bt-ranged-threat-goal 0)
     (goal unit-goal crossbowman)
     (current-age >= imperial-age)
     (up-research-status c: ri-crossbow == research-complete)
