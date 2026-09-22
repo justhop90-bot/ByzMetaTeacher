@@ -8799,6 +8799,24 @@
     (set-goal bt-heavy-camel-demand-goal 0)
 )
 
+(defrule
+    (strategic-number sn-resource-control == ri-halberdier)
+    (up-research-status c: ri-halberdier <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (strategic-number sn-resource-control == ri-heavy-camel)
+    (up-research-status c: ri-heavy-camel <= research-available)
+    (timer-triggered bt-research-watchdog-timer)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
 ;================================================================
 ; RESEARCH / AGE CLAIM WATCHDOG RECOVERY
 ;================================================================
