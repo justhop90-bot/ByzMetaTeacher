@@ -10556,6 +10556,10 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
             (goal bt-mill-project-goal 2)
             (building-type-count mill >= 2)
         )
+        (and
+            (goal bt-mill-project-goal 3)
+            (building-type-count mill >= 3)
+        )
     )
 =>
     (disable-timer bt-mill-watchdog-timer)
@@ -10579,6 +10583,10 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
         (and
             (goal bt-mill-project-goal 2)
             (building-type-count mill < 2)
+        )
+        (and
+            (goal bt-mill-project-goal 3)
+            (building-type-count mill < 3)
         )
     )
     (up-pending-objects c: mill == 0)
