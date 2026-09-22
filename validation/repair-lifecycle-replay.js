@@ -470,6 +470,324 @@ const scenarios = {
   goldShaft: goldShaftTrace,
 };
 
+
+
+// MAP-AWARE OPENING SELECTOR VALIDATION
+for (const constant of [
+  "bt-opening-map-goal",
+  "bt-opening-plan-goal",
+  "bt-opening-stage-goal",
+  "bt-opening-underlay-goal",
+  "bt-opening-threat-goal",
+  "bt-opening-plan-arabia-standard",
+  "bt-opening-plan-arabia-pressure",
+  "bt-opening-plan-arabia-fast-castle",
+  "bt-opening-plan-arena-fast-castle",
+  "bt-opening-plan-arena-boom",
+  "bt-opening-plan-anti-rush",
+  "bt-opening-plan-generic-pressure",
+  "bt-opening-plan-generic-defensive",
+]) {
+  assert.ok(source.includes(constant), `[Opening] missing constant/state symbol: ${constant}`);
+}
+
+requireRule(
+  "Arabia map classification",
+  "(goal bt-opening-map-goal 0)",
+  "(map-type arabia)",
+  "(set-goal bt-opening-map-goal bt-opening-map-arabia)",
+);
+requireRule(
+  "Arena map classification",
+  "(goal bt-opening-map-goal 0)",
+  "(map-type arena)",
+  "(set-goal bt-opening-map-goal bt-opening-map-arena)",
+);
+requireRule(
+  "Immediate opening pressure",
+  "(game-time >= 180)",
+  "(game-time < bt-scout-pressure-window)",
+  "(players-building-type-count target-player watch-tower >= 1)",
+  "(set-goal bt-opening-threat-goal bt-opening-threat-immediate)",
+);
+requireRule(
+  "Confirmed opening pressure",
+  "(goal bt-opening-threat-goal bt-opening-threat-none)",
+  "(players-current-age target-player >= feudal-age)",
+  "(players-military-population target-player >= 3)",
+  "(set-goal bt-opening-threat-goal bt-opening-threat-confirmed)",
+);
+requireRule(
+  "Arabia Early Pressure",
+  "(goal bt-opening-map-goal bt-opening-map-arabia)",
+  "(players-building-type-count target-player market >= 1)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-arabia-pressure)",
+);
+requireRule(
+  "Arabia Fast Castle",
+  "(goal bt-opening-map-goal bt-opening-map-arabia)",
+  "(players-current-age target-player == dark-age)",
+  "(players-military-population target-player <= 1)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-arabia-fast-castle)",
+);
+requireRule(
+  "Arena Fast Castle",
+  "(goal bt-opening-map-goal bt-opening-map-arena)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)",
+);
+requireRule(
+  "Generic pressure fallback",
+  "(goal bt-opening-map-goal bt-opening-map-generic)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-generic-pressure)",
+);
+requireRule(
+  "Anti-Rush commitment",
+  "(goal bt-opening-stage-goal bt-opening-stage-selecting)",
+  "(up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+);
+requireRule(
+  "Anti-Rush restore",
+  "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+  "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+  "(goal bt-opening-underlay-goal bt-opening-plan-arena-fast-castle)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)",
+);
+requireRule(
+  "Arena Fast Castle completion",
+  "(goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)",
+  "(current-age >= castle-age)",
+  "(set-goal bt-opening-plan-goal bt-opening-plan-arena-boom)",
+);
+requireRule(
+  "Opening -> RUSH",
+  "(goal bt-opening-plan-goal bt-opening-plan-arabia-pressure)",
+  "(current-age == feudal-age)",
+  "(set-goal strategy-goal bt-strategy-rush)",
+);
+requireRule(
+  "Opening -> FLUSH",
+  "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+  "(set-goal strategy-goal bt-strategy-flush)",
+);
+requireRule(
+  "Opening -> Castle bank",
+  "(current-age == feudal-age)",
+  "(goal bt-opening-plan-goal bt-opening-plan-arabia-fast-castle)",
+  "(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)",
+);
+
+function renderRule(rule) {
+  if (!Array.isArray(rule)) return String(rule);
+  return `(${rule.map(renderRule).join(" ")})`;
+}
+
+const openingWriterRules = rules.filter((rule) =>
+  renderRule(rule).includes("(set-goal bt-opening-"),
+);
+const openingSelectorWriters = openingWriterRules.filter((rule) => {
+  const rendered = renderRule(rule);
+  return !(
+    rendered.includes("(true)") &&
+    rendered.includes("(set-goal strategy-goal bt-strategy-boom)") &&
+    rendered.includes("(set-goal unit-goal bt-unit-mix)")
+  );
+});
+for (const rule of openingSelectorWriters) {
+  const rendered = renderRule(rule);
+  for (const forbidden of [
+    "(set-goal strategy-goal",
+    "(set-goal unit-goal",
+    "(set-goal bt-resource-mode-goal",
+    "(set-strategic-number",
+    "(release-escrow",
+    "(build ",
+    "(train ",
+    "(research ",
+  ]) {
+    assert.ok(
+      !rendered.includes(forbidden),
+      `[Opening ownership] opening rule illegally writes execution state: ${forbidden}`,
+    );
+  }
+}
+assert.equal(
+  openingSelectorWriters.filter((rule) => renderRule(rule).includes("any-enemy")).length,
+  0,
+  "[Opening target ownership] opening rules must stay target-player specific",
+);
+
+// Deterministic policy model mirrors the implemented selector priority.
+function openingPolicy(input) {
+  const threat =
+    input.time >= 180 && input.time < 600 && input.targetKnown &&
+    (input.tower ||
+      (input.barracks && input.range) ||
+      (input.barracks && input.stable) ||
+      (input.range && input.stable) ||
+      input.militia >= 3 ||
+      input.archers >= 3 ||
+      input.scouts >= 4)
+      ? 3
+      : input.time >= 180 && input.time < 600 && input.targetKnown &&
+          ((input.barracks && input.militia >= 2) ||
+            (input.range && input.archers >= 2) ||
+            (input.stable && input.scouts >= 3) ||
+            (input.enemyAge === "feudal" && input.enemyMilitary >= 3) ||
+            input.enemyMilitary >= 5)
+        ? 2
+        : input.time >= 180 && input.time < 600 && input.targetKnown && input.enemyMilitary >= 2
+          ? 1
+          : 0;
+
+  let plan = 0;
+  let underlay = 0;
+
+  if (threat >= 2) {
+    underlay = input.map === "arabia" ? 1 : input.map === "arena" ? 4 : 8;
+    plan = 6;
+  } else if (
+    input.map === "arabia" &&
+    input.time >= 300 &&
+    input.targetKnown &&
+    input.market &&
+    !input.barracks &&
+    !input.range &&
+    !input.stable
+  ) {
+    underlay = plan = 2;
+  } else if (
+    input.map === "arabia" &&
+    input.time >= 300 &&
+    input.targetKnown &&
+    input.enemyAge === "dark" &&
+    input.enemyMilitary <= 1 &&
+    !input.barracks &&
+    !input.range &&
+    !input.stable
+  ) {
+    underlay = plan = 3;
+  } else if (
+    input.map === "arabia" &&
+    input.time >= 300 &&
+    (!input.targetKnown || threat === 1)
+  ) {
+    underlay = plan = 1;
+  } else if (
+    input.map === "arena" &&
+    input.time >= 180
+  ) {
+    underlay = plan = 4;
+  } else if (
+    input.map === "generic" &&
+    input.time >= 300 &&
+    input.targetKnown &&
+    input.enemyAge === "dark" &&
+    input.market &&
+    !input.barracks &&
+    !input.range &&
+    !input.stable &&
+    threat === 0
+  ) {
+    underlay = plan = 7;
+  } else if (input.map === "generic" && input.time >= 300) {
+    underlay = plan = 8;
+  }
+
+  if (input.map === "arena" && plan === 4 && input.age === "castle" && threat === 0) {
+    underlay = plan = 5;
+  }
+  return { threat, plan, underlay };
+}
+
+const openingCases = {
+  A: {
+    map: "arabia", time: 360, targetKnown: false, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "dark",
+  },
+  B: {
+    map: "arabia", time: 360, targetKnown: true, market: true,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "dark",
+  },
+  C: {
+    map: "arabia", time: 360, targetKnown: true, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "dark",
+  },
+  D: {
+    map: "arena", time: 300, targetKnown: false, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "dark",
+  },
+  E: {
+    map: "arena", time: 900, targetKnown: true, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "castle",
+  },
+  F: {
+    map: "arabia", time: 360, targetKnown: true, market: false,
+    barracks: true, range: false, stable: false, tower: false,
+    militia: 3, archers: 0, scouts: 1, enemyMilitary: 4,
+    enemyAge: "feudal", age: "dark",
+  },
+  G: {
+    map: "arena", time: 360, targetKnown: true, market: false,
+    barracks: false, range: false, stable: false, tower: true,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 3,
+    enemyAge: "feudal", age: "dark",
+  },
+  H: {
+    map: "arabia", time: 360, targetKnown: false, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 0,
+    enemyAge: "dark", age: "dark",
+  },
+  I: {
+    map: "arabia", time: 360, targetKnown: true, market: false,
+    barracks: false, range: false, stable: false, tower: false,
+    militia: 0, archers: 0, scouts: 1, enemyMilitary: 2,
+    enemyAge: "dark", age: "dark",
+  },
+};
+
+const expectedPlans = {
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+  F: 6,
+  G: 6,
+  H: 1,
+};
+for (const [scenario, expected] of Object.entries(expectedPlans)) {
+  const actual = openingPolicy(openingCases[scenario]).plan;
+  assert.equal(actual, expected, `[Opening scenario ${scenario}] expected plan ${expected}, got ${actual}`);
+}
+
+// Scenario G: reversible Anti-Rush override restores its Arena FC underlay.
+const gInitial = openingPolicy(openingCases.G);
+assert.equal(gInitial.plan, 6, "[Opening G] Anti-Rush did not win priority");
+assert.equal(gInitial.underlay, 4, "[Opening G] Arena FC underlay was not preserved");
+const gRecovered = { ...gInitial, plan: 6, threat: 0 };
+gRecovered.plan = gRecovered.underlay;
+assert.equal(gRecovered.plan, 4, "[Opening G] Anti-Rush did not restore Arena FC");
+
+// Scenario I: the implementation is target-player-specific. No opening rule
+// contains any-enemy, so unrelated enemy populations cannot directly trigger it.
+assert.equal(
+  openingSelectorWriters.filter((rule) => renderRule(rule).includes("any-enemy")).length,
+  0,
+  "[Opening I] any-enemy leaked into opening selection",
+);
+assert.equal(openingPolicy(openingCases.I).plan, 1, "[Opening I] suspected target pressure should fall back to Arabia Standard");
 console.log(JSON.stringify({
   controller: path.relative(process.cwd(), controllerPath),
   rules: rules.length,
