@@ -4634,10 +4634,11 @@ bt-stone-shaft-wood-buffer) (and (not (can-research-with-escrow imperial-age)) (
     (building-type-count-total siege-workshop < 1)
     (up-pending-objects c: siege-workshop == 0)
     (strategic-number sn-resource-control == 0)
-    (can-build siege-workshop)
+    (can-build-with-escrow siege-workshop)
 =>
     (set-strategic-number sn-resource-control bt-imperial-siege-claim)
     (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
     (build siege-workshop)
 )
 
