@@ -1639,15 +1639,37 @@
                       )
                       )
          ))
-    (or
-        (and
+    (and
             (goal unit-goal crossbowman)
             (and
             (up-research-status c: ri-arbalest == research-complete)
             (unit-type-count-total arbalester >= bt-crossbow-target-mature)
                     )
         )
-        (or
+    (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
+    (up-research-status c: ri-bracer < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bracer)
+)
+(defrule
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-ranged-threat-goal 1)
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
+    (current-age >= imperial-age)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
+    (not (and
+             (up-compare-goal bt-ranged-counter-level-goal >= 1)
+             (and
+             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+             (and
+             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+             (up-research-status c: ri-elite-skirmisher < research-complete)
+                      )
+                      )
+         ))
+    (or
         (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
             (and
@@ -1660,7 +1682,6 @@
             (goal bt-ranged-threat-goal 1)
         )
             )
-    )
     (up-compare-goal bt-research-blacksmith-bracer-retry-goal < bt-blacksmith-research-max-retries)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
     (up-research-status c: ri-bracer < research-complete)
