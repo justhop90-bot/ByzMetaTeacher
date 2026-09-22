@@ -6493,11 +6493,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (up-pending-objects c: blacksmith > 0)
 =>
     (disable-timer bt-blacksmith-repair-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-blacksmith-repair-retry-goal 4)
-    (set-goal bt-blacksmith-repair-backoff-goal 0)
-    (set-goal bt-blacksmith-repair-failure-goal 1)
-    (enable-timer bt-blacksmith-repair-failure-timer bt-blacksmith-repair-failure-seconds)
+    (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+    (enable-timer bt-blacksmith-repair-watchdog-timer bt-blacksmith-repair-watchdog-seconds)
 )
 
 (defrule
@@ -6794,10 +6791,17 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (timer-triggered bt-castle-prereq-watchdog-timer)
 =>
     (disable-timer bt-castle-prereq-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-prereq-retry-goal 4)
-    (set-goal bt-castle-prereq-backoff-goal 1)
-    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-cap-seconds)
+    (or
+        (and
+            (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+            (up-assign-builders c: blacksmith c: bt-foundation-stall-builder-count)
+        )
+        (and
+            (strategic-number sn-resource-control == bt-castle-market-claim)
+            (up-assign-builders c: market c: bt-foundation-stall-builder-count)
+        )
+    )
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
 )
 
 (defrule
@@ -6998,11 +7002,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (up-pending-objects c: castle > 0)
 =>
     (disable-timer bt-castle-cataphract-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-castle-cataphract-retry-goal 4)
-    (set-goal bt-castle-cataphract-backoff-goal 0)
-    (set-goal bt-castle-cataphract-demand-goal 0)
-    (set-goal bt-castle-cataphract-failure-goal 1)
+    (up-assign-builders c: castle c: bt-foundation-stall-builder-count)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
 )
 
 (defrule
@@ -7546,10 +7547,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (up-pending-objects c: monastery > 0)
 =>
     (disable-timer bt-monastery-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-monastery-retry-goal 4)
-    (set-goal bt-monastery-backoff-goal 1)
-    (enable-timer bt-monastery-backoff-timer bt-monastery-backoff-cap-seconds)
+    (up-assign-builders c: monastery c: bt-foundation-stall-builder-count)
+    (enable-timer bt-monastery-watchdog-timer bt-monastery-watchdog-seconds)
 )
 (defrule
     (strategic-number sn-resource-control == bt-monastery-claim)
@@ -9673,10 +9672,8 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-pending-objects c: university > 0)
 =>
     (disable-timer bt-bombard-university-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-bombard-university-retry-goal 4)
-    (set-goal bt-bombard-university-backoff-goal 1)
-    (enable-timer bt-bombard-university-backoff-timer bt-bombard-university-backoff-cap-seconds)
+    (up-assign-builders c: university c: bt-foundation-stall-builder-count)
+    (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
 )
 
 (defrule
@@ -10971,10 +10968,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-pending-objects c: siege-workshop > 0)
 =>
     (disable-timer bt-military-siege-workshop-watchdog-timer)
-    (set-strategic-number sn-resource-control 0)
-    (set-goal bt-military-siege-workshop-retry-goal 4)
-    (set-goal bt-military-siege-workshop-backoff-goal 1)
-    (enable-timer bt-military-siege-workshop-backoff-timer bt-military-siege-workshop-backoff-cap-seconds)
+    (up-assign-builders c: siege-workshop c: bt-foundation-stall-builder-count)
+    (enable-timer bt-military-siege-workshop-watchdog-timer bt-military-siege-workshop-watchdog-seconds)
 )
 
 (defrule
