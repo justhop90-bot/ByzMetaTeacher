@@ -1368,7 +1368,9 @@
     (or (and
             (food-amount < 350)
             (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count <= 1))))) bt-farm-build-wood)
+        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-castle-food-threshold) (idle-farm-count <= 1)))))
+    (building-type-count-total farm < bt-farm-feudal-cap)
+    (wood-amount >= bt-farm-build-wood)
     ; Wood escrow is intentionally usable by the farm action once the
     ; shared resource mutex is free. This is the same escrow-aware
     ; feasibility model used by TC/research construction.
@@ -1388,7 +1390,9 @@
     (or (and
             (food-amount < bt-farm-castle-food-threshold)
             (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1))))) bt-farm-build-wood)
+        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (building-type-count-total farm < bt-farm-castle-cap)
+    (wood-amount >= bt-farm-build-wood)
     ; Farm construction is escrow-aware, so the rule cannot stall merely
     ; because the controller is carrying reserved wood.
     (can-build-with-escrow farm)
@@ -1410,7 +1414,9 @@
     (or (and
             (food-amount < bt-farm-imperial-food-threshold)
             (idle-farm-count == 0)
-        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))>= bt-farm-build-wood)
+        ) (or (and (goal bt-natural-food-state-goal bt-natural-food-transition) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count == 0))) (and (goal bt-natural-food-state-goal bt-natural-food-depleted) (and (food-amount < bt-farm-imperial-food-threshold) (idle-farm-count <= 1)))))
+    (building-type-count-total farm < bt-farm-imperial-cap)
+    (wood-amount >= bt-farm-build-wood)
     ; Preserve the same feasibility semantics through Imperial: the
     ; physical farm may consume reserved wood only when no higher-priority
     ; resource claim currently owns the bank.
@@ -2011,7 +2017,12 @@
     (or (and
             (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
             (unit-type-count-total cataphract-line < bt-cataphract-target-3)
-        ) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (unit-type-count-total cataphract-line < bt-cataphract-target-2))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line < bt-cataphract-target-1)))))a required premium upgrade. This prevents the
+        ) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (unit-type-count-total cataphract-line < bt-cataphract-target-2))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line < bt-cataphract-target-1)))))
+=>
+    (set-goal bt-cataphract-demand-goal 1)
+)
+
+; Demand stays live through a required premium upgrade. This prevents the
 ; 10/20-unit package from self-canceling when queue-inclusive production
 ; reaches its target before Logistica or Elite Cataphract can claim.
 (defrule
@@ -2023,7 +2034,13 @@
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-flush)
             )
-        ) (or (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-1) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line >= bt-cataphract-target-1))) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-2) (up-research-status c: ri-logistica == research-complete)))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-3) (and (up-research-status c: ri-logistica == research-complete) (up-research-status c: ri-elite-cataphract == research-complete)))))))))AL SELECTION
+        ) (or (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-1) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line >= bt-cataphract-target-1))) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-2) (up-research-status c: ri-logistica == research-complete)))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3) (and (unit-type-count-total cataphract-line >= bt-cataphract-target-3) (and (up-research-status c: ri-logistica == research-complete) (up-research-status c: ri-elite-cataphract == research-complete)))))))))
+=>
+    (set-goal bt-cataphract-demand-goal 0)
+)
+
+;================================================================
+; 14. UNIT-GOAL SELECTION
 ;================================================================
 ;
 ; Unit-goal answers:
@@ -2173,7 +2190,9 @@
 (defrule
     (goal bt-resource-mode-goal 0)
     (gold-amount < 100)
-    (or (goal bt-cataphract-demand-goal 1) (or (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))) (or (and (current-age == dark-age) (unit-type-count villager >= bt-feudal-villagers)) (or (and (current-age == feudal-age) (unit-type-count villager >= bt-castle-villagers)) (and (current-age == castle-age) (unit-type-count villager >= bt-imperial-villagers))))))risis)
+    (or (goal bt-cataphract-demand-goal 1) (or (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))) (or (and (current-age == dark-age) (unit-type-count villager >= bt-feudal-villagers)) (or (and (current-age == feudal-age) (unit-type-count villager >= bt-castle-villagers)) (and (current-age == castle-age) (unit-type-count villager >= bt-imperial-villagers))))))
+=>
+    (set-goal bt-resource-mode-goal bt-resource-mode-gold-crisis)
 )
 
 ; P0 WOOD. Requires a real existing wood consumer.
@@ -2326,12 +2345,16 @@
 (defrule
     (goal bt-resource-mode-goal 0)
     (current-age == imperial-age)
-    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))))imperial-power)
+    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))))
+=>
+    (set-goal bt-resource-mode-goal bt-resource-mode-imperial-power)
 )
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1)))))))))m-gold)
+    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1)))))))))
+=>
+    (set-goal bt-resource-mode-goal bt-resource-mode-premium-gold)
 )
 
 ; P3 CHEAP-TRASH. Existing Spear/Skirm demand drives food/wood-heavy mode.
@@ -2698,7 +2721,13 @@
                     (unit-type-count-total camel-line < bt-camel-target-1)
                 )
             )
-        )))D MINING RESEARCH LIFECYCLE
+        )))
+=>
+    (set-goal bt-gold-mining-demand-goal 0)
+)
+
+;================================================================
+; 14F. GOLD MINING RESEARCH LIFECYCLE
 ;================================================================
 ;
 ; Existing sn-resource-control arbitration remains authoritative.
@@ -2767,7 +2796,12 @@
                 (not (can-research-with-escrow imperial-age))
                 (up-research-status c: ri-wheel-barrow == research-available)
             )
-        )))+ Wood escrow -> research.
+        )))
+=>
+    (set-goal bt-wheelbarrow-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
 (defrule
     (goal bt-wheelbarrow-demand-goal 1)
     (current-age >= feudal-age)
@@ -2901,7 +2935,12 @@
                 (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
                 (up-research-status c: ri-hand-cart == research-available)
             )
-        )))w -> research.
+        )))
+=>
+    (set-goal bt-hand-cart-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
 (defrule
     (goal bt-hand-cart-demand-goal 1)
     (current-age >= castle-age)
@@ -2997,7 +3036,17 @@
                 )
                 (up-research-status c: ri-bow-saw == research-available)
             )
-        )))l-age))
+        )))
+=>
+    (set-goal bt-bow-saw-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-bow-saw-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow imperial-age))
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
         (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0))))
@@ -3188,7 +3237,9 @@
     (goal strategy-goal bt-strategy-boom)
     (not (town-under-attack))
     (research-available ri-stone-mining)
-    (or (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium) (or (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers)))))scrow castle-age))
+    (or (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium) (or (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total castle >= 1) (unit-type-count villager >= bt-imperial-villagers)))))
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
     (not (can-research-with-escrow imperial-age))
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -3228,7 +3279,20 @@
                     (unit-type-count villager >= bt-imperial-villagers)
                 )
             )
-        )))))))))ow castle-age))
+        )))))))))
+=>
+    (set-goal bt-stone-mining-demand-goal 0)
+)
+
+;----------------------------------------------------------------
+; 14L-B. STONE MINING RESEARCH
+;----------------------------------------------------------------
+(defrule
+    (goal bt-stone-mining-demand-goal 1)
+    (current-age >= feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow feudal-age))
+    (not (can-research-with-escrow castle-age))
     (not (can-research-with-escrow imperial-age))
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -4687,7 +4751,12 @@
                     (up-research-status c: ri-arbalest == research-complete)
                     (unit-type-count-total arbalester >= bt-standing-crossbow-target-goal)
                 )
-            ))))))))=============================================================
+            ))))))))
+=>
+    (set-goal bt-standing-army-demand-goal 0)
+)
+
+;================================================================
 ; 16. MILITARY PRODUCTION ARBITRATION
 ;================================================================
 ;
@@ -4726,7 +4795,11 @@
     (or (and
             (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-3)
             (unit-type-count-total cataphract-line < bt-cataphract-target-3)
-        ) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (unit-type-count-total cataphract-line < bt-cataphract-target-2))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line < bt-cataphract-target-1)))))(release-escrow gold)
+        ) (or (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-2) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-3) (unit-type-count-total cataphract-line < bt-cataphract-target-2))) (and (players-unit-type-count any-enemy militia-line >= bt-cataphract-enemy-threshold-1) (and (players-unit-type-count any-enemy militia-line < bt-cataphract-enemy-threshold-2) (unit-type-count-total cataphract-line < bt-cataphract-target-1)))))
+    (can-train-with-escrow cataphract-line)
+=>
+    (release-escrow food)
+    (release-escrow gold)
     (train cataphract-line)
 )
 
@@ -5200,7 +5273,8 @@
         ) (and (goal bt-tc-stage-goal bt-tc-stage-blocked) (and (up-compare-goal bt-tc-retry-goal > 0) (or
                 (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
                 (goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
-            )))))gy-boom))
+            )))))
+    (not (goal strategy-goal bt-strategy-boom))
     (building-type-count-total town-center < 2)
     (or
         (strategic-number sn-resource-control == 0)
@@ -5739,7 +5813,8 @@
         ) (and (goal bt-tc-stage-goal bt-tc-stage-blocked) (and (up-compare-goal bt-tc-retry-goal > 0) (or
                 (goal bt-tc-failure-goal bt-tc-failure-project-invalid)
                 (goal bt-tc-failure-goal bt-tc-failure-placement-timeout)
-            )))))gy-boom))
+            )))))
+    (not (goal strategy-goal bt-strategy-boom))
     (building-type-count-total town-center < 3)
     (or
         (strategic-number sn-resource-control == 0)
@@ -8908,7 +8983,11 @@
 ; claim. Do not cancel/reset research.
 (defrule
     (timer-triggered bt-research-watchdog-timer)
-    (or (and (strategic-number sn-resource-control == feudal-age) (and (current-age < feudal-age) (up-research-status c: feudal-age == research-complete))) (or (and (strategic-number sn-resource-control == castle-age) (and (current-age < castle-age) (up-research-status c: castle-age == research-complete))) (and (strategic-number sn-resource-control == imperial-age) (and (current-age < imperial-age) (up-research-status c: imperial-age == research-complete)))))in-civ-goal 1)
+    (or (and (strategic-number sn-resource-control == feudal-age) (and (current-age < feudal-age) (up-research-status c: feudal-age == research-complete))) (or (and (strategic-number sn-resource-control == castle-age) (and (current-age < castle-age) (up-research-status c: castle-age == research-complete))) (and (strategic-number sn-resource-control == imperial-age) (and (current-age < imperial-age) (up-research-status c: imperial-age == research-complete)))))
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal train-civ-goal 1)
 )
 
 ;----------------------------------------------------------------
