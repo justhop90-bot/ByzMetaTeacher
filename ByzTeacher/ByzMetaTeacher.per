@@ -8246,7 +8246,379 @@
 )
 
 ;================================================================
-; 22. PIKEMAN RESEARCH
+; 22. CASTLE / IMPERIAL PRIMARY MILITARY RESEARCH
+;================================================================
+
+; Crossbow support: Fletching -> Crossbow -> Bodkin.
+(defrule
+    (goal bt-crossbow-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total blacksmith >= 1)
+    (up-research-status c: ri-fletching < research-pending)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-fletching)
+=>
+    (set-strategic-number sn-resource-control ri-fletching)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-fletching)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-crossbow-demand-goal 1)
+    (current-age >= castle-age)
+    (up-research-status c: ri-fletching == research-complete)
+    (up-research-status c: ri-crossbow < research-pending)
+    (building-type-count-total archery-range >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-crossbow)
+=>
+    (set-strategic-number sn-resource-control ri-crossbow)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-crossbow)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-crossbow)
+    (up-research-status c: ri-crossbow == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-crossbow-demand-goal 1)
+    (current-age >= castle-age)
+    (up-research-status c: ri-crossbow == research-complete)
+    (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
+    (up-research-status c: ri-bodkin-arrow < research-pending)
+    (building-type-count-total blacksmith >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-bodkin-arrow)
+=>
+    (set-strategic-number sn-resource-control ri-bodkin-arrow)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-bodkin-arrow)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-bodkin-arrow)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; Knight support: Forging -> Iron Casting and cavalry armor.
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= castle-age)
+    (building-type-count-total blacksmith >= 1)
+    (up-research-status c: ri-forging < research-pending)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-forging)
+=>
+    (set-strategic-number sn-resource-control ri-forging)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-forging)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-forging)
+    (up-research-status c: ri-forging == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= castle-age)
+    (unit-type-count-total knight-line >= bt-knight-target-castle)
+    (up-research-status c: ri-forging == research-complete)
+    (up-research-status c: ri-iron-casting < research-pending)
+    (building-type-count-total blacksmith >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-iron-casting)
+=>
+    (set-strategic-number sn-resource-control ri-iron-casting)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-iron-casting)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-iron-casting)
+    (up-research-status c: ri-iron-casting == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= castle-age)
+    (up-research-status c: ri-scale-barding-armor < research-pending)
+    (building-type-count-total blacksmith >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-scale-barding-armor)
+=>
+    (set-strategic-number sn-resource-control ri-scale-barding-armor)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-scale-barding-armor)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-scale-barding-armor)
+    (up-research-status c: ri-scale-barding-armor == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= castle-age)
+    (unit-type-count-total knight-line >= bt-knight-target-castle)
+    (up-research-status c: ri-scale-barding-armor == research-complete)
+    (up-research-status c: ri-chain-barding-armor < research-pending)
+    (building-type-count-total blacksmith >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-chain-barding-armor)
+=>
+    (set-strategic-number sn-resource-control ri-chain-barding-armor)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-chain-barding-armor)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-chain-barding-armor)
+    (up-research-status c: ri-chain-barding-armor == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; Imperial cavalry armor cap before/alongside the Knight-line upgrade.
+(defrule
+    (goal bt-knight-demand-goal 1)
+    (current-age >= imperial-age)
+    (unit-type-count-total knight-line >= bt-knight-target-mature)
+    (up-research-status c: ri-chain-barding-armor == research-complete)
+    (up-research-status c: ri-plate-barding-armor < research-pending)
+    (building-type-count-total blacksmith >= 1)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-plate-barding-armor)
+=>
+    (set-strategic-number sn-resource-control ri-plate-barding-armor)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-plate-barding-armor)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-plate-barding-armor)
+    (up-research-status c: ri-plate-barding-armor == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; Imperial Knight transition: Cavalier.
+(defrule
+    (goal bt-cavalier-demand-goal 0)
+    (goal unit-goal knight-line)
+    (current-age >= imperial-age)
+    (unit-type-count-total knight-line >= bt-knight-target-mature)
+    (up-research-status c: ri-cavalier < research-pending)
+    (goal bt-cataphract-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-cavalier-demand-goal 1)
+)
+(defrule
+    (goal bt-cavalier-demand-goal 1)
+    (or
+        (current-age < imperial-age)
+        (not (goal unit-goal knight-line))
+        (unit-type-count-total knight-line < bt-knight-target-mature)
+        (not (up-research-status c: ri-cavalier < research-pending))
+        (goal bt-cataphract-demand-goal 1)
+        (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (goal bt-resource-mode-goal bt-resource-mode-food-crisis)
+        (goal bt-resource-mode-goal bt-resource-mode-gold-crisis)
+    )
+=>
+    (set-goal bt-cavalier-demand-goal 0)
+)
+(defrule
+    (goal bt-cavalier-demand-goal 1)
+    (current-age >= imperial-age)
+    (goal unit-goal knight-line)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-cavalier)
+=>
+    (set-strategic-number sn-resource-control ri-cavalier)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-cavalier)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-cavalier)
+    (up-research-status c: ri-cavalier == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-cavalier-demand-goal 0)
+)
+
+; Imperial Paladin transition.
+(defrule
+    (goal bt-paladin-demand-goal 0)
+    (goal unit-goal knight-line)
+    (current-age >= imperial-age)
+    (up-research-status c: ri-cavalier == research-complete)
+    (unit-type-count-total knight-line >= bt-knight-target-late)
+    (unit-type-count villager >= 60)
+    (up-research-status c: ri-paladin < research-pending)
+    (goal bt-cataphract-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-paladin-demand-goal 1)
+)
+(defrule
+    (goal bt-paladin-demand-goal 1)
+    (or
+        (current-age < imperial-age)
+        (not (goal unit-goal knight-line))
+        (up-research-status c: ri-cavalier != research-complete)
+        (unit-type-count-total knight-line < bt-knight-target-late)
+        (unit-type-count villager < 60)
+        (not (up-research-status c: ri-paladin < research-pending))
+        (goal bt-cataphract-demand-goal 1)
+        (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (goal bt-resource-mode-goal bt-resource-mode-food-crisis)
+        (goal bt-resource-mode-goal bt-resource-mode-gold-crisis)
+    )
+=>
+    (set-goal bt-paladin-demand-goal 0)
+)
+(defrule
+    (goal bt-paladin-demand-goal 1)
+    (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-paladin)
+=>
+    (set-strategic-number sn-resource-control ri-paladin)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-paladin)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-paladin)
+    (up-research-status c: ri-paladin == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-paladin-demand-goal 0)
+)
+
+; Imperial ranged transition: Arbalest.
+(defrule
+    (goal bt-arbalest-demand-goal 0)
+    (goal unit-goal crossbowman)
+    (current-age >= imperial-age)
+    (up-research-status c: ri-crossbow == research-complete)
+    (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
+    (up-research-status c: ri-arbalest < research-pending)
+    (goal bt-cataphract-demand-goal 0)
+    (goal bt-bombard-cannon-demand-goal 0)
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+=>
+    (set-goal bt-arbalest-demand-goal 1)
+)
+(defrule
+    (goal bt-arbalest-demand-goal 1)
+    (or
+        (current-age < imperial-age)
+        (not (goal unit-goal crossbowman))
+        (up-research-status c: ri-crossbow != research-complete)
+        (unit-type-count-total crossbowman < bt-crossbow-target-mature)
+        (not (up-research-status c: ri-arbalest < research-pending))
+        (goal bt-cataphract-demand-goal 1)
+        (goal bt-bombard-cannon-demand-goal 1)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
+        (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        (goal bt-resource-mode-goal bt-resource-mode-food-crisis)
+        (goal bt-resource-mode-goal bt-resource-mode-gold-crisis)
+    )
+=>
+    (set-goal bt-arbalest-demand-goal 0)
+)
+(defrule
+    (goal bt-arbalest-demand-goal 1)
+    (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-arbalest)
+=>
+    (set-strategic-number sn-resource-control ri-arbalest)
+    (release-escrow food)
+    (release-escrow gold)
+    (enable-timer bt-research-watchdog-timer bt-research-watchdog-seconds)
+    (research ri-arbalest)
+)
+(defrule
+    (strategic-number sn-resource-control == ri-arbalest)
+    (up-research-status c: ri-arbalest == research-complete)
+=>
+    (disable-timer bt-research-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-arbalest-demand-goal 0)
+)
+
+;================================================================
+; 23. PIKEMAN RESEARCH
 ;================================================================
 
 ;
