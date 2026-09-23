@@ -88,6 +88,13 @@ try {
 
   const boundaryPasses = [
     {
+      name: "documented-unit-wildcard-count-slot-passes",
+      source: baseline.replace(
+        "(players-unit-type-count target-player trebuchet-set >= 1)",
+        "(players-unit-type-count target-player villager-hunter >= 1)",
+      ),
+    },
+    {
       name: "up-get-point-base-15998-passes",
       source: setNumericDefconst(
         baseline,
@@ -345,12 +352,11 @@ try {
       ),
     },
     {
-      name: "documented-unit-wildcard-rejected-in-build-slot",
+      name: "documented-unit-wildcard-rejected-in-non-count-unit-slot",
       expected: "undocumented AIRef object identifier",
-      source: baseline.replace(
-        "(can-build house)\n    (build house)",
-        "(can-build trebuchet-set)\n    (build trebuchet-set)",
-      ),
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-set-attack-stance trebuchet-set c: stance-aggressive)\n)\n",
     },
     {
       name: "documented-unit-wildcard-rejected-in-garrison-slot",
