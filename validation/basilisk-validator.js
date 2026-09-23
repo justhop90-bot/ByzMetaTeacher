@@ -297,6 +297,7 @@ function validateEngineLimits(sourceText, rules) {
   let worstRule = -1;
   let worstElements = 0;
   const nearLimitRules = [];
+  const atLimitRules = [];
   const complexSingleLineRules = [];
 
   for (let index = 0; index < rules.length; index += 1) {
@@ -306,16 +307,27 @@ function validateEngineLimits(sourceText, rules) {
       worstRule = index;
     }
 
-    if (elements >= NEAR_RULE_ELEMENTS && elements <= MAX_RULE_ELEMENTS) {
+    if (elements >= NEAR_RULE_ELEMENTS && elements < MAX_RULE_ELEMENTS) {
       nearLimitRules.push({
         rule: index + 1,
         elements,
+        headroom: MAX_RULE_ELEMENTS - elements,
+        risk: "near-limit",
+      });
+    }
+
+    if (elements === MAX_RULE_ELEMENTS) {
+      atLimitRules.push({
+        rule: index + 1,
+        elements,
+        headroom: 0,
+        risk: "at-limit",
       });
     }
 
     assert.ok(
       elements <= MAX_RULE_ELEMENTS,
-      `[Rule too long] rule ${index + 1} has ${elements} elements; DE limit is ${MAX_RULE_ELEMENTS}`,
+      `[Rule too long] rule ${index + 1} has ${elements} elements; DE hard limit is ${MAX_RULE_ELEMENTS}`,
     );
 
     const nonBlankLines = rules[index]
@@ -366,8 +378,11 @@ function validateEngineLimits(sourceText, rules) {
     maxLineLength,
     worstRule,
     worstElements,
+    maxRuleHeadroom: MAX_RULE_ELEMENTS - worstElements,
     nearLimitRules,
+    atLimitRules,
     nearLimitThreshold: NEAR_RULE_ELEMENTS,
+    hardRuleElementLimit: MAX_RULE_ELEMENTS,
     complexSingleLineThreshold: COMPLEX_SINGLE_LINE_RULE_LENGTH,
   };
 }
@@ -2114,8 +2129,11 @@ console.log(JSON.stringify({
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,
   maxRuleIndex: engineLimitReport.worstRule,
+  maxRuleHeadroom: engineLimitReport.maxRuleHeadroom,
   nearLimitRules: engineLimitReport.nearLimitRules,
+  atLimitRules: engineLimitReport.atLimitRules,
   nearLimitThreshold: engineLimitReport.nearLimitThreshold,
+  hardRuleElementLimit: engineLimitReport.hardRuleElementLimit,
   complexSingleLineThreshold: engineLimitReport.complexSingleLineThreshold,
   airefCommandCount: commandReport.commandCount,
   airefCommandsUsed: commandReport.usedCommandCount,
