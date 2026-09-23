@@ -11453,7 +11453,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-    (goal unit-goal spearman-line)
     (unit-type-count-total spearman-line >= 6)
     (or
 (players-unit-type-count any-enemy knight-line >= 6)
@@ -11489,7 +11488,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-    (goal unit-goal bt-unit-mix)
     (unit-type-count-total spearman-line >= 6)
     (or
 (players-unit-type-count any-enemy knight-line >= 6)
@@ -11538,10 +11536,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 ;================================================================
 (defrule
     (current-age >= castle-age)
-    (or
-    (goal unit-goal skirmisher-line)
-    (goal unit-goal bt-unit-mix)
-    )
     (unit-type-count-total skirmisher-line >= 6)
     (or
     (players-unit-type-count any-enemy archer-line >= 6)
