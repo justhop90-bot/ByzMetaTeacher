@@ -2232,16 +2232,17 @@ function validateVillagerHygiene(rules) {
   }
 }
 
-function validateScoutingLifecycle(rules) {
+function validateScoutingLifecycle(sourceText, rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
-  const source = rules.map(normalize).join("\n");
+  const source = sourceText.replace(/\s+/g, " ");
+  const ruleSource = rules.map(normalize).join("\n");
 
   assert.ok(
-    source.includes("(set-strategic-number sn-total-number-explorers 10)"),
+    ruleSource.includes("(set-strategic-number sn-total-number-explorers 10)"),
     "[Scouting lifecycle] native explorer cap is not opened for early home scouting",
   );
   assert.ok(
-    source.includes("(set-strategic-number sn-cap-civilian-explorers 0)"),
+    ruleSource.includes("(set-strategic-number sn-cap-civilian-explorers 0)"),
     "[Scouting lifecycle] civilian explorer cap must remain zero",
   );
   assert.ok(
@@ -2257,11 +2258,11 @@ function validateScoutingLifecycle(rules) {
     "[Scouting lifecycle] protected home-search window must remain 300 seconds",
   );
   assert.ok(
-    source.includes("(enable-timer bt-scouting-timer bt-scout-first-pulse)"),
+    ruleSource.includes("(enable-timer bt-scouting-timer bt-scout-first-pulse)"),
     "[Scouting lifecycle] initial scouting timer must use the explicit first pulse",
   );
   assert.ok(
-    source.includes("(set-strategic-number sn-home-exploration-time bt-scout-home-grace)"),
+    ruleSource.includes("(set-strategic-number sn-home-exploration-time bt-scout-home-grace)"),
     "[Scouting lifecycle] home exploration window is missing",
   );
 
@@ -2658,7 +2659,7 @@ validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
-validateScoutingLifecycle(rules);
+validateScoutingLifecycle(source, rules);
 validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
