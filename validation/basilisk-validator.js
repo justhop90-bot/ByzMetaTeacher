@@ -3117,6 +3117,23 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
     );
   }
 
+    
+  for (const claim of beginClaims) {
+    const completion = rules.find(
+      (rule) =>
+        rule.includes("(goal bt-preempt-active-goal 1)") &&
+        rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
+        rule.includes("(building-type-count town-center") &&
+        rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
+        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-complete)") &&
+        rule.includes("(set-strategic-number sn-resource-control 0)"),
+    );
+    assert.ok(
+      completion,
+      "[Preemption] completion path must terminate emergency ownership for " + claim,
+    );
+  }
+
   const defenseRules = rules.filter(
     (rule) =>
       rule.includes("(goal bt-preempt-active-goal 1)") &&
@@ -3214,6 +3231,10 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+  assert.ok(
+    (xs.match(/xsChatData\([^\n]*,\s*[^\n]*\)/g) || []).length >= 2,
+    "[Telemetry] XS telemetry output must use the two-argument xsChatData signature",
+  );
   assert.ok(xs.includes("while(count > 0 && processed < 4)"), "[Telemetry] drain is not bounded");
   assert.ok(xs.includes("xsSetGoal(BT_RING_READ"), "[Telemetry] XS drain does not advance read head");
   assert.ok(xs.includes("xsSetGoal(BT_RING_COUNT"), "[Telemetry] XS drain does not decrement occupancy");
@@ -4331,8 +4352,8 @@ validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
 validateImperialPrerequisiteProviders(rules);
 validateAgeBankPriority(rules);
-validateFeudalEcoResearchPriority(rules, sourceText);
-validateEconomicResearchPackageIsolation(rules, sourceText);
+validateFeudalEcoResearchPriority(rules, source);
+validateEconomicResearchPackageIsolation(rules, source);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
