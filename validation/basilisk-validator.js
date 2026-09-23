@@ -3310,6 +3310,7 @@ console.log(JSON.stringify({
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
+    "age-transition queue gates separate civilian bank ownership from engine research feasibility",
     "engine-action can-* contracts",
     "fielded Scout witness for up-send-scout",
     "escrow-aware farm gate consistency",
