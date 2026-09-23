@@ -2,6 +2,7 @@ name: Basilisk live validator self-test
 
 on:
   push:
+  pull_request:
 
 jobs:
   validator-selftest:
