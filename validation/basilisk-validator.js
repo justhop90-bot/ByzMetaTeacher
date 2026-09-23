@@ -305,7 +305,7 @@ function validateEngineLimits(sourceText, rules) {
     );
   }
 
-  const badDefconstTimers = [...sourceText.matchAll(
+  const badDefconstTimers = [...sanitizeStructure(sourceText).matchAll(
     /\(defconst\s+[^\s)]+timer[^\s)]*\s+(-?\d+)\)/g,
   )]
     .map((match) => Number(match[1]))
@@ -316,8 +316,8 @@ function validateEngineLimits(sourceText, rules) {
     `[Engine limits] numeric timer defconst outside 1..50: ${badDefconstTimers.join(", ")}`,
   );
 
-  const badLiteralTimers = [...stripComments(sourceText).matchAll(
-    /\((?:enable-timer|disable-timer|timer-triggered|up-timer-status)\s+(-?\d+)(?:\s|\))/g,
+  const badLiteralTimers = [...sanitizeStructure(sourceText).matchAll(
+    /\((?:enable-timer|disable-timer|timer-triggered|up-timer-status|up-get-timer|up-set-timer)\s+(-?\d+)(?:\s|\))/g,
   )]
     .map((match) => Number(match[1]))
     .filter((value) => value < 1 || value > 50);
@@ -474,7 +474,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
   }
 
   for (const match of identifierSource.matchAll(
-    /\((enable-timer|disable-timer|timer-triggered|up-timer-status)\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)/g,
+    /\((enable-timer|disable-timer|timer-triggered|up-timer-status|up-get-timer|up-set-timer)\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)/g,
   )) {
     const token = match[2];
     const line = identifierSource.slice(0, match.index).split("\n").length;
