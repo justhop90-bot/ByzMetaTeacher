@@ -860,10 +860,9 @@ requireRule(
 );
 requireRule(
   "Castle-power Crossbow demand",
+  "(goal bt-crossbow-demand-goal 0)",
   "(goal strategy-goal bt-strategy-castle-power)",
-  "(current-age >= castle-age)",
   "(up-compare-goal bt-standing-crossbow-target-goal > 0)",
-  "(not (goal bt-any-threat-goal 1))",
   "(set-goal bt-crossbow-demand-goal 1)",
 );
 requireRule(
