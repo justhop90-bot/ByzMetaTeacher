@@ -1742,7 +1742,7 @@
         (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
         (unit-type-count-total arbalester >= bt-crossbow-target-mature)
     )
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-thumb-ring)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-thumb-ring)
     (up-research-status c: ri-thumb-ring < research-complete)
 =>
     (set-goal bt-research-ranged-counter-package-goal ri-thumb-ring)
@@ -1946,7 +1946,7 @@
     (goal bt-scorpion-ballistics-demand-goal 0)
     (goal bt-onager-demand-goal 1)
     (up-research-status c: ri-chemistry == research-complete)
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
+    (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-onager)
     (up-research-status c: ri-onager < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-onager)
@@ -1996,7 +1996,7 @@
     (goal bt-scorpion-ballistics-demand-goal 0)
     (goal bt-onager-demand-goal 1)
     (up-research-status c: ri-chemistry == research-complete)
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
+    (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-onager)
     (up-research-status c: ri-onager < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-onager)
@@ -2015,7 +2015,7 @@
     (goal bt-research-siege-package-goal ri-chemistry)
     (up-research-status c: ri-chemistry == research-complete)
     (goal bt-onager-demand-goal 1)
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
+    (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-onager)
     (up-research-status c: ri-onager < research-complete)
 =>
     (set-goal bt-research-siege-package-goal ri-onager)
@@ -8647,28 +8647,27 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (unit-type-count mangonel-line >= bt-mangonel-imperial-escalation-target)
     (not (goal bt-cataphract-demand-goal 1))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-onager)
+    (up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ri-onager)
     (strategic-number sn-resource-control == 0)
-    (building-type-count university >= 1)
     (can-research-with-escrow ri-onager)
-    (goal bt-research-university-claim-goal 0)
+    (goal bt-research-siege-workshop-claim-goal 0)
     (goal bt-research-siege-package-goal ri-onager)
 =>
     (set-strategic-number sn-resource-control ri-onager)
     (release-escrow food)
     (release-escrow gold)
     (research ri-onager)
-    (set-goal bt-research-university-claim-goal ri-onager)
+    (set-goal bt-research-siege-workshop-claim-goal ri-onager)
     (set-strategic-number sn-resource-control 0)
 )
 
 ; Research completion releases only the Onager resource claim. Demand stays
 ; active so the completed upgrade can feed the finite production package.
 (defrule
-    (goal bt-research-university-claim-goal ri-onager)
+    (goal bt-research-siege-workshop-claim-goal ri-onager)
     (up-research-status c: ri-onager == research-complete)
 =>
-    (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 ; Two actual Onagers close the finite Imperial response package.
@@ -9657,13 +9656,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (goal bt-university-backoff-goal 0)
     (or
         (goal bt-research-siege-package-goal ri-ballistics)
-        (or
-            (goal bt-research-siege-package-goal ri-onager)
-            (or
-                (goal bt-research-siege-package-goal ri-chemistry)
-                (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
-            )
-        )
+        (goal bt-research-siege-package-goal ri-chemistry)
     )
 =>
     (set-goal bt-university-demand-goal 1)
@@ -9690,7 +9683,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (goal bt-university-demand-goal 1)
     (goal bt-university-backoff-goal 0)
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: university == 0)
     (can-build-with-escrow university)
@@ -10727,25 +10719,24 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (building-type-count archery-range >= 1)
     (up-research-status c: ri-thumb-ring < research-pending)
-    (up-compare-goal bt-research-university-failure-backoff-goal != ri-thumb-ring)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-thumb-ring)
     (strategic-number sn-resource-control == 0)
-    (building-type-count university >= 1)
     (can-research-with-escrow ri-thumb-ring)
-    (goal bt-research-university-claim-goal 0)
+    (goal bt-research-archery-range-claim-goal 0)
     (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
 =>
     (set-strategic-number sn-resource-control ri-thumb-ring)
     (release-escrow food)
     (release-escrow wood)
     (research ri-thumb-ring)
-    (set-goal bt-research-university-claim-goal ri-thumb-ring)
+    (set-goal bt-research-archery-range-claim-goal ri-thumb-ring)
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (goal bt-research-university-claim-goal ri-thumb-ring)
+    (goal bt-research-archery-range-claim-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring == research-complete)
 =>
-    (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 (defrule
@@ -12146,12 +12137,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ;----------------------------------------------------------------
 ; ONAGER WATCHDOG EXPIRY
 (defrule
-    (goal bt-research-university-claim-goal ri-onager)
+    (goal bt-research-siege-workshop-claim-goal ri-onager)
     (up-research-status c: ri-onager <= research-available)
 =>
-    (set-goal bt-research-university-failure-backoff-goal ri-onager)
-    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-siege-workshop-failure-backoff-goal ri-onager)
+    (enable-timer bt-research-siege-workshop-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-siege-workshop-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -12224,12 +12215,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 )
 
 (defrule
-    (goal bt-research-university-claim-goal ri-thumb-ring)
+    (goal bt-research-archery-range-claim-goal ri-thumb-ring)
     (up-research-status c: ri-thumb-ring <= research-available)
 =>
-    (set-goal bt-research-university-failure-backoff-goal ri-thumb-ring)
-    (enable-timer bt-research-university-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-goal bt-research-university-claim-goal 0)
+    (set-goal bt-research-archery-range-failure-backoff-goal ri-thumb-ring)
+    (enable-timer bt-research-archery-range-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-archery-range-claim-goal 0)
 )
 
 (defrule
