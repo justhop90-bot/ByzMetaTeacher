@@ -6529,11 +6529,6 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 ; Live Imperial-prerequisite foundations remain owned construction
 ; obligations. Keep the claim and continue builder support indefinitely.
 
-; The current rules record the last construction execution timeout only.
-(defrule
-    (up-compare-goal bt-imperial-prereq-failure-history-goal != 0)
-=>
-)
 
 ;----------------------------------------------------------------
 ; CASTLE PREREQUISITE CONSTRUCTION WATCHDOG
