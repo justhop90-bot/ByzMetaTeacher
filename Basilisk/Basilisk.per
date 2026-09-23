@@ -5257,12 +5257,15 @@ town-center >= 2)))))
 
 ; Temporarily favor wood while the second Castle-age provider is outstanding.
 (defrule
-    ; Imperial prerequisite funding deliberately overrides the 50-villager
-    ; bank-prep mode while the second qualifying building is outstanding.
+    ; Imperial prerequisite funding overrides age-bank arbitration, but P0
+    ; resource crises retain ownership until the crisis clears.
     (current-age == castle-age)
     (goal bt-imperial-prereq-demand-goal 1)
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
+    (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)
 )
