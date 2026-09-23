@@ -946,3 +946,85 @@ assert.equal(castlePowerPolicy({
   flushArmyFloorCastle: 4,
 }), "boom", "[Castle-power E] cleared-threat Castle FLUSH did not recover to BOOM");
 
+
+function imperialFlushPolicy(input) {
+  if (input.threatActive) return "flush";
+  if (input.standingArmyDeficit < 0 || input.standingArmyFloor < input.flushArmyFloorImperial) {
+    return "flush";
+  }
+  return "boom";
+}
+
+const imperialFlushCases = [
+  {
+    id: "A",
+    threatActive: true,
+    targetAlive: true,
+    archers: 4,
+    expected: "flush",
+  },
+  {
+    id: "B",
+    threatActive: true,
+    targetAlive: true,
+    archers: 2,
+    expected: "flush",
+  },
+  {
+    id: "C",
+    threatActive: true,
+    targetAlive: false,
+    archers: 4,
+    expected: "flush",
+  },
+  {
+    id: "D",
+    threatActive: true,
+    targetAlive: false,
+    archers: 2,
+    expected: "flush",
+  },
+  {
+    id: "E",
+    threatActive: false,
+    targetAlive: true,
+    archers: 4,
+    expected: "boom",
+  },
+  {
+    id: "F",
+    threatActive: false,
+    targetAlive: true,
+    archers: 2,
+    expected: "boom",
+  },
+  {
+    id: "G",
+    threatActive: false,
+    targetAlive: false,
+    archers: 4,
+    expected: "boom",
+  },
+  {
+    id: "H",
+    threatActive: false,
+    targetAlive: false,
+    archers: 2,
+    expected: "boom",
+  },
+];
+
+for (const testCase of imperialFlushCases) {
+  assert.equal(imperialFlushPolicy({
+    age: 4,
+    imperialAge: 4,
+    safe: !testCase.threatActive,
+    threatActive: testCase.threatActive,
+    targetAlive: testCase.targetAlive,
+    archers: testCase.archers,
+    standingArmyDeficit: 0,
+    standingArmyFloor: 8,
+    flushArmyFloorImperial: 8,
+  }), testCase.expected, `[Imperial FLUSH ${testCase.id}] final strategy mismatch`);
+}
+
