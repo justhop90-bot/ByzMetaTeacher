@@ -490,9 +490,10 @@
 (defconst bt-relative-force-goal 506)
 (defconst bt-counter-veto-goal 504)
 (defconst bt-cataphract-demand-goal 45)
-; Pre-Imperial Castle capability demand for an infantry-driven Cataphract plan.
-; This is deliberately separate from the Imperial Cataphract production demand:
-; it means "secure the Castle capability before Imperial", not "train Cataphracts now".
+; Pre-Imperial Castle capability demand.
+; This uses the existing Castle/Cataphract capability lifecycle for either
+; an infantry-driven Cataphract plan or a mature Castle economy that should
+; secure the Byzantine unique-unit capability before Imperial.
 (defconst bt-castle-cataphract-demand-goal 585)
 (defconst bt-castle-cataphract-failure-history-goal 586)
 (defconst bt-castle-cataphract-backoff-goal 588)
@@ -2703,6 +2704,9 @@
     (disable-timer bt-research-watchdog-timer)
     (set-strategic-number sn-resource-control 0)
     (set-goal bt-castle-commitment-goal 0)
+    ; The Feudal bank has completed its job. Release the resource-mode
+    ; ownership so Castle-age consumers, including Castle stone, can arbitrate.
+    (set-goal bt-resource-mode-goal 0)
     (set-goal train-civ-goal 1)
 )
 
@@ -2714,35 +2718,50 @@
 ;   536 gold
 
 ;================================================================
-; 6A. PRE-IMPERIAL CASTLE CAPABILITY FOR CATAPHRACTS
+; 6A. PRE-IMPERIAL CASTLE CAPABILITY
 ;================================================================
 ; This demand is created in Castle Age, before Imperial authority is
 ; evaluated below. It is strategic intent, not production authorization.
 ;
-; Trigger:
-;   - Castle Age
-;   - boom or flush posture
-;   - six or more enemy infantry
-;   - fewer than six completed/queued Cataphracts
-;   - no existing Castle
+; Two valid reasons own the same finite Castle capability package:
+;   1) real infantry pressure justifies the Cataphract/defensive Castle;
+;   2) a mature Castle economy should secure the Byzantine Castle capability
+;      before Imperial makes the decision irrelevant.
 ;
-; The Castle is justified by the future Cataphract capability. The Imperial
-; prerequisite shortcut is a secondary benefit, not the reason to spend 650
-; stone on a building that exists only to save 400 wood elsewhere.
+; The mature-economy trigger deliberately waits for 36 villagers plus
+; meaningful food/gold reserves. It does not force a Castle immediately on
+; reaching Castle Age and does not create a stone demand before the economy
+; is ready to carry it.
 (defrule
     (current-age == castle-age)
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (building-type-count-total castle < 1)
-    ; Do not create a Castle capability obligation once Imperial is already executable.
-    ; Imperial age authority owns the transition when its engine feasibility witness is true.
     (not (can-research-with-escrow imperial-age))
     (or
-        (goal strategy-goal bt-strategy-boom)
-        (goal strategy-goal bt-strategy-flush)
+        (and
+            (goal strategy-goal bt-strategy-boom)
+            (unit-type-count villager >= 36)
+            (food-amount >= 500)
+            (gold-amount >= 200)
+        )
+        (or
+            (and
+                (goal strategy-goal bt-strategy-castle-power)
+                (unit-type-count villager >= 36)
+                (food-amount >= 500)
+                (gold-amount >= 200)
+            )
+            (and
+                (goal strategy-goal bt-strategy-flush)
+                (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+            )
+        )
     )
-    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
-    (unit-type-count-total cataphract-line < bt-cataphract-target-1)
+    (or
+        (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+        (unit-type-count villager >= 36)
+    )
 =>
     (set-goal bt-castle-cataphract-demand-goal 1)
 )
