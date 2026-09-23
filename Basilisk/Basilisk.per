@@ -545,6 +545,26 @@
 ; Persistent Castle Heavy Plow demand. 1 means the farm-efficiency upgrade
 ; remains wanted until completion or Imperial priority invalidates the window.
 (defconst bt-heavy-plow-demand-goal 699)
+; Diagnostic narration state. These goals remember only already-decided state.
+; They never participate in strategy, production, resource allocation, or research.
+(defconst bt-debug-verbosity-goal 700)
+(defconst bt-debug-last-opening-goal 701)
+(defconst bt-debug-last-threat-goal 702)
+(defconst bt-debug-last-resource-mode-goal 703)
+(defconst bt-debug-last-unit-goal 704)
+(defconst bt-debug-last-castle-block-goal 705)
+(defconst bt-debug-last-tc-stage-goal 706)
+(defconst bt-debug-last-tc-complete-goal 707)
+(defconst bt-debug-last-age-event-goal 708)
+(defconst bt-debug-last-eco-event-goal 709)
+(defconst bt-debug-last-strategy-goal 710)
+(defconst bt-debug-last-tc-project-goal 712)
+(defconst bt-debug-castle-block-none 0)
+(defconst bt-debug-castle-block-backoff 1)
+(defconst bt-debug-castle-block-mutex 2)
+(defconst bt-debug-castle-block-feasibility 3)
+(defconst bt-debug-castle-block-villagers 4)
+(defconst bt-debug-castle-block-ready 5)
 ; Villager hygiene QoL state: current attacker player and TC defense point.
 (defconst bt-villager-defense-raider-player-goal 695)
 (defconst bt-villager-defense-self-player-goal 696)
@@ -767,6 +787,18 @@
     (set-escrow-percentage gold 30)
     (set-escrow-percentage stone 0)
     (set-goal train-civ-goal 1)
+    (set-goal bt-debug-verbosity-goal 1)
+    (set-goal bt-debug-last-opening-goal 0)
+    (set-goal bt-debug-last-threat-goal 0)
+    (set-goal bt-debug-last-resource-mode-goal 0)
+    (set-goal bt-debug-last-unit-goal 0)
+    (set-goal bt-debug-last-castle-block-goal 0)
+    (set-goal bt-debug-last-tc-stage-goal 0)
+    (set-goal bt-debug-last-tc-complete-goal 1)
+    (set-goal bt-debug-last-age-event-goal 0)
+    (set-goal bt-debug-last-eco-event-goal 0)
+    (set-goal bt-debug-last-strategy-goal 0)
+    (set-goal bt-debug-last-tc-project-goal 0)
     (disable-self)
 )
 
@@ -2751,6 +2783,100 @@
     (set-goal train-civ-goal 1)
 )
 
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: AGE-UP LIFECYCLE
+; Demand/started/completed are read from existing engine witnesses.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == dark-age)
+    (unit-type-count villager >= bt-feudal-villagers)
+    (can-research-with-escrow feudal-age)
+    (up-compare-goal bt-debug-last-age-event-goal != 1)
+=>
+    (chat-local-to-self "BASILISK | AGE | Feudal bank committed.")
+    (set-goal bt-debug-last-age-event-goal 1)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == dark-age)
+    (up-research-status c: feudal-age >= research-pending)
+    (up-compare-goal bt-debug-last-age-event-goal != 2)
+=>
+    (chat-local-to-self "BASILISK | AGE | Feudal research started.")
+    (set-goal bt-debug-last-age-event-goal 2)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age >= feudal-age)
+    (up-compare-goal bt-debug-last-age-event-goal != 3)
+=>
+    (chat-local-to-self "BASILISK | AGE | Feudal complete.")
+    (set-goal bt-debug-last-age-event-goal 3)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == feudal-age)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-age-event-goal != 4)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle bank committed.")
+    (set-goal bt-debug-last-age-event-goal 4)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == feudal-age)
+    (up-research-status c: castle-age >= research-pending)
+    (up-compare-goal bt-debug-last-age-event-goal != 5)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle research started.")
+    (set-goal bt-debug-last-age-event-goal 5)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age >= castle-age)
+    (up-compare-goal bt-debug-last-age-event-goal != 6)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle complete.")
+    (set-goal bt-debug-last-age-event-goal 6)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == castle-age)
+    (unit-type-count villager >= bt-imperial-villagers)
+    (can-research-with-escrow imperial-age)
+    (up-compare-goal bt-debug-last-age-event-goal != 7)
+=>
+    (chat-local-to-self "BASILISK | AGE | Imperial bank committed.")
+    (set-goal bt-debug-last-age-event-goal 7)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age == castle-age)
+    (up-research-status c: imperial-age >= research-pending)
+    (up-compare-goal bt-debug-last-age-event-goal != 8)
+=>
+    (chat-local-to-self "BASILISK | AGE | Imperial research started.")
+    (set-goal bt-debug-last-age-event-goal 8)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (current-age >= imperial-age)
+    (up-compare-goal bt-debug-last-age-event-goal != 9)
+=>
+    (chat-local-to-self "BASILISK | AGE | Imperial complete.")
+    (set-goal bt-debug-last-age-event-goal 9)
+)
+
+
 ;================================================================
 ; 8. HOUSING
 ;================================================================
@@ -4186,6 +4312,126 @@
     (set-goal bt-opening-stage-goal bt-opening-stage-complete)
 )
 
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: THREAT INTERPRETATION
+; The threat goal is recomputed every pass, so narration uses a diagnostic
+; latch rather than attaching chat directly to the observation writers.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-threat-goal bt-opening-threat-none)
+    (up-compare-goal bt-debug-last-threat-goal != bt-opening-threat-none)
+    (up-compare-goal bt-debug-last-threat-goal != 0)
+=>
+    (chat-local-to-self "BASILISK | THREAT | clear.")
+    (set-goal bt-debug-last-threat-goal bt-opening-threat-none)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-threat-goal bt-opening-threat-suspected)
+    (up-compare-goal bt-debug-last-threat-goal != bt-opening-threat-suspected)
+=>
+    (chat-local-to-self "BASILISK | THREAT | suspected pressure.")
+    (set-goal bt-debug-last-threat-goal bt-opening-threat-suspected)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-threat-goal bt-opening-threat-confirmed)
+    (up-compare-goal bt-debug-last-threat-goal != bt-opening-threat-confirmed)
+=>
+    (chat-local-to-self "BASILISK | THREAT | confirmed pressure.")
+    (set-goal bt-debug-last-threat-goal bt-opening-threat-confirmed)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-threat-goal bt-opening-threat-immediate)
+    (up-compare-goal bt-debug-last-threat-goal != bt-opening-threat-immediate)
+=>
+    (chat-local-to-self "BASILISK | THREAT | immediate pressure.")
+    (set-goal bt-debug-last-threat-goal bt-opening-threat-immediate)
+)
+
+
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: OPENING PLAN
+; Existing opening writers remain authoritative; this is a one-shot observer.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-arabia-standard)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-arabia-standard)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ARABIA-STANDARD")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-arabia-standard)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-arabia-pressure)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-arabia-pressure)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ARABIA-PRESSURE")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-arabia-pressure)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-arabia-fast-castle)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-arabia-fast-castle)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ARABIA-FAST-CASTLE")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-arabia-fast-castle)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-arena-fast-castle)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ARENA-FAST-CASTLE")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-arena-fast-castle)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-arena-boom)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-arena-boom)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ARENA-BOOM")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-arena-boom)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-anti-rush)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-anti-rush)
+=>
+    (chat-local-to-self "BASILISK | OPENING | ANTI-RUSH")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-anti-rush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-generic-pressure)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-generic-pressure)
+=>
+    (chat-local-to-self "BASILISK | OPENING | GENERIC-PRESSURE")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-generic-pressure)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-opening-plan-goal bt-opening-plan-generic-defensive)
+    (up-compare-goal bt-debug-last-opening-goal != bt-opening-plan-generic-defensive)
+=>
+    (chat-local-to-self "BASILISK | OPENING | GENERIC-DEFENSIVE")
+    (set-goal bt-debug-last-opening-goal bt-opening-plan-generic-defensive)
+)
+
+
 ; 13. STRATEGY SELECTION
 ;================================================================
 ;
@@ -4555,6 +4801,47 @@ cataphract-line < bt-cataphract-target-1)))))
 =>
     (set-goal bt-cataphract-demand-goal 0)
 )
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: STRATEGY
+; The four broad postures are observed after their existing writers.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal strategy-goal bt-strategy-flush)
+    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-flush)
+=>
+    (chat-local-to-self "BASILISK | STRATEGY | FLUSH: defensive response.")
+    (set-goal bt-debug-last-strategy-goal bt-strategy-flush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal strategy-goal bt-strategy-rush)
+    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-rush)
+=>
+    (chat-local-to-self "BASILISK | STRATEGY | RUSH: pressure posture.")
+    (set-goal bt-debug-last-strategy-goal bt-strategy-rush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal strategy-goal bt-strategy-boom)
+    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-boom)
+=>
+    (chat-local-to-self "BASILISK | STRATEGY | BOOM: economic posture.")
+    (set-goal bt-debug-last-strategy-goal bt-strategy-boom)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal strategy-goal bt-strategy-castle-power)
+    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-castle-power)
+=>
+    (chat-local-to-self "BASILISK | STRATEGY | CASTLE-POWER: pressure survives the age-up.")
+    (set-goal bt-debug-last-strategy-goal bt-strategy-castle-power)
+)
+
+
 ;================================================================
 ; 14. UNIT-GOAL SELECTION
 ;================================================================
@@ -4689,6 +4976,74 @@ cataphract-line < bt-cataphract-target-1)))))
 )
 
 ;================================================================
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: COMPOSITION
+; Unit-goal is continuously selected; this reports only meaningful changes.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal bt-unit-mix)
+    (up-compare-goal bt-debug-last-unit-goal != bt-unit-mix)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | MIX")
+    (set-goal bt-debug-last-unit-goal bt-unit-mix)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal spearman-line)
+    (up-compare-goal bt-debug-last-unit-goal != spearman-line)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | SPEARS")
+    (set-goal bt-debug-last-unit-goal spearman-line)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal skirmisher-line)
+    (up-compare-goal bt-debug-last-unit-goal != skirmisher-line)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | SKIRMISHERS")
+    (set-goal bt-debug-last-unit-goal skirmisher-line)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal archer-line)
+    (up-compare-goal bt-debug-last-unit-goal != archer-line)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | ARCHERS")
+    (set-goal bt-debug-last-unit-goal archer-line)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal crossbowman)
+    (up-compare-goal bt-debug-last-unit-goal != crossbowman)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | CROSSBOW")
+    (set-goal bt-debug-last-unit-goal crossbowman)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal knight-line)
+    (up-compare-goal bt-debug-last-unit-goal != knight-line)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | KNIGHTS")
+    (set-goal bt-debug-last-unit-goal knight-line)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal unit-goal camel-line)
+    (up-compare-goal bt-debug-last-unit-goal != camel-line)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | CAMELS")
+    (set-goal bt-debug-last-unit-goal camel-line)
+)
+
+
 ; 14D. BYZANTINE RESOURCE ALLOCATION
 ;================================================================
 ; CONSUMES existing strategy/composition/project state. Never writes it.
@@ -4843,6 +5198,77 @@ town-center >= 2)))))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
 )
+
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: CASTLE GATE
+; Pure diagnostics. These rules never write strategic state.
+;----------------------------------------------------------------
+(defrule
+    (goal bt-castle-commitment-goal 0)
+    (up-compare-goal bt-debug-last-castle-block-goal != 0)
+=>
+    (set-goal bt-debug-last-castle-block-goal 0)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-castle-block-goal != bt-debug-castle-block-backoff)
+    (up-compare-goal bt-research-age-failure-backoff-goal == castle-age)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: research backoff.")
+    (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-backoff)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-castle-block-goal != bt-debug-castle-block-mutex)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+    (strategic-number sn-resource-control != 0)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: resource mutex busy.")
+    (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-mutex)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-castle-block-goal != bt-debug-castle-block-feasibility)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+    (strategic-number sn-resource-control == 0)
+    (not (can-research-with-escrow castle-age))
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: engine feasibility.")
+    (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-feasibility)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-castle-block-goal != bt-debug-castle-block-villagers)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow castle-age)
+    (unit-type-count villager < bt-castle-villagers)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: waiting for 30 villagers.")
+    (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-villagers)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-debug-last-castle-block-goal != bt-debug-castle-block-ready)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow castle-age)
+    (unit-type-count villager >= bt-castle-villagers)
+=>
+    (chat-local-to-self "BASILISK | AGE | Castle ready to research.")
+    (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-ready)
+)
+
 
 ; P2 CASTLE STONE. Stone exists only while an existing
 ; Castle-oriented military project has earned the stone allocation.
@@ -5257,6 +5683,191 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 ;================================================================
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: RESOURCE MODE
+; Resource mode is continuously re-arbitrated; this latch reports only changes.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-dark)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-dark)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | DARK")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-dark)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-feudal-rush)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-feudal-rush)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | FEUDAL-RUSH")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-feudal-rush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-feudal-flush)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-feudal-flush)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | FEUDAL-FLUSH")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-feudal-flush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-boom)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CASTLE-BOOM")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-castle-boom)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-flush)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-flush)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CASTLE-FLUSH")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-castle-flush)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-cheap-trash)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-cheap-trash)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CHEAP-TRASH")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-cheap-trash)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-premium-gold)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | PREMIUM-GOLD")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-premium-gold)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-imperial-bank)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | IMPERIAL-BANK")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-imperial-bank)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-trash)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-imperial-trash)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | IMPERIAL-TRASH")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-imperial-trash)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-power)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-imperial-power)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | IMPERIAL-POWER")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-imperial-power)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-feudal-bank)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-feudal-bank)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | FEUDAL-BANK")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-feudal-bank)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-bank)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-bank)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CASTLE-BANK")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-castle-bank)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-imperial-bank-prep)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | IMPERIAL-BANK-PREP")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-stone-premium)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CASTLE-STONE-PREMIUM")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-castle-stone-premium)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-castle-stone)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-stone)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | CASTLE-STONE")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-castle-stone)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-tc-stone-premium)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-tc-stone-premium)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | TC-STONE-PREMIUM")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-tc-stone-premium)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-tc-stone)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | TC-STONE")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-tc-stone)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-food-crisis)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-food-crisis)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | FOOD-CRISIS")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-food-crisis)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-gold-crisis)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-gold-crisis)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | GOLD-CRISIS")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-gold-crisis)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-wood-crisis)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-wood-crisis)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | WOOD-CRISIS")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-wood-crisis)
+)
+
+
 ; 14E. DOUBLE-BIT AXE DEMAND
 ;================================================================
 ;
@@ -8121,6 +8732,201 @@ cataphract-line < bt-cataphract-target-1)))))
     (train camel)
 )
 
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: MAJOR ECO RESEARCH
+; Demand, active research, and completion are observed without touching
+; technology authority or resource-claim predicates.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-horse-collar-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 1)
+=>
+    (chat-local-to-self "BASILISK | ECO | Horse Collar: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 1)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-mill-claim-goal ri-horse-collar)
+    (up-compare-goal bt-debug-last-eco-event-goal != 2)
+=>
+    (chat-local-to-self "BASILISK | ECO | Horse Collar: research started.")
+    (set-goal bt-debug-last-eco-event-goal 2)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-horse-collar == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 3)
+=>
+    (chat-local-to-self "BASILISK | ECO | Horse Collar: complete.")
+    (set-goal bt-debug-last-eco-event-goal 3)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-double-bit-axe-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 4)
+=>
+    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 4)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+    (up-compare-goal bt-debug-last-eco-event-goal != 5)
+=>
+    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: research started.")
+    (set-goal bt-debug-last-eco-event-goal 5)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-double-bit-axe == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 6)
+=>
+    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: complete.")
+    (set-goal bt-debug-last-eco-event-goal 6)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-gold-mining-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 7)
+=>
+    (chat-local-to-self "BASILISK | ECO | Gold Mining: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 7)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-mining-camp-claim-goal ri-gold-mining)
+    (up-compare-goal bt-debug-last-eco-event-goal != 8)
+=>
+    (chat-local-to-self "BASILISK | ECO | Gold Mining: research started.")
+    (set-goal bt-debug-last-eco-event-goal 8)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-gold-mining == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 9)
+=>
+    (chat-local-to-self "BASILISK | ECO | Gold Mining: complete.")
+    (set-goal bt-debug-last-eco-event-goal 9)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-wheelbarrow-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 10)
+=>
+    (chat-local-to-self "BASILISK | ECO | Wheelbarrow: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 10)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-town-center-claim-goal ri-wheel-barrow)
+    (up-compare-goal bt-debug-last-eco-event-goal != 11)
+=>
+    (chat-local-to-self "BASILISK | ECO | Wheelbarrow: research started.")
+    (set-goal bt-debug-last-eco-event-goal 11)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-wheel-barrow == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 12)
+=>
+    (chat-local-to-self "BASILISK | ECO | Wheelbarrow: complete.")
+    (set-goal bt-debug-last-eco-event-goal 12)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-hand-cart-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 13)
+=>
+    (chat-local-to-self "BASILISK | ECO | Hand Cart: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 13)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-town-center-claim-goal ri-hand-cart)
+    (up-compare-goal bt-debug-last-eco-event-goal != 14)
+=>
+    (chat-local-to-self "BASILISK | ECO | Hand Cart: research started.")
+    (set-goal bt-debug-last-eco-event-goal 14)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-hand-cart == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 15)
+=>
+    (chat-local-to-self "BASILISK | ECO | Hand Cart: complete.")
+    (set-goal bt-debug-last-eco-event-goal 15)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-bow-saw-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 16)
+=>
+    (chat-local-to-self "BASILISK | ECO | Bow Saw: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 16)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
+    (up-compare-goal bt-debug-last-eco-event-goal != 17)
+=>
+    (chat-local-to-self "BASILISK | ECO | Bow Saw: research started.")
+    (set-goal bt-debug-last-eco-event-goal 17)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-bow-saw == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 18)
+=>
+    (chat-local-to-self "BASILISK | ECO | Bow Saw: complete.")
+    (set-goal bt-debug-last-eco-event-goal 18)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-heavy-plow-demand-goal 1)
+    (up-compare-goal bt-debug-last-eco-event-goal != 19)
+=>
+    (chat-local-to-self "BASILISK | ECO | Heavy Plow: demand active.")
+    (set-goal bt-debug-last-eco-event-goal 19)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-research-mill-claim-goal ri-heavy-plow)
+    (up-compare-goal bt-debug-last-eco-event-goal != 20)
+=>
+    (chat-local-to-self "BASILISK | ECO | Heavy Plow: research started.")
+    (set-goal bt-debug-last-eco-event-goal 20)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (up-research-status c: ri-heavy-plow == research-complete)
+    (up-compare-goal bt-debug-last-eco-event-goal != 21)
+=>
+    (chat-local-to-self "BASILISK | ECO | Heavy Plow: complete.")
+    (set-goal bt-debug-last-eco-event-goal 21)
+)
+
+
 ;================================================================
 ; 17. BYZANTINE BOOM
 ;================================================================
@@ -8491,6 +9297,65 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-tc-project-goal 0)
     (set-goal bt-tc-stage-goal bt-tc-stage-idle)
 )
+
+;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: TOWN-CENTER PROJECTS
+; Existing TC lifecycle remains authoritative; narration only observes stage.
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (up-compare-goal bt-debug-last-tc-stage-goal != 1)
+=>
+    (chat-local-to-self "BASILISK | TC | TC project demanded.")
+    (set-goal bt-debug-last-tc-stage-goal 1)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (up-compare-goal bt-debug-last-tc-stage-goal != 2)
+=>
+    (chat-local-to-self "BASILISK | TC | TC resource bank claimed.")
+    (set-goal bt-debug-last-tc-stage-goal 2)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    (up-compare-goal bt-debug-last-tc-stage-goal != 3)
+=>
+    (chat-local-to-self "BASILISK | TC | TC placement requested.")
+    (set-goal bt-debug-last-tc-stage-goal 3)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-tc-stage-goal bt-tc-stage-foundation-active)
+    (up-compare-goal bt-debug-last-tc-stage-goal != 4)
+=>
+    (chat-local-to-self "BASILISK | TC | TC foundation active.")
+    (set-goal bt-debug-last-tc-stage-goal 4)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (building-type-count town-center >= 2)
+    (up-compare-goal bt-debug-last-tc-complete-goal < 2)
+=>
+    (chat-local-to-self "BASILISK | TC | TC2 complete.")
+    (set-goal bt-debug-last-tc-complete-goal 2)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (building-type-count town-center >= 3)
+    (up-compare-goal bt-debug-last-tc-complete-goal < 3)
+=>
+    (chat-local-to-self "BASILISK | TC | TC3 complete.")
+    (set-goal bt-debug-last-tc-complete-goal 3)
+)
+
 
 ;================================================================
 ; 18. SCOUTING -> ATTACK-GROUP GATHERING
