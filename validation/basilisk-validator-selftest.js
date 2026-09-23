@@ -908,6 +908,54 @@ try {
       })(),
     }
     {
+      name: "narration-verbosity-gate-regression",
+      expected: "[Narration]",
+      source: (() => {
+        const needle = "    (up-compare-goal bt-debug-verbosity-goal >= 1)\n    (goal strategy-goal bt-strategy-flush)";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] strategy narration gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(
+          "    (up-compare-goal bt-debug-verbosity-goal >= 1)\n",
+          "",
+        );
+      })(),
+    },
+    {
+      name: "narration-edge-trigger-regression",
+      expected: "[Narration]",
+      source: (() => {
+        const needle =
+          "    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-flush)\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] strategy narration latch witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index + needle.length);
+      })(),
+    },
+    {
+      name: "narration-strategic-write-regression",
+      expected: "[Narration]",
+      source: baseline.replace(
+        "(set-goal bt-debug-last-strategy-goal bt-strategy-flush)",
+        "(set-goal strategy-goal bt-strategy-rush)",
+      ),
+    },
+    {
+      name: "narration-canonical-message-regression",
+      expected: "[Narration]",
+      source: baseline.replace(
+        'BASILISK | STRATEGY | CASTLE-POWER: pressure survives the age-up.',
+        "BASILISK | STRATEGY | CASTLE-POWER: removed.",
+      ),
+    },
+    {
+      name: "narration-castle-block-regression",
+      expected: "[Narration]",
+      source: baseline.replace(
+        'BASILISK | AGE | Castle blocked: engine feasibility.',
+        'BASILISK | AGE | Castle blocked: missing.',
+      ),
+    },
+    {
       name: "unknown-timer",
       expected: "[Timer]",
       source: baseline.replace(
