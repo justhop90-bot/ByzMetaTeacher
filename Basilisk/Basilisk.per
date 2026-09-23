@@ -4055,6 +4055,18 @@
     (set-goal strategy-goal bt-strategy-castle-power)
 )
 
+; Failed Castle-Power promotion is an explicit RUSH -> BOOM recovery.
+; This is mutually exclusive with the promotion rule above because that rule
+; changes strategy-goal away from RUSH before this rule can match in the same pass.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age >= castle-age)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
 (defrule
     (current-age >= castle-age)
     (not (town-under-attack))
