@@ -5110,6 +5110,7 @@ town-center >= 2)))))
 ; of the transition.
 (defrule
     (current-age == feudal-age)
+    (unit-type-count villager < bt-castle-villagers)
     (goal bt-horse-collar-demand-goal 1)
     (or
         (can-research-with-escrow ri-horse-collar)
@@ -5121,6 +5122,7 @@ town-center >= 2)))))
 
 (defrule
     (current-age == feudal-age)
+    (unit-type-count villager < bt-castle-villagers)
     (goal bt-double-bit-axe-demand-goal 1)
     (or
         (can-research-with-escrow ri-double-bit-axe)
@@ -5134,6 +5136,7 @@ town-center >= 2)))))
 ; the direct feasibility witness as the immediate Castle-preemption fallback.
 (defrule
     (current-age == feudal-age)
+    (unit-type-count villager < bt-castle-villagers)
     (up-research-status c: ri-double-bit-axe == research-available)
     (food-amount >= bt-double-bit-axe-food-buffer)
     (wood-amount >= bt-double-bit-axe-wood-buffer)
@@ -5917,6 +5920,7 @@ research-pending))))
 (defrule
     (goal bt-double-bit-axe-demand-goal 1)
     (current-age == feudal-age)
+    (not (goal bt-castle-commitment-goal 1))
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
     (strategic-number sn-resource-control == 0)
     (building-type-count lumber-camp >= 1)
