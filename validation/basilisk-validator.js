@@ -312,9 +312,21 @@ function validateRuleStructure(sourceText) {
 
     const head = headMatch[1];
     assert.ok(
-      head === "defconst" || head === "defrule",
+      head === "defconst" || head === "defrule" || head === "include",
       `[Top-level syntax] unsupported top-level form '${head}' near source offset ${cursor}`,
     );
+
+    if (head === "include") {
+      const includeMatch = form.match(/^\(include\s+"([^"]+)"\)$/);
+      assert.ok(
+        includeMatch,
+        "[Include] include must name exactly one quoted XS file",
+      );
+      assert.ok(
+        includeMatch[1].toLowerCase().endsWith(".xs"),
+        "[Include] included file must use the .xs extension",
+      );
+    }
 
     if (head === "defrule") {
       const arrowPositions = [...form.matchAll(/=>/g)].map((match) => match.index);
@@ -646,6 +658,21 @@ function validateParserGradeRuleStructure(sourceText) {
         "[Defconst] defconst at line " +
           form.line +
           " value must be a single integer, alias, or quoted string",
+      );
+      continue;
+    }
+
+    if (form.head === "include") {
+      assert.equal(
+        form.args.length,
+        1,
+        "[Include] include requires exactly one quoted XS path",
+      );
+      assert.ok(
+        form.args[0].kind === "atom" &&
+          form.args[0].value.startsWith('"') &&
+          form.args[0].value.endsWith(".xs""),
+        "[Include] include path must be a quoted .xs filename",
       );
       continue;
     }
