@@ -122,6 +122,16 @@
 (defconst bt-varangian-target-level-3 6)
 (defconst bt-varangian-logistica-min 6)
 
+; VARANGIAN INTEGRATION CHECKLIST
+;   1. Exact unit symbols: 2703 / 2704.
+;   2. Persistent demand: cavalry pressure -> finite target.
+;   3. Completion witness: queue-inclusive regular+elite total.
+;   4. Execution: Barracks + can-train-with-escrow -> train.
+;   5. Resource arbitration: premium-gold mode protects the package.
+;   6. Upgrade continuation: six Guards can earn shared Logistica.
+;   7. Release: cavalry pressure/target/premium-tech completion clears demand.
+;   8. Existing cheap Spear/Camel counters remain the first response tier.
+
 ; Q: "What is attack-goal?"
 ;
 ; Community goal 2.
@@ -2332,7 +2342,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
-    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)
+    (goal bt-cataphract-demand-goal 0)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
@@ -2340,6 +2350,7 @@
     (goal bt-research-cataphract-package-goal ri-logistica)
     (goal bt-research-castle-claim-goal 0)
     (up-research-status c: ri-logistica < research-pending)
+    (goal bt-varangian-demand-goal 0)
     (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
@@ -2361,6 +2372,13 @@
 (defrule
     (up-compare-goal bt-research-cataphract-package-goal != 0)
     (goal bt-cataphract-demand-goal 0)
+    (or
+        (goal bt-research-cataphract-package-goal ri-elite-cataphract)
+        (and
+            (goal bt-research-cataphract-package-goal ri-logistica)
+            (goal bt-varangian-demand-goal 0)
+        )
+    )
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
