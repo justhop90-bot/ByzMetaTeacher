@@ -551,6 +551,7 @@
 (defconst bt-wheelbarrow-feudal-villagers 30)
 (defconst bt-wheelbarrow-castle-villagers 40)
 (defconst bt-bow-saw-villagers 32)
+(defconst bt-hand-cart-villagers 45)
 
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
@@ -595,9 +596,9 @@
 (defconst bt-elite-skirmisher-bank-delta-gold-goal 479)
 
 ; Double-Bit Axe demand buffers.
-; 900 food follows the stock-AI Feudal investment window; 100 wood is
-; a modest execution cushion rather than a second Castle bank.
-(defconst bt-double-bit-axe-food-buffer 900)
+; 800 food / 100 wood leaves the full generic Castle food bank intact
+; after the 100F/50W upgrade cost while opening the Feudal window earlier.
+(defconst bt-double-bit-axe-food-buffer 800)
 (defconst bt-double-bit-axe-wood-buffer 100)
 
 ; Stone Shaft Mining late-Castle maturity buffers.
@@ -640,9 +641,9 @@
 (defconst bt-opening-threat-immediate 3)
 
 ; Farm-tech lifecycle tuning.
-; Castle capacity is 14 farms, matching the mature-boom range used by
-; community/stock logic before larger Imperial farm scaling.
-(defconst bt-farm-feudal-cap 6)
+; Eight Feudal farms allow extended Feudal pressure/boom without making
+; the farm layer wait for Castle; 14 remains the mature Castle ceiling.
+(defconst bt-farm-feudal-cap 8)
 (defconst bt-farm-castle-cap 14)
 (defconst bt-farm-imperial-cap 24)
 (defconst bt-farm-feudal-emergency-food 150)
@@ -5404,8 +5405,10 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-wheel-barrow >= research-complete)
     (or
-        (building-type-count-total town-center >= 3)
-        (unit-type-count villager >= bt-imperial-villagers)
+        (or
+            (building-type-count-total town-center >= 3)
+            (unit-type-count villager >= bt-hand-cart-villagers)
+        )
     )
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -5422,8 +5425,10 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (goal bt-research-town-center-claim-goal 0)
     (or (can-research-with-escrow imperial-age) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (not
             (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (up-research-status c: ri-wheel-barrow >= research-complete) (and (or
-                    (building-type-count-total town-center >= 3)
-                    (unit-type-count villager >= bt-imperial-villagers)
+                    (or
+                        (building-type-count-total town-center >= 3)
+                        (unit-type-count villager >= bt-hand-cart-villagers)
+                    )
                 ) (and (not (can-research-with-escrow imperial-age)) (and (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)) (up-research-status c: ri-hand-cart == research-available)))))))
         )))
 =>
