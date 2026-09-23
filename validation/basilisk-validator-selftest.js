@@ -96,74 +96,66 @@ try {
     },
     {
       name: "up-get-point-base-15998-passes",
-      source: setNumericDefconst(
-        baseline,
-        "bt-siege-tower-wall-point-goal",
-        15998,
-      ),
+      source:
+        baseline +
+        "\\n(defconst validator-point-output-goal 15998)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-point position-object validator-point-output-goal)\\n)\\n",
     },
     {
       name: "up-get-search-state-base-15996-passes",
-      source: setNumericDefconst(
-        baseline,
-        "bt-bombard-trebuchet-search-state-goal",
-        15996,
-      ),
+      source:
+        baseline +
+        "\\n(defconst validator-search-state-output-goal 15996)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-search-state validator-search-state-output-goal)\\n)\\n",
     },
     {
       name: "up-get-cost-delta-base-15996-passes",
-      source: setNumericDefconst(
-        baseline,
-        "bt-stone-mining-bank-delta-food-goal",
-        15996,
-      ),
+      source:
+        baseline +
+        "\\n(defconst validator-cost-delta-output-goal 15996)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-cost-delta validator-cost-delta-output-goal)\\n)\\n",
     },
     {
       name: "up-setup-cost-data-base-15996-passes",
-      source: setNumericDefconst(
-        baseline,
-        "bt-bow-saw-bank-cost-goal",
-        15996,
-      ),
+      source:
+        baseline +
+        "\\n(defconst validator-setup-cost-output-goal 15996)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-setup-cost-data 1 validator-setup-cost-output-goal)\\n)\\n",
     },
   ];
 
   const boundaryFailures = [
     {
       name: "up-get-point-base-15999-fails",
-      expected: "[AIRef goal-output]",
-      source: setNumericDefconst(
-        baseline,
-        "bt-siege-tower-wall-point-goal",
-        15999,
-      ),
+      expected: "command-numeric-range-mismatch",
+      source:
+        baseline +
+        "\\n(defconst validator-point-output-goal 15999)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-point position-object validator-point-output-goal)\\n)\\n",
     },
     {
       name: "up-get-search-state-base-15997-fails",
-      expected: "[AIRef goal-output]",
-      source: setNumericDefconst(
-        baseline,
-        "bt-bombard-trebuchet-search-state-goal",
-        15997,
-      ),
+      expected: "command-numeric-range-mismatch",
+      source:
+        baseline +
+        "\\n(defconst validator-search-state-output-goal 15997)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-search-state validator-search-state-output-goal)\\n)\\n",
     },
     {
       name: "up-get-cost-delta-base-15997-fails",
-      expected: "[AIRef goal-output]",
-      source: setNumericDefconst(
-        baseline,
-        "bt-stone-mining-bank-delta-food-goal",
-        15997,
-      ),
+      expected: "command-numeric-range-mismatch",
+      source:
+        baseline +
+        "\\n(defconst validator-cost-delta-output-goal 15997)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-get-cost-delta validator-cost-delta-output-goal)\\n)\\n",
     },
     {
       name: "up-setup-cost-data-base-15997-fails",
-      expected: "[AIRef goal-output]",
-      source: setNumericDefconst(
-        baseline,
-        "bt-bow-saw-bank-cost-goal",
-        15997,
-      ),
+      expected: "command-numeric-range-mismatch",
+      source:
+        baseline +
+        "\\n(defconst validator-setup-cost-output-goal 15997)\\n" +
+        "\\n(defrule\\n    (true)\\n=>\\n    (up-setup-cost-data 1 validator-setup-cost-output-goal)\\n)\\n",
     },
   ];
 
