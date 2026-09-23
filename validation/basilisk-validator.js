@@ -3408,6 +3408,16 @@ function validateImperialPrerequisiteProviders(rules) {
     !fundingMode.includes("(goal bt-resource-mode-goal 0)"),
     "[Imperial prerequisites] Funding mode must be allowed to override Imperial bank-prep arbitration",
   );
+  for (const crisis of [
+    "bt-resource-mode-food-crisis",
+    "bt-resource-mode-gold-crisis",
+    "bt-resource-mode-wood-crisis",
+  ]) {
+    assert.ok(
+      fundingMode.includes(`(not (goal bt-resource-mode-goal ${crisis}))`),
+      "[Imperial prerequisites] Funding mode must yield to " + crisis,
+    );
+  }
   assert.ok(
     fundingMode.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
       fundingMode.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
