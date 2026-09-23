@@ -289,6 +289,14 @@ try {
       ),
     },
     {
+      name: "bare-siege-tower-identifier-rejected",
+      expected: "[Invalid identifier]",
+      source: baseline.replace(
+        "(defconst siege-tower 1105)",
+        "(defconst siege-tower-invalid-placeholder 1105)",
+      ),
+    },
+    {
       name: "unknown-timer",
       expected: "[Timer]",
       source: baseline.replace(
