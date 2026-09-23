@@ -4058,6 +4058,7 @@ validateEconomicResearchPackageIsolation(rules, sourceText);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
+validateMillPlacement(source, rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
 validateScoutingLifecycle(source, rules);
