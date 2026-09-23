@@ -823,12 +823,60 @@ function loadAIRefCommandSchema(repoRootPath) {
     "[AIRef schema] schema is not anchored to the current AIRef commands.js blob",
   );
 
+  const commandInventoryPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-command-inventory.json",
+  );
+  assert.ok(
+    fs.existsSync(commandInventoryPath),
+    "[AIRef schema] current AIRef command inventory is missing: " + commandInventoryPath,
+  );
+
+  let commandInventory;
+  try {
+    commandInventory = JSON.parse(fs.readFileSync(commandInventoryPath, "utf8"));
+  } catch (error) {
+    assert.fail(
+      "[AIRef schema] could not parse current AIRef command inventory: " +
+        error.message,
+    );
+  }
+
+  assert.equal(
+    commandInventory?.metadata?.source_blob_sha,
+    registry?.metadata?.source_commands_js_blob_sha,
+    "[AIRef schema] slot schema and AIRef command vocabulary are anchored to different commands.js blobs",
+  );
+  assert.equal(
+    registry?.metadata?.ai_ref_command_count,
+    385,
+    "[AIRef schema] expected the complete 385-command AIRef catalog",
+  );
+
   const commands = Array.isArray(registry.commands) ? registry.commands : [];
+  const inventoryCommands = Array.isArray(commandInventory?.commands)
+    ? commandInventory.commands
+    : [];
+  assert.equal(
+    commands.length,
+    inventoryCommands.length,
+    "[AIRef schema] slot schema command count does not match the current AIRef command inventory",
+  );
+  assert.equal(
+    commands.length,
+    385,
+    "[AIRef schema] slot schema does not contain all 385 AIRef commands",
+  );
   assert.ok(
     commands.length > 0,
     "[AIRef schema] command schema contains no commands",
   );
 
+  const inventoryByName = new Map(
+    inventoryCommands.map((command) => [command.name, command]),
+  );
   const byName = new Map();
   for (const command of commands) {
     assert.ok(
@@ -841,8 +889,30 @@ function loadAIRefCommandSchema(repoRootPath) {
       !byName.has(command.name),
       "[AIRef schema] duplicate command entry: " + command.name,
     );
+    const inventoryEntry = inventoryByName.get(command.name);
+    assert.ok(
+      inventoryEntry,
+      "[AIRef schema] slot schema contains command not present in current AIRef inventory: " +
+        command.name,
+    );
+    assert.equal(
+      command.version,
+      inventoryEntry.version,
+      "[AIRef schema] version mismatch for " + command.name,
+    );
+    assert.equal(
+      command.command_type,
+      inventoryEntry.type,
+      "[AIRef schema] command-type mismatch for " + command.name,
+    );
     byName.set(command.name, command);
   }
+
+  assert.equal(
+    byName.size,
+    inventoryByName.size,
+    "[AIRef schema] command names differ between slot schema and AIRef inventory",
+  );
 
   return {
     path: schemaPath,
@@ -871,6 +941,18 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     "inventories",
     "airef-object-inventory.json",
   );
+  const classPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-class-inventory.json",
+  );
+  const valueFamilyPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-value-family-inventory.json",
+  );
 
   const load = (filePath) => {
     assert.ok(
@@ -883,6 +965,8 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
   const strategicNumberInventory = load(strategicNumberPath);
   const techInventory = load(techPath);
   const objectInventory = load(objectPath);
+  const classInventory = load(classPath);
+  const valueFamilyInventory = load(valueFamilyPath);
 
   const strategicNumbers = new Set(
     (strategicNumberInventory.strategic_numbers ?? [])
@@ -910,6 +994,29 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     }
   }
 
+  const classes = new Set(
+    (classInventory.entries ?? [])
+      .flatMap((entry) => [entry.symbol, ...(entry.aliases ?? [])])
+      .filter(Boolean),
+  );
+
+  const parameterValues = new Map();
+  for (const family of valueFamilyInventory.families ?? []) {
+    const names = parameterValues.get(family.parameter_name) ?? new Set();
+    for (const entry of family.entries ?? []) {
+      if (typeof entry.name === "string") {
+        for (const token of entry.name.split(",")) {
+          const normalized = token.trim();
+          if (normalized) names.add(normalized);
+        }
+      }
+      for (const alias of entry.aliases ?? []) {
+        if (typeof alias === "string" && alias.trim()) names.add(alias.trim());
+      }
+    }
+    parameterValues.set(family.parameter_name, names);
+  }
+
   const defconsts = new Set(
     [...sanitizeStructure(sourceText).matchAll(
       /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g,
@@ -921,7 +1028,30 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     strategicNumbers,
     techs,
     objects,
+    classes,
+    parameterValues,
   };
+}
+
+
+function documentedParameterValue(parameterName, value, families) {
+  if (!value || /^-?\d+$/.test(value) || value.startsWith('"')) return true;
+  if (families.defconsts.has(value)) return true;
+  if (value.startsWith(("g:")) || value.startsWith(("s:")) || value.startsWith(("c:"))) {
+    return false;
+  }
+  return families.parameterValues.get(parameterName)?.has(value) ||
+    families.objects.has(value) ||
+    families.techs.has(value) ||
+    families.classes.has(value) ||
+    families.strategicNumbers.has(value);
+}
+
+function isSymbolicSchemaValue(value) {
+  return (
+    /^[A-Za-z][A-Za-z0-9_-]*$/.test(value) &&
+    !/^-?\d+$/.test(value)
+  );
 }
 
 function typedSchemaFamily(value, families) {
@@ -1147,6 +1277,26 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         }
       }
 
+      if (
+        parameter.type === "Const" &&
+        isSymbolicSchemaValue(value) &&
+        !documentedParameterValue(parameterName, value, families)
+      ) {
+        reportFailure(
+          "command-argument-mismatch",
+          expression,
+          index + 1,
+          command.name +
+            " " +
+            parameterName +
+            " argument " +
+            (index + 1) +
+            " uses undocumented AIRef value '" +
+            value +
+            "'",
+        );
+      }
+
       const expectedFamily = expectedAIRefFamily(parameterName);
       const actualFamily = typedSchemaFamily(value, families);
       if (
@@ -1249,7 +1399,94 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
   };
 }
 
+
+function validateAIRefDucStateSafety(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+  const rules = extractRules(sanitized);
+  let localReady = false;
+  let remoteReady = false;
+  const failures = [];
+
+  const walk = (expression, line) => {
+    if (!expression || typeof expression !== "object") return;
+    const head = expression.head;
+    const args = expression.args.map((arg) =>
+      typeof arg === "string" ? arg : null,
+    );
+
+    if (head === "up-full-reset-search") {
+      localReady = false;
+      remoteReady = false;
+    } else if (head === "up-reset-search") {
+      if (args.length < 4) {
+        localReady = false;
+        remoteReady = false;
+      } else {
+        if (args[1] === "1") localReady = false;
+        if (args[3] === "1") remoteReady = false;
+      }
+    } else if (head === "up-find-local") {
+      localReady = true;
+    } else if (head === "up-find-remote" || head === "up-find-resource") {
+      remoteReady = true;
+    } else if (
+      head === "up-set-group" ||
+      head === "up-set-target-object"
+    ) {
+      const source = args[0];
+      if (source === "search-local") localReady = true;
+      if (source === "search-remote") remoteReady = true;
+    } else if (head === "up-target-point" || head === "up-target-objects") {
+      if (!localReady) {
+        failures.push({
+          kind: "unscoped-duc-target",
+          command: head,
+          line,
+          message:
+            head +
+            " runs without a retained local search/group state",
+        });
+      }
+    }
+
+    for (const arg of expression.args) {
+      if (arg && typeof arg === "object") walk(arg, line);
+    }
+  };
+
+  for (const rule of rules) {
+    const expressions = parseCommandExpressions(rule);
+    const line = sanitized.slice(
+      0,
+      sanitized.indexOf(rule),
+    ).split("\n").length + 1;
+    for (const expression of expressions) walk(expression, line);
+  }
+
+  assert.equal(
+    failures.length,
+    0,
+    "[AIRef DUC] " +
+      failures.length +
+      " retained-search safety failure(s): " +
+      failures
+        .slice(0, 12)
+        .map(
+          (failure) =>
+            failure.kind +
+            " '" +
+            failure.command +
+            "' at line " +
+            failure.line +
+            ": " +
+            failure.message,
+        )
+        .join("; "),
+  );
+}
+
 function validateAIRefGoalOutputSafety(sourceText) {
+
   const sanitized = sanitizeStructure(sourceText);
   const numericDefconsts = new Map(
     [...sanitized.matchAll(
@@ -1661,6 +1898,7 @@ const engineLimitReport = validateEngineLimits(source, rules);
 const identifierReport = validateIdentifiers(source, repoRoot);
 const commandReport = validateAIRefCommandVocabulary(source, rules, repoRoot);
 validateAIRefCommandSchema(source, rules, repoRoot);
+validateAIRefDucStateSafety(source);
 validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
@@ -1700,6 +1938,8 @@ console.log(JSON.stringify({
     "exact defrule => separator and action-section structure",
     "invalid identifier resolution for engine-facing typed slots",
     "AIRef command arity, parameter-family, type-prefix, and typed-operand schema contracts",
+    "AIRef documented enum/value-family validation for symbolic Const slots",
+    "AIRef retained-search DUC target-scope validation",
     "typed c:/g:/s: operand resolution and timer identifiers",
     "missing closing parenthesis diagnostics with source line",
     "rule-too-long diagnostics at the DE 32-element ceiling",
