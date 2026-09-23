@@ -3033,6 +3033,110 @@ function validateCastleCataphractImperialHandoff(rules) {
   );
 }
 
+function validateFeudalEcoResearchPriority(rules, sourceText) {
+  const forbidden = [
+    "(goal bt-research-cavalry-counter-package-goal 0)",
+    "(goal bt-research-ranged-counter-package-goal 0)",
+    "(goal bt-research-cataphract-package-goal 0)",
+    "(goal bt-research-siege-package-goal 0)",
+    "(goal bt-research-monk-package-goal 0)",
+  ];
+
+  const horseDemandWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-horse-collar-demand-goal 0)") &&
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-horse-collar == research-available)") &&
+      rule.includes("(building-type-count mill >= 1)") &&
+      rule.includes("(set-goal bt-horse-collar-demand-goal 1)"),
+  );
+  assert.ok(
+    horseDemandWriter,
+    "[Feudal eco] persistent Horse Collar demand writer is missing",
+  );
+
+  assert.ok(
+    sourceText.includes("(defconst bt-horse-collar-demand-goal 698)"),
+    "[Feudal eco] persistent Horse Collar demand goal constant is missing",
+  );
+
+  const horseExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
+      rule.includes("(research ri-horse-collar)"),
+  );
+  assert.ok(
+    horseExecutor,
+    "[Feudal eco] Horse Collar executor is missing",
+  );
+  for (const witness of [
+    "(current-age == feudal-age)",
+    "(can-research-with-escrow ri-horse-collar)",
+    "(goal bt-research-mill-claim-goal 0)",
+  ]) {
+    assert.ok(
+      horseExecutor.includes(witness),
+      "[Feudal eco] Horse Collar executor is missing witness: " + witness,
+    );
+  }
+  for (const veto of forbidden) {
+    assert.ok(
+      !horseExecutor.includes(veto),
+      "[Feudal eco] Horse Collar executor still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const dbaExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
+      rule.includes("(research ri-double-bit-axe)"),
+  );
+  assert.ok(
+    dbaExecutor,
+    "[Feudal eco] Double-Bit Axe executor is missing",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !dbaExecutor.includes(veto),
+      "[Feudal eco] Double-Bit Axe executor still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const horseHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-horse-collar == research-available)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    horseHold,
+    "[Feudal eco] Horse Collar hold rule is missing",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !horseHold.includes(veto),
+      "[Feudal eco] Horse Collar hold rule still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const dbaHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-double-bit-axe == research-available)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    dbaHold,
+    "[Feudal eco] Double-Bit Axe hold rule is missing",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !dbaHold.includes(veto),
+      "[Feudal eco] Double-Bit Axe hold rule still contains unrelated package veto: " + veto,
+    );
+  }
+}
+
 function validateAgeTransitionQueueGates(rules) {
   const castleStop = rules.find(
     (rule) =>
@@ -3257,6 +3361,7 @@ validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
+validateFeudalEcoResearchPriority(rules, sourceText);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
@@ -3311,6 +3416,7 @@ console.log(JSON.stringify({
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
     "age-transition queue gates separate civilian bank ownership from engine research feasibility",
+    "persistent Feudal eco research priority and package-veto separation",
     "engine-action can-* contracts",
     "fielded Scout witness for up-send-scout",
     "escrow-aware farm gate consistency",
