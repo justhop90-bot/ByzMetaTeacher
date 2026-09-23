@@ -1077,6 +1077,47 @@ for (const [technology, requiredPredicates] of rangedExecutorRules) {
     }
   }
 }
+requireRule(
+  "Scout Stable live strategy gate",
+  "(goal bt-scout-pressure-demand-goal 1)",
+  "(goal strategy-goal bt-strategy-boom)",
+  "(goal bt-any-threat-goal 0)",
+  "(can-build stable)",
+  "(build stable)",
+);
+requireRule(
+  "Scout production live strategy gate",
+  "(goal bt-scout-pressure-demand-goal 1)",
+  "(goal strategy-goal bt-strategy-boom)",
+  "(goal bt-any-threat-goal 0)",
+  "(can-train scout-cavalry)",
+  "(train scout-cavalry)",
+);
+requireRule(
+  "Scout Forging live strategy gate",
+  "(goal bt-scout-pressure-demand-goal 1)",
+  "(goal strategy-goal bt-strategy-boom)",
+  "(goal bt-any-threat-goal 0)",
+  "(research ri-forging)",
+);
+
+const firstStrategyWriterIndex = rules.findIndex((rule) =>
+  rule.includes("(set-goal strategy-goal"),
+);
+assert.notEqual(
+  firstStrategyWriterIndex,
+  -1,
+  "[Strategy boundary] no strategy writer exists",
+);
+for (let index = 0; index < firstStrategyWriterIndex; index += 1) {
+  const rule = rules[index];
+  if (!rule.includes("(goal strategy-goal") && !rule.includes("(not (goal strategy-goal")) continue;
+  assert.ok(
+    !/(^|\\s)\\((build|train|research|attack-now)\\b/.test(rule),
+    `[One-pass latency] pre-strategy reader at rule ${index} must not issue an engine action`,
+  );
+}
+
 const firstProductionRuleIndex = ruleIndex(
   "(goal bt-standing-army-demand-goal 1)",
   "(strategic-number sn-resource-control == 0)",
