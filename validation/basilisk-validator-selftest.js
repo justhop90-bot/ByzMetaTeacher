@@ -699,6 +699,82 @@ try {
       })(),
     },
     {
+      name: "castle-commitment-must-pause-spear-production",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count-total barracks >= 1)";
+        const replacement =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count-total barracks >= 1)";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Spear Castle-commitment gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
+      name: "castle-commitment-must-pause-skirmisher-production",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count archery-range >= 1)\n" +
+          "    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)";
+        const replacement =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count archery-range >= 1)\n" +
+          "    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Skirmisher Castle-commitment gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
+      name: "castle-commitment-must-pause-standing-archer-production",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count archery-range >= 1)\n" +
+          "    (unit-type-count-total archer-line < bt-standing-archer-target-goal)";
+        const replacement =
+          "    (goal bt-standing-army-demand-goal 1)\n" +
+          "    (strategic-number sn-resource-control == 0)\n" +
+          "    (building-type-count archery-range >= 1)\n" +
+          "    (unit-type-count-total archer-line < bt-standing-archer-target-goal)";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Standing Archer Castle-commitment gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
+      name: "castle-commitment-must-pause-rush-archer-production",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (goal strategy-goal bt-strategy-rush)\n" +
+          "    (goal unit-goal archer-line)\n" +
+          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (strategic-number sn-resource-control == 0)";
+        const replacement =
+          "    (goal strategy-goal bt-strategy-rush)\n" +
+          "    (goal unit-goal archer-line)\n" +
+          "    (strategic-number sn-resource-control == 0)";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] RUSH Archer Castle-commitment gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
