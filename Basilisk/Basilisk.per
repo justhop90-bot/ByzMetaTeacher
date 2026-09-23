@@ -182,7 +182,7 @@
 ; The second-mill trigger is a simplified Naga-derived scaling rule:
 ;   1 completed TC  -> 8 farms
 ;   2+ completed TCs -> 14 farms
-; This is equivalent to a 16 + 2*min(TCs, 2) farm threshold.
+; This keeps the 1-TC trigger deliberately early while retaining a 14-farm witness for 2+ TCs.
 ; The target deliberately stops at two mills because this controller's
 ; farm capacity currently stops at 24; a third mill needs a later placement
 ; and food-density proof rather than another speculative threshold.
