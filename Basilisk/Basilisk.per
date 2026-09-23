@@ -3687,6 +3687,7 @@
     (or
         (game-time < bt-scout-home-grace)
         (sheep-and-forage-too-far)
+        (players-building-count target-player <= 0)
     )
     (unit-type-count scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
