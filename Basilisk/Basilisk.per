@@ -216,6 +216,10 @@
 (defconst bt-mill-second-farm-threshold-2tc 14)
 (defconst bt-mill-third-farm-threshold-3tc 18)
 (defconst bt-mill-third-farm-threshold-4tc 22)
+; Post-Feudal Mill placement: anchor on the latest Farm and keep other
+; dropsites separated so later Mills do not collapse into one fish pond.
+(defconst bt-mill-placement-zone-size 6)
+(defconst bt-mill-placement-separation-distance 10)
 
 ; Mill construction watchdog. It detects a failed build order without
 ; releasing ownership while a real Mill foundation is still pending.
@@ -3261,7 +3265,7 @@
 
 ; The second mill is justified by farm density, with completed Town
 ; Centers acting as the scale modifier rather than as a direct trigger.
-; One TC requires 18 farms; two or more require 20 farms.
+; One TC requires 8 farms; two or more require 14 farms.
 (defrule
     (goal bt-mill-target-goal 1)
     (building-type-count mill >= 1)
@@ -3327,12 +3331,9 @@
     (set-goal bt-mill-project-goal 3)
 )
 
-; Resource authority is acquired before the engine action.
-; can-build-with-escrow is required because this controller keeps 30% wood
-; escrow. Releasing wood here follows the established TC/research claim
-; pattern without changing the global escrow percentage.
+; First Mill: keep the existing generic engine placement.
 (defrule
-    (up-compare-goal bt-mill-project-goal > 0)
+    (goal bt-mill-project-goal 1)
     (goal bt-mill-backoff-goal 0)
     (strategic-number sn-resource-control == 0)
     (not (and
@@ -3350,6 +3351,35 @@
     (release-escrow wood)
     (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
     (build mill)
+)
+
+; Later Mills: center the placement on the latest completed Farm. The
+; compact zone keeps the initial search near food infrastructure, while
+; dropsite separation rejects Mill-on-Mill placement and fish-pond wandering.
+(defrule
+    (up-compare-goal bt-mill-project-goal >= 2)
+    (current-age >= feudal-age)
+    (building-type-count farm >= 1)
+    (goal bt-mill-backoff-goal 0)
+    (strategic-number sn-resource-control == 0)
+    (not (and
+        (current-age == feudal-age)
+        (or
+            (can-research-with-escrow castle-age)
+            (goal bt-castle-commitment-goal 1)
+        )
+    ))
+    (up-pending-objects c: mill == 0)
+    (civilian-population >= 10)
+    (can-build-with-escrow mill)
+=>
+    (up-set-placement-data my-player-number farm c: 0)
+    (set-strategic-number sn-placement-zone-size bt-mill-placement-zone-size)
+    (set-strategic-number sn-dropsite-separation-distance bt-mill-placement-separation-distance)
+    (set-strategic-number sn-resource-control bt-mill-claim)
+    (release-escrow wood)
+    (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+    (up-build place-control 0 c: mill)
 )
 
 (defrule

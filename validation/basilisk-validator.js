@@ -3244,6 +3244,62 @@ function validateEconomicResearchPackageIsolation(rules, sourceText) {
   }
 }
 
+function validateMillPlacement(sourceText, rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  for (const [name, value] of [
+    ["bt-mill-placement-zone-size", "6"],
+    ["bt-mill-placement-separation-distance", "10"],
+  ]) {
+    assert.ok(
+      sourceText.includes("(defconst " + name + " " + value + ")"),
+      "[Mill placement] missing placement constant: " + name,
+    );
+  }
+
+  const laterMillExecutor = rules.find(
+    (rule) =>
+      rule.includes("(up-compare-goal bt-mill-project-goal >= 2)") &&
+      rule.includes("(current-age >= feudal-age)") &&
+      rule.includes("(building-type-count farm >= 1)") &&
+      rule.includes("(up-set-placement-data my-player-number farm c: 0)") &&
+      rule.includes("(up-build place-control 0 c: mill)"),
+  );
+  assert.ok(
+    laterMillExecutor,
+    "[Mill placement] later-Mill executor must use farm-anchored controlled placement",
+  );
+
+  const laterMillText = normalize(laterMillExecutor);
+  for (const witness of [
+    "(set-strategic-number sn-placement-zone-size bt-mill-placement-zone-size)",
+    "(set-strategic-number sn-dropsite-separation-distance bt-mill-placement-separation-distance)",
+  ]) {
+    assert.ok(
+      laterMillText.includes(witness),
+      "[Mill placement] executor missing placement hygiene: " + witness,
+    );
+  }
+
+  const secondMillFarmGate = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-mill-target-goal 1)") &&
+      rule.includes("(building-type-count mill >= 1)") &&
+      rule.includes("(set-goal bt-mill-target-goal 2)"),
+  );
+  assert.equal(
+    secondMillFarmGate.length,
+    2,
+    "[Mill lifecycle] expected separate 1-TC and 2+-TC farm-density gates for the second Mill",
+  );
+  for (const rule of secondMillFarmGate) {
+    assert.ok(
+      rule.includes("(building-type-count-total farm >= bt-mill-second-farm-threshold-"),
+      "[Mill lifecycle] second-Mill demand must remain farm-density gated",
+    );
+  }
+}
+
 function validateCastleEcoThresholds(sourceText) {
   const expected = [
     ["bt-wheelbarrow-castle-villagers", "30"],
@@ -3998,6 +4054,7 @@ validateEconomicResearchPackageIsolation(rules, sourceText);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
+validateMillPlacement(source, rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
 validateScoutingLifecycle(source, rules);
