@@ -69,6 +69,35 @@ try {
   assert.ok(timerEnable, "[Self-test] timer signature missing");
 
 
+  function injectPredicateIntoResearchRule(sourceText, tech, predicate) {
+    const action = "(research " + tech + ")";
+    const actionIndex = sourceText.indexOf(action);
+    assert.notEqual(
+      actionIndex,
+      -1,
+      "[Self-test] research action missing for " + tech,
+    );
+    const ruleStart = sourceText.lastIndexOf("(defrule", actionIndex);
+    const ruleEnd = sourceText.indexOf("\n(defrule", actionIndex);
+    const end = ruleEnd === -1 ? sourceText.length : ruleEnd;
+    assert.ok(
+      ruleStart >= 0 && ruleStart < end,
+      "[Self-test] research rule bounds missing for " + tech,
+    );
+    const rule = sourceText.slice(ruleStart, end);
+    const arrow = rule.indexOf("=>");
+    assert.notEqual(
+      arrow,
+      -1,
+      "[Self-test] research rule action boundary missing for " + tech,
+    );
+    const patched =
+      rule.slice(0, arrow) +
+      "    " + predicate + "\n" +
+      rule.slice(arrow);
+    return sourceText.slice(0, ruleStart) + patched + sourceText.slice(end);
+  }
+
   function setNumericDefconst(sourceText, name, value) {
     const marker = "(defconst " + name + " ";
     const start = sourceText.indexOf(marker);
@@ -489,6 +518,30 @@ try {
         );
       })(),
     },
+    {
+      name: "heavy-plow-demand-writer-regression",
+      expected: "[Castle eco]",
+      source: baseline.replace(
+        "    (set-goal bt-heavy-plow-demand-goal 1)",
+        "    (set-goal bt-heavy-plow-demand-goal 0)",
+      ),
+    },
+    ...[
+      ["ri-heavy-plow", "heavy-plow"],
+      ["ri-gold-mining", "gold-mining"],
+      ["ri-wheel-barrow", "wheelbarrow"],
+      ["ri-hand-cart", "hand-cart"],
+      ["ri-bow-saw", "bow-saw"],
+      ["ri-gold-shaft-mining", "gold-shaft-mining"],
+    ].map(([tech, label]) => ({
+      name: label + "-executor-package-veto-regression",
+      expected: "[Castle eco]",
+      source: injectPredicateIntoResearchRule(
+        baseline,
+        tech,
+        "(goal bt-research-ranged-counter-package-goal 0)",
+      ),
+    })),
     {
       name: "villager-hygiene-house-headroom-regression",
       expected: "[Villager hygiene]",
