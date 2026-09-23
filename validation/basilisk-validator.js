@@ -764,7 +764,6 @@ function parseCommandExpressions(text) {
       if (text[cursor] === "(") {
         const child = readExpression(cursor);
         args.push(child);
-        expressions.push(child);
         cursor = child.end;
         continue;
       }
