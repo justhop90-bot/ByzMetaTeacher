@@ -8083,9 +8083,8 @@ cataphract-line < bt-cataphract-target-1)))))
     (up-modify-goal bt-relative-force-goal g:- bt-target-military-scratch-goal)
 )
 
-; Composition readiness is a parity-only attack veto.
-; Positive relative force bypasses composition mismatch.
-; Negative relative force is already blocked by the 506 gate.
+; Relative force is the aggregate parity signal. Standing-army demand
+; separately closes the required role targets before attack authority.
 (defrule
     (true)
 =>
