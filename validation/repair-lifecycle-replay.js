@@ -32,29 +32,32 @@ function assertBinaryBooleanArity(text) {
     }
     assert.notEqual(end, -1, "[Boolean arity] unclosed defrule");
     const rule = sanitized.slice(cursor, end);
-    const stack = [{ depth: 0, args: 0, head: null }];
+    const stack = [];
     let token = "";
     const flushToken = () => {
       if (!token) return;
       const frame = stack[stack.length - 1];
-      frame.args += 1;
-      if (frame.args === 1) frame.head = token;
+      frame.items += 1;
+      if (frame.items === 1) frame.head = token;
       token = "";
     };
     for (const ch of rule) {
       if (ch === "(") {
         flushToken();
-        stack.push({ depth: stack.length, args: 0, head: null });
+        if (stack.length > 0) stack[stack.length - 1].items += 1;
+        stack.push({ items: 0, head: null });
       } else if (ch === ")") {
         flushToken();
         const frame = stack.pop();
+        const operands = frame.items - 1;
         if (frame.head === "or" || frame.head === "and") {
-          assert.ok(
-            frame.args <= 3,
-            "[Boolean arity] " + frame.head + " has more than two operands or comments corrupted the scan",
+          assert.equal(
+            operands <= 2,
+            true,
+            "[Boolean arity] " + frame.head + " has " + operands + " operands; expected binary form",
           );
         }
-      } else if (/\\s/.test(ch)) {
+      } else if (/\s/.test(ch)) {
         flushToken();
       } else {
         token += ch;
@@ -63,7 +66,6 @@ function assertBinaryBooleanArity(text) {
     cursor = end;
   }
 }
-
 assertBinaryBooleanArity(source);
 function extractRules(text) {
   const rules = [];
