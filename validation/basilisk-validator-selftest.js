@@ -1038,6 +1038,24 @@ try {
       })(),
     },
     {
+      name: "imperial-funding-mode-must-override-bank-prep",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial prerequisite funding mode missing");
+        const needle = "    (current-age == castle-age)\n";
+        const index = baseline.indexOf(needle, start);
+        assert.ok(index >= 0, "[Self-test] Imperial funding mode anchor missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(
+            needle,
+            "    (goal bt-resource-mode-goal 0)\n" + needle,
+          ) +
+          baseline.slice(index + needle.length);
+      })(),
+    },
+    {
       name: "imperial-funding-mode-must-prioritize-wood",
       expected: "[Imperial prerequisites]",
       source: (() => {
