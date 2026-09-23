@@ -748,6 +748,34 @@ try {
       })(),
     },
     {
+      name: "castle-bank-must-directly-stop-villagers",
+      expected: "[Age banking]",
+      source: (() => {
+        const needle = "    (set-goal train-civ-goal -1)\n";
+        const searchFrom = baseline.indexOf("(set-goal bt-castle-commitment-goal 1)");
+        const index = baseline.indexOf(needle, searchFrom);
+        assert.ok(index >= 0, "[Self-test] Castle bank direct villager-stop witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index + needle.length);
+      })(),
+    },
+    {
+      name: "castle-bank-must-not-depend-on-feudal-eco-hold",
+      expected: "[Age banking]",
+      source: (() => {
+        const marker = "(defrule\n    ; HARD CASTLE OWNERSHIP BOUNDARY.";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] hard Castle bank rule missing");
+        const ruleEnd = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, ruleEnd);
+        return baseline.slice(0, start) +
+          rule.replace(
+            "    (current-age == feudal-age)\n",
+            "    (current-age == feudal-age)\n    (goal bt-feudal-eco-hold-goal 0)\n",
+          ) +
+          baseline.slice(ruleEnd);
+      })(),
+    },
+    {
       name: "castle-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
