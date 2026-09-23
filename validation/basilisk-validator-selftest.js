@@ -465,6 +465,22 @@ try {
       ),
     },
     {
+      name: "scouting-home-loop-without-target-fallback-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "        (players-building-count target-player <= 0)\n",
+        "",
+      ),
+    },
+    {
+      name: "scouting-enemy-loop-without-home-grace-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "    (game-time >= bt-scout-home-grace)\n",
+        "    (game-time >= 120)\n",
+      ),
+    },
+    {
       name: "crop-rotation-without-mature-farm-base-rejected",
       expected: "[Late-eco lifecycle]",
       source: baseline.replace(
@@ -781,6 +797,8 @@ try {
           "crop-rotation-maturity-witness",
           "two-man-saw-demand-maturity-witness",
           "two-man-saw-executor-maturity-witness",
+          "scouting-home-loop-without-target-fallback",
+          "scouting-enemy-loop-without-home-grace",
           "two-man-saw-demand-lumberjack-maturity-witness",
           "two-man-saw-executor-lumberjack-maturity-witness",
         ],
