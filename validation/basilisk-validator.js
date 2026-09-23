@@ -516,7 +516,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
   }
 
   return {
-    checkedSlots: "build/train/research/goal/strategic-number",
+    checkedSlots: "build/train/research/goal/strategic-number plus typed c:/g:/s: operands and timers",
     engineSupplements: [...engineSupplements],
     objectLinesByName,
   };
@@ -845,18 +845,21 @@ console.log(JSON.stringify({
   controller: controllerRelative,
   rules: rules.length,
   checks: [
-    "balanced parentheses",
+    "balanced parentheses and string-safe top-level structure",
     "exact logical-operator arity",
     "DE rule/element/line/timer hard limits",
+    "exact defrule => separator and action-section structure",
     "invalid identifier resolution for engine-facing typed slots",
+    "typed c:/g:/s: operand resolution and timer identifiers",
     "missing closing parenthesis diagnostics with source line",
     "rule-too-long diagnostics at the DE 32-element ceiling",
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
     "engine-action can-* contracts",
-    "queued/completed train witnesses",
-    "completed/pending build witnesses",
+    "queued/completed train witnesses tied to the trained line",
+    "completed/pending build witnesses tied to the built building",
+    "duplicate and out-of-range defconst diagnostics",
     "attack-now timer/idle/completion contracts",
     "critical state writer/reader/action coverage",
     "pre-final-strategy one-pass action ban",
@@ -864,6 +867,7 @@ console.log(JSON.stringify({
     "live Thumb Ring resource-mode gate",
     "validator handoff wiring",
     "full repair-lifecycle-replay regression suite",
+    "validator mutation self-test is available as validation/basilisk-validator-selftest.js",
   ],
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,
