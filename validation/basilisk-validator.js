@@ -2085,6 +2085,15 @@ function validateVillagerHygiene(rules) {
   const house = requireRule("(housing-headroom <= 5)", "preemptive housing rule");
   assert.ok(house.includes("(up-pending-objects c: house == 0)"), "[Villager hygiene] housing rule must stay pending-safe");
   assert.ok(house.includes("(can-build house)"), "[Villager hygiene] housing rule must use engine build feasibility");
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(building-type-count-total lumber-camp >= 1)") &&
+        rule.includes("(up-set-placement-data my-player-number lumber-camp c: 6)") &&
+        rule.includes("(up-build place-control 0 c: house)"),
+    ),
+    "[Villager hygiene] lumber-local house placement rule is missing",
+  );
 
   for (const resource of ["wood", "gold", "stone"]) {
     const campType = resource === "wood" ? "lumber-camp" : "mining-camp";
