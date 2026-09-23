@@ -11592,10 +11592,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-halberdier == research-complete)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
     (unit-type-count-total spearman-line >= bt-spear-target-2)
-    (or
-        (goal bt-ranged-threat-goal 1)
-        (up-compare-goal bt-cavalry-counter-level-goal >= 2)
-    )
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
     (up-research-status c: ri-plate-mail < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
