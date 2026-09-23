@@ -58,6 +58,25 @@ class Ring {
   }
 }
 
+function sourceOrderReplay() {
+  const begin = source.indexOf(
+    "(goal bt-preempt-result-goal bt-preempt-result-begin)\\n    (goal bt-preempt-event-captured-goal 0)",
+  );
+  const resume = source.indexOf(
+    "(goal bt-preempt-result-goal bt-preempt-result-resume)\\n    (goal bt-preempt-event-captured-goal 0)",
+  );
+  const writerPattern =
+    "(goal bt-telemetry-event-pending-goal 1)\\n    (up-compare-goal bt-telemetry-write-head-goal ==";
+
+  assert.ok(begin >= 0, "[Preemption replay] BEGIN capture rule missing");
+  assert.ok(resume > begin, "[Preemption replay] RESUME capture must follow BEGIN");
+  const firstWriter = source.indexOf(writerPattern, begin);
+  assert.ok(
+    firstWriter > begin && firstWriter < resume,
+    "[Preemption replay] BEGIN FIFO injection must occur before same-pass RESUME can overwrite staging",
+  );
+}
+
 function lifecycleReplay() {
   const ring = new Ring(4);
   let owner = 524;
@@ -138,6 +157,7 @@ function lifecycleReplay() {
   assert.equal(bounded.drain(4).length, 4);
 }
 
+sourceOrderReplay();
 lifecycleReplay();
 
 console.log(JSON.stringify({
