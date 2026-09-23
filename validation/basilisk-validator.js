@@ -474,7 +474,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
     }
   }
 
-  const engineSupplements = new Set(["siege-tower", "ri-logistica"]);
+  const engineSupplements = new Set(["ri-logistica"]);
   for (const value of engineSupplements) universalValues.add(value);
 
   const identifierSource = sanitizeStructure(sourceText);
