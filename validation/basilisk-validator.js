@@ -2141,6 +2141,66 @@ function validateVillagerHygiene(rules) {
   }
 }
 
+function validateScoutingLifecycle(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+  const source = rules.map(normalize).join("\n");
+
+  assert.ok(
+    source.includes("(set-strategic-number sn-total-number-explorers 10)"),
+    "[Scouting lifecycle] native explorer cap is not opened for early home scouting",
+  );
+  assert.ok(
+    source.includes("(set-strategic-number sn-cap-civilian-explorers 0)"),
+    "[Scouting lifecycle] civilian explorer cap must remain zero",
+  );
+  assert.ok(
+    source.includes("(set-strategic-number sn-home-exploration-time bt-scout-home-grace)"),
+    "[Scouting lifecycle] home exploration window is missing",
+  );
+
+  const homeRule = rules.find(
+    (rule) =>
+      rule.includes("(up-send-scout bt-land-explore-group scout-flank)") &&
+      rule.includes("(enable-timer bt-scouting-timer bt-scout-home-pulse)"),
+  );
+  assert.ok(
+    homeRule,
+    "[Scouting lifecycle] home-search pulse rule is missing",
+  );
+  const homeText = normalize(homeRule);
+  for (const witness of [
+    "(game-time < bt-scout-home-grace)",
+    "(sheep-and-forage-too-far)",
+    "(players-building-count target-player <= 0)",
+  ]) {
+    assert.ok(
+      homeText.includes(witness),
+      "[Scouting lifecycle] home-search rule is missing witness: " + witness,
+    );
+  }
+
+  const enemyRule = rules.find(
+    (rule) =>
+      rule.includes("(up-send-scout bt-land-explore-group scout-enemy)") &&
+      rule.includes("(enable-timer bt-scouting-timer bt-scout-enemy-pulse)"),
+  );
+  assert.ok(
+    enemyRule,
+    "[Scouting lifecycle] targeted enemy-search rule is missing",
+  );
+  const enemyText = normalize(enemyRule);
+  for (const witness of [
+    "(game-time >= bt-scout-home-grace)",
+    "(not (sheep-and-forage-too-far))",
+    "(players-building-count target-player > 0)",
+  ]) {
+    assert.ok(
+      enemyText.includes(witness),
+      "[Scouting lifecycle] enemy-search rule is missing witness: " + witness,
+    );
+  }
+}
+
 function validateDerivedThreatStateOrdering(rules) {
   const states = [
     "bt-cavalry-threat-goal",
@@ -2490,6 +2550,7 @@ validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
+validateScoutingLifecycle(rules);
 validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
