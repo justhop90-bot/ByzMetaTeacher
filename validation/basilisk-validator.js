@@ -1044,28 +1044,18 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
     "xnor",
   ]);
 
+  const cleanSource = stripComments(sourceText);
   const reportFailure = (kind, expression, parameterIndex, message) => {
     failures.push({
       kind,
       command: expression.head,
       parameterIndex,
-      line: sourceText.slice(0, rules.__sourceOffset + expression.start)
-        .split("\n").length,
+      line: cleanSource.slice(0, expression.start).split("\n").length,
       message,
     });
   };
 
-  let sourceOffset = 0;
-  const allExpressions = [];
-  for (const rule of rules) {
-    const ruleStart = sourceText.indexOf("(defrule", sourceOffset);
-    if (ruleStart === -1) continue;
-    const expressions = parseCommandExpressions(
-      stripComments(sourceText.slice(ruleStart, ruleStart + rule.length)),
-    );
-    allExpressions.push(...expressions);
-    sourceOffset = ruleStart + rule.length;
-  }
+  const allExpressions = parseCommandExpressions(cleanSource);
 
   const validateExpression = (expression) => {
     if (
