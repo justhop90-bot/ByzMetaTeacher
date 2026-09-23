@@ -592,7 +592,7 @@ function validateParserGradeRuleStructure(sourceText) {
     const value = form.args[1]?.value;
     if (
       typeof value === "string" &&
-      !value.startsWith(""") &&
+      !value.startsWith('"') &&
       !/^-?\d+$/.test(value)
     ) {
       defconstAliases.set(form.args[0].value, value);
