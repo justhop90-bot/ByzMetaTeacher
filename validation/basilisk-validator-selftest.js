@@ -1023,6 +1023,44 @@ try {
       })(),
     },
     {
+      name: "imperial-builders-must-consume-persistent-demand",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial Siege section missing");
+        const end = baseline.indexOf(";---------------------------------------------------------------\n; 15I.", start);
+        assert.ok(end > start, "[Self-test] Imperial Siege section bounds missing");
+        const section = baseline.slice(start, end);
+        const needle = "    (goal bt-imperial-prereq-demand-goal 1)\n";
+        assert.ok(section.includes(needle), "[Self-test] Imperial persistent-demand gate missing");
+        return baseline.replace(needle, "");
+      })(),
+    },
+    {
+      name: "imperial-funding-mode-must-prioritize-wood",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial prerequisite funding mode missing");
+        const line = "    (set-strategic-number sn-wood-gatherer-percentage 40)\n";
+        const index = baseline.indexOf(line, start);
+        assert.ok(index >= 0, "[Self-test] Imperial prerequisite wood allocation missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(line, "    (set-strategic-number sn-wood-gatherer-percentage 35)\n");
+      })(),
+    },
+    {
+      name: "imperial-demand-producer-must-exist",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const needle = "    (set-goal bt-imperial-prereq-demand-goal 1)\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] Imperial demand producer witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(needle, "");
+      })(),
+    },
+    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
