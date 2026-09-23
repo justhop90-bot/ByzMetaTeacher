@@ -2837,12 +2837,13 @@
     (unit-type-count villager >= 6)
 =>
     (up-find-next-player enemy find-attacker bt-villager-defense-raider-player-goal)
+    (up-modify-sn sn-focus-player-number g:= bt-villager-defense-raider-player-goal)
 )
 
 (defrule
     (up-compare-goal bt-villager-defense-raider-player-goal > 0)
-    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)
-    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line <= 2)
+    (players-unit-type-count focus-player scout-cavalry-line >= 1)
+    (players-unit-type-count focus-player scout-cavalry-line <= 2)
 =>
     (up-full-reset-search)
     (up-reset-filters)
