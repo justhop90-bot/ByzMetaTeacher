@@ -41,7 +41,12 @@ function extractRules(text) {
         }
       }
     }
-    assert.notEqual(end, -1, "[Parser] unclosed defrule");
+    const startLine = sanitized.slice(0, cursor).split("\n").length;
+    assert.notEqual(
+      end,
+      -1,
+      `[Missing closing parenthesis] defrule begins at line ${startLine} and is not closed`,
+    );
     rules.push(sanitized.slice(cursor, end));
     cursor = end;
   }
@@ -57,7 +62,11 @@ function validateBalancedParens(text) {
     assert.ok(depth >= 0, `[Parser] unexpected closing parenthesis near line ${line}`);
     if (ch === "\n") line += 1;
   }
-  assert.equal(depth, 0, "[Parser] unclosed parenthesis at end of controller");
+  assert.equal(
+    depth,
+    0,
+    `[Missing closing parenthesis] controller ends with ${depth} unmatched opening parenthesis`,
+  );
 }
 
 function validateBooleanArity(text) {
@@ -157,7 +166,7 @@ function validateEngineLimits(sourceText, rules) {
     }
     assert.ok(
       elements <= 32,
-      `[Engine limits] rule ${index} has ${elements} elements; DE limit is 32`,
+      `[Rule too long] rule ${index + 1} has ${elements} elements; DE limit is 32`,
     );
   }
 
@@ -185,6 +194,118 @@ function validateEngineLimits(sourceText, rules) {
 
   return { maxLineLength, worstRule, worstElements };
 }
+function addKnownIdentifier(set, value) {
+  if (typeof value !== "string") return;
+  for (const raw of value.split(",")) {
+    const token = raw.trim().split(/\s+/)[0];
+    if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) set.add(token);
+  }
+}
+
+function validateIdentifiers(sourceText, repoRootPath) {
+  const registryFiles = {
+    object: path.join(repoRootPath, "extracted", "inventories", "airef-object-inventory.json"),
+    tech: path.join(repoRootPath, "extracted", "inventories", "airef-tech-inventory.json"),
+    strategicNumber: path.join(repoRootPath, "extracted", "inventories", "airef-strategic-number-inventory.json"),
+    class: path.join(repoRootPath, "extracted", "inventories", "airef-class-inventory.json"),
+    valueFamily: path.join(repoRootPath, "extracted", "inventories", "airef-value-family-inventory.json"),
+  };
+  const known = {
+    defconst: new Set(),
+    object: new Set(),
+    tech: new Set(),
+    strategicNumber: new Set(),
+  };
+  for (const match of sourceText.matchAll(/\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g)) {
+    known.defconst.add(match[1]);
+  }
+
+  const loadJson = (kind, filePath) => {
+    assert.ok(
+      fs.existsSync(filePath),
+      "[Invalid identifier] required " + kind + " reference inventory is missing: " + filePath,
+    );
+    try {
+      return JSON.parse(fs.readFileSync(filePath, "utf8"));
+    } catch (error) {
+      assert.fail(
+        "[Invalid identifier] could not parse " + kind + " reference inventory " + filePath + ": " + error.message,
+      );
+    }
+  };
+
+  const objects = loadJson("object", registryFiles.object);
+  const techs = loadJson("technology", registryFiles.tech);
+  const strategicNumbers = loadJson("strategic-number", registryFiles.strategicNumber);
+  const classes = loadJson("class", registryFiles.class);
+  const valueFamilies = loadJson("value-family", registryFiles.valueFamily);
+
+  for (const entry of objects.objects ?? []) {
+    addKnownIdentifier(known.object, entry.ai_name);
+    addKnownIdentifier(known.object, entry.line);
+  }
+  for (const entry of techs.techs ?? []) {
+    addKnownIdentifier(known.tech, entry.ai_name);
+  }
+  for (const entry of strategicNumbers.strategic_numbers ?? []) {
+    addKnownIdentifier(known.strategicNumber, entry.name);
+  }
+
+  const universalValues = new Set();
+  for (const entry of classes.entries ?? []) {
+    addKnownIdentifier(universalValues, entry.symbol);
+    for (const alias of entry.aliases ?? []) addKnownIdentifier(universalValues, alias);
+  }
+  for (const family of valueFamilies.families ?? []) {
+    for (const entry of family.entries ?? []) {
+      addKnownIdentifier(universalValues, entry.name);
+      for (const alias of entry.aliases ?? []) addKnownIdentifier(universalValues, alias);
+    }
+  }
+
+  const engineSupplements = new Set(["siege-tower", "ri-logistica"]);
+  for (const value of engineSupplements) universalValues.add(value);
+
+  const failures = [];
+  const check = (regex, family, label) => {
+    for (const match of sourceText.matchAll(regex)) {
+      const token = match[1];
+      if (/^-?\d+$/.test(token)) continue;
+      const recognized =
+        known.defconst.has(token) ||
+        known[family]?.has(token) ||
+        universalValues.has(token);
+      if (!recognized) {
+        const line = sourceText.slice(0, match.index).split("\n").length;
+        failures.push({ label, token, line });
+      }
+    }
+  };
+
+  check(/\((?:can-build(?:-with-escrow)?|build)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "object", "build");
+  check(/\((?:can-train(?:-with-escrow)?|train)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "object", "train");
+  check(/\((?:can-research(?:-with-escrow)?|research)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "tech", "research");
+  check(/\((?:goal|set-goal|up-compare-goal)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "defconst", "goal");
+  check(/\((?:strategic-number|set-strategic-number)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number");
+
+  if (failures.length > 0) {
+    const detail = failures
+      .slice(0, 12)
+      .map(({ label, token, line }) => label + " '" + token + "' at line " + line)
+      .join("; ");
+    const suffix = failures.length > 12 ? "; plus " + (failures.length - 12) + " more" : "";
+    assert.fail(
+      "[Invalid identifier] " + failures.length + " unresolved engine identifier(s): " + detail + suffix,
+    );
+  }
+
+  return {
+    checkedSlots: "build/train/research/goal/strategic-number",
+    engineSupplements: [...engineSupplements],
+  };
+}
+
+
 
 function validateEngineActionContracts(rules) {
   for (let index = 0; index < rules.length; index += 1) {
@@ -464,6 +585,7 @@ validateBooleanArity(source);
 const rules = extractRules(source);
 assert.ok(rules.length > 0, "[Parser] no defrule forms found");
 const engineLimitReport = validateEngineLimits(source, rules);
+const identifierReport = validateIdentifiers(source, repoRoot);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
@@ -498,6 +620,9 @@ console.log(JSON.stringify({
     "balanced parentheses",
     "exact logical-operator arity",
     "DE rule/element/line/timer hard limits",
+    "invalid identifier resolution for engine-facing typed slots",
+    "missing closing parenthesis diagnostics with source line",
+    "rule-too-long diagnostics at the DE 32-element ceiling",
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
@@ -515,4 +640,6 @@ console.log(JSON.stringify({
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,
   maxRuleIndex: engineLimitReport.worstRule,
+  identifierSlots: identifierReport.checkedSlots,
+  identifierSupplements: identifierReport.engineSupplements,
 }, null, 2));
