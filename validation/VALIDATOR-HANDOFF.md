@@ -34,6 +34,10 @@ The repository now contains extracted/inventories/airef-command-inventory.json, 
 
 The front-door validator rejects any engine command/fact symbol absent from that snapshot and rejects Fact/Action misuse by rule side. AIRef logical operators are classified as Other and are handled as condition-side syntax. It also checks the AIRef consecutive-goal safety rules for up-get-point, up-get-search-state, up-get-cost-delta, and up-setup-cost-data, plus the 240-local/40-remote DUC search limits.
 
+The repository also carries `extracted/inventories/airef-command-schema.json` with slot metadata for the complete 385-command AIRef catalog. The schema is anchored to the same AIRef `commands.js` blob SHA as the command vocabulary snapshot and is cross-checked against that inventory on every front-door run. Slot validation covers arity, direct parameter families, strict value-list enums, typeOp/compareOp/mathOp syntax, typed operands, and documented numeric ranges. The validator additionally enforces the community-lab retained-search DUC safety checks for unscoped target orders and unsafe `up-set-target-object` use.
+
+The schema was cross-referenced against the bundled `aoe2-ai-parser 0.1.82` laboratory package and its AIRef scraper/parser/linter. The lab is a secondary engineering reference: AIRef remains the language authority; community parser diagnostics supply practical lint categories such as command-family mismatch, typed-operand mismatch, split typed comparison, numeric-range mismatch, and retained-search DUC safety. The lab runtime is not vendored into Basilisk and does not replace game/runtime validation.
+
 ## Current strictness upgrades
 
 Three engine-hygiene diagnostics are now explicit and intentionally named after the failures they prevent:
@@ -56,4 +60,4 @@ The validator also treats 255 characters as the source-line ceiling and keeps th
 7. The validator checks its own handoff plumbing and the legacy validator's default controller path.
 8. `validation/basilisk-validator-selftest.js` runs the real front door against temporary mutated controllers covering unknown DUC identifiers, unknown timers, missing rule separators, stray top-level forms, unrelated production witnesses, duplicate/out-of-range defconsts, and invalid `g:/s:` operands. It also includes a positive string-safety case.
 
-The external standards behind these changes are AIRef's documented DE limits, logical-operator syntax, timer range, command vocabulary/type, point/cost/search-state goal allocation rules, DUC search-list bounds, and command parameter typing, plus community examples that pair feasibility commands with engine actions and use queued-aware unit-line counts.
+The external standards behind these changes are AIRef's documented DE limits, logical-operator syntax, timer range, command vocabulary/type, point/cost/search-state goal allocation rules, DUC search-list bounds, and command parameter typing, plus community examples that pair feasibility commands with engine actions and use queued-aware unit-line counts. The current validator baseline is 795 rules, a 239-character maximum source line, and a 31-element maximum rule size. The AIRef schema covers all 385 commands, while the current Basilisk controller uses 88 of them.
