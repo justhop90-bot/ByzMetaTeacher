@@ -278,6 +278,11 @@ try {
 
   const mutations = [
     {
+      name: "DE-runtime-rejected-arbalester-alias",
+      expected: "runtime canonical identifier",
+      source: baseline.replace(/\barbalest\b/g, "arbalester"),
+    },
+    {
       name: "scout-total-count-rejected-for-dispatch",
       expected: "[Scout contract]",
       source: baseline.replace(
