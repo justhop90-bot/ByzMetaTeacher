@@ -361,6 +361,14 @@ try {
       ),
     },
     {
+      name: "object-display-name-rejected-as-runtime-identifier",
+      expected: "undocumented AIRef object identifier",
+      source: baseline.replace(
+        "(up-garrison siege-tower c: infantry-class)",
+        "(up-garrison Arbalest c: infantry-class)",
+      ),
+    },
+    {
       name: "bare-siege-tower-object-slot-rejected",
       expected: "[Invalid identifier]",
       source: baseline.replace(
