@@ -644,6 +644,13 @@ try {
       ),
     },
     {
+      name: "goal-fact-comparison",
+      expected: "[Goal syntax]",
+      source:
+        baseline +
+        "\n(defrule\n    (goal bt-attack-reserve-goal > 0)\n=>\n    (true)\n)\n",
+    },
+    {
       name: "unknown-airef-command",
       expected: "[AIRef command]",
       source: baseline.replace(
