@@ -1113,7 +1113,7 @@ for (let index = 0; index < firstStrategyWriterIndex; index += 1) {
   const rule = rules[index];
   if (!rule.includes("(goal strategy-goal") && !rule.includes("(not (goal strategy-goal")) continue;
   assert.ok(
-    !/(^|\\s)\\((build|train|research|attack-now)\\b/.test(rule),
+    !/(^|\s)\((build|train|research|attack-now)\b/.test(rule),
     `[One-pass latency] pre-strategy reader at rule ${index} must not issue an engine action`,
   );
 }
