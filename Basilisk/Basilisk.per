@@ -180,15 +180,15 @@
 ; project-goal = the completed mill count the current mill project must reach.
 ;
 ; The second-mill trigger is a simplified Naga-derived scaling rule:
-;   1 completed TC  -> 18 farms
-;   2+ completed TCs -> 20 farms
+;   1 completed TC  -> 8 farms
+;   2+ completed TCs -> 14 farms
 ; This is equivalent to a 16 + 2*min(TCs, 2) farm threshold.
 ; The target deliberately stops at two mills because this controller's
 ; farm capacity currently stops at 24; a third mill needs a later placement
 ; and food-density proof rather than another speculative threshold.
 (defconst bt-mill-target-goal 525)
 (defconst bt-mill-project-goal 526)
-(defconst bt-mill-second-farm-threshold-1tc 12)
+(defconst bt-mill-second-farm-threshold-1tc 8)
 (defconst bt-mill-second-farm-threshold-2tc 14)
 (defconst bt-mill-third-farm-threshold-3tc 18)
 (defconst bt-mill-third-farm-threshold-4tc 22)
@@ -593,7 +593,7 @@
 ; lumberjack task wildcard, not a guessed unit id.
 (defconst bt-two-man-saw-lumberjacks 10)
 ; Crop Rotation is deliberately gated by a mature completed-farm base instead of generic Imperial affordability.
-(defconst bt-crop-rotation-farm-threshold 8)
+(defconst bt-crop-rotation-farm-threshold 12)
 
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
