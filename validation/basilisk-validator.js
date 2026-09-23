@@ -1956,6 +1956,12 @@ function validateEngineActionContracts(rules, objectLinesByName) {
       );
 
       if (kind === "train") {
+        // Villager production is queue-gated by can-train villager itself.
+        // A separate completed/pending witness is not required for the TC
+        // producer because this is replenishing civilian production rather
+        // than deficit-driven military/capability production.
+        if (target === "villager") continue;
+
         const acceptedLines = new Set([target]);
         const familyLine = objectLinesByName[target];
         if (familyLine) acceptedLines.add(familyLine);
