@@ -475,6 +475,11 @@ function validateIdentifiers(sourceText, repoRootPath) {
   }
 
   const engineSupplements = new Set(["ri-logistica"]);
+  const runtimeRejectedAliases = new Map([
+    ["arbalester", "arbalest"],
+    ["ri-arbalester", "ri-arbalest"],
+  ]);
+
   for (const value of engineSupplements) universalValues.add(value);
 
   const identifierSource = sanitizeStructure(sourceText);
@@ -483,6 +488,16 @@ function validateIdentifiers(sourceText, repoRootPath) {
     for (const match of identifierSource.matchAll(regex)) {
       const token = match[1];
       if (/^-?\d+$/.test(token)) continue;
+      if (runtimeRejectedAliases.has(token)) {
+        const line = sourceText.slice(0, match.index).split("\n").length;
+        failures.push({
+          label,
+          token,
+          line,
+          replacement: runtimeRejectedAliases.get(token),
+        });
+        continue;
+      }
       const recognized =
         known.defconst.has(token) ||
         known[family]?.has(token) ||
@@ -564,7 +579,14 @@ function validateIdentifiers(sourceText, repoRootPath) {
   if (failures.length > 0) {
     const detail = failures
       .slice(0, 12)
-      .map(({ label, token, line }) => label + " '" + token + "' at line " + line)
+      .map(({ label, token, line, replacement }) =>
+        label +
+        " '" +
+        token +
+        "' at line " +
+        line +
+        (replacement ? " (DE runtime canonical identifier: '" + replacement + "')" : ""),
+      )
       .join("; ");
     const suffix = failures.length > 12 ? "; plus " + (failures.length - 12) + " more" : "";
     assert.fail(
