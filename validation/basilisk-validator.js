@@ -3467,7 +3467,6 @@ function validateImperialPrerequisiteProviders(rules) {
     "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
   );
 }
-function validateAgeBankPriority(rules) {
   const castleBank = rules.find(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
