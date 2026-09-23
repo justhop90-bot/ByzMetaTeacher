@@ -3647,7 +3647,7 @@ function validateAgeBankPriority(rules) {
 
 function validateGoalIdNamespace(sourceText) {
   const defs = [...sourceText.matchAll(
-    /\\(defconst\\s+([A-Za-z][A-Za-z0-9_-]*)\\s+(-?\\d+)\\s*\\)/g,
+    /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\s*\)/g,
   )].map((match) => ({
     name: match[1],
     value: Number(match[2]),
@@ -3755,7 +3755,7 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
   const emergencyActions = rules.filter(
     (rule) =>
       rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
-      /\\((build|train|research|attack-now)\\b/.test(rule),
+      /\((build|train|research|attack-now)\b/.test(rule),
   );
   for (const rule of emergencyActions) {
     assert.ok(
@@ -3860,7 +3860,7 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
     "[XS] telemetry drain must be bounded to four records per invocation",
   );
   assert.ok(
-    !/xs(?:SetStrategicNumber|ResearchTechnology|CreateUnit|RemoveUnit|Task)\\b/.test(xs),
+    !/xs(?:SetStrategicNumber|ResearchTechnology|CreateUnit|RemoveUnit|Task)\b/.test(xs),
     "[XS] telemetry consumer must not mutate strategic policy or game state",
   );
 }
