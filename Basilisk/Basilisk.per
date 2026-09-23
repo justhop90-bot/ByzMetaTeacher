@@ -2439,27 +2439,31 @@
     (strategic-number sn-resource-control != imperial-age)
     (can-train villager)
     (population-headroom > 0)
-    ; Do not deadlock below the age-up villager threshold merely because
-    ; the bank is already research-feasible. Age authority still owns the
-    ; actual research action once the threshold is reached.
+    ; Stop villager production only when the corresponding age action is
+    ; executable now, not merely when its resource bank is affordable.
     (not (and
+        (current-age == dark-age)
         (unit-type-count villager >= bt-feudal-villagers)
+        (up-compare-goal bt-research-age-failure-backoff-goal != feudal-age)
+        (strategic-number sn-resource-control == 0)
         (can-research-with-escrow feudal-age)
     ))
     (not (and
+        (current-age == feudal-age)
         (unit-type-count villager >= bt-castle-villagers)
-        (or
-            (can-research-with-escrow castle-age)
-            (goal bt-castle-commitment-goal 1)
-        )
+        (goal bt-castle-commitment-goal 1)
+        (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+        (strategic-number sn-resource-control == 0)
+        (can-research-with-escrow castle-age)
     ))
-    (or
-        (not (can-research-with-escrow imperial-age))
-        (and
-            (strategic-number sn-resource-control == 0)
-            (unit-type-count-total villager < bt-imperial-villagers)
-        )
-    )
+    (not (and
+        (current-age == castle-age)
+        (unit-type-count villager >= bt-imperial-villagers)
+        (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
+        (strategic-number sn-resource-control == 0)
+        (goal bt-castle-cataphract-demand-goal 0)
+        (can-research-with-escrow imperial-age)
+    ))
 =>
     (train villager)
 )
@@ -2807,6 +2811,13 @@
     (up-compare-goal bt-mill-project-goal > 0)
     (goal bt-mill-backoff-goal 0)
     (strategic-number sn-resource-control == 0)
+    (not (and
+        (current-age == feudal-age)
+        (or
+            (can-research-with-escrow castle-age)
+            (goal bt-castle-commitment-goal 1)
+        )
+    ))
     (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
     (can-build-with-escrow mill)
@@ -3075,10 +3086,7 @@
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mill-failure-backoff-goal != ri-horse-collar)
     (strategic-number sn-resource-control == 0)
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
     (building-type-count mill >= 1)
     (can-research-with-escrow ri-horse-collar)
     (goal bt-research-mill-claim-goal 0)
@@ -4984,10 +4992,7 @@ sn-stone-gatherer-percentage == 0)))))
     (up-research-status c: ri-double-bit-axe == research-available)
     (food-amount >= bt-double-bit-axe-food-buffer)
     (wood-amount >= bt-double-bit-axe-wood-buffer)
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
 =>
     (set-goal bt-double-bit-axe-demand-goal 1)
 )
@@ -5015,10 +5020,7 @@ research-pending)))))
     (current-age == feudal-age)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
     (strategic-number sn-resource-control == 0)
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
     (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-double-bit-axe)
     (goal bt-research-lumber-camp-claim-goal 0)
