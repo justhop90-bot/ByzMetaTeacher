@@ -278,6 +278,49 @@ try {
 
   const mutations = [
     {
+      name: "scout-total-count-rejected-for-dispatch",
+      expected: "[Scout contract]",
+      source: baseline.replace(
+        "(unit-type-count scout-cavalry-line >= 1)",
+        "(unit-type-count-total scout-cavalry-line >= 1)",
+      ),
+    },
+    {
+      name: "farm-raw-wood-gate-rejected-with-escrow",
+      expected: "[Escrow farm]",
+      source: baseline.replace(
+        "(can-build-with-escrow farm)",
+        "(wood-amount >= bt-farm-build-wood)\n    (can-build-with-escrow farm)",
+      ),
+    },
+    {
+      name: "late-threat-state-block-rejected",
+      expected: "[State order]",
+      source: (() => {
+        const start = baseline.indexOf(
+          ";================================================================\n; 2A. DERIVED ENEMY THREAT STATE",
+        );
+        const end = baseline.indexOf(
+          ";================================================================\n; MONASTERY / MONK DEMAND",
+        );
+        const marker = baseline.indexOf(
+          ";================================================================\n; 12E. MAP-AWARE OPENING SELECTION",
+        );
+        assert.notEqual(start, -1, "[Self-test] derived threat-state block start missing");
+        assert.notEqual(end, -1, "[Self-test] derived threat-state block end missing");
+        assert.notEqual(marker, -1, "[Self-test] map-aware opening marker missing");
+        assert.ok(end > start, "[Self-test] derived threat-state block bounds invalid");
+        assert.ok(marker > end, "[Self-test] expected late insertion point after early block");
+        const block = baseline.slice(start, end);
+        const without = baseline.slice(0, start) + baseline.slice(end);
+        const lateMarker = without.indexOf(
+          ";================================================================\n; 12E. MAP-AWARE OPENING SELECTION",
+        );
+        assert.notEqual(lateMarker, -1, "[Self-test] late insertion marker missing after extraction");
+        return without.slice(0, lateMarker) + block + "\n" + without.slice(lateMarker);
+      })(),
+    },
+    {
       name: "unknown-duc-identifier",
       expected: "constant-operand",
       source: baseline.replace(
@@ -543,6 +586,11 @@ try {
         boundaryFailures: boundaryFailureReports,
         ruleLengthCases: ruleLengthReports,
         ruleSizeCases: ruleLengthReports,
+        semanticRegressionClasses: [
+          "scout-total-count-rejected-for-dispatch",
+          "farm-raw-wood-gate-rejected-with-escrow",
+          "late-threat-state-block-rejected",
+        ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
           "command-family-mismatch",
