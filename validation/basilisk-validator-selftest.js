@@ -278,7 +278,7 @@ try {
   const mutations = [
     {
       name: "DE-runtime-rejected-arbalester-alias",
-      expected: "runtime canonical identifier",
+      expected: "DE runtime canonical identifier",
       source: baseline.replace(/\barbalest\b/g, "arbalester"),
     },
     {
