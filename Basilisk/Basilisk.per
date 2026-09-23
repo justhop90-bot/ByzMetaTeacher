@@ -754,10 +754,14 @@
 ; Q: "What must be true before any strategic rule starts?"
 ;
 ; One initialization rule establishes known runtime state.
+; Engine-native dropsite hygiene: a new camp/mill does not become a
+; live dropsite until construction completes. This complements the
+; pending-object guards in the resource refresh rules below.
 (defrule
     (true)
 =>
     (set-strategic-number sn-resource-control 0)
+    (set-strategic-number sn-defer-dropsite-update 1)
     (set-escrow-percentage food 30)
     (set-escrow-percentage wood 30)
     (set-escrow-percentage gold 30)
