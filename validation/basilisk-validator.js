@@ -1077,7 +1077,7 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
   const objects = new Set();
   const objectWildcards = new Set();
   for (const entry of objectInventory.objects ?? []) {
-    for (const value of [entry.ai_name, entry.line, entry.name]) {
+    for (const value of [entry.ai_name, entry.line]) {
       if (typeof value !== "string") continue;
       for (const raw of value.split(",")) {
         const token = raw.trim().split(/\s+/)[0];
