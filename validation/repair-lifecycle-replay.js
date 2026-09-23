@@ -156,6 +156,19 @@ requireRule(
   "Gold Shaft strategic cancellation",
   "(goal bt-gold-shaft-mining-demand-goal 1)",
   "(goal bt-research-mining-camp-claim-goal 0)",
+  "(or",
+  "    (current-age > castle-age)",
+  "    (or",
+  "        (not (goal strategy-goal bt-strategy-boom))",
+  "        (or",
+  "            (up-research-status c: ri-gold-mining < research-complete)",
+  "            (or",
+  "                (can-research-with-escrow imperial-age)",
+  "                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)",
+  "            )",
+  "        )",
+  "    )",
+  ")",
   "(set-goal bt-gold-shaft-mining-demand-goal 0)",
 );
 requireRule(
@@ -232,6 +245,21 @@ requireRule(
   "(disable-timer bt-research-barracks-failure-backoff-timer)",
   "(set-goal bt-research-barracks-failure-backoff-goal 0)",
 );
+requireRule(
+  "Pike capability-loss cleanup",
+  "(up-compare-goal bt-research-barracks-claim-goal != 0)",
+  "(building-type-count barracks == 0)",
+  "(set-goal bt-research-barracks-claim-goal 0)",
+);
+requireRule(
+  "Pike package capability-loss cleanup",
+  "(building-type-count barracks == 0)",
+  "(or",
+  "    (goal bt-research-cavalry-counter-package-goal ri-pikeman)",
+  "    (goal bt-research-cavalry-counter-package-goal ri-halberdier)",
+  ")",
+  "(set-goal bt-research-cavalry-counter-package-goal 0)",
+);
 
 for (const tech of ["ri-cavalier", "ri-paladin", "ri-heavy-camel"]) {
   requireRule(
@@ -254,6 +282,12 @@ requireRule(
   "(timer-triggered bt-research-stable-failure-backoff-timer)",
   "(disable-timer bt-research-stable-failure-backoff-timer)",
   "(set-goal bt-research-stable-failure-backoff-goal 0)",
+);
+requireRule(
+  "Stable capability-loss cleanup",
+  "(up-compare-goal bt-research-stable-claim-goal != 0)",
+  "(building-type-count stable == 0)",
+  "(set-goal bt-research-stable-claim-goal 0)",
 );
 
 for (const tech of ["ri-capped-ram", "ri-siege-ram"]) {
@@ -278,9 +312,43 @@ requireRule(
   "(disable-timer bt-research-siege-workshop-failure-backoff-timer)",
   "(set-goal bt-research-siege-workshop-failure-backoff-goal 0)",
 );
+requireRule(
+  "Siege capability-loss cleanup",
+  "(up-compare-goal bt-research-siege-workshop-claim-goal != 0)",
+  "(building-type-count siege-workshop == 0)",
+  "(set-goal bt-research-siege-workshop-claim-goal 0)",
+);
+requireRule(
+  "Siege package capability-loss cleanup",
+  "(building-type-count siege-workshop == 0)",
+  "(or",
+  "    (goal bt-research-siege-package-goal ri-onager)",
+  "    (or",
+  "        (goal bt-research-siege-package-goal ri-capped-ram)",
+  "        (goal bt-research-siege-package-goal ri-siege-ram)",
+  "    )",
+  ")",
+  "(set-goal bt-research-siege-package-goal 0)",
+);
 
 requireRule(
   "Workshop issue eligibility",
+  "(or",
+  "    (goal bt-mangonel-demand-goal 1)",
+  "    (or",
+  "        (goal bt-scorpion-demand-goal 1)",
+  "        (or",
+  "            (goal bt-onager-demand-goal 1)",
+  "            (or",
+  "                (goal bt-bombard-cannon-demand-goal 1)",
+  "                (or",
+  "                    (goal bt-ram-demand-goal 1)",
+  "                    (goal bt-siege-tower-demand-goal 1)",
+  "                )",
+  "            )",
+  "        )",
+  "    )",
+  ")",
   "(goal bt-military-siege-workshop-backoff-goal 0)",
   "(building-type-count siege-workshop == 0)",
   "(up-pending-objects c: siege-workshop == 0)",
@@ -294,6 +362,7 @@ requireRule(
   "(up-pending-objects c: siege-workshop == 0)",
   "(set-strategic-number sn-resource-control 0)",
   "(set-goal bt-military-siege-workshop-backoff-goal 1)",
+  "(enable-timer bt-military-siege-workshop-backoff-timer bt-military-siege-workshop-backoff-seconds)",
 );
 requireRule(
   "Workshop demand-gated backoff reset",
@@ -303,6 +372,7 @@ requireRule(
   "(goal bt-bombard-cannon-demand-goal 0)",
   "(goal bt-ram-demand-goal 0)",
   "(goal bt-siege-tower-demand-goal 0)",
+  "(strategic-number sn-resource-control != bt-military-siege-workshop-claim)",
   "(up-pending-objects c: siege-workshop == 0)",
   "(set-goal bt-military-siege-workshop-backoff-goal 0)",
 );
@@ -336,31 +406,53 @@ const stableTrace = (() => {
   const s = { demand: 1, claim: "ri-cavalier", backoff: 1 };
   const trace = [];
   const snap = (event) => trace.push({ event, ...s });
+
   snap("initial");
   s.claim = 0;
   s.backoff = 1;
+  snap("failure-1");
   assert.equal(s.claim, 0, "[Stable/Cavalier] claim was not released after failure");
   assert.equal(s.demand, 1, "[Stable/Cavalier] persistent demand was lost after failure");
   assert.equal(s.backoff, 1, "[Stable/Cavalier] bounded backoff was not armed");
+
   s.backoff = 0;
-  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
-    "[Stable/Cavalier] demand did not re-open after cooldown");
+  snap("cooldown-1-expired");
+  assert.ok(
+    s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] demand did not re-open after cooldown",
+  );
+
   s.claim = 0;
   s.backoff = 1;
+  snap("failure-2");
+  assert.equal(s.claim, 0, "[Stable/Cavalier] repeated failure retained Stable claim");
   assert.equal(s.demand, 1, "[Stable/Cavalier] repeated failure canceled persistent demand");
   assert.equal(s.backoff, 1, "[Stable/Cavalier] repeated failure did not re-arm bounded backoff");
+
   s.backoff = 0;
-  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
-    "[Stable/Cavalier] demand did not re-open after second cooldown");
+  snap("cooldown-2-expired");
+  assert.ok(
+    s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] demand did not re-open after second cooldown",
+  );
+
   s.demand = 0;
   s.claim = 0;
   s.backoff = 0;
+  snap("strategic-invalidation");
   assert.equal(s.demand, 0, "[Stable/Cavalier] strategic invalidation did not clear demand");
+  assert.equal(s.claim, 0, "[Stable/Cavalier] stale claim survived invalidation");
+  assert.equal(s.backoff, 0, "[Stable/Cavalier] stale backoff survived invalidation");
+
   s.demand = 1;
-  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
-    "[Stable/Cavalier] clean reassessment could not re-enter");
+  snap("strategic-reassessment");
+  assert.ok(
+    s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] clean reassessment could not re-enter",
+  );
   return trace;
 })();
+
 const cappedRamTrace = transition(
   "Capped Ram",
   { demand: 1, package: "ri-capped-ram", claim: "ri-capped-ram", backoff: 1 },
