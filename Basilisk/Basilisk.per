@@ -4699,16 +4699,28 @@ town-center >= 2)))))
 ; of the transition.
 (defrule
     (current-age == feudal-age)
-    (up-research-status c: ri-horse-collar == research-available)
-    (building-type-count mill >= 1)
-    (up-compare-goal bt-research-mill-failure-backoff-goal != ri-horse-collar)
-    (strategic-number sn-resource-control == 0)
-    (can-research-with-escrow ri-horse-collar)
-    (goal bt-research-mill-claim-goal 0)
+    (goal bt-horse-collar-demand-goal 1)
+    (or
+        (can-research-with-escrow ri-horse-collar)
+        (goal bt-research-mill-claim-goal ri-horse-collar)
+    )
 =>
     (set-goal bt-feudal-eco-hold-goal 1)
 )
 
+(defrule
+    (current-age == feudal-age)
+    (goal bt-double-bit-axe-demand-goal 1)
+    (or
+        (can-research-with-escrow ri-double-bit-axe)
+        (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+    )
+=>
+    (set-goal bt-feudal-eco-hold-goal 1)
+)
+
+; A first-pass DBA demand can be created later in this source file, so keep
+; the direct feasibility witness as the immediate Castle-preemption fallback.
 (defrule
     (current-age == feudal-age)
     (up-research-status c: ri-double-bit-axe == research-available)
