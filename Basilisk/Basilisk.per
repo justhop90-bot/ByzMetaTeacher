@@ -2566,6 +2566,9 @@
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (building-type-count-total castle < 1)
+    ; Do not create a Castle capability obligation once Imperial is already executable.
+    ; Imperial age authority owns the transition when its engine feasibility witness is true.
+    (not (can-research-with-escrow imperial-age))
     (or
         (goal strategy-goal bt-strategy-boom)
         (goal strategy-goal bt-strategy-flush)
