@@ -776,6 +776,92 @@ try {
       })(),
     },
     {
+      name: "imperial-bank-must-directly-stop-villagers",
+      expected: "[Age banking]",
+      source: (() => {
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
+        const ruleEnd = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, ruleEnd);
+        const needle = "    (set-goal train-civ-goal -1)\n";
+        assert.ok(
+          rule.includes(needle),
+          "[Self-test] Imperial bank direct villager-stop witness is missing",
+        );
+        return baseline.replace(rule, rule.replace(needle, ""));
+      })(),
+    },
+    {
+      name: "imperial-bank-must-not-depend-on-cataphract-demand",
+      expected: "[Age banking]",
+      source: (() => {
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
+        const ruleEnd = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, ruleEnd);
+        const inserted =
+          "    (unit-type-count villager >= bt-imperial-villagers)\n" +
+          "    (goal bt-castle-cataphract-demand-goal 0)\n";
+        const witness =
+          "    (unit-type-count villager >= bt-imperial-villagers)\n";
+        assert.ok(
+          rule.includes(witness),
+          "[Self-test] Imperial bank threshold witness is missing",
+        );
+        return baseline.replace(rule, rule.replace(witness, inserted));
+      })(),
+    },
+    {
+      name: "imperial-villager-stop-must-not-depend-on-cataphract-demand",
+      expected: "[Age transition]",
+      source: (() => {
+        const marker =
+          "(defrule\n    (goal train-civ-goal 1)\n    (current-age == castle-age)\n    (unit-type-count villager >= bt-imperial-villagers)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial villager stop gate missing");
+        const end = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, end);
+        const commitment =
+          "    (goal bt-imperial-commitment-goal 1)\n";
+        assert.ok(
+          rule.includes(commitment),
+          "[Self-test] Imperial commitment witness is missing",
+        );
+        const mutated = rule.replace(
+          commitment,
+          "    (goal bt-castle-cataphract-demand-goal 0)\n",
+        );
+        assert.notEqual(mutated, rule, "[Self-test] Imperial stop mutation did not apply");
+        return baseline.replace(rule, mutated);
+      })(),
+    },
+    {
+      name: "imperial-research-must-not-depend-on-cataphract-demand",
+      expected: "[Age transition]",
+      source: (() => {
+        const marker =
+          "(defrule\n    ; Imperial age authority owns the transition once the civilian threshold is";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial research executor missing");
+        const end = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, end);
+        const commitment =
+          "    (goal bt-imperial-commitment-goal 1)\n";
+        assert.ok(
+          rule.includes(commitment),
+          "[Self-test] Imperial research commitment witness is missing",
+        );
+        const mutated = rule.replace(
+          commitment,
+          "    (goal bt-castle-cataphract-demand-goal 0)\n",
+        );
+        assert.notEqual(mutated, rule, "[Self-test] Imperial research mutation did not apply");
+        return baseline.replace(rule, mutated);
+      })(),
+    },
+    {
       name: "castle-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
