@@ -4029,20 +4029,21 @@
 )
 
 ;---------------------------------------------------------------
-; 13E. SAFE CASTLE -> BOOM
+; 13E. SAFE CASTLE STRATEGY TRANSITIONS
 ;---------------------------------------------------------------
-; Explicitly exclude both active pressure states.  BOOM can no
-; longer overwrite RUSH or FLUSH.
+; Explicitly exclude active pressure states from the generic BOOM
+; fallback. RUSH gets one qualified Castle-Power continuation, with
+; BOOM as the explicit recovery when that qualification fails.
 ;---------------------------------------------------------------
-; 13E.1 FEUDAL RUSH EXPIRY -> BOOM
+; 13E.1 FEUDAL RUSH -> CASTLE TRANSITION
 ;---------------------------------------------------------------
 ; RUSH is a Feudal pressure posture. Once Castle Age is reached,
-; a safe RUSH must yield to the existing BOOM posture so Castle
-; economic consumers (TC expansion, Castle BOOM resource mode, and
-; related maturity rules) are not permanently starved by stale
+; surviving pressure with a live target and four archers continues
+; into Castle-Power. A safe RUSH that fails those witnesses recovers
+; to BOOM so Castle economic consumers are not starved by stale
 ; Feudal strategy state. Active pressure is already claimed by
-; FLUSH above, so this rule only fires when the current threat
-; snapshot is clear.
+; FLUSH above, so both branches require a clear current threat
+; snapshot.
 (defrule
     (goal strategy-goal bt-strategy-rush)
     (current-age >= castle-age)
