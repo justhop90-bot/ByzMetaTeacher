@@ -671,7 +671,7 @@ function validateParserGradeRuleStructure(sourceText) {
       assert.ok(
         form.args[0].kind === "atom" &&
           form.args[0].value.startsWith('"') &&
-          form.args[0].value.endsWith(".xs""),
+          form.args[0].value.endsWith(".xs"),
         "[Include] include path must be a quoted .xs filename",
       );
       continue;
@@ -3645,6 +3645,226 @@ function validateAgeBankPriority(rules) {
   );
 }
 
+function validateGoalIdNamespace(sourceText) {
+  const defs = [...sourceText.matchAll(
+    /\\(defconst\\s+([A-Za-z][A-Za-z0-9_-]*)\\s+(-?\\d+)\\s*\\)/g,
+  )].map((match) => ({
+    name: match[1],
+    value: Number(match[2]),
+  }));
+
+  const goalDefs = defs.filter(
+    ({ name }) => name === "goal" || name.endsWith("-goal"),
+  );
+  const byId = new Map();
+  for (const def of goalDefs) {
+    if (!byId.has(def.value)) byId.set(def.value, []);
+    byId.get(def.value).push(def.name);
+  }
+  for (const [id, names] of byId) {
+    assert.equal(
+      names.length,
+      1,
+      "[Goal namespace] GoalId " + id +
+        " is shared by multiple goal-state symbols: " + names.join(", "),
+    );
+  }
+
+  const required = [
+    ["bt-debug-last-strategy-goal", 729],
+    ["bt-preempt-active-goal", 730],
+    ["bt-telemetry-write-head-goal", 738],
+    ["bt-telemetry-count-goal", 740],
+    ["bt-telemetry-overflow-goal", 743],
+    ["bt-telemetry-slot3-sequence-goal", 784],
+  ];
+  for (const [name, value] of required) {
+    assert.ok(
+      sourceText.includes("(defconst " + name + " " + value + ")"),
+      "[Goal namespace] missing required GoalId allocation: " + name + "=" + value,
+    );
+  }
+
+  for (let id = 730; id <= 784; id += 1) {
+    const match = goalDefs.filter((def) => def.value === id);
+    assert.equal(
+      match.length,
+      1,
+      "[Goal namespace] telemetry GoalId " + id +
+        " must have exactly one goal-state symbol",
+    );
+  }
+}
+
+function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
+  const requiredSymbols = [
+    "bt-preempt-emergency-claim",
+    "bt-preempt-active-goal",
+    "bt-preempt-original-owner-goal",
+    "bt-preempt-original-mode-goal",
+    "bt-preempt-result-goal",
+    "bt-telemetry-count-goal",
+    "bt-telemetry-write-head-goal",
+    "bt-telemetry-read-head-goal",
+    "bt-telemetry-dropped-goal",
+    "bt-telemetry-overflow-goal",
+    "bt-telemetry-heartbeat-timer",
+    "bt-telemetry-slot0-type-goal",
+    "bt-telemetry-slot3-sequence-goal",
+  ];
+  for (const symbol of requiredSymbols) {
+    assert.ok(
+      sourceText.includes(symbol),
+      "[Preemption] missing required symbol: " + symbol,
+    );
+  }
+
+  assert.ok(
+    sourceText.includes('(include "Basilisk/BasiliskTelemetry.xs")'),
+    "[Preemption] Basilisk must explicitly include the XS telemetry consumer",
+  );
+
+  const entries = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-preempt-active-goal 0)") &&
+      rule.includes("(set-goal bt-preempt-active-goal 1)") &&
+      rule.includes("(strategic-number sn-resource-control == bt-mill-claim)"),
+  );
+  assert.equal(
+    entries.length,
+    1,
+    "[Preemption] exactly one Mill preemption entry writer is required",
+  );
+  const entry = entries[0];
+  for (const witness of [
+    "(town-under-attack)",
+    "(goal bt-any-threat-goal 1)",
+    "(current-age >= feudal-age)",
+    "(goal bt-castle-commitment-goal 0)",
+    "(goal bt-imperial-commitment-goal 0)",
+    "(up-compare-goal bt-mill-project-goal > 0)",
+    "(up-pending-objects c: mill > 0)",
+    "(set-strategic-number sn-resource-control bt-preempt-emergency-claim)",
+  ]) {
+    assert.ok(
+      entry.includes(witness),
+      "[Preemption] entry rule missing witness/action: " + witness,
+    );
+  }
+
+  const emergencyActions = rules.filter(
+    (rule) =>
+      rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
+      /\\((build|train|research|attack-now)\\b/.test(rule),
+  );
+  for (const rule of emergencyActions) {
+    assert.ok(
+      rule.includes("(train spearman-line)") ||
+        rule.includes("(train skirmisher-line)") ||
+        !/\\((build|research)\\b/.test(rule),
+      "[Preemption] emergency claim may only authorize existing Feudal Spear/Skirm execution",
+    );
+  }
+
+  const millCompletion = rules.find(
+    (rule) =>
+      rule.includes("(building-type-count mill >= 1)") &&
+      rule.includes("(set-goal bt-mill-project-goal 0)") &&
+      rule.includes("(set-strategic-number sn-resource-control 0)"),
+  );
+  assert.ok(
+    millCompletion &&
+      millCompletion.includes("(strategic-number sn-resource-control == bt-mill-claim)") &&
+      millCompletion.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
+      millCompletion.includes("(goal bt-preempt-original-owner-goal bt-mill-claim)"),
+    "[Preemption] Mill completion must accept the emergency-owned lifecycle while retaining the physical witness",
+  );
+
+  const watchdogRules = rules.filter(
+    (rule) =>
+      rule.includes("bt-mill-watchdog-timer") &&
+      rule.includes("(timer-triggered bt-mill-watchdog-timer)"),
+  );
+  assert.ok(
+    watchdogRules.some((rule) => rule.includes("bt-preempt-emergency-claim")),
+    "[Preemption] Mill watchdog must remain executable while the emergency owns the mutex",
+  );
+
+  const heartbeat = rules.filter((rule) =>
+    rule.includes('(xs-script-call "bt_telemetry_drain")'),
+  );
+  assert.equal(
+    heartbeat.length,
+    1,
+    "[Preemption] telemetry consumer must have exactly one .per heartbeat call",
+  );
+
+  const writerRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-telemetry-event-pending-goal 1)") &&
+      rule.includes("(up-compare-goal bt-telemetry-write-head-goal =="),
+  );
+  assert.equal(
+    writerRules.length,
+    4,
+    "[Telemetry FIFO] expected exactly four slot writer rules",
+  );
+  for (const rule of writerRules) {
+    assert.ok(
+      rule.includes("(up-modify-goal bt-telemetry-count-goal g:+ 1)"),
+      "[Telemetry FIFO] slot writer must increment occupancy",
+    );
+    assert.ok(
+      rule.includes("(set-goal bt-telemetry-event-pending-goal 0)"),
+      "[Telemetry FIFO] slot writer must consume the staging event",
+    );
+  }
+
+  const producerRules = rules.filter(
+    (rule) =>
+      rule.includes("(set-goal bt-telemetry-event-pending-goal 1)") &&
+      rule.includes("(up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)"),
+  );
+  assert.ok(
+    producerRules.length >= 3,
+    "[Telemetry FIFO] begin/resume/terminal event producers are missing",
+  );
+  for (const rule of producerRules) {
+    assert.ok(
+      rule.includes("(up-compare-goal bt-telemetry-count-goal < 4)"),
+      "[Telemetry FIFO] accepted event producer must prove a free FIFO slot",
+    );
+  }
+
+  const overflowRules = rules.filter(
+    (rule) =>
+      rule.includes("(up-modify-goal bt-telemetry-dropped-goal g:+ 1)") &&
+      rule.includes("(set-goal bt-telemetry-overflow-goal 1)"),
+  );
+  assert.ok(
+    overflowRules.length >= 3,
+    "[Telemetry FIFO] full-buffer drop accounting is missing",
+  );
+
+  const xsPath = path.join(repoRootPath, "Basilisk", "BasiliskTelemetry.xs");
+  assert.ok(fs.existsSync(xsPath), "[XS] BasiliskTelemetry.xs is missing");
+  const xs = fs.readFileSync(xsPath, "utf8");
+  assert.ok(
+    xs.includes("xsGetGoal") &&
+      xs.includes("xsSetGoal") &&
+      xs.includes("xsChatData"),
+    "[XS] telemetry consumer must use goal IO and debug chat",
+  );
+  assert.ok(
+    xs.includes("drained < 4"),
+    "[XS] telemetry drain must be bounded to four records per invocation",
+  );
+  assert.ok(
+    !/xs(?:SetStrategicNumber|ResearchTechnology|CreateUnit|RemoveUnit|Task)\\b/.test(xs),
+    "[XS] telemetry consumer must not mutate strategic policy or game state",
+  );
+}
+
 function validateLineHygiene(text) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
@@ -4069,6 +4289,8 @@ validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
+validateGoalIdNamespace(source);
+validatePreemptionLifecycle(source, rules, repoRoot);
 validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
@@ -4131,6 +4353,10 @@ console.log(JSON.stringify({
     "complex single-line defrule rejection above the 150-character community safety threshold",
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
+    "unique Basilisk GoalId namespace and reserved telemetry block",
+    "temporary Mill resource-control preemption lifecycle",
+    "bounded four-slot telemetry FIFO and overflow accounting",
+    "XS telemetry consumer is present, bounded, and policy-read-only",
     "lifecycle anchors",
     "age-transition queue gates separate civilian bank ownership from engine research feasibility",
     "persistent Feudal eco demand, hold, and package-veto separation",
