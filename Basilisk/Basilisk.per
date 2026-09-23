@@ -10243,12 +10243,10 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 
 (defrule
-    (goal unit-goal crossbowman)
     (current-age >= castle-age)
     (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-fletching < research-pending)
-    (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
