@@ -8614,10 +8614,58 @@ cataphract-line < bt-cataphract-target-1)))))
 ; Workshop absence. Reassess only the strategic purpose and explicit exclusions.
 (defrule
     (goal bt-scorpion-demand-goal 1)
-    (or (current-age < castle-age) (or (players-unit-type-count target-player militiaman-line < bt-scorpion-trigger-infantry) (or (players-building-count target-player == 0) (or (not (player-in-game target-player)) (or (up-compare-goal
-bt-cavalry-counter-level-goal >= 2) (or (up-compare-goal bt-ranged-counter-level-goal >= 2) (or (players-unit-type-count target-player mangonel-line >= 2) (or (players-unit-type-count target-player scorpion-line >= 4) (or (goal
-bt-mangonel-demand-goal 1) (or (goal bt-onager-demand-goal 1) (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-ram-demand-goal 1) (or (goal retreat-now-goal 1) (or (town-under-attack) (goal bt-resource-mode-goal
-bt-resource-mode-imperial-bank-prep)))))))))))))))
+    (or
+        (current-age < castle-age)
+        (or
+            (players-unit-type-count target-player militiaman-line < bt-scorpion-trigger-infantry)
+            (or
+                (players-building-count target-player == 0)
+                (not (player-in-game target-player))
+            )
+        )
+    )
+=>
+    (set-goal bt-scorpion-demand-goal 0)
+)
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+        (or
+            (up-compare-goal bt-ranged-counter-level-goal >= 2)
+            (or
+                (players-unit-type-count target-player mangonel-line >= 2)
+                (players-unit-type-count target-player scorpion-line >= 4)
+            )
+        )
+    )
+=>
+    (set-goal bt-scorpion-demand-goal 0)
+)
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (or
+        (goal bt-mangonel-demand-goal 1)
+        (or
+            (goal bt-onager-demand-goal 1)
+            (or
+                (goal bt-bombard-cannon-demand-goal 1)
+                (goal bt-ram-demand-goal 1)
+            )
+        )
+    )
+=>
+    (set-goal bt-scorpion-demand-goal 0)
+)
+(defrule
+    (goal bt-scorpion-demand-goal 1)
+    (or
+        (goal retreat-now-goal 1)
+        (or
+            (town-under-attack)
+            (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+        )
+    )
 =>
     (set-goal bt-scorpion-demand-goal 0)
 )
@@ -9220,8 +9268,61 @@ bt-resource-mode-imperial-bank-prep)))))
 )
 (defrule
     (goal bt-siege-tower-demand-goal 1)
-    (or (goal retreat-now-goal 1) (or (town-under-attack) (or (goal bt-resource-mode-goal
-bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (goal bt-onager-demand-goal 1) (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-ram-demand-goal 1) (goal bt-scorpion-demand-goal 1))))))))
+    (or (goal retreat-now-goal 1) (town-under-attack))
+=>
+    (up-ungarrison c: siege-tower)
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-execution-remote-count-goal 0)
+    (set-goal bt-siege-tower-wall-remote-count-goal 0)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+)
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+=>
+    (up-ungarrison c: siege-tower)
+    (disable-timer bt-siege-tower-tower-watchdog-timer)
+    (disable-timer bt-siege-tower-payload-watchdog-timer)
+    (disable-timer bt-siege-tower-garrison-watchdog-timer)
+    (disable-timer bt-siege-tower-approach-watchdog-timer)
+    (disable-timer bt-siege-tower-unload-watchdog-timer)
+    (disable-timer bt-siege-tower-assault-watchdog-timer)
+    (disable-timer bt-siege-tower-retry-timer)
+    (set-strategic-number sn-number-garrison-units 0)
+    (set-strategic-number sn-maximum-garrison-fill 0)
+    (set-goal bt-siege-tower-demand-goal 0)
+    (set-goal bt-siege-tower-stage-goal bt-siege-tower-stage-idle)
+    (set-goal bt-siege-tower-execution-remote-count-goal 0)
+    (set-goal bt-siege-tower-wall-remote-count-goal 0)
+    (set-goal bt-siege-tower-failure-goal 0)
+    (set-goal bt-siege-tower-wall-attempt-goal 0)
+)
+(defrule
+    (goal bt-siege-tower-demand-goal 1)
+    (or
+        (goal bt-mangonel-demand-goal 1)
+        (or
+            (goal bt-onager-demand-goal 1)
+            (or
+                (goal bt-bombard-cannon-demand-goal 1)
+                (or
+                    (goal bt-ram-demand-goal 1)
+                    (goal bt-scorpion-demand-goal 1)
+                )
+            )
+        )
+    )
 =>
     (up-ungarrison c: siege-tower)
     (disable-timer bt-siege-tower-tower-watchdog-timer)
