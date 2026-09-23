@@ -830,6 +830,14 @@ requireRule(
   "(set-goal strategy-goal bt-strategy-castle-power)",
 );
 requireRule(
+  "RUSH -> BOOM fallback",
+  "(goal strategy-goal bt-strategy-rush)",
+  "(current-age >= castle-age)",
+  "(not (town-under-attack))",
+  "(not (goal bt-any-threat-goal 1))",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+requireRule(
   "Castle fallback excludes Castle-power",
   "(current-age >= castle-age)",
   "(not (goal strategy-goal bt-strategy-castle-power))",
@@ -898,9 +906,12 @@ assert.equal(castlePowerTcConsumers.length, 0, "[Castle-power] BOOM-only TC expa
 
 function castlePowerPolicy(input) {
   if (input.age >= input.imperialAge && input.safe) return "boom";
-  if (input.strategy === "rush" && input.age >= input.castleAge && input.safe &&
-      input.targetAlive && input.archers >= 4) return "castle-power";
-  if (input.age >= input.castleAge && input.safe && !["boom", "rush", "flush", "castle-power"].includes(input.strategy)) {
+  if (input.strategy === "rush" && input.age >= input.castleAge && input.safe) {
+    if (input.targetAlive && input.archers >= 4) return "castle-power";
+    return "boom";
+  }
+  if (input.age >= input.castleAge && input.safe &&
+      !["boom", "rush", "flush", "castle-power"].includes(input.strategy)) {
     return "boom";
   }
   return input.strategy;
@@ -911,10 +922,10 @@ assert.equal(castlePowerPolicy({
 }), "castle-power", "[Castle-power A] surviving Feudal pressure did not continue into Castle-power");
 assert.equal(castlePowerPolicy({
   strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 2,
-}), "rush", "[Castle-power B] insufficient archer pressure incorrectly promoted to Castle-power");
+}), "boom", "[Castle-power B] insufficient Castle-Power pressure did not recover to BOOM");
 assert.equal(castlePowerPolicy({
   strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: false, archers: 4,
-}), "rush", "[Castle-power C] lost target incorrectly promoted to Castle-power");
+}), "boom", "[Castle-power C] lost target did not recover to BOOM");
 assert.equal(castlePowerPolicy({
   strategy: "castle-power", age: 4, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
 }), "boom", "[Castle-power D] Imperial expiry did not return to BOOM");
