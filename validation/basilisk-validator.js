@@ -1458,7 +1458,7 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
       if (
         parameter.type === "Const" &&
         isSymbolicSchemaValue(value) &&
-        !documentedParameterValue(parameterName, value, families, parameter.type)
+        !documentedParameterValue(parameterName, value, families, parameter.type) && !(parameterName === "UnitId" && families.objectWildcards.has(value) && allowsObjectWildcard(command.name, parameterName))
       ) {
         reportFailure(
           "command-argument-mismatch",
