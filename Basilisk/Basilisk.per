@@ -5598,7 +5598,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (not (town-under-attack))
     (research-available ri-stone-mining)
     (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
-    (not (can-research-with-escrow feudal-age))
     (not (or
         (can-research-with-escrow castle-age)
         (goal bt-castle-commitment-goal 1)
@@ -10190,7 +10189,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
     (and (current-age == feudal-age) (not (or
