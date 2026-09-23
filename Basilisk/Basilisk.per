@@ -1693,16 +1693,6 @@
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
     (up-research-status c: ri-bodkin-arrow == research-complete)
-    (not (and
-             (up-compare-goal bt-ranged-counter-level-goal >= 1)
-             (and
-             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
-             (and
-             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
-             (up-research-status c: ri-elite-skirmisher < research-complete)
-                      )
-                      )
-         ))
     (or
         (and
             (goal unit-goal crossbowman)
