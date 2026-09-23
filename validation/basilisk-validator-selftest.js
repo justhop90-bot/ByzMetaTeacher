@@ -272,6 +272,34 @@ try {
         "(up-modify-sn sn-focus-player-number s:= definitely-not-a-strategic-number)",
       ),
     },
+    {
+      name: "command-arity-mismatch",
+      expected: "command-arity-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (up-compare-goal bt-attack-reserve-goal == 1 2)\n=>\n    (do-nothing)\n)\n",
+    },
+    {
+      name: "command-family-mismatch",
+      expected: "command-family-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (up-compare-goal sn-resource-control == 1)\n=>\n    (do-nothing)\n)\n",
+    },
+    {
+      name: "command-typed-prefix-mismatch",
+      expected: "command-typed-prefix-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-build place-normal 0 c:= castle)\n)\n",
+    },
+    {
+      name: "command-typed-operand-mismatch",
+      expected: "command-typed-operand-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-train 0 g: sn-resource-control)\n)\n",
+    },
   ];
 
 
@@ -346,6 +374,12 @@ try {
         mutationFailures: reports,
         boundaryPasses: boundaryPassReports,
         boundaryFailures: boundaryFailureReports,
+        schemaMismatchClasses: [
+          "command-arity-mismatch",
+          "command-family-mismatch",
+          "command-typed-prefix-mismatch",
+          "command-typed-operand-mismatch",
+        ],
       },
       null,
       2,
