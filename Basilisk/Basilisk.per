@@ -2712,6 +2712,19 @@
 ;================================================================
 ; 8. HOUSING
 ;================================================================
+; Resource-local housing hygiene. When a lumber camp already exists, place
+; the next house around that active woodline rather than defaulting every house
+; to the Town Center area. The generic housing rule remains the fallback.
+(defrule
+    (housing-headroom <= 5)
+    (up-pending-objects c: house == 0)
+    (building-type-count-total lumber-camp >= 1)
+    (can-build house)
+=>
+    (up-set-placement-data my-player-number lumber-camp c: 6)
+    (up-build place-control 0 c: house)
+)
+
 ; Q: "How do I prevent a population-cap stall?"
 (defrule
     ; Keep one house ahead of the normal four-headroom trigger so fast villager
