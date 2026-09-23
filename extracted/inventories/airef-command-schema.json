@@ -1,0 +1,2384 @@
+{
+  "metadata": {
+    "schema": "airef-command-schema-v1",
+    "generated_for": "ByzMetaTeacher/Basilisk",
+    "source": "https://airef.github.io/commands/commands-index.html",
+    "source_commands_js_blob_sha": "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+    "ai_ref_command_count": 385,
+    "parameter_snapshot_source": "joerollman/aoe2-ai-parser AIRef command scrape",
+    "parameter_snapshot_fetched_at": "2026-04-28T03:26:06Z",
+    "parameter_snapshot_blob_sha": "05240ac13648f24a4849b44be5d03da9ac24cb78",
+    "covered_command_count": 88,
+    "notes": [
+      "AIRef commands.js is the vocabulary authority.",
+      "Per-command slot signatures were scraped from AIRef command details and are carried here only for commands used by Basilisk.",
+      "This schema layer validates command syntax contracts; Basilisk lifecycle policy remains in basilisk-validator.js."
+    ]
+  },
+  "commands": [
+    {
+      "name": "true",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(true)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#true",
+      "parameters": []
+    },
+    {
+      "name": "acknowledge-event",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(acknowledge-event <EventType> <EventId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#acknowledge-event",
+      "parameters": [
+        {
+          "name": "EventType",
+          "type": "Const",
+          "dir": "in",
+          "range": "trigger",
+          "note": "The type of the event. Triggers are the only valid event types.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "EventId",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 to 255.",
+          "note": "The EventId to acknowledge.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "attack-now",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(attack-now)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#attack-now",
+      "parameters": []
+    },
+    {
+      "name": "attack-soldier-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(attack-soldier-count <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#attack-soldier-count",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(build <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#build",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "building-available",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(building-available <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#building-available",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building to check availability for.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "building-type-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(building-type-count <BuildingId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#building-type-count",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "building-type-count-total",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(building-type-count-total <BuildingId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#building-type-count-total",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-afford-building",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-afford-building <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-afford-building",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building to check affordability for.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-build",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-build <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-build",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-build-with-escrow",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-build-with-escrow <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-build-with-escrow",
+      "parameters": [
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-research-with-escrow",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-research-with-escrow <TechId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-research-with-escrow",
+      "parameters": [
+        {
+          "name": "TechId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A TechId.",
+          "note": "The technology to be researched.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-train",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-train <UnitId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-train",
+      "parameters": [
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId. This fact allows the use of unit line wildcard parameters for UnitId.",
+          "note": "The unit to train.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "can-train-with-escrow",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(can-train-with-escrow <UnitId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#can-train-with-escrow",
+      "parameters": [
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId. This action allows the use of unit line wildcard parameters for UnitId.",
+          "note": "The unit to train.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "civilian-population",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(civilian-population <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#civilian-population",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "current-age",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(current-age <compareOp> <Age>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#current-age",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Age",
+          "type": "Op",
+          "dir": "in",
+          "range": "dark-age, feudal-age, castle-age, or imperial-age.",
+          "note": "An age for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "disable-self",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(disable-self)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#disable-self",
+      "parameters": []
+    },
+    {
+      "name": "disable-timer",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(disable-timer <TimerId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#disable-timer",
+      "parameters": [
+        {
+          "name": "TimerId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid TimerId.",
+          "note": "The timer to disable.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "dropsite-min-distance",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(dropsite-min-distance <Resource> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#dropsite-min-distance",
+      "parameters": [
+        {
+          "name": "Resource",
+          "type": "Const",
+          "dir": "in",
+          "range": "food, wood, stone, gold, hunting, boar-hunting, deer-hunting, or live-boar.",
+          "note": "The resource to check. Food includes all food sources except boar and fish for fishing ships.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "enable-timer",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(enable-timer <TimerId> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#enable-timer",
+      "parameters": [
+        {
+          "name": "TimerId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid TimerId.",
+          "note": "The timer to enable.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 to 32767.",
+          "note": "The length of the timer in seconds.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "event-detected",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(event-detected <EventType> <EventId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#event-detected",
+      "parameters": [
+        {
+          "name": "EventType",
+          "type": "Const",
+          "dir": "in",
+          "range": "trigger",
+          "note": "The type of the event. Triggers are the only valid event types.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "EventId",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 to 255.",
+          "note": "The EventId to detect.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "food-amount",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(food-amount <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#food-amount",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "game-time",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(game-time <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#game-time",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "Sets the expected type of the following parameter for comparison.<br/>Value: c: or s: followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "goal",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(goal <GoalId> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#goal",
+      "parameters": [
+        {
+          "name": "GoalId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid GoalId, from 1 to 16000.",
+          "note": "The goal to compare the Value to.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Const",
+          "dir": "in",
+          "range": "-2,147,483,648 to 2,147,483,647.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "gold-amount",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(gold-amount <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#gold-amount",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "housing-headroom",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(housing-headroom <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#housing-headroom",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "idle-farm-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(idle-farm-count <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#idle-farm-count",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "map-type",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(map-type <MapType>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#map-type",
+      "parameters": [
+        {
+          "name": "MapType",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid MapType",
+          "note": "The type of map, such as arabia.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "military-population",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(military-population <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#military-population",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "player-in-game",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(player-in-game <PlayerNumber>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#player-in-game",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "players-building-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(players-building-count <PlayerNumber> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#players-building-count",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "players-building-type-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(players-building-type-count <PlayerNumber> <BuildingId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#players-building-type-count",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "BuildingId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A BuildingId.",
+          "note": "The BuildingId to count.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "players-current-age",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(players-current-age <PlayerNumber> <compareOp> <Age>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#players-current-age",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Age",
+          "type": "Op",
+          "dir": "in",
+          "range": "dark-age, feudal-age, castle-age, or imperial-age.",
+          "note": "The current age of the player.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "players-military-population",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(players-military-population <PlayerNumber> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#players-military-population",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "players-unit-type-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(players-unit-type-count <PlayerNumber> <UnitId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#players-unit-type-count",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "Any player number.",
+          "note": "The player(s) to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId.",
+          "note": "The UnitId to count.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "population-headroom",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(population-headroom <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#population-headroom",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "release-escrow",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(release-escrow <Resource>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#release-escrow",
+      "parameters": [
+        {
+          "name": "Resource",
+          "type": "Const",
+          "dir": "in",
+          "range": "food, wood, stone, or gold.",
+          "note": "The escrow resource stockpile.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "research",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(research <TechId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#research",
+      "parameters": [
+        {
+          "name": "TechId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A TechId.",
+          "note": "The technology to research.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "research-available",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(research-available <TechId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#research-available",
+      "parameters": [
+        {
+          "name": "TechId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A TechId.",
+          "note": "The technology to check availability for.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "set-escrow-percentage",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(set-escrow-percentage <Resource> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#set-escrow-percentage",
+      "parameters": [
+        {
+          "name": "Resource",
+          "type": "Const",
+          "dir": "in",
+          "range": "Food, wood, stone, or gold.",
+          "note": "The resource to set the escrow percentage for.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 to 100.",
+          "note": "The escrow percentage to set.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "set-goal",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(set-goal <GoalId> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#set-goal",
+      "parameters": [
+        {
+          "name": "GoalId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid GoalId, from 1 to 16000.",
+          "note": "The goal to set.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Const",
+          "dir": "in",
+          "range": "-2,147,483,648 to 2,147,483,647.",
+          "note": "The value to set the goal to.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "set-strategic-number",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(set-strategic-number <SnId> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#set-strategic-number",
+      "parameters": [
+        {
+          "name": "SnId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid SnId.",
+          "note": "The strategic number to set.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Const",
+          "dir": "in",
+          "range": "-32768 to 32767. Some strategic numbers have a smaller usable range.",
+          "note": "The value to set the strategic number to.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "sheep-and-forage-too-far",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(sheep-and-forage-too-far)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#sheep-and-forage-too-far",
+      "parameters": []
+    },
+    {
+      "name": "stone-amount",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(stone-amount <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#stone-amount",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "strategic-number",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(strategic-number <SnId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#strategic-number",
+      "parameters": [
+        {
+          "name": "SnId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid SnId.",
+          "note": "The strategic number to compare.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "timer-triggered",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(timer-triggered <TimerId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#timer-triggered",
+      "parameters": [
+        {
+          "name": "TimerId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A valid TimerId.",
+          "note": "The timer to check.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "town-under-attack",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(town-under-attack)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#town-under-attack",
+      "parameters": []
+    },
+    {
+      "name": "train",
+      "version": "AoC",
+      "command_type": "Action",
+      "syntax": "(train <UnitId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#train",
+      "parameters": [
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId. This action allows the use of unit line wildcard parameters for UnitId.",
+          "note": "The unit to train.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "unit-type-count",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(unit-type-count <UnitId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#unit-type-count",
+      "parameters": [
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId.",
+          "note": "The unit type to count. This fact allows the use of unit line wildcard parameters for UnitId.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "unit-type-count-total",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(unit-type-count-total <UnitId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#unit-type-count-total",
+      "parameters": [
+        {
+          "name": "UnitId",
+          "type": "Const",
+          "dir": "in",
+          "range": "A UnitId.",
+          "note": "The unit type to count. This fact allows the use of unit line wildcard parameters for UnitId.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "wood-amount",
+      "version": "AoC",
+      "command_type": "Fact",
+      "syntax": "(wood-amount <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#wood-amount",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767.",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-add-research-cost",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-add-research-cost <typeOp> <TechId> <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-add-research-cost",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "TechId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a TechId",
+          "note": "The technology to operate upon.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "The number of techs to add or subtract.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-assign-builders",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-assign-builders <typeOp> <BuildingId> <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-assign-builders",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "BuildingId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a BuildingId",
+          "note": "The building to modify.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-1 to 250",
+          "note": "The number of builders to assign or -1 to disable sending additional builders.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-build",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-build <PlacementType> <EscrowGoalId> <typeOp> <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-build",
+      "parameters": [
+        {
+          "name": "PlacementType",
+          "type": "Const",
+          "dir": "in",
+          "range": "place-normal, place-forward, place-control, place-point",
+          "note": "The type of placement. Execute up-set-placement-data before using place-control.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "EscrowGoalId",
+          "type": "Goal",
+          "dir": "in",
+          "range": "a goal set to with-escrow or without-escrow, or 0 for without-escrow",
+          "note": "Determines whether escrowed resources are considered.<br/>Note: A goal ID that stores the escrow state is expected. However, if you never want this command to use escrow, you can put 0 instead.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "BuildingId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a BuildingId",
+          "note": "The building that will be constructed.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-compare-goal",
+      "version": "UP",
+      "command_type": "Fact",
+      "syntax": "(up-compare-goal <GoalId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-compare-goal",
+      "parameters": [
+        {
+          "name": "GoalId",
+          "type": "Goal",
+          "dir": "in",
+          "range": "a GoalId",
+          "note": "The goal that will be compared.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-filter-distance",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-filter-distance <typeOp> <MinDistance> <typeOp> <MaxDistance>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-filter-distance",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "MinDistance",
+          "type": "Op",
+          "dir": "in",
+          "range": "-1 to 32767",
+          "note": "The minimum acceptable distance from the point specified by up-set-target-point.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "MaxDistance",
+          "type": "Op",
+          "dir": "in",
+          "range": "-1 to 32767",
+          "note": "The maximum acceptable distance from the point specified by up-set-target-point.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-filter-garrison",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-filter-garrison <typeOp> <MinGarrison> <typeOp> <MaxGarrison>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-filter-garrison",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "MinGarrison",
+          "type": "Op",
+          "dir": "in",
+          "range": "-1 to 32767",
+          "note": "The minimum acceptable value for objects garrisoned.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "MaxGarrison",
+          "type": "Op",
+          "dir": "in",
+          "range": "-1 to 32767",
+          "note": "The maximum acceptable value for objects garrisoned.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-find-local",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-find-local <typeOp> <UnitId> <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-find-local",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "UnitId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a UnitId",
+          "note": "The unit type that will be selected.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "0 to 240",
+          "note": "The number of results to find.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-find-player",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-find-player <PlayerStance> <FindPlayerMethod> <OutputGoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-find-player",
+      "parameters": [
+        {
+          "name": "PlayerStance",
+          "type": "Const",
+          "dir": "in",
+          "range": "any, ally, neutral, enemy, or enemy-treaty",
+          "note": "The stance of the player to find.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "FindPlayerMethod",
+          "type": "Const",
+          "dir": "in",
+          "range": "find-attacker, find-random, find-closest, find-ordered",
+          "note": "The search method.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "OutputGoalId",
+          "type": "Goal",
+          "dir": "out",
+          "range": "a GoalId",
+          "note": "Stores the player number of the match.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-find-remote",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-find-remote <typeOp> <UnitId> <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-find-remote",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "UnitId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a UnitId",
+          "note": "The unit type that will be selected.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "0 to 40",
+          "note": "The number of results to find.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-full-reset-search",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-full-reset-search)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-full-reset-search",
+      "parameters": []
+    },
+    {
+      "name": "up-garrison",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-garrison <ObjectId> <typeOp> <UnitId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-garrison",
+      "parameters": [
+        {
+          "name": "ObjectId",
+          "type": "Const",
+          "dir": "in",
+          "range": "a UnitId or BuildingId",
+          "note": "The type of object that will hold the units.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "UnitId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a UnitId",
+          "note": "The type of unit that will be garrisoned.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-get-cost-delta",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-get-cost-delta <OutputGoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-get-cost-delta",
+      "parameters": [
+        {
+          "name": "OutputGoalId",
+          "type": "Goal",
+          "dir": "out",
+          "range": "an extended GoalId from 41 to 15996",
+          "note": "The first of 4 consecutive goals to store the cost delta for food, wood, stone, and gold.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-get-fact",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-get-fact <FactId> <FactParameter> <OutputGoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-get-fact",
+      "parameters": [
+        {
+          "name": "FactId",
+          "type": "Const",
+          "dir": "in",
+          "range": "a const from the FactId list",
+          "note": "The fact to query.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "FactParameter",
+          "type": "Const",
+          "dir": "in",
+          "range": "an appropriate parameter for the fact, or 0 if not required",
+          "note": "A parameter for the fact.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "OutputGoalId",
+          "type": "Goal",
+          "dir": "out",
+          "range": "a GoalId",
+          "note": "Stores the result of the fact.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-get-point",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-get-point <PositionType> <Point>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-get-point",
+      "parameters": [
+        {
+          "name": "PositionType",
+          "type": "Const",
+          "dir": "in",
+          "range": "a member of the PositionType list",
+          "note": "The position to read.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Point",
+          "type": "Goal",
+          "dir": "out",
+          "range": "an extended GoalId from 41 to 15998",
+          "note": "The first of 2 consecutive goals to store the (x,y) pair.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-get-search-state",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-get-search-state <OutputGoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-get-search-state",
+      "parameters": [
+        {
+          "name": "OutputGoalId",
+          "type": "Goal",
+          "dir": "out",
+          "range": "an extended GoalId from 41 to 15996",
+          "note": "The first of 4 consecutive goals to read the search state.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-get-target-fact",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-get-target-fact <FactId> <FactParameter> <OutputGoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-get-target-fact",
+      "parameters": [
+        {
+          "name": "FactId",
+          "type": "Const",
+          "dir": "in",
+          "range": "a const from the FactId list",
+          "note": "The fact to query.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "FactParameter",
+          "type": "Const",
+          "dir": "in",
+          "range": "an appropriate parameter for the fact, or 0 if not required",
+          "note": "A parameter for the fact.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "OutputGoalId",
+          "type": "Goal",
+          "dir": "out",
+          "range": "a GoalId",
+          "note": "Stores the result of the fact.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-modify-goal",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-modify-goal <GoalId> <mathOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-modify-goal",
+      "parameters": [
+        {
+          "name": "GoalId",
+          "type": "Goal",
+          "dir": "io",
+          "range": "a GoalId",
+          "note": "The goal that will be modified.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "mathOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for a math operation.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: =,, -, *, /, mod, min, max, neg, z/, %*, %/\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "The number that will be used in the operation.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-modify-sn",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-modify-sn <SnId> <mathOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-modify-sn",
+      "parameters": [
+        {
+          "name": "SnId",
+          "type": "Sn",
+          "dir": "io",
+          "range": "an SnId",
+          "note": "The strategic number that will be modified.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "mathOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for a math operation.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: =,, -, *, /, mod, min, max, neg, z/, %*, %/\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "The number that will be used in the operation.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-pending-objects",
+      "version": "UP",
+      "command_type": "Fact",
+      "syntax": "(up-pending-objects <typeOp> <ObjectId> <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-pending-objects",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "ObjectId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a UnitId or BuildingId",
+          "note": "The object to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-pending-placement",
+      "version": "UP",
+      "command_type": "Fact",
+      "syntax": "(up-pending-placement <typeOp> <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-pending-placement",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "BuildingId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a BuildingId",
+          "note": "The building to check.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-remaining-boar-amount",
+      "version": "UP",
+      "command_type": "Fact",
+      "syntax": "(up-remaining-boar-amount <compareOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-remaining-boar-amount",
+      "parameters": [
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-32768 to 32767",
+          "note": "A number for comparison.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-request-hunters",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-request-hunters <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-request-hunters",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "0 to 32767",
+          "note": "The total number of hunters for the AI.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-research-status",
+      "version": "UP",
+      "command_type": "Fact",
+      "syntax": "(up-research-status <typeOp> <TechId> <compareOp> <ResearchState>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-research-status",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "TechId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a TechId",
+          "note": "The technology to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "compareOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter for comparison.<br/>Value: c:",
+          "g": "",
+          "s": "followed by: &gt;, &gt;=, &lt;, &lt;=, ==, !=<br/>Note: the c: prefix is optional; other prefixes are required.\""
+        },
+        {
+          "name": "ResearchState",
+          "type": "Op",
+          "dir": "in",
+          "range": "research-disabled, research-unavailable, research-available, research-pending, research-complete, research-queued",
+          "note": "The research status to compare with.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-reset-attack-now",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-reset-attack-now)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-reset-attack-now",
+      "parameters": []
+    },
+    {
+      "name": "up-reset-placement",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-reset-placement <typeOp> <BuildingId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-reset-placement",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "BuildingId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a BuildingId",
+          "note": "The building type that will be reset.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-retreat-now",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-retreat-now)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-retreat-now",
+      "parameters": []
+    },
+    {
+      "name": "up-send-scout",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-send-scout <GroupType> <ScoutMethod>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-send-scout",
+      "parameters": [
+        {
+          "name": "GroupType",
+          "type": "Const",
+          "dir": "in",
+          "range": "a const from the GroupType list",
+          "note": "The type of explore group that will be tasked.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "ScoutMethod",
+          "type": "Const",
+          "dir": "in",
+          "range": "a member of the ScoutMethod list",
+          "note": "The scouting method.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-set-placement-data",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-set-placement-data <PlayerNumber> <ObjectId> <typeOp> <Value>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-set-placement-data",
+      "parameters": [
+        {
+          "name": "PlayerNumber",
+          "type": "Player",
+          "dir": "in",
+          "range": "a single player number for: self, this-any-ally",
+          "note": "The player to focus upon.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "ObjectId",
+          "type": "Const",
+          "dir": "in",
+          "range": "a UnitId or BuildingId",
+          "note": "The object that will be the focus for placement.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Value",
+          "type": "Op",
+          "dir": "in",
+          "range": "-254 to 254",
+          "note": "The distance from the focus object to place using up-build + place-control. If a target enemy has been found, the distance shifts toward or away from the closest building of that target. Otherwise, the center of the map acts as the reference position.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-set-target-object",
+      "version": "UP",
+      "command_type": "Fact/Action",
+      "syntax": "(up-set-target-object <SearchSource> <typeOp> <Index>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-set-target-object",
+      "parameters": [
+        {
+          "name": "SearchSource",
+          "type": "Const",
+          "dir": "in",
+          "range": "search-local or search-remote",
+          "note": "The search source to check.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "Index",
+          "type": "Op",
+          "dir": "in",
+          "range": "0 to 240",
+          "note": "The zero-based index of the object to set.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-set-target-point",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-set-target-point <Point>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-set-target-point",
+      "parameters": [
+        {
+          "name": "Point",
+          "type": "Goal",
+          "dir": "in",
+          "range": "an extended GoalId from 41 to 15598",
+          "note": "The first of 2 consecutive goals to store the (x,y) pair.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-setup-cost-data",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-setup-cost-data <Option> <GoalId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-setup-cost-data",
+      "parameters": [
+        {
+          "name": "Option",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 or 1",
+          "note": "If set to 1, the values of the provided goal set will be reset to 0.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "GoalId",
+          "type": "Goal",
+          "dir": "io",
+          "range": "an extended GoalId from 41 to 15996",
+          "note": "The first of 4 consecutive goals to store cost data for food, wood, stone, and gold.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-target-objects",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-target-objects <Option> <DUCAction> <Formation> <AttackStance>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-target-objects",
+      "parameters": [
+        {
+          "name": "Option",
+          "type": "Const",
+          "dir": "in",
+          "range": "0 or 1",
+          "note": "Set to 1 to target only the object set by up-set-target-object.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "DUCAction",
+          "type": "Const",
+          "dir": "in",
+          "range": "action-default, action-move, action-patrol, action-guard, action-follow, action-stop, action-ground, action-garrison, action-delete, action-gather, action-none",
+          "note": "The action to perform with the selected units.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "Formation",
+          "type": "Const",
+          "dir": "in",
+          "range": "-1, formation-line, formation-box, formation-stagger, or formation-flank",
+          "note": "The formation to set or -1 to do nothing.",
+          "g": null,
+          "s": null
+        },
+        {
+          "name": "AttackStance",
+          "type": "Const",
+          "dir": "in",
+          "range": "-1, stance-aggressive, stance-defensive, stance-stand-ground, or stance-no-attack",
+          "note": "The stance to set or -1 to do nothing.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "up-ungarrison",
+      "version": "UP",
+      "command_type": "Action",
+      "syntax": "(up-ungarrison <typeOp> <ObjectId>)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#up-ungarrison",
+      "parameters": [
+        {
+          "name": "typeOp",
+          "type": "",
+          "dir": "",
+          "range": "",
+          "note": "\"Sets the expected type of the following parameter.<br/>Value: c: for consts",
+          "g": "for goals, or s: for strategic numbers.\"",
+          "s": null
+        },
+        {
+          "name": "ObjectId",
+          "type": "Op",
+          "dir": "in",
+          "range": "a UnitId or BuildingId",
+          "note": "The type of object that will release garrisoned units.",
+          "g": null,
+          "s": null
+        }
+      ]
+    },
+    {
+      "name": "and",
+      "version": "AoC",
+      "command_type": "Other",
+      "syntax": "(and)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#and",
+      "parameters": []
+    },
+    {
+      "name": "nor",
+      "version": "AoC",
+      "command_type": "Other",
+      "syntax": "(nor)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#nor",
+      "parameters": []
+    },
+    {
+      "name": "not",
+      "version": "AoC",
+      "command_type": "Other",
+      "syntax": "(not)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#not",
+      "parameters": []
+    },
+    {
+      "name": "or",
+      "version": "AoC",
+      "command_type": "Other",
+      "syntax": "(or)",
+      "source_url": "https://airef.github.io/commands/commands-details.html#or",
+      "parameters": []
+    }
+  ]
+}
