@@ -3425,6 +3425,155 @@ function validateRetryDoctrine(sourceText) {
   );
 }
 
+function validateStrategicNarration(sourceText, rules) {
+  for (const symbol of [
+    "bt-debug-verbosity-goal",
+    "bt-debug-last-opening-goal",
+    "bt-debug-last-threat-goal",
+    "bt-debug-last-resource-mode-goal",
+    "bt-debug-last-unit-goal",
+    "bt-debug-last-strategy-goal",
+    "bt-debug-last-castle-block-goal",
+    "bt-debug-last-age-event-goal",
+    "bt-debug-last-eco-event-goal",
+    "bt-debug-last-tc-stage-goal",
+  ]) {
+    assert.ok(
+      sourceText.includes(symbol),
+      "[Narration] missing diagnostic state: " + symbol,
+    );
+  }
+
+  assert.ok(
+    sourceText.includes("(set-goal bt-debug-verbosity-goal 1)"),
+    "[Narration] default verbosity gate is not initialized to level 1",
+  );
+
+  const chatRules = rules.filter((rule) =>
+    rule.includes('(chat-local-to-self "BASILISK |'),
+  );
+  assert.ok(
+    chatRules.length >= 80,
+    "[Narration] expected a complete strategic narration layer",
+  );
+
+  for (const rule of chatRules) {
+    assert.ok(
+      rule.includes("(up-compare-goal bt-debug-verbosity-goal"),
+      "[Narration] every diagnostic chat action must be verbosity-gated",
+    );
+    assert.ok(
+      rule.includes("(up-compare-goal bt-debug-last-"),
+      "[Narration] every diagnostic chat action must be edge-triggered by diagnostic state",
+    );
+    assert.ok(
+      !/\(set-goal (?:strategy-goal|unit-goal|bt-opening-plan-goal|bt-resource-mode-goal)/.test(rule),
+      "[Narration] diagnostic rule must never write strategic state",
+    );
+  }
+
+  const requiredMessages = [
+    "BASILISK | OPENING | ARABIA-FAST-CASTLE",
+    "BASILISK | OPENING | ANTI-RUSH",
+    "BASILISK | STRATEGY | FLUSH",
+    "BASILISK | STRATEGY | RUSH",
+    "BASILISK | STRATEGY | BOOM",
+    "BASILISK | STRATEGY | CASTLE-POWER",
+    "BASILISK | THREAT | confirmed pressure.",
+    "BASILISK | RESOURCE | CASTLE-BANK",
+    "BASILISK | COMPOSITION | CROSSBOW",
+    "BASILISK | AGE | Castle blocked: engine feasibility.",
+    "BASILISK | AGE | Castle ready to research.",
+    "BASILISK | AGE | Castle complete.",
+    "BASILISK | ECO | Horse Collar: demand active.",
+    "BASILISK | ECO | Horse Collar: research started.",
+    "BASILISK | ECO | Horse Collar: complete.",
+    "BASILISK | ECO | Heavy Plow: complete.",
+    "BASILISK | TC | TC2 complete.",
+  ];
+  for (const message of requiredMessages) {
+    assert.ok(
+      sourceText.includes(message),
+      "[Narration] missing canonical diagnostic message: " + message,
+    );
+  }
+
+  const categories = [
+    "OPENING",
+    "THREAT",
+    "STRATEGY",
+    "RESOURCE",
+    "COMPOSITION",
+    "AGE",
+    "ECO",
+    "TC",
+  ];
+  for (const category of categories) {
+    assert.ok(
+      chatRules.some((rule) =>
+        rule.includes('BASILISK | ' + category + ' |'),
+      ),
+      "[Narration] missing diagnostic category: " + category,
+    );
+  }
+
+  const firstStrategyWriter = Math.max(
+    ...rules
+      .map((rule, index) =>
+        rule.includes("(set-goal strategy-goal bt-strategy-") ? index : -1,
+      )
+      .filter((index) => index >= 0),
+  );
+  const firstStrategyNarrator = ruleIndex(
+    rules,
+    '(chat-local-to-self "BASILISK | STRATEGY | FLUSH',
+  );
+  assert.ok(
+    firstStrategyNarrator > firstStrategyWriter,
+    "[Narration] strategy narration must observe finalized strategy state",
+  );
+
+  const firstResourceWriter = Math.max(
+    ...rules
+      .map((rule, index) =>
+        rule.includes("(set-goal bt-resource-mode-goal") ? index : -1,
+      )
+      .filter((index) => index >= 0),
+  );
+  const firstResourceNarrator = ruleIndex(
+    rules,
+    '(chat-local-to-self "BASILISK | RESOURCE | DARK',
+  );
+  assert.ok(
+    firstResourceNarrator > firstResourceWriter,
+    "[Narration] resource-mode narration must observe finalized resource arbitration",
+  );
+
+  const firstUnitWriter = Math.max(
+    ...rules
+      .map((rule, index) =>
+        rule.includes("(set-goal unit-goal") ? index : -1,
+      )
+      .filter((index) => index >= 0),
+  );
+  const firstUnitNarrator = ruleIndex(
+    rules,
+    '(chat-local-to-self "BASILISK | COMPOSITION | MIX',
+  );
+  assert.ok(
+    firstUnitNarrator > firstUnitWriter,
+    "[Narration] composition narration must observe finalized unit-goal selection",
+  );
+
+  assert.ok(
+    !chatRules.some((rule) =>
+      rule.includes("(true)") &&
+      rule.includes("(chat-local-to-self"),
+    ),
+    "[Narration] unconditional diagnostic chat rule would spam every evaluation pass",
+  );
+}
+
 function validateLifecycleAnchors(sourceText, rules) {
   for (const symbol of [
     "bt-strategy-boom",
@@ -3481,6 +3630,7 @@ validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
+validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
