@@ -379,7 +379,12 @@ function validateIdentifiers(sourceText, repoRootPath) {
   for (const entry of objects.objects ?? []) {
     addKnownIdentifier(known.object, entry.ai_name);
     addKnownIdentifier(known.object, entry.line);
-    if (typeof entry.ai_name === "string" && typeof entry.line === "string" && entry.line) {
+    if (
+      entry.dataset === "standard" &&
+      typeof entry.ai_name === "string" &&
+      typeof entry.line === "string" &&
+      entry.line
+    ) {
       for (const raw of entry.ai_name.split(",")) {
         const token = raw.trim().split(/\s+/)[0];
         if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) objectLinesByName[token] = entry.line;
