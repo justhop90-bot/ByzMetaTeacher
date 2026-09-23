@@ -1139,18 +1139,28 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     classes,
     parameterValues,
     strictParameterValues,
+    constantSymbols: new Set([
+      ...strategicNumbers,
+      ...techs,
+      ...objects,
+      ...classes,
+      ...[...parameterValues.values()].flatMap((values) => [...values]),
+      ...defconsts,
+    ]),
   };
 }
 
 
-function documentedParameterValue(parameterName, value, families) {
+function documentedParameterValue(parameterName, value, families, parameterType = null) {
   if (!value || /^-?\d+$/.test(value) || value.startsWith('"')) return true;
   if (families.defconsts.has(value)) return true;
   if (value.startsWith("g:") || value.startsWith("s:") || value.startsWith("c:")) {
     return false;
   }
   const strictValues = families.strictParameterValues.get(parameterName);
-  return !strictValues || strictValues.has(value);
+  if (strictValues) return strictValues.has(value);
+  if (parameterType === "Const") return families.constantSymbols.has(value);
+  return true;
 }
 
 function parseAIRefSimpleNumericRange(rangeText) {
@@ -1441,7 +1451,7 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
       if (
         parameter.type === "Const" &&
         isSymbolicSchemaValue(value) &&
-        !documentedParameterValue(parameterName, value, families)
+        !documentedParameterValue(parameterName, value, families, parameter.type)
       ) {
         reportFailure(
           "command-argument-mismatch",
