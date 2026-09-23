@@ -176,6 +176,34 @@ try {
     );
   }
 
+  function buildSingleLineRule(targetLength) {
+    const base = "(defrule (true) => (disable-self))";
+    assert.ok(
+      targetLength >= base.length,
+      "[Self-test] single-line fixture target must cover its base syntax",
+    );
+    return (
+      baseline +
+      "\n" +
+      base.slice(0, base.indexOf("=>")) +
+      " ".repeat(targetLength - base.length) +
+      base.slice(base.indexOf("=>")) +
+      "\n"
+    );
+  }
+
+  function buildMultilineLongRule() {
+    return (
+      baseline +
+      "\n(defrule\n    (true)\n=>    (disable-self))\n"
+    );
+  }
+
+  function buildLineLengthFixture(targetLength) {
+    const prefix = baseline + "\n;";
+    return prefix + " ".repeat(targetLength - 2) + "\n";
+  }
+
   const ruleLengthCases = [
     {
       name: "rule-elements-31-pass",
@@ -194,16 +222,31 @@ try {
       source: buildRuleWithElementCount(33),
     },
     {
+      name: "complex-single-line-defrule-150-pass",
+      expectedStatus: 0,
+      source: buildSingleLineRule(150),
+    },
+    {
       name: "complex-single-line-defrule-151-fail",
       expectedStatus: 1,
       expected: "[Complex single-line rule]",
-      source:
-        baseline.replace(
-          "(defrule\n    (true)\n=>\n    (disable-self)\n)",
-          "(defrule (true)" +
-            " ".repeat(151) +
-            "=> (disable-self))",
-        ),
+      source: buildSingleLineRule(151),
+    },
+    {
+      name: "multiline-long-rule-pass",
+      expectedStatus: 0,
+      source: buildMultilineLongRule(),
+    },
+    {
+      name: "source-line-255-pass",
+      expectedStatus: 0,
+      source: buildLineLengthFixture(255),
+    },
+    {
+      name: "source-line-256-fail",
+      expectedStatus: 1,
+      expected: "[Engine limits]",
+      source: buildLineLengthFixture(256),
     },
   ];
 
@@ -483,6 +526,7 @@ try {
         boundaryPasses: boundaryPassReports,
         boundaryFailures: boundaryFailureReports,
         ruleLengthCases: ruleLengthReports,
+        ruleSizeCases: ruleLengthReports,
         schemaMismatchClasses: [
           "command-arity-mismatch",
           "command-family-mismatch",
