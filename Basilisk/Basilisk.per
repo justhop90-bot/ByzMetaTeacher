@@ -5248,8 +5248,10 @@ town-center >= 2)))))
     (goal bt-imperial-prereq-demand-goal 1)
     (or
         (current-age >= imperial-age)
-        (building-type-count-total castle >= 1)
-        (can-research-with-escrow imperial-age)
+        (or
+            (building-type-count-total castle >= 1)
+            (can-research-with-escrow imperial-age)
+        )
     )
 =>
     (set-goal bt-imperial-prereq-demand-goal 0)
