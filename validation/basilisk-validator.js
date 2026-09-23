@@ -474,13 +474,22 @@ function validateIdentifiers(sourceText, repoRootPath) {
     }
   }
 
-  const engineSupplements = new Set(["ri-logistica"]);
+  // These engine-native aliases are not present as named AIRef identifiers.
+  // They must therefore be explicitly materialized as local defconst values.
+  const engineSupplements = new Set(["siege-tower", "ri-logistica"]);
   const runtimeRejectedAliases = new Map([
     ["arbalester", "arbalest"],
     ["ri-arbalester", "ri-arbalest"],
   ]);
 
-  for (const value of engineSupplements) universalValues.add(value);
+  for (const value of engineSupplements) {
+    assert.ok(
+      known.defconst.has(value),
+      "[Invalid identifier] site-specific engine identifier '" +
+        value +
+        "' must be explicitly defined with defconst before use",
+    );
+  }
 
   const identifierSource = sanitizeStructure(sourceText);
   const failures = [];
@@ -571,7 +580,9 @@ function validateIdentifiers(sourceText, repoRootPath) {
 
   for (const match of identifierSource.matchAll(/\b(ri-[A-Za-z0-9_-]+)\b/g)) {
     assert.ok(
-      known.tech.has(match[1]) || universalValues.has(match[1]),
+      known.tech.has(match[1]) ||
+        known.defconst.has(match[1]) ||
+        universalValues.has(match[1]),
       `[Invalid identifier] technology-like symbol '${match[1]}' at line ${identifierSource.slice(0, match.index).split("\n").length} is not resolvable`,
     );
   }
@@ -597,6 +608,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
   return {
     checkedSlots: "build/train/research/goal/strategic-number plus typed c:/g:/s: operands and timers",
     engineSupplements: [...engineSupplements],
+    siteSpecificEngineIdentifiersRequireDefconst: true,
     objectLinesByName,
   };
 }
