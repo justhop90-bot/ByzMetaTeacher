@@ -3405,6 +3405,10 @@ function validateImperialPrerequisiteProviders(rules) {
     "[Imperial prerequisites] Temporary wood-priority funding mode is missing",
   );
   assert.ok(
+    !fundingMode.includes("(goal bt-resource-mode-goal 0)"),
+    "[Imperial prerequisites] Funding mode must be allowed to override Imperial bank-prep arbitration",
+  );
+  assert.ok(
     fundingMode.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
       fundingMode.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
       fundingMode.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
