@@ -407,6 +407,46 @@ try {
       })(),
     },
     {
+      name: "villager-hygiene-house-headroom-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "(housing-headroom <= 5)",
+        "(housing-headroom <= 4)",
+      ),
+    },
+    {
+      name: "villager-hygiene-wood-dropsite-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (dropsite-min-distance wood > 8)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-gold-dropsite-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (dropsite-min-distance gold > 8)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-stone-dropsite-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (dropsite-min-distance stone > 8)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-scout-defense-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (up-target-objects 0 action-default -1 stance-defensive)\n",
+        "    (up-target-objects 0 action-move -1 stance-defensive)\n",
+      ),
+    },
+    {
       name: "castle-cataphract-demand-cannot-block-ready-imperial",
       expected: "[Castle-Cataphract/Imperial handoff]",
       source: baseline.replace(
@@ -723,6 +763,11 @@ try {
           "farm-raw-wood-gate-rejected-with-escrow",
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
+          "villager-hygiene-house-headroom-regression",
+          "villager-hygiene-wood-dropsite-regression",
+          "villager-hygiene-gold-dropsite-regression",
+          "villager-hygiene-stone-dropsite-regression",
+          "villager-hygiene-scout-defense-regression",
           "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
           "crop-rotation-maturity-witness",
           "two-man-saw-demand-maturity-witness",
