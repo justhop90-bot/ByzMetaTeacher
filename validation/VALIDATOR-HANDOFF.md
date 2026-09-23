@@ -28,6 +28,11 @@ Current source baseline: Basilisk/Basilisk.per is at controller content SHA `4cd
 
 For the next ChatGPT session: read this file first, then `Basilisk/Lifecycle-Audit-Specification.md`, then run `node validation/basilisk-validator.js` before making lifecycle claims. Treat a failing assertion as a broken wire until the controller source proves otherwise. Do not weaken the validator merely to make a patch pass.
 
+
+## Current semantic hardening
+
+The current Basilisk repair pass closed three concrete lifecycle wires that syntax-only validation could not see. First, `up-send-scout` now requires a fielded Scout witness through `unit-type-count`, not the queue-inclusive `unit-type-count-total`; a queued Scout is not a Scout that can be dispatched. Second, farm rules using `can-build-with-escrow farm` no longer impose a contradictory raw `wood-amount >= bt-farm-build-wood` gate, so escrow-aware feasibility actually reaches the farm action as the comments claim. Third, the enemy threat/counter state derivation was moved ahead of the first package consumers. The validator now treats that source-order boundary as a hard lifecycle invariant and rejects a later threat-state block that would make package selection read stale state. 
+
 ## Current AIRef command-source gate
 
 The repository now contains extracted/inventories/airef-command-inventory.json, generated from the current AIRef master js/commands.js command definitions. It records the exhaustive 385-command vocabulary, each command's AIRef type/version, the source blob SHA, and Basilisk's 88-command usage set. docs/reference/AIREF-COMMAND-SOURCE.md is the human-facing audit companion.
@@ -58,6 +63,6 @@ The validator also treats 255 characters as the source-line ceiling and keeps th
 5. Top-level syntax is restricted to `defconst` and `defrule` forms (with preprocessor directives permitted), and every rule must contain exactly one `=>` separator followed by an action form.
 6. Strategy-reader phase checking extends to the final strategy writer, and downstream executors must re-check live strategic/resource boundaries. Attack delivery also requires its timer/idle contract and, for Castle-Power, the actual completed Crossbow witness.
 7. The validator checks its own handoff plumbing and the legacy validator's default controller path.
-8. `validation/basilisk-validator-selftest.js` runs the real front door against temporary mutated controllers covering unknown DUC identifiers, unknown timers, missing rule separators, stray top-level forms, unrelated production witnesses, duplicate/out-of-range defconsts, and invalid `g:/s:` operands. It also includes a positive string-safety case.
+8. `validation/basilisk-validator-selftest.js` runs the real front door against temporary mutated controllers covering unknown DUC identifiers, unknown timers, missing rule separators, stray top-level forms, unrelated production witnesses, duplicate/out-of-range defconsts, invalid `g:/s:` operands, and the new scout-dispatch, escrow-farm, and derived-state-order regressions. It also includes a positive string-safety case.
 
 The external standards behind these changes are AIRef's documented DE limits, logical-operator syntax, timer range, command vocabulary/type, point/cost/search-state goal allocation rules, DUC search-list bounds, and command parameter typing, plus community examples that pair feasibility commands with engine actions and use queued-aware unit-line counts. The current validator baseline is 795 rules, a 239-character maximum source line, and a 31-element maximum rule size. The AIRef schema covers all 385 commands, while the current Basilisk controller uses 88 of them.
