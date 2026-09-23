@@ -465,6 +465,22 @@ try {
       ),
     },
     {
+      name: "scouting-first-pulse-not-30-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "(defconst bt-scout-first-pulse 30)",
+        "(defconst bt-scout-first-pulse 120)",
+      ),
+    },
+    {
+      name: "scouting-home-pulse-too-slow-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "(defconst bt-scout-home-pulse 60)",
+        "(defconst bt-scout-home-pulse 120)",
+      ),
+    },
+    {
       name: "scouting-home-loop-without-target-fallback-rejected",
       expected: "[Scouting lifecycle]",
       source: (() => {
@@ -802,6 +818,8 @@ try {
           "farm-raw-wood-gate-rejected-with-escrow",
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
+          "scouting-first-pulse-not-30-rejected",
+          "scouting-home-pulse-too-slow-rejected",
           "villager-hygiene-house-headroom-regression",
           "villager-hygiene-lumber-local-house-placement-regression",
           "villager-hygiene-wood-dropsite-regression",
