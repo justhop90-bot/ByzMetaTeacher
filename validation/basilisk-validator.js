@@ -3104,6 +3104,10 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
     dbaExecutor,
     "[Feudal eco] Double-Bit Axe executor is missing",
   );
+  assert.ok(
+    dbaExecutor.includes("(not (goal bt-castle-commitment-goal 1))"),
+    "[Feudal eco] Double-Bit Axe executor must yield to Castle commitment",
+  );
   for (const veto of forbidden) {
     assert.ok(
       !dbaExecutor.includes(veto),
@@ -3149,6 +3153,18 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
   assert.ok(
     dbaImmediateHold,
     "[Feudal eco] first-pass Double-Bit Axe hold rule is missing",
+  );
+  assert.ok(
+    horseHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] Horse Collar hold must yield at the Castle villager threshold",
+  );
+  assert.ok(
+    dbaHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] Double-Bit Axe hold must yield at the Castle villager threshold",
+  );
+  assert.ok(
+    dbaImmediateHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] first-pass Double-Bit Axe hold must yield at the Castle villager threshold",
   );
   for (const veto of forbidden) {
     assert.ok(
