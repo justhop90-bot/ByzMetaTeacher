@@ -838,23 +838,32 @@ requireRule(
 requireRule(
   "Castle-power Crossbow role",
   "(goal strategy-goal bt-strategy-castle-power)",
-  "(unit-type-count-total archer-line >= 4)",
+  "(current-age >= castle-age)",
+  "(not (town-under-attack))",
+  "(not (goal bt-any-threat-goal 1))",
+  "(unit-type-count archer-line >= 4)",
   "(set-goal unit-goal crossbowman)",
 );
 requireRule(
   "Castle-power standing target",
   "(goal strategy-goal bt-strategy-castle-power)",
+  "(current-age >= castle-age)",
   "(goal unit-goal crossbowman)",
+  "(not (goal bt-any-threat-goal 1))",
   "(set-goal bt-standing-crossbow-target-goal bt-crossbow-target-castle)",
 );
 requireRule(
   "Castle-power standing demand",
   "(goal strategy-goal bt-strategy-castle-power)",
+  "(current-age >= feudal-age)",
   "(set-goal bt-standing-army-demand-goal 1)",
 );
 requireRule(
   "Castle-power Crossbow demand",
   "(goal strategy-goal bt-strategy-castle-power)",
+  "(current-age >= castle-age)",
+  "(up-compare-goal bt-standing-crossbow-target-goal > 0)",
+  "(not (goal bt-any-threat-goal 1))",
   "(set-goal bt-crossbow-demand-goal 1)",
 );
 requireRule(
