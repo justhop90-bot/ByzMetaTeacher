@@ -2840,7 +2840,7 @@
 )
 
 (defrule
-    (goal bt-villager-defense-raider-player-goal > 0)
+    (up-compare-goal bt-villager-defense-raider-player-goal > 0)
     (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)
     (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line <= 2)
 =>
