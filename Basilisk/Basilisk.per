@@ -4558,8 +4558,34 @@ town-center >= 2)))))
 
 (defrule
     (goal bt-resource-mode-goal 0)
-    (or (goal strategy-goal bt-strategy-castle-power) (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line
->= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))))))
+    (or
+        (goal strategy-goal bt-strategy-castle-power)
+        (or
+            (goal bt-bombard-cannon-demand-goal 1)
+            (or
+                (goal bt-cataphract-demand-goal 1)
+                (and
+                    (current-age >= castle-age)
+                    (and
+                        (goal strategy-goal bt-strategy-flush)
+                        (and
+                            (goal unit-goal bt-unit-mix)
+                            (and
+                                (unit-type-count-total spearman-line >= bt-spear-target-1)
+                                (and
+                                    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                                    (and
+                                        (building-type-count-total stable >= 1)
+                                        (unit-type-count-total camel-line < bt-camel-target-1)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-premium-gold)
 )
@@ -5695,7 +5721,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)
     (strategic-number sn-resource-control == 0)
-    (not (can-research-with-escrow feudal-age))
     (not (or
         (can-research-with-escrow castle-age)
         (goal bt-castle-commitment-goal 1)
@@ -10977,7 +11002,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (and
             (current-age >= castle-age)
@@ -11175,7 +11199,28 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 (defrule
     (goal bt-cavalier-demand-goal 1)
-    (or (current-age < imperial-age) (or (not (goal unit-goal knight-line)) (or (unit-type-count-total knight-line < bt-knight-target-mature) (or (not (up-research-status c: ri-cavalier < research-pending)) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank) (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))))))))
+    (or
+        (current-age < imperial-age)
+        (or
+            (not (goal unit-goal knight-line))
+            (or
+                (unit-type-count-total knight-line < bt-knight-target-mature)
+                (or
+                    (not (up-research-status c: ri-cavalier < research-pending))
+                    (or
+                        (goal bt-cataphract-demand-goal 1)
+                        (or
+                            (goal bt-bombard-cannon-demand-goal 1)
+                            (or
+                                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank)
+                                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 =>
     (set-goal bt-cavalier-demand-goal 0)
 )
