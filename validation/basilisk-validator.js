@@ -3517,53 +3517,136 @@ function validateStrategicNarration(sourceText, rules) {
     );
   }
 
-  const firstStrategyWriter = Math.max(
-    ...rules
-      .map((rule, index) =>
-        rule.includes("(set-goal strategy-goal bt-strategy-") ? index : -1,
-      )
-      .filter((index) => index >= 0),
-  );
-  const firstStrategyNarrator = ruleIndex(
-    rules,
-    '(chat-local-to-self "BASILISK | STRATEGY | FLUSH',
+  function maxRuleIndex(predicate, label) {
+    const indexes = rules
+      .map((rule, index) => (predicate(rule) ? index : -1))
+      .filter((index) => index >= 0);
+    assert.ok(indexes.length > 0, "[Narration] missing source-order anchor: " + label);
+    return Math.max(...indexes);
+  }
+
+  function firstNarrator(message) {
+    const index = ruleIndex(
+      rules,
+      '(chat-local-to-self "' + message,
+    );
+    assert.ok(index >= 0, "[Narration] missing narrator: " + message);
+    return index;
+  }
+
+  const firstOpeningWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal bt-opening-plan-goal"),
+    "opening writer",
   );
   assert.ok(
-    firstStrategyNarrator > firstStrategyWriter,
+    firstNarrator("BASILISK | OPENING | ARABIA-STANDARD") > firstOpeningWriter,
+    "[Narration] opening narration must observe finalized opening state",
+  );
+
+  const firstThreatWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal bt-opening-threat-goal"),
+    "threat writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | THREAT | confirmed pressure.") > firstThreatWriter,
+    "[Narration] threat narration must observe finalized threat state",
+  );
+
+  const firstStrategyWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal strategy-goal bt-strategy-"),
+    "strategy writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | STRATEGY | FLUSH") > firstStrategyWriter,
     "[Narration] strategy narration must observe finalized strategy state",
   );
 
-  const firstResourceWriter = Math.max(
-    ...rules
-      .map((rule, index) =>
-        rule.includes("(set-goal bt-resource-mode-goal") ? index : -1,
-      )
-      .filter((index) => index >= 0),
-  );
-  const firstResourceNarrator = ruleIndex(
-    rules,
-    '(chat-local-to-self "BASILISK | RESOURCE | DARK',
+  const firstResourceWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal bt-resource-mode-goal"),
+    "resource-mode writer",
   );
   assert.ok(
-    firstResourceNarrator > firstResourceWriter,
+    firstNarrator("BASILISK | RESOURCE | DARK") > firstResourceWriter,
     "[Narration] resource-mode narration must observe finalized resource arbitration",
   );
 
-  const firstUnitWriter = Math.max(
-    ...rules
-      .map((rule, index) =>
-        rule.includes("(set-goal unit-goal") ? index : -1,
-      )
-      .filter((index) => index >= 0),
-  );
-  const firstUnitNarrator = ruleIndex(
-    rules,
-    '(chat-local-to-self "BASILISK | COMPOSITION | MIX',
+  const firstUnitWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal unit-goal"),
+    "unit-goal writer",
   );
   assert.ok(
-    firstUnitNarrator > firstUnitWriter,
+    firstNarrator("BASILISK | COMPOSITION | MIX") > firstUnitWriter,
     "[Narration] composition narration must observe finalized unit-goal selection",
   );
+
+  const firstAgeWriter = maxRuleIndex(
+    (rule) =>
+      rule.includes("(research feudal-age)") ||
+      rule.includes("(research castle-age)") ||
+      rule.includes("(research imperial-age)"),
+    "age research writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | AGE | Castle complete.") > firstAgeWriter,
+    "[Narration] age narration must observe age-transition execution",
+  );
+
+  const firstEcoWriter = maxRuleIndex(
+    (rule) =>
+      rule.includes("(research ri-horse-collar)") ||
+      rule.includes("(research ri-double-bit-axe)") ||
+      rule.includes("(research ri-gold-mining)") ||
+      rule.includes("(research ri-wheel-barrow)") ||
+      rule.includes("(research ri-hand-cart)") ||
+      rule.includes("(research ri-bow-saw)") ||
+      rule.includes("(research ri-heavy-plow)"),
+    "eco research writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | ECO | Heavy Plow: complete.") > firstEcoWriter,
+    "[Narration] eco narration must observe eco-tech execution",
+  );
+
+  const firstTcWriter = maxRuleIndex(
+    (rule) =>
+      rule.includes("(set-goal bt-tc-stage-goal") ||
+      rule.includes("(set-goal bt-tc-project-goal"),
+    "TC project writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | TC | TC2 complete.") > firstTcWriter,
+    "[Narration] TC narration must observe the completed project",
+  );
+
+  const firstCastleCommitmentWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal bt-castle-commitment-goal 1)"),
+    "Castle commitment writer",
+  );
+  assert.ok(
+    firstNarrator("BASILISK | AGE | Castle ready to research.") > firstCastleCommitmentWriter,
+    "[Narration] Castle gate diagnostics must observe commitment arbitration",
+  );
+
+  for (const rule of chatRules) {
+    const messageMatch = rule.match(/chat-local-to-self "BASILISK \| ([A-Z-]+)/);
+    const category = messageMatch?.[1];
+    const categorySignal = {
+      OPENING: "(goal bt-opening-plan-goal",
+      THREAT: "(goal bt-opening-threat-goal",
+      STRATEGY: "(goal strategy-goal bt-strategy-",
+      RESOURCE: "(goal bt-resource-mode-goal",
+      COMPOSITION: "(goal unit-goal",
+      ECO: "(goal ",
+      TC: "(goal bt-tc-stage-goal",
+      AGE: "(current-age",
+    }[category];
+    if (category && categorySignal && !rule.includes(categorySignal)) {
+      assert.ok(
+        category === "ECO" && rule.includes("(up-research-status c:"),
+        "[Narration] message does not match the state witness for category " + category,
+      );
+    }
+  }
 
   assert.ok(
     !chatRules.some((rule) =>
