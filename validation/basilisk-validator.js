@@ -1041,12 +1041,20 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
   }
 
   const objects = new Set();
+  const objectWildcards = new Set();
   for (const entry of objectInventory.objects ?? []) {
     for (const value of [entry.ai_name, entry.line, entry.name]) {
       if (typeof value !== "string") continue;
       for (const raw of value.split(",")) {
         const token = raw.trim().split(/\s+/)[0];
         if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) objects.add(token);
+      }
+    }
+    if (typeof entry.notes === "string") {
+      for (const match of entry.notes.matchAll(
+        /(?:counted|used)\s+with\s+([A-Za-z][A-Za-z0-9_-]*)/gi,
+      )) {
+        objectWildcards.add(match[1]);
       }
     }
   }
@@ -1093,6 +1101,7 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     strategicNumbers,
     techs,
     objects,
+    objectWildcards,
     classes,
     parameterValues,
     strictParameterValues,
@@ -1422,7 +1431,11 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         expectedFamily === "object" &&
         isSymbolicSchemaValue(value) &&
         !families.defconsts.has(value) &&
-        !families.objects.has(value)
+        !families.objects.has(value) &&
+        !families.objectWildcards.has(value) &&
+        !families.parameterValues.get(parameterName)?.has(value) &&
+        !(parameterName === "ClassId" && families.classes.has(value)) &&
+        !(parameterName === "UnitId" && families.classes.has(value))
       ) {
         reportFailure(
           "command-argument-mismatch",
