@@ -664,7 +664,8 @@ function validateParserGradeRuleStructure(sourceText) {
       assert.ok(
         form.args[0].kind === "atom" &&
           form.args[0].value.startsWith('"') &&
-          form.args[0].value.endsWith(".xs"),
+          form.args[0].value.endsWith('"') &&
+          form.args[0].value.slice(1, -1).toLowerCase().endsWith(".xs"),
         "[Include] include path must be a quoted .xs filename",
       );
       continue;
