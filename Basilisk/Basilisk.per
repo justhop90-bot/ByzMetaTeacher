@@ -11231,7 +11231,6 @@ bt-resource-mode-food-crisis) (goal bt-resource-mode-goal bt-resource-mode-gold-
 (defrule
     (goal bt-cavalier-demand-goal 1)
     (current-age >= imperial-age)
-    (goal unit-goal knight-line)
     (up-compare-goal bt-research-stable-failure-backoff-goal != ri-cavalier)
     (strategic-number sn-resource-control == 0)
     (building-type-count stable >= 1)
