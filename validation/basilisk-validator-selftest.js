@@ -1079,6 +1079,21 @@ try {
       })(),
     },
     {
+      name: "imperial-funding-mode-must-yield-to-p0-crisis",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; Imperial prerequisite funding deliberately overrides age-bank arbitration, but P0";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial funding mode section missing");
+        const needle = "    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))\n";
+        const index = baseline.indexOf(needle, start);
+        assert.ok(index >= 0, "[Self-test] Imperial funding P0 food-crisis guard missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(needle, "") +
+          baseline.slice(index + needle.length);
+      })(),
+    },
+    {
       name: "imperial-demand-clear-must-retain-world-state-witnesses",
       expected: "[Imperial prerequisites]",
       source: (() => {
