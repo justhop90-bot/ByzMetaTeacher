@@ -1,3 +1,4 @@
+(include "Basilisk/BasiliskTelemetry.xs")
 ;================================================================
 ; BASILISK
 ; BYZANTINE ADAPTIVE COUNTERWEIGHT AI
@@ -190,6 +191,9 @@
 ; Mill resource claim. The mill is an owner of the existing
 ; sn-resource-control mutex while its construction is in flight.
 (defconst bt-mill-claim 524)
+; Temporary emergency owner for the live Mill construction interruption.
+; Castle/Imperial commitments are never assigned to this claim.
+(defconst bt-preempt-emergency-claim 601)
 (defconst bt-mill-backoff-goal 606)
 
 ; Military Mangonel Workshop claim. This is a transient owner of the
@@ -605,8 +609,81 @@
 (defconst bt-debug-age-imperial-start-goal 720)
 (defconst bt-debug-age-imperial-complete-goal 721)
 (defconst bt-debug-last-eco-event-goal 709)
-(defconst bt-debug-last-strategy-goal 710)
+(defconst bt-debug-last-strategy-goal 729)
 (defconst bt-debug-last-tc-project-goal 712)
+;================================================================
+; P0 PREEMPTION / TELEMETRY STATE
+; Preemption is orthogonal to strategy: it temporarily displaces one
+; discretionary capability owner and never resets that capability lifecycle.
+(defconst bt-preempt-active-goal 730)
+(defconst bt-preempt-original-owner-goal 731)
+(defconst bt-preempt-original-mode-goal 732)
+(defconst bt-preempt-reason-goal 733)
+(defconst bt-preempt-result-goal 734)
+(defconst bt-preempt-event-captured-goal 735)
+(defconst bt-preempt-spear-issued-goal 736)
+(defconst bt-preempt-skirm-issued-goal 737)
+(defconst bt-telemetry-write-head-goal 738)
+(defconst bt-telemetry-read-head-goal 739)
+(defconst bt-telemetry-count-goal 740)
+(defconst bt-telemetry-next-sequence-goal 741)
+(defconst bt-telemetry-dropped-goal 742)
+(defconst bt-telemetry-overflow-goal 743)
+(defconst bt-telemetry-event-pending-goal 744)
+(defconst bt-telemetry-event-type-goal 745)
+(defconst bt-telemetry-event-from-goal 746)
+(defconst bt-telemetry-event-to-goal 747)
+(defconst bt-telemetry-event-mode-goal 748)
+(defconst bt-telemetry-event-reason-goal 749)
+(defconst bt-telemetry-event-flags-goal 750)
+(defconst bt-telemetry-event-time-goal 751)
+(defconst bt-telemetry-event-sequence-goal 752)
+(defconst bt-telemetry-heartbeat-timer 11)
+(defconst bt-preempt-reason-town-attack 1)
+(defconst bt-preempt-result-begin 1)
+(defconst bt-preempt-result-resume 2)
+(defconst bt-preempt-result-complete 3)
+(defconst bt-preempt-result-abort 4)
+(defconst bt-telemetry-event-begin 1)
+(defconst bt-telemetry-event-resume 2)
+(defconst bt-telemetry-event-complete 3)
+(defconst bt-telemetry-event-abort 4)
+(defconst bt-telemetry-event-flag-complete 1)
+(defconst bt-telemetry-event-flag-watchdog-failure 2)
+; Four slots, eight fields each:
+; type, from, to, mode, reason, flags, game-time, sequence.
+(defconst bt-telemetry-slot0-type-goal 753)
+(defconst bt-telemetry-slot0-from-goal 754)
+(defconst bt-telemetry-slot0-to-goal 755)
+(defconst bt-telemetry-slot0-mode-goal 756)
+(defconst bt-telemetry-slot0-reason-goal 757)
+(defconst bt-telemetry-slot0-flags-goal 758)
+(defconst bt-telemetry-slot0-time-goal 759)
+(defconst bt-telemetry-slot0-sequence-goal 760)
+(defconst bt-telemetry-slot1-type-goal 761)
+(defconst bt-telemetry-slot1-from-goal 762)
+(defconst bt-telemetry-slot1-to-goal 763)
+(defconst bt-telemetry-slot1-mode-goal 764)
+(defconst bt-telemetry-slot1-reason-goal 765)
+(defconst bt-telemetry-slot1-flags-goal 766)
+(defconst bt-telemetry-slot1-time-goal 767)
+(defconst bt-telemetry-slot1-sequence-goal 768)
+(defconst bt-telemetry-slot2-type-goal 769)
+(defconst bt-telemetry-slot2-from-goal 770)
+(defconst bt-telemetry-slot2-to-goal 771)
+(defconst bt-telemetry-slot2-mode-goal 772)
+(defconst bt-telemetry-slot2-reason-goal 773)
+(defconst bt-telemetry-slot2-flags-goal 774)
+(defconst bt-telemetry-slot2-time-goal 775)
+(defconst bt-telemetry-slot2-sequence-goal 776)
+(defconst bt-telemetry-slot3-type-goal 777)
+(defconst bt-telemetry-slot3-from-goal 778)
+(defconst bt-telemetry-slot3-to-goal 779)
+(defconst bt-telemetry-slot3-mode-goal 780)
+(defconst bt-telemetry-slot3-reason-goal 781)
+(defconst bt-telemetry-slot3-flags-goal 782)
+(defconst bt-telemetry-slot3-time-goal 783)
+(defconst bt-telemetry-slot3-sequence-goal 784)
 (defconst bt-debug-castle-block-none 0)
 (defconst bt-debug-castle-block-backoff 1)
 (defconst bt-debug-castle-block-mutex 2)
@@ -884,6 +961,38 @@
     (set-goal bt-debug-last-eco-event-goal 0)
     (set-goal bt-debug-last-strategy-goal 0)
     (set-goal bt-debug-last-tc-project-goal 0)
+    (disable-self)
+)
+
+; Initialize the orthogonal preemption and telemetry runtime state.
+; Slot payloads are irrelevant while count=0; they are written before read.
+(defrule
+    (true)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-original-owner-goal 0)
+    (set-goal bt-preempt-original-mode-goal 0)
+    (set-goal bt-preempt-reason-goal 0)
+    (set-goal bt-preempt-result-goal 0)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+    (set-goal bt-telemetry-write-head-goal 0)
+    (set-goal bt-telemetry-read-head-goal 0)
+    (set-goal bt-telemetry-count-goal 0)
+    (set-goal bt-telemetry-next-sequence-goal 0)
+    (set-goal bt-telemetry-dropped-goal 0)
+    (set-goal bt-telemetry-overflow-goal 0)
+    (set-goal bt-telemetry-event-pending-goal 0)
+    (set-goal bt-telemetry-event-type-goal 0)
+    (set-goal bt-telemetry-event-from-goal 0)
+    (set-goal bt-telemetry-event-to-goal 0)
+    (set-goal bt-telemetry-event-mode-goal 0)
+    (set-goal bt-telemetry-event-reason-goal 0)
+    (set-goal bt-telemetry-event-flags-goal 0)
+    (set-goal bt-telemetry-event-time-goal 0)
+    (set-goal bt-telemetry-event-sequence-goal 0)
+    (enable-timer bt-telemetry-heartbeat-timer 5)
     (disable-self)
 )
 
@@ -9106,7 +9215,13 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
     (goal bt-castle-commitment-goal 0)
-    (strategic-number sn-resource-control == 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (and
+            (goal bt-preempt-active-goal 1)
+            (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+        )
+    )
     (building-type-count-total barracks >= 1)
     (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
     (can-train spearman-line)
@@ -9124,7 +9239,13 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
     (goal bt-castle-commitment-goal 0)
-    (strategic-number sn-resource-control == 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (and
+            (goal bt-preempt-active-goal 1)
+            (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+        )
+    )
     (building-type-count archery-range >= 1)
     (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
     (can-train skirmisher-line)
@@ -14565,7 +14686,14 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; building-type-count-total includes construction foundations, so it is
 ; deliberately not used to release the Mill claim.
 (defrule
-    (strategic-number sn-resource-control == bt-mill-claim)
+    (or
+        (strategic-number sn-resource-control == bt-mill-claim)
+        (and
+            (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+            (goal bt-preempt-active-goal 1)
+            (goal bt-preempt-original-owner-goal bt-mill-claim)
+        )
+    )
     (or
         (and
             (goal bt-mill-project-goal 1)
@@ -14600,7 +14728,14 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; The current mill project target remains persistent. The completed mill
 ; count is the witness; the live foundation is the execution obligation.
 (defrule
-    (strategic-number sn-resource-control == bt-mill-claim)
+    (or
+        (strategic-number sn-resource-control == bt-mill-claim)
+        (and
+            (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+            (goal bt-preempt-active-goal 1)
+            (goal bt-preempt-original-owner-goal bt-mill-claim)
+        )
+    )
     (timer-triggered bt-mill-watchdog-timer)
     (up-pending-objects c: mill > 0)
 =>
@@ -14609,7 +14744,14 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
 )
 (defrule
-    (strategic-number sn-resource-control == bt-mill-claim)
+    (or
+        (strategic-number sn-resource-control == bt-mill-claim)
+        (and
+            (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+            (goal bt-preempt-active-goal 1)
+            (goal bt-preempt-original-owner-goal bt-mill-claim)
+        )
+    )
     (timer-triggered bt-mill-watchdog-timer)
     (up-pending-objects c: mill == 0)
 =>
@@ -14624,6 +14766,337 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 =>
     (disable-timer bt-mill-backoff-timer)
     (set-goal bt-mill-backoff-goal 0)
+)
+
+;================================================================
+; P0 TEMPORARY RESOURCE PREEMPTION
+; Only the live Mill construction claim is preemptible. The Castle and
+; Imperial commitment owners are explicitly preserved.
+;================================================================
+(defrule
+    (town-under-attack)
+    (goal bt-any-threat-goal 1)
+    (current-age >= feudal-age)
+    (goal bt-preempt-active-goal 0)
+    (goal bt-castle-commitment-goal 0)
+    (goal bt-imperial-commitment-goal 0)
+    (strategic-number sn-resource-control == bt-mill-claim)
+    (up-compare-goal bt-mill-project-goal > 0)
+    (up-pending-objects c: mill > 0)
+=>
+    (up-modify-goal bt-preempt-original-mode-goal g:= bt-resource-mode-goal)
+    (set-goal bt-preempt-original-owner-goal bt-mill-claim)
+    (set-goal bt-preempt-reason-goal bt-preempt-reason-town-attack)
+    (set-goal bt-preempt-result-goal bt-preempt-result-begin)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+    (set-goal bt-preempt-active-goal 1)
+    (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-result-goal bt-preempt-result-begin)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal < 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-goal bt-telemetry-event-type-goal bt-telemetry-event-begin)
+    (set-goal bt-telemetry-event-from-goal bt-mill-claim)
+    (set-goal bt-telemetry-event-to-goal bt-preempt-emergency-claim)
+    (up-modify-goal bt-telemetry-event-mode-goal g:= bt-preempt-original-mode-goal)
+    (set-goal bt-telemetry-event-reason-goal bt-preempt-reason-town-attack)
+    (set-goal bt-telemetry-event-flags-goal 0)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-event-sequence-goal g:= bt-telemetry-next-sequence-goal)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-result-goal bt-preempt-result-begin)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal >= 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (up-modify-goal bt-telemetry-dropped-goal g:+ 1)
+    (set-goal bt-telemetry-overflow-goal 1)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+; Emergency defense is allowed to use the emergency claim only through
+; existing Spear/Skirm role executors. No generic build/research bypass exists.
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (current-age >= feudal-age)
+    (goal bt-standing-army-demand-goal 1)
+    (not (goal bt-preempt-spear-issued-goal 1))
+    (building-type-count-total barracks >= 1)
+    (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+    (set-goal bt-preempt-spear-issued-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (current-age >= feudal-age)
+    (goal bt-standing-army-demand-goal 1)
+    (not (goal bt-preempt-skirm-issued-goal 1))
+    (building-type-count-total archery-range >= 1)
+    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+    (set-goal bt-preempt-skirm-issued-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-mill-claim)
+    (not (town-under-attack))
+    (not (timer-triggered bt-mill-watchdog-timer))
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (up-compare-goal bt-mill-project-goal > 0)
+    (up-pending-objects c: mill > 0)
+=>
+    (set-strategic-number sn-resource-control bt-mill-claim)
+    (set-goal bt-preempt-result-goal bt-preempt-result-resume)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+)
+
+; Physical Mill completion has already cleared the project and mutex above.
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-mill-claim)
+    (strategic-number sn-resource-control == 0)
+    (goal bt-mill-project-goal 0)
+    (building-type-count mill >= 1)
+=>
+    (set-goal bt-preempt-result-goal bt-preempt-result-complete)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+)
+
+; Watchdog failure has already armed Mill backoff and released the mutex.
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-mill-claim)
+    (goal bt-mill-backoff-goal 1)
+    (strategic-number sn-resource-control == 0)
+=>
+    (set-goal bt-preempt-result-goal bt-preempt-result-abort)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+)
+
+; Capture terminal transition events with the exact ownership direction.
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-resume)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal < 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-goal bt-telemetry-event-type-goal bt-telemetry-event-resume)
+    (set-goal bt-telemetry-event-from-goal bt-preempt-emergency-claim)
+    (set-goal bt-telemetry-event-to-goal bt-mill-claim)
+    (up-modify-goal bt-telemetry-event-mode-goal g:= bt-preempt-original-mode-goal)
+    (up-modify-goal bt-telemetry-event-reason-goal g:= bt-preempt-reason-goal)
+    (set-goal bt-telemetry-event-flags-goal 0)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-event-sequence-goal g:= bt-telemetry-next-sequence-goal)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-resume)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal >= 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (up-modify-goal bt-telemetry-dropped-goal g:+ 1)
+    (set-goal bt-telemetry-overflow-goal 1)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-complete)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal < 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-goal bt-telemetry-event-type-goal bt-telemetry-event-complete)
+    (set-goal bt-telemetry-event-from-goal bt-preempt-emergency-claim)
+    (set-goal bt-telemetry-event-to-goal 0)
+    (up-modify-goal bt-telemetry-event-mode-goal g:= bt-preempt-original-mode-goal)
+    (up-modify-goal bt-telemetry-event-reason-goal g:= bt-preempt-reason-goal)
+    (set-goal bt-telemetry-event-flags-goal bt-telemetry-event-flag-complete)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-event-sequence-goal g:= bt-telemetry-next-sequence-goal)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-complete)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal >= 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (up-modify-goal bt-telemetry-dropped-goal g:+ 1)
+    (set-goal bt-telemetry-overflow-goal 1)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-abort)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal < 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-goal bt-telemetry-event-type-goal bt-telemetry-event-abort)
+    (set-goal bt-telemetry-event-from-goal bt-preempt-emergency-claim)
+    (set-goal bt-telemetry-event-to-goal 0)
+    (up-modify-goal bt-telemetry-event-mode-goal g:= bt-preempt-original-mode-goal)
+    (up-modify-goal bt-telemetry-event-reason-goal g:= bt-preempt-reason-goal)
+    (set-goal bt-telemetry-event-flags-goal bt-telemetry-event-flag-watchdog-failure)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-event-sequence-goal g:= bt-telemetry-next-sequence-goal)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-result-goal bt-preempt-result-abort)
+    (goal bt-preempt-event-captured-goal 0)
+    (up-compare-goal bt-telemetry-count-goal >= 4)
+=>
+    (up-modify-goal bt-telemetry-next-sequence-goal g:+ 1)
+    (up-modify-goal bt-telemetry-dropped-goal g:+ 1)
+    (set-goal bt-telemetry-overflow-goal 1)
+    (set-goal bt-preempt-event-captured-goal 1)
+)
+
+; Reset terminal preemption state only after the event has been transported.
+(defrule
+    (goal bt-preempt-active-goal 0)
+    (goal bt-preempt-event-captured-goal 1)
+    (goal bt-telemetry-event-pending-goal 0)
+    (up-compare-goal bt-preempt-result-goal >= bt-preempt-result-resume)
+    (up-compare-goal bt-preempt-result-goal <= bt-preempt-result-abort)
+=>
+    (set-goal bt-preempt-original-owner-goal 0)
+    (set-goal bt-preempt-original-mode-goal 0)
+    (set-goal bt-preempt-reason-goal 0)
+    (set-goal bt-preempt-result-goal 0)
+    (set-goal bt-preempt-event-captured-goal 0)
+    (set-goal bt-preempt-spear-issued-goal 0)
+    (set-goal bt-preempt-skirm-issued-goal 0)
+)
+
+; The bounded FIFO writer. The read side lives in XS; ownership never does.
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 0)
+=>
+    (up-modify-goal bt-telemetry-slot0-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot0-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot0-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot0-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot0-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot0-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot0-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot0-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 1)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 1)
+=>
+    (up-modify-goal bt-telemetry-slot1-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot1-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot1-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot1-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot1-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot1-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot1-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot1-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 2)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 2)
+=>
+    (up-modify-goal bt-telemetry-slot2-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot2-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot2-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot2-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot2-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot2-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot2-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot2-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 3)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 3)
+=>
+    (up-modify-goal bt-telemetry-slot3-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot3-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot3-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot3-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot3-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot3-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot3-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot3-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 0)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+; Telemetry heartbeat is explicitly invoked by .per. XS is a consumer, never an AI rule layer.
+(defrule
+    (timer-triggered bt-telemetry-heartbeat-timer)
+=>
+    (disable-timer bt-telemetry-heartbeat-timer)
+    (xs-script-call "bt_telemetry_drain")
+    (enable-timer bt-telemetry-heartbeat-timer 5)
+)
+
+\n(defrule
+    (timer-triggered bt-telemetry-heartbeat-timer)
+=>
+    (disable-timer bt-telemetry-heartbeat-timer)
+    (xs-script-call "bt_telemetry_drain")
+    (enable-timer bt-telemetry-heartbeat-timer 5)
 )
 
 ;----------------------------------------------------------------
