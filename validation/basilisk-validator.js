@@ -1058,8 +1058,8 @@ function parseAIRefSimpleNumericRange(rangeText) {
   if (!text || /\bor\b/i.test(text)) return null;
   const matches = [...text.matchAll(/(-?\d[\d,]*)\s+to\s+(-?\d[\d,]*)/gi)];
   if (matches.length !== 1) return null;
-  const minimum = Number(matches[1][1].replaceAll(",", ""));
-  const maximum = Number(matches[1][2].replaceAll(",", ""));
+  const minimum = Number(matches[0][1].replaceAll(",", ""));
+  const maximum = Number(matches[0][2].replaceAll(",", ""));
   if (!Number.isFinite(minimum) || !Number.isFinite(maximum)) return null;
   return minimum <= maximum ? [minimum, maximum] : [maximum, minimum];
 }
