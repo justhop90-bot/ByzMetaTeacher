@@ -205,7 +205,10 @@
 
 ; Existing/community timer identifiers.
 (defconst bt-scouting-timer 3)
+; Explicit opening pulse, then the normal home-exploration interval.
+(defconst bt-scout-first-pulse 30)
 (defconst bt-scout-home-pulse 60)
+; Protect home-resource exploration through roughly the first five minutes.
 (defconst bt-scout-home-grace 300)
 (defconst bt-scout-enemy-pulse 180)
 (defconst bt-attack-timer 4)
@@ -1001,7 +1004,7 @@
 (defrule
     (true)
 =>
-    (enable-timer bt-scouting-timer 30)
+    (enable-timer bt-scouting-timer bt-scout-first-pulse)
     (enable-timer bt-attack-timer 900)
     (disable-timer bt-retreat-timer)
     (disable-timer bt-attack-gather-watchdog-timer)
