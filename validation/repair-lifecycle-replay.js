@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
+const repoRoot = path.resolve(import.meta.dirname, "..");
 const controllerPath =
-  process.argv[2] ??
-  path.resolve(process.cwd(), "ByzTeacher", "ByzMetaTeacher.per");
+  process.argv[2] ?? path.join(repoRoot, "Basilisk", "Basilisk.per");
 
 const source = fs.readFileSync(controllerPath, "utf8");
 
