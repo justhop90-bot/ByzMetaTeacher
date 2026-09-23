@@ -14835,6 +14835,79 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (set-goal bt-telemetry-overflow-goal 1)
     (set-goal bt-preempt-event-captured-goal 1)
 )
+; BEGIN event injection occurs before any later terminal transition in this pass.
+; This closes the same-pass overwrite window in the staging register.
+; The bounded FIFO writer. The read side lives in XS; ownership never does.
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 0)
+=>
+    (up-modify-goal bt-telemetry-slot0-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot0-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot0-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot0-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot0-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot0-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot0-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot0-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 1)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 1)
+=>
+    (up-modify-goal bt-telemetry-slot1-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot1-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot1-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot1-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot1-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot1-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot1-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot1-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 2)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 2)
+=>
+    (up-modify-goal bt-telemetry-slot2-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot2-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot2-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot2-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot2-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot2-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot2-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot2-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 3)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+(defrule
+    (goal bt-telemetry-event-pending-goal 1)
+    (up-compare-goal bt-telemetry-write-head-goal == 3)
+=>
+    (up-modify-goal bt-telemetry-slot3-type-goal g:= bt-telemetry-event-type-goal)
+    (up-modify-goal bt-telemetry-slot3-from-goal g:= bt-telemetry-event-from-goal)
+    (up-modify-goal bt-telemetry-slot3-to-goal g:= bt-telemetry-event-to-goal)
+    (up-modify-goal bt-telemetry-slot3-mode-goal g:= bt-telemetry-event-mode-goal)
+    (up-modify-goal bt-telemetry-slot3-reason-goal g:= bt-telemetry-event-reason-goal)
+    (up-modify-goal bt-telemetry-slot3-flags-goal g:= bt-telemetry-event-flags-goal)
+    (up-modify-goal bt-telemetry-slot3-time-goal g:= bt-telemetry-event-time-goal)
+    (up-modify-goal bt-telemetry-slot3-sequence-goal g:= bt-telemetry-event-sequence-goal)
+    (up-modify-goal bt-telemetry-count-goal g:+ 1)
+    (set-goal bt-telemetry-write-head-goal 0)
+    (set-goal bt-telemetry-event-pending-goal 0)
+)
+
+
+
 
 ; Emergency defense is allowed to use the emergency claim only through
 ; existing Spear/Skirm role executors. No generic build/research bypass exists.
