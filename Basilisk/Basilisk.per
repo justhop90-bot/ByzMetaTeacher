@@ -107,6 +107,30 @@
 ; Logistica is a DE-only research alias absent from the scraped AI name registry.
 ; Community AI references define the research id explicitly as 61 before use.
 (defconst ri-logistica 61)
+; Update 185872 Byzantine regional infantry. These are site-specific
+; train targets, so keep the exact numeric IDs local until AIRef exposes
+; a native named line in the active DE registry.
+(defconst varangian-guard 2703)
+(defconst elite-varangian-guard 2704)
+
+; Varangian Guard response package.
+; Demand is premium cavalry-response intent; target/fielded are derived state.
+(defconst bt-varangian-demand-goal 726)
+(defconst bt-varangian-target-goal 727)
+(defconst bt-varangian-fielded-goal 728)
+(defconst bt-varangian-target-level-2 4)
+(defconst bt-varangian-target-level-3 6)
+(defconst bt-varangian-logistica-min 6)
+
+; VARANGIAN INTEGRATION CHECKLIST
+;   1. Exact unit symbols: 2703 / 2704.
+;   2. Persistent demand: cavalry pressure -> finite target.
+;   3. Completion witness: queue-inclusive regular+elite total.
+;   4. Execution: Barracks + can-train-with-escrow -> train.
+;   5. Resource arbitration: premium-gold mode protects the package.
+;   6. Upgrade continuation: six Guards can earn shared Logistica.
+;   7. Release: cavalry pressure/target/premium-tech completion clears demand.
+;   8. Existing cheap Spear/Camel counters remain the first response tier.
 
 ; Q: "What is attack-goal?"
 ;
@@ -918,6 +942,9 @@
     (set-goal bt-scout-pressure-demand-goal 0)
     (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-castle-commitment-goal 0)
+    (set-goal bt-varangian-demand-goal 0)
+    (set-goal bt-varangian-target-goal 0)
+    (set-goal bt-varangian-fielded-goal 0)
     (set-goal bt-castle-mature-commitment-goal 0)
     (set-goal bt-imperial-commitment-goal 0)
     (set-goal bt-imperial-prereq-demand-goal 0)
@@ -1258,6 +1285,85 @@
 =>
     (set-goal bt-ranged-counter-level-goal 2)
 )
+;---------------------------------------------------------------
+; VARANGIAN GUARD DERIVED PACKAGE STATE
+; Update 185872 adds Byzantines a Castle-age Barracks shock-infantry
+; line. The premium package is deliberately narrower than the cheap
+; Spear/Camel response: it enters only at substantial cavalry pressure.
+(defrule
+    (true)
+=>
+    (set-goal bt-varangian-fielded-goal 0)
+    (set-goal bt-varangian-target-goal 0)
+    (up-get-fact unit-type-count-total varangian-guard temporary-goal)
+    (up-modify-goal bt-varangian-fielded-goal g:+ temporary-goal)
+    (up-get-fact unit-type-count-total elite-varangian-guard temporary-goal)
+    (up-modify-goal bt-varangian-fielded-goal g:+ temporary-goal)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
+=>
+    (set-goal bt-varangian-target-goal bt-varangian-target-level-3)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (up-compare-goal bt-cavalry-counter-level-goal < 3)
+=>
+    (set-goal bt-varangian-target-goal bt-varangian-target-level-2)
+)
+
+; Create the premium package only when the cheaper standing response is
+; not already in deficit and the Cataphract package does not own the
+; current premium-gold decision.
+(defrule
+    (current-age >= castle-age)
+    (goal bt-varangian-demand-goal 0)
+    (goal bt-cataphract-demand-goal 0)
+    (up-compare-goal bt-varangian-target-goal > bt-varangian-fielded-goal)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+=>
+    (set-goal bt-varangian-demand-goal 1)
+)
+
+; Withdraw the tactical package when cavalry pressure falls away or
+; the desired Guard mass is already present. At the larger six-Guard
+; tier, keep the demand alive until Logistica is researched so the new
+; Byzantine trample interaction is actually reachable.
+(defrule
+    (goal bt-varangian-demand-goal 1)
+    (or
+        (current-age < castle-age)
+        (up-compare-goal bt-cavalry-counter-level-goal < 2)
+        (and
+            (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
+            (or
+                (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
+                (up-research-status c: ri-logistica == research-complete)
+                (goal bt-research-cataphract-package-goal ri-logistica)
+            )
+        )
+    )
+=>
+    (set-goal bt-varangian-demand-goal 0)
+)
+
+; Update 185872: Logistica now gives both Cataphracts and Varangian Guards
+; trample damage. Earn it only for the six-Guard package, preserving the
+; existing Cataphract premium research path.
+(defrule
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-varangian-demand-goal 1)
+    (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-logistica-min)
+    (up-research-status c: ri-logistica < research-complete)
+=>
+    (set-goal bt-research-cataphract-package-goal ri-logistica)
+)
+
+
 (defrule
     (or
         (players-unit-type-count any-enemy archer-line >= 20)
@@ -2236,7 +2342,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
-    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)
+    (goal bt-cataphract-demand-goal 0)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
@@ -2244,6 +2350,7 @@
     (goal bt-research-cataphract-package-goal ri-logistica)
     (goal bt-research-castle-claim-goal 0)
     (up-research-status c: ri-logistica < research-pending)
+    (goal bt-varangian-demand-goal 0)
     (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
@@ -2265,6 +2372,13 @@
 (defrule
     (up-compare-goal bt-research-cataphract-package-goal != 0)
     (goal bt-cataphract-demand-goal 0)
+    (or
+        (goal bt-research-cataphract-package-goal ri-elite-cataphract)
+        (and
+            (goal bt-research-cataphract-package-goal ri-logistica)
+            (goal bt-varangian-demand-goal 0)
+        )
+    )
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
@@ -5104,6 +5218,18 @@ cataphract-line < bt-cataphract-target-1)))))
 
 ;================================================================
 ;----------------------------------------------------------------
+; BASILISK STRATEGIC NARRATION: VARANGIAN PACKAGE
+;----------------------------------------------------------------
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 2)
+    (goal bt-varangian-demand-goal 1)
+    (up-compare-goal bt-debug-last-unit-goal != varangian-guard)
+=>
+    (chat-local-to-self "BASILISK | COMPOSITION | VARANGIAN GUARD")
+    (set-goal bt-debug-last-unit-goal varangian-guard)
+)
+
+;----------------------------------------------------------------
 ; BASILISK STRATEGIC NARRATION: COMPOSITION
 ; Unit-goal is continuously selected; this reports only meaningful changes.
 ;----------------------------------------------------------------
@@ -5611,7 +5737,9 @@ town-center >= 2)))))
     (or
         (goal strategy-goal bt-strategy-castle-power)
         (or
-            (goal bt-bombard-cannon-demand-goal 1)
+            (goal bt-varangian-demand-goal 1)
+            (or
+                (goal bt-bombard-cannon-demand-goal 1)
             (or
                 (goal bt-cataphract-demand-goal 1)
                 (and
@@ -5634,6 +5762,7 @@ town-center >= 2)))))
                     )
                 )
             )
+        )
         )
     )
 =>
@@ -8707,6 +8836,36 @@ cataphract-line < bt-cataphract-target-1)))))
     (release-escrow gold)
     (train cataphract-line)
 )
+;---------------------------------------------------------------
+; 16B.1 VARANGIAN GUARD PRODUCTION
+; The Castle-age Guard uses existing Barracks capability. Production is
+; demand-driven and queue-inclusive; no new production subsystem exists.
+(defrule
+    (goal bt-varangian-demand-goal 1)
+    (current-age >= imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks >= 1)
+    (up-compare-goal bt-varangian-fielded-goal < bt-varangian-target-goal)
+    (can-train-with-escrow elite-varangian-guard)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (train elite-varangian-guard)
+)
+
+(defrule
+    (goal bt-varangian-demand-goal 1)
+    (current-age >= castle-age)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total barracks >= 1)
+    (up-compare-goal bt-varangian-fielded-goal < bt-varangian-target-goal)
+    (can-train-with-escrow varangian-guard)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (train varangian-guard)
+)
+
 
 ; 16B.0. MONK RESPONSE PRODUCTION
 ;---------------------------------------------------------------
