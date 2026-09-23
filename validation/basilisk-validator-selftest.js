@@ -201,7 +201,7 @@ try {
 
   function buildLineLengthFixture(targetLength) {
     const prefix = baseline + "\n;";
-    return prefix + " ".repeat(targetLength - 2) + "\n";
+    return prefix + " ".repeat(targetLength - 1) + "\n";
   }
 
   const ruleLengthCases = [
