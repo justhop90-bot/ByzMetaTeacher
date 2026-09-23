@@ -552,6 +552,9 @@
 (defconst bt-wheelbarrow-castle-villagers 40)
 (defconst bt-bow-saw-villagers 32)
 (defconst bt-hand-cart-villagers 45)
+(defconst bt-two-man-saw-villagers 45)
+; Crop Rotation is deliberately gated by a mature completed-farm base instead of generic Imperial affordability.
+(defconst bt-crop-rotation-farm-threshold 12)
 
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
@@ -3165,10 +3168,11 @@
 ; 11B. IMPERIAL FARM TECHNOLOGY
 ;================================================================
 ; Crop Rotation is the final Mill farm lifecycle step. At Imperial,
-; there is no later age claim to outrank it, but the shared resource
-; mutex still prevents it from colliding with every other technology.
+; it is a selective late-eco investment: require a mature completed-farm
+; base so the 250F/250W research is not purchased merely because it is affordable.
 (defrule
     (current-age >= imperial-age)
+    (building-type-count farm >= bt-crop-rotation-farm-threshold)
     (up-research-status c: ri-heavy-plow >= research-complete)
     (up-compare-goal bt-research-mill-failure-backoff-goal != ri-crop-rotation)
     (strategic-number sn-resource-control == 0)
@@ -5600,10 +5604,11 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 ;================================================================
 ;
 ; Two-Man Saw is the terminal Imperial wood-productivity investment.
-; Imperial BOOM is the maturity witness. Active Cataphract demand keeps
-; the Imperial resource bank focused on the power-unit priority.
+; Imperial BOOM is the strategic owner, but the upgrade also waits for a
+; mature villager economy so the 300F/200W, 100-second investment has time to pay back.
 (defrule
     (current-age >= imperial-age)
+    (unit-type-count-total villager >= bt-two-man-saw-villagers)
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-cataphract-demand-goal 1))
     (research-available ri-two-man-saw)
@@ -5631,6 +5636,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 (defrule
     (goal bt-two-man-saw-demand-goal 1)
     (current-age >= imperial-age)
+    (unit-type-count-total villager >= bt-two-man-saw-villagers)
     (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
     (strategic-number sn-resource-control == 0)
