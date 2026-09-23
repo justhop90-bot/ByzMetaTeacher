@@ -3373,16 +3373,26 @@ function validateAgeBankPriority(rules) {
   const castleBank = rules.find(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
-      rule.includes("(goal bt-castle-commitment-goal 0)") &&
-      rule.includes("(goal bt-feudal-eco-hold-goal 0)") &&
       rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
       rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)") &&
-      rule.includes("(set-goal bt-castle-commitment-goal 1)"),
+      rule.includes("(set-goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
   );
   assert.ok(
     castleBank,
     "[Age banking] Castle bank priority rule is missing",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Age banking] Castle bank must not be gated by military/Cataphract demand",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-feudal-eco-hold-goal"),
+    "[Age banking] Castle bank must not be gated by Feudal eco hold",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-castle-commitment-goal 0)"),
+    "[Age banking] Castle bank must not require a prior commitment state",
   );
   assert.ok(
     !castleBank.includes("(goal bt-resource-mode-goal 0)"),
