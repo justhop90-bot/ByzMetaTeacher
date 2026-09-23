@@ -3260,6 +3260,38 @@ function validateAgeTransitionQueueGates(rules) {
     "[Age transition] Castle research executor lost its engine feasibility guard",
   );
 
+  const castleBankMilitaryProducers = [
+    "(train spearman-line)",
+    "(train skirmisher-line)",
+    "(train archer-line)",
+  ];
+  for (const action of castleBankMilitaryProducers) {
+    const producer = rules.find(
+      (rule) =>
+        rule.includes("(current-age >= feudal-age)") &&
+        rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+        rule.includes("(goal bt-castle-commitment-goal 0)") &&
+        rule.includes(action),
+    );
+    assert.ok(
+      producer,
+      "[Age transition] Feudal standing military producer must yield to Castle commitment: " +
+        action,
+    );
+  }
+
+  const rushArcherProducer = rules.find(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(goal unit-goal archer-line)") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)") &&
+      rule.includes("(train archer-line)"),
+  );
+  assert.ok(
+    rushArcherProducer,
+    "[Age transition] RUSH archer producer must yield to Castle commitment",
+  );
+
   const imperialStop = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
