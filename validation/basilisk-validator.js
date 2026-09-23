@@ -2709,6 +2709,15 @@ function validateVillagerHygiene(rules) {
     return normalize(rule);
   };
 
+  const dropsiteSafety = requireRule(
+    "(set-strategic-number sn-defer-dropsite-update 1)",
+    "completed-dropsite update deferral",
+  );
+  assert.ok(
+    dropsiteSafety.includes("(true)"),
+    "[Villager hygiene] dropsite update deferral must be a one-time initialization policy",
+  );
+
   const house = requireRule("(housing-headroom <= 5)", "preemptive housing rule");
   assert.ok(house.includes("(up-pending-objects c: house == 0)"), "[Villager hygiene] housing rule must stay pending-safe");
   assert.ok(house.includes("(can-build house)"), "[Villager hygiene] housing rule must use engine build feasibility");
