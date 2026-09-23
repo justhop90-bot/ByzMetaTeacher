@@ -1602,16 +1602,6 @@
     (goal bt-ranged-threat-goal 1)
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
-    (not (and
-             (current-age >= castle-age)
-             (and
-             (up-compare-goal bt-ranged-counter-level-goal >= 1)
-             (and
-             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
-             (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-                      )
-                      )
-         ))
     (up-research-status c: ri-fletching == research-complete)
     (or
         (and
