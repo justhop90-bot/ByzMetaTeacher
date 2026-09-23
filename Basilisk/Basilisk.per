@@ -15091,14 +15091,6 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (enable-timer bt-telemetry-heartbeat-timer 5)
 )
 
-\n(defrule
-    (timer-triggered bt-telemetry-heartbeat-timer)
-=>
-    (disable-timer bt-telemetry-heartbeat-timer)
-    (xs-script-call "bt_telemetry_drain")
-    (enable-timer bt-telemetry-heartbeat-timer 5)
-)
-
 ;----------------------------------------------------------------
 ; RESEARCH FAILURE RESET POLICY
 ;----------------------------------------------------------------
