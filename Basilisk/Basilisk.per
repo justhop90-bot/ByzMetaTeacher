@@ -5608,7 +5608,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 ; mature villager economy so the 300F/200W, 100-second investment has time to pay back.
 (defrule
     (current-age >= imperial-age)
-    (unit-type-count-total villager >= bt-two-man-saw-villagers)
+    (unit-type-count villager >= bt-two-man-saw-villagers)
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-cataphract-demand-goal 1))
     (research-available ri-two-man-saw)
@@ -5636,7 +5636,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 (defrule
     (goal bt-two-man-saw-demand-goal 1)
     (current-age >= imperial-age)
-    (unit-type-count-total villager >= bt-two-man-saw-villagers)
+    (unit-type-count villager >= bt-two-man-saw-villagers)
     (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
     (strategic-number sn-resource-control == 0)
