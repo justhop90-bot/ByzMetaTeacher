@@ -787,6 +787,7 @@
     (true)
 =>
     (set-goal bt-scout-pressure-demand-goal 0)
+    (set-goal bt-scout-target-player-goal 0)
     (set-goal bt-castle-commitment-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-failure-history-goal 0)
@@ -995,6 +996,175 @@
 )
 
 ;================================================================
+
+;================================================================
+; 2A. DERIVED ENEMY THREAT STATE
+;----------------------------------------------------------------
+; Threat booleans describe immediate counter categories.
+; Counter levels describe response pressure and feed role-target capacity.
+; Production-building capacity is derived from the resulting standing-role targets.
+(defrule
+    (true)
+=>
+    (set-goal bt-cavalry-threat-goal 0)
+    (set-goal bt-ranged-threat-goal 0)
+    (set-goal bt-spear-threat-goal 0)
+    (set-goal bt-any-threat-goal 0)
+    (set-goal bt-cavalry-counter-level-goal 0)
+    (set-goal bt-ranged-counter-level-goal 0)
+    (set-goal bt-spear-counter-level-goal 0)
+    (set-goal bt-noncav-cavalry-level-goal 0)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 3)
+        (or
+            (players-unit-type-count any-enemy camel-line >= 3)
+            (or
+                (players-unit-type-count any-enemy cataphract-line >= 3)
+                (or
+                    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+                    (players-unit-type-count any-enemy war-elephant-line >= 3)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-cavalry-threat-goal 1)
+    (set-goal bt-any-threat-goal 1)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy archer-line >= 3)
+        (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+=>
+    (set-goal bt-ranged-threat-goal 1)
+    (set-goal bt-any-threat-goal 1)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 4)
+=>
+    (set-goal bt-spear-threat-goal 1)
+    (set-goal bt-any-threat-goal 1)
+)
+; Counter levels preserve original military-response thresholds.
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 3)
+        (or
+            (players-unit-type-count any-enemy camel-line >= 3)
+            (or
+                (players-unit-type-count any-enemy cataphract-line >= 3)
+                (or
+                    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+                    (players-unit-type-count any-enemy war-elephant-line >= 3)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-cavalry-counter-level-goal 1)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 10)
+        (or
+            (players-unit-type-count any-enemy camel-line >= 10)
+            (or
+                (players-unit-type-count any-enemy cataphract-line >= 10)
+                (or
+                    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+                    (players-unit-type-count any-enemy war-elephant-line >= 10)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-cavalry-counter-level-goal 2)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 20)
+        (or
+            (players-unit-type-count any-enemy camel-line >= 20)
+            (or
+                (players-unit-type-count any-enemy cataphract-line >= 20)
+                (or
+                    (players-unit-type-count any-enemy scout-cavalry-line >= 20)
+                    (players-unit-type-count any-enemy war-elephant-line >= 20)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-cavalry-counter-level-goal 3)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy archer-line >= 3)
+        (players-unit-type-count any-enemy cavalry-archer-line >= 3)
+    )
+=>
+    (set-goal bt-ranged-counter-level-goal 1)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy archer-line >= 10)
+        (players-unit-type-count any-enemy cavalry-archer-line >= 10)
+    )
+=>
+    (set-goal bt-ranged-counter-level-goal 2)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy archer-line >= 20)
+        (players-unit-type-count any-enemy cavalry-archer-line >= 20)
+    )
+=>
+    (set-goal bt-ranged-counter-level-goal 3)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 4)
+=>
+    (set-goal bt-spear-counter-level-goal 1)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 8)
+=>
+    (set-goal bt-spear-counter-level-goal 2)
+)
+; Non-Camel cavalry capacity: 10/15.
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 10)
+        (or
+            (players-unit-type-count any-enemy cataphract-line >= 10)
+            (or
+                (players-unit-type-count any-enemy scout-cavalry-line >= 10)
+                (players-unit-type-count any-enemy war-elephant-line >= 10)
+            )
+        )
+    )
+=>
+    (set-goal bt-noncav-cavalry-level-goal 1)
+)
+(defrule
+    (or
+        (players-unit-type-count any-enemy knight-line >= 15)
+        (or
+            (players-unit-type-count any-enemy cataphract-line >= 15)
+            (or
+                (players-unit-type-count any-enemy scout-cavalry-line >= 15)
+                (players-unit-type-count any-enemy war-elephant-line >= 15)
+            )
+        )
+    )
+=>
+    (set-goal bt-noncav-cavalry-level-goal 2)
+)
+; Cavalry production capacity: 6/15/25/40/55.
+
 
 ;================================================================
 ; MONASTERY / MONK DEMAND
@@ -3241,7 +3411,7 @@
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
 (defrule
-    (current-age >= feudal-age)
+    (current-age == feudal-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
     (or
@@ -3254,7 +3424,6 @@
             )
     )
     (building-type-count-total farm < bt-farm-feudal-cap)
-    (wood-amount >= bt-farm-build-wood)
     ; Wood escrow is intentionally usable by the farm action once the
     ; shared resource mutex is free. This is the same escrow-aware
     ; feasibility model used by TC/research construction.
@@ -3281,7 +3450,6 @@
             )
     )
     (building-type-count-total farm < bt-farm-castle-cap)
-    (wood-amount >= bt-farm-build-wood)
     ; Farm construction is escrow-aware, so the rule cannot stall merely
     ; because the controller is carrying reserved wood.
     (can-build-with-escrow farm)
@@ -3310,7 +3478,6 @@
             )
     )
     (building-type-count-total farm < bt-farm-imperial-cap)
-    (wood-amount >= bt-farm-build-wood)
     ; Preserve the same feasibility semantics through Imperial: the
     ; physical farm may consume reserved wood only when no higher-priority
     ; resource claim currently owns the bank.
@@ -3372,7 +3539,7 @@
     (timer-triggered bt-scouting-timer)
     (game-time >= 120)
     (players-building-count target-player <= 0)
-    (unit-type-count-total scout-cavalry-line >= 1)
+    (unit-type-count scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-flank)
@@ -3389,7 +3556,7 @@
     (timer-triggered bt-scouting-timer)
     (game-time >= 120)
     (players-building-count target-player > 0)
-    (unit-type-count-total scout-cavalry-line >= 1)
+    (unit-type-count scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-enemy)
@@ -3442,175 +3609,7 @@
 )
 
 ;================================================================
-; 12E. ENEMY THREAT STATE
-;----------------------------------------------------------------
-; Threat booleans describe immediate counter categories.
-; Counter levels describe response pressure and feed role-target capacity.
-; Production-building capacity is derived from the resulting standing-role targets.
-(defrule
-    (true)
-=>
-    (set-goal bt-cavalry-threat-goal 0)
-    (set-goal bt-ranged-threat-goal 0)
-    (set-goal bt-spear-threat-goal 0)
-    (set-goal bt-any-threat-goal 0)
-    (set-goal bt-cavalry-counter-level-goal 0)
-    (set-goal bt-ranged-counter-level-goal 0)
-    (set-goal bt-spear-counter-level-goal 0)
-    (set-goal bt-noncav-cavalry-level-goal 0)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 3)
-        (or
-            (players-unit-type-count any-enemy camel-line >= 3)
-            (or
-                (players-unit-type-count any-enemy cataphract-line >= 3)
-                (or
-                    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-                    (players-unit-type-count any-enemy war-elephant-line >= 3)
-                )
-            )
-        )
-    )
-=>
-    (set-goal bt-cavalry-threat-goal 1)
-    (set-goal bt-any-threat-goal 1)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 3)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 3)
-    )
-=>
-    (set-goal bt-ranged-threat-goal 1)
-    (set-goal bt-any-threat-goal 1)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 4)
-=>
-    (set-goal bt-spear-threat-goal 1)
-    (set-goal bt-any-threat-goal 1)
-)
-; Counter levels preserve original military-response thresholds.
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 3)
-        (or
-            (players-unit-type-count any-enemy camel-line >= 3)
-            (or
-                (players-unit-type-count any-enemy cataphract-line >= 3)
-                (or
-                    (players-unit-type-count any-enemy scout-cavalry-line >= 3)
-                    (players-unit-type-count any-enemy war-elephant-line >= 3)
-                )
-            )
-        )
-    )
-=>
-    (set-goal bt-cavalry-counter-level-goal 1)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 10)
-        (or
-            (players-unit-type-count any-enemy camel-line >= 10)
-            (or
-                (players-unit-type-count any-enemy cataphract-line >= 10)
-                (or
-                    (players-unit-type-count any-enemy scout-cavalry-line >= 10)
-                    (players-unit-type-count any-enemy war-elephant-line >= 10)
-                )
-            )
-        )
-    )
-=>
-    (set-goal bt-cavalry-counter-level-goal 2)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 20)
-        (or
-            (players-unit-type-count any-enemy camel-line >= 20)
-            (or
-                (players-unit-type-count any-enemy cataphract-line >= 20)
-                (or
-                    (players-unit-type-count any-enemy scout-cavalry-line >= 20)
-                    (players-unit-type-count any-enemy war-elephant-line >= 20)
-                )
-            )
-        )
-    )
-=>
-    (set-goal bt-cavalry-counter-level-goal 3)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 3)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 3)
-    )
-=>
-    (set-goal bt-ranged-counter-level-goal 1)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 10)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 10)
-    )
-=>
-    (set-goal bt-ranged-counter-level-goal 2)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy archer-line >= 20)
-        (players-unit-type-count any-enemy cavalry-archer-line >= 20)
-    )
-=>
-    (set-goal bt-ranged-counter-level-goal 3)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 4)
-=>
-    (set-goal bt-spear-counter-level-goal 1)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 8)
-=>
-    (set-goal bt-spear-counter-level-goal 2)
-)
-; Non-Camel cavalry capacity: 10/15.
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 10)
-        (or
-            (players-unit-type-count any-enemy cataphract-line >= 10)
-            (or
-                (players-unit-type-count any-enemy scout-cavalry-line >= 10)
-                (players-unit-type-count any-enemy war-elephant-line >= 10)
-            )
-        )
-    )
-=>
-    (set-goal bt-noncav-cavalry-level-goal 1)
-)
-(defrule
-    (or
-        (players-unit-type-count any-enemy knight-line >= 15)
-        (or
-            (players-unit-type-count any-enemy cataphract-line >= 15)
-            (or
-                (players-unit-type-count any-enemy scout-cavalry-line >= 15)
-                (players-unit-type-count any-enemy war-elephant-line >= 15)
-            )
-        )
-    )
-=>
-    (set-goal bt-noncav-cavalry-level-goal 2)
-)
-; Cavalry production capacity: 6/15/25/40/55.
-
-;================================================================
-; 12F. MAP-AWARE OPENING SELECTION
+; 12E. MAP-AWARE OPENING SELECTION
 ;================================================================
 ; Strategic wire:
 ;   MAP / EARLY OPPONENT SIGNALS -> OPENING PLAN -> EXISTING STRATEGY
