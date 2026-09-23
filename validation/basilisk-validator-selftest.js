@@ -325,6 +325,41 @@ try {
       source: baseline + "\n(defrule\n    (defrule (true) => (do-nothing))\n=>\n    (do-nothing)\n)\n",
     },
     {
+      name: "defconst-alias-cycle",
+      expected: "alias cycle",
+      source:
+        baseline +
+        "\n(defconst validator-alias-a validator-alias-b)\n" +
+        "(defconst validator-alias-b validator-alias-a)\n",
+    },
+    {
+      name: "unexpected-preprocessor-else",
+      expected: "unexpected #else",
+      source: baseline + "\n#else\n",
+    },
+    {
+      name: "duplicate-preprocessor-else",
+      expected: "duplicate #else",
+      source:
+        baseline +
+        "\n#load-if-defined VALIDATOR_TEST\n#else\n#else\n#end-if\n",
+    },
+    {
+      name: "unexpected-preprocessor-end-if",
+      expected: "unexpected #end-if",
+      source: baseline + "\n#end-if\n",
+    },
+    {
+      name: "unterminated-preprocessor-conditional",
+      expected: "unterminated conditional block",
+      source: baseline + "\n#load-if-defined VALIDATOR_TEST\n",
+    },
+    {
+      name: "malformed-preprocessor-conditional",
+      expected: "malformed conditional directive",
+      source: baseline + "\n#load-if-defined\n#end-if\n",
+    },
+    {
       name: "DE-runtime-rejected-arbalester-alias",
       expected: "DE runtime canonical identifier",
       source: baseline.replace(/\barbalest\b/g, "arbalester"),
@@ -907,6 +942,12 @@ try {
           "unterminated-string",
           "malformed-defconst",
           "nested-defrule-rejected",
+          "defconst-alias-cycle",
+          "unexpected-preprocessor-else",
+          "duplicate-preprocessor-else",
+          "unexpected-preprocessor-end-if",
+          "unterminated-preprocessor-conditional",
+          "malformed-preprocessor-conditional",
         ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
