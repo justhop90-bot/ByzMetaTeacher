@@ -1628,7 +1628,7 @@
             (goal unit-goal crossbowman)
             (or
                 (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
-                (unit-type-count-total arbalester >= bt-crossbow-target-castle)
+                (unit-type-count-total arbalest >= bt-crossbow-target-castle)
             )
         )
         (or
@@ -1683,7 +1683,7 @@
             (goal unit-goal crossbowman)
             (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+            (unit-type-count-total arbalest >= bt-crossbow-target-mature)
                     )
         )
         (or
@@ -1716,7 +1716,7 @@
             (goal unit-goal crossbowman)
             (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+            (unit-type-count-total arbalest >= bt-crossbow-target-mature)
                     )
         )
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
@@ -1829,7 +1829,7 @@
             (goal unit-goal crossbowman)
             (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+            (unit-type-count-total arbalest >= bt-crossbow-target-mature)
                     )
         )
         (or
@@ -1862,7 +1862,7 @@
             (goal unit-goal crossbowman)
             (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+            (unit-type-count-total arbalest >= bt-crossbow-target-mature)
                     )
         )
         (or
@@ -1908,7 +1908,7 @@
     (or
         ; Keep Thumb Ring behind the first real Castle ranged mass.
         (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
-        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalest >= bt-crossbow-target-mature)
     )
     (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-thumb-ring)
     (up-research-status c: ri-thumb-ring < research-complete)
@@ -7176,7 +7176,7 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
         )
         (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
+            (unit-type-count-total arbalest < bt-standing-crossbow-target-goal)
         )
     )
     (or
@@ -7194,7 +7194,7 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
             (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
         ) (or (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester >= bt-standing-crossbow-target-goal)
+            (unit-type-count-total arbalest >= bt-standing-crossbow-target-goal)
         ) (not (goal unit-goal crossbowman)))))))))
 =>
     (set-goal bt-crossbow-demand-goal 0)
@@ -7351,7 +7351,7 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
             (unit-type-count-total crossbowman < bt-standing-crossbow-target-goal)
         ) (and
             (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
+            (unit-type-count-total arbalest < bt-standing-crossbow-target-goal)
         )))))))
 =>
     (set-goal bt-standing-army-demand-goal 1)
@@ -7374,7 +7374,7 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
                 )
                 (and
                     (up-research-status c: ri-arbalest == research-complete)
-                    (unit-type-count-total arbalester >= bt-standing-crossbow-target-goal)
+                    (unit-type-count-total arbalest >= bt-standing-crossbow-target-goal)
                 )
             ))))))))
 =>
@@ -7779,12 +7779,12 @@ cataphract-line < bt-cataphract-target-1)))))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
     (strategic-number sn-resource-control == 0)
-    (unit-type-count-total arbalester < bt-standing-crossbow-target-goal)
-    (can-train arbalester)
+    (unit-type-count-total arbalest < bt-standing-crossbow-target-goal)
+    (can-train arbalest)
     (up-get-fact building-type-count-total archery-range bt-primary-capacity-scratch-goal)
-    (up-pending-objects c: arbalester g:< bt-primary-capacity-scratch-goal)
+    (up-pending-objects c: arbalest g:< bt-primary-capacity-scratch-goal)
 =>
-    (train arbalester)
+    (train arbalest)
 )
 
 ;---------------------------------------------------------------
@@ -10720,7 +10720,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (or
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
-        (unit-type-count-total arbalester >= bt-crossbow-target-castle)
+        (unit-type-count-total arbalest >= bt-crossbow-target-castle)
     )
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-leather-archer-armor < research-pending)
@@ -10792,7 +10792,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (or
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
-        (unit-type-count-total arbalester >= bt-crossbow-target-castle)
+        (unit-type-count-total arbalest >= bt-crossbow-target-castle)
     )
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-leather-archer-armor < research-pending)
@@ -10874,7 +10874,7 @@ bt-resource-mode-imperial-bank-prep)))))
         ; Four Crossbows are the Castle transition package. Thumb Ring waits
         ; for the controller's mature eight-unit ranged mass.
         (unit-type-count-total crossbowman >= bt-crossbow-target-mature)
-        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalest >= bt-crossbow-target-mature)
     )
     (building-type-count archery-range >= 1)
     (up-research-status c: ri-thumb-ring < research-pending)
@@ -10914,7 +10914,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (and
         (up-research-status c: ri-arbalest == research-complete)
-        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalest >= bt-crossbow-target-mature)
     )
     (up-research-status c: ri-bracer < research-pending)
     (goal bt-ranged-threat-goal 1)
@@ -11002,7 +11002,7 @@ bt-resource-mode-imperial-bank-prep)))))
     (up-research-status c: ri-leather-archer-armor == research-complete)
     (and
         (up-research-status c: ri-arbalest == research-complete)
-        (unit-type-count-total arbalester >= bt-crossbow-target-mature)
+        (unit-type-count-total arbalest >= bt-crossbow-target-mature)
     )
     (up-research-status c: ri-ring-archer-armor < research-pending)
     (goal bt-ranged-threat-goal 1)
