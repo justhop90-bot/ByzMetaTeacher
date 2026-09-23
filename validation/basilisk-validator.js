@@ -2038,6 +2038,7 @@ function validateLateEcoTechnologyMaturity(rules) {
   for (const witness of [
     "(current-age >= imperial-age)",
     "(unit-type-count villager >= bt-two-man-saw-villagers)",
+    "(unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)",
     "(goal strategy-goal bt-strategy-boom)",
     "(research-available ri-two-man-saw)",
   ]) {
@@ -2060,6 +2061,7 @@ function validateLateEcoTechnologyMaturity(rules) {
   for (const witness of [
     "(current-age >= imperial-age)",
     "(unit-type-count villager >= bt-two-man-saw-villagers)",
+    "(unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)",
     "(goal strategy-goal bt-strategy-boom)",
     "(not (goal bt-cataphract-demand-goal 1))",
     "(can-research-with-escrow ri-two-man-saw)",
