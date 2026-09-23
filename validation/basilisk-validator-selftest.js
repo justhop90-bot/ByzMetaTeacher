@@ -1113,7 +1113,7 @@ try {
       name: "imperial-demand-clear-must-not-use-cataphract-state",
       expected: "[Imperial prerequisites]",
       source: (() => {
-        const marker = "; Hold the demand until the engine proves Imperial researchable or Castle exists.";
+        const marker = "; Clear prerequisite demand when the world already proves Imperial/Castle completion.";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial demand-clear section missing");
         const end = baseline.indexOf("; Temporarily favor wood while the second Castle-age provider is outstanding.", start);
