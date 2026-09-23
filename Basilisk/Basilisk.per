@@ -7510,8 +7510,10 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (or
         (goal strategy-goal bt-strategy-boom)
-        (goal strategy-goal bt-strategy-flush)
-        (goal strategy-goal bt-strategy-castle-power)
+        (or
+            (goal strategy-goal bt-strategy-flush)
+            (goal strategy-goal bt-strategy-castle-power)
+        )
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
@@ -7525,8 +7527,10 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (or
         (goal strategy-goal bt-strategy-boom)
-        (goal strategy-goal bt-strategy-flush)
-        (goal strategy-goal bt-strategy-castle-power)
+        (or
+            (goal strategy-goal bt-strategy-flush)
+            (goal strategy-goal bt-strategy-castle-power)
+        )
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
@@ -7540,8 +7544,10 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (or
         (goal strategy-goal bt-strategy-boom)
-        (goal strategy-goal bt-strategy-flush)
-        (goal strategy-goal bt-strategy-castle-power)
+        (or
+            (goal strategy-goal bt-strategy-flush)
+            (goal strategy-goal bt-strategy-castle-power)
+        )
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
