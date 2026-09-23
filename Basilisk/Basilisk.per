@@ -9859,9 +9859,9 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (players-building-count target-player > 0)
     (up-compare-goal bt-attack-reserve-goal >= 10)
     (up-compare-goal bt-relative-force-goal >= 0)
-    ; Castle-Power joins the global attack controller only after its selected
-    ; Crossbow core exists as completed units. Other strategies retain the
-    ; existing global readiness contract unchanged.
+    ; Every strategy must first satisfy the existing standing-army
+    ; completion witness. Castle-Power additionally requires its selected
+    ; Crossbow core as completed units.
     (or
         (not (goal strategy-goal bt-strategy-castle-power))
         (and
