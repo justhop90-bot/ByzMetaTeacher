@@ -1021,14 +1021,18 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     }
   }
 
-  const defconsts = new Set(
-    [...sanitizeStructure(sourceText).matchAll(
-      /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g,
-    )].map((match) => match[1]),
-  );
+  const defconsts = new Set();
+  const defconstValues = new Map();
+  for (const match of sanitizeStructure(sourceText).matchAll(
+    /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
+  )) {
+    defconsts.add(match[1]);
+    defconstValues.set(match[1], Number(match[2]));
+  }
 
   return {
     defconsts,
+    defconstValues,
     strategicNumbers,
     techs,
     objects,
@@ -1047,6 +1051,17 @@ function documentedParameterValue(parameterName, value, families) {
   }
   const strictValues = families.strictParameterValues.get(parameterName);
   return !strictValues || strictValues.has(value);
+}
+
+function parseAIRefSimpleNumericRange(rangeText) {
+  const text = String(rangeText ?? "");
+  if (!text || /\bor\b/i.test(text)) return null;
+  const matches = [...text.matchAll(/(-?\d[\d,]*)\s+to\s+(-?\d[\d,]*)/gi)];
+  if (matches.length !== 1) return null;
+  const minimum = Number(matches[1][1].replaceAll(",", ""));
+  const maximum = Number(matches[1][2].replaceAll(",", ""));
+  if (!Number.isFinite(minimum) || !Number.isFinite(maximum)) return null;
+  return minimum <= maximum ? [minimum, maximum] : [maximum, minimum];
 }
 
 function isSymbolicSchemaValue(value) {
@@ -1279,6 +1294,39 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         }
       }
 
+      const range = parseAIRefSimpleNumericRange(parameter.range);
+      if (range) {
+        let numericValue;
+        if (/^-?\d+$/.test(value)) {
+          numericValue = Number(value);
+        } else if (families.defconstValues.has(value)) {
+          numericValue = families.defconstValues.get(value);
+        }
+        if (
+          numericValue !== undefined &&
+          (numericValue < range[0] || numericValue > range[1])
+        ) {
+          reportFailure(
+            "command-numeric-range-mismatch",
+            expression,
+            index + 1,
+            command.name +
+              " " +
+              parameterName +
+              " argument " +
+              (index + 1) +
+              " uses " +
+              value +
+              "=" +
+              numericValue +
+              "; expected " +
+              range[0] +
+              " to " +
+              range[1],
+          );
+        }
+      }
+
       if (
         parameter.type === "Const" &&
         isSymbolicSchemaValue(value) &&
@@ -1401,6 +1449,29 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
   };
 }
 
+
+function validateAIRefTypedComparisonSyntax(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+  const failures = [];
+  const splitComparison =
+    /(?:<|<=|>|>=|==|!=)\s+[gs]:|[gs]:\s*(?:<|<=|>|>=|==|!=)/g;
+
+  for (const match of sanitized.matchAll(splitComparison)) {
+    const line = sanitized.slice(0, match.index).split("\n").length;
+    failures.push({
+      line,
+      text: match[0],
+    });
+  }
+
+  assert.equal(
+    failures.length,
+    0,
+    "[AIRef schema] split-typed-comparison " +
+      failures.length +
+      " violation(s); use typed comparison operators such as g:< or s:==",
+  );
+}
 
 function validateAIRefDucStateSafety(sourceText) {
   const sanitized = sanitizeStructure(sourceText);
@@ -1922,6 +1993,7 @@ const engineLimitReport = validateEngineLimits(source, rules);
 const identifierReport = validateIdentifiers(source, repoRoot);
 const commandReport = validateAIRefCommandVocabulary(source, rules, repoRoot);
 validateAIRefCommandSchema(source, rules, repoRoot);
+validateAIRefTypedComparisonSyntax(source);
 validateAIRefDucStateSafety(source);
 validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
@@ -1964,6 +2036,8 @@ console.log(JSON.stringify({
     "AIRef command arity, parameter-family, type-prefix, and typed-operand schema contracts",
     "AIRef documented enum/value-family validation for symbolic Const slots",
     "AIRef retained-search DUC target-scope validation",
+    "AIRef parameter-specific numeric range validation",
+    "AIRef split typed-comparison syntax validation",
     "typed c:/g:/s: operand resolution and timer identifiers",
     "missing closing parenthesis diagnostics with source line",
     "rule-too-long diagnostics at the DE 32-element ceiling",
