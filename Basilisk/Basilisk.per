@@ -2737,9 +2737,11 @@
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
     (or
-        (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+        (and
+            (not (can-research-with-escrow imperial-age))
+            (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+        )
         (and
             (or
                 (goal strategy-goal bt-strategy-boom)
@@ -2773,7 +2775,10 @@
             (not
                 (or
                     (goal strategy-goal bt-strategy-boom)
-                    (goal strategy-goal bt-strategy-castle-power)
+                    (or
+                        (goal strategy-goal bt-strategy-castle-power)
+                        (goal strategy-goal bt-strategy-flush)
+                    )
                 )
             )
         )
@@ -2871,10 +2876,13 @@
     (goal bt-imperial-commitment-goal 1)
     (or
         (building-type-count-total castle >= 1)
-        (not
-            (or
-                (goal strategy-goal bt-strategy-boom)
-                (goal strategy-goal bt-strategy-castle-power)
+        (and
+            (goal bt-castle-cataphract-demand-goal 0)
+            (not
+                (or
+                    (goal strategy-goal bt-strategy-boom)
+                    (goal strategy-goal bt-strategy-castle-power)
+                )
             )
         )
     )
@@ -5318,10 +5326,13 @@ town-center >= 2)))))
     (unit-type-count villager >= bt-imperial-villagers)
     (or
         (building-type-count-total castle >= 1)
-        (not
-            (or
-                (goal strategy-goal bt-strategy-boom)
-                (goal strategy-goal bt-strategy-castle-power)
+        (and
+            (goal bt-castle-cataphract-demand-goal 0)
+            (not
+                (or
+                    (goal strategy-goal bt-strategy-boom)
+                    (goal strategy-goal bt-strategy-castle-power)
+                )
             )
         )
     )
