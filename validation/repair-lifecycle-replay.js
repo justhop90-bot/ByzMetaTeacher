@@ -823,7 +823,10 @@ requireRule(
   "(goal strategy-goal bt-strategy-rush)",
   "(current-age >= castle-age)",
   "(players-building-count target-player > 0)",
-  "(unit-type-count-total archer-line >= 4)",
+  "(player-in-game target-player)",
+  "(unit-type-count archer-line >= 4)",
+  "(not (town-under-attack))",
+  "(not (goal bt-any-threat-goal 1))",
   "(set-goal strategy-goal bt-strategy-castle-power)",
 );
 requireRule(
