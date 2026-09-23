@@ -589,12 +589,13 @@ try {
       name: "horse-collar-hold-package-veto-regression",
       expected: "[Feudal eco]",
       source: (() => {
-        const needle = "(goal bt-horse-collar-demand-goal 1)";
+        const needle = "(set-goal bt-feudal-eco-hold-goal 1)";
         const index = baseline.indexOf(needle);
         const ruleStart = baseline.lastIndexOf("(defrule", index);
         const ruleEnd = baseline.indexOf("\n)", index) + 2;
         assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Horse Collar hold missing");
         const rule = baseline.slice(ruleStart, ruleEnd);
+        assert.ok(rule.includes("(goal bt-horse-collar-demand-goal 1)"), "[Self-test] Horse Collar hold demand witness missing");
         const arrow = rule.indexOf("=>");
         assert.ok(arrow >= 0, "[Self-test] Horse Collar hold arrow missing");
         return baseline.slice(0, ruleStart) +
