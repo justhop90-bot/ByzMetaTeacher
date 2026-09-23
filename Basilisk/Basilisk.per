@@ -6693,10 +6693,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 )
 (defrule
     (building-type-count monastery >= 1)
-    (or
-        (strategic-number sn-resource-control == 0)
-        (strategic-number sn-resource-control == bt-monastery-claim)
-    )
+    (strategic-number sn-resource-control != bt-monastery-claim)
 =>
     (disable-timer bt-monastery-watchdog-timer)
     (disable-timer bt-monastery-backoff-timer)
@@ -8701,6 +8698,7 @@ bt-resource-mode-imperial-bank-prep)))))
  
 (defrule
     (building-type-count university >= 1)
+    (strategic-number sn-resource-control != bt-bombard-university-claim)
 =>
     (disable-timer bt-bombard-university-watchdog-timer)
     (disable-timer bt-bombard-university-backoff-timer)
@@ -9738,6 +9736,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 ; owner of sn-resource-control.
 (defrule
     (building-type-count siege-workshop >= 1)
+    (strategic-number sn-resource-control != bt-military-siege-workshop-claim)
 =>
     (disable-timer bt-military-siege-workshop-backoff-timer)
     (set-goal bt-military-siege-workshop-backoff-goal 0)
