@@ -436,17 +436,17 @@ try {
       name: "two-man-saw-executor-without-villager-maturity-rejected",
       expected: "[Late-eco lifecycle]",
       source: (() => {
-        const demandWriterMatch =
-          baseline.match(
-            /\(defrule\n    \(goal bt-two-man-saw-demand-goal 1\)\n[\s\S]*?\(research ri-two-man-saw\)\n[\s\S]*?\n\)/,
-          )?.[0];
+        const maturityWitness =
+          "    (unit-type-count villager >= bt-two-man-saw-villagers)\n";
+        const first = baseline.indexOf(maturityWitness);
+        const second = baseline.indexOf(maturityWitness, first + maturityWitness.length);
         assert.ok(
-          demandWriterMatch,
-          "[Self-test] Two-Man Saw executor fixture is missing from baseline",
+          first >= 0 && second >= 0,
+          "[Self-test] Two-Man Saw maturity witnesses are missing from baseline",
         );
-        return baseline.replace(
-          "    (unit-type-count villager >= bt-two-man-saw-villagers)\n",
-          "",
+        return (
+          baseline.slice(0, second) +
+          baseline.slice(second + maturityWitness.length)
         );
       })(),
     }
