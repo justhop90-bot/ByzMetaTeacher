@@ -1079,6 +1079,40 @@ try {
       })(),
     },
     {
+      name: "imperial-demand-clear-must-retain-world-state-witnesses",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const needle =
+          "    (goal bt-imperial-prereq-demand-goal 1)\n" +
+          "    (or\n" +
+          "        (current-age >= imperial-age)\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] Imperial demand-clear lifecycle witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(
+          needle,
+          "    (goal bt-imperial-prereq-demand-goal 1)\n",
+        );
+      })(),
+    },
+    {
+      name: "imperial-demand-clear-must-not-use-cataphract-state",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; Hold the demand until the engine proves Imperial researchable or Castle exists.";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial demand-clear section missing");
+        const end = baseline.indexOf("; Temporarily favor wood while the second Castle-age provider is outstanding.", start);
+        assert.ok(end > start, "[Self-test] Imperial demand-clear bounds missing");
+        const section = baseline.slice(start, end);
+        const needle = "    (can-research-with-escrow imperial-age)\n";
+        assert.ok(section.includes(needle), "[Self-test] Imperial feasibility witness missing");
+        return baseline.slice(0, start) + baseline.slice(start, end).replace(
+          needle,
+          needle + "    (goal bt-castle-cataphract-demand-goal 0)\n",
+        ) + baseline.slice(end);
+      })(),
+    },
+    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
