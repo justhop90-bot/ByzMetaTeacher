@@ -120,19 +120,69 @@ function extractRules(text) {
 }
 
 function validateBalancedParens(text) {
-  let depth = 0;
+  const sanitized = maskStrings(stripComments(text));
+  const stack = [];
   let line = 1;
-  for (const ch of sanitizeStructure(text)) {
-    if (ch === "(") depth += 1;
-    if (ch === ")") depth -= 1;
-    assert.ok(depth >= 0, `[Parser] unexpected closing parenthesis near line ${line}`);
-    if (ch === "\n") line += 1;
+  let column = 0;
+
+  const lineColumnAt = (offset) => {
+    const prefix = sanitized.slice(0, offset);
+    const lastNewline = prefix.lastIndexOf("\n");
+    return {
+      line: prefix.split("\n").length,
+      column: offset - lastNewline,
+    };
+  };
+
+  const headAtOpen = (offset) => {
+    const match = sanitized
+      .slice(offset + 1)
+      .match(/^\s*([A-Za-z][A-Za-z0-9_-]*)/);
+    return match ? match[1] : "<unknown>";
+  };
+
+  for (let index = 0; index < sanitized.length; index += 1) {
+    const ch = sanitized[index];
+    if (ch === "(") {
+      const location = lineColumnAt(index);
+      stack.push({
+        head: headAtOpen(index),
+        line: location.line,
+        column: location.column,
+      });
+      continue;
+    }
+    if (ch === ")") {
+      if (stack.length === 0) {
+        assert.fail(
+          "[Missing opening parenthesis] unexpected ')' at line " +
+            line +
+            ", column " +
+            (column + 1),
+        );
+      }
+      stack.pop();
+    }
+    if (ch === "\n") {
+      line += 1;
+      column = 0;
+    } else {
+      column += 1;
+    }
   }
-  assert.equal(
-    depth,
-    0,
-    `[Missing closing parenthesis] controller ends with ${depth} unmatched opening parenthesis`,
-  );
+
+  if (stack.length > 0) {
+    const opening = stack.at(-1);
+    assert.fail(
+      "[Missing closing parenthesis] expression '" +
+        opening.head +
+        "' opened at line " +
+        opening.line +
+        ", column " +
+        opening.column +
+        " remains unclosed",
+    );
+  }
 }
 
 function validateGoalFactSyntax(sourceText) {
@@ -281,6 +331,352 @@ function validateRuleStructure(sourceText) {
 
     cursor = end;
   }
+}
+
+
+function parseStrictTopLevelForms(sourceText) {
+  const text = stripComments(sourceText);
+
+  const lineOf = (offset) => text.slice(0, offset).split("\n").length;
+  const columnOf = (offset) => {
+    const lastNewline = text.lastIndexOf("\n", offset - 1);
+    return offset - lastNewline;
+  };
+
+  function skipWhitespace(index) {
+    let cursor = index;
+    while (cursor < text.length && /\s/.test(text[cursor])) cursor += 1;
+    return cursor;
+  }
+
+  function readAtom(index) {
+    if (text[index] === "\"") {
+      const start = index;
+      let cursor = index + 1;
+      let escaped = false;
+      while (cursor < text.length) {
+        const ch = text[cursor];
+        if (escaped) {
+          escaped = false;
+        } else if (ch === "\\") {
+          escaped = true;
+        } else if (ch === "\"") {
+          return {
+            kind: "atom",
+            value: text.slice(start, cursor + 1),
+            start,
+            end: cursor + 1,
+          };
+        }
+        cursor += 1;
+      }
+      assert.fail(
+        "[Parser] unterminated quoted string opened at line " +
+          lineOf(start) +
+          ", column " +
+          columnOf(start),
+      );
+    }
+
+    let cursor = index;
+    while (
+      cursor < text.length &&
+      !/\s/.test(text[cursor]) &&
+      text[cursor] !== "(" &&
+      text[cursor] !== ")"
+    ) {
+      cursor += 1;
+    }
+    return {
+      kind: "atom",
+      value: text.slice(index, cursor),
+      start: index,
+      end: cursor,
+    };
+  }
+
+  function readExpression(start) {
+    assert.equal(
+      text[start],
+      "(",
+      "[Parser] internal expression parser expected '('",
+    );
+    const line = lineOf(start);
+    const column = columnOf(start);
+    let cursor = skipWhitespace(start + 1);
+
+    if (cursor >= text.length) {
+      assert.fail(
+        "[Missing closing parenthesis] expression opened at line " +
+          line +
+          ", column " +
+          column +
+          " reaches end of file",
+      );
+    }
+    if (text[cursor] === ")") {
+      assert.fail(
+        "[Parser] empty expression '()' at line " +
+          line +
+          ", column " +
+          column,
+      );
+    }
+
+    const headToken = readAtom(cursor);
+    const head = headToken.value;
+    if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(head)) {
+      assert.fail(
+        "[Parser] invalid expression head '" +
+          head +
+          "' at line " +
+          line +
+          ", column " +
+          column,
+      );
+    }
+    cursor = headToken.end;
+    const args = [];
+
+    while (cursor < text.length) {
+      cursor = skipWhitespace(cursor);
+      if (cursor >= text.length) {
+        assert.fail(
+          "[Missing closing parenthesis] expression '" +
+            head +
+            "' opened at line " +
+            line +
+            ", column " +
+            column +
+            " is not closed",
+        );
+      }
+      if (text[cursor] === ")") {
+        return {
+          kind: "expression",
+          head,
+          args,
+          line,
+          column,
+          start,
+          end: cursor + 1,
+        };
+      }
+      if (text[cursor] === "(") {
+        const child = readExpression(cursor);
+        args.push(child);
+        cursor = child.end;
+        continue;
+      }
+      const atom = readAtom(cursor);
+      if (!atom.value) {
+        assert.fail(
+          "[Parser] empty atom in expression '" +
+            head +
+            "' at line " +
+            line +
+            ", column " +
+            column,
+        );
+      }
+      args.push(atom);
+      cursor = atom.end;
+    }
+
+    assert.fail(
+      "[Missing closing parenthesis] expression '" +
+        head +
+        "' opened at line " +
+        line +
+        ", column " +
+        column +
+        " is not closed",
+    );
+  }
+
+  const forms = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    cursor = skipWhitespace(cursor);
+    if (cursor >= text.length) break;
+
+    if (text[cursor] === "#") {
+      const lineEnd = text.indexOf("\n", cursor);
+      cursor = lineEnd === -1 ? text.length : lineEnd + 1;
+      continue;
+    }
+
+    if (text[cursor] === ")") {
+      assert.fail(
+        "[Missing opening parenthesis] unexpected ')' at line " +
+          lineOf(cursor) +
+          ", column " +
+          columnOf(cursor),
+      );
+    }
+    if (text[cursor] !== "(") {
+      assert.fail(
+        "[Top-level syntax] stray token near line " +
+          lineOf(cursor) +
+          ", column " +
+          columnOf(cursor) +
+          ": " +
+          text.slice(cursor, Math.min(text.length, cursor + 32)).trim(),
+      );
+    }
+
+    const form = readExpression(cursor);
+    forms.push(form);
+    cursor = form.end;
+  }
+
+  return forms;
+}
+
+function validateParserGradeRuleStructure(sourceText) {
+  const forms = parseStrictTopLevelForms(sourceText);
+  const logicalArity = new Map([
+    ["not", 1],
+    ["and", 2],
+    ["nand", 2],
+    ["nor", 2],
+    ["or", 2],
+    ["xor", 2],
+    ["xnor", 2],
+  ]);
+
+  assert.ok(forms.length > 0, "[Parser] no top-level forms found");
+
+  const validateRuleExpression = (expr) => {
+    if (logicalArity.has(expr.head)) {
+      const expected = logicalArity.get(expr.head);
+      assert.equal(
+        expr.args.length,
+        expected,
+        "[Logical arity] " +
+          expr.head +
+          " at line " +
+          expr.line +
+          " has " +
+          expr.args.length +
+          " operands; expected exactly " +
+          expected,
+      );
+      assert.ok(
+        expr.args.every((arg) => arg.kind === "expression"),
+        "[Rule syntax] " +
+          expr.head +
+          " at line " +
+          expr.line +
+          " must contain only fact expressions as operands",
+      );
+      for (const child of expr.args) validateRuleExpression(child);
+      return;
+    }
+
+    for (const arg of expr.args) {
+      assert.ok(
+        arg.kind === "atom",
+        "[Rule syntax] command '" +
+          expr.head +
+          "' at line " +
+          expr.line +
+          " contains a nested expression argument; command parameters must be atomic values",
+      );
+    }
+  };
+
+  for (const form of forms) {
+    if (form.head === "defconst") {
+      assert.equal(
+        form.args.length,
+        2,
+        "[Defconst] defconst at line " +
+          form.line +
+          " requires exactly a name and one value",
+      );
+      assert.ok(
+        form.args[0].kind === "atom" &&
+          /^[A-Za-z][A-Za-z0-9_-]*$/.test(form.args[0].value) &&
+          !form.args[0].value.startsWith("\""),
+        "[Defconst] defconst at line " +
+          form.line +
+          " has an invalid constant name",
+      );
+      assert.ok(
+        form.args[1].kind === "atom",
+        "[Defconst] defconst at line " +
+          form.line +
+          " value must be a single integer, alias, or quoted string",
+      );
+      continue;
+    }
+
+    assert.equal(
+      form.head,
+      "defrule",
+      "[Top-level syntax] unsupported top-level form '" +
+        form.head +
+        "' at line " +
+        form.line,
+    );
+
+    const arrowIndexes = form.args
+      .map((arg, index) => (arg.kind === "atom" && arg.value === "=>" ? index : -1))
+      .filter((index) => index >= 0);
+
+    assert.equal(
+      arrowIndexes.length,
+      1,
+      "[Rule structure] defrule at line " +
+        form.line +
+        " must contain exactly one direct => separator; found " +
+        arrowIndexes.length,
+    );
+
+    const arrowIndex = arrowIndexes[0];
+    const facts = form.args.slice(0, arrowIndex);
+    const actions = form.args.slice(arrowIndex + 1);
+
+    assert.ok(
+      facts.length > 0,
+      "[Rule structure] defrule at line " +
+        form.line +
+        " has an empty facts section",
+    );
+    assert.ok(
+      actions.length > 0,
+      "[Rule structure] defrule at line " +
+        form.line +
+        " has an empty actions section",
+    );
+    assert.ok(
+      facts.every((arg) => arg.kind === "expression"),
+      "[Rule syntax] defrule at line " +
+        form.line +
+        " contains a non-expression token in its facts section",
+    );
+    assert.ok(
+      actions.every((arg) => arg.kind === "expression"),
+      "[Rule syntax] defrule at line " +
+        form.line +
+        " contains a non-expression token in its actions section",
+    );
+
+    for (const expr of [...facts, ...actions]) {
+      if (expr.head === "defrule" || expr.head === "defconst") {
+        assert.fail(
+          "[Rule syntax] top-level form '" +
+            expr.head +
+            "' is nested inside defrule at line " +
+            expr.line,
+        );
+      }
+      validateRuleExpression(expr);
+    }
+  }
+
+  return forms;
 }
 
 function renderRule(rule) {
@@ -1381,7 +1777,19 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
       return;
     }
 
-    if (expression.args.some((arg) => arg && typeof arg === "object")) {
+    const nestedArgument = expression.args.find(
+      (arg) => arg && typeof arg === "object",
+    );
+    if (nestedArgument) {
+      reportFailure(
+        "command-nested-expression-mismatch",
+        expression,
+        expression.args.indexOf(nestedArgument) + 1,
+        command.name +
+          " argument " +
+          (expression.args.indexOf(nestedArgument) + 1) +
+          " is a nested expression; AIRef command parameters are atomic values",
+      );
       for (const arg of expression.args) {
         if (arg && typeof arg === "object") validateExpression(arg);
       }
@@ -2633,6 +3041,7 @@ function validateLifecycleAnchors(sourceText, rules) {
 
 validateRuleStructure(source);
 validateBalancedParens(source);
+validateParserGradeRuleStructure(source);
 validateGoalFactSyntax(source);
 validateBooleanArity(source);
 const rules = extractRules(source);
