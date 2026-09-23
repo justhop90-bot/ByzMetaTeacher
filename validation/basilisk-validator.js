@@ -135,6 +135,22 @@ function validateBalancedParens(text) {
   );
 }
 
+function validateGoalFactSyntax(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+  const invalidComparisons = [
+    ...sanitized.matchAll(
+      /\(goal\s+[A-Za-z][A-Za-z0-9_-]*\s+(>=|<=|>|<|!=)\s+/g,
+    ),
+  ];
+  assert.equal(
+    invalidComparisons.length,
+    0,
+    `[Goal syntax] goal facts accept exact equality only; use up-compare-goal for comparisons. Invalid forms found: ${invalidComparisons
+      .map((match) => match[1])
+      .join(", ")}`,
+  );
+}
+
 function validateBooleanArity(text) {
   const sanitized = sanitizeStructure(text);
   const logicalArity = new Map([
@@ -2546,6 +2562,7 @@ function validateLifecycleAnchors(sourceText, rules) {
 
 validateRuleStructure(source);
 validateBalancedParens(source);
+validateGoalFactSyntax(source);
 validateBooleanArity(source);
 const rules = extractRules(source);
 assert.ok(rules.length > 0, "[Parser] no defrule forms found");
