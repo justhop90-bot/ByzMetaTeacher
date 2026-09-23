@@ -911,10 +911,10 @@ assert.equal(castlePowerPolicy({
 }), "castle-power", "[Castle-power A] surviving Feudal pressure did not continue into Castle-power");
 assert.equal(castlePowerPolicy({
   strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 2,
-}), "boom", "[Castle-power B] dead/insufficient Feudal pressure did not fall back to BOOM");
+}), "rush", "[Castle-power B] insufficient archer pressure incorrectly promoted to Castle-power");
 assert.equal(castlePowerPolicy({
   strategy: "rush", age: 3, castleAge: 3, imperialAge: 4, safe: true, targetAlive: false, archers: 4,
-}), "boom", "[Castle-power C] lost target did not fall back to BOOM");
+}), "rush", "[Castle-power C] lost target incorrectly promoted to Castle-power");
 assert.equal(castlePowerPolicy({
   strategy: "castle-power", age: 4, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
 }), "boom", "[Castle-power D] Imperial expiry did not return to BOOM");
@@ -922,11 +922,11 @@ console.log(JSON.stringify({
   controller: path.relative(process.cwd(), controllerPath),
   rules: rules.length,
   assertions: [
-    "stale claims",
-    "stale package cursors",
-    "bounded retry persistence",
-    "terminal-state re-entry prevention",
-    "strategic-owner reset and clean re-entry",
+    "persistent-demand preservation",
+    "claim release on execution failure",
+    "bounded failure backoff",
+    "same-demand re-entry after cooldown",
+    "strategic invalidation reset and clean re-entry",
   ],
   scenarios: Object.fromEntries(
     Object.entries(scenarios).map(([name, trace]) => [
