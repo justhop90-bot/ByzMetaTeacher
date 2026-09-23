@@ -3341,7 +3341,7 @@ function validateAgeTransitionQueueGates(rules) {
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
       rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
-      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(goal bt-imperial-commitment-goal 1)") &&
       rule.includes("(set-goal train-civ-goal -1)"),
   );
   assert.ok(
@@ -3352,11 +3352,15 @@ function validateAgeTransitionQueueGates(rules) {
     !imperialStop.includes("(can-research-with-escrow imperial-age)"),
     "[Age transition] Imperial villager stop gate must not depend on research queue availability",
   );
+  assert.ok(
+    !imperialStop.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Age transition] Imperial villager stop gate must not depend on Castle Cataphract demand",
+  );
 
   const imperialExecutor = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
-      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(goal bt-imperial-commitment-goal 1)") &&
       rule.includes("(research imperial-age)"),
   );
   assert.ok(
@@ -3366,6 +3370,10 @@ function validateAgeTransitionQueueGates(rules) {
   assert.ok(
     imperialExecutor.includes("(can-research-with-escrow imperial-age)"),
     "[Age transition] Imperial research executor lost its engine feasibility guard",
+  );
+  assert.ok(
+    !imperialExecutor.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Age transition] Imperial research executor must not depend on Castle Cataphract demand",
   );
 }
 
@@ -3402,9 +3410,10 @@ function validateAgeBankPriority(rules) {
   const imperialBank = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
-      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
       rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
-      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)"),
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)") &&
+      rule.includes("(set-goal bt-imperial-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
   );
   assert.ok(
     imperialBank,
@@ -3413,6 +3422,10 @@ function validateAgeBankPriority(rules) {
   assert.ok(
     !imperialBank.includes("(goal bt-resource-mode-goal 0)"),
     "[Age banking] Imperial bank must override transient resource-mode arbitration at 50 villagers",
+  );
+  assert.ok(
+    !imperialBank.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Age banking] Imperial bank must not be gated by Castle Cataphract demand",
   );
 }
 
