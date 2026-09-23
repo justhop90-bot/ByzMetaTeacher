@@ -353,6 +353,14 @@ try {
       ),
     },
     {
+      name: "bare-logistica-tech-slot-rejected-without-defconst",
+      expected: "site-specific engine identifier",
+      source: baseline.replace(
+        "(defconst ri-logistica 61)",
+        "(defconst ri-logistica-invalid-placeholder 61)",
+      ),
+    },
+    {
       name: "unknown-timer",
       expected: "[Timer]",
       source: baseline.replace(
