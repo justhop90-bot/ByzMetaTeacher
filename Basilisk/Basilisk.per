@@ -2439,10 +2439,19 @@
     (strategic-number sn-resource-control != imperial-age)
     (can-train villager)
     (population-headroom > 0)
-    (not (can-research-with-escrow feudal-age))
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
+    ; Do not deadlock below the age-up villager threshold merely because
+    ; the bank is already research-feasible. Age authority still owns the
+    ; actual research action once the threshold is reached.
+    (not (and
+        (unit-type-count villager >= bt-feudal-villagers)
+        (can-research-with-escrow feudal-age)
+    ))
+    (not (and
+        (unit-type-count villager >= bt-castle-villagers)
+        (or
+            (can-research-with-escrow castle-age)
+            (goal bt-castle-commitment-goal 1)
+        )
     ))
     (or
         (not (can-research-with-escrow imperial-age))
