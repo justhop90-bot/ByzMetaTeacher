@@ -5243,16 +5243,21 @@ town-center >= 2)))))
     (set-goal bt-imperial-prereq-demand-goal 1)
 )
 
-; Hold the demand until the engine proves Imperial researchable or Castle exists.
+; Clear prerequisite demand when the world already proves Imperial/Castle completion.
 (defrule
     (goal bt-imperial-prereq-demand-goal 1)
     (or
         (current-age >= imperial-age)
-        (or
-            (building-type-count-total castle >= 1)
-            (can-research-with-escrow imperial-age)
-        )
+        (building-type-count-total castle >= 1)
     )
+=>
+    (set-goal bt-imperial-prereq-demand-goal 0)
+)
+
+; Clear prerequisite demand when the engine proves Imperial is immediately researchable.
+(defrule
+    (goal bt-imperial-prereq-demand-goal 1)
+    (can-research-with-escrow imperial-age)
 =>
     (set-goal bt-imperial-prereq-demand-goal 0)
 )
