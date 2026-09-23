@@ -583,17 +583,17 @@
 (defconst bt-feudal-villagers 21)
 (defconst bt-castle-villagers 30)
 (defconst bt-imperial-villagers 50)
-; Eco-tech maturity witnesses tuned to common stock/community timing.
+; Castle eco maturity witnesses: early Wheelbarrow/Bow Saw at 30 villagers, Hand Cart by mid-Castle at 36, and Heavy Plow after an 8-farm base.
 (defconst bt-wheelbarrow-feudal-villagers 30)
-(defconst bt-wheelbarrow-castle-villagers 40)
-(defconst bt-bow-saw-villagers 32)
-(defconst bt-hand-cart-villagers 45)
+(defconst bt-wheelbarrow-castle-villagers 30)
+(defconst bt-bow-saw-villagers 30)
+(defconst bt-hand-cart-villagers 36)
 (defconst bt-two-man-saw-villagers 45)
 ; Two-Man Saw also requires a real wood economy. villager-wood is the engine/UserPatch
 ; lumberjack task wildcard, not a guessed unit id.
 (defconst bt-two-man-saw-lumberjacks 10)
 ; Crop Rotation is deliberately gated by a mature completed-farm base instead of generic Imperial affordability.
-(defconst bt-crop-rotation-farm-threshold 12)
+(defconst bt-crop-rotation-farm-threshold 8)
 
 (defconst bt-imperial-food 667)
 (defconst bt-imperial-gold 536)
@@ -2690,6 +2690,8 @@
         (or
         (current-age >= imperial-age)
         (or
+        (can-research-with-escrow imperial-age)
+        (or
         (not
             (or
                 (goal strategy-goal bt-strategy-boom)
@@ -2699,6 +2701,7 @@
         (or
         (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-1)
         (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+            )
             )
             )
             )
@@ -3423,8 +3426,8 @@
 ; 11A. CASTLE FARM TECHNOLOGY
 ;================================================================
 ; Heavy Plow is the Castle-age continuation of the Mill farm lifecycle.
-; Demand persists once the farm economy is mature; Imperial transition
-; ownership remains the explicit opportunity-cost boundary.
+; Demand starts on a modest 8-farm base so the upgrade arrives before the
+; economy has already spent a pile of wood compensating for the missing tech.
 (defrule
     (goal bt-heavy-plow-demand-goal 0)
     (current-age == castle-age)
@@ -6046,7 +6049,7 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
 ; Wheelbarrow is a late-Feudal / early-Castle eco upgrade, not a
 ; three-TC-only luxury.  The Feudal path uses a 30-villager maturity
 ; witness but yields to an immediately executable Castle transition.
-; The Castle path becomes valid at two TCs or 40 villagers.
+; The Castle path becomes valid at two TCs or 30 villagers.
 (defrule
     (goal bt-wheelbarrow-demand-goal 0)
     (goal strategy-goal bt-strategy-boom)
@@ -6234,8 +6237,7 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
 ;
 ; Hand Cart is a late-Castle economic investment. Wheelbarrow must be
 ; complete, and the controller must show a mature BOOM economy through
-; either three Town Centers or the existing 50-villager Imperial-age
-; threshold. Do not spend the Castle economy's Food/Wood on Hand Cart
+; either three Town Centers or 36 villagers. Do not spend the Castle economy's Food/Wood on Hand Cart
 ; while the existing Imperial-bank-prep state owns that priority.
 ;
 ; The existing Imperial feasibility veto also prevents an immediate
