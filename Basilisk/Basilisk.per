@@ -533,6 +533,10 @@
 (defconst bt-castle-commitment-goal 693)
 ; Feudal eco window hold: 1 means Horse Collar or Double-Bit Axe can execute now.
 (defconst bt-feudal-eco-hold-goal 694)
+; Villager hygiene QoL state: current attacker player and TC defense point.
+(defconst bt-villager-defense-raider-player-goal 695)
+(defconst bt-villager-defense-self-player-goal 696)
+(defconst bt-villager-defense-point-goal 697)
 (defconst bt-natural-food-stable 0)
 (defconst bt-natural-food-transition 1)
 (defconst bt-natural-food-depleted 2)
@@ -2710,7 +2714,9 @@
 ;================================================================
 ; Q: "How do I prevent a population-cap stall?"
 (defrule
-    (housing-headroom <= 4)
+    ; Keep one house ahead of the normal four-headroom trigger so fast villager
+    ; production and woodline expansions do not hit the population cap.
+    (housing-headroom <= 5)
     (up-pending-objects c: house == 0)
     (can-build house)
 =>
@@ -2735,6 +2741,85 @@
 =>
     (build mining-camp)
 )
+
+;----------------------------------------------------------------
+; VILLAGER / DROPSITE HYGIENE
+; Community-native maintenance rules. These are capability repairs only:
+; they do not create a second economic allocator.
+;----------------------------------------------------------------
+
+; 1. WOOD DROPSITE REFRESH
+; Keep wood walking distance bounded once a usable forest is actually known.
+(defrule
+    (strategic-number sn-wood-gatherer-percentage > 0)
+    (resource-found wood)
+    (dropsite-min-distance wood > 8)
+    (building-type-count-total lumber-camp < 4)
+    (up-pending-objects c: lumber-camp == 0)
+    (can-build lumber-camp)
+=>
+    (build lumber-camp)
+)
+
+; 2. GOLD DROPSITE REFRESH
+(defrule
+    (strategic-number sn-gold-gatherer-percentage > 0)
+    (resource-found gold)
+    (dropsite-min-distance gold > 8)
+    (building-type-count-total mining-camp < 3)
+    (up-pending-objects c: mining-camp == 0)
+    (can-build mining-camp)
+=>
+    (build mining-camp)
+)
+
+; 3. STONE DROPSITE REFRESH
+(defrule
+    (strategic-number sn-stone-gatherer-percentage > 0)
+    (resource-found stone)
+    (dropsite-min-distance stone > 8)
+    (building-type-count-total mining-camp < 3)
+    (up-pending-objects c: mining-camp == 0)
+    (can-build mining-camp)
+=>
+    (build mining-camp)
+)
+
+; 4. SMALL SCOUT-RAID VILLAGER DEFENSE
+; Find the attacking player first so the remote search is target-specific.
+; Only 1-2 enemy scout-cavalry-line units trigger this reflex. Six nearby
+; villagers are enough to discourage a tiny raid without creating a standing
+; villager-combat system.
+(defrule
+    (up-enemy-units-in-town >= 1)
+    (players-unit-type-count any-enemy scout-cavalry-line >= 1)
+    (players-unit-type-count any-enemy scout-cavalry-line <= 2)
+    (unit-type-count villager >= 6)
+=>
+    (up-find-next-player enemy find-attacker bt-villager-defense-raider-player-goal)
+)
+
+(defrule
+    (goal bt-villager-defense-raider-player-goal > 0)
+    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)
+    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line <= 2)
+=>
+    (up-full-reset-search)
+    (up-reset-filters)
+    (up-find-local c: town-center c: 1)
+    (up-set-target-object search-local c: 0)
+    (up-get-point position-object bt-villager-defense-point-goal)
+    (up-reset-search 1 1 0 0)
+    (up-set-target-point bt-villager-defense-point-goal)
+    (up-filter-distance c: -1 c: 10)
+    (up-find-local c: villager-class c: 6)
+    (up-get-fact player-number 0 bt-villager-defense-self-player-goal)
+    (up-modify-sn sn-focus-player-number g:= bt-villager-defense-raider-player-goal)
+    (up-find-remote c: scout-cavalry-line c: 2)
+    (up-target-objects 0 action-default -1 stance-defensive)
+    (up-modify-sn sn-focus-player-number g:= bt-villager-defense-self-player-goal)
+)
+
 
 ;----------------------------------------------------------------
 ; 11. MILL FOOD-INFRASTRUCTURE LIFECYCLE
