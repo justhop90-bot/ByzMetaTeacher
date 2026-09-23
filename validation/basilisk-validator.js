@@ -1967,11 +1967,11 @@ function validateDoubleBitAxeLifecycle(rules) {
     );
     assert.ok(
       releaseText.includes("(not (food-amount >= bt-double-bit-axe-food-buffer))"),
-      "[DBA lifecycle] demand release must preserve the 900 food buffer",
+      "[DBA lifecycle] demand release must preserve the configured food buffer",
     );
     assert.ok(
       releaseText.includes("(not (wood-amount >= bt-double-bit-axe-wood-buffer))"),
-      "[DBA lifecycle] demand release must preserve the 225 wood buffer",
+      "[DBA lifecycle] demand release must preserve the configured wood buffer",
     );
     assert.ok(
       releaseText.includes("(up-research-status c: ri-double-bit-axe >= research-pending)"),
