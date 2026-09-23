@@ -68,6 +68,98 @@ try {
   )?.[0];
   assert.ok(timerEnable, "[Self-test] timer signature missing");
 
+
+  function setNumericDefconst(sourceText, name, value) {
+    const marker = "(defconst " + name + " ";
+    const start = sourceText.indexOf(marker);
+    assert.notEqual(
+      start,
+      -1,
+      "[Self-test] missing defconst for " + name,
+    );
+    const end = sourceText.indexOf(")", start);
+    assert.notEqual(end, -1, "[Self-test] malformed defconst for " + name);
+    return (
+      sourceText.slice(0, start) +
+      "(defconst " + name + " " + value + ")" +
+      sourceText.slice(end + 1)
+    );
+  }
+
+  const boundaryPasses = [
+    {
+      name: "up-get-point-base-15998-passes",
+      source: setNumericDefconst(
+        baseline,
+        "bt-siege-tower-wall-point-goal",
+        15998,
+      ),
+    },
+    {
+      name: "up-get-search-state-base-15996-passes",
+      source: setNumericDefconst(
+        baseline,
+        "bt-bombard-trebuchet-search-state-goal",
+        15996,
+      ),
+    },
+    {
+      name: "up-get-cost-delta-base-15996-passes",
+      source: setNumericDefconst(
+        baseline,
+        "bt-stone-mining-bank-delta-food-goal",
+        15996,
+      ),
+    },
+    {
+      name: "up-setup-cost-data-base-15996-passes",
+      source: setNumericDefconst(
+        baseline,
+        "bt-bow-saw-bank-cost-goal",
+        15996,
+      ),
+    },
+  ];
+
+  const boundaryFailures = [
+    {
+      name: "up-get-point-base-15999-fails",
+      expected: "[AIRef goal-output]",
+      source: setNumericDefconst(
+        baseline,
+        "bt-siege-tower-wall-point-goal",
+        15999,
+      ),
+    },
+    {
+      name: "up-get-search-state-base-15997-fails",
+      expected: "[AIRef goal-output]",
+      source: setNumericDefconst(
+        baseline,
+        "bt-bombard-trebuchet-search-state-goal",
+        15997,
+      ),
+    },
+    {
+      name: "up-get-cost-delta-base-15997-fails",
+      expected: "[AIRef goal-output]",
+      source: setNumericDefconst(
+        baseline,
+        "bt-stone-mining-bank-delta-food-goal",
+        15997,
+      ),
+    },
+    {
+      name: "up-setup-cost-data-base-15997-fails",
+      expected: "[AIRef goal-output]",
+      source: setNumericDefconst(
+        baseline,
+        "bt-bow-saw-bank-cost-goal",
+        15997,
+      ),
+    },
+  ];
+
   const mutations = [
     {
       name: "unknown-duc-identifier",
@@ -182,6 +274,47 @@ try {
     },
   ];
 
+
+  const boundaryPassReports = [];
+  for (const boundary of boundaryPasses) {
+    const result = runValidator(boundary.source, boundary.name);
+    assert.equal(
+      result.status,
+      0,
+      "[Self-test] legal AIRef output boundary unexpectedly failed: " +
+        boundary.name +
+        "\n" +
+        result.output,
+    );
+    boundaryPassReports.push({
+      name: boundary.name,
+      status: result.status,
+    });
+  }
+
+  const boundaryFailureReports = [];
+  for (const boundary of boundaryFailures) {
+    const result = runValidator(boundary.source, boundary.name);
+    assert.notEqual(
+      result.status,
+      0,
+      "[Self-test] illegal AIRef output boundary unexpectedly passed: " +
+        boundary.name,
+    );
+    assert.ok(
+      result.output.includes(boundary.expected),
+      "[Self-test] illegal boundary " +
+        boundary.name +
+        " failed without the expected diagnostic " +
+        boundary.expected,
+    );
+    boundaryFailureReports.push({
+      name: boundary.name,
+      status: result.status,
+      diagnostic: boundary.expected,
+    });
+  }
+
   const reports = [];
   for (const mutation of mutations) {
     const result = runValidator(mutation.source, mutation.name);
@@ -211,6 +344,8 @@ try {
         baseline: "PASS",
         stringSafety: "PASS",
         mutationFailures: reports,
+        boundaryPasses: boundaryPassReports,
+        boundaryFailures: boundaryFailureReports,
       },
       null,
       2,
