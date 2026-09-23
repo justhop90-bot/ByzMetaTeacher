@@ -1318,21 +1318,16 @@ function normalizeAIRefTypedOperands(args, parameters) {
     if (
       parameter.name !== "typeOp" &&
       typeof first === "string" &&
-      AIREF_TYPE_PREFIXES.has(first) &&
-      cursor + 1 < args.length
+      AIREF_TYPE_PREFIXES.has(first)
     ) {
-      normalized.push({
-        value: args[cursor + 1],
-        typePrefix: first,
-      });
-      cursor += 2;
-    } else {
-      normalized.push({
-        value: first,
-        typePrefix: null,
-      });
-      cursor += 1;
+      return null;
     }
+
+    normalized.push({
+      value: first,
+      typePrefix: null,
+    });
+    cursor += 1;
   }
 
   if (cursor !== args.length) return null;
