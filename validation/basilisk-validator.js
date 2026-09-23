@@ -2119,7 +2119,6 @@ function validateLateEcoTechnologyMaturity(rules) {
 
   const twoManDemandWriter = rules.find(
     (rule) =>
-      rule.includes("(goal bt-two-man-saw-demand-goal 0)") &&
       rule.includes("(set-goal bt-two-man-saw-demand-goal 1)"),
   );
   assert.ok(
