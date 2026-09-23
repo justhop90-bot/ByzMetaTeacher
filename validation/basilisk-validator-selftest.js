@@ -467,18 +467,33 @@ try {
     {
       name: "scouting-home-loop-without-target-fallback-rejected",
       expected: "[Scouting lifecycle]",
-      source: baseline.replace(
-        "        (players-building-count target-player <= 0)\n",
-        "",
-      ),
+      source: (() => {
+        const witness =
+          "        (players-building-count target-player <= 0)\n";
+        const ruleNeedle =
+          "(up-send-scout bt-land-explore-group scout-flank)";
+        const ruleStart = baseline.lastIndexOf("(defrule", baseline.indexOf(ruleNeedle));
+        const ruleEnd = baseline.indexOf("\n)", baseline.indexOf(ruleNeedle)) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] home scouting rule missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        assert.ok(rule.includes(witness), "[Self-test] home scouting target fallback witness missing");
+        return baseline.slice(0, ruleStart) + rule.replace(witness, "") + baseline.slice(ruleEnd);
+      })(),
     },
     {
       name: "scouting-enemy-loop-without-home-grace-rejected",
       expected: "[Scouting lifecycle]",
-      source: baseline.replace(
-        "    (game-time >= bt-scout-home-grace)\n",
-        "    (game-time >= 120)\n",
-      ),
+      source: (() => {
+        const witness = "    (game-time >= bt-scout-home-grace)\n";
+        const ruleNeedle =
+          "(up-send-scout bt-land-explore-group scout-enemy)";
+        const ruleStart = baseline.lastIndexOf("(defrule", baseline.indexOf(ruleNeedle));
+        const ruleEnd = baseline.indexOf("\n)", baseline.indexOf(ruleNeedle)) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] enemy scouting rule missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        assert.ok(rule.includes(witness), "[Self-test] enemy scouting home-grace witness missing");
+        return baseline.slice(0, ruleStart) + rule.replace(witness, "    (game-time >= 120)\n") + baseline.slice(ruleEnd);
+      })(),
     },
     {
       name: "crop-rotation-without-mature-farm-base-rejected",
