@@ -160,6 +160,79 @@ try {
     },
   ];
 
+  function buildRuleWithElementCount(elementCount) {
+    assert.ok(
+      elementCount >= 2,
+      "[Self-test] element-count fixture requires at least one fact and one action",
+    );
+    const facts = Array(elementCount - 1)
+      .fill("(true)")
+      .join("\n    ");
+    return (
+      baseline +
+      "\n(defrule\n    " +
+      facts +
+      "\n=>\n    (disable-self)\n)\n"
+    );
+  }
+
+  const ruleLengthCases = [
+    {
+      name: "rule-elements-31-pass",
+      expectedStatus: 0,
+      source: buildRuleWithElementCount(31),
+    },
+    {
+      name: "rule-elements-32-pass",
+      expectedStatus: 0,
+      source: buildRuleWithElementCount(32),
+    },
+    {
+      name: "rule-elements-33-fail",
+      expectedStatus: 1,
+      expected: "[Rule too long]",
+      source: buildRuleWithElementCount(33),
+    },
+    {
+      name: "complex-single-line-defrule-151-fail",
+      expectedStatus: 1,
+      expected: "[Complex single-line rule]",
+      source:
+        baseline.replace(
+          "(defrule\n    (true)\n=>\n    (disable-self)\n)",
+          "(defrule (true)" +
+            " ".repeat(151) +
+            "=> (disable-self))",
+        ),
+    },
+  ];
+
+  const ruleLengthReports = [];
+  for (const testCase of ruleLengthCases) {
+    const result = runValidator(testCase.source, testCase.name);
+    assert.equal(
+      result.status,
+      testCase.expectedStatus,
+      "[Self-test] unexpected rule-length result: " +
+        testCase.name +
+        "\n" +
+        result.output,
+    );
+    if (testCase.expected) {
+      assert.ok(
+        result.output.includes(testCase.expected),
+        "[Self-test] rule-length mutation " +
+          testCase.name +
+          " missed diagnostic " +
+          testCase.expected,
+      );
+    }
+    ruleLengthReports.push({
+      name: testCase.name,
+      status: result.status,
+    });
+  }
+
   const mutations = [
     {
       name: "unknown-duc-identifier",
@@ -409,6 +482,7 @@ try {
         mutationFailures: reports,
         boundaryPasses: boundaryPassReports,
         boundaryFailures: boundaryFailureReports,
+        ruleLengthCases: ruleLengthReports,
         schemaMismatchClasses: [
           "command-arity-mismatch",
           "command-family-mismatch",
