@@ -5489,7 +5489,10 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-boom)
-    (building-type-count-total town-center >= 2)
+    (or
+        (building-type-count-total town-center >= 2)
+        (unit-type-count villager >= bt-bow-saw-villagers)
+    )
     (not (can-research-with-escrow imperial-age))
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -5528,7 +5531,7 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
     (goal bt-bow-saw-demand-goal 1)
     (goal bt-research-lumber-camp-claim-goal 0)
     (not
-            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (building-type-count-total town-center >= 2) (and (not (can-research-with-escrow imperial-age)) (and (or
+            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (or (building-type-count-total town-center >= 2) (unit-type-count villager >= bt-bow-saw-villagers)) (and (not (can-research-with-escrow imperial-age)) (and (or
                     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
                     (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal
 bt-bow-saw-bank-delta-gold-goal >= 0))))
