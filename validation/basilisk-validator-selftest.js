@@ -361,6 +361,14 @@ try {
       ),
     },
     {
+      name: "unknown-symbolic-const-value-rejected",
+      expected: "undocumented AIRef value",
+      source: baseline.replace(
+        "(set-goal bt-research-cataphract-package-goal ri-logistica)",
+        "(set-goal bt-research-cataphract-package-goal definitely-not-a-const)",
+      ),
+    },
+    {
       name: "unknown-timer",
       expected: "[Timer]",
       source: baseline.replace(
