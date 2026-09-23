@@ -24,7 +24,7 @@ The validator deliberately checks source semantics, not just parser cleanliness.
 
 When extending the validator, keep it cheap and native to Node's standard library. Prefer exact stable signatures, explicit source-order assertions, small deterministic policy models for transition matrices, and direct lifecycle invariants. Do not build an AST framework, simulation engine, or generic rule parser unless the controller develops a concrete failure that requires one. Keep the checks anchored to actual AoE2 engine constraints and Basilisk lifecycle boundaries. The validator is a guard rail around the .per bot, not a second bot.
 
-Known handoff baseline from the current repair cycle: the legacy validator returned PASS against the Basilisk controller with 786 parsed rules and controller content SHA `15d7855863ed83dd42a9d2fbcaee55501e3721f4`. That result validates the fetched source under the validator; it is not a substitute for in-game/replay acceptance.
+Current source baseline: Basilisk/Basilisk.per is at controller content SHA `505b0ca5cc11d6936a583a7406a5a55059e0673d` with 786 parsed rules. Source-level validation of the current controller reports a 244-character maximum line, a 32-element maximum rule size, and zero unresolved identifiers in the validator's supported engine-facing slots. The front-door validator source itself compiles cleanly after the Node shebang is handled as Node expects. A full end-to-end spawned run of the new front door was not executed in this environment, so this evidence is intentionally not presented as a game/runtime PASS.
 
 For the next ChatGPT session: read this file first, then `Basilisk/Lifecycle-Audit-Specification.md`, then run `node validation/basilisk-validator.js` before making lifecycle claims. Treat a failing assertion as a broken wire until the controller source proves otherwise. Do not weaken the validator merely to make a patch pass.
 
@@ -39,6 +39,8 @@ Three engine-hygiene diagnostics are now explicit and intentionally named after 
 
 The validator also treats 255 characters as the source-line ceiling and keeps the separate line-too-long diagnostic distinct from the 32-element rule limit.
 
+
+### Existing strictness gates
 
 1. Engine-limit enforcement now rejects more than 10,000 rules, more than 32 elements in a DE rule, lines over 255 characters, and numeric timer IDs outside 1..50. Basilisk had 13 timer constants assigned above 50; those were reassigned to unused slots within the documented DE range before this gate was enabled.
 2. Logical operators are now checked exactly: `not` takes one operand; `and`, `nand`, `nor`, `or`, `xor`, and `xnor` take exactly two. Nested forms remain mandatory for larger boolean expressions.
