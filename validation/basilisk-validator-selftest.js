@@ -391,6 +391,22 @@ try {
       ),
     },
     {
+      name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
+      expected: "[DBA lifecycle]",
+      source: (() => {
+        const pendingWitness =
+          "(up-research-status c: ri-double-bit-axe >=\nresearch-pending)";
+        assert.ok(
+          baseline.includes(pendingWitness),
+          "[Self-test] DBA pending-state witness missing from baseline",
+        );
+        return baseline.replace(
+          pendingWitness,
+          "(or (can-research-with-escrow castle-age) " + pendingWitness + ")",
+        );
+      })(),
+    },
+    {
       name: "castle-cataphract-demand-cannot-block-ready-imperial",
       expected: "[Castle-Cataphract/Imperial handoff]",
       source: baseline.replace(
@@ -644,6 +660,7 @@ try {
           "farm-raw-wood-gate-rejected-with-escrow",
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
+          "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
         ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
