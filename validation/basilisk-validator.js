@@ -524,6 +524,299 @@ function validateIdentifiers(sourceText, repoRootPath) {
 
 
 
+
+function validateAIRefCommandVocabulary(sourceText, rules, repoRootPath) {
+  const inventoryPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-command-inventory.json",
+  );
+  assert.ok(
+    fs.existsSync(inventoryPath),
+    "[AIRef command] command inventory is missing: " + inventoryPath,
+  );
+
+  let registry;
+  try {
+    registry = JSON.parse(fs.readFileSync(inventoryPath, "utf8"));
+  } catch (error) {
+    assert.fail(
+      "[AIRef command] could not parse command inventory " +
+        inventoryPath +
+        ": " +
+        error.message,
+    );
+  }
+
+  assert.equal(
+    registry?.metadata?.source,
+    "https://airef.github.io/commands/commands-index.html",
+    "[AIRef command] command inventory is not anchored to the AIRef command index",
+  );
+  assert.ok(
+    registry?.metadata?.source_blob_sha,
+    "[AIRef command] command inventory is missing the AIRef source blob SHA",
+  );
+
+  const commands = Array.isArray(registry.commands) ? registry.commands : [];
+  assert.ok(commands.length > 0, "[AIRef command] command inventory contains no commands");
+
+  const byName = new Map();
+  const duplicates = [];
+  for (const command of commands) {
+    assert.ok(
+      typeof command.name === "string" &&
+        typeof command.type === "string" &&
+        typeof command.version === "string",
+      "[AIRef command] every command entry must contain name/type/version",
+    );
+    if (byName.has(command.name)) duplicates.push(command.name);
+    byName.set(command.name, command);
+  }
+  assert.equal(
+    duplicates.length,
+    0,
+    "[AIRef command] duplicate command names in registry: " +
+      [...new Set(duplicates)].join(", "),
+  );
+
+  const logicalOperators = new Set([
+    "and",
+    "nand",
+    "nor",
+    "not",
+    "or",
+    "xor",
+    "xnor",
+  ]);
+  const failures = [];
+  const used = new Set();
+
+  for (let index = 0; index < rules.length; index += 1) {
+    const rule = rules[index];
+    const arrow = rule.indexOf("=>");
+    assert.notEqual(arrow, -1, "[AIRef command] rule " + index + " has no => separator");
+
+    for (const side of [
+      { role: "fact", text: rule.slice(0, arrow) },
+      { role: "action", text: rule.slice(arrow + 2) },
+    ]) {
+      for (const match of side.text.matchAll(/\(([A-Za-z][A-Za-z0-9_-]*)\b/g)) {
+        const name = match[1];
+        if (name === "defrule" || name === "defconst") continue;
+        used.add(name);
+        const command = byName.get(name);
+
+        if (!command) {
+          failures.push({
+            kind: "unknown-command",
+            name,
+            role: side.role,
+            rule: index + 1,
+          });
+          continue;
+        }
+        if (command.type === "Fact" && side.role !== "fact") {
+          failures.push({
+            kind: "fact-used-as-action",
+            name,
+            role: side.role,
+            rule: index + 1,
+          });
+        }
+        if (command.type === "Action" && side.role !== "action") {
+          failures.push({
+            kind: "action-used-as-fact",
+            name,
+            role: side.role,
+            rule: index + 1,
+          });
+        }
+        if (
+          command.type === "Other" &&
+          side.role === "action" &&
+          !logicalOperators.has(name)
+        ) {
+          failures.push({
+            kind: "other-command-in-action-side",
+            name,
+            role: side.role,
+            rule: index + 1,
+          });
+        }
+        if (
+          command.type === "Other" &&
+          side.role === "fact" &&
+          !logicalOperators.has(name)
+        ) {
+          failures.push({
+            kind: "unsupported-other-command",
+            name,
+            role: side.role,
+            rule: index + 1,
+          });
+        }
+      }
+    }
+  }
+
+  assert.equal(
+    failures.length,
+    0,
+    "[AIRef command] " +
+      failures.length +
+      " command contract failure(s): " +
+      failures
+        .slice(0, 12)
+        .map(
+          (failure) =>
+            failure.kind +
+            " '" +
+            failure.name +
+            "' in " +
+            failure.role +
+            " side of rule " +
+            failure.rule,
+        )
+        .join("; "),
+  );
+
+  const versionCounts = {};
+  for (const name of used) {
+    const version = byName.get(name)?.version;
+    if (!version) continue;
+    versionCounts[version] = (versionCounts[version] ?? 0) + 1;
+  }
+
+  return {
+    commandCount: commands.length,
+    usedCommandCount: used.size,
+    sourceBlobSha: registry.metadata.source_blob_sha,
+    versionCounts,
+  };
+}
+
+function validateAIRefGoalOutputSafety(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+  const numericDefconsts = new Map(
+    [...sanitized.matchAll(
+      /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
+    )].map((match) => [match[1], Number(match[2])]),
+  );
+
+  const specs = [
+    {
+      command: "up-get-point",
+      regex: /\(up-get-point\s+\S+\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)\)/g,
+      outputs: 2,
+      maxBase: 15999,
+      forbidden: new Set([511, 512]),
+    },
+    {
+      command: "up-get-search-state",
+      regex: /\(up-get-search-state\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)\)/g,
+      outputs: 4,
+      maxBase: 15997,
+      forbidden: new Set([509, 510, 511, 512]),
+    },
+    {
+      command: "up-get-cost-delta",
+      regex: /\(up-get-cost-delta\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)\)/g,
+      outputs: 4,
+      maxBase: 15997,
+      forbidden: new Set([509, 510, 511, 512]),
+    },
+    {
+      command: "up-setup-cost-data",
+      regex: /\(up-setup-cost-data\s+\S+\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)\)/g,
+      outputs: 4,
+      maxBase: 15997,
+      forbidden: new Set([509, 510, 511, 512]),
+    },
+  ];
+
+  for (const spec of specs) {
+    for (const match of sanitized.matchAll(spec.regex)) {
+      const token = match[1];
+      const line = sanitized.slice(0, match.index).split("\n").length;
+      const base = /^-?\d+$/.test(token)
+        ? Number(token)
+        : numericDefconsts.get(token);
+
+      assert.ok(
+        base !== undefined,
+        "[AIRef goal-output] " +
+          spec.command +
+          " uses undefined/non-numeric output goal '" +
+          token +
+          "' at line " +
+          line,
+      );
+      assert.ok(
+        base >= 41 && base <= spec.maxBase,
+        "[AIRef goal-output] " +
+          spec.command +
+          " output block starts at goal " +
+          token +
+          "=" +
+          base +
+          " at line " +
+          line +
+          "; " +
+          spec.outputs +
+          " consecutive goals require a safe base in 41.." +
+          spec.maxBase,
+      );
+      assert.ok(
+        !spec.forbidden.has(base),
+        "[AIRef goal-output] " +
+          spec.command +
+          " starts a " +
+          spec.outputs +
+          "-goal output block at reserved tail goal " +
+          base +
+          " at line " +
+          line,
+      );
+    }
+  }
+}
+
+function validateAIRefDucSearchBounds(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+
+  for (const match of sanitized.matchAll(
+    /\(up-find-local\b(?:[^()]|\([^()]*\))*\s+c:\s+(\d+)\)/g,
+  )) {
+    const value = Number(match[1]);
+    const line = sanitized.slice(0, match.index).split("\n").length;
+    assert.ok(
+      value >= 0 && value <= 240,
+      "[AIRef DUC] up-find-local requests " +
+        value +
+        " objects at line " +
+        line +
+        "; AIRef local search list limit is 240",
+    );
+  }
+
+  for (const match of sanitized.matchAll(
+    /\(up-find-remote\b(?:[^()]|\([^()]*\))*\s+c:\s+(\d+)\)/g,
+  )) {
+    const value = Number(match[1]);
+    const line = sanitized.slice(0, match.index).split("\n").length;
+    assert.ok(
+      value >= 0 && value <= 40,
+      "[AIRef DUC] up-find-remote requests " +
+        value +
+        " objects at line " +
+        line +
+        "; AIRef remote search list limit is 40",
+    );
+  }
+}
+
 function validateEngineActionContracts(rules, objectLinesByName) {
   for (let index = 0; index < rules.length; index += 1) {
     const rule = rules[index];
@@ -814,6 +1107,9 @@ const rules = extractRules(source);
 assert.ok(rules.length > 0, "[Parser] no defrule forms found");
 const engineLimitReport = validateEngineLimits(source, rules);
 const identifierReport = validateIdentifiers(source, repoRoot);
+const commandReport = validateAIRefCommandVocabulary(source, rules, repoRoot);
+validateAIRefGoalOutputSafety(source);
+validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
@@ -872,6 +1168,10 @@ console.log(JSON.stringify({
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,
   maxRuleIndex: engineLimitReport.worstRule,
+  airefCommandCount: commandReport.commandCount,
+  airefCommandsUsed: commandReport.usedCommandCount,
+  airefCommandSourceBlobSha: commandReport.sourceBlobSha,
+  airefCommandVersionCounts: commandReport.versionCounts,
   identifierSlots: identifierReport.checkedSlots,
   identifierSupplements: identifierReport.engineSupplements,
 }, null, 2));
