@@ -1924,6 +1924,83 @@ function validateFarmEscrowContracts(rules) {
   }
 }
 
+function validateDoubleBitAxeLifecycle(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  const demandWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-double-bit-axe-demand-goal 0)") &&
+      rule.includes("(set-goal bt-double-bit-axe-demand-goal 1)"),
+  );
+  assert.ok(
+    demandWriter,
+    "[DBA lifecycle] Double-Bit Axe demand writer is missing",
+  );
+  const demandText = normalize(demandWriter);
+  for (const prerequisite of [
+    "(current-age == feudal-age)",
+    "(food-amount >= bt-double-bit-axe-food-buffer)",
+    "(wood-amount >= bt-double-bit-axe-wood-buffer)",
+    "(up-research-status c: ri-double-bit-axe == research-available)",
+  ]) {
+    assert.ok(
+      demandText.includes(prerequisite),
+      "[DBA lifecycle] demand writer is missing prerequisite: " + prerequisite,
+    );
+  }
+
+  const releaseRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
+      rule.includes("(set-goal bt-double-bit-axe-demand-goal 0)"),
+  );
+  assert.ok(
+    releaseRules.length > 0,
+    "[DBA lifecycle] demand release rule is missing",
+  );
+
+  for (const releaseRule of releaseRules) {
+    const releaseText = normalize(releaseRule);
+    assert.ok(
+      !releaseText.includes("(can-research-with-escrow castle-age)"),
+      "[DBA lifecycle] Castle feasibility must not clear Double-Bit Axe demand before execution",
+    );
+    assert.ok(
+      releaseText.includes("(not (food-amount >= bt-double-bit-axe-food-buffer))"),
+      "[DBA lifecycle] demand release must preserve the 900 food buffer",
+    );
+    assert.ok(
+      releaseText.includes("(not (wood-amount >= bt-double-bit-axe-wood-buffer))"),
+      "[DBA lifecycle] demand release must preserve the 225 wood buffer",
+    );
+    assert.ok(
+      releaseText.includes("(up-research-status c: ri-double-bit-axe >= research-pending)"),
+      "[DBA lifecycle] demand release must clear an already-pending/researching DBA",
+    );
+  }
+
+  const executor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
+      rule.includes("(research ri-double-bit-axe)"),
+  );
+  assert.ok(
+    executor,
+    "[DBA lifecycle] Double-Bit Axe research executor is missing",
+  );
+  const executorText = normalize(executor);
+  for (const witness of [
+    "(current-age == feudal-age)",
+    "(can-research-with-escrow ri-double-bit-axe)",
+    "(goal bt-research-lumber-camp-claim-goal 0)",
+  ]) {
+    assert.ok(
+      executorText.includes(witness),
+      "[DBA lifecycle] executor is missing witness: " + witness,
+    );
+  }
+}
+
 function validateDerivedThreatStateOrdering(rules) {
   const states = [
     "bt-cavalry-threat-goal",
@@ -2271,6 +2348,7 @@ validateCastleCataphractImperialHandoff(rules);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
+validateDoubleBitAxeLifecycle(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
