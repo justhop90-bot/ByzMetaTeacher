@@ -6181,6 +6181,8 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 (defrule
     (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (goal bt-any-threat-goal 0)
     (strategic-number sn-resource-control == 0)
     (not (or
         (can-research-with-escrow castle-age)
@@ -7311,6 +7313,8 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
 (defrule
     (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (goal bt-any-threat-goal 0)
     (not (town-under-attack))
     (strategic-number sn-resource-control == 0)
     (not (or
@@ -10877,6 +10881,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (goal bt-any-threat-goal 0)
     (building-type-count blacksmith >= 1)
     (not (or
         (can-research-with-escrow castle-age)
