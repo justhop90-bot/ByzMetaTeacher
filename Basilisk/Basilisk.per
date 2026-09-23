@@ -5172,7 +5172,9 @@ town-center >= 2)))))
 )
 
 (defrule
-    (goal bt-resource-mode-goal 0)
+    ; Castle-age banking outranks transient resource-crisis modes once the
+    ; civilian threshold is reached. The 30-villager gate is the ownership
+    ; boundary; later rules may still select the final resource posture.
     (current-age == feudal-age)
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-commitment-goal 0)
@@ -5191,7 +5193,8 @@ town-center >= 2)))))
 )
 
 (defrule
-    (goal bt-resource-mode-goal 0)
+    ; Imperial-age banking outranks transient resource-crisis modes once the
+    ; civilian threshold is reached.
     (current-age == castle-age)
     (goal bt-castle-cataphract-demand-goal 0)
     (unit-type-count villager >= bt-imperial-villagers)
