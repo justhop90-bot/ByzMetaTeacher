@@ -298,7 +298,7 @@ try {
       expected: "command-typed-operand-mismatch",
       source:
         baseline +
-        "\n(defrule\n    (true)\n=>\n    (up-train 0 g: sn-resource-control)\n)\n",
+        "\n(defrule\n    (true)\n=>\n    (up-build place-normal 0 g: sn-resource-control)\n)\n",
     },
   ];
 
