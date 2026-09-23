@@ -415,9 +415,10 @@ function validateIdentifiers(sourceText, repoRootPath) {
   const engineSupplements = new Set(["siege-tower", "ri-logistica"]);
   for (const value of engineSupplements) universalValues.add(value);
 
+  const identifierSource = sanitizeStructure(sourceText);
   const failures = [];
   const check = (regex, family, label) => {
-    for (const match of sanitizeStructure(sourceText).matchAll(regex)) {
+    for (const match of identifierSource.matchAll(regex)) {
       const token = match[1];
       if (/^-?\d+$/.test(token)) continue;
       const recognized =
