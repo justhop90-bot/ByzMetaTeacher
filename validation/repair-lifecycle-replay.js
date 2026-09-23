@@ -1026,6 +1026,57 @@ const resourceModeResetIndex = ruleIndex(
   "(true)",
   "(set-goal bt-resource-mode-goal 0)",
 );
+const rangedExecutorRules = [
+  ["ri-fletching", ["(goal bt-ranged-threat-goal 1)"]],
+  ["ri-padded-archer-armor", ["(goal bt-ranged-threat-goal 1)"]],
+  ["ri-leather-archer-armor", ["(goal bt-ranged-threat-goal 1)"]],
+  ["ri-ring-archer-armor", ["(goal bt-ranged-threat-goal 1)"]],
+  ["ri-bracer", ["(goal bt-ranged-threat-goal 1)"]],
+  ["ri-crossbow", [
+    "(or",
+    "(goal strategy-goal bt-strategy-boom)",
+    "(goal strategy-goal bt-strategy-castle-power)",
+    "(goal bt-any-threat-goal 0)",
+    "(goal bt-ranged-threat-goal 0)",
+  ]],
+  ["ri-thumb-ring", [
+    "(goal bt-any-threat-goal 0)",
+    "(goal bt-ranged-threat-goal 0)",
+    "(goal bt-resource-mode-goal bt-resource-mode-castle-boom)",
+    "(goal bt-resource-mode-goal bt-resource-mode-premium-gold)",
+  ]],
+  ["ri-arbalest", [
+    "(goal strategy-goal bt-strategy-boom)",
+    "(goal bt-any-threat-goal 0)",
+    "(goal bt-ranged-threat-goal 0)",
+    "(goal unit-goal crossbowman)",
+    "(goal bt-arbalest-demand-goal 1)",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))",
+  ]],
+];
+for (const [technology, requiredPredicates] of rangedExecutorRules) {
+  const executors = rules.filter((rule) => {
+    const rendered = renderRule(rule);
+    return rendered.includes("(goal bt-research-ranged-counter-package-goal " + technology + ")") &&
+      rendered.includes("(research " + technology + ")");
+  });
+  assert.ok(
+    executors.length > 0,
+    "[Ranged executor] no research executor found for " + technology,
+  );
+  for (const rule of executors) {
+    const rendered = renderRule(rule);
+    for (const predicate of requiredPredicates) {
+      assert.ok(
+        rendered.includes(predicate),
+        "[Ranged executor] " + technology + " executor at rule index " + rules.indexOf(rule) + " lost required live gate: " + predicate,
+      );
+    }
+  }
+}
 const firstProductionRuleIndex = ruleIndex(
   "(goal bt-standing-army-demand-goal 1)",
   "(strategic-number sn-resource-control == 0)",
