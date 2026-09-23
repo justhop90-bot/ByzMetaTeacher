@@ -3244,6 +3244,35 @@ function validateEconomicResearchPackageIsolation(rules, sourceText) {
   }
 }
 
+function validateCastleEcoThresholds(sourceText) {
+  const expected = [
+    ["bt-wheelbarrow-castle-villagers", "30"],
+    ["bt-bow-saw-villagers", "30"],
+    ["bt-hand-cart-villagers", "36"],
+    ["bt-mill-second-farm-threshold-1tc", "8"],
+  ];
+  for (const [name, value] of expected) {
+    assert.ok(
+      sourceText.includes("(defconst " + name + " " + value + ")"),
+      "[Castle eco] expected early maturity threshold is missing or stale: " + name + "=" + value,
+    );
+  }
+}
+
+function validateImperialTransitionLifecycle(rules) {
+  const cataphractWithdraw = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-castle-cataphract-demand-goal 1)") &&
+      rule.includes("(set-goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(building-type-count-total castle >= 1)") &&
+      rule.includes("(can-research-with-escrow imperial-age)"),
+  );
+  assert.ok(
+    cataphractWithdraw,
+    "[Imperial transition] Cataphract capability demand must yield when Imperial Age becomes engine-executable",
+  );
+}
+
 function validateAgeTransitionQueueGates(rules) {
   const castleStop = rules.find(
     (rule) =>
