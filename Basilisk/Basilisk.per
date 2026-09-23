@@ -10423,7 +10423,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (current-age == feudal-age)
     (building-type-count blacksmith >= 1)
-    (goal bt-ranged-threat-goal 1)
     (or
         (and
             (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -10461,7 +10460,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 (defrule
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
-    (goal bt-ranged-threat-goal 1)
     (or
         (and
             (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -10496,7 +10494,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (and
-            (goal unit-goal crossbowman)
             (or
                 (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
                 (unit-type-count-total arbalester >= bt-crossbow-target-castle)
@@ -10528,7 +10525,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
                 (and
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-                    (goal bt-ranged-threat-goal 1)
                 )
             )
     (building-type-count blacksmith >= 1)
@@ -10557,7 +10553,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
                 (and
                     (unit-type-count-total archer-line >= 3)
-                    (goal bt-ranged-threat-goal 1)
                 )
             )
     (building-type-count blacksmith >= 1)
@@ -10583,7 +10578,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (and
-            (goal unit-goal crossbowman)
             (or
                 (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
                 (unit-type-count-total arbalester >= bt-crossbow-target-castle)
@@ -10615,7 +10609,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
                 (and
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
-                    (goal bt-ranged-threat-goal 1)
                 )
             )
     (building-type-count blacksmith >= 1)
@@ -10644,7 +10637,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
                 (and
                     (unit-type-count-total archer-line >= 3)
-                    (goal bt-ranged-threat-goal 1)
                 )
             )
     (building-type-count blacksmith >= 1)
