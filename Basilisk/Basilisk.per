@@ -2482,8 +2482,9 @@
     (goal bt-castle-commitment-goal 1)
     (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
     (strategic-number sn-resource-control == 0)
-    (can-research-with-escrow castle-age)
 =>
+    ; Castle commitment owns the TC bank. The research executor below keeps
+    ; the engine-native can-research-with-escrow guard for the actual action.
     (set-goal train-civ-goal -1)
 )
 
@@ -2494,8 +2495,10 @@
     (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
     (strategic-number sn-resource-control == 0)
     (goal bt-castle-cataphract-demand-goal 0)
-    (can-research-with-escrow imperial-age)
 =>
+    ; Imperial bank ownership stops civilian queue growth before the TC
+    ; research queue becomes the limiting condition. The executor below
+    ; retains the engine-native can-research-with-escrow guard.
     (set-goal train-civ-goal -1)
 )
 
