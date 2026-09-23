@@ -538,6 +538,92 @@ try {
       ),
     },
     {
+      name: "horse-collar-demand-writer-regression",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "(set-goal bt-horse-collar-demand-goal 1)";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] Horse Collar demand writer missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(needle, "(set-goal bt-horse-collar-demand-goal 0)");
+      })(),
+    },
+    {
+      name: "horse-collar-executor-package-veto-regression",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "(research ri-horse-collar)";
+        const index = baseline.indexOf(needle);
+        const ruleStart = baseline.lastIndexOf("(defrule", index);
+        const ruleEnd = baseline.indexOf("\n)", index) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Horse Collar executor missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Horse Collar executor arrow missing");
+        return baseline.slice(0, ruleStart) +
+          rule.slice(0, arrow) +
+          "    (goal bt-research-ranged-counter-package-goal 0)\n" +
+          rule.slice(arrow) +
+          baseline.slice(ruleEnd);
+      })(),
+    },
+    {
+      name: "double-bit-axe-executor-package-veto-regression",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "(research ri-double-bit-axe)";
+        const index = baseline.indexOf(needle);
+        const ruleStart = baseline.lastIndexOf("(defrule", index);
+        const ruleEnd = baseline.indexOf("\n)", index) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Double-Bit Axe executor missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Double-Bit Axe executor arrow missing");
+        return baseline.slice(0, ruleStart) +
+          rule.slice(0, arrow) +
+          "    (goal bt-research-cavalry-counter-package-goal 0)\n" +
+          rule.slice(arrow) +
+          baseline.slice(ruleEnd);
+      })(),
+    },
+    {
+      name: "horse-collar-hold-package-veto-regression",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "(goal bt-horse-collar-demand-goal 1)";
+        const index = baseline.indexOf(needle);
+        const ruleStart = baseline.lastIndexOf("(defrule", index);
+        const ruleEnd = baseline.indexOf("\n)", index) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Horse Collar hold missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Horse Collar hold arrow missing");
+        return baseline.slice(0, ruleStart) +
+          rule.slice(0, arrow) +
+          "    (goal bt-research-siege-package-goal 0)\n" +
+          rule.slice(arrow) +
+          baseline.slice(ruleEnd);
+      })(),
+    },
+    {
+      name: "double-bit-axe-hold-package-veto-regression",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "(goal bt-double-bit-axe-demand-goal 1)";
+        const index = baseline.indexOf(needle);
+        const ruleStart = baseline.lastIndexOf("(defrule", index);
+        const ruleEnd = baseline.indexOf("\n)", index) + 2;
+        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Double-Bit Axe hold missing");
+        const rule = baseline.slice(ruleStart, ruleEnd);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Double-Bit Axe hold arrow missing");
+        return baseline.slice(0, ruleStart) +
+          rule.slice(0, arrow) +
+          "    (goal bt-research-monk-package-goal 0)\n" +
+          rule.slice(arrow) +
+          baseline.slice(ruleEnd);
+      })(),
+    },
+    {
       name: "castle-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
