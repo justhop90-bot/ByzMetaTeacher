@@ -1436,6 +1436,28 @@ function validateAIRefDucStateSafety(sourceText) {
       head === "up-set-target-object"
     ) {
       const source = args[0];
+      if (head === "up-set-target-object") {
+        if (source === "search-local" && !localReady) {
+          failures.push({
+            kind: "unsafe-set-target-object",
+            command: head,
+            line,
+            message:
+              head +
+              " uses search-local before retained local search state has rebuilt that list",
+          });
+        }
+        if (source === "search-remote" && !remoteReady) {
+          failures.push({
+            kind: "unsafe-set-target-object",
+            command: head,
+            line,
+            message:
+              head +
+              " uses search-remote before retained remote search state has rebuilt that list",
+          });
+        }
+      }
       if (source === "search-local") localReady = true;
       if (source === "search-remote") remoteReady = true;
     } else if (head === "up-target-point" || head === "up-target-objects") {
