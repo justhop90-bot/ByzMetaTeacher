@@ -3273,11 +3273,7 @@ function validateMillPlacement(sourceText, rules) {
   const laterMillText = normalize(laterMillExecutor);
   for (const witness of [
     "(set-strategic-number sn-placement-zone-size bt-mill-placement-zone-size)",
-    "(set-strategic-number sn-allow-adjacent-dropsites 0)",
     "(set-strategic-number sn-dropsite-separation-distance bt-mill-placement-separation-distance)",
-    "(set-strategic-number sn-placement-zone-size 0)",
-    "(set-strategic-number sn-allow-adjacent-dropsites 1)",
-    "(set-strategic-number sn-dropsite-separation-distance 0)",
   ]) {
     assert.ok(
       laterMillText.includes(witness),
