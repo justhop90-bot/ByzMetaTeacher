@@ -667,6 +667,27 @@ try {
       })(),
     },
     {
+      name: "feudal-eco-hold-must-yield-at-castle-threshold",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "    (unit-type-count villager < bt-castle-villagers)\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] Feudal eco hold threshold witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index + needle.length);
+      })(),
+    },
+    {
+      name: "double-bit-axe-must-yield-to-castle-commitment",
+      expected: "[Feudal eco]",
+      source: (() => {
+        const needle = "    (not (goal bt-castle-commitment-goal 1))\n";
+        const searchFrom = baseline.indexOf("(research ri-double-bit-axe)");
+        const index = baseline.indexOf(needle, searchFrom);
+        assert.ok(index >= 0, "[Self-test] Double-Bit Axe Castle-commitment witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index + needle.length);
+      })(),
+    },
+    {
       name: "double-bit-axe-hold-package-veto-regression",
       expected: "[Feudal eco]",
       source: (() => {
