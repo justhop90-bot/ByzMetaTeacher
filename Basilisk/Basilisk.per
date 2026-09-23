@@ -459,7 +459,7 @@
 
 (defconst bt-attack-gather-watchdog-timer 23)
 (defconst bt-attack-gather-watchdog-seconds 30)
-(defconst bt-flush-army-floor-feudal 12)
+(defconst bt-flush-army-floor-feudal 8)
 (defconst bt-flush-army-floor-castle 20)
 (defconst bt-flush-army-floor-imperial 30)
 
@@ -8022,7 +8022,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; Stable capacity, using building-type-count-total.
 ;
 ; Controller tuning:
-;   Feudal:          6
+;   Feudal:          4
 ;   Castle:         12
 ;   Castle mature:  16
 ;   Castle late:    20
@@ -8058,7 +8058,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (current-age == feudal-age)
     (not (goal strategy-goal bt-strategy-flush))
 =>
-    (set-goal bt-standing-army-floor-goal 6)
+    (set-goal bt-standing-army-floor-goal 4)
 )
 
 (defrule
@@ -8175,9 +8175,17 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (set-goal bt-standing-knight-target-goal 0)
     (set-goal bt-standing-crossbow-target-goal 0)
 )
+(defrule (up-compare-goal bt-standing-army-floor-goal == 4) =>
+    (set-goal bt-standing-spear-target-goal 2)
+    (set-goal bt-standing-skirm-target-goal 2)
+)
 (defrule (up-compare-goal bt-standing-army-floor-goal == 6) =>
     (set-goal bt-standing-spear-target-goal 3)
     (set-goal bt-standing-skirm-target-goal 3)
+)
+(defrule (up-compare-goal bt-standing-army-floor-goal == 8) =>
+    (set-goal bt-standing-spear-target-goal 4)
+    (set-goal bt-standing-skirm-target-goal 4)
 )
 (defrule (up-compare-goal bt-standing-army-floor-goal == 12) =>
     (set-goal bt-standing-spear-target-goal 6)
