@@ -2073,6 +2073,65 @@ function validateLateEcoTechnologyMaturity(rules) {
   }
 }
 
+
+function validateVillagerHygiene(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+  const requireRule = (needle, label) => {
+    const rule = rules.find((candidate) => candidate.includes(needle));
+    assert.ok(rule, "[Villager hygiene] missing " + label);
+    return normalize(rule);
+  };
+
+  const house = requireRule("(housing-headroom <= 5)", "preemptive housing rule");
+  assert.ok(house.includes("(up-pending-objects c: house == 0)"), "[Villager hygiene] housing rule must stay pending-safe");
+  assert.ok(house.includes("(can-build house)"), "[Villager hygiene] housing rule must use engine build feasibility");
+
+  for (const resource of ["wood", "gold", "stone"]) {
+    const campType = resource === "wood" ? "lumber-camp" : "mining-camp";
+    const rule = requireRule(
+      "(dropsite-min-distance " + resource + " > 8)",
+      resource + " dropsite refresh",
+    );
+    assert.ok(
+      rule.includes("(resource-found " + resource + ")"),
+      "[Villager hygiene] " + resource + " refresh must require a found resource",
+    );
+    assert.ok(
+      rule.includes("(up-pending-objects c: " + campType + " == 0)"),
+      "[Villager hygiene] " + resource + " refresh must be pending-safe",
+    );
+    assert.ok(
+      rule.includes("(can-build " + campType + ")"),
+      "[Villager hygiene] " + resource + " refresh must use engine build feasibility",
+    );
+  }
+
+  const attacker = requireRule(
+    "(up-find-next-player enemy find-attacker bt-villager-defense-raider-player-goal)",
+    "villager scout-raid attacker discovery",
+  );
+  assert.ok(attacker.includes("(up-enemy-units-in-town >= 1)"), "[Villager hygiene] scout defense must be town-local");
+  assert.ok(attacker.includes("(players-unit-type-count any-enemy scout-cavalry-line >= 1)"), "[Villager hygiene] scout defense must require a small scout group");
+  assert.ok(attacker.includes("(players-unit-type-count any-enemy scout-cavalry-line <= 2)"), "[Villager hygiene] scout defense must stay scoped to 1-2 scouts");
+
+  const defense = requireRule(
+    "(up-target-objects 0 action-default -1 stance-defensive)",
+    "villager scout-raid defense action",
+  );
+  for (const witness of [
+    "(up-find-local c: villager-class c: 6)",
+    "(up-find-remote c: scout-cavalry-line c: 2)",
+    "(up-get-fact player-number 0 bt-villager-defense-self-player-goal)",
+    "(up-modify-sn sn-focus-player-number g:= bt-villager-defense-raider-player-goal)",
+    "(up-modify-sn sn-focus-player-number g:= bt-villager-defense-self-player-goal)",
+  ]) {
+    assert.ok(
+      defense.includes(witness),
+      "[Villager hygiene] defense action missing witness: " + witness,
+    );
+  }
+}
+
 function validateDerivedThreatStateOrdering(rules) {
   const states = [
     "bt-cavalry-threat-goal",
@@ -2422,6 +2481,7 @@ validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
+validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
