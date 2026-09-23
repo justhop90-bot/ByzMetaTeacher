@@ -47,6 +47,10 @@ The repository also carries `extracted/inventories/airef-command-schema.json` wi
 
 The schema was cross-referenced against the bundled `aoe2-ai-parser 0.1.82` laboratory package and its AIRef scraper/parser/linter. The lab is a secondary engineering reference: AIRef remains the language authority; community parser diagnostics supply practical lint categories such as command-family mismatch, typed-operand mismatch, split typed comparison, numeric-range mismatch, and retained-search DUC safety. The lab runtime is not vendored into Basilisk and does not replace game/runtime validation.
 
+## Live invalid-identifier lesson: site-specific aliases must be explicit
+
+The September 23, 2026 runtime failure at Basilisk source line 2059 exposed a validator false negative for `ri-logistica`. The standard AIRef technology inventory records Logistica as technology id 61 but has an empty `ai_name`; community .per references therefore define `(defconst ri-logistica 61)` before use. The validator had incorrectly put `ri-logistica` into `universalValues`, which made the missing runtime definition look valid in every identifier slot. That was wrong: an engine supplement is evidence that a value needs explicit local materialization, not evidence that the bare symbol is a built-in identifier. The validator now requires every site-specific engine supplement (`siege-tower`, `ri-logistica`) to be present in Basilisk `defconst`s and no longer adds them to the universal identifier allowlist. The technology-like symbol check also accepts explicit `defconst`s, while still accepting named AIRef technologies and rejecting unresolved names. The self-test now mutates out the `ri-logistica` definition and requires the new diagnostic.
+
 ## Current strictness upgrades
 
 Three engine-hygiene diagnostics are now explicit and intentionally named after the failures they prevent:
