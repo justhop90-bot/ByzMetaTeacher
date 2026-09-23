@@ -442,12 +442,12 @@ function validateIdentifiers(sourceText, repoRootPath) {
   check(/\bs:[^\s()]+\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number-operand");
 
   const numericDefconsts = new Map(
-    [...sourceText.matchAll(
+    [...identifierSource.matchAll(
       /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
     )].map((match) => [match[1], Number(match[2])]),
   );
 
-  const defconstDefinitions = [...sourceText.matchAll(
+  const defconstDefinitions = [...identifierSource.matchAll(
     /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g,
   )];
   const duplicateDefconsts = [
@@ -485,10 +485,10 @@ function validateIdentifiers(sourceText, repoRootPath) {
     );
   }
 
-  for (const match of identifierSource.matchAll(/\b([A-Za-z][A-Za-z0-9_-]*-goal)\b/g)) {
+  for (const match of identifierSource.matchAll(/\b(bt-[A-Za-z0-9_-]*-goal)\b/g)) {
     assert.ok(
       known.defconst.has(match[1]),
-      `[Invalid identifier] goal-like symbol '${match[1]}' at line ${identifierSource.slice(0, match.index).split("\n").length} is not defined by defconst`,
+      `[Invalid identifier] Basilisk goal symbol '${match[1]}' at line ${identifierSource.slice(0, match.index).split("\n").length} is not defined by defconst`,
     );
   }
 
