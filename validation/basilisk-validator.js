@@ -3378,6 +3378,39 @@ function validateAgeTransitionQueueGates(rules) {
 }
 
 function validateImperialPrerequisiteProviders(rules) {
+  const demandProducer = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(set-goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(not (can-research-with-escrow imperial-age))"),
+  );
+  assert.ok(
+    demandProducer,
+    "[Imperial prerequisites] Persistent second-provider demand producer is missing",
+  );
+  assert.ok(
+    demandProducer.includes("(building-type-count-total monastery >= 1)") &&
+      demandProducer.includes("(building-type-count-total university >= 1)") &&
+      demandProducer.includes("(building-type-count-total siege-workshop >= 1)"),
+    "[Imperial prerequisites] Demand producer must recognize Monastery, University, or Siege Workshop as the existing qualifying provider",
+  );
+
+  const fundingMode = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
+      rule.includes("(set-strategic-number sn-wood-gatherer-percentage 40)"),
+  );
+  assert.ok(
+    fundingMode,
+    "[Imperial prerequisites] Temporary wood-priority funding mode is missing",
+  );
+  assert.ok(
+    fundingMode.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
+      fundingMode.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
+      fundingMode.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
+    "[Imperial prerequisites] Funding mode percentages are incomplete",
+  );
+
   const siegeBuilder = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
@@ -3388,6 +3421,10 @@ function validateImperialPrerequisiteProviders(rules) {
   assert.ok(
     siegeBuilder,
     "[Imperial prerequisites] Siege Workshop builder is missing",
+  );
+  assert.ok(
+    siegeBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
+    "[Imperial prerequisites] Siege Workshop builder must consume persistent prerequisite demand",
   );
   assert.ok(
     siegeBuilder.includes("(or") &&
@@ -3412,6 +3449,10 @@ function validateImperialPrerequisiteProviders(rules) {
     "[Imperial prerequisites] University builder is missing",
   );
   assert.ok(
+    universityBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
+    "[Imperial prerequisites] University builder must consume persistent prerequisite demand",
+  );
+  assert.ok(
     universityBuilder.includes("(or") &&
       universityBuilder.includes("(building-type-count-total monastery >= 1)") &&
       universityBuilder.includes("(building-type-count-total siege-workshop >= 1)"),
@@ -3422,7 +3463,6 @@ function validateImperialPrerequisiteProviders(rules) {
     "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
   );
 }
-
 function validateAgeBankPriority(rules) {
   const castleBank = rules.find(
     (rule) =>
