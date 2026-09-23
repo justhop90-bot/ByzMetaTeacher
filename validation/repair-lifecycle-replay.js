@@ -922,6 +922,51 @@ assert.ok(
   castlePowerPromotionIndex < rushFallbackIndex,
   "[Strategy order] Castle-Power promotion must precede RUSH -> BOOM fallback",
 );
+
+const antiRushRestoreIndices = [
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-arabia-standard)",
+  ),
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-arabia-pressure)",
+  ),
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-plan-goal == bt-opening-plan-anti-rush)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-arabia-fast-castle)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+  ),
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-arena-fast-castle)",
+  ),
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-generic-pressure)",
+  ),
+  ruleIndex(
+    "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+    "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
+    "(goal bt-opening-underlay-goal bt-opening-plan-generic-defensive)",
+  ),
+];
+const antiRushToFlushIndex = ruleIndex(
+  "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+  "(not (goal strategy-goal bt-strategy-flush))",
+  "(set-goal strategy-goal bt-strategy-flush)",
+);
+for (const restoreIndex of antiRushRestoreIndices) {
+  assert.ok(
+    restoreIndex < antiRushToFlushIndex,
+    `[Strategy order] opening-plan anti-rush restoration at rule ${restoreIndex} must precede anti-rush -> FLUSH rule ${antiRushToFlushIndex}`,
+  );
+}
 requireRule(
   "Castle fallback excludes Castle-power",
   "(current-age >= castle-age)",
