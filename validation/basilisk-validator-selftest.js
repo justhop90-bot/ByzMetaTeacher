@@ -415,7 +415,41 @@ try {
           "    (not (can-research-with-escrow imperial-age))\n",
         "",
       ),
+    },,
+    {
+      name: "crop-rotation-without-mature-farm-base-rejected",
+      expected: "[Late-eco lifecycle]",
+      source: baseline.replace(
+        "    (building-type-count farm >= bt-crop-rotation-farm-threshold)\n",
+        "",
+      ),
     },
+    {
+      name: "two-man-saw-demand-without-villager-maturity-rejected",
+      expected: "[Late-eco lifecycle]",
+      source: baseline.replace(
+        "    (unit-type-count villager >= bt-two-man-saw-villagers)\n",
+        "",
+      ),
+    },
+    {
+      name: "two-man-saw-executor-without-villager-maturity-rejected",
+      expected: "[Late-eco lifecycle]",
+      source: (() => {
+        const demandWriterMatch =
+          baseline.match(
+            /\(defrule\n    \(goal bt-two-man-saw-demand-goal 1\)\n[\s\S]*?\(research ri-two-man-saw\)\n[\s\S]*?\n\)/,
+          )?.[0];
+        assert.ok(
+          demandWriterMatch,
+          "[Self-test] Two-Man Saw executor fixture is missing from baseline",
+        );
+        return baseline.replace(
+          "    (unit-type-count villager >= bt-two-man-saw-villagers)\n",
+          "",
+        );
+      })(),
+    }
     {
       name: "unknown-timer",
       expected: "[Timer]",
@@ -661,6 +695,9 @@ try {
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
           "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
+          "crop-rotation-maturity-witness",
+          "two-man-saw-demand-maturity-witness",
+          "two-man-saw-executor-maturity-witness",
         ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
