@@ -677,6 +677,27 @@ try {
       })(),
     },
     {
+      name: "cataphract-demand-must-yield-to-imperial-feasibility",
+      expected: "[Imperial transition]",
+      source: (() => {
+        const marker = "(defrule\n    (goal bt-castle-cataphract-demand-goal 1)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Cataphract withdrawal rule missing");
+        const end = baseline.indexOf("\n=>", start);
+        assert.ok(end > start, "[Self-test] Cataphract withdrawal arrow missing");
+        const rule = baseline.slice(start, baseline.indexOf("\n)", end) + 2);
+        const needle = "        (can-research-with-escrow imperial-age)\n";
+        const mutated = rule.replace(needle, "");
+        assert.notEqual(mutated, rule, "[Self-test] Cataphract Imperial-feasibility witness missing");
+        return baseline.replace(rule, mutated);
+      })(),
+    },
+    {
+      name: "castle-eco-thresholds-must-be-early",
+      expected: "[Castle eco]",
+      source: baseline.replace("(defconst bt-hand-cart-villagers 36)", "(defconst bt-hand-cart-villagers 45)"),
+    },
+    {
       name: "double-bit-axe-must-yield-to-castle-commitment",
       expected: "[Feudal eco]",
       source: (() => {
