@@ -3377,6 +3377,52 @@ function validateAgeTransitionQueueGates(rules) {
   );
 }
 
+function validateImperialPrerequisiteProviders(rules) {
+  const siegeBuilder = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(building-type-count-total castle < 1)") &&
+      rule.includes("(building-type-count-total siege-workshop < 1)") &&
+      rule.includes("(build siege-workshop)"),
+  );
+  assert.ok(
+    siegeBuilder,
+    "[Imperial prerequisites] Siege Workshop builder is missing",
+  );
+  assert.ok(
+    siegeBuilder.includes("(or") &&
+      siegeBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      siegeBuilder.includes("(building-type-count-total university >= 1)"),
+    "[Imperial prerequisites] Siege Workshop must accept Monastery or University as the existing qualifying provider",
+  );
+  assert.ok(
+    !siegeBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Imperial prerequisites] Siege Workshop builder must not depend on Castle Cataphract demand",
+  );
+
+  const universityBuilder = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(building-type-count-total castle < 1)") &&
+      rule.includes("(building-type-count-total university < 1)") &&
+      rule.includes("(build university)"),
+  );
+  assert.ok(
+    universityBuilder,
+    "[Imperial prerequisites] University builder is missing",
+  );
+  assert.ok(
+    universityBuilder.includes("(or") &&
+      universityBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      universityBuilder.includes("(building-type-count-total siege-workshop >= 1)"),
+    "[Imperial prerequisites] University must accept Monastery or Siege Workshop as the existing qualifying provider",
+  );
+  assert.ok(
+    !universityBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
+  );
+}
+
 function validateAgeBankPriority(rules) {
   const castleBank = rules.find(
     (rule) =>
@@ -3831,6 +3877,7 @@ validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
+validateImperialPrerequisiteProviders(rules);
 validateAgeBankPriority(rules);
 validateFeudalEcoResearchPriority(rules, sourceText);
 validateEconomicResearchPackageIsolation(rules, sourceText);
