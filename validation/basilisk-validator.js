@@ -1001,6 +1001,7 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
   );
 
   const parameterValues = new Map();
+  const strictParameterValues = new Map();
   for (const family of valueFamilyInventory.families ?? []) {
     const names = parameterValues.get(family.parameter_name) ?? new Set();
     for (const entry of family.entries ?? []) {
@@ -1015,6 +1016,9 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
       }
     }
     parameterValues.set(family.parameter_name, names);
+    if (family.family_type === "value-list") {
+      strictParameterValues.set(family.parameter_name, names);
+    }
   }
 
   const defconsts = new Set(
@@ -1030,6 +1034,7 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
     objects,
     classes,
     parameterValues,
+    strictParameterValues,
   };
 }
 
@@ -1037,14 +1042,11 @@ function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
 function documentedParameterValue(parameterName, value, families) {
   if (!value || /^-?\d+$/.test(value) || value.startsWith('"')) return true;
   if (families.defconsts.has(value)) return true;
-  if (value.startsWith(("g:")) || value.startsWith(("s:")) || value.startsWith(("c:"))) {
+  if (value.startsWith("g:") || value.startsWith("s:") || value.startsWith("c:")) {
     return false;
   }
-  return families.parameterValues.get(parameterName)?.has(value) ||
-    families.objects.has(value) ||
-    families.techs.has(value) ||
-    families.classes.has(value) ||
-    families.strategicNumbers.has(value);
+  const strictValues = families.strictParameterValues.get(parameterName);
+  return !strictValues || strictValues.has(value);
 }
 
 function isSymbolicSchemaValue(value) {
