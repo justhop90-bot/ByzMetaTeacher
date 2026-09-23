@@ -345,6 +345,22 @@ try {
       ),
     },
     {
+      name: "documented-unit-wildcard-rejected-in-build-slot",
+      expected: "undocumented AIRef object identifier",
+      source: baseline.replace(
+        "(can-build house)\n    (build house)",
+        "(can-build trebuchet-set)\n    (build trebuchet-set)",
+      ),
+    },
+    {
+      name: "documented-unit-wildcard-rejected-in-garrison-slot",
+      expected: "undocumented AIRef object identifier",
+      source: baseline.replace(
+        "(up-garrison siege-tower c: infantry-class)",
+        "(up-garrison villager-hunter c: infantry-class)",
+      ),
+    },
+    {
       name: "bare-siege-tower-object-slot-rejected",
       expected: "[Invalid identifier]",
       source: baseline.replace(
