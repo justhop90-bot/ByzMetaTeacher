@@ -5029,7 +5029,7 @@ sn-stone-gatherer-percentage == 0)))))
 ;   - Feudal age
 ;   - 900 food
 ;   - 225 wood
-;   - Castle is not immediately researchable
+;   - Castle commitment is not already active
 ;   - technology is still available
 ;
 ; The demand signal does not own sn-resource-control. The existing
@@ -5051,7 +5051,7 @@ sn-stone-gatherer-percentage == 0)))))
     (goal bt-double-bit-axe-demand-goal 1)
     (goal bt-research-lumber-camp-claim-goal 0)
     (or (current-age != feudal-age) (or (not (food-amount >= bt-double-bit-axe-food-buffer)) (or (not (wood-amount >= bt-double-bit-axe-wood-buffer)) (up-research-status c: ri-double-bit-axe >=
-research-pending)))
+research-pending))))
 =>
     (set-goal bt-double-bit-axe-demand-goal 0)
 )
