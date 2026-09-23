@@ -415,7 +415,7 @@ try {
           "    (not (can-research-with-escrow imperial-age))\n",
         "",
       ),
-    },,
+    },
     {
       name: "crop-rotation-without-mature-farm-base-rejected",
       expected: "[Late-eco lifecycle]",
