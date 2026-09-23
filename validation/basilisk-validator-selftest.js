@@ -951,6 +951,78 @@ try {
       })(),
     },
     {
+      name: "imperial-siege-builder-must-not-depend-on-cataphract-demand",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const needle = "    (building-type-count-total castle < 1)\n";
+        const searchFrom = baseline.indexOf("; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING");
+        const index = baseline.indexOf(needle, searchFrom);
+        assert.ok(index >= 0, "[Self-test] Imperial Siege builder anchor is missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(
+            needle,
+            needle + "    (goal bt-castle-cataphract-demand-goal 0)\n",
+          ) +
+          baseline.slice(index + needle.length);
+      })(),
+    },
+    {
+      name: "imperial-university-builder-must-not-depend-on-cataphract-demand",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY FALLBACK";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial University section missing");
+        const needle = "    (building-type-count-total castle < 1)\n";
+        const index = baseline.indexOf(needle, start);
+        assert.ok(index >= 0, "[Self-test] Imperial University builder anchor is missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(
+            needle,
+            needle + "    (goal bt-castle-cataphract-demand-goal 0)\n",
+          ) +
+          baseline.slice(index + needle.length);
+      })(),
+    },
+    {
+      name: "imperial-siege-provider-must-accept-monastery-or-university",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial Siege section missing");
+        const end = baseline.indexOf(";---------------------------------------------------------------\n; 15I.", start);
+        assert.ok(end > start, "[Self-test] Imperial Siege section bounds missing");
+        const section = baseline.slice(start, end);
+        const needle =
+          "    (or\n" +
+          "        (building-type-count-total monastery >= 1)\n" +
+          "        (building-type-count-total university >= 1)\n" +
+          "    )";
+        assert.ok(section.includes(needle), "[Self-test] Siege two-of-three provider witness missing");
+        return baseline.replace(needle, "    (building-type-count-total monastery >= 1)");
+      })(),
+    },
+    {
+      name: "imperial-university-provider-must-accept-monastery-or-siege",
+      expected: "[Imperial prerequisites]",
+      source: (() => {
+        const marker = "; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY FALLBACK";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial University section missing");
+        const end = baseline.indexOf(";----------------------------------------------------------------\n; CASTLE PREREQUISITE CONSTRUCTION WATCHDOG", start);
+        assert.ok(end > start, "[Self-test] Imperial University section bounds missing");
+        const section = baseline.slice(start, end);
+        const needle =
+          "    (or\n" +
+          "        (building-type-count-total monastery >= 1)\n" +
+          "        (building-type-count-total siege-workshop >= 1)\n" +
+          "    )";
+        assert.ok(section.includes(needle), "[Self-test] University two-of-three provider witness missing");
+        return baseline.replace(needle, "    (building-type-count-total monastery >= 1)");
+      })(),
+    },
+    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
