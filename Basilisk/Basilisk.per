@@ -11683,17 +11683,42 @@ camel-line < bt-camel-target-1)))))
 )
 
 (defrule
-    (or
-        (up-compare-goal bt-research-blacksmith-claim-goal != 0)
-        (or
-        (up-compare-goal bt-research-cavalry-counter-package-goal != 0)
-        (up-compare-goal bt-research-ranged-counter-package-goal != 0)
-            )
-    )
+    (up-compare-goal bt-research-blacksmith-claim-goal != 0)
     (building-type-count blacksmith == 0)
 =>
     (set-goal bt-research-blacksmith-claim-goal 0)
+)
+(defrule
+    (building-type-count blacksmith == 0)
+    (or
+        (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
+        (or
+            (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+            (goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+        )
+    )
+=>
     (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (building-type-count blacksmith == 0)
+    (or
+        (goal bt-research-ranged-counter-package-goal ri-fletching)
+        (or
+            (goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+            (or
+                (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
+                (or
+                    (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
+                    (or
+                        (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
+                        (goal bt-research-ranged-counter-package-goal ri-bracer)
+                    )
+                )
+            )
+        )
+    )
+=>
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
@@ -11707,8 +11732,15 @@ camel-line < bt-camel-target-1)))))
     (building-type-count university == 0)
 =>
     (set-goal bt-research-university-claim-goal 0)
+)
+(defrule
+    (building-type-count university == 0)
+    (or
+        (goal bt-research-siege-package-goal ri-ballistics)
+        (goal bt-research-siege-package-goal ri-chemistry)
+    )
+=>
     (set-goal bt-research-siege-package-goal 0)
-    (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
 (defrule
@@ -11724,6 +11756,14 @@ camel-line < bt-camel-target-1)))))
     (building-type-count barracks == 0)
 =>
     (set-goal bt-research-barracks-claim-goal 0)
+)
+(defrule
+    (building-type-count barracks == 0)
+    (or
+        (goal bt-research-cavalry-counter-package-goal ri-pikeman)
+        (goal bt-research-cavalry-counter-package-goal ri-halberdier)
+    )
+=>
     (set-goal bt-research-cavalry-counter-package-goal 0)
 )
 
@@ -11734,6 +11774,20 @@ camel-line < bt-camel-target-1)))))
     (building-type-count archery-range == 0)
 =>
     (set-goal bt-research-archery-range-claim-goal 0)
+)
+(defrule
+    (building-type-count archery-range == 0)
+    (or
+        (goal bt-research-ranged-counter-package-goal ri-crossbow)
+        (or
+            (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+            (or
+                (goal bt-research-ranged-counter-package-goal ri-thumb-ring)
+                (goal bt-research-ranged-counter-package-goal ri-arbalest)
+            )
+        )
+    )
+=>
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
 
@@ -11742,7 +11796,6 @@ camel-line < bt-camel-target-1)))))
     (building-type-count stable == 0)
 =>
     (set-goal bt-research-stable-claim-goal 0)
-    (set-goal bt-research-cavalry-counter-package-goal 0)
 )
 
 (defrule
@@ -11750,6 +11803,17 @@ camel-line < bt-camel-target-1)))))
     (building-type-count siege-workshop == 0)
 =>
     (set-goal bt-research-siege-workshop-claim-goal 0)
+)
+(defrule
+    (building-type-count siege-workshop == 0)
+    (or
+        (goal bt-research-siege-package-goal ri-onager)
+        (or
+            (goal bt-research-siege-package-goal ri-capped-ram)
+            (goal bt-research-siege-package-goal ri-siege-ram)
+        )
+    )
+=>
     (set-goal bt-research-siege-package-goal 0)
 )
 
