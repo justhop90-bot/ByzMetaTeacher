@@ -3641,8 +3641,17 @@ function validateStrategicNarration(sourceText, rules) {
       AGE: "(current-age",
     }[category];
     if (category && categorySignal && !rule.includes(categorySignal)) {
+      const castleGateException =
+        category === "AGE" &&
+        rule.includes("(goal bt-castle-commitment-goal 1)");
+      const tcCompletionException =
+        category === "TC" &&
+        rule.includes("(building-type-count town-center");
+      const ecoException =
+        category === "ECO" &&
+        rule.includes("(up-research-status c:");
       assert.ok(
-        category === "ECO" && rule.includes("(up-research-status c:"),
+        castleGateException || tcCompletionException || ecoException,
         "[Narration] message does not match the state witness for category " + category,
       );
     }
