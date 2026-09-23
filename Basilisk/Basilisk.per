@@ -531,6 +531,8 @@
 ; Persistent Castle transition commitment. 1 means the Castle bank has been
 ; intentionally committed; it is cleared only by the Castle-age world-state witness.
 (defconst bt-castle-commitment-goal 693)
+; Feudal eco window hold: 1 means Horse Collar or Double-Bit Axe can execute now.
+(defconst bt-feudal-eco-hold-goal 694)
 (defconst bt-natural-food-stable 0)
 (defconst bt-natural-food-transition 1)
 (defconst bt-natural-food-depleted 2)
@@ -826,6 +828,50 @@
     (set-goal bt-farm-depleted-reserve-goal 3)
     (set-goal bt-standing-army-floor-goal 0)
     (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal bt-feudal-eco-hold-goal 0)
+)
+
+; Feudal eco priority. This state is evaluated before Castle commitment so
+; a ready Horse Collar or Double-Bit Axe blocks ownership of the transition.
+(defrule
+    (current-age == feudal-age)
+    (up-research-status c: ri-horse-collar == research-available)
+    (building-type-count mill >= 1)
+    (up-compare-goal bt-research-mill-failure-backoff-goal != ri-horse-collar)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-horse-collar)
+    (goal bt-research-mill-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
+=>
+    (set-goal bt-feudal-eco-hold-goal 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (up-research-status c: ri-double-bit-axe == research-available)
+    (food-amount >= bt-double-bit-axe-food-buffer)
+    (wood-amount >= bt-double-bit-axe-wood-buffer)
+    (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count lumber-camp >= 1)
+    (can-research-with-escrow ri-double-bit-axe)
+    (goal bt-research-lumber-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
+=>
+    (set-goal bt-feudal-eco-hold-goal 1)
 )
 
 (defrule
@@ -3080,8 +3126,8 @@
 ; 11. HORSE COLLAR
 ;================================================================
 ; Age advancement gets first resource claim.
-; Horse Collar can only claim the bank if Castle is not currently
-; researchable.
+; Horse Collar can only claim the bank before Castle commitment.
+; The Feudal eco hold reserves that window when Horse Collar is executable.
 (defrule
     (current-age >= feudal-age)
     (up-compare-goal bt-research-mill-failure-backoff-goal != ri-horse-collar)
@@ -4518,6 +4564,7 @@ town-center >= 2)))))
     )
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-commitment-goal 0)
+    (goal bt-feudal-eco-hold-goal 0)
     (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)
@@ -4538,6 +4585,7 @@ town-center >= 2)))))
     (current-age == feudal-age)
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-commitment-goal 0)
+    (goal bt-feudal-eco-hold-goal 0)
     (unit-type-count villager >= bt-castle-villagers)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)
@@ -5002,8 +5050,8 @@ sn-stone-gatherer-percentage == 0)))))
 (defrule
     (goal bt-double-bit-axe-demand-goal 1)
     (goal bt-research-lumber-camp-claim-goal 0)
-    (or (current-age != feudal-age) (or (not (food-amount >= bt-double-bit-axe-food-buffer)) (or (not (wood-amount >= bt-double-bit-axe-wood-buffer)) (or (can-research-with-escrow castle-age) (up-research-status c: ri-double-bit-axe >=
-research-pending)))))
+    (or (current-age != feudal-age) (or (not (food-amount >= bt-double-bit-axe-food-buffer)) (or (not (wood-amount >= bt-double-bit-axe-wood-buffer)) (up-research-status c: ri-double-bit-axe >=
+research-pending)))
 =>
     (set-goal bt-double-bit-axe-demand-goal 0)
 )
