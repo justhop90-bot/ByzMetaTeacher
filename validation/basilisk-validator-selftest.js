@@ -538,6 +538,32 @@ try {
       ),
     },
     {
+      name: "castle-villager-stop-must-not-require-research-queue",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (strategic-number sn-resource-control == 0)\n=>\n    ; Castle commitment owns the TC bank.";
+        const replacement =
+          "    (strategic-number sn-resource-control == 0)\n    (can-research-with-escrow castle-age)\n=>\n    ; Castle commitment owns the TC bank.";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Castle stop-gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
+      name: "imperial-villager-stop-must-not-require-research-queue",
+      expected: "[Age transition]",
+      source: (() => {
+        const witness =
+          "    (goal bt-castle-cataphract-demand-goal 0)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
+        const replacement =
+          "    (goal bt-castle-cataphract-demand-goal 0)\n    (can-research-with-escrow imperial-age)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Imperial stop-gate witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
       name: "castle-cataphract-demand-cannot-block-ready-imperial",
       expected: "[Castle-Cataphract/Imperial handoff]",
       source: baseline.replace(
