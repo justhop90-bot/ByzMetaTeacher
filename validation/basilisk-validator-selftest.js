@@ -289,13 +289,12 @@ try {
       ),
     },
     {
-      name: "class-wildcard-unit-id-remains-accepted",
+      name: "unknown-class-wildcard-unit-id-rejected",
       expected: "[AIRef schema]",
       source: baseline.replace(
         "(unit-type-count infantry-class >= bt-siege-tower-payload-min)",
-        "(unit-type-count infantry-class >= bt-siege-tower-payload-min)",
+        "(unit-type-count definitely-not-a-real-unit-class >= bt-siege-tower-payload-min)",
       ),
-      expectNoFailure: true,
     },
     {
       name: "bare-siege-tower-object-slot-rejected",
