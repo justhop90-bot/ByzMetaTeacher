@@ -3477,22 +3477,36 @@ function validateImperialPrerequisiteProviders(rules) {
     "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
   );
 
-  const demandClear = rules.find(
+  const demandClearWorldState = rules.find(
     (rule) =>
       rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
       rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
       rule.includes("(or") &&
       rule.includes("(current-age >= imperial-age)") &&
-      rule.includes("(building-type-count-total castle >= 1)") &&
+      rule.includes("(building-type-count-total castle >= 1)"),
+  );
+  assert.ok(
+    demandClearWorldState,
+    "[Imperial prerequisites] Demand-clear world-state lifecycle witness is missing",
+  );
+  assert.ok(
+    !demandClearWorldState.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] Demand clear must not depend on Cataphract demand",
+  );
+
+  const demandClearFeasibility = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
       rule.includes("(can-research-with-escrow imperial-age)"),
   );
   assert.ok(
-    demandClear,
-    "[Imperial prerequisites] Demand-clear lifecycle witness is missing",
+    demandClearFeasibility,
+    "[Imperial prerequisites] Demand-clear Imperial-feasibility witness is missing",
   );
   assert.ok(
-    !demandClear.includes("(goal bt-castle-cataphract-demand-goal"),
-    "[Imperial prerequisites] Demand clear must not depend on Cataphract demand",
+    !demandClearFeasibility.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] Imperial-feasibility demand clear must not depend on Cataphract demand",
   );
 }
 
