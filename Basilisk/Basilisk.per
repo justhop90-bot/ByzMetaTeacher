@@ -2458,10 +2458,50 @@
 )
 
 ;================================================================
-; 4. NORMAL VILLAGER PRODUCTION
+; 4. AGE-READINESS VILLAGER STOP GATES
 ;================================================================
-; Q: "When is the TC allowed to make another villager?"
-;
+; These are temporary latches, not new state. Each gate uses the exact
+; age-action predicate and clears itself by consuming train-civ-goal 1.
+; Keeping the readiness tests in their own rules avoids illegal oversized
+; logical operators in the production rule while preserving the can-* gate.
+(defrule
+    (goal train-civ-goal 1)
+    (current-age == dark-age)
+    (unit-type-count villager >= bt-feudal-villagers)
+    (up-compare-goal bt-research-age-failure-backoff-goal != feudal-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow feudal-age)
+=>
+    (set-goal train-civ-goal -1)
+)
+
+(defrule
+    (goal train-civ-goal 1)
+    (current-age == feudal-age)
+    (unit-type-count villager >= bt-castle-villagers)
+    (goal bt-castle-commitment-goal 1)
+    (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow castle-age)
+=>
+    (set-goal train-civ-goal -1)
+)
+
+(defrule
+    (goal train-civ-goal 1)
+    (current-age == castle-age)
+    (unit-type-count villager >= bt-imperial-villagers)
+    (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
+    (strategic-number sn-resource-control == 0)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (can-research-with-escrow imperial-age)
+=>
+    (set-goal train-civ-goal -1)
+)
+
+;================================================================
+; 5. NORMAL VILLAGER PRODUCTION
+;================================================================
 ; The normal villager-training goal must be enabled.
 ; An active age claim overrides ordinary production.
 (defrule
@@ -2471,31 +2511,6 @@
     (strategic-number sn-resource-control != imperial-age)
     (can-train villager)
     (population-headroom > 0)
-    ; Stop villager production only when the corresponding age action is
-    ; executable now, not merely when its resource bank is affordable.
-    (not (and
-        (current-age == dark-age)
-        (unit-type-count villager >= bt-feudal-villagers)
-        (up-compare-goal bt-research-age-failure-backoff-goal != feudal-age)
-        (strategic-number sn-resource-control == 0)
-        (can-research-with-escrow feudal-age)
-    ))
-    (not (and
-        (current-age == feudal-age)
-        (unit-type-count villager >= bt-castle-villagers)
-        (goal bt-castle-commitment-goal 1)
-        (up-compare-goal bt-research-age-failure-backoff-goal != castle-age)
-        (strategic-number sn-resource-control == 0)
-        (can-research-with-escrow castle-age)
-    ))
-    (not (and
-        (current-age == castle-age)
-        (unit-type-count villager >= bt-imperial-villagers)
-        (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
-        (strategic-number sn-resource-control == 0)
-        (goal bt-castle-cataphract-demand-goal 0)
-        (can-research-with-escrow imperial-age)
-    ))
 =>
     (train villager)
 )
