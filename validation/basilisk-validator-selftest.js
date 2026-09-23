@@ -150,6 +150,29 @@ try {
       ),
     },
     {
+      name: "unknown-airef-command",
+      expected: "[AIRef command]",
+      source: baseline.replace(
+        "(goal strategy-goal bt-strategy-boom)",
+        "(definitely-not-an-airef-command strategy-goal bt-strategy-boom)",
+      ),
+    },
+    {
+      name: "command-role-mismatch",
+      expected: "[AIRef command]",
+      source:
+        baseline +
+        "\n(defrule\n    (disable-self)\n=>\n    (true)\n)\n",
+    },
+    {
+      name: "unsafe-point-output-goal",
+      expected: "[AIRef goal-output]",
+      source: baseline.replace(
+        "(up-get-point position-object bt-siege-tower-wall-point-goal)",
+        "(up-get-point position-object bt-feudal-villagers)",
+      ),
+    },
+    {
       name: "bad-strategic-number-operand",
       expected: "strategic-number-operand",
       source: baseline.replace(
