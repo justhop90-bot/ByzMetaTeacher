@@ -3646,7 +3646,7 @@ function validateAgeBankPriority(rules) {
 }
 
 function validateGoalIdNamespace(sourceText) {
-  const defs = [...sourceText.matchAll(
+  const defs = [...sanitizeStructure(sourceText).matchAll(
     /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\s*\)/g,
   )].map((match) => ({
     name: match[1],
@@ -3806,8 +3806,8 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
   );
   assert.equal(
     writerRules.length,
-    4,
-    "[Telemetry FIFO] expected exactly four slot writer rules",
+    8,
+    "[Telemetry FIFO] expected two four-slot writer phases: immediate BEGIN and terminal transition injection",
   );
   for (const rule of writerRules) {
     assert.ok(
@@ -3836,6 +3836,52 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
     );
   }
 
+  const beginCaptureIndex = ruleIndex(
+    rules,
+    "(goal bt-preempt-result-goal bt-preempt-result-begin)",
+    "(set-goal bt-telemetry-event-pending-goal 1)",
+  );
+  const terminalCaptureIndexes = [
+    ruleIndex(
+      rules,
+      "(goal bt-preempt-result-goal bt-preempt-result-resume)",
+      "(set-goal bt-telemetry-event-pending-goal 1)",
+    ),
+    ruleIndex(
+      rules,
+      "(goal bt-preempt-result-goal bt-preempt-result-complete)",
+      "(set-goal bt-telemetry-event-pending-goal 1)",
+    ),
+    ruleIndex(
+      rules,
+      "(goal bt-preempt-result-goal bt-preempt-result-abort)",
+      "(set-goal bt-telemetry-event-pending-goal 1)",
+    ),
+  ];
+
+  const writerIndexes = rules
+    .map((rule, index) =>
+      rule.includes("(goal bt-telemetry-event-pending-goal 1)") &&
+      rule.includes("(up-compare-goal bt-telemetry-write-head-goal ==")
+        ? index
+        : -1,
+    )
+    .filter((index) => index >= 0);
+
+  assert.ok(
+    writerIndexes.some(
+      (index) => index > beginCaptureIndex && index < Math.min(...terminalCaptureIndexes),
+    ),
+    "[Telemetry FIFO] BEGIN must be physically enqueued before any terminal transition can overwrite the staging register",
+  );
+
+  assert.ok(
+    writerIndexes.some(
+      (index) => terminalCaptureIndexes.every((captureIndex) => index > captureIndex),
+    ),
+    "[Telemetry FIFO] terminal transition events must have a downstream FIFO injection phase",
+  );
+
   const overflowRules = rules.filter(
     (rule) =>
       rule.includes("(up-modify-goal bt-telemetry-dropped-goal g:+ 1)") &&
@@ -3850,6 +3896,10 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
   assert.ok(fs.existsSync(xsPath), "[XS] BasiliskTelemetry.xs is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(
+    xs.includes("void bt_telemetry_drain()"),
+    "[XS] telemetry consumer function bt_telemetry_drain() is missing",
+  );
+  assert.ok(
     xs.includes("xsGetGoal") &&
       xs.includes("xsSetGoal") &&
       xs.includes("xsChatData"),
@@ -3863,6 +3913,24 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
     !/xs(?:SetStrategicNumber|ResearchTechnology|CreateUnit|RemoveUnit|Task)\b/.test(xs),
     "[XS] telemetry consumer must not mutate strategic policy or game state",
   );
+  const xsGoalRefs = [...xs.matchAll(/const\\s+BT_[A-Z0-9_]+\\s*=\\s*(\\d+)/g)].map((m) => Number(m[1]));
+  const allowedXsGoalIds = new Set([
+    700,
+    739,
+    740,
+    742,
+    743,
+    753, 754, 755, 756, 757, 758, 759, 760,
+    761, 762, 763, 764, 765, 766, 767, 768,
+    769, 770, 771, 772, 773, 774, 775, 776,
+    777, 778, 779, 780, 781, 782, 783, 784,
+  ]);
+  for (const id of xsGoalRefs) {
+    assert.ok(
+      allowedXsGoalIds.has(id),
+      "[XS] telemetry consumer references undeclared/non-telemetry GoalId " + id,
+    );
+  }
 }
 
 function validateLineHygiene(text) {
