@@ -720,6 +720,16 @@
 (defconst bt-skirm-target-2 16)
 (defconst bt-skirm-target-3 24)
 
+; Feudal response packages deliberately stay small. These are the
+; early defensive targets; the larger Castle/Imperial counter tiers
+; remain unchanged for later army formation and research lifecycles.
+(defconst bt-feudal-spear-counter-1 3)
+(defconst bt-feudal-spear-counter-2 4)
+(defconst bt-feudal-spear-counter-3 6)
+(defconst bt-feudal-skirm-counter-1 3)
+(defconst bt-feudal-skirm-counter-2 4)
+(defconst bt-feudal-skirm-counter-3 6)
+
 (defconst bt-camel-target-1 4)
 (defconst bt-camel-target-2 8)
 
@@ -8241,6 +8251,64 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 )
 (defrule (up-compare-goal bt-spear-counter-level-goal >= 1) =>
     (up-modify-goal bt-standing-archer-target-goal c:max 3)
+)
+
+; Feudal counter normalization.
+; The generic counter levels above are intentionally retained for
+; Castle/Imperial systems. In Feudal they would otherwise overwrite
+; the small 2+2 defensive floor with six/16/24-unit targets.
+; Normalize only the live Feudal role targets:
+;   no threat     -> existing floor target
+;   first pressure -> 3 of the relevant counter
+;   second level   -> 4
+;   heavy level    -> 6
+; FLUSH's four-per-role floor is preserved until cavalry/ranged level 3.
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal >= 8)
+=>
+    (set-goal bt-standing-spear-target-goal 4)
+    (set-goal bt-standing-skirm-target-goal 4)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal <= 6)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+=>
+    (set-goal bt-standing-spear-target-goal bt-feudal-spear-counter-1)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal <= 6)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+=>
+    (set-goal bt-standing-spear-target-goal bt-feudal-spear-counter-2)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
+=>
+    (set-goal bt-standing-spear-target-goal bt-feudal-spear-counter-3)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal <= 6)
+    (up-compare-goal bt-ranged-counter-level-goal >= 1)
+=>
+    (set-goal bt-standing-skirm-target-goal bt-feudal-skirm-counter-1)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-standing-army-floor-goal <= 6)
+    (up-compare-goal bt-ranged-counter-level-goal >= 2)
+=>
+    (set-goal bt-standing-skirm-target-goal bt-feudal-skirm-counter-2)
+)
+(defrule
+    (current-age == feudal-age)
+    (up-compare-goal bt-ranged-counter-level-goal >= 3)
+=>
+    (set-goal bt-standing-skirm-target-goal bt-feudal-skirm-counter-3)
 )
 ;---------------------------------------------------------------
 ; 15Z.1.0 PRIMARY MILITARY ROLE TARGETS
