@@ -300,6 +300,27 @@ try {
         baseline +
         "\n(defrule\n    (up-compare-goal bt-attack-reserve-goal g:== sn-resource-control)\n=>\n    (do-nothing)\n)\n",
     },
+    {
+      name: "strict-enum-value-mismatch",
+      expected: "command-argument-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-build place-norml 0 c: castle)\n)\n",
+    },
+    {
+      name: "unsafe-set-target-object",
+      expected: "unsafe-set-target-object",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-full-reset-search)\n    (up-set-target-object search-remote c: 0)\n)\n",
+    },
+    {
+      name: "unscoped-duc-target",
+      expected: "unscoped-duc-target",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-full-reset-search)\n    (up-target-objects 0 action-default -1 -1)\n)\n",
+    },
   ];
 
 
@@ -379,6 +400,9 @@ try {
           "command-family-mismatch",
           "command-typed-prefix-mismatch",
           "command-typed-operand-mismatch",
+        "strict-enum-value-mismatch",
+        "unsafe-set-target-object",
+        "unscoped-duc-target",
         ],
       },
       null,
