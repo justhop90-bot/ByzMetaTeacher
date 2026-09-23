@@ -1518,7 +1518,10 @@
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
             (and
             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+            (and
             (up-compare-goal bt-ranged-counter-level-goal >= 2)
+            (up-research-status c: ri-elite-skirmisher == research-complete)
+                    )
                     )
         )
         (unit-type-count-total cavalry-archer >= 6)
@@ -1539,16 +1542,6 @@
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
     (up-research-status c: ri-bodkin-arrow == research-complete)
-    (not (and
-             (up-compare-goal bt-ranged-counter-level-goal >= 1)
-             (and
-             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
-             (and
-             (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
-             (up-research-status c: ri-elite-skirmisher < research-complete)
-                      )
-                      )
-         ))
     (and
             (goal unit-goal crossbowman)
             (and
@@ -1676,10 +1669,6 @@
     (goal bt-ranged-threat-goal 1)
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
-    (not (and
-        (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
-        (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
-    ))
     (current-age >= imperial-age)
     (or
         (and
