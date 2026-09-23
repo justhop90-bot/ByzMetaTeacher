@@ -10,6 +10,61 @@ const controllerPath =
 
 const source = fs.readFileSync(controllerPath, "utf8");
 
+function stripComments(text) {
+  return text
+    .split("\n")
+    .map((line) => line.split(";")[0])
+    .join("\n");
+}
+
+function assertBinaryBooleanArity(text) {
+  const sanitized = stripComments(text);
+  let cursor = 0;
+  while ((cursor = sanitized.indexOf("(defrule", cursor)) !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = cursor; i < sanitized.length; i += 1) {
+      if (sanitized[i] === "(") depth += 1;
+      else if (sanitized[i] === ")") {
+        depth -= 1;
+        if (depth === 0) { end = i + 1; break; }
+      }
+    }
+    assert.notEqual(end, -1, "[Boolean arity] unclosed defrule");
+    const rule = sanitized.slice(cursor, end);
+    const stack = [{ depth: 0, args: 0, head: null }];
+    let token = "";
+    const flushToken = () => {
+      if (!token) return;
+      const frame = stack[stack.length - 1];
+      frame.args += 1;
+      if (frame.args === 1) frame.head = token;
+      token = "";
+    };
+    for (const ch of rule) {
+      if (ch === "(") {
+        flushToken();
+        stack.push({ depth: stack.length, args: 0, head: null });
+      } else if (ch === ")") {
+        flushToken();
+        const frame = stack.pop();
+        if (frame.head === "or" || frame.head === "and") {
+          assert.ok(
+            frame.args <= 3,
+            "[Boolean arity] " + frame.head + " has more than two operands or comments corrupted the scan",
+          );
+        }
+      } else if (/\\s/.test(ch)) {
+        flushToken();
+      } else {
+        token += ch;
+      }
+    }
+    cursor = end;
+  }
+}
+
+assertBinaryBooleanArity(source);
 function extractRules(text) {
   const rules = [];
   let cursor = 0;
