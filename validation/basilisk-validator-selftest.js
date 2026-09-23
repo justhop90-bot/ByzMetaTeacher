@@ -476,7 +476,7 @@ try {
     },
     {
       name: "unsafe-point-output-goal",
-      expected: "[AIRef goal-output]",
+      expected: "command-numeric-range-mismatch",
       source: baseline.replace(
         "(up-get-point position-object bt-siege-tower-wall-point-goal)",
         "(up-get-point position-object bt-feudal-villagers)",
