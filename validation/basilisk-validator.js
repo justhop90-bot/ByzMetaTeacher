@@ -1417,6 +1417,27 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
 
       const expectedFamily = expectedAIRefFamily(parameterName);
       const actualFamily = typedSchemaFamily(value, families);
+
+      if (
+        expectedFamily === "object" &&
+        isSymbolicSchemaValue(value) &&
+        !families.defconsts.has(value) &&
+        !families.objects.has(value)
+      ) {
+        reportFailure(
+          "command-argument-mismatch",
+          expression,
+          index + 1,
+          command.name +
+            " " +
+            parameterName +
+            " argument " +
+            (index + 1) +
+            " uses undocumented AIRef object identifier '" +
+            value +
+            "'",
+        );
+      }
       if (
         expectedFamily &&
         actualFamily &&
