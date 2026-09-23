@@ -686,6 +686,26 @@ try {
       })(),
     },
     {
+      name: "castle-bank-must-override-resource-mode",
+      expected: "[Age banking]",
+      source: (() => {
+        const witness =
+          "    (current-age == feudal-age)\n" +
+          "    (goal bt-castle-cataphract-demand-goal 0)\n" +
+          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (goal bt-feudal-eco-hold-goal 0)\n" +
+          "    (unit-type-count villager >= bt-castle-villagers)\n" +
+          "=>\n" +
+          "    (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)";
+        const replacement =
+          "    (goal bt-resource-mode-goal 0)\n" + witness;
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Castle bank priority witness is missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(witness, replacement);
+      })(),
+    },
+    {
       name: "castle-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
