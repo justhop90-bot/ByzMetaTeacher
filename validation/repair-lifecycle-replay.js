@@ -937,7 +937,7 @@ const antiRushRestoreIndices = [
   ruleIndex(
     "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
     "(up-compare-goal bt-opening-plan-goal == bt-opening-plan-anti-rush)",
-    "(goal bt-opening-underlay-goal bt-opening-plan-arabia-fast-castle)",
+    "(up-compare-goal bt-opening-underlay-goal == bt-opening-plan-arabia-fast-castle)",
     "(up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)",
   ),
   ruleIndex(
