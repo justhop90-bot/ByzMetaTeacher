@@ -95,12 +95,6 @@ try {
       ),
     },
     {
-      name: "typed-player-number-operand-passes",
-      source:
-        baseline +
-        "\n(defrule\n    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)\n=>\n    (true)\n)\n",
-    },
-    {
       name: "up-get-point-base-15998-passes",
       source:
         baseline +
@@ -686,6 +680,13 @@ try {
         "(up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)",
         "(up-modify-sn sn-focus-player-number s:= definitely-not-a-strategic-number)",
       ),
+    },
+    {
+      name: "standalone-typed-prefix-in-player-number",
+      expected: "command-arity-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)\n=>\n    (true)\n)\n",
     },
     {
       name: "command-arity-mismatch",
