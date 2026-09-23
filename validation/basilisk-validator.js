@@ -2001,6 +2001,76 @@ function validateDoubleBitAxeLifecycle(rules) {
   }
 }
 
+function validateLateEcoTechnologyMaturity(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  const cropRotationExecutor = rules.find(
+    (rule) =>
+      rule.includes("(research ri-crop-rotation)") &&
+      rule.includes("(set-goal bt-research-mill-claim-goal ri-crop-rotation)"),
+  );
+  assert.ok(
+    cropRotationExecutor,
+    "[Late-eco lifecycle] Crop Rotation research executor is missing",
+  );
+  const cropText = normalize(cropRotationExecutor);
+  for (const witness of [
+    "(current-age >= imperial-age)",
+    "(building-type-count farm >= bt-crop-rotation-farm-threshold)",
+    "(can-research-with-escrow ri-crop-rotation)",
+  ]) {
+    assert.ok(
+      cropText.includes(witness),
+      "[Late-eco lifecycle] Crop Rotation executor is missing maturity witness: " + witness,
+    );
+  }
+
+  const twoManDemandWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-two-man-saw-demand-goal 0)") &&
+      rule.includes("(set-goal bt-two-man-saw-demand-goal 1)"),
+  );
+  assert.ok(
+    twoManDemandWriter,
+    "[Late-eco lifecycle] Two-Man Saw demand writer is missing",
+  );
+  const twoManDemandText = normalize(twoManDemandWriter);
+  for (const witness of [
+    "(current-age >= imperial-age)",
+    "(unit-type-count villager >= bt-two-man-saw-villagers)",
+    "(goal strategy-goal bt-strategy-boom)",
+    "(research-available ri-two-man-saw)",
+  ]) {
+    assert.ok(
+      twoManDemandText.includes(witness),
+      "[Late-eco lifecycle] Two-Man Saw demand writer is missing maturity witness: " + witness,
+    );
+  }
+
+  const twoManExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-two-man-saw-demand-goal 1)") &&
+      rule.includes("(research ri-two-man-saw)"),
+  );
+  assert.ok(
+    twoManExecutor,
+    "[Late-eco lifecycle] Two-Man Saw research executor is missing",
+  );
+  const twoManExecutorText = normalize(twoManExecutor);
+  for (const witness of [
+    "(current-age >= imperial-age)",
+    "(unit-type-count villager >= bt-two-man-saw-villagers)",
+    "(goal strategy-goal bt-strategy-boom)",
+    "(not (goal bt-cataphract-demand-goal 1))",
+    "(can-research-with-escrow ri-two-man-saw)",
+  ]) {
+    assert.ok(
+      twoManExecutorText.includes(witness),
+      "[Late-eco lifecycle] Two-Man Saw executor is missing maturity witness: " + witness,
+    );
+  }
+}
+
 function validateDerivedThreatStateOrdering(rules) {
   const states = [
     "bt-cavalry-threat-goal",
@@ -2349,6 +2419,7 @@ validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateDoubleBitAxeLifecycle(rules);
+validateLateEcoTechnologyMaturity(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
