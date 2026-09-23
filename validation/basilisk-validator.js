@@ -3761,7 +3761,7 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
     assert.ok(
       rule.includes("(train spearman-line)") ||
         rule.includes("(train skirmisher-line)") ||
-        !/\\((build|research)\\b/.test(rule),
+        !/\((build|research)\b/.test(rule),
       "[Preemption] emergency claim may only authorize existing Feudal Spear/Skirm execution",
     );
   }
@@ -3913,7 +3913,7 @@ function validatePreemptionLifecycle(sourceText, rules, repoRootPath) {
     !/xs(?:SetStrategicNumber|ResearchTechnology|CreateUnit|RemoveUnit|Task)\b/.test(xs),
     "[XS] telemetry consumer must not mutate strategic policy or game state",
   );
-  const xsGoalRefs = [...xs.matchAll(/const\\s+BT_[A-Z0-9_]+\\s*=\\s*(\\d+)/g)].map((m) => Number(m[1]));
+  const xsGoalRefs = [...xs.matchAll(/const\s+int\s+BT_[A-Z0-9_]+\s*=\s*(\d+)/g)].map((m) => Number(m[1]));
   const allowedXsGoalIds = new Set([
     700,
     739,
