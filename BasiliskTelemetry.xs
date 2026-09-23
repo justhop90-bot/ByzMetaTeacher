@@ -33,11 +33,8 @@ void basiliskTelemetryDrain() {
         int sequence = xsGetGoal(BT_SLOT_SEQUENCE_BASE + readHead);
 
         if(xsGetGoal(BT_DEBUG_VERBOSITY) >= 2) {
-            xsChatData("BASILISK | PREEMPT | seq=" + sequence
-                + " time=" + eventTime
-                + " type=" + basiliskTelemetryEventName(eventType)
-                + " owner=" + owner
-                + " flags=" + flags);
+            xsChatData("BASILISK | PREEMPT | " + basiliskTelemetryEventName(eventType), sequence);
+            xsChatData("BASILISK | PREEMPT | owner/flags/time", owner + flags + eventTime);
         }
 
         readHead = readHead + 1;
@@ -51,8 +48,7 @@ void basiliskTelemetryDrain() {
 
     if(xsGetGoal(BT_RING_OVERFLOW_STATE) > 0) {
         if(xsGetGoal(BT_DEBUG_VERBOSITY) >= 1) {
-            xsChatData("BASILISK | PREEMPT | FIFO OVERFLOW count="
-                + xsGetGoal(BT_RING_OVERFLOW));
+            xsChatData("BASILISK | PREEMPT | FIFO OVERFLOW", xsGetGoal(BT_RING_OVERFLOW));
         }
         xsSetGoal(BT_RING_OVERFLOW_STATE, 0);
     }
