@@ -14783,6 +14783,16 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (strategic-number sn-resource-control == bt-mill-claim)
     (up-compare-goal bt-mill-project-goal > 0)
     (up-pending-objects c: mill > 0)
+    (or
+        (and
+            (building-type-count-total barracks >= 1)
+            (can-train spearman-line)
+        )
+        (and
+            (building-type-count archery-range >= 1)
+            (can-train skirmisher-line)
+        )
+    )
 =>
     (up-modify-goal bt-preempt-original-mode-goal g:= bt-resource-mode-goal)
     (set-goal bt-preempt-original-owner-goal bt-mill-claim)
@@ -14832,10 +14842,8 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-preempt-active-goal 1)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (current-age >= feudal-age)
-    (goal bt-standing-army-demand-goal 1)
     (not (goal bt-preempt-spear-issued-goal 1))
     (building-type-count-total barracks >= 1)
-    (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
     (can-train spearman-line)
 =>
     (train spearman-line)
@@ -14846,10 +14854,8 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
     (goal bt-preempt-active-goal 1)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (current-age >= feudal-age)
-    (goal bt-standing-army-demand-goal 1)
     (not (goal bt-preempt-skirm-issued-goal 1))
     (building-type-count-total archery-range >= 1)
-    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
     (can-train skirmisher-line)
 =>
     (train skirmisher-line)
