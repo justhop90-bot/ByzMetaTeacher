@@ -3324,6 +3324,43 @@ function validateAgeTransitionQueueGates(rules) {
   );
 }
 
+function validateAgeBankPriority(rules) {
+  const castleBank = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)") &&
+      rule.includes("(goal bt-feudal-eco-hold-goal 0)") &&
+      rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)") &&
+      rule.includes("(set-goal bt-castle-commitment-goal 1)"),
+  );
+  assert.ok(
+    castleBank,
+    "[Age banking] Castle bank priority rule is missing",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Castle bank must override transient resource-mode arbitration at 30 villagers",
+  );
+
+  const imperialBank = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)"),
+  );
+  assert.ok(
+    imperialBank,
+    "[Age banking] Imperial bank priority rule is missing",
+  );
+  assert.ok(
+    !imperialBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Imperial bank must override transient resource-mode arbitration at 50 villagers",
+  );
+}
+
 function validateLineHygiene(text) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
@@ -3726,6 +3763,7 @@ validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
+validateAgeBankPriority(rules);
 validateFeudalEcoResearchPriority(rules, sourceText);
 validateEconomicResearchPackageIsolation(rules, sourceText);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
