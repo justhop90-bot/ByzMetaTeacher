@@ -53,6 +53,12 @@ The September 23, 2026 runtime failure at Basilisk source line 2059 exposed a va
 
 The validator's AIRef schema pass is also hardened at the generic `Const` boundary: symbolic operands in `Const` parameters must now resolve to a local `defconst`, an exact named registry constant, or an exact parameter-family value. This closes the class of false negatives exposed by `set-goal ... ri-logistica`, where `set-goal`'s `Value` is a `Const` slot and therefore bypassed the previous family-only checks.
 
+## Adversarial identifier hardening: wildcard and display-name boundaries
+
+The September 23, 2026 adversarial Basilisk scan found two validator false-positive classes. First, object-inventory notes such as `Can be counted with trebuchet-set` and `Can be counted with villager-hunter` were converted into `objectWildcards` and accepted in every object-family slot. The validator now admits those documented wildcard symbols only when the command is a `unit-type-count`-family command and the parameter is `UnitId`. They are no longer valid for `build`, `up-garrison` `ObjectId`, or other general object slots. Second, the AIRef object schema loader was importing human-readable `entry.name` fields into the executable object identifier set. Those display names are now excluded; only `ai_name` and `line` contribute canonical object identifiers. Self-tests now cover wildcard misuse in build and garrison slots and display-name misuse with `Arbalest`.
+
+Current controller SHA: `b4ef1fc548d7ffd9465c12e8695a4f74bbcccebd`; validator SHA: `ef03d1326588bf8b5f4fe1112158b9f86c51e309`; self-test SHA: `22228592e8e01c52c6a98217255d8c997d828402`.
+
 ## Current strictness upgrades
 
 Three engine-hygiene diagnostics are now explicit and intentionally named after the failures they prevent:
