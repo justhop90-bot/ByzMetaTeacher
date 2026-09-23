@@ -5886,6 +5886,15 @@ sn-stone-gatherer-percentage == 0)))))
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)
+    (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-imperial-prereq)
+=>
+    (chat-local-to-self "BASILISK | RESOURCE | IMPERIAL-PREREQ")
+    (set-goal bt-debug-last-resource-mode-goal bt-resource-mode-imperial-prereq)
+)
+
+(defrule
+    (up-compare-goal bt-debug-verbosity-goal >= 1)
     (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
     (up-compare-goal bt-debug-last-resource-mode-goal != bt-resource-mode-castle-stone-premium)
 =>
