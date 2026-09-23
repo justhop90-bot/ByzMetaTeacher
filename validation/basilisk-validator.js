@@ -2154,6 +2154,22 @@ function validateScoutingLifecycle(rules) {
     "[Scouting lifecycle] civilian explorer cap must remain zero",
   );
   assert.ok(
+    source.includes("(defconst bt-scout-first-pulse 30)"),
+    "[Scouting lifecycle] explicit first scouting pulse must be 30 seconds",
+  );
+  assert.ok(
+    source.includes("(defconst bt-scout-home-pulse 60)"),
+    "[Scouting lifecycle] home-search pulse must remain 60 seconds or less",
+  );
+  assert.ok(
+    source.includes("(defconst bt-scout-home-grace 300)"),
+    "[Scouting lifecycle] protected home-search window must remain 300 seconds",
+  );
+  assert.ok(
+    source.includes("(enable-timer bt-scouting-timer bt-scout-first-pulse)"),
+    "[Scouting lifecycle] initial scouting timer must use the explicit first pulse",
+  );
+  assert.ok(
     source.includes("(set-strategic-number sn-home-exploration-time bt-scout-home-grace)"),
     "[Scouting lifecycle] home exploration window is missing",
   );
