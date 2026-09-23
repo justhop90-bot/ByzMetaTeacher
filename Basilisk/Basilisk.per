@@ -205,6 +205,9 @@
 
 ; Existing/community timer identifiers.
 (defconst bt-scouting-timer 3)
+(defconst bt-scout-home-pulse 60)
+(defconst bt-scout-home-grace 300)
+(defconst bt-scout-enemy-pulse 180)
 (defconst bt-attack-timer 4)
 (defconst bt-retreat-timer 15)
 
@@ -974,7 +977,13 @@
     (true)
 =>
     (set-strategic-number sn-number-explore-groups 1)
-    (set-strategic-number sn-total-number-explorers 1)
+    ; Let the engine's normal explorer policy own the opening search.
+    ; One military scout explores; civilian exploration remains disabled.
+    (set-strategic-number sn-total-number-explorers 10)
+    (set-strategic-number sn-percent-civilian-explorers 100)
+    (set-strategic-number sn-cap-civilian-explorers 0)
+    (set-strategic-number sn-percent-half-exploration 100)
+    (set-strategic-number sn-home-exploration-time bt-scout-home-grace)
     ; Community-proven gatherer handoff behavior.
     (set-strategic-number sn-intelligent-gathering 1)
     (set-strategic-number sn-retask-gather-amount 0)
@@ -992,7 +1001,7 @@
 (defrule
     (true)
 =>
-    (enable-timer bt-scouting-timer 120)
+    (enable-timer bt-scouting-timer 30)
     (enable-timer bt-attack-timer 900)
     (disable-timer bt-retreat-timer)
     (disable-timer bt-attack-gather-watchdog-timer)
@@ -3675,13 +3684,15 @@
 ; upgraded Light Cavalry/Hussar scout remains a mobile reconnaissance asset.
 (defrule
     (timer-triggered bt-scouting-timer)
-    (game-time >= 120)
-    (players-building-count target-player <= 0)
+    (or
+        (game-time < bt-scout-home-grace)
+        (sheep-and-forage-too-far)
+    )
     (unit-type-count scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-flank)
-    (enable-timer bt-scouting-timer 120)
+    (enable-timer bt-scouting-timer bt-scout-home-pulse)
 )
 
 ;---------------------------------------------------------------
@@ -3692,13 +3703,14 @@
 ; building witness.  any-enemy is deliberately not used here.
 (defrule
     (timer-triggered bt-scouting-timer)
-    (game-time >= 120)
+    (game-time >= bt-scout-home-grace)
+    (not (sheep-and-forage-too-far))
     (players-building-count target-player > 0)
     (unit-type-count scout-cavalry-line >= 1)
     (strategic-number sn-number-explore-groups > 0)
 =>
     (up-send-scout bt-land-explore-group scout-enemy)
-    (enable-timer bt-scouting-timer 180)
+    (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
 )
 
 ;---------------------------------------------------------------
