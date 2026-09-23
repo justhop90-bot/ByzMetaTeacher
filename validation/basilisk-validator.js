@@ -1699,6 +1699,7 @@ console.log(JSON.stringify({
     "DE rule/element/line/timer hard limits",
     "exact defrule => separator and action-section structure",
     "invalid identifier resolution for engine-facing typed slots",
+    "AIRef command arity, parameter-family, type-prefix, and typed-operand schema contracts",
     "typed c:/g:/s: operand resolution and timer identifiers",
     "missing closing parenthesis diagnostics with source line",
     "rule-too-long diagnostics at the DE 32-element ceiling",
