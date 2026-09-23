@@ -586,6 +586,44 @@ function validateParserGradeRuleStructure(sourceText) {
     }
   };
 
+  const defconstAliases = new Map();
+  for (const form of forms) {
+    if (form.head !== "defconst") continue;
+    const value = form.args[1]?.value;
+    if (
+      typeof value === "string" &&
+      !value.startsWith(""") &&
+      !/^-?\d+$/.test(value)
+    ) {
+      defconstAliases.set(form.args[0].value, value);
+    }
+  }
+
+  const reportedAliasCycles = new Set();
+  for (const start of defconstAliases.keys()) {
+    const path = [];
+    const seen = new Map();
+    let current = start;
+    while (defconstAliases.has(current)) {
+      if (seen.has(current)) {
+        const cycle = path.slice(seen.get(current));
+        const key = [...cycle].sort().join("|");
+        if (!reportedAliasCycles.has(key)) {
+          reportedAliasCycles.add(key);
+          assert.fail(
+            "[Defconst] alias cycle " +
+              [...cycle, current].join(" -> ") +
+              " cannot resolve",
+          );
+        }
+        break;
+      }
+      seen.set(current, path.length);
+      path.push(current);
+      current = defconstAliases.get(current);
+    }
+  }
+
   for (const form of forms) {
     if (form.head === "defconst") {
       assert.equal(
@@ -677,6 +715,101 @@ function validateParserGradeRuleStructure(sourceText) {
   }
 
   return forms;
+}
+
+
+function validatePreprocessorStructure(sourceText) {
+  const lines = stripComments(sourceText).split("\n");
+  const stack = [];
+  const MAX_DEPTH = 50;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineNumber = index + 1;
+    const trimmed = lines[index].trim();
+    if (!trimmed.startsWith("#")) continue;
+
+    const definedMatch = trimmed.match(
+      /^#load-if-defined\s+([A-Za-z_][A-Za-z0-9_-]*)\s*$/,
+    );
+    if (definedMatch) {
+      stack.push({ line: lineNumber, inElse: false });
+      assert.ok(
+        stack.length <= MAX_DEPTH,
+        "[Preprocessor] conditional loading exceeds " +
+          MAX_DEPTH +
+          " nested levels at line " +
+          lineNumber,
+      );
+      continue;
+    }
+
+    const notDefinedMatch = trimmed.match(
+      /^#load-if-not-defined\s+([A-Za-z_][A-Za-z0-9_-]*)\s*$/,
+    );
+    if (notDefinedMatch) {
+      stack.push({ line: lineNumber, inElse: false });
+      assert.ok(
+        stack.length <= MAX_DEPTH,
+        "[Preprocessor] conditional loading exceeds " +
+          MAX_DEPTH +
+          " nested levels at line " +
+          lineNumber,
+      );
+      continue;
+    }
+
+    if (/^#load-if-(?:defined|not-defined)\b/.test(trimmed)) {
+      assert.fail(
+        "[Preprocessor] malformed conditional directive at line " +
+          lineNumber +
+          "; expected a symbol name",
+      );
+    }
+
+    if (trimmed === "#else") {
+      assert.ok(
+        stack.length > 0,
+        "[Preprocessor] unexpected #else at line " +
+          lineNumber +
+          "; no matching conditional block",
+      );
+      const frame = stack.at(-1);
+      assert.ok(
+        !frame.inElse,
+        "[Preprocessor] duplicate #else at line " +
+          lineNumber +
+          "; conditional block already has an else branch",
+      );
+      frame.inElse = true;
+      continue;
+    }
+
+    if (trimmed === "#end-if") {
+      assert.ok(
+        stack.length > 0,
+        "[Preprocessor] unexpected #end-if at line " +
+          lineNumber +
+          "; no matching conditional block",
+      );
+      stack.pop();
+      continue;
+    }
+
+    if (
+      /^#(?:load-if-defined|load-if-not-defined|else|end-if)\b/.test(trimmed)
+    ) {
+      assert.fail(
+        "[Preprocessor] malformed directive at line " + lineNumber,
+      );
+    }
+  }
+
+  assert.equal(
+    stack.length,
+    0,
+    "[Preprocessor] unterminated conditional block opened at line " +
+      stack.at(-1)?.line,
+  );
 }
 
 function renderRule(rule) {
@@ -3041,6 +3174,7 @@ function validateLifecycleAnchors(sourceText, rules) {
 
 validateRuleStructure(source);
 validateBalancedParens(source);
+validatePreprocessorStructure(source);
 validateParserGradeRuleStructure(source);
 validateGoalFactSyntax(source);
 validateBooleanArity(source);
