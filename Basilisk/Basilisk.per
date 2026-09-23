@@ -7642,21 +7642,11 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (set-strategic-number sn-placement-to-center 1)
 )
 
+
 (defrule
     ; Original pre-Imperial Cataphract Castle executor.
     (goal bt-castle-cataphract-demand-goal 1)
     (goal bt-imperial-siege-package-goal 0)
-    (goal bt-castle-cataphract-failure-history-goal 0)
-    (goal bt-castle-cataphract-backoff-goal 0)
-    (current-age >= castle-age)
-    (building-type-count-total castle < 1)
-    (up-pending-objects c: castle == 0)
-    (strategic-number sn-resource-control == 0)
-    (building-available castle)
-    (can-build-with-escrow castle)
-=>
-(defrule
-    (goal bt-castle-cataphract-demand-goal 1)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
     (current-age >= castle-age)
@@ -11642,8 +11632,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (train trebuchet)
 )
 
-;---------------------------------------------------------------
-; 18A.2. ATTACK / BUILDING-PRESSURE RAM DEMAND
 ;---------------------------------------------------------------
 ; 18A.2. ATTACK / BUILDING-PRESSURE RAM DEMAND
 ;---------------------------------------------------------------
