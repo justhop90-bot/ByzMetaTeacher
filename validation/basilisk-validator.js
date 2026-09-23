@@ -1309,6 +1309,36 @@ const AIREF_MATH_OPS = new Set([
   "s:%/",
 ]);
 
+function normalizeAIRefTypedOperands(args, parameters) {
+  const normalized = [];
+  let cursor = 0;
+
+  for (const parameter of parameters) {
+    const first = args[cursor];
+    if (
+      parameter.name !== "typeOp" &&
+      typeof first === "string" &&
+      AIREF_TYPE_PREFIXES.has(first) &&
+      cursor + 1 < args.length
+    ) {
+      normalized.push({
+        value: args[cursor + 1],
+        typePrefix: first,
+      });
+      cursor += 2;
+    } else {
+      normalized.push({
+        value: first,
+        typePrefix: null,
+      });
+      cursor += 1;
+    }
+  }
+
+  if (cursor !== args.length) return null;
+  return normalized;
+}
+
 function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
   const schema = loadAIRefCommandSchema(repoRootPath);
   const families = loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath);
@@ -1375,7 +1405,12 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
     if (splitTypedComparison) {
       return;
     }
-    if (expression.args.length !== parameters.length) {
+
+    const normalizedArguments = normalizeAIRefTypedOperands(
+      expression.args,
+      parameters,
+    );
+    if (!normalizedArguments) {
       reportFailure(
         "command-arity-mismatch",
         expression,
@@ -1383,8 +1418,9 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         command.name +
           " expects " +
           parameters.length +
-          " arguments, got " +
-          expression.args.length,
+          " logical arguments, got " +
+          expression.args.length +
+          " lexical arguments",
       );
       return;
     }
@@ -1392,7 +1428,9 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
     for (let index = 0; index < parameters.length; index += 1) {
       const parameter = parameters[index];
       const parameterName = parameter.name;
-      const value = expression.args[index];
+      const argument = normalizedArguments[index];
+      const value = argument.value;
+      const typePrefix = argument.typePrefix;
 
       if (parameterName === "typeOp") {
         if (!AIREF_TYPE_PREFIXES.has(value)) {
@@ -1493,8 +1531,39 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
 
       const expectedFamily = expectedAIRefFamily(parameterName);
       const actualFamily = typedSchemaFamily(value, families);
+      const expectedTypedFamily =
+        typePrefix === "g:"
+          ? "goal"
+          : typePrefix === "s:"
+            ? "strategic number"
+            : null;
 
       if (
+        expectedTypedFamily &&
+        actualFamily &&
+        actualFamily !== expectedTypedFamily
+      ) {
+        reportFailure(
+          "command-typed-operand-mismatch",
+          expression,
+          index + 1,
+          command.name +
+            " argument " +
+            (index + 1) +
+            " uses '" +
+            value +
+            "', which is a " +
+            actualFamily +
+            "; type prefix '" +
+            typePrefix +
+            "' requires a " +
+            expectedTypedFamily +
+            " operand",
+        );
+      }
+
+      if (
+        !typePrefix &&
         expectedFamily === "object" &&
         isSymbolicSchemaValue(value) &&
         !families.defconsts.has(value) &&
@@ -1522,6 +1591,7 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         );
       }
       if (
+        !typePrefix &&
         expectedFamily &&
         actualFamily &&
         expectedFamily !== actualFamily
