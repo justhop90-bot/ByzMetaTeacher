@@ -7527,24 +7527,29 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 )
 
 ;---------------------------------------------------------------
-; 15H. CASTLE -> IMPERIAL PREREQUISITE: SIEGE WORKSHOP
+; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING
 ;---------------------------------------------------------------
-; Deterministic Imperial path:
-;   Siege Workshop -> University.
+; Imperial uses any two qualifying Castle-age buildings from:
+;   Monastery, Siege Workshop, University.
 ;
-; Imperial feasibility is the demand witness. A Castle is the
-; alternate Imperial prerequisite, so these buildings are not forced
-; when a Castle already satisfies the engine requirement.
+; The Monastery is already a live Castle-age capability in Basilisk. Once
+; one qualifying building exists, either missing alternative is a valid
+; second provider. Castle/Cataphract demand must not own this prerequisite
+; path; it is a separate strategic capability decision.
+;
+; Siege Workshop is first in source order, so when Monastery exists and both
+; alternatives are absent it is the deterministic preferred second provider.
+; If Siege Workshop is not currently buildable, University can claim the same
+; one-of-three completion path later in the pass.
 (defrule
     (current-age == castle-age)
     (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
-    (goal bt-castle-cataphract-demand-goal 0)
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
     (or
-        (building-type-count-total university < 1)
-        (building-type-count-total monastery < 1)
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total university >= 1)
     )
     (building-type-count-total siege-workshop < 1)
     (up-pending-objects c: siege-workshop == 0)
@@ -7580,19 +7585,22 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 )
 
 ;---------------------------------------------------------------
-; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY
+; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY FALLBACK
 ;---------------------------------------------------------------
-; University is downstream of Siege Workshop so the two-building
-; Imperial path is serialized and deterministic.
+; University is the alternate second provider. When Monastery or Siege
+; Workshop already exists, completing University gives the second qualifying
+; Castle-age building and should immediately satisfy the Imperial prerequisite.
 (defrule
     (current-age == castle-age)
     (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
-    (goal bt-castle-cataphract-demand-goal 0)
-    (building-type-count siege-workshop >= 1)
+    (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total siege-workshop >= 1)
+    )
     (building-type-count-total university < 1)
-    (building-type-count-total monastery < 1)
     (up-pending-objects c: university == 0)
     (strategic-number sn-resource-control == 0)
     (can-build-with-escrow university)
