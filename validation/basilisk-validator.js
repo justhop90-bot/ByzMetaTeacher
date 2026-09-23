@@ -3478,7 +3478,7 @@ function validateStrategicNarration(sourceText, rules) {
     "BASILISK | STRATEGY | FLUSH",
     "BASILISK | STRATEGY | RUSH",
     "BASILISK | STRATEGY | BOOM",
-    "BASILISK | STRATEGY | CASTLE-POWER",
+    "BASILISK | STRATEGY | CASTLE-POWER: pressure survives the age-up.",
     "BASILISK | THREAT | confirmed pressure.",
     "BASILISK | RESOURCE | CASTLE-BANK",
     "BASILISK | COMPOSITION | CROSSBOW",
