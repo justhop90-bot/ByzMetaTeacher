@@ -2739,28 +2739,16 @@
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
     (or
+        (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
         (and
-            (goal strategy-goal bt-strategy-boom)
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
             (unit-type-count villager >= 36)
             (food-amount >= 500)
             (gold-amount >= 200)
         )
-        (or
-            (and
-                (goal strategy-goal bt-strategy-castle-power)
-                (unit-type-count villager >= 36)
-                (food-amount >= 500)
-                (gold-amount >= 200)
-            )
-            (and
-                (goal strategy-goal bt-strategy-flush)
-                (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
-            )
-        )
-    )
-    (or
-        (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
-        (unit-type-count villager >= 36)
     )
 =>
     (set-goal bt-castle-cataphract-demand-goal 1)
