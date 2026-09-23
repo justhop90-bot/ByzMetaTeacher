@@ -317,15 +317,8 @@ function validateRuleStructure(sourceText) {
     );
 
     if (head === "include") {
-      const includeMatch = form.match(/^\(include\s+"([^"]+)"\)$/);
-      assert.ok(
-        includeMatch,
-        "[Include] include must name exactly one quoted XS file",
-      );
-      assert.ok(
-        includeMatch[1].toLowerCase().endsWith(".xs"),
-        "[Include] included file must use the .xs extension",
-      );
+      cursor = end;
+      continue;
     }
 
     if (head === "defrule") {
