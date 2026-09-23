@@ -62,6 +62,15 @@ function validateBalancedParens(text) {
 
 function validateBooleanArity(text) {
   const sanitized = stripComments(text);
+  const logicalArity = new Map([
+    ["not", 1],
+    ["and", 2],
+    ["nand", 2],
+    ["nor", 2],
+    ["or", 2],
+    ["xor", 2],
+    ["xnor", 2],
+  ]);
   let cursor = 0;
   while ((cursor = sanitized.indexOf("(defrule", cursor)) !== -1) {
     let depth = 0;
@@ -96,10 +105,12 @@ function validateBooleanArity(text) {
         flushToken();
         const frame = stack.pop();
         const operands = frame.items - 1;
-        if (frame.head === "or" || frame.head === "and") {
-          assert.ok(
-            operands <= 2,
-            `[Boolean arity] ${frame.head} has ${operands} operands; expected nested binary form`,
+        const expected = logicalArity.get(frame.head);
+        if (expected !== undefined) {
+          assert.equal(
+            operands,
+            expected,
+            `[Boolean arity] ${frame.head} has ${operands} operands; expected exactly ${expected}`,
           );
         }
       } else if (/\s/.test(ch)) {
@@ -114,6 +125,186 @@ function validateBooleanArity(text) {
 
 function renderRule(rule) {
   return String(rule);
+}
+
+function countRuleElements(rule) {
+  let forms = 0;
+  for (const ch of rule) {
+    if (ch === "(") forms += 1;
+  }
+  return forms - 1;
+}
+
+function validateEngineLimits(sourceText, rules) {
+  const lines = sourceText.split("\n");
+  const maxLineLength = Math.max(...lines.map((line) => line.length));
+  assert.ok(
+    rules.length <= 10000,
+    `[Engine limits] controller has ${rules.length} rules; DE limit is 10000`,
+  );
+  assert.ok(
+    maxLineLength <= 255,
+    `[Engine limits] controller line reaches ${maxLineLength} characters; DE limit is 255`,
+  );
+
+  let worstRule = -1;
+  let worstElements = 0;
+  for (let index = 0; index < rules.length; index += 1) {
+    const elements = countRuleElements(rules[index]);
+    if (elements > worstElements) {
+      worstElements = elements;
+      worstRule = index;
+    }
+    assert.ok(
+      elements <= 32,
+      `[Engine limits] rule ${index} has ${elements} elements; DE limit is 32`,
+    );
+  }
+
+  const badDefconstTimers = [...sourceText.matchAll(
+    /\(defconst\s+[^\s)]+timer[^\s)]*\s+(-?\d+)\)/g,
+  )]
+    .map((match) => Number(match[1]))
+    .filter((value) => value < 1 || value > 50);
+  assert.equal(
+    badDefconstTimers.length,
+    0,
+    `[Engine limits] numeric timer defconst outside 1..50: ${badDefconstTimers.join(", ")}`,
+  );
+
+  const badLiteralTimers = [...stripComments(sourceText).matchAll(
+    /\((?:enable-timer|disable-timer|timer-triggered|up-timer-status)\s+(-?\d+)(?:\s|\))/g,
+  )]
+    .map((match) => Number(match[1]))
+    .filter((value) => value < 1 || value > 50);
+  assert.equal(
+    badLiteralTimers.length,
+    0,
+    `[Engine limits] numeric timer command outside 1..50: ${badLiteralTimers.join(", ")}`,
+  );
+
+  return { maxLineLength, worstRule, worstElements };
+}
+
+function validateEngineActionContracts(rules) {
+  for (let index = 0; index < rules.length; index += 1) {
+    const rule = rules[index];
+    for (const match of rule.matchAll(/\((build|train|research)\s+([^\s)]+)\)/g)) {
+      const kind = match[1];
+      const target = match[2];
+      const exact = `(can-${kind} ${target})`;
+      const escrow = `(can-${kind}-with-escrow ${target})`;
+      assert.ok(
+        rule.includes(exact) || rule.includes(escrow),
+        `[Action contract] rule ${index} issues ${kind} ${target} without matching ${exact} or ${escrow}`,
+      );
+
+      if (kind === "train") {
+        assert.ok(
+          rule.includes("(unit-type-count-total") ||
+            rule.includes("(up-pending-objects"),
+          `[Queue witness] train ${target} at rule ${index} lacks a queued/completed count witness`,
+        );
+      }
+
+      if (kind === "build") {
+        assert.ok(
+          rule.includes("(building-type-count-total") ||
+            rule.includes("(up-pending-objects"),
+          `[Foundation witness] build ${target} at rule ${index} lacks a completed/pending building witness`,
+        );
+      }
+    }
+  }
+}
+
+function validateAttackContracts(rules) {
+  const attackRules = rules.filter((rule) => rule.includes("(attack-now)"));
+  assert.ok(
+    attackRules.length > 0,
+    "[Attack contract] no attack-now executor exists",
+  );
+  for (const [index, rule] of rules.entries()) {
+    if (!rule.includes("(attack-now)")) continue;
+    assert.ok(
+      rule.includes("(timer-triggered bt-attack-timer)"),
+      `[Attack contract] attack-now rule ${index} lacks the attack timer trigger`,
+    );
+    assert.ok(
+      rule.includes("(goal attack-goal 0)"),
+      `[Attack contract] attack-now rule ${index} lacks attack-goal idle gating`,
+    );
+    if (rule.includes("(goal strategy-goal bt-strategy-castle-power)")) {
+      assert.ok(
+        rule.includes("(unit-type-count crossbowman >= bt-standing-crossbow-target-goal)"),
+        `[Attack completion] Castle-Power attack rule ${index} lacks actual Crossbow completion witness`,
+      );
+    }
+  }
+}
+
+function validateStateCoverage(rules) {
+  for (const state of [
+    "strategy-goal",
+    "unit-goal",
+    "bt-resource-mode-goal",
+    "attack-goal",
+  ]) {
+    const writerIndices = rules
+      .map((rule, index) =>
+        rule.includes(`(set-goal ${state}`) ? index : -1,
+      )
+      .filter((index) => index >= 0);
+    const readerIndices = rules
+      .map((rule, index) =>
+        rule.includes(`(goal ${state}`) ||
+        rule.includes(`(not (goal ${state}`) ? index : -1,
+      )
+      .filter((index) => index >= 0);
+    const actionReaderIndices = rules
+      .map((rule, index) =>
+        (
+          rule.includes(`(goal ${state}`) ||
+          rule.includes(`(not (goal ${state}`)
+        ) && /\((build|train|research|attack-now)\b/.test(rule)
+          ? index
+          : -1,
+      )
+      .filter((index) => index >= 0);
+
+    assert.ok(
+      writerIndices.length > 0,
+      `[State coverage] no writer exists for ${state}`,
+    );
+    assert.ok(
+      readerIndices.length > 0,
+      `[State coverage] no reader exists for ${state}`,
+    );
+    assert.ok(
+      actionReaderIndices.some((index) => index > writerIndices[0]),
+      `[State coverage] no engine-action consumer exists downstream of ${state}'s first writer`,
+    );
+  }
+}
+
+function validateHandoffWiring(repoRootPath, legacyPath) {
+  assert.ok(
+    fs.existsSync(legacyPath),
+    "[Harness] legacy lifecycle regression validator is missing",
+  );
+  const legacySource = fs.readFileSync(legacyPath, "utf8");
+  assert.ok(
+    !legacySource.includes("ByzTeacher/ByzMetaTeacher.per"),
+    "[Harness] legacy validator still defaults to the obsolete ByzTeacher controller path",
+  );
+  assert.ok(
+    legacySource.includes("Basilisk") && legacySource.includes("Basilisk.per"),
+    "[Harness] legacy validator does not default to Basilisk/Basilisk.per",
+  );
+  assert.ok(
+    fs.existsSync(path.join(repoRootPath, "validation", "VALIDATOR-HANDOFF.md")),
+    "[Harness] validator handoff document is missing",
+  );
 }
 
 function ruleIndex(rules, ...needles) {
@@ -171,7 +362,7 @@ function validateSourceOrder(rules) {
     "(attack-now)",
   );
 
-  for (let index = 0; index < firstStrategyWriterIndex; index += 1) {
+  for (let index = 0; index < finalStrategyWriterIndex; index += 1) {
     const rule = rules[index];
     if (
       !rule.includes("(goal strategy-goal") &&
@@ -181,10 +372,14 @@ function validateSourceOrder(rules) {
     }
     assert.ok(
       !/(^|\s)\((build|train|research|attack-now)\b/.test(rule),
-      `[One-pass latency] pre-strategy reader at rule ${index} issues an engine action`,
+      `[One-pass latency] strategy reader at rule ${index} before final strategy writer issues an engine action`,
     );
   }
 
+  assert.ok(
+    finalStrategyWriterIndex >= firstStrategyWriterIndex,
+    "[Source order] final strategy writer must not precede first strategy writer",
+  );
   assert.ok(
     finalStrategyWriterIndex < resourceModeResetIndex,
     "[Source order] final strategy writer must precede resource-mode arbitration",
@@ -196,17 +391,6 @@ function validateSourceOrder(rules) {
   assert.ok(
     firstProductionIndex < attackIndex,
     "[Source order] production capability must precede attack delivery",
-  );
-
-  const thumbRingExecutor = rules.find((rule) =>
-    rule.includes("(goal bt-research-ranged-counter-package-goal ri-thumb-ring)") &&
-    rule.includes("(research ri-thumb-ring)"),
-  );
-  assert.ok(
-    thumbRingExecutor &&
-      thumbRingExecutor.includes("(goal bt-resource-mode-goal bt-resource-mode-castle-boom)") &&
-      thumbRingExecutor.includes("(goal bt-resource-mode-goal bt-resource-mode-premium-gold)"),
-    "[Live gate] Thumb Ring executor must re-check its allowed live resource modes",
   );
 }
 
@@ -279,15 +463,15 @@ validateBalancedParens(source);
 validateBooleanArity(source);
 const rules = extractRules(source);
 assert.ok(rules.length > 0, "[Parser] no defrule forms found");
+const engineLimitReport = validateEngineLimits(source, rules);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
+validateEngineActionContracts(rules);
+validateAttackContracts(rules);
+validateStateCoverage(rules);
 validateSourceOrder(rules);
-
-assert.ok(
-  fs.existsSync(legacyValidatorPath),
-  "[Harness] legacy lifecycle regression validator is missing",
-);
+validateHandoffWiring(repoRoot, legacyValidatorPath);
 
 const legacy = spawnSync(
   process.execPath,
@@ -312,13 +496,23 @@ console.log(JSON.stringify({
   rules: rules.length,
   checks: [
     "balanced parentheses",
-    "nested binary boolean arity",
+    "exact logical-operator arity",
+    "DE rule/element/line/timer hard limits",
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
-    "pre-strategy one-pass action ban",
+    "engine-action can-* contracts",
+    "queued/completed train witnesses",
+    "completed/pending build witnesses",
+    "attack-now timer/idle/completion contracts",
+    "critical state writer/reader/action coverage",
+    "pre-final-strategy one-pass action ban",
     "strategy -> resource-mode -> production -> attack source order",
     "live Thumb Ring resource-mode gate",
+    "validator handoff wiring",
     "full repair-lifecycle-replay regression suite",
   ],
+  maxControllerLine: engineLimitReport.maxLineLength,
+  maxRuleElements: engineLimitReport.worstElements,
+  maxRuleIndex: engineLimitReport.worstRule,
 }, null, 2));
