@@ -1877,9 +1877,12 @@
 ; package predicates remain the execution gate, while research-complete
 ; is the only success witness.
 ; CATAPHRACT PREMIUM PACKAGE
+; Tier 1 (6-9 enemy infantry) is a completed Cataphract response, not a
+; premium-research package. Logistica begins only at the 10-unit threat tier.
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
+    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-2)
     (up-research-status c: ri-logistica < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-logistica)
@@ -1887,6 +1890,7 @@
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 1)
+    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-3)
     (up-research-status c: ri-logistica == research-complete)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
@@ -1895,9 +1899,33 @@
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (up-research-status c: ri-logistica == research-complete)
+    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-3)
     (up-research-status c: ri-elite-cataphract < research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal ri-elite-cataphract)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal ri-logistica)
+    (up-research-status c: ri-logistica == research-complete)
+    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)
+=>
+    (set-goal bt-research-cataphract-package-goal 0)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal ri-logistica)
+    (goal bt-research-castle-claim-goal 0)
+    (up-research-status c: ri-logistica < research-pending)
+    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
+=>
+    (set-goal bt-research-cataphract-package-goal 0)
+)
+(defrule
+    (goal bt-research-cataphract-package-goal ri-elite-cataphract)
+    (goal bt-research-castle-claim-goal 0)
+    (up-research-status c: ri-elite-cataphract < research-pending)
+    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)
+=>
+    (set-goal bt-research-cataphract-package-goal 0)
 )
 (defrule
     (goal bt-research-cataphract-package-goal ri-elite-cataphract)
@@ -2383,6 +2411,25 @@
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-demand-goal 0)
     (set-goal bt-castle-cataphract-backoff-goal 0)
+)
+
+; Imperial Cataphract recovery reuses the existing Castle project lifecycle after
+; the civilization has aged past the original Castle-demand creation window.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
 )
 
 ; Construction failure is temporary execution state. Once the
@@ -4215,10 +4262,7 @@ cataphract-line < bt-cataphract-target-1)))))
             (or
                 (and
                     (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
-                    (and
-                        (unit-type-count cataphract-line >= bt-cataphract-target-1)
-                        (up-research-status c: ri-logistica == research-complete)
-                    )
+                    (unit-type-count cataphract-line >= bt-cataphract-target-1)
                 )
                 (or
                     (and
@@ -6460,7 +6504,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
     (goal bt-castle-cataphract-demand-goal 1)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
-    (current-age == castle-age)
+    (current-age >= castle-age)
     (building-type-count-total castle < 1)
     (up-pending-objects c: castle == 0)
     (strategic-number sn-resource-control == 0)
