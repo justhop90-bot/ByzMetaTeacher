@@ -3481,8 +3481,10 @@ function validateImperialPrerequisiteProviders(rules) {
     (rule) =>
       rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
       rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
-      rule.includes("(can-research-with-escrow imperial-age)") &&
-      rule.includes("(building-type-count-total castle >= 1)"),
+      rule.includes("(or") &&
+      rule.includes("(current-age >= imperial-age)") &&
+      rule.includes("(building-type-count-total castle >= 1)") &&
+      rule.includes("(can-research-with-escrow imperial-age)"),
   );
   assert.ok(
     demandClear,
