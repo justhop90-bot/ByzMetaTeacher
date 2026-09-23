@@ -4111,6 +4111,7 @@
 ;----------------------------------------------------------------
 (defrule
     (goal bt-opening-plan-goal bt-opening-plan-anti-rush)
+    (current-age < castle-age)
     (not (goal strategy-goal bt-strategy-flush))
 =>
     (set-goal strategy-goal bt-strategy-flush)
@@ -4158,6 +4159,7 @@
     (current-age >= castle-age)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
+    (not (goal strategy-goal bt-strategy-castle-power))
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
