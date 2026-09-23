@@ -95,6 +95,12 @@ try {
       ),
     },
     {
+      name: "typed-player-number-operand-passes",
+      source:
+        baseline +
+        "\n(defrule\n    (players-unit-type-count g: bt-villager-defense-raider-player-goal scout-cavalry-line >= 1)\n=>\n    (true)\n)\n",
+    },
+    {
       name: "up-get-point-base-15998-passes",
       source:
         baseline +
