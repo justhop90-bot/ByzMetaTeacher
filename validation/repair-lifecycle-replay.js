@@ -837,6 +837,91 @@ requireRule(
   "(not (goal bt-any-threat-goal 1))",
   "(set-goal strategy-goal bt-strategy-boom)",
 );
+
+function ruleIndex(...needles) {
+  const index = rules.findIndex((rule) => needles.every((needle) => renderRule(rule).includes(needle)));
+  assert.notEqual(index, -1, `[Strategy order] rule not found: ${needles.join(" | ")}`);
+  return index;
+}
+
+const threatWriterIndices = [
+  ruleIndex(
+    "(players-unit-type-count any-enemy knight-line >= 3)",
+    "(set-goal bt-cavalry-threat-goal 1)",
+    "(set-goal bt-any-threat-goal 1)",
+  ),
+  ruleIndex(
+    "(players-unit-type-count any-enemy archer-line >= 3)",
+    "(set-goal bt-ranged-threat-goal 1)",
+    "(set-goal bt-any-threat-goal 1)",
+  ),
+  ruleIndex(
+    "(players-unit-type-count any-enemy spearman-line >= 4)",
+    "(set-goal bt-spear-threat-goal 1)",
+    "(set-goal bt-any-threat-goal 1)",
+  ),
+];
+
+const flushEntryIndices = [
+  ruleIndex("(town-under-attack)", "(set-goal strategy-goal bt-strategy-flush)"),
+  ruleIndex(
+    "(goal bt-cavalry-threat-goal 1)",
+    "(not (goal strategy-goal bt-strategy-flush))",
+    "(set-goal strategy-goal bt-strategy-flush)",
+  ),
+  ruleIndex(
+    "(goal bt-ranged-threat-goal 1)",
+    "(not (goal strategy-goal bt-strategy-flush))",
+    "(set-goal strategy-goal bt-strategy-flush)",
+  ),
+  ruleIndex(
+    "(goal bt-spear-threat-goal 1)",
+    "(not (goal strategy-goal bt-strategy-flush))",
+    "(set-goal strategy-goal bt-strategy-flush)",
+  ),
+];
+
+const flushRecoveryIndex = ruleIndex(
+  "(goal strategy-goal bt-strategy-flush)",
+  "(current-age >= imperial-age)",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+const castlePowerPromotionIndex = ruleIndex(
+  "(goal strategy-goal bt-strategy-rush)",
+  "(current-age >= castle-age)",
+  "(players-building-count target-player > 0)",
+  "(player-in-game target-player)",
+  "(unit-type-count archer-line >= 4)",
+  "(set-goal strategy-goal bt-strategy-castle-power)",
+);
+const rushFallbackIndex = ruleIndex(
+  "(goal strategy-goal bt-strategy-rush)",
+  "(current-age >= castle-age)",
+  "(not (goal bt-any-threat-goal 1))",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+
+for (const threatIndex of threatWriterIndices) {
+  for (const flushIndex of flushEntryIndices) {
+    assert.ok(
+      threatIndex < flushIndex,
+      `[Strategy order] threat writer at rule ${threatIndex} must precede FLUSH entry rule ${flushIndex}`,
+    );
+  }
+  assert.ok(
+    threatIndex < flushRecoveryIndex,
+    `[Strategy order] threat writer at rule ${threatIndex} must precede FLUSH recovery rule ${flushRecoveryIndex}`,
+  );
+}
+
+assert.ok(
+  flushRecoveryIndex < castlePowerPromotionIndex,
+  "[Strategy order] FLUSH recovery must precede Castle-Power promotion",
+);
+assert.ok(
+  castlePowerPromotionIndex < rushFallbackIndex,
+  "[Strategy order] Castle-Power promotion must precede RUSH -> BOOM fallback",
+);
 requireRule(
   "Castle fallback excludes Castle-power",
   "(current-age >= castle-age)",
