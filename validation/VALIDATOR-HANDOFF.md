@@ -83,3 +83,20 @@ The validator also treats 255 characters as the source-line ceiling and keeps th
 8. `validation/basilisk-validator-selftest.js` runs the real front door against temporary mutated controllers covering unknown DUC identifiers, unknown timers, missing rule separators, stray top-level forms, unrelated production witnesses, duplicate/out-of-range defconsts, invalid `g:/s:` operands, and the new scout-dispatch, escrow-farm, and derived-state-order regressions. It also includes a positive string-safety case.
 
 The external standards behind these changes are AIRef's documented DE limits, logical-operator syntax, timer range, command vocabulary/type, point/cost/search-state goal allocation rules, DUC search-list bounds, and command parameter typing, plus community examples that pair feasibility commands with engine actions and use queued-aware unit-line counts. The current validator baseline is 795 rules, a 239-character maximum source line, and a 31-element maximum rule size. The AIRef schema covers all 385 commands, while the current Basilisk controller uses 88 of them.
+
+## September 23, 2026 parser-grade hardening
+
+The validator has now been cross-referenced against the community `joerollman/aoe2-ai-parser` parser/linter and the public AIRef command/rule guidance, with the actual runtime failure at Basilisk source line 2844 used as the adversarial test case.
+
+The important distinction is now explicit: balanced parentheses are necessary but not sufficient. The front door parses a strict expression tree before semantic validation and rejects malformed-but-balanced source structures including empty `defrule` fact/action sides, non-expression facts/actions, atomic-vs-nested expression violations, invalid logical operands, nested `defrule`/`defconst`, malformed `defconst`, unterminated quoted strings, unexpected closing parentheses, unclosed expressions, and defconst alias cycles. Preprocessor conditional structure is also checked for malformed directives, duplicate/unexpected `#else`, unexpected `#end-if`, nesting depth above 50, and unterminated conditionals.
+
+AIRef typed-prefix handling is deliberately strict. A standalone `c:/g:/s:` token is only legal where the command schema defines a `typeOp`; it is not silently attached to the following argument. This directly prevents the live failure where `(players-unit-type-count g: bt-villager-defense-raider-player-goal ...)` reached the game and was reported as a misleading missing-parenthesis error. The correct engine-native pattern is to bind the discovered player to `sn-focus-player-number` with `g:=` and then query `focus-player`.
+
+Current validator main commit: `b5cebdd278a730d9355c54cfb1c538634a4268a6`.
+Current validator blob: `6ace838303ca0a7a6b9bdbd336d16667922b29bc`.
+Parser-grade self-test additions are in `validation/basilisk-validator-selftest.js`, latest self-test commit `0e75126a670dd254a4d5e927f51ed2aec2e42387`.
+
+The hermetic V8 syntax harness has been run against the exact checked-in validator functions and current Basilisk source. The baseline passed; deliberate missing/extra parenthesis, empty rule sections, illegal logical operands, nested command expressions, unterminated strings, malformed defconst, preprocessor, and defconst-cycle fixtures all failed with the expected diagnostic class. Native Windows execution remains unavailable while the connected desktop is offline, so this is parser/source-level evidence, not a native game runtime PASS.
+
+Community scope boundary: the validator intentionally does not become a package manager. AI-parser diagnostics concerning repository load graphs, duplicate package roots, missing include/load targets, or editor/package metadata belong to package-level tooling rather than the single Basilisk controller front door. Engine syntax, command contracts, identifiers, limits, and Basilisk lifecycle semantics remain in scope.
+
