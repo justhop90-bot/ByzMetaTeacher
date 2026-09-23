@@ -1450,9 +1450,10 @@
     (goal bt-varangian-demand-goal 1)
     (or
         (current-age < castle-age)
-        (up-compare-goal bt-cavalry-counter-level-goal < 2)
-        (and
-            (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
+        (or
+            (up-compare-goal bt-cavalry-counter-level-goal < 2)
+            (and
+                (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
             (or
                 (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
                 (up-research-status c: ri-logistica == research-complete)
