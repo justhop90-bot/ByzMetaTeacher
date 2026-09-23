@@ -277,6 +277,54 @@ try {
 
   const mutations = [
     {
+      name: "missing-closing-parenthesis",
+      expected: "[Missing closing parenthesis]",
+      source: baseline.replace(
+        "(players-unit-type-count any-enemy scout-cavalry-line >= 1)",
+        "(players-unit-type-count any-enemy scout-cavalry-line >= 1",
+      ),
+    },
+    {
+      name: "unexpected-closing-parenthesis",
+      expected: "[Missing opening parenthesis]",
+      source: baseline + "\n)\n",
+    },
+    {
+      name: "empty-facts-section",
+      expected: "empty facts section",
+      source: baseline + "\n(defrule\n=>\n    (true)\n)\n",
+    },
+    {
+      name: "empty-actions-section",
+      expected: "empty actions section",
+      source: baseline + "\n(defrule\n    (true)\n=>\n)\n",
+    },
+    {
+      name: "logical-operator-requires-fact-expressions",
+      expected: "must contain only fact expressions as operands",
+      source: baseline + "\n(defrule\n    (or true (true))\n=>\n    (do-nothing)\n)\n",
+    },
+    {
+      name: "nested-command-expression-rejected",
+      expected: "contains a nested expression argument",
+      source: baseline + "\n(defrule\n    (true)\n=>\n    (up-build place-normal 0 c: (castle))\n)\n",
+    },
+    {
+      name: "unterminated-string",
+      expected: "unterminated quoted string",
+      source: baseline + '\n(defrule\n    (true)\n=>\n    (chat-local-to-self "unterminated)\n)\n',
+    },
+    {
+      name: "malformed-defconst",
+      expected: "requires exactly a name and one value",
+      source: baseline + "\n(defconst broken)\n",
+    },
+    {
+      name: "nested-defrule-rejected",
+      expected: "is nested inside defrule",
+      source: baseline + "\n(defrule\n    (defrule (true) => (do-nothing))\n=>\n    (do-nothing)\n)\n",
+    },
+    {
       name: "DE-runtime-rejected-arbalester-alias",
       expected: "DE runtime canonical identifier",
       source: baseline.replace(/\barbalest\b/g, "arbalester"),
@@ -849,11 +897,23 @@ try {
           "two-man-saw-demand-lumberjack-maturity-witness",
           "two-man-saw-executor-lumberjack-maturity-witness",
         ],
+        parserSyntaxClasses: [
+          "missing-closing-parenthesis",
+          "unexpected-closing-parenthesis",
+          "empty-facts-section",
+          "empty-actions-section",
+          "logical-operator-requires-fact-expressions",
+          "nested-command-expression-rejected",
+          "unterminated-string",
+          "malformed-defconst",
+          "nested-defrule-rejected",
+        ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
           "command-family-mismatch",
           "command-typed-prefix-mismatch",
           "command-typed-operand-mismatch",
+          "command-nested-expression-mismatch",
         "strict-enum-value-mismatch",
         "unsafe-set-target-object",
         "unscoped-duc-target",
