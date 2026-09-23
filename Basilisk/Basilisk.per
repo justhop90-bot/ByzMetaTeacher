@@ -562,6 +562,15 @@
 (defconst bt-debug-last-tc-stage-goal 706)
 (defconst bt-debug-last-tc-complete-goal 707)
 (defconst bt-debug-last-age-event-goal 708)
+(defconst bt-debug-age-feudal-bank-goal 713)
+(defconst bt-debug-age-feudal-start-goal 714)
+(defconst bt-debug-age-feudal-complete-goal 715)
+(defconst bt-debug-age-castle-bank-goal 716)
+(defconst bt-debug-age-castle-start-goal 717)
+(defconst bt-debug-age-castle-complete-goal 718)
+(defconst bt-debug-age-imperial-bank-goal 719)
+(defconst bt-debug-age-imperial-start-goal 720)
+(defconst bt-debug-age-imperial-complete-goal 721)
 (defconst bt-debug-last-eco-event-goal 709)
 (defconst bt-debug-last-strategy-goal 710)
 (defconst bt-debug-last-tc-project-goal 712)
@@ -804,6 +813,15 @@
     (set-goal bt-debug-last-tc-stage-goal 0)
     (set-goal bt-debug-last-tc-complete-goal 1)
     (set-goal bt-debug-last-age-event-goal 0)
+    (set-goal bt-debug-age-feudal-bank-goal 0)
+    (set-goal bt-debug-age-feudal-start-goal 0)
+    (set-goal bt-debug-age-feudal-complete-goal 0)
+    (set-goal bt-debug-age-castle-bank-goal 0)
+    (set-goal bt-debug-age-castle-start-goal 0)
+    (set-goal bt-debug-age-castle-complete-goal 0)
+    (set-goal bt-debug-age-imperial-bank-goal 0)
+    (set-goal bt-debug-age-imperial-start-goal 0)
+    (set-goal bt-debug-age-imperial-complete-goal 0)
     (set-goal bt-debug-last-eco-event-goal 0)
     (set-goal bt-debug-last-strategy-goal 0)
     (set-goal bt-debug-last-tc-project-goal 0)
@@ -2798,96 +2816,89 @@
 
 ;----------------------------------------------------------------
 ; BASILISK STRATEGIC NARRATION: AGE-UP LIFECYCLE
-; Demand/started/completed are read from existing engine witnesses.
+; Each milestone has an independent latch. A shared last-event latch can make
+; earlier lifecycle messages fire again after later milestones change its code.
 ;----------------------------------------------------------------
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == dark-age)
     (unit-type-count villager >= bt-feudal-villagers)
     (can-research-with-escrow feudal-age)
-    (up-compare-goal bt-debug-last-age-event-goal != 1)
+    (goal bt-debug-age-feudal-bank-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Feudal bank committed.")
-    (set-goal bt-debug-last-age-event-goal 1)
+    (set-goal bt-debug-age-feudal-bank-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == dark-age)
     (up-research-status c: feudal-age >= research-pending)
-    (up-compare-goal bt-debug-last-age-event-goal != 2)
+    (goal bt-debug-age-feudal-start-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Feudal research started.")
-    (set-goal bt-debug-last-age-event-goal 2)
+    (set-goal bt-debug-age-feudal-start-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age >= feudal-age)
-    (up-compare-goal bt-debug-last-age-event-goal != 3)
+    (goal bt-debug-age-feudal-complete-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Feudal complete.")
-    (set-goal bt-debug-last-age-event-goal 3)
+    (set-goal bt-debug-age-feudal-complete-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == feudal-age)
     (goal bt-castle-commitment-goal 1)
-    (up-compare-goal bt-debug-last-age-event-goal != 4)
+    (goal bt-debug-age-castle-bank-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Castle bank committed.")
-    (set-goal bt-debug-last-age-event-goal 4)
+    (set-goal bt-debug-age-castle-bank-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == feudal-age)
     (up-research-status c: castle-age >= research-pending)
-    (up-compare-goal bt-debug-last-age-event-goal != 5)
+    (goal bt-debug-age-castle-start-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Castle research started.")
-    (set-goal bt-debug-last-age-event-goal 5)
+    (set-goal bt-debug-age-castle-start-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age >= castle-age)
-    (up-compare-goal bt-debug-last-age-event-goal != 6)
+    (goal bt-debug-age-castle-complete-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Castle complete.")
-    (set-goal bt-debug-last-age-event-goal 6)
+    (set-goal bt-debug-age-castle-complete-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == castle-age)
     (goal bt-imperial-commitment-goal 1)
     (unit-type-count villager >= bt-imperial-villagers)
     (can-research-with-escrow imperial-age)
-    (up-compare-goal bt-debug-last-age-event-goal != 7)
+    (goal bt-debug-age-imperial-bank-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Imperial bank committed.")
-    (set-goal bt-debug-last-age-event-goal 7)
+    (set-goal bt-debug-age-imperial-bank-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age == castle-age)
     (up-research-status c: imperial-age >= research-pending)
-    (up-compare-goal bt-debug-last-age-event-goal != 8)
+    (goal bt-debug-age-imperial-start-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Imperial research started.")
-    (set-goal bt-debug-last-age-event-goal 8)
+    (set-goal bt-debug-age-imperial-start-goal 1)
 )
-
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
     (current-age >= imperial-age)
-    (up-compare-goal bt-debug-last-age-event-goal != 9)
+    (goal bt-debug-age-imperial-complete-goal 0)
 =>
     (chat-local-to-self "BASILISK | AGE | Imperial complete.")
-    (set-goal bt-debug-last-age-event-goal 9)
+    (set-goal bt-debug-age-imperial-complete-goal 1)
 )
 
 

@@ -1128,6 +1128,19 @@ try {
       })(),
     },
     {
+      name: "age-narration-must-not-use-shared-latch",
+      expected: "[Narration]",
+      source: (() => {
+        const needle = "    (goal bt-debug-age-castle-complete-goal 0)";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] Castle completion latch missing");
+        return baseline.slice(0, index) + baseline.slice(index).replace(
+          needle,
+          "    (up-compare-goal bt-debug-last-age-event-goal != 6)",
+        );
+      })(),
+    },
+    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {

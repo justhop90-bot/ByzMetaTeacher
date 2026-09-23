@@ -3663,6 +3663,32 @@ function validateRetryDoctrine(sourceText) {
   );
 }
 
+function validateAgeNarrationLatches(sourceText, rules) {
+  const latches = [
+    "bt-debug-age-feudal-bank-goal",
+    "bt-debug-age-feudal-start-goal",
+    "bt-debug-age-feudal-complete-goal",
+    "bt-debug-age-castle-bank-goal",
+    "bt-debug-age-castle-start-goal",
+    "bt-debug-age-castle-complete-goal",
+    "bt-debug-age-imperial-bank-goal",
+    "bt-debug-age-imperial-start-goal",
+    "bt-debug-age-imperial-complete-goal",
+  ];
+  for (const latch of latches) {
+    assert.ok(sourceText.includes(latch), "[Narration] missing independent age latch: " + latch);
+  }
+  const ageMessages = rules.filter(
+    (rule) => rule.includes('(chat-local-to-self "BASILISK | AGE |') &&
+      rule.includes("(set-goal bt-debug-age-"),
+  );
+  assert.ok(ageMessages.length >= 9, "[Narration] expected independent age latches");
+  assert.ok(
+    !ageMessages.some((rule) => rule.includes("(set-goal bt-debug-last-age-event-goal")),
+    "[Narration] age lifecycle messages must not share the legacy last-event latch",
+  );
+}
+
 function validateStrategicNarration(sourceText, rules) {
   for (const symbol of [
     "bt-debug-verbosity-goal",
@@ -3960,7 +3986,8 @@ validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
-validateStrategicNarration(source, rules);
+validateAgeNarrationLatches(source, rules);
+  validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
