@@ -437,7 +437,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
   check(/\((?:can-research(?:-with-escrow)?|research)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "tech", "research");
   check(/\((?:goal|set-goal|up-compare-goal)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "defconst", "goal");
   check(/\((?:strategic-number|set-strategic-number)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number");
-  check(/\bc:\s*([A-Za-z][A-Za-z0-9_-]*)/g, null, "constant-operand");
+  check(/\bc:\s+([A-Za-z][A-Za-z0-9_-]*)/g, null, "constant-operand");
   check(/\bg:[^\s()]+\s+([A-Za-z][A-Za-z0-9_-]*)/g, "defconst", "goal-operand");
   check(/\bs:[^\s()]+\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number-operand");
 
