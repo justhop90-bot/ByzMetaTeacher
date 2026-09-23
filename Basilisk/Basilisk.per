@@ -637,6 +637,7 @@
 (defconst bt-preempt-reason-attack 1)
 (defconst bt-preempt-result-none 0)
 (defconst bt-preempt-result-resume 1)
+(defconst bt-preempt-result-complete 2)
 (defconst bt-preempt-result-abort 3)
 (defconst bt-preempt-emergency-claim 799)
 (defconst bt-telemetry-write-head-goal 735)
@@ -5681,6 +5682,45 @@ cataphract-line < bt-cataphract-target-1)))))
     (up-get-fact game-time 0 bt-telemetry-event-time-goal)
     (set-goal bt-telemetry-event-pending-goal 1)
 )
+; A TC can complete through another already-issued engine path while emergency
+; ownership is active. Completion is terminal and must release the emergency
+; claim without resurrecting the finished project.
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (building-type-count town-center >= 2)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-result-goal bt-preempt-result-complete)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-goal bt-telemetry-event-type-goal 3)
+    (set-goal bt-telemetry-event-owner-goal bt-tc2-claim)
+    (set-goal bt-telemetry-event-flags-goal 200)
+    (up-modify-goal bt-telemetry-event-flags-goal g:+ bt-preempt-original-mode-goal)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (building-type-count town-center >= 3)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-result-goal bt-preempt-result-complete)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-goal bt-telemetry-event-type-goal 3)
+    (set-goal bt-telemetry-event-owner-goal bt-tc3-claim)
+    (set-goal bt-telemetry-event-flags-goal 200)
+    (up-modify-goal bt-telemetry-event-flags-goal g:+ bt-preempt-original-mode-goal)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-strategic-number sn-resource-control 0)
+)
+
 (defrule
     (not (town-under-attack))
     (goal bt-preempt-active-goal 1)
@@ -5718,6 +5758,43 @@ cataphract-line < bt-cataphract-target-1)))))
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-result-goal bt-preempt-result-abort)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-goal bt-telemetry-event-type-goal 3)
+    (set-goal bt-telemetry-event-owner-goal bt-tc3-claim)
+    (set-goal bt-telemetry-event-flags-goal 300)
+    (up-modify-goal bt-telemetry-event-flags-goal g:+ bt-preempt-original-mode-goal)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-strategic-number sn-resource-control 0)
+)
+
+; If the strategic TC project vanished while emergency ownership was active,
+; abandon the temporary owner without reviving the project.
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-result-goal bt-preempt-result-abort)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-goal bt-telemetry-event-type-goal 3)
+    (set-goal bt-telemetry-event-owner-goal bt-tc2-claim)
+    (set-goal bt-telemetry-event-flags-goal 300)
+    (up-modify-goal bt-telemetry-event-flags-goal g:+ bt-preempt-original-mode-goal)
+    (up-get-fact game-time 0 bt-telemetry-event-time-goal)
+    (set-goal bt-telemetry-event-pending-goal 1)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
     (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-result-goal bt-preempt-result-abort)
     (set-goal bt-preempt-defense-issued-goal 0)
