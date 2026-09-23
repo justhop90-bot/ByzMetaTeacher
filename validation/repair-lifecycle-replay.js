@@ -973,6 +973,7 @@ const antiRushRestoreIndices = [
 ];
 const antiRushToFlushIndex = ruleIndex(
   "(goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
+  "(current-age < castle-age)",
   "(not (goal strategy-goal bt-strategy-flush))",
   "(set-goal strategy-goal bt-strategy-flush)",
 );
@@ -982,6 +983,19 @@ for (const restoreIndex of antiRushRestoreIndices) {
     `[Strategy order] opening-plan anti-rush restoration at rule ${restoreIndex} must precede anti-rush -> FLUSH rule ${antiRushToFlushIndex}`,
   );
 }
+
+const arenaBoomIndex = ruleIndex(
+  "(goal bt-opening-plan-goal bt-opening-plan-arena-boom)",
+  "(current-age >= castle-age)",
+  "(set-goal strategy-goal bt-strategy-boom)",
+);
+const castlePowerProtection = renderRule(rules[arenaBoomIndex]).includes(
+  "(not (goal strategy-goal bt-strategy-castle-power))",
+);
+assert.ok(
+  castlePowerProtection,
+  "[Strategy order] Arena Boom recovery must not overwrite qualified Castle-Power",
+);
 requireRule(
   "Castle fallback excludes Castle-power",
   "(current-age >= castle-age)",
