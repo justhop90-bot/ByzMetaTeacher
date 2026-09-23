@@ -3172,10 +3172,10 @@ function validateLifecycleAnchors(sourceText, rules) {
   );
 }
 
-validateRuleStructure(source);
-validateBalancedParens(source);
 validatePreprocessorStructure(source);
 validateParserGradeRuleStructure(source);
+validateRuleStructure(source);
+validateBalancedParens(source);
 validateGoalFactSyntax(source);
 validateBooleanArity(source);
 const rules = extractRules(source);
