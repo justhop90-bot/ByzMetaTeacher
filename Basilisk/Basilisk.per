@@ -637,10 +637,12 @@
 (defconst bt-elite-skirmisher-bank-delta-stone-goal 478)
 (defconst bt-elite-skirmisher-bank-delta-gold-goal 479)
 
-; Double-Bit Axe demand buffers.
-; 800 food / 100 wood leaves the full generic Castle food bank intact
-; after the 100F/50W upgrade cost while opening the Feudal window earlier.
-(defconst bt-double-bit-axe-food-buffer 800)
+; Double-Bit Axe early-Feudal demand buffers.
+; 450 food / 100 wood is an intentional early Feudal window: enough food
+; remains for immediate villager production while the 50W/100F technology
+; pays back the wood economy before farms, houses, and production consume
+; the Feudal wood reserve.
+(defconst bt-double-bit-axe-food-buffer 450)
 (defconst bt-double-bit-axe-wood-buffer 100)
 
 ; Stone Shaft Mining late-Castle maturity buffers.
