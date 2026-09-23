@@ -321,6 +321,20 @@ try {
         baseline +
         "\n(defrule\n    (true)\n=>\n    (up-full-reset-search)\n    (up-target-objects 0 action-default -1 -1)\n)\n",
     },
+    {
+      name: "command-numeric-range-mismatch",
+      expected: "command-numeric-range-mismatch",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (up-find-local c: castle c: 241)\n)\n",
+    },
+    {
+      name: "split-typed-comparison",
+      expected: "split-typed-comparison",
+      source:
+        baseline +
+        "\n(defrule\n    (up-compare-goal bt-attack-reserve-goal < g: 1)\n=>\n    (do-nothing)\n)\n",
+    },
   ];
 
 
