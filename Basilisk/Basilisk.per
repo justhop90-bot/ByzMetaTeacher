@@ -3375,15 +3375,10 @@
 =>
     (up-set-placement-data my-player-number farm c: 0)
     (set-strategic-number sn-placement-zone-size bt-mill-placement-zone-size)
-    (set-strategic-number sn-allow-adjacent-dropsites 0)
-    (set-strategic-number sn-dropsite-separation-distance bt-mill-placement-separation-distance)
     (set-strategic-number sn-resource-control bt-mill-claim)
     (release-escrow wood)
     (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
     (up-build place-control 0 c: mill)
-    (set-strategic-number sn-placement-zone-size 0)
-    (set-strategic-number sn-allow-adjacent-dropsites 1)
-    (set-strategic-number sn-dropsite-separation-distance 0)
 )
 
 (defrule
