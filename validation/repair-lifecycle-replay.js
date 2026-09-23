@@ -918,20 +918,4 @@ assert.equal(castlePowerPolicy({
 assert.equal(castlePowerPolicy({
   strategy: "castle-power", age: 4, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
 }), "boom", "[Castle-power D] Imperial expiry did not return to BOOM");
-console.log(JSON.stringify({
-  controller: path.relative(process.cwd(), controllerPath),
-  rules: rules.length,
-  assertions: [
-    "persistent-demand preservation",
-    "claim release on execution failure",
-    "bounded failure backoff",
-    "same-demand re-entry after cooldown",
-    "strategic invalidation reset and clean re-entry",
-  ],
-  scenarios: Object.fromEntries(
-    Object.entries(scenarios).map(([name, trace]) => [
-      name,
-      { passed: true, states: trace.length, terminalChecked: true, reentryChecked: true },
-    ]),
-  ),
-}, null, 2));
+
