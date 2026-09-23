@@ -123,40 +123,302 @@ assert.ok(source.includes("(defconst bt-research-barracks-failure-backoff-goal 6
 assert.ok(source.includes("(defconst bt-research-stable-failure-backoff-goal 632)"));
 assert.ok(source.includes("(defconst bt-research-siege-workshop-failure-backoff-goal 633)"));
 assert.ok(source.includes("(defconst bt-gold-shaft-mining-demand-goal 687)"));
-for (const stale of ["bt-research-barracks-max-retries","bt-stable-research-max-retries","bt-siege-research-max-retries","bt-economic-research-max-retries","bt-research-mining-camp-gold-shaft-mining-retry-goal","bt-research-barracks-pikeman-retry-goal","bt-research-stable-cavalier-retry-goal","bt-research-stable-paladin-retry-goal","bt-research-stable-heavy-camel-retry-goal","bt-research-siege-capped-ram-retry-goal","bt-research-siege-ram-retry-goal","bt-military-siege-workshop-retry-goal"]) assert.ok(!source.includes(stale), `[Retry doctrine] stale terminal-retry symbol remains: ${stale}`);
+for (const stale of [
+  "bt-research-barracks-max-retries",
+  "bt-stable-research-max-retries",
+  "bt-siege-research-max-retries",
+  "bt-economic-research-max-retries",
+  "bt-research-mining-camp-gold-shaft-mining-retry-goal",
+  "bt-research-barracks-pikeman-retry-goal",
+  "bt-research-stable-cavalier-retry-goal",
+  "bt-research-stable-paladin-retry-goal",
+  "bt-research-stable-heavy-camel-retry-goal",
+  "bt-research-siege-capped-ram-retry-goal",
+  "bt-research-siege-ram-retry-goal",
+  "bt-military-siege-workshop-retry-goal",
+]) {
+  assert.ok(
+    !source.includes(stale),
+    `[Retry doctrine] stale terminal-retry symbol remains: ${stale}`,
+  );
+}
 
-requireRule("Gold Shaft strategic demand","(goal bt-gold-shaft-mining-demand-goal 0)","(current-age == castle-age)","(goal strategy-goal bt-strategy-boom)","(up-research-status c: ri-gold-mining >= research-complete)","(building-type-count-total town-center >= 2)","(set-goal bt-gold-shaft-mining-demand-goal 1)");
-requireRule("Gold Shaft strategic cancellation","(goal bt-gold-shaft-mining-demand-goal 1)","(goal bt-research-mining-camp-claim-goal 0)","(set-goal bt-gold-shaft-mining-demand-goal 0)");
-requireRule("Gold Shaft executor backoff gate","(goal bt-gold-shaft-mining-demand-goal 1)","(up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)","(can-research-with-escrow ri-gold-shaft-mining)","(set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)");
-const goldShaftFailureRule=requireRule("Gold Shaft watchdog","(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)","(up-research-status c: ri-gold-shaft-mining <= research-available)","(set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)","(enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)","(set-goal bt-research-mining-camp-claim-goal 0)");
-assert.ok(!goldShaftFailureRule.includes("(set-goal bt-gold-shaft-mining-demand-goal 0)"), "[Gold Shaft] engine failure must not cancel strategic demand");
-requireRule("Gold Shaft completion","(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)","(up-research-status c: ri-gold-shaft-mining == research-complete)","(set-goal bt-research-mining-camp-claim-goal 0)","(set-goal bt-gold-shaft-mining-demand-goal 0)");
-requireRule("Gold Shaft backoff expiry","(timer-triggered bt-research-mining-camp-failure-backoff-timer)","(disable-timer bt-research-mining-camp-failure-backoff-timer)","(set-goal bt-research-mining-camp-failure-backoff-goal 0)");
-const goldShaftTrace=transition("Gold Shaft Mining",{demand:1,package:0,claim:"ri-gold-shaft-mining",backoff:1},s=>{s.claim=0;s.backoff=1;},s=>{s.backoff=0;},s=>s.demand===1&&s.claim===0&&s.package===0&&s.backoff===0,s=>{s.demand=0;s.claim=0;s.package=0;},s=>{s.backoff=0;},s=>{s.demand=1;return s.demand===1&&s.claim===0&&s.package===0&&s.backoff===0;});
+requireRule(
+  "Gold Shaft strategic demand",
+  "(goal bt-gold-shaft-mining-demand-goal 0)",
+  "(current-age == castle-age)",
+  "(goal strategy-goal bt-strategy-boom)",
+  "(up-research-status c: ri-gold-mining >= research-complete)",
+  "(building-type-count-total town-center >= 2)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 1)",
+);
+requireRule(
+  "Gold Shaft strategic cancellation",
+  "(goal bt-gold-shaft-mining-demand-goal 1)",
+  "(goal bt-research-mining-camp-claim-goal 0)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
+);
+requireRule(
+  "Gold Shaft executor backoff gate",
+  "(goal bt-gold-shaft-mining-demand-goal 1)",
+  "(up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)",
+  "(can-research-with-escrow ri-gold-shaft-mining)",
+  "(set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+);
+const goldShaftFailureRule = requireRule(
+  "Gold Shaft watchdog",
+  "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+  "(up-research-status c: ri-gold-shaft-mining <= research-available)",
+  "(set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)",
+  "(enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)",
+  "(set-goal bt-research-mining-camp-claim-goal 0)",
+);
+assert.ok(
+  !goldShaftFailureRule.includes("(set-goal bt-gold-shaft-mining-demand-goal 0)"),
+  "[Gold Shaft] engine failure must not cancel strategic demand",
+);
+requireRule(
+  "Gold Shaft completion",
+  "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
+  "(up-research-status c: ri-gold-shaft-mining == research-complete)",
+  "(set-goal bt-research-mining-camp-claim-goal 0)",
+  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
+);
+requireRule(
+  "Gold Shaft backoff expiry",
+  "(timer-triggered bt-research-mining-camp-failure-backoff-timer)",
+  "(disable-timer bt-research-mining-camp-failure-backoff-timer)",
+  "(set-goal bt-research-mining-camp-failure-backoff-goal 0)",
+);
+const goldShaftTrace = transition(
+  "Gold Shaft Mining",
+  { demand: 1, package: 0, claim: "ri-gold-shaft-mining", backoff: 1 },
+  (s) => { s.claim = 0; s.backoff = 1; },
+  (s) => { s.backoff = 0; },
+  (s) => s.demand === 1 && s.claim === 0 && s.package === 0 && s.backoff === 0,
+  (s) => { s.demand = 0; s.claim = 0; s.package = 0; },
+  (s) => { s.backoff = 0; },
+  (s) => {
+    s.demand = 1;
+    return s.demand === 1 && s.claim === 0 && s.package === 0 && s.backoff === 0;
+  },
+);
 
-requireRule("Pike failure","(goal bt-research-barracks-claim-goal ri-pikeman)","(up-research-status c: ri-pikeman <= research-available)","(set-goal bt-research-barracks-failure-backoff-goal ri-pikeman)","(enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)","(set-goal bt-research-barracks-claim-goal 0)");
-const pikeFailureRule=findRule("(goal bt-research-barracks-claim-goal ri-pikeman)","(up-research-status c: ri-pikeman <= research-available)");
-assert.ok(!pikeFailureRule.includes("(set-goal bt-research-cavalry-counter-package-goal 0)"),"[Pike] execution failure must not mutate the META-owned package cursor");
-requireRule("Pike executor backoff gate","(goal bt-research-cavalry-counter-package-goal ri-pikeman)","(up-compare-goal bt-research-barracks-failure-backoff-goal != ri-pikeman)","(can-research-with-escrow ri-pikeman)");
-requireRule("Pike backoff expiry","(timer-triggered bt-research-barracks-failure-backoff-timer)","(disable-timer bt-research-barracks-failure-backoff-timer)","(set-goal bt-research-barracks-failure-backoff-goal 0)");
+requireRule(
+  "Pike failure",
+  "(goal bt-research-barracks-claim-goal ri-pikeman)",
+  "(up-research-status c: ri-pikeman <= research-available)",
+  "(set-goal bt-research-barracks-failure-backoff-goal ri-pikeman)",
+  "(enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)",
+  "(set-goal bt-research-barracks-claim-goal 0)",
+);
+const pikeFailureRule = findRule(
+  "(goal bt-research-barracks-claim-goal ri-pikeman)",
+  "(up-research-status c: ri-pikeman <= research-available)",
+);
+assert.ok(
+  !pikeFailureRule.includes("(set-goal bt-research-cavalry-counter-package-goal 0)"),
+  "[Pike] execution failure must not mutate the META-owned package cursor",
+);
+requireRule(
+  "Pike executor backoff gate",
+  "(goal bt-research-cavalry-counter-package-goal ri-pikeman)",
+  "(up-compare-goal bt-research-barracks-failure-backoff-goal != ri-pikeman)",
+  "(can-research-with-escrow ri-pikeman)",
+);
+requireRule(
+  "Pike backoff expiry",
+  "(timer-triggered bt-research-barracks-failure-backoff-timer)",
+  "(disable-timer bt-research-barracks-failure-backoff-timer)",
+  "(set-goal bt-research-barracks-failure-backoff-goal 0)",
+);
 
-for(const tech of ["ri-cavalier","ri-paladin","ri-heavy-camel"]){requireRule(`Stable ${tech} failure`,`(goal bt-research-stable-claim-goal ${tech})`,`(up-research-status c: ${tech} <= research-available)`,`(set-goal bt-research-stable-failure-backoff-goal ${tech})`,"(enable-timer bt-research-stable-failure-backoff-timer bt-research-failure-backoff-seconds)","(set-goal bt-research-stable-claim-goal 0)");requireRule(`Stable ${tech} executor backoff gate`,"(goal bt-research-stable-claim-goal 0)",`(up-compare-goal bt-research-stable-failure-backoff-goal != ${tech})`,`(can-research-with-escrow ${tech})`);}
-requireRule("Stable backoff expiry","(timer-triggered bt-research-stable-failure-backoff-timer)","(disable-timer bt-research-stable-failure-backoff-timer)","(set-goal bt-research-stable-failure-backoff-goal 0)");
+for (const tech of ["ri-cavalier", "ri-paladin", "ri-heavy-camel"]) {
+  requireRule(
+    `Stable ${tech} failure`,
+    `(goal bt-research-stable-claim-goal ${tech})`,
+    `(up-research-status c: ${tech} <= research-available)`,
+    `(set-goal bt-research-stable-failure-backoff-goal ${tech})`,
+    "(enable-timer bt-research-stable-failure-backoff-timer bt-research-failure-backoff-seconds)",
+    "(set-goal bt-research-stable-claim-goal 0)",
+  );
+  requireRule(
+    `Stable ${tech} executor backoff gate`,
+    "(goal bt-research-stable-claim-goal 0)",
+    `(up-compare-goal bt-research-stable-failure-backoff-goal != ${tech})`,
+    `(can-research-with-escrow ${tech})`,
+  );
+}
+requireRule(
+  "Stable backoff expiry",
+  "(timer-triggered bt-research-stable-failure-backoff-timer)",
+  "(disable-timer bt-research-stable-failure-backoff-timer)",
+  "(set-goal bt-research-stable-failure-backoff-goal 0)",
+);
 
-for(const tech of ["ri-capped-ram","ri-siege-ram"]){requireRule(`Siege ${tech} failure`,`(goal bt-research-siege-workshop-claim-goal ${tech})`,`(up-research-status c: ${tech} <= research-available)`,`(set-goal bt-research-siege-workshop-failure-backoff-goal ${tech})`,"(enable-timer bt-research-siege-workshop-failure-backoff-timer bt-research-failure-backoff-seconds)","(set-goal bt-research-siege-workshop-claim-goal 0)");requireRule(`Siege ${tech} executor backoff gate`,"(goal bt-ram-demand-goal 1)",`(up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ${tech})`,`(can-research-with-escrow ${tech})`);}
-requireRule("Siege backoff expiry","(timer-triggered bt-research-siege-workshop-failure-backoff-timer)","(disable-timer bt-research-siege-workshop-failure-backoff-timer)","(set-goal bt-research-siege-workshop-failure-backoff-goal 0)");
+for (const tech of ["ri-capped-ram", "ri-siege-ram"]) {
+  requireRule(
+    `Siege ${tech} failure`,
+    `(goal bt-research-siege-workshop-claim-goal ${tech})`,
+    `(up-research-status c: ${tech} <= research-available)`,
+    `(set-goal bt-research-siege-workshop-failure-backoff-goal ${tech})`,
+    "(enable-timer bt-research-siege-workshop-failure-backoff-timer bt-research-failure-backoff-seconds)",
+    "(set-goal bt-research-siege-workshop-claim-goal 0)",
+  );
+  requireRule(
+    `Siege ${tech} executor backoff gate`,
+    "(goal bt-ram-demand-goal 1)",
+    `(up-compare-goal bt-research-siege-workshop-failure-backoff-goal != ${tech})`,
+    `(can-research-with-escrow ${tech})`,
+  );
+}
+requireRule(
+  "Siege backoff expiry",
+  "(timer-triggered bt-research-siege-workshop-failure-backoff-timer)",
+  "(disable-timer bt-research-siege-workshop-failure-backoff-timer)",
+  "(set-goal bt-research-siege-workshop-failure-backoff-goal 0)",
+);
 
-requireRule("Workshop issue eligibility","(goal bt-military-siege-workshop-backoff-goal 0)","(building-type-count siege-workshop == 0)","(up-pending-objects c: siege-workshop == 0)","(strategic-number sn-resource-control == 0)","(can-build-with-escrow siege-workshop)");
-requireRule("Workshop watchdog failure","(strategic-number sn-resource-control == bt-military-siege-workshop-claim)","(timer-triggered bt-military-siege-workshop-watchdog-timer)","(up-pending-objects c: siege-workshop == 0)","(set-strategic-number sn-resource-control 0)","(set-goal bt-military-siege-workshop-backoff-goal 1)");
-requireRule("Workshop demand-gated backoff reset","(goal bt-mangonel-demand-goal 0)","(goal bt-scorpion-demand-goal 0)","(goal bt-onager-demand-goal 0)","(goal bt-bombard-cannon-demand-goal 0)","(goal bt-ram-demand-goal 0)","(goal bt-siege-tower-demand-goal 0)","(up-pending-objects c: siege-workshop == 0)","(set-goal bt-military-siege-workshop-backoff-goal 0)");
+requireRule(
+  "Workshop issue eligibility",
+  "(goal bt-military-siege-workshop-backoff-goal 0)",
+  "(building-type-count siege-workshop == 0)",
+  "(up-pending-objects c: siege-workshop == 0)",
+  "(strategic-number sn-resource-control == 0)",
+  "(can-build-with-escrow siege-workshop)",
+);
+requireRule(
+  "Workshop watchdog failure",
+  "(strategic-number sn-resource-control == bt-military-siege-workshop-claim)",
+  "(timer-triggered bt-military-siege-workshop-watchdog-timer)",
+  "(up-pending-objects c: siege-workshop == 0)",
+  "(set-strategic-number sn-resource-control 0)",
+  "(set-goal bt-military-siege-workshop-backoff-goal 1)",
+);
+requireRule(
+  "Workshop demand-gated backoff reset",
+  "(goal bt-mangonel-demand-goal 0)",
+  "(goal bt-scorpion-demand-goal 0)",
+  "(goal bt-onager-demand-goal 0)",
+  "(goal bt-bombard-cannon-demand-goal 0)",
+  "(goal bt-ram-demand-goal 0)",
+  "(goal bt-siege-tower-demand-goal 0)",
+  "(up-pending-objects c: siege-workshop == 0)",
+  "(set-goal bt-military-siege-workshop-backoff-goal 0)",
+);
 
-const pikeTrace=transition("Pike",{demand:1,package:"ri-pikeman",claim:"ri-pikeman",backoff:1,counterLevel:1},s=>{s.claim=0;s.backoff=1;},s=>{s.backoff=0;},s=>s.demand===1&&s.claim===0&&s.package==="ri-pikeman"&&s.backoff===0&&s.counterLevel>=1,s=>{s.demand=0;s.package=0;s.claim=0;s.counterLevel=0;},s=>{s.demand=0;s.package=0;s.claim=0;s.counterLevel=0;},s=>{s.demand=1;s.package="ri-pikeman";return s.demand===1&&s.claim===0&&s.package==="ri-pikeman"&&s.backoff===0;});
-const stableTrace=(()=>{const s={demand:1,claim:"ri-cavalier",backoff:1};const trace=[];const snap=e=>trace.push({event:e,...s});snap("initial");s.claim=0;s.backoff=1;assert.equal(s.claim,0,"[Stable/Cavalier] claim was not released after failure");assert.equal(s.demand,1,"[Stable/Cavalier] persistent demand was lost after failure");assert.equal(s.backoff,1,"[Stable/Cavalier] bounded backoff was not armed");s.backoff=0;assert.ok(s.demand===1&&s.claim===0&&s.backoff===0,"[Stable/Cavalier] demand did not re-open after cooldown");s.claim=0;s.backoff=1;assert.equal(s.demand,1,"[Stable/Cavalier] repeated failure canceled persistent demand");assert.equal(s.backoff,1,"[Stable/Cavalier] repeated failure did not re-arm bounded backoff");s.backoff=0;assert.ok(s.demand===1&&s.claim===0&&s.backoff===0,"[Stable/Cavalier] demand did not re-open after second cooldown");s.demand=0;s.claim=0;s.backoff=0;assert.equal(s.demand,0,"[Stable/Cavalier] strategic invalidation did not clear demand");s.demand=1;assert.ok(s.demand===1&&s.claim===0&&s.backoff===0,"[Stable/Cavalier] clean reassessment could not re-enter");return trace;})();
-const cappedRamTrace=transition("Capped Ram",{demand:1,package:"ri-capped-ram",claim:"ri-capped-ram",backoff:1},s=>{s.claim=0;s.backoff=1;},s=>{s.backoff=0;},s=>s.demand===1&&s.claim===0&&s.package==="ri-capped-ram"&&s.backoff===0,s=>{s.demand=0;s.package=0;s.claim=0;},s=>{s.demand=0;s.package=0;s.claim=0;},s=>{s.demand=1;s.package="ri-capped-ram";return s.demand===1&&s.claim===0&&s.package==="ri-capped-ram"&&s.backoff===0;});
-const siegeRamTrace=transition("Siege Ram",{demand:1,package:"ri-siege-ram",claim:"ri-siege-ram",backoff:1},s=>{s.claim=0;s.backoff=1;},s=>{s.backoff=0;},s=>s.demand===1&&s.claim===0&&s.package==="ri-siege-ram"&&s.backoff===0,s=>{s.demand=0;s.claim=0;s.package=0;},s=>{s.demand=0;s.claim=0;s.package=0;},s=>{s.demand=1;s.package="ri-siege-ram";return s.demand===1&&s.claim===0&&s.package==="ri-siege-ram"&&s.backoff===0;});
+const pikeTrace = transition(
+  "Pike",
+  {
+    demand: 1,
+    package: "ri-pikeman",
+    claim: "ri-pikeman",
+    backoff: 1,
+    counterLevel: 1,
+  },
+  (s) => { s.claim = 0; s.backoff = 1; },
+  (s) => { s.backoff = 0; },
+  (s) => s.demand === 1 &&
+    s.claim === 0 &&
+    s.package === "ri-pikeman" &&
+    s.backoff === 0 &&
+    s.counterLevel >= 1,
+  (s) => { s.demand = 0; s.package = 0; s.claim = 0; s.counterLevel = 0; },
+  (s) => { s.demand = 0; s.package = 0; s.claim = 0; s.counterLevel = 0; },
+  (s) => {
+    s.demand = 1;
+    s.package = "ri-pikeman";
+    return s.demand === 1 && s.claim === 0 &&
+      s.package === "ri-pikeman" && s.backoff === 0;
+  },
+);
+const stableTrace = (() => {
+  const s = { demand: 1, claim: "ri-cavalier", backoff: 1 };
+  const trace = [];
+  const snap = (event) => trace.push({ event, ...s });
+  snap("initial");
+  s.claim = 0;
+  s.backoff = 1;
+  assert.equal(s.claim, 0, "[Stable/Cavalier] claim was not released after failure");
+  assert.equal(s.demand, 1, "[Stable/Cavalier] persistent demand was lost after failure");
+  assert.equal(s.backoff, 1, "[Stable/Cavalier] bounded backoff was not armed");
+  s.backoff = 0;
+  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] demand did not re-open after cooldown");
+  s.claim = 0;
+  s.backoff = 1;
+  assert.equal(s.demand, 1, "[Stable/Cavalier] repeated failure canceled persistent demand");
+  assert.equal(s.backoff, 1, "[Stable/Cavalier] repeated failure did not re-arm bounded backoff");
+  s.backoff = 0;
+  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] demand did not re-open after second cooldown");
+  s.demand = 0;
+  s.claim = 0;
+  s.backoff = 0;
+  assert.equal(s.demand, 0, "[Stable/Cavalier] strategic invalidation did not clear demand");
+  s.demand = 1;
+  assert.ok(s.demand === 1 && s.claim === 0 && s.backoff === 0,
+    "[Stable/Cavalier] clean reassessment could not re-enter");
+  return trace;
+})();
+const cappedRamTrace = transition(
+  "Capped Ram",
+  { demand: 1, package: "ri-capped-ram", claim: "ri-capped-ram", backoff: 1 },
+  (s) => { s.claim = 0; s.backoff = 1; },
+  (s) => { s.backoff = 0; },
+  (s) => s.demand === 1 && s.claim === 0 &&
+    s.package === "ri-capped-ram" && s.backoff === 0,
+  (s) => { s.demand = 0; s.package = 0; s.claim = 0; },
+  (s) => { s.demand = 0; s.package = 0; s.claim = 0; },
+  (s) => {
+    s.demand = 1;
+    s.package = "ri-capped-ram";
+    return s.demand === 1 && s.claim === 0 &&
+      s.package === "ri-capped-ram" && s.backoff === 0;
+  },
+);
+const siegeRamTrace = transition(
+  "Siege Ram",
+  { demand: 1, package: "ri-siege-ram", claim: "ri-siege-ram", backoff: 1 },
+  (s) => { s.claim = 0; s.backoff = 1; },
+  (s) => { s.backoff = 0; },
+  (s) => s.demand === 1 && s.claim === 0 &&
+    s.package === "ri-siege-ram" && s.backoff === 0,
+  (s) => { s.demand = 0; s.claim = 0; s.package = 0; },
+  (s) => { s.demand = 0; s.claim = 0; s.package = 0; },
+  (s) => {
+    s.demand = 1;
+    s.package = "ri-siege-ram";
+    return s.demand === 1 && s.claim === 0 &&
+      s.package === "ri-siege-ram" && s.backoff === 0;
+  },
+);
 const workshopTrace=workshopScenario();
 const scenarios={pike:pikeTrace,stable:stableTrace,cappedRam:cappedRamTrace,siegeRam:siegeRamTrace,workshop:workshopTrace,goldShaft:goldShaftTrace};
-console.log(JSON.stringify({controller:path.relative(process.cwd(),controllerPath),rules:rules.length,assertions:["persistent-demand preservation","claim release on execution failure","bounded failure backoff","same-demand re-entry after cooldown","strategic invalidation reset and clean re-entry"],scenarios:Object.fromEntries(Object.entries(scenarios).map(([name,trace])=>[name,{passed:true,states:trace.length,persistentDemandChecked:true,backoffChecked:true,claimReleaseChecked:true,reentryChecked:true}]))},null,2));// MAP-AWARE OPENING SELECTOR VALIDATION
+console.log(JSON.stringify({
+  controller: path.relative(process.cwd(), controllerPath),
+  rules: rules.length,
+  assertions: [
+    "persistent-demand preservation",
+    "claim release on execution failure",
+    "bounded failure backoff",
+    "same-demand re-entry after cooldown",
+    "strategic invalidation reset and clean re-entry",
+  ],
+  scenarios: Object.fromEntries(
+    Object.entries(scenarios).map(([name, trace]) => [
+      name,
+      {
+        passed: true,
+        states: trace.length,
+        persistentDemandChecked: true,
+        backoffChecked: true,
+        claimReleaseChecked: true,
+        reentryChecked: true,
+      },
+    ]),
+  ),
+}, null, 2));// MAP-AWARE OPENING SELECTOR VALIDATION
 for (const constant of [
   "bt-opening-map-goal",
   "bt-opening-plan-goal",
