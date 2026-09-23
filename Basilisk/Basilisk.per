@@ -765,8 +765,24 @@
 (defconst bt-mangonel-imperial-escalation-target 4)
 (defconst bt-onager-response-target 2)
 
-; Precision Imperial artillery package triggered by enemy Trebuchet presence.
+; Precision Imperial artillery package. Two Bombard Cannons are the normal
+; Imperial conversion floor; enemy Trebuchets remain a tactical escalation.
 (defconst bt-bombard-cannon-response-target 2)
+
+; Imperial conversion package. Strategic intent only. Child demands remain
+; independent capability owners and close on their own world-state witnesses.
+(defconst bt-imperial-siege-package-goal 722)
+(defconst bt-trebuchet-demand-goal 723)
+(defconst bt-trebuchet-target-goal 724)
+(defconst bt-imperial-siege-bbc-target 2)
+(defconst bt-trebuchet-target 2)
+(defconst bt-trebuchet-fortified-target 3)
+(defconst bt-imperial-siege-army-floor 30)
+(defconst bt-imperial-siege-reserve-floor 10)
+(defconst bt-imperial-siege-force-floor 0)
+(defconst bt-forward-castle-stone-floor 650)
+(defconst bt-forward-castle-force-floor 5)
+(defconst bt-forward-castle-reserve-floor 15)
 
 ; Attack/building-pressure ram package.
 ; Finite execution ceiling for an active attack package.
@@ -898,6 +914,9 @@
     (set-goal bt-monastery-failure-history-goal 0)
     (set-goal bt-monk-demand-goal 0)
     (set-goal bt-monk-target-goal 0)
+    (set-goal bt-imperial-siege-package-goal 0)
+    (set-goal bt-trebuchet-demand-goal 0)
+    (set-goal bt-trebuchet-target-goal 0)
     (set-goal bt-research-monk-package-goal 0)
     (set-goal bt-research-monastery-claim-goal 0)
     (set-goal bt-research-monastery-failure-backoff-goal 0)
@@ -1276,6 +1295,19 @@
 ;================================================================
 ; MONASTERY / MONK DEMAND
 ;================================================================
+; Three monks are support, not a prerequisite for attacking.
+(defrule
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (unit-type-count-total monk < 3)
+    (goal bt-monk-demand-goal 0)
+=>
+    (set-goal bt-monk-target-goal 3)
+    (set-goal bt-monk-demand-goal 1)
+)
+
+; MONASTERY / MONK DEMAND
+;================================================================
 (defrule
     (current-age >= castle-age)
     (players-unit-type-count target-player monk >= 1)
@@ -1321,6 +1353,7 @@
 )
 (defrule
     (goal bt-monk-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 0)
     (players-unit-type-count target-player monk < 1)
     (players-unit-type-count target-player mangonel-line < 1)
     (players-unit-type-count target-player scorpion-line < 1)
@@ -2713,7 +2746,10 @@
     (or
         (building-type-count-total castle >= 1)
         (or
-        (current-age >= imperial-age)
+        (and
+            (current-age >= imperial-age)
+            (goal bt-imperial-siege-package-goal 0)
+        )
         (or
         (can-research-with-escrow imperial-age)
         (or
@@ -2737,6 +2773,26 @@
     (set-goal bt-castle-cataphract-backoff-goal 0)
 )
 
+; Imperial siege recovery reuses the existing Castle capability lifecycle.
+; A missing Castle is an executable capability gap, not a new subsystem.
+(defrule
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (stone-amount >= bt-forward-castle-stone-floor)
+    (up-compare-goal bt-relative-force-goal >= bt-forward-castle-force-floor)
+    (up-compare-goal bt-attack-reserve-goal >= bt-forward-castle-reserve-floor)
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
+)
+
+; Imperial Cataphract recovery reuses the existing Castle project lifecycle after
+; the civilization has aged past the original Castle-demand creation window.
 ; Imperial Cataphract recovery reuses the existing Castle project lifecycle after
 ; the civilization has aged past the original Castle-demand creation window.
 (defrule
@@ -5471,6 +5527,17 @@ town-center >= 2)))))
     (set-goal bt-resource-mode-goal bt-resource-mode-tc-stone)
 )
 
+; Imperial siege conversion keeps the existing Byzantine premium-gold posture
+; active while the package owns the strategic resource-mode decision.
+(defrule
+    (goal bt-resource-mode-goal 0)
+    (current-age == imperial-age)
+    (goal bt-imperial-siege-package-goal 1)
+=>
+    (set-goal bt-resource-mode-goal bt-resource-mode-imperial-power)
+)
+
+; P3 PREMIUM-GOLD.
 ; P3 PREMIUM-GOLD.
 (defrule
     (goal bt-resource-mode-goal 0)
@@ -7544,7 +7611,41 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ;---------------------------------------------------------------
 
 (defrule
+    ; Package-owned Castle placement. Field control and stone are prerequisites,
+    ; and place-control remains the engine-native placement executor.
     (goal bt-castle-cataphract-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 1)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (strategic-number sn-resource-control == 0)
+    (building-available castle)
+    (can-build-with-escrow castle)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (stone-amount >= bt-forward-castle-stone-floor)
+    (up-compare-goal bt-relative-force-goal >= bt-forward-castle-force-floor)
+    (up-compare-goal bt-attack-reserve-goal >= bt-forward-castle-reserve-floor)
+=>
+    (set-strategic-number sn-resource-control bt-castle-cataphract-claim)
+    (release-escrow stone)
+    (set-strategic-number sn-placement-to-center 0)
+    (set-strategic-number sn-placement-zone-size 5)
+    (set-strategic-number sn-placement-fail-delta 0)
+    (up-set-placement-data target-player -1 c: -6)
+    (up-assign-builders c: castle c: 4)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+    (up-build place-control 0 c: castle)
+    (set-strategic-number sn-placement-to-center 1)
+)
+
+
+(defrule
+    ; Original pre-Imperial Cataphract Castle executor.
+    (goal bt-castle-cataphract-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 0)
     (goal bt-castle-cataphract-failure-history-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
     (current-age >= castle-age)
@@ -8590,8 +8691,9 @@ cataphract-line < bt-cataphract-target-1)))))
     (building-type-count siege-workshop >= 1)
     (up-research-status c: ri-chemistry == research-complete)
     (strategic-number sn-resource-control == 0)
-    (unit-type-count-total bombard-cannon-line < bt-bombard-cannon-response-target)
-    (players-unit-type-count target-player trebuchet-set >= 1)
+    (unit-type-count-total bombard-cannon-line < bt-imperial-siege-bbc-target)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
     (can-train-with-escrow bombard-cannon-line)
 =>
     (release-escrow wood)
@@ -8612,6 +8714,12 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= castle-age)
     (strategic-number sn-resource-control == 0)
     (building-type-count siege-workshop >= 1)
+    (or
+        (current-age == castle-age)
+        (goal bt-imperial-siege-package-goal 1)
+    )
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
     (or
         (unit-type-count-total battering-ram-line < bt-ram-response-target)
         (and (current-age >= imperial-age) (and (up-research-status c: ri-capped-ram == research-complete) (unit-type-count-total battering-ram-line < bt-ram-imperial-response-target)))
@@ -10148,22 +10256,16 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ;---------------------------------------------------------------
 ; 18A.4. IMPERIAL BOMBARD CANNON DEMAND / CHEMISTRY
 ;---------------------------------------------------------------
-; The strategic witness is specific: the selected enemy currently has at least
-; one Trebuchet, the bot has an active attack package, and the existing attack
-; readiness gates remain satisfied. This does not create a new scouting layer.
+; Strategic ownership is now the Imperial siege package. The separate
+; enemy-Trebuchet branch remains a tactical reason to retain/replace BBCs.
 (defrule
+    ; BBC is the default Imperial siege conversion demand.
     (goal bt-bombard-cannon-demand-goal 0)
+    (goal bt-imperial-siege-package-goal 1)
     (current-age >= imperial-age)
-    (unit-type-count bombard-cannon-line < bt-bombard-cannon-response-target)
-    (players-unit-type-count target-player trebuchet-set >= 1)
+    (unit-type-count-total bombard-cannon-line < bt-imperial-siege-bbc-target)
     (players-building-count target-player > 0)
-    (goal attack-goal 1)
-    (up-compare-goal bt-attack-reserve-goal >= 10)
-    (up-compare-goal bt-relative-force-goal >= 0)
-    (goal bt-counter-veto-goal 0)
-    (goal retreat-now-goal 0)
-    (not (town-under-attack))
-    (not (goal bt-cataphract-demand-goal 1))
+    (player-in-game target-player)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (or
         (up-research-status c: ri-chemistry == research-available)
@@ -10180,8 +10282,16 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-bombard-cannon-demand-goal 1)
     (strategic-number sn-resource-control != ri-chemistry)
     (strategic-number sn-resource-control != bt-bombard-university-claim)
-    (or (current-age < imperial-age) (or (players-unit-type-count target-player trebuchet-set == 0) (or (players-building-count target-player == 0) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mode-goal
-bt-resource-mode-imperial-bank-prep)))))
+    (or
+        (current-age < imperial-age)
+        (or
+            (goal bt-imperial-siege-package-goal 0)
+            (or
+                (players-building-count target-player == 0)
+                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
+            )
+        )
+    )
 => 
     (disable-timer bt-bombard-university-backoff-timer)
     (set-goal bt-bombard-cannon-demand-goal 0)
@@ -11396,6 +11506,135 @@ bt-resource-mode-imperial-bank-prep)))))
 )
 
 ;---------------------------------------------------------------
+; 18A.2. IMPERIAL SIEGE CONVERSION PACKAGE
+;---------------------------------------------------------------
+; Persistent strategic intent. The package survives attack resets and retreat.
+; Its children own actual capabilities and close independently.
+(defrule
+    (goal bt-imperial-siege-package-goal 0)
+    (current-age >= imperial-age)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-standing-army-floor-goal >= bt-imperial-siege-army-floor)
+    (up-compare-goal bt-standing-army-deficit-goal >= 0)
+    (up-compare-goal bt-attack-reserve-goal >= bt-imperial-siege-reserve-floor)
+    (up-compare-goal bt-relative-force-goal >= bt-imperial-siege-force-floor)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+=>
+    (set-goal bt-imperial-siege-package-goal 1)
+)
+
+(defrule
+    (goal bt-imperial-siege-package-goal 1)
+    (or
+        (current-age < imperial-age)
+        (or
+            (not (player-in-game target-player))
+            (players-building-count target-player == 0)
+        )
+    )
+=>
+    (set-goal bt-imperial-siege-package-goal 0)
+    (set-goal bt-trebuchet-demand-goal 0)
+    (set-goal bt-trebuchet-target-goal 0)
+)
+
+; Missing Castle recovery reuses the existing Castle demand/capability owner.
+(defrule
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (stone-amount >= bt-forward-castle-stone-floor)
+    (up-compare-goal bt-relative-force-goal >= bt-forward-castle-force-floor)
+    (up-compare-goal bt-attack-reserve-goal >= bt-forward-castle-reserve-floor)
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
+)
+
+; Trebuchets are only demanded for defended/high-value structures.
+(defrule
+    (goal bt-trebuchet-demand-goal 0)
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count castle >= 1)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (or
+        (players-building-type-count target-player castle >= 2)
+        (players-building-type-count target-player town-center >= 4)
+    )
+=>
+    (set-goal bt-trebuchet-target-goal bt-trebuchet-fortified-target)
+    (set-goal bt-trebuchet-demand-goal 1)
+)
+
+(defrule
+    (goal bt-trebuchet-demand-goal 0)
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count castle >= 1)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (or
+        (players-building-type-count target-player castle >= 1)
+        (players-building-type-count target-player town-center >= 3)
+    )
+=>
+    (set-goal bt-trebuchet-target-goal bt-trebuchet-target)
+    (set-goal bt-trebuchet-demand-goal 1)
+)
+
+(defrule
+    ; Completed Trebs are the demand witness. Queued Trebs only gate the
+    ; production action below and must not close the strategic demand early.
+    (goal bt-trebuchet-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 1)
+    (unit-type-count trebuchet-set >= bt-trebuchet-target-goal)
+=>
+    (set-goal bt-trebuchet-demand-goal 0)
+)
+
+(defrule
+    (goal bt-trebuchet-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 1)
+    (or
+        (players-building-count target-player == 0)
+        (not (player-in-game target-player))
+        (current-age < imperial-age)
+        (building-type-count castle < 1)
+    )
+=>
+    (set-goal bt-trebuchet-demand-goal 0)
+    (set-goal bt-trebuchet-target-goal 0)
+)
+
+(defrule
+    ; Direct community-native production pattern: total-count target,
+    ; engine feasibility, then train.
+    (goal bt-trebuchet-demand-goal 1)
+    (current-age >= imperial-age)
+    (building-type-count castle >= 1)
+    (strategic-number sn-resource-control == 0)
+    (goal bt-counter-veto-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+    (unit-type-count-total trebuchet-set < bt-trebuchet-target-goal)
+    (can-train-with-escrow trebuchet)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (train trebuchet)
+)
+
+;---------------------------------------------------------------
 ; 18A.2. ATTACK / BUILDING-PRESSURE RAM DEMAND
 ;---------------------------------------------------------------
 ; Attack authority already proves the army package is active. This state
@@ -11417,11 +11656,11 @@ bt-resource-mode-imperial-bank-prep)))))
 )
 
 (defrule
-    ; Imperial Ram pressure remains live until the four-Ram package and
-    ; the final Siege Ram upgrade are both complete.
+    ; Imperial Rams belong to the persistent siege package, not the transient
+    ; attack-goal latch. Castle Rams retain the normal attack lifecycle.
     (goal bt-ram-demand-goal 0)
+    (goal bt-imperial-siege-package-goal 1)
     (current-age >= imperial-age)
-    (goal attack-goal 1)
     (players-building-count target-player > 0)
     (up-compare-goal bt-attack-reserve-goal >= 10)
     (up-compare-goal bt-relative-force-goal >= 0)
@@ -11438,7 +11677,17 @@ bt-resource-mode-imperial-bank-prep)))))
 
 (defrule
     (goal bt-ram-demand-goal 1)
-    (or (goal attack-goal 0) (or (players-building-count target-player == 0) (or (town-under-attack) (goal retreat-now-goal 1))))
+    (or
+        (players-building-count target-player == 0)
+        (and
+            (current-age == castle-age)
+            (goal attack-goal 0)
+        )
+        (and
+            (current-age >= imperial-age)
+            (goal bt-imperial-siege-package-goal 0)
+        )
+    )
 =>
     (set-goal bt-ram-demand-goal 0)
 )
@@ -11557,6 +11806,7 @@ bt-resource-mode-imperial-bank-prep)))))
 ; plus live attack/building pressure justify the Imperial upgrade.
 (defrule
     (goal bt-ram-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 1)
     (current-age >= imperial-age)
     (building-type-count siege-workshop >= 1)
     (unit-type-count battering-ram-line >= 2)
