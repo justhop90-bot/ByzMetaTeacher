@@ -5277,20 +5277,6 @@ town-center >= 2)))))
     (set-goal bt-debug-last-castle-block-goal 0)
 )
 
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 1)
-    (goal bt-imperial-prereq-demand-goal 1)
-    (up-compare-goal bt-debug-last-age-event-goal != 711)
-=>
-    (chat-local-to-self "BASILISK | AGE | Imperial prerequisite demand: fund second Castle building.")
-    (set-goal bt-debug-last-age-event-goal 711)
-)
-(defrule
-    (goal bt-imperial-prereq-demand-goal 0)
-    (up-compare-goal bt-debug-last-age-event-goal == 711)
-=>
-    (set-goal bt-debug-last-age-event-goal 0)
-)
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 1)
