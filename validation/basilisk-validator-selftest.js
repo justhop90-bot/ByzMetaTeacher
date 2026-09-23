@@ -415,6 +415,14 @@ try {
       ),
     },
     {
+      name: "villager-hygiene-lumber-local-house-placement-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (up-set-placement-data my-player-number lumber-camp c: 6)\n",
+        "",
+      ),
+    },
+    {
       name: "villager-hygiene-wood-dropsite-regression",
       expected: "[Villager hygiene]",
       source: baseline.replace(
@@ -764,6 +772,7 @@ try {
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
           "villager-hygiene-house-headroom-regression",
+          "villager-hygiene-lumber-local-house-placement-regression",
           "villager-hygiene-wood-dropsite-regression",
           "villager-hygiene-gold-dropsite-regression",
           "villager-hygiene-stone-dropsite-regression",
