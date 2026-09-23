@@ -2768,7 +2768,15 @@
             (goal bt-imperial-siege-package-goal 0)
         )
         (or
-        (can-research-with-escrow imperial-age)
+        (and
+            (can-research-with-escrow imperial-age)
+            (not
+                (or
+                    (goal strategy-goal bt-strategy-boom)
+                    (goal strategy-goal bt-strategy-castle-power)
+                )
+            )
+        )
         (or
         (not
             (or
@@ -2861,6 +2869,15 @@
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
     (goal bt-imperial-commitment-goal 1)
+    (or
+        (building-type-count-total castle >= 1)
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
+        )
+    )
     (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow imperial-age)
@@ -5299,6 +5316,15 @@ town-center >= 2)))))
     ; transition owns the bank and civilian queue immediately.
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
+    (or
+        (building-type-count-total castle >= 1)
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
+        )
+    )
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
     (set-goal bt-imperial-commitment-goal 1)
@@ -8851,7 +8877,7 @@ cataphract-line < bt-cataphract-target-1)))))
 ; minimum defensive army.  This floor is independent of transient
 ; enemy observation and remains separate from the attack lifecycle.
 ;
-; Six military units is the same minimum floor used by FLUSH recovery.
+; The BOOM floor is four units; FLUSH can raise the defensive floor to eight.
 (defrule
     (goal strategy-goal bt-strategy-boom)
     (current-age >= feudal-age)
@@ -10005,9 +10031,52 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule (up-compare-goal bt-standing-army-floor-goal == 42)
 => (set-strategic-number sn-percent-attack-soldiers 20))
 
-; Normalized primary counter deficits are hard attack vetoes even
-; when relative force is positive.
+; Feudal counter deficits use the compact 3/4/6 defensive ladder.
+; This must agree with the Feudal role-target writer above, or production may
+; be complete while attack authority still waits for the obsolete 6/16/24 tiers.
 (defrule
+    (current-age == feudal-age)
+    (or
+        (and
+            (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+            (up-compare-goal bt-standing-spear-target-goal < bt-feudal-spear-counter-1)
+        )
+        (or
+            (and
+                (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+                (up-compare-goal bt-standing-spear-target-goal < bt-feudal-spear-counter-2)
+            )
+            (or
+                (and
+                    (up-compare-goal bt-cavalry-counter-level-goal >= 3)
+                    (up-compare-goal bt-standing-spear-target-goal < bt-feudal-spear-counter-3)
+                )
+                (or
+                    (and
+                        (up-compare-goal bt-ranged-counter-level-goal >= 1)
+                        (up-compare-goal bt-standing-skirm-target-goal < bt-feudal-skirm-counter-1)
+                    )
+                    (or
+                        (and
+                            (up-compare-goal bt-ranged-counter-level-goal >= 2)
+                            (up-compare-goal bt-standing-skirm-target-goal < bt-feudal-skirm-counter-2)
+                        )
+                        (and
+                            (up-compare-goal bt-ranged-counter-level-goal >= 3)
+                            (up-compare-goal bt-standing-skirm-target-goal < bt-feudal-skirm-counter-3)
+                        )
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-counter-veto-goal 1)
+)
+
+; Castle/Imperial counter deficits retain the larger strategic response tiers.
+(defrule
+    (current-age >= castle-age)
     (or (and
             (up-compare-goal bt-cavalry-counter-level-goal >= 1)
             (up-compare-goal bt-standing-spear-target-goal < bt-spear-target-1)
@@ -11626,6 +11695,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 )
 
 ; Missing Castle recovery reuses the existing Castle demand/capability owner.
+; Do not require 650 stone before creating the demand: the Castle-stone
+; resource mode exists precisely to accumulate the missing stone.
 (defrule
     (goal bt-imperial-siege-package-goal 1)
     (current-age >= imperial-age)
@@ -11635,7 +11706,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-castle-cataphract-backoff-goal 0)
     (player-in-game target-player)
     (players-building-count target-player > 0)
-    (stone-amount >= bt-forward-castle-stone-floor)
     (up-compare-goal bt-relative-force-goal >= bt-forward-castle-force-floor)
     (up-compare-goal bt-attack-reserve-goal >= bt-forward-castle-reserve-floor)
 =>
