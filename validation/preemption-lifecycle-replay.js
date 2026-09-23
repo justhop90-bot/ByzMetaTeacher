@@ -60,13 +60,13 @@ class Ring {
 
 function sourceOrderReplay() {
   const begin = source.indexOf(
-    "(goal bt-preempt-result-goal bt-preempt-result-begin)\\n    (goal bt-preempt-event-captured-goal 0)",
+    "(goal bt-preempt-result-goal bt-preempt-result-begin)\n    (goal bt-preempt-event-captured-goal 0)",
   );
   const resume = source.indexOf(
-    "(goal bt-preempt-result-goal bt-preempt-result-resume)\\n    (goal bt-preempt-event-captured-goal 0)",
+    "(goal bt-preempt-result-goal bt-preempt-result-resume)\n    (goal bt-preempt-event-captured-goal 0)",
   );
   const writerPattern =
-    "(goal bt-telemetry-event-pending-goal 1)\\n    (up-compare-goal bt-telemetry-write-head-goal ==";
+    "(goal bt-telemetry-event-pending-goal 1)\n    (up-compare-goal bt-telemetry-write-head-goal ==";
 
   assert.ok(begin >= 0, "[Preemption replay] BEGIN capture rule missing");
   assert.ok(resume > begin, "[Preemption replay] RESUME capture must follow BEGIN");
