@@ -3149,6 +3149,76 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
   }
 }
 
+function validateEconomicResearchPackageIsolation(rules, sourceText) {
+  const forbidden = [
+    "(goal bt-research-cavalry-counter-package-goal 0)",
+    "(goal bt-research-ranged-counter-package-goal 0)",
+    "(goal bt-research-cataphract-package-goal 0)",
+    "(goal bt-research-siege-package-goal 0)",
+    "(goal bt-research-monk-package-goal 0)",
+  ];
+  const economicExecutors = [
+    ["ri-heavy-plow", "bt-heavy-plow-demand-goal"],
+    ["ri-gold-mining", "bt-gold-mining-demand-goal"],
+    ["ri-wheel-barrow", "bt-wheelbarrow-demand-goal"],
+    ["ri-hand-cart", "bt-hand-cart-demand-goal"],
+    ["ri-bow-saw", "bt-bow-saw-demand-goal"],
+    ["ri-gold-shaft-mining", "bt-gold-shaft-mining-demand-goal"],
+  ];
+
+  assert.ok(
+    sourceText.includes("(defconst bt-heavy-plow-demand-goal 699)"),
+    "[Castle eco] persistent Heavy Plow demand goal constant is missing",
+  );
+
+  const heavyPlowDemand = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-heavy-plow-demand-goal 0)") &&
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(up-research-status c: ri-horse-collar >= research-complete)") &&
+      rule.includes("(building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)") &&
+      rule.includes("(up-research-status c: ri-heavy-plow == research-available)") &&
+      rule.includes("(set-goal bt-heavy-plow-demand-goal 1)"),
+  );
+  assert.ok(
+    heavyPlowDemand,
+    "[Castle eco] persistent Heavy Plow demand writer is missing",
+  );
+
+  const heavyPlowCompletion = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-mill-claim-goal ri-heavy-plow)") &&
+      rule.includes("(up-research-status c: ri-heavy-plow == research-complete)") &&
+      rule.includes("(set-goal bt-heavy-plow-demand-goal 0)"),
+  );
+  assert.ok(
+    heavyPlowCompletion,
+    "[Castle eco] Heavy Plow completion must clear persistent demand",
+  );
+
+  for (const [tech, demandGoal] of economicExecutors) {
+    const executor = rules.find(
+      (rule) =>
+        rule.includes("(goal " + demandGoal + " 1)") &&
+        rule.includes("(research " + tech + ")"),
+    );
+    assert.ok(
+      executor,
+      "[Castle eco] executor is missing for " + tech,
+    );
+    assert.ok(
+      executor.includes("(can-research-with-escrow " + tech + ")"),
+      "[Castle eco] executor lost engine-native feasibility gate for " + tech,
+    );
+    for (const veto of forbidden) {
+      assert.ok(
+        !executor.includes(veto),
+        "[Castle eco] " + tech + " executor still depends on unrelated military package veto: " + veto,
+      );
+    }
+  }
+}
+
 function validateAgeTransitionQueueGates(rules) {
   const castleStop = rules.find(
     (rule) =>
@@ -3374,6 +3444,7 @@ validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
 validateFeudalEcoResearchPriority(rules, sourceText);
+validateEconomicResearchPackageIsolation(rules, sourceText);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
@@ -3429,6 +3500,7 @@ console.log(JSON.stringify({
     "lifecycle anchors",
     "age-transition queue gates separate civilian bank ownership from engine research feasibility",
     "persistent Feudal eco demand, hold, and package-veto separation",
+    "Castle eco persistent demand and military-package isolation",
 
     "engine-action can-* contracts",
     "fielded Scout witness for up-send-scout",
