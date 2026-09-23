@@ -1844,6 +1844,104 @@ function validateEngineActionContracts(rules, objectLinesByName) {
   }
 }
 
+function validateScoutActionContracts(rules) {
+  for (const [index, rule] of rules.entries()) {
+    if (!rule.includes("(up-send-scout ")) continue;
+    assert.ok(
+      /\(unit-type-count (?:scout-cavalry-line|scout-cavalry) >= 1\)/.test(rule),
+      "[Scout contract] up-send-scout rule " + index +
+        " lacks a fielded Scout witness; unit-type-count-total is queue-inclusive and is not sufficient for dispatch",
+    );
+  }
+}
+
+function validateFarmEscrowContracts(rules) {
+  for (const [index, rule] of rules.entries()) {
+    if (!rule.includes("(can-build-with-escrow farm)")) continue;
+    assert.ok(
+      !rule.includes("(wood-amount >= bt-farm-build-wood)"),
+      "[Escrow farm] farm rule " + index +
+        " gates an escrow-aware build with raw wood-amount; rely on can-build-with-escrow before releasing wood",
+    );
+    assert.ok(
+      rule.includes("(build farm)"),
+      "[Escrow farm] farm rule " + index + " has escrow-aware feasibility but no build action",
+    );
+  }
+}
+
+function validateDerivedThreatStateOrdering(rules) {
+  const states = [
+    "bt-cavalry-threat-goal",
+    "bt-ranged-threat-goal",
+    "bt-spear-threat-goal",
+    "bt-any-threat-goal",
+    "bt-cavalry-counter-level-goal",
+    "bt-ranged-counter-level-goal",
+    "bt-spear-counter-level-goal",
+    "bt-noncav-cavalry-level-goal",
+  ];
+  const reads = rules.flatMap((rule, index) =>
+    states.some((state) =>
+      rule.includes("(goal " + state) ||
+      rule.includes("(up-compare-goal " + state),
+    )
+      ? [index]
+      : [],
+  );
+  const firstConsumer = Math.min(...reads);
+  assert.notEqual(
+    firstConsumer,
+    Infinity,
+    "[State order] no threat/counter consumers found; regression fixture is invalid",
+  );
+
+  const resetNeedles = states.map(
+    (state) => "(set-goal " + state + " 0)",
+  );
+  const resetCandidates = rules
+    .map((rule, index) =>
+      resetNeedles.every((needle) => rule.includes(needle)) ? index : -1,
+    )
+    .filter((index) => index >= 0);
+
+  const resetIndex = Math.max(
+    ...resetCandidates.filter((index) => index < firstConsumer),
+    -1,
+  );
+  assert.notEqual(
+    resetIndex,
+    -1,
+    "[State order] derived threat-state reset must occur before the first threat/counter consumer",
+  );
+
+  const writerSet = new Set(states);
+  let blockEnd = resetIndex;
+  const blockStates = new Set();
+  const recordWriters = (rule) => {
+    for (const state of states) {
+      if (rule.includes("(set-goal " + state)) blockStates.add(state);
+    }
+  };
+  recordWriters(rules[resetIndex]);
+  while (blockEnd + 1 < rules.length) {
+    const next = rules[blockEnd + 1];
+    if (!states.some((state) => next.includes("(set-goal " + state))) break;
+    blockEnd += 1;
+    recordWriters(next);
+  }
+
+  assert.equal(
+    blockStates.size,
+    writerSet.size,
+    "[State order] derived threat-state writer block does not populate every threat/counter state before consumption",
+  );
+  assert.ok(
+    blockEnd < firstConsumer,
+    "[State order] threat/counter derivation must complete before its first consumer; package logic currently reads stale state",
+  );
+}
+
 function validateAttackContracts(rules) {
   const attackRules = rules.filter((rule) => rule.includes("(attack-now)"));
   assert.ok(
@@ -2102,6 +2200,9 @@ validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
+validateScoutActionContracts(rules);
+validateFarmEscrowContracts(rules);
+validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
 validateSourceOrder(rules);
@@ -2148,6 +2249,9 @@ console.log(JSON.stringify({
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
     "engine-action can-* contracts",
+    "fielded Scout witness for up-send-scout",
+    "escrow-aware farm gate consistency",
+    "derived threat/counter state ordering before package consumers",
     "queued/completed train witnesses tied to the trained line",
     "completed/pending build witnesses tied to the built building",
     "duplicate and out-of-range defconst diagnostics",
