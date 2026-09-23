@@ -298,7 +298,7 @@ try {
     },
     {
       name: "bare-siege-tower-object-slot-rejected",
-      expected: "[AIRef schema]",
+      expected: "[Invalid identifier]",
       source: baseline.replace(
         "(defconst siege-tower 1105)",
         "(defconst siege-tower-invalid-placeholder 1105)",
