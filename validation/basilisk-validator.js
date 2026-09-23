@@ -2098,6 +2098,20 @@ function requireRule(rules, label, ...needles) {
   return label;
 }
 
+function validateCastleCataphractImperialHandoff(rules) {
+  const writerIndex = ruleIndex(
+    rules,
+    "(current-age == castle-age)",
+    "(goal bt-castle-cataphract-demand-goal 0)",
+    "(set-goal bt-castle-cataphract-demand-goal 1)",
+  );
+  const writer = rules[writerIndex];
+  assert.ok(
+    writer.includes("(not (can-research-with-escrow imperial-age))"),
+    "[Castle-Cataphract/Imperial handoff] pre-Imperial Castle-Cataphract demand writer must refuse to create demand when Imperial is already research-feasible",
+  );
+}
+
 function validateLineHygiene(text) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
@@ -2253,6 +2267,7 @@ validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
+validateCastleCataphractImperialHandoff(rules);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
