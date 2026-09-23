@@ -8718,6 +8718,8 @@ cataphract-line < bt-cataphract-target-1)))))
         (current-age == castle-age)
         (goal bt-imperial-siege-package-goal 1)
     )
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
     (or
         (unit-type-count-total battering-ram-line < bt-ram-response-target)
         (and (current-age >= imperial-age) (and (up-research-status c: ri-capped-ram == research-complete) (unit-type-count-total battering-ram-line < bt-ram-imperial-response-target)))
@@ -10254,9 +10256,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ;---------------------------------------------------------------
 ; 18A.4. IMPERIAL BOMBARD CANNON DEMAND / CHEMISTRY
 ;---------------------------------------------------------------
-; The strategic witness is specific: the selected enemy currently has at least
-; one Trebuchet, the bot has an active attack package, and the existing attack
-; readiness gates remain satisfied. This does not create a new scouting layer.
+; Strategic ownership is now the Imperial siege package. The separate
+; enemy-Trebuchet branch remains a tactical reason to retain/replace BBCs.
 (defrule
     ; BBC is the default Imperial siege conversion demand.
     (goal bt-bombard-cannon-demand-goal 0)
@@ -11592,9 +11593,11 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 )
 
 (defrule
+    ; Completed Trebs are the demand witness. Queued Trebs only gate the
+    ; production action below and must not close the strategic demand early.
     (goal bt-trebuchet-demand-goal 1)
     (goal bt-imperial-siege-package-goal 1)
-    (unit-type-count-total trebuchet-set >= bt-trebuchet-target-goal)
+    (unit-type-count trebuchet-set >= bt-trebuchet-target-goal)
 =>
     (set-goal bt-trebuchet-demand-goal 0)
 )
