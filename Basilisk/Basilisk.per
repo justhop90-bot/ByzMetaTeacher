@@ -6371,22 +6371,9 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 
 (defrule
     (building-type-count castle >= 1)
-    (goal bt-castle-cataphract-failure-history-goal 0)
-    (or
-        (strategic-number sn-resource-control == 0)
-        (strategic-number sn-resource-control == bt-castle-cataphract-claim)
-    )
+    (goal bt-castle-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control != bt-castle-cataphract-claim)
 =>
-    (disable-timer bt-castle-cataphract-watchdog-timer)
-    (disable-timer bt-castle-cataphract-backoff-timer)
-    (set-goal bt-castle-cataphract-demand-goal 0)
-    (set-goal bt-castle-cataphract-backoff-goal 0)
-)
-
-(defrule
-    (building-type-count castle >= 1)
-=>
-    (disable-timer bt-castle-cataphract-watchdog-timer)
     (disable-timer bt-castle-cataphract-backoff-timer)
     (set-goal bt-castle-cataphract-demand-goal 0)
     (set-goal bt-castle-cataphract-failure-history-goal 0)
