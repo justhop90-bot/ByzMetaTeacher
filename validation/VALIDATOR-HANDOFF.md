@@ -31,6 +31,15 @@ For the next ChatGPT session: read this file first, then `Basilisk/Lifecycle-Aud
 
 ## Current strictness upgrades
 
+Three engine-hygiene diagnostics are now explicit and intentionally named after the failures they prevent:
+
+1. **Invalid identifier** means an engine-facing identifier cannot be resolved to a Basilisk `defconst`, the checked-in DE AIRef object/technology/strategic-number registries, or the checked-in value/class registries. The check covers direct `build`, `train`, `research`, `can-*`, `goal`, `set-goal`, `up-compare-goal`, and strategic-number identifier slots. This is specifically aimed at typos such as a misspelled `ri-*`, unit, building, or goal constant. Two explicit current-engine supplements, `siege-tower` and `ri-logistica`, are documented because the checked-in AIRef scrape does not contain them even though Basilisk uses them.
+2. **Missing closing parenthesis** is a source-structure error. The validator now reports the opening line of an unclosed `defrule` and the final unmatched-opening count, while the balanced-parenthesis pass still catches premature closing parentheses separately.
+3. **Rule too long** means a parsed DE `defrule` exceeds the documented 32-element rule limit. The count is every nested parenthesized command/fact/logical form inside the rule, excluding the outer `defrule` wrapper. Exactly 32 is legal; greater than 32 is a hard failure. The current Basilisk controller sits exactly at 32 elements in three rules, at source lines 4204, 8542, and 9148, so those rules have zero structural headroom even though they currently remain within the engine limit.
+
+The validator also treats 255 characters as the source-line ceiling and keeps the separate line-too-long diagnostic distinct from the 32-element rule limit.
+
+
 1. Engine-limit enforcement now rejects more than 10,000 rules, more than 32 elements in a DE rule, lines over 255 characters, and numeric timer IDs outside 1..50. Basilisk had 13 timer constants assigned above 50; those were reassigned to unused slots within the documented DE range before this gate was enabled.
 2. Logical operators are now checked exactly: `not` takes one operand; `and`, `nand`, `nor`, `or`, `xor`, and `xnor` take exactly two. Nested forms remain mandatory for larger boolean expressions.
 3. Every `build`, `train`, and `research` action must have the matching `can-*` or escrow feasibility predicate in the same rule. Every train action must expose a queued/completed count witness, and every build action must expose a completed/pending building witness.
