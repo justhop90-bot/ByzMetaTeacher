@@ -433,6 +433,35 @@ try {
       ),
     },
     {
+      name: "two-man-saw-demand-without-lumberjack-maturity-rejected",
+      expected: "[Late-eco lifecycle]",
+      source: (() => {
+        const witness =
+          "    (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)\n";
+        const index = baseline.indexOf(witness);
+        assert.ok(index >= 0, "[Self-test] Two-Man Saw demand lumberjack witness is missing");
+        return baseline.slice(0, index) + baseline.slice(index + witness.length);
+      })(),
+    },
+    {
+      name: "two-man-saw-executor-without-lumberjack-maturity-rejected",
+      expected: "[Late-eco lifecycle]",
+      source: (() => {
+        const witness =
+          "    (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)\n";
+        const first = baseline.indexOf(witness);
+        const second = baseline.indexOf(witness, first + witness.length);
+        assert.ok(
+          first >= 0 && second >= 0,
+          "[Self-test] Two-Man Saw lumberjack witnesses are missing from baseline",
+        );
+        return (
+          baseline.slice(0, second) +
+          baseline.slice(second + witness.length)
+        );
+      })(),
+    },
+    {
       name: "two-man-saw-executor-without-villager-maturity-rejected",
       expected: "[Late-eco lifecycle]",
       source: (() => {
@@ -698,6 +727,8 @@ try {
           "crop-rotation-maturity-witness",
           "two-man-saw-demand-maturity-witness",
           "two-man-saw-executor-maturity-witness",
+          "two-man-saw-demand-lumberjack-maturity-witness",
+          "two-man-saw-executor-lumberjack-maturity-witness",
         ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
