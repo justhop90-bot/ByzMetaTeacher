@@ -3033,6 +3033,70 @@ function validateCastleCataphractImperialHandoff(rules) {
   );
 }
 
+function validateAgeTransitionQueueGates(rules) {
+  const castleStop = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
+      rule.includes("(goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    castleStop,
+    "[Age transition] Castle villager stop gate is missing",
+  );
+  assert.ok(
+    !castleStop.includes("(can-research-with-escrow castle-age)"),
+    "[Age transition] Castle villager stop gate must not depend on research queue availability",
+  );
+
+  const castleExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(research castle-age)"),
+  );
+  assert.ok(
+    castleExecutor,
+    "[Age transition] Castle research executor is missing",
+  );
+  assert.ok(
+    castleExecutor.includes("(can-research-with-escrow castle-age)"),
+    "[Age transition] Castle research executor lost its engine feasibility guard",
+  );
+
+  const imperialStop = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    imperialStop,
+    "[Age transition] Imperial villager stop gate is missing",
+  );
+  assert.ok(
+    !imperialStop.includes("(can-research-with-escrow imperial-age)"),
+    "[Age transition] Imperial villager stop gate must not depend on research queue availability",
+  );
+
+  const imperialExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(research imperial-age)"),
+  );
+  assert.ok(
+    imperialExecutor,
+    "[Age transition] Imperial research executor is missing",
+  );
+  assert.ok(
+    imperialExecutor.includes("(can-research-with-escrow imperial-age)"),
+    "[Age transition] Imperial research executor lost its engine feasibility guard",
+  );
+}
+
 function validateLineHygiene(text) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
@@ -3192,6 +3256,7 @@ validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
 validateCastleCataphractImperialHandoff(rules);
+validateAgeTransitionQueueGates(rules);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
