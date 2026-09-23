@@ -82,6 +82,8 @@
 ;
 ;================================================================
 ;================================================================
+(include "BasiliskTelemetry.xs")
+;
 ; 0. ENGINE / COMMUNITY DEFINITIONS
 ;================================================================
 ; Q: "What is sn-resource-control?"
@@ -605,7 +607,7 @@
 (defconst bt-debug-age-imperial-start-goal 720)
 (defconst bt-debug-age-imperial-complete-goal 721)
 (defconst bt-debug-last-eco-event-goal 709)
-(defconst bt-debug-last-strategy-goal 710)
+(defconst bt-debug-last-strategy-goal 768)
 (defconst bt-debug-last-tc-project-goal 712)
 (defconst bt-debug-castle-block-none 0)
 (defconst bt-debug-castle-block-backoff 1)
@@ -936,6 +938,38 @@
     (set-goal bt-two-man-saw-demand-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
     (set-goal bt-stone-shaft-mining-demand-goal 0)
+    (disable-self)
+)
+
+
+; Initialize preemption ownership and telemetry transport state.
+(defrule
+    (true)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-original-owner-goal 0)
+    (set-goal bt-preempt-original-mode-goal 0)
+    (set-goal bt-preempt-reason-goal 0)
+    (set-goal bt-preempt-result-goal bt-preempt-result-none)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-goal bt-telemetry-write-head-goal 0)
+    (set-goal bt-telemetry-read-head-goal 0)
+    (set-goal bt-telemetry-count-goal 0)
+    (set-goal bt-telemetry-sequence-goal 0)
+    (set-goal bt-telemetry-overflow-goal 0)
+    (set-goal bt-telemetry-overflow-state-goal 0)
+    (disable-self)
+)
+(defrule
+    (true)
+=>
+    (set-goal bt-telemetry-event-pending-goal 0)
+    (set-goal bt-telemetry-event-type-goal 0)
+    (set-goal bt-telemetry-event-owner-goal 0)
+    (set-goal bt-telemetry-event-flags-goal 0)
+    (set-goal bt-telemetry-event-time-goal 0)
+    (set-goal bt-telemetry-event-sequence-goal 0)
+    (enable-timer bt-telemetry-timer 1)
     (disable-self)
 )
 
