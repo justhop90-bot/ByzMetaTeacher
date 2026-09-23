@@ -697,6 +697,569 @@ function validateAIRefCommandVocabulary(sourceText, rules, repoRootPath) {
   };
 }
 
+
+function parseCommandExpressions(text) {
+  const expressions = [];
+
+  function skipWhitespace(index) {
+    let cursor = index;
+    while (cursor < text.length && /\s/.test(text[cursor])) cursor += 1;
+    return cursor;
+  }
+
+  function readAtom(index) {
+    if (text[index] === '"') {
+      let cursor = index + 1;
+      let escaped = false;
+      while (cursor < text.length) {
+        const ch = text[cursor];
+        if (escaped) {
+          escaped = false;
+        } else if (ch === "\\") {
+          escaped = true;
+        } else if (ch === '"') {
+          return {
+            value: text.slice(index, cursor + 1),
+            end: cursor + 1,
+          };
+        }
+        cursor += 1;
+      }
+      return { value: text.slice(index), end: text.length };
+    }
+
+    let cursor = index;
+    while (
+      cursor < text.length &&
+      !/\s/.test(text[cursor]) &&
+      text[cursor] !== "(" &&
+      text[cursor] !== ")"
+    ) {
+      cursor += 1;
+    }
+    return {
+      value: text.slice(index, cursor),
+      end: cursor,
+    };
+  }
+
+  function readExpression(start) {
+    assert.equal(text[start], "(", "[AIRef schema] expression parser expected '('");
+    let cursor = skipWhitespace(start + 1);
+    const headToken = readAtom(cursor);
+    const head = headToken.value;
+    cursor = headToken.end;
+
+    const args = [];
+    while (cursor < text.length) {
+      cursor = skipWhitespace(cursor);
+      if (text[cursor] === ")") {
+        return {
+          head,
+          args,
+          start,
+          end: cursor + 1,
+        };
+      }
+      if (text[cursor] === "(") {
+        const child = readExpression(cursor);
+        args.push(child);
+        expressions.push(child);
+        cursor = child.end;
+        continue;
+      }
+      const atom = readAtom(cursor);
+      args.push(atom.value);
+      cursor = atom.end;
+    }
+
+    assert.fail(
+      "[AIRef schema] expression '" + head + "' is not closed",
+    );
+  }
+
+  let cursor = 0;
+  while (cursor < text.length) {
+    cursor = skipWhitespace(cursor);
+    if (cursor >= text.length) break;
+    if (text[cursor] !== "(") {
+      cursor += 1;
+      continue;
+    }
+    const expression = readExpression(cursor);
+    expressions.push(expression);
+    cursor = expression.end;
+  }
+
+  return expressions;
+}
+
+function loadAIRefCommandSchema(repoRootPath) {
+  const schemaPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-command-schema.json",
+  );
+  assert.ok(
+    fs.existsSync(schemaPath),
+    "[AIRef schema] command schema is missing: " + schemaPath,
+  );
+
+  let registry;
+  try {
+    registry = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
+  } catch (error) {
+    assert.fail(
+      "[AIRef schema] could not parse command schema " +
+        schemaPath +
+        ": " +
+        error.message,
+    );
+  }
+
+  assert.equal(
+    registry?.metadata?.source_commands_js_blob_sha,
+    "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+    "[AIRef schema] schema is not anchored to the current AIRef commands.js blob",
+  );
+
+  const commands = Array.isArray(registry.commands) ? registry.commands : [];
+  assert.ok(
+    commands.length > 0,
+    "[AIRef schema] command schema contains no commands",
+  );
+
+  const byName = new Map();
+  for (const command of commands) {
+    assert.ok(
+      typeof command.name === "string" &&
+        Array.isArray(command.parameters) &&
+        typeof command.syntax === "string",
+      "[AIRef schema] every command entry must contain name, syntax, and parameters",
+    );
+    assert.ok(
+      !byName.has(command.name),
+      "[AIRef schema] duplicate command entry: " + command.name,
+    );
+    byName.set(command.name, command);
+  }
+
+  return {
+    path: schemaPath,
+    metadata: registry.metadata ?? {},
+    commands,
+    byName,
+  };
+}
+
+function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
+  const strategicNumberPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-strategic-number-inventory.json",
+  );
+  const techPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-tech-inventory.json",
+  );
+  const objectPath = path.join(
+    repoRootPath,
+    "extracted",
+    "inventories",
+    "airef-object-inventory.json",
+  );
+
+  const load = (filePath) => {
+    assert.ok(
+      fs.existsSync(filePath),
+      "[AIRef schema] supporting inventory is missing: " + filePath,
+    );
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  };
+
+  const strategicNumberInventory = load(strategicNumberPath);
+  const techInventory = load(techPath);
+  const objectInventory = load(objectPath);
+
+  const strategicNumbers = new Set(
+    (strategicNumberInventory.strategic_numbers ?? [])
+      .map((entry) => entry.name)
+      .filter(Boolean),
+  );
+  const techs = new Set();
+  for (const entry of techInventory.techs ?? []) {
+    if (typeof entry.ai_name === "string") {
+      for (const raw of entry.ai_name.split(",")) {
+        const token = raw.trim().split(/\s+/)[0];
+        if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) techs.add(token);
+      }
+    }
+  }
+
+  const objects = new Set();
+  for (const entry of objectInventory.objects ?? []) {
+    for (const value of [entry.ai_name, entry.line, entry.name]) {
+      if (typeof value !== "string") continue;
+      for (const raw of value.split(",")) {
+        const token = raw.trim().split(/\s+/)[0];
+        if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) objects.add(token);
+      }
+    }
+  }
+
+  const defconsts = new Set(
+    [...sanitizeStructure(sourceText).matchAll(
+      /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g,
+    )].map((match) => match[1]),
+  );
+
+  return {
+    defconsts,
+    strategicNumbers,
+    techs,
+    objects,
+  };
+}
+
+function typedSchemaFamily(value, families) {
+  if (!value || /^-?\d+$/.test(value)) return null;
+  if (families.strategicNumbers.has(value) || /^sn-/.test(value)) {
+    return "strategic number";
+  }
+  if (
+    families.defconsts.has(value) &&
+    (/^(?:gl-|goal-)/.test(value) || /-goal$/.test(value))
+  ) {
+    return "goal";
+  }
+  if (families.techs.has(value) || /^ri-/.test(value)) return "tech";
+  if (families.objects.has(value)) return "object";
+  return null;
+}
+
+function expectedAIRefFamily(parameterName) {
+  if (
+    parameterName === "GoalId" ||
+    parameterName === "EscrowGoalId" ||
+    parameterName === "OptionGoalId" ||
+    parameterName === "SharedGoalId"
+  ) {
+    return "goal";
+  }
+  if (parameterName === "SnId") return "strategic number";
+  if (parameterName === "TechId") return "tech";
+  if (
+    parameterName === "BuildingId" ||
+    parameterName === "UnitId" ||
+    parameterName === "ObjectId" ||
+    parameterName === "ClassId"
+  ) {
+    return "object";
+  }
+  if (parameterName === "PlayerNumber") return "player";
+  return null;
+}
+
+const AIREF_TYPE_PREFIXES = new Set(["c:", "g:", "s:"]);
+const AIREF_COMPARE_OPS = new Set([
+  "<",
+  "<=",
+  ">",
+  ">=",
+  "==",
+  "!=",
+  "c:<",
+  "c:<=",
+  "c:>",
+  "c:>=",
+  "c:==",
+  "c:!=",
+  "g:<",
+  "g:<=",
+  "g:>",
+  "g:>=",
+  "g:==",
+  "g:!=",
+  "s:<",
+  "s:<=",
+  "s:>",
+  "s:>=",
+  "s:==",
+  "s:!=",
+]);
+const AIREF_MATH_OPS = new Set([
+  "c:=",
+  "c:+",
+  "c:-",
+  "c:*",
+  "c:/",
+  "c:z/",
+  "c:mod",
+  "c:min",
+  "c:max",
+  "c:neg",
+  "c:%*",
+  "c:%/",
+  "g:=",
+  "g:+",
+  "g:-",
+  "g:*",
+  "g:/",
+  "g:z/",
+  "g:mod",
+  "g:min",
+  "g:max",
+  "g:neg",
+  "g:%*",
+  "g:%/",
+  "s:=",
+  "s:+",
+  "s:-",
+  "s:*",
+  "s:/",
+  "s:z/",
+  "s:mod",
+  "s:min",
+  "s:max",
+  "s:neg",
+  "s:%*",
+  "s:%/",
+]);
+
+function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
+  const schema = loadAIRefCommandSchema(repoRootPath);
+  const families = loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath);
+  const failures = [];
+  const logicalOperators = new Set([
+    "and",
+    "nand",
+    "nor",
+    "not",
+    "or",
+    "xor",
+    "xnor",
+  ]);
+
+  const reportFailure = (kind, expression, parameterIndex, message) => {
+    failures.push({
+      kind,
+      command: expression.head,
+      parameterIndex,
+      line: sourceText.slice(0, rules.__sourceOffset + expression.start)
+        .split("\n").length,
+      message,
+    });
+  };
+
+  let sourceOffset = 0;
+  const allExpressions = [];
+  for (const rule of rules) {
+    const ruleStart = sourceText.indexOf("(defrule", sourceOffset);
+    if (ruleStart === -1) continue;
+    const expressions = parseCommandExpressions(
+      stripComments(sourceText.slice(ruleStart, ruleStart + rule.length)),
+    );
+    allExpressions.push(...expressions);
+    sourceOffset = ruleStart + rule.length;
+  }
+
+  const validateExpression = (expression) => {
+    if (
+      logicalOperators.has(expression.head) ||
+      expression.head === "defrule" ||
+      expression.head === "defconst"
+    ) {
+      for (const arg of expression.args) {
+        if (arg && typeof arg === "object") validateExpression(arg);
+      }
+      return;
+    }
+
+    const command = schema.byName.get(expression.head);
+    if (!command) {
+      for (const arg of expression.args) {
+        if (arg && typeof arg === "object") validateExpression(arg);
+      }
+      return;
+    }
+
+    if (expression.args.some((arg) => arg && typeof arg === "object")) {
+      for (const arg of expression.args) {
+        if (arg && typeof arg === "object") validateExpression(arg);
+      }
+      return;
+    }
+
+    const parameters = command.parameters;
+    if (expression.args.length !== parameters.length) {
+      reportFailure(
+        "command-arity-mismatch",
+        expression,
+        null,
+        command.name +
+          " expects " +
+          parameters.length +
+          " arguments, got " +
+          expression.args.length,
+      );
+      return;
+    }
+
+    for (let index = 0; index < parameters.length; index += 1) {
+      const parameter = parameters[index];
+      const parameterName = parameter.name;
+      const value = expression.args[index];
+
+      if (parameterName === "typeOp") {
+        if (!AIREF_TYPE_PREFIXES.has(value)) {
+          reportFailure(
+            "command-typed-prefix-mismatch",
+            expression,
+            index + 1,
+            command.name +
+              " argument " +
+              (index + 1) +
+              " is '" +
+              value +
+              "'; expected one of c:, g:, s: for typeOp",
+          );
+        }
+      } else if (parameterName === "compareOp") {
+        if (!AIREF_COMPARE_OPS.has(value)) {
+          reportFailure(
+            "command-argument-mismatch",
+            expression,
+            index + 1,
+            command.name +
+              " argument " +
+              (index + 1) +
+              " is '" +
+              value +
+              "'; expected an AIRef compareOp",
+          );
+        }
+      } else if (parameterName === "mathOp") {
+        if (!AIREF_MATH_OPS.has(value)) {
+          reportFailure(
+            "command-argument-mismatch",
+            expression,
+            index + 1,
+            command.name +
+              " argument " +
+              (index + 1) +
+              " is '" +
+              value +
+              "'; expected an AIRef mathOp",
+          );
+        }
+      }
+
+      const expectedFamily = expectedAIRefFamily(parameterName);
+      const actualFamily = typedSchemaFamily(value, families);
+      if (
+        expectedFamily &&
+        actualFamily &&
+        expectedFamily !== actualFamily
+      ) {
+        reportFailure(
+          "command-family-mismatch",
+          expression,
+          index + 1,
+          command.name +
+            " " +
+            parameterName +
+            " argument " +
+            (index + 1) +
+            " uses '" +
+            value +
+            "', which looks like a " +
+            actualFamily +
+            "; expected " +
+            expectedFamily,
+        );
+      }
+
+      if (
+        index > 0 &&
+        ["typeOp", "compareOp", "mathOp"].includes(parameters[index - 1].name)
+      ) {
+        const operator = expression.args[index - 1];
+        let expectedTypedFamily = null;
+        if (typeof operator === "string" && operator.startsWith("g:")) {
+          expectedTypedFamily = "goal";
+        } else if (
+          typeof operator === "string" &&
+          operator.startsWith("s:")
+        ) {
+          expectedTypedFamily = "strategic number";
+        }
+
+        if (expectedTypedFamily) {
+          const actualTypedFamily = typedSchemaFamily(value, families);
+          if (
+            actualTypedFamily &&
+            actualTypedFamily !== expectedTypedFamily
+          ) {
+            reportFailure(
+              "command-typed-operand-mismatch",
+              expression,
+              index + 1,
+              command.name +
+                " argument " +
+                (index + 1) +
+                " uses '" +
+                value +
+                "', which looks like a " +
+                actualTypedFamily +
+                "; operator '" +
+                operator +
+                "' requires a " +
+                expectedTypedFamily +
+                " operand",
+            );
+          }
+        }
+      }
+    }
+  };
+
+  for (const expression of allExpressions) validateExpression(expression);
+
+  assert.equal(
+    failures.length,
+    0,
+    "[AIRef schema] " +
+      failures.length +
+      " command-schema failure(s): " +
+      failures
+        .slice(0, 12)
+        .map(
+          (failure) =>
+            failure.kind +
+            " '" +
+            failure.command +
+            "' argument " +
+            failure.parameterIndex +
+            " at line " +
+            failure.line +
+            ": " +
+            failure.message,
+        )
+        .join("; "),
+  );
+
+  return {
+    schemaCommandCount: schema.commands.length,
+    schemaCoveredUsageCount: new Set(
+      allExpressions.map((expression) => expression.head),
+    ).size,
+  };
+}
+
 function validateAIRefGoalOutputSafety(sourceText) {
   const sanitized = sanitizeStructure(sourceText);
   const numericDefconsts = new Map(
@@ -1108,6 +1671,7 @@ assert.ok(rules.length > 0, "[Parser] no defrule forms found");
 const engineLimitReport = validateEngineLimits(source, rules);
 const identifierReport = validateIdentifiers(source, repoRoot);
 const commandReport = validateAIRefCommandVocabulary(source, rules, repoRoot);
+validateAIRefCommandSchema(source, rules, repoRoot);
 validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
