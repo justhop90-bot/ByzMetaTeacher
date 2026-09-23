@@ -844,6 +844,14 @@ function ruleIndex(...needles) {
   return index;
 }
 
+const threatResetIndex = ruleIndex(
+  "(true)",
+  "(set-goal bt-cavalry-threat-goal 0)",
+  "(set-goal bt-ranged-threat-goal 0)",
+  "(set-goal bt-spear-threat-goal 0)",
+  "(set-goal bt-any-threat-goal 0)",
+);
+
 const threatWriterIndices = [
   ruleIndex(
     "(players-unit-type-count any-enemy knight-line >= 3)",
@@ -861,6 +869,13 @@ const threatWriterIndices = [
     "(set-goal bt-any-threat-goal 1)",
   ),
 ];
+
+assert.ok(
+  threatResetIndex < threatWriterIndices[0] &&
+    threatResetIndex < threatWriterIndices[1] &&
+    threatResetIndex < threatWriterIndices[2],
+  `[Strategy order] threat reset at rule ${threatResetIndex} must precede all positive threat writers`,
+);
 
 const flushEntryIndices = [
   ruleIndex("(town-under-attack)", "(set-goal strategy-goal bt-strategy-flush)"),
