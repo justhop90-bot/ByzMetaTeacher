@@ -136,7 +136,7 @@ function validateBalancedParens(text) {
 }
 
 function validateBooleanArity(text) {
-  const sanitized = stripComments(text);
+  const sanitized = sanitizeStructure(text);
   const logicalArity = new Map([
     ["not", 1],
     ["and", 2],
