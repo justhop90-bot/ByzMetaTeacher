@@ -3311,19 +3311,36 @@
 
 ; Strategic invalidation only. Temporary resource contention and provider
 ; loss do not erase Heavy Plow demand; the executor owns feasibility.
+; Four independent invalidation witnesses. Keep each rule parser-simple:
+; demand is cleared whenever any terminal strategic condition becomes true.
 (defrule
     (goal bt-heavy-plow-demand-goal 1)
     (goal bt-research-mill-claim-goal 0)
-    (or
-        (current-age > castle-age)
-        (or
-            (up-research-status c: ri-heavy-plow >= research-complete)
-            (or
-                (can-research-with-escrow imperial-age)
-                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-            )
-        )
-    )
+    (current-age > castle-age)
+=>
+    (set-goal bt-heavy-plow-demand-goal 0)
+)
+
+(defrule
+    (goal bt-heavy-plow-demand-goal 1)
+    (goal bt-research-mill-claim-goal 0)
+    (up-research-status c: ri-heavy-plow >= research-complete)
+=>
+    (set-goal bt-heavy-plow-demand-goal 0)
+)
+
+(defrule
+    (goal bt-heavy-plow-demand-goal 1)
+    (goal bt-research-mill-claim-goal 0)
+    (can-research-with-escrow imperial-age)
+=>
+    (set-goal bt-heavy-plow-demand-goal 0)
+)
+
+(defrule
+    (goal bt-heavy-plow-demand-goal 1)
+    (goal bt-research-mill-claim-goal 0)
+    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
 =>
     (set-goal bt-heavy-plow-demand-goal 0)
 )
