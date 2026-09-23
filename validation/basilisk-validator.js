@@ -324,8 +324,8 @@ function validateLineHygiene(text) {
   const lines = text.split("\n");
   const maxLength = Math.max(...lines.map((line) => line.length));
   assert.ok(
-    maxLength <= 260,
-    `[Hygiene] controller line exceeds 260 characters (max observed: ${maxLength})`,
+    maxLength <= 255,
+    `[Hygiene] controller line exceeds 255 characters (max observed: ${maxLength})`,
   );
   assert.ok(
     !/\t/.test(text),
