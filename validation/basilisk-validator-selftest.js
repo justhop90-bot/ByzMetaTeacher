@@ -543,6 +543,14 @@ try {
       ),
     })),
     {
+      name: "dropsite-update-deferral-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "(set-strategic-number sn-defer-dropsite-update 1)",
+        "(set-strategic-number sn-defer-dropsite-update 0)",
+      ),
+    },
+    {
       name: "villager-hygiene-house-headroom-regression",
       expected: "[Villager hygiene]",
       source: baseline.replace(
