@@ -906,6 +906,10 @@ assert.equal(castlePowerTcConsumers.length, 0, "[Castle-power] BOOM-only TC expa
 
 function castlePowerPolicy(input) {
   if (input.age >= input.imperialAge && input.safe) return "boom";
+  if (input.strategy === "flush" && input.age >= input.castleAge && input.safe &&
+      input.standingArmyDeficit >= 0 && input.standingArmyFloor >= input.flushArmyFloorCastle) {
+    return "boom";
+  }
   if (input.strategy === "rush" && input.age >= input.castleAge && input.safe) {
     if (input.targetAlive && input.archers >= 4) return "castle-power";
     return "boom";
@@ -929,4 +933,16 @@ assert.equal(castlePowerPolicy({
 assert.equal(castlePowerPolicy({
   strategy: "castle-power", age: 4, castleAge: 3, imperialAge: 4, safe: true, targetAlive: true, archers: 4,
 }), "boom", "[Castle-power D] Imperial expiry did not return to BOOM");
+assert.equal(castlePowerPolicy({
+  strategy: "flush",
+  age: 3,
+  castleAge: 3,
+  imperialAge: 4,
+  safe: true,
+  targetAlive: true,
+  archers: 4,
+  standingArmyDeficit: 0,
+  standingArmyFloor: 4,
+  flushArmyFloorCastle: 4,
+}), "boom", "[Castle-power E] cleared-threat Castle FLUSH did not recover to BOOM");
 
