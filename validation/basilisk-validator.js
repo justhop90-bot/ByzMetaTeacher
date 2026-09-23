@@ -1197,6 +1197,13 @@ function typedSchemaFamily(value, families) {
   return null;
 }
 
+function allowsObjectWildcard(commandName, parameterName) {
+  return (
+    parameterName === "UnitId" &&
+    /(?:^|-)unit-type-count(?:-total)?$/.test(commandName)
+  );
+}
+
 function expectedAIRefFamily(parameterName) {
   if (
     parameterName === "GoalId" ||
@@ -1476,7 +1483,10 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
         isSymbolicSchemaValue(value) &&
         !families.defconsts.has(value) &&
         !families.objects.has(value) &&
-        !families.objectWildcards.has(value) &&
+        !(
+          families.objectWildcards.has(value) &&
+          allowsObjectWildcard(command.name, parameterName)
+        ) &&
         !families.parameterValues.get(parameterName)?.has(value) &&
         !(parameterName === "ClassId" && families.classes.has(value)) &&
         !(parameterName === "UnitId" && families.classes.has(value))
