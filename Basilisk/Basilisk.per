@@ -10675,7 +10675,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
 )
 
 (defrule
-    (goal unit-goal crossbowman)
     (current-age >= castle-age)
     (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
     (building-type-count blacksmith >= 1)
@@ -10689,10 +10688,6 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     )
     (building-type-count archery-range >= 1)
     (up-research-status c: ri-thumb-ring < research-pending)
-    (or
-        (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
-        (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
-    )
     (up-compare-goal bt-research-university-failure-backoff-goal != ri-thumb-ring)
     (strategic-number sn-resource-control == 0)
     (building-type-count university >= 1)
@@ -10719,8 +10714,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (and
-            (goal unit-goal crossbowman)
-            (and
+                    (and
                 (up-research-status c: ri-arbalest == research-complete)
                 (unit-type-count-total arbalester >= bt-crossbow-target-mature)
             )
@@ -10753,8 +10747,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
                     (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
                     (and
                     (up-compare-goal bt-ranged-counter-level-goal >= 2)
-                    (goal bt-ranged-threat-goal 1)
-                                    )
+                                                    )
                 )
             )
     (up-research-status c: ri-bracer < research-pending)
@@ -10781,8 +10774,7 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (and
                 (unit-type-count-total cavalry-archer >= 6)
-                (goal bt-ranged-threat-goal 1)
-            )
+                        )
     (up-research-status c: ri-bracer < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -10813,13 +10805,11 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-leather-archer-armor == research-complete)
     (and
-            (goal unit-goal crossbowman)
-            (and
+                    (and
                 (up-research-status c: ri-arbalest == research-complete)
                 (unit-type-count-total arbalester >= bt-crossbow-target-mature)
             )
         )
-    (goal bt-ranged-threat-goal 1)
     (up-research-status c: ri-ring-archer-armor < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
@@ -10849,10 +10839,8 @@ bt-resource-mode-imperial-bank-prep) (or (goal bt-mangonel-demand-goal 1) (or (g
             )
             (and
                 (unit-type-count-total cavalry-archer >= 6)
-                (goal bt-ranged-threat-goal 1)
-            )
+                        )
         )
-    (goal bt-ranged-threat-goal 1)
     (up-research-status c: ri-ring-archer-armor < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
