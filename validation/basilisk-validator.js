@@ -3105,12 +3105,12 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
   const horseHold = rules.find(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(up-research-status c: ri-horse-collar == research-available)") &&
+      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
       rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
   );
   assert.ok(
     horseHold,
-    "[Feudal eco] Horse Collar hold rule is missing",
+    "[Feudal eco] persistent Horse Collar hold rule is missing",
   );
   for (const veto of forbidden) {
     assert.ok(
@@ -3122,12 +3122,24 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
   const dbaHold = rules.find(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(up-research-status c: ri-double-bit-axe == research-available)") &&
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
       rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
   );
   assert.ok(
     dbaHold,
-    "[Feudal eco] Double-Bit Axe hold rule is missing",
+    "[Feudal eco] persistent Double-Bit Axe hold rule is missing",
+  );
+
+  const dbaImmediateHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-double-bit-axe == research-available)") &&
+      rule.includes("(can-research-with-escrow ri-double-bit-axe)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    dbaImmediateHold,
+    "[Feudal eco] first-pass Double-Bit Axe hold rule is missing",
   );
   for (const veto of forbidden) {
     assert.ok(
@@ -3416,7 +3428,8 @@ console.log(JSON.stringify({
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
     "age-transition queue gates separate civilian bank ownership from engine research feasibility",
-    "persistent Feudal eco research priority and package-veto separation",
+    "persistent Feudal eco demand, hold, and package-veto separation",
+
     "engine-action can-* contracts",
     "fielded Scout witness for up-send-scout",
     "escrow-aware farm gate consistency",
