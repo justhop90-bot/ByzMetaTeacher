@@ -265,21 +265,23 @@
 ; fairness slots so unrelated research failures cannot overwrite each other.
 ; Age-research failed-start memory. Age transitions have their own cooldown so an ordinary technology failure cannot interfere.
 (defconst bt-research-age-failure-backoff-goal 644)
-(defconst bt-research-age-failure-backoff-timer 63)
+(defconst bt-research-age-failure-backoff-timer 50)
 (defconst bt-research-failure-backoff-seconds 30)
+; DE AI scripting exposes 50 timer slots (1..50). Keep capability-local timers
+; inside that engine range; the previous 51..63 assignments were invalid.
 ; Capability-local failed-start timers.
-(defconst bt-research-town-center-failure-backoff-timer 51)
-(defconst bt-research-mill-failure-backoff-timer 52)
-(defconst bt-research-lumber-camp-failure-backoff-timer 53)
-(defconst bt-research-mining-camp-failure-backoff-timer 54)
-(defconst bt-research-blacksmith-failure-backoff-timer 55)
-(defconst bt-research-university-failure-backoff-timer 56)
-(defconst bt-research-castle-failure-backoff-timer 57)
-(defconst bt-research-barracks-failure-backoff-timer 58)
-(defconst bt-research-archery-range-failure-backoff-timer 59)
-(defconst bt-research-stable-failure-backoff-timer 60)
-(defconst bt-research-siege-workshop-failure-backoff-timer 61)
-(defconst bt-research-monastery-failure-backoff-timer 62)
+(defconst bt-research-town-center-failure-backoff-timer 40)
+(defconst bt-research-mill-failure-backoff-timer 41)
+(defconst bt-research-lumber-camp-failure-backoff-timer 42)
+(defconst bt-research-mining-camp-failure-backoff-timer 43)
+(defconst bt-research-blacksmith-failure-backoff-timer 1)
+(defconst bt-research-university-failure-backoff-timer 2)
+(defconst bt-research-castle-failure-backoff-timer 5)
+(defconst bt-research-barracks-failure-backoff-timer 6)
+(defconst bt-research-archery-range-failure-backoff-timer 7)
+(defconst bt-research-stable-failure-backoff-timer 8)
+(defconst bt-research-siege-workshop-failure-backoff-timer 9)
+(defconst bt-research-monastery-failure-backoff-timer 10)
 ; Capability-local failed-start memory. These goals prevent one failed
 ; capability from overwriting another capability's bounded fairness delay.
 (defconst bt-research-town-center-failure-backoff-goal 623)
