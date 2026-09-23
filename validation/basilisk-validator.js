@@ -1231,6 +1231,17 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
     }
 
     const parameters = command.parameters;
+    const splitTypedComparison =
+      expression.args.some(
+        (arg, index) =>
+          typeof arg === "string" &&
+          AIREF_COMPARE_OPS.has(arg) &&
+          (expression.args[index + 1] === "g:" ||
+            expression.args[index + 1] === "s:"),
+      );
+    if (splitTypedComparison) {
+      return;
+    }
     if (expression.args.length !== parameters.length) {
       reportFailure(
         "command-arity-mismatch",
@@ -1453,8 +1464,7 @@ function validateAIRefCommandSchema(sourceText, rules, repoRootPath) {
 function validateAIRefTypedComparisonSyntax(sourceText) {
   const sanitized = sanitizeStructure(sourceText);
   const failures = [];
-  const splitComparison =
-    /(?:<|<=|>|>=|==|!=)\s+[gs]:|[gs]:\s*(?:<|<=|>|>=|==|!=)/g;
+  const splitComparison = /\s(?:<=|>=|<|>|==|!=)\s+g:|\s(?:<=|>=|<|>|==|!=)\s+s:/g;
 
   for (const match of sanitized.matchAll(splitComparison)) {
     const line = sanitized.slice(0, match.index).split("\n").length;
