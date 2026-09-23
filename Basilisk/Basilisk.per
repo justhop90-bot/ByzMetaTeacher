@@ -4218,9 +4218,9 @@
 ;================================================================
 ;
 ; Cataphract demand is a strategic response package. It persists until
-; the current enemy tier is satisfied and its required premium technology
-; is complete. Queue-inclusive totals drive execution; actual completed
-; Cataphracts drive expensive upgrade qualification.
+; the current enemy tier is satisfied and any tier-required premium
+; technology is complete. Queue-inclusive totals drive production;
+; actual completed Cataphracts qualify expensive upgrades.
 (defrule
     (current-age >= imperial-age)
     (or
@@ -6497,7 +6497,7 @@ bt-stone-mining-bank-delta-gold-goal >= 0))))
 )
 
 ;---------------------------------------------------------------
-; 15G. PRE-IMPERIAL CASTLE CAPABILITY FOR CATAPHRACTS
+; 15G. CASTLE CAPABILITY FOR CATAPHRACTS
 ;---------------------------------------------------------------
 
 (defrule
