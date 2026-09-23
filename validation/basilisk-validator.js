@@ -291,19 +291,54 @@ function validateEngineLimits(sourceText, rules) {
     `[Engine limits] controller line reaches ${maxLineLength} characters; DE limit is 255`,
   );
 
+  const MAX_RULE_ELEMENTS = 32;
+  const NEAR_RULE_ELEMENTS = 30;
+  const COMPLEX_SINGLE_LINE_RULE_LENGTH = 150;
   let worstRule = -1;
   let worstElements = 0;
+  const nearLimitRules = [];
+  const complexSingleLineRules = [];
+
   for (let index = 0; index < rules.length; index += 1) {
     const elements = countRuleElements(rules[index]);
     if (elements > worstElements) {
       worstElements = elements;
       worstRule = index;
     }
+
+    if (elements >= NEAR_RULE_ELEMENTS && elements <= MAX_RULE_ELEMENTS) {
+      nearLimitRules.push({
+        rule: index + 1,
+        elements,
+      });
+    }
+
     assert.ok(
-      elements <= 32,
-      `[Rule too long] rule ${index + 1} has ${elements} elements; DE limit is 32`,
+      elements <= MAX_RULE_ELEMENTS,
+      `[Rule too long] rule ${index + 1} has ${elements} elements; DE limit is ${MAX_RULE_ELEMENTS}`,
     );
+
+    const nonBlankLines = rules[index]
+      .split("\n")
+      .filter((line) => line.trim().length > 0);
+    if (
+      nonBlankLines.length === 1 &&
+      nonBlankLines[0].length > COMPLEX_SINGLE_LINE_RULE_LENGTH
+    ) {
+      complexSingleLineRules.push({
+        rule: index + 1,
+        length: nonBlankLines[0].length,
+      });
+    }
   }
+
+  assert.equal(
+    complexSingleLineRules.length,
+    0,
+    `[Complex single-line rule] DE-risk threshold is ${COMPLEX_SINGLE_LINE_RULE_LENGTH} characters; rules: ${complexSingleLineRules
+      .map((entry) => `#${entry.rule}=${entry.length}`)
+      .join(", ")}`,
+  );
 
   const badDefconstTimers = [...sanitizeStructure(sourceText).matchAll(
     /\(defconst\s+[^\s)]+timer[^\s)]*\s+(-?\d+)\)/g,
@@ -327,7 +362,14 @@ function validateEngineLimits(sourceText, rules) {
     `[Engine limits] numeric timer command outside 1..50: ${badLiteralTimers.join(", ")}`,
   );
 
-  return { maxLineLength, worstRule, worstElements };
+  return {
+    maxLineLength,
+    worstRule,
+    worstElements,
+    nearLimitRules,
+    nearLimitThreshold: NEAR_RULE_ELEMENTS,
+    complexSingleLineThreshold: COMPLEX_SINGLE_LINE_RULE_LENGTH,
+  };
 }
 function addKnownIdentifier(set, value) {
   if (typeof value !== "string") return;
@@ -2051,6 +2093,8 @@ console.log(JSON.stringify({
     "typed c:/g:/s: operand resolution and timer identifiers",
     "missing closing parenthesis diagnostics with source line",
     "rule-too-long diagnostics at the DE 32-element ceiling",
+    "near-limit rule reporting at 30+ elements",
+    "complex single-line defrule rejection above the 150-character community safety threshold",
     "line/tab hygiene",
     "persistent-demand bounded-backoff doctrine",
     "lifecycle anchors",
