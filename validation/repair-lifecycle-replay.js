@@ -996,6 +996,60 @@ assert.ok(
   castlePowerProtection,
   "[Strategy order] Arena Boom recovery must not overwrite qualified Castle-Power",
 );
+
+requireRule(
+  "Thumb Ring executor rechecks live resource mode",
+  "(goal bt-research-ranged-counter-package-goal ri-thumb-ring)",
+  "(goal bt-resource-mode-goal bt-resource-mode-castle-boom)",
+  "(can-research-with-escrow ri-thumb-ring)",
+  "(research ri-thumb-ring)",
+);
+const thumbRingExecutor = rules.find((rule) =>
+  renderRule(rule).includes("(goal bt-research-ranged-counter-package-goal ri-thumb-ring)") &&
+  renderRule(rule).includes("(research ri-thumb-ring)"),
+);
+assert.ok(
+  thumbRingExecutor && renderRule(thumbRingExecutor).includes("(or") &&
+    renderRule(thumbRingExecutor).includes("(goal bt-resource-mode-goal bt-resource-mode-castle-boom)") &&
+    renderRule(thumbRingExecutor).includes("(goal bt-resource-mode-goal bt-resource-mode-premium-gold)"),
+  "[Resource boundary] Thumb Ring executor lost its live allowed resource-mode gate",
+);
+
+const lastStrategyWriterIndex = Math.max(
+  ...rules
+    .map((rule, index) =>
+      renderRule(rule).includes("(set-goal strategy-goal") ? index : -1,
+    )
+    .filter((index) => index >= 0),
+);
+const resourceModeResetIndex = ruleIndex(
+  "(true)",
+  "(set-goal bt-resource-mode-goal 0)",
+);
+const firstProductionRuleIndex = ruleIndex(
+  "(goal bt-standing-army-demand-goal 1)",
+  "(strategic-number sn-resource-control == 0)",
+  "(can-build barracks)",
+  "(build barracks)",
+);
+const attackActionIndex = ruleIndex(
+  "(timer-triggered bt-attack-timer)",
+  "(goal attack-goal 0)",
+  "(attack-now)",
+);
+
+assert.ok(
+  lastStrategyWriterIndex < resourceModeResetIndex,
+  "[Strategy boundary] resource-mode arbitration must run after the final strategy writer",
+);
+assert.ok(
+  resourceModeResetIndex < firstProductionRuleIndex,
+  "[Resource boundary] production capability must consume a resolved resource mode",
+);
+assert.ok(
+  firstProductionRuleIndex < attackActionIndex,
+  "[Production boundary] attack delivery must run after military production/capability rules",
+);
 requireRule(
   "Castle fallback excludes Castle-power",
   "(current-age >= castle-age)",
