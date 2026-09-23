@@ -18,16 +18,82 @@ const legacyValidatorPath = path.join(
 const source = fs.readFileSync(controllerPath, "utf8");
 
 function stripComments(text) {
-  return text
-    .split("\n")
-    .map((line) => line.split(";")[0])
-    .join("\n");
+  let result = "";
+  let inString = false;
+  let escaped = false;
+  let inComment = false;
+
+  for (const ch of text) {
+    if (inComment) {
+      if (ch === "\n") {
+        result += "\n";
+        inComment = false;
+      }
+      continue;
+    }
+
+    if (inString) {
+      result += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      result += ch;
+    } else if (ch === ";") {
+      inComment = true;
+    } else {
+      result += ch;
+    }
+  }
+
+  return result;
+}
+
+function maskStrings(text) {
+  let result = "";
+  let inString = false;
+  let escaped = false;
+
+  for (const ch of text) {
+    if (inString) {
+      result += ch === "\n" ? "\n" : " ";
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      result += " ";
+    } else {
+      result += ch;
+    }
+  }
+
+  return result;
+}
+
+function sanitizeStructure(text) {
+  return maskStrings(stripComments(text));
 }
 
 function extractRules(text) {
   const rules = [];
   let cursor = 0;
-  const sanitized = stripComments(text);
+  const sanitized = sanitizeStructure(text);
   while ((cursor = sanitized.indexOf("(defrule", cursor)) !== -1) {
     let depth = 0;
     let end = -1;
@@ -56,7 +122,7 @@ function extractRules(text) {
 function validateBalancedParens(text) {
   let depth = 0;
   let line = 1;
-  for (const ch of stripComments(text)) {
+  for (const ch of sanitizeStructure(text)) {
     if (ch === "(") depth += 1;
     if (ch === ")") depth -= 1;
     assert.ok(depth >= 0, `[Parser] unexpected closing parenthesis near line ${line}`);
@@ -128,6 +194,75 @@ function validateBooleanArity(text) {
         token += ch;
       }
     }
+    cursor = end;
+  }
+}
+
+function validateRuleStructure(sourceText) {
+  const sanitized = sanitizeStructure(sourceText);
+  let cursor = 0;
+
+  while (cursor < sanitized.length) {
+    while (cursor < sanitized.length && /\s/.test(sanitized[cursor])) cursor += 1;
+    if (cursor >= sanitized.length) break;
+
+    if (sanitized[cursor] === "#") {
+      const newline = sanitized.indexOf("\n", cursor);
+      cursor = newline === -1 ? sanitized.length : newline + 1;
+      continue;
+    }
+
+    assert.equal(
+      sanitized[cursor],
+      "(",
+      `[Top-level syntax] unexpected token near source offset ${cursor}; expected a top-level form`,
+    );
+
+    let depth = 0;
+    let end = -1;
+    for (let i = cursor; i < sanitized.length; i += 1) {
+      if (sanitized[i] === "(") depth += 1;
+      else if (sanitized[i] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+
+    assert.notEqual(
+      end,
+      -1,
+      `[Missing closing parenthesis] top-level form begins near source offset ${cursor} and is not closed`,
+    );
+
+    const form = sanitized.slice(cursor, end);
+    const headMatch = form.match(/^\(\s*([A-Za-z][A-Za-z0-9_-]*)/);
+    assert.ok(
+      headMatch,
+      `[Top-level syntax] could not identify form head near source offset ${cursor}`,
+    );
+
+    const head = headMatch[1];
+    assert.ok(
+      head === "defconst" || head === "defrule",
+      `[Top-level syntax] unsupported top-level form '${head}' near source offset ${cursor}`,
+    );
+
+    if (head === "defrule") {
+      const arrowPositions = [...form.matchAll(/=>/g)].map((match) => match.index);
+      assert.equal(
+        arrowPositions.length,
+        1,
+        `[Rule structure] defrule near source offset ${cursor} must contain exactly one => separator; found ${arrowPositions.length}`,
+      );
+      assert.ok(
+        /\(/.test(form.slice(arrowPositions[0] + 2)),
+        `[Rule structure] defrule near source offset ${cursor} has no action form after =>`,
+      );
+    }
+
     cursor = end;
   }
 }
@@ -240,9 +375,16 @@ function validateIdentifiers(sourceText, repoRootPath) {
   const classes = loadJson("class", registryFiles.class);
   const valueFamilies = loadJson("value-family", registryFiles.valueFamily);
 
+  const objectLinesByName = {};
   for (const entry of objects.objects ?? []) {
     addKnownIdentifier(known.object, entry.ai_name);
     addKnownIdentifier(known.object, entry.line);
+    if (typeof entry.ai_name === "string" && typeof entry.line === "string" && entry.line) {
+      for (const raw of entry.ai_name.split(",")) {
+        const token = raw.trim().split(/\s+/)[0];
+        if (/^[A-Za-z][A-Za-z0-9_-]*$/.test(token)) objectLinesByName[token] = entry.line;
+      }
+    }
   }
   for (const entry of techs.techs ?? []) {
     addKnownIdentifier(known.tech, entry.ai_name);
@@ -252,6 +394,13 @@ function validateIdentifiers(sourceText, repoRootPath) {
   }
 
   const universalValues = new Set();
+  for (const entry of objects.objects ?? []) {
+    addKnownIdentifier(universalValues, entry.ai_name);
+    addKnownIdentifier(universalValues, entry.line);
+  }
+  for (const entry of techs.techs ?? []) {
+    addKnownIdentifier(universalValues, entry.ai_name);
+  }
   for (const entry of classes.entries ?? []) {
     addKnownIdentifier(universalValues, entry.symbol);
     for (const alias of entry.aliases ?? []) addKnownIdentifier(universalValues, alias);
@@ -268,7 +417,7 @@ function validateIdentifiers(sourceText, repoRootPath) {
 
   const failures = [];
   const check = (regex, family, label) => {
-    for (const match of sourceText.matchAll(regex)) {
+    for (const match of sanitizeStructure(sourceText).matchAll(regex)) {
       const token = match[1];
       if (/^-?\d+$/.test(token)) continue;
       const recognized =
@@ -287,6 +436,67 @@ function validateIdentifiers(sourceText, repoRootPath) {
   check(/\((?:can-research(?:-with-escrow)?|research)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "tech", "research");
   check(/\((?:goal|set-goal|up-compare-goal)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "defconst", "goal");
   check(/\((?:strategic-number|set-strategic-number)\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number");
+  check(/\bc:\s*([A-Za-z][A-Za-z0-9_-]*)/g, null, "constant-operand");
+  check(/\bg:[^\s()]+\s+([A-Za-z][A-Za-z0-9_-]*)/g, "defconst", "goal-operand");
+  check(/\bs:[^\s()]+\s+([A-Za-z][A-Za-z0-9_-]*)/g, "strategicNumber", "strategic-number-operand");
+
+  const numericDefconsts = new Map(
+    [...sourceText.matchAll(
+      /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
+    )].map((match) => [match[1], Number(match[2])]),
+  );
+
+  const defconstDefinitions = [...sourceText.matchAll(
+    /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\b/g,
+  )];
+  const duplicateDefconsts = [
+    ...defconstDefinitions
+      .map((match) => match[1])
+      .filter((name, index, names) => names.indexOf(name) !== index),
+  ];
+  assert.equal(
+    duplicateDefconsts.length,
+    0,
+    `[Defconst] duplicate definition(s): ${[...new Set(duplicateDefconsts)].join(", ")}`,
+  );
+
+  for (const [name, value] of numericDefconsts) {
+    assert.ok(
+      value >= -32768 && value <= 32767,
+      `[Defconst] ${name} has numeric value ${value} outside -32768..32767`,
+    );
+  }
+
+  for (const match of identifierSource.matchAll(
+    /\((enable-timer|disable-timer|timer-triggered|up-timer-status)\s+(-?\d+|[A-Za-z][A-Za-z0-9_-]*)/g,
+  )) {
+    const token = match[2];
+    const line = identifierSource.slice(0, match.index).split("\n").length;
+    const value = /^-?\d+$/.test(token) ? Number(token) : numericDefconsts.get(token);
+
+    assert.ok(
+      value !== undefined,
+      `[Timer] ${match[1]} uses undefined or non-numeric timer identifier '${token}' at line ${line}`,
+    );
+    assert.ok(
+      value >= 1 && value <= 50,
+      `[Timer] ${match[1]} uses timer ${token}=${value} outside 1..50 at line ${line}`,
+    );
+  }
+
+  for (const match of identifierSource.matchAll(/\b([A-Za-z][A-Za-z0-9_-]*-goal)\b/g)) {
+    assert.ok(
+      known.defconst.has(match[1]),
+      `[Invalid identifier] goal-like symbol '${match[1]}' at line ${identifierSource.slice(0, match.index).split("\n").length} is not defined by defconst`,
+    );
+  }
+
+  for (const match of identifierSource.matchAll(/\b(ri-[A-Za-z0-9_-]+)\b/g)) {
+    assert.ok(
+      known.tech.has(match[1]) || universalValues.has(match[1]),
+      `[Invalid identifier] technology-like symbol '${match[1]}' at line ${identifierSource.slice(0, match.index).split("\n").length} is not resolvable`,
+    );
+  }
 
   if (failures.length > 0) {
     const detail = failures
@@ -302,12 +512,13 @@ function validateIdentifiers(sourceText, repoRootPath) {
   return {
     checkedSlots: "build/train/research/goal/strategic-number",
     engineSupplements: [...engineSupplements],
+    objectLinesByName,
   };
 }
 
 
 
-function validateEngineActionContracts(rules) {
+function validateEngineActionContracts(rules, objectLinesByName) {
   for (let index = 0; index < rules.length; index += 1) {
     const rule = rules[index];
     for (const match of rule.matchAll(/\((build|train|research)\s+([^\s)]+)\)/g)) {
@@ -321,18 +532,28 @@ function validateEngineActionContracts(rules) {
       );
 
       if (kind === "train") {
+        const acceptedLines = new Set([target]);
+        const familyLine = objectLinesByName[target];
+        if (familyLine) acceptedLines.add(familyLine);
+
+        const completedWitness = [...acceptedLines].some((line) =>
+          rule.includes(`(unit-type-count-total ${line}`),
+        );
+        const pendingWitness = rule.includes(`(up-pending-objects c: ${target}`);
+
         assert.ok(
-          rule.includes("(unit-type-count-total") ||
-            rule.includes("(up-pending-objects"),
-          `[Queue witness] train ${target} at rule ${index} lacks a queued/completed count witness`,
+          completedWitness || pendingWitness,
+          `[Queue witness] train ${target} at rule ${index} lacks a queued/completed witness for the trained unit or its engine unit line`,
         );
       }
 
       if (kind === "build") {
+        const completedWitness = rule.includes(`(building-type-count-total ${target}`);
+        const pendingWitness = rule.includes(`(up-pending-objects c: ${target}`);
+
         assert.ok(
-          rule.includes("(building-type-count-total") ||
-            rule.includes("(up-pending-objects"),
-          `[Foundation witness] build ${target} at rule ${index} lacks a completed/pending building witness`,
+          completedWitness || pendingWitness,
+          `[Foundation witness] build ${target} at rule ${index} lacks a completed/pending witness for the same building`,
         );
       }
     }
@@ -580,6 +801,7 @@ function validateLifecycleAnchors(sourceText, rules) {
   );
 }
 
+validateRuleStructure(source);
 validateBalancedParens(source);
 validateBooleanArity(source);
 const rules = extractRules(source);
@@ -589,7 +811,7 @@ const identifierReport = validateIdentifiers(source, repoRoot);
 validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateLifecycleAnchors(source, rules);
-validateEngineActionContracts(rules);
+validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
 validateSourceOrder(rules);
