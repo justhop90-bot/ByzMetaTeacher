@@ -391,6 +391,16 @@ try {
       ),
     },
     {
+      name: "castle-cataphract-demand-cannot-block-ready-imperial",
+      expected: "[Castle-Cataphract/Imperial handoff]",
+      source: baseline.replace(
+        "    ; Do not create a Castle capability obligation once Imperial is already executable.\n" +
+          "    ; Imperial age authority owns the transition when its engine feasibility witness is true.\n" +
+          "    (not (can-research-with-escrow imperial-age))\n",
+        "",
+      ),
+    },
+    {
       name: "unknown-timer",
       expected: "[Timer]",
       source: baseline.replace(
@@ -633,6 +643,7 @@ try {
           "scout-total-count-rejected-for-dispatch",
           "farm-raw-wood-gate-rejected-with-escrow",
           "late-threat-state-block-rejected",
+          "castle-cataphract-demand-cannot-block-ready-imperial",
         ],
         schemaMismatchClasses: [
           "command-arity-mismatch",
