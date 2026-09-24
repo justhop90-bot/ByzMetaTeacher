@@ -14954,15 +14954,6 @@ camel-line < bt-camel-target-1)))))
 =>
     (set-goal bt-research-university-claim-goal 0)
 )
-(defrule
-    (building-type-count university == 0)
-    (or
-        (goal bt-research-siege-package-goal ri-ballistics)
-        (goal bt-research-siege-package-goal ri-chemistry)
-    )
-=>
-    (set-goal bt-research-siege-package-goal 0)
-)
 
 (defrule
     (up-compare-goal bt-research-castle-claim-goal != 0)
