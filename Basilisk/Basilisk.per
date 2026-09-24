@@ -9016,7 +9016,7 @@ cataphract-line < bt-cataphract-target-1)))))
     (building-type-count siege-workshop >= 1)
     (up-research-status c: ri-onager == research-complete)
     (strategic-number sn-resource-control == 0)
-    (unit-type-count-total mangonel-line < bt-onager-response-target)
+    (unit-type-count-total onager < bt-onager-response-target)
     (can-train onager)
 =>
     (train onager)
@@ -10531,9 +10531,10 @@ cataphract-line < bt-cataphract-target-1)))))
 ; cannot cancel that active research claim.
 (defrule
     (goal bt-onager-demand-goal 1)
+    (goal bt-research-siege-workshop-claim-goal 0)
     (strategic-number sn-resource-control != ri-onager)
     (or (current-age < imperial-age) (or (up-compare-goal bt-ranged-counter-level-goal < 2) (or (players-building-count target-player == 0) (or (unit-type-count mangonel-line < bt-mangonel-response-target) (or (town-under-attack) (or (goal
-retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (not (up-research-status c: ri-onager == research-available))))))))))
+retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))))))))
 =>
     (set-goal bt-onager-demand-goal 0)
 )
