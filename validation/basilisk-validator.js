@@ -3177,6 +3177,29 @@ function validateAttackResultLifecycle(rules) {
   );
 }
 
+function validateAttackAllocationPolicy(rules) {
+  const expected = new Map([
+    [4, 72],
+    [6, 63],
+    [12, 46],
+    [16, 39],
+    [20, 34],
+    [26, 28],
+    [30, 25],
+    [34, 23],
+    [42, 20],
+  ]);
+  for (const [floor, percent] of expected) {
+    assert.ok(
+      rules.some((rule) =>
+        rule.includes(`(up-compare-goal bt-standing-army-floor-goal == ${floor})`) &&
+        rule.includes(`(set-strategic-number sn-percent-attack-soldiers ${percent})`),
+      ),
+      `[Attack allocation] standing floor ${floor} is missing its explicit ${percent}% attack allocation`,
+    );
+  }
+}
+
 function validateImperialSiegeAttackOrdering(rules) {
   const attackIndex = rules.findIndex(
     (rule) =>
@@ -5458,6 +5481,7 @@ validateDerivedThreatStateOrdering(rules);
 validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
+validateAttackAllocationPolicy(rules);
 validateImperialSiegeExit(rules, source);
 validateImperialSiegeAttackOrdering(rules);
 validateTcScaledFarms(rules);
