@@ -11013,6 +11013,8 @@ cataphract-line < bt-cataphract-target-1)))))
 ; CPSB documents that sn-percent-attack-soldiers is difficulty-scaled.
 ; Disable that scaling and derive a reserve-safe allocation from the
 ; standing-floor tier. Ten soldiers is also the minimum attack group.
+(defrule (up-compare-goal bt-standing-army-floor-goal == 4)
+=> (set-strategic-number sn-percent-attack-soldiers 72))
 (defrule (up-compare-goal bt-standing-army-floor-goal == 6)
 => (set-strategic-number sn-percent-attack-soldiers 63))
 (defrule (up-compare-goal bt-standing-army-floor-goal == 12)
