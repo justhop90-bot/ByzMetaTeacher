@@ -4295,7 +4295,6 @@ function validateStrategicNarration(sourceText, rules) {
     "BASILISK | AGE | Castle blocked: engine feasibility.",
     "BASILISK | AGE | Castle ready to research.",
     "BASILISK | AGE | Castle complete.",
-    "BASILISK | ECO | Horse Collar: demand active.",
     "BASILISK | ECO | Horse Collar: research started.",
     "BASILISK | ECO | Horse Collar: complete.",
     "BASILISK | ECO | Heavy Plow: complete.",
