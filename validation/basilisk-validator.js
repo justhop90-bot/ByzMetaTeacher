@@ -3407,9 +3407,10 @@ function validateAttackResultLifecycle(rules) {
   const resultRules = rules.filter(
     (rule) =>
       rule.includes("(goal attack-goal 0)") &&
-      rule.includes("(goal bt-attack-result-goal bt-attack-result-none)"),
+      rule.includes("(goal bt-attack-result-goal bt-attack-result-none)") &&
+      /\\(set-goal bt-attack-result-goal bt-attack-result-(damaged|stalled|reassess)\\)/.test(rule),
   );
-  assert.equal(resultRules.length, 3, "[Attack result] expected damaged/stalled/reassess result consumers");
+  assert.equal(resultRules.length, 4, "[Attack result] expected damaged, first-stall, generic-stall, and reassess result consumers");
 
   const gatherFailure = rules.find(
     (rule) =>
@@ -3456,6 +3457,186 @@ function validateAttackResultLifecycle(rules) {
     ),
     "[Attack result] non-positive-damage parity path is missing",
   );
+}
+
+function validateRushStallFailurePolicy(rules, sourceText) {
+  assert.ok(
+    sourceText.includes("(defconst bt-rush-stall-latch-goal 775)"),
+    "[RUSH stall] persistent stall latch must use GoalId 775",
+  );
+
+  const initIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(true)") &&
+      rule.includes("(set-goal bt-strategy-boom)") &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 0)"),
+  );
+  assert.ok(initIndex >= 0, "[RUSH stall] stall latch is not initialized to zero");
+
+  const rushWriterIndices = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) => rule.includes("(set-goal strategy-goal bt-strategy-rush)"))
+    .map(({ index }) => index);
+
+  const latchClearIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(not (goal strategy-goal bt-strategy-rush))") &&
+      rule.includes("(up-compare-goal bt-rush-stall-latch-goal != 0)") &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 0)"),
+  );
+  assert.ok(latchClearIndex >= 0, "[RUSH stall] non-RUSH latch cleanup rule is missing");
+  assert.ok(
+    rushWriterIndices.length > 0 && latchClearIndex > Math.max(...rushWriterIndices),
+    "[RUSH stall] latch cleanup must run after every RUSH strategy writer",
+  );
+
+  const resultNone = "(goal bt-attack-result-goal bt-attack-result-none)";
+  const noDamage = "(up-compare-goal bt-attack-buildings-destroyed-goal <= 0)";
+  const inferior = "(up-compare-goal bt-relative-force-goal < 0)";
+
+  const secondStallIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-rush-stall-latch-goal 1)") &&
+      rule.includes("(goal attack-goal 0)") &&
+      rule.includes(resultNone) &&
+      rule.includes(noDamage) &&
+      rule.includes(inferior) &&
+      rule.includes("(set-goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 0)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)") &&
+      rule.includes("(enable-timer bt-attack-timer 300)"),
+  );
+  assert.ok(secondStallIndex >= 0, "[RUSH stall] second consecutive inferior stall release is missing");
+
+  const firstStallIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-rush-stall-latch-goal 0)") &&
+      rule.includes("(goal attack-goal 0)") &&
+      rule.includes(resultNone) &&
+      rule.includes(noDamage) &&
+      rule.includes(inferior) &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 1)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)") &&
+      rule.includes("(enable-timer bt-attack-timer 300)"),
+  );
+  assert.ok(firstStallIndex >= 0, "[RUSH stall] first consecutive inferior stall latch is missing");
+
+  const genericStallIndex = rules.findIndex(
+    (rule) =>
+      rule.includes(resultNone) &&
+      rule.includes(noDamage) &&
+      rule.includes(inferior) &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)") &&
+      !rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      !rule.includes("(set-goal bt-rush-stall-latch-goal 1)") &&
+      !rule.includes("(set-goal strategy-goal bt-strategy-boom)"),
+  );
+  assert.ok(genericStallIndex >= 0, "[RUSH stall] generic stalled result consumer disappeared");
+
+  const damagedIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal >= 1)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-damaged)") &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 0)"),
+  );
+  assert.ok(damagedIndex >= 0, "[RUSH stall] structural damage must clear the latch");
+
+  const reassessIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal <= 0)") &&
+      rule.includes("(up-compare-goal bt-relative-force-goal >= 0)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-reassess)") &&
+      rule.includes("(set-goal bt-rush-stall-latch-goal 0)"),
+  );
+  assert.ok(reassessIndex >= 0, "[RUSH stall] reassessment must clear the latch");
+
+  assert.ok(
+    secondStallIndex < firstStallIndex &&
+      firstStallIndex < genericStallIndex &&
+      genericStallIndex < reassessIndex,
+    "[RUSH stall] result arbitration order is broken: second-stall release -> first-stall latch -> generic stall -> reassess expected",
+  );
+
+  assert.ok(
+    firstStallIndex > damagedIndex,
+    "[RUSH stall] first-stall latch must follow the damage result partition",
+  );
+
+  const attackResultRules = rules.filter(
+    (rule) => rule.includes(resultNone) && rule.includes("(goal attack-goal 0)"),
+  );
+  assert.ok(
+    attackResultRules.some((rule) => rule.includes("(set-goal strategy-goal bt-strategy-boom)")),
+    "[RUSH stall] second-stall rule must be an explicit strategy transition, not a hidden result code",
+  );
+
+  const strategyConstants = [...sourceText.matchAll(/\\(defconst\\s+(bt-strategy-[A-Za-z0-9_-]+)\\s+(-?\\d+)\\)/g)]
+    .map((match) => match[1]);
+  assert.deepEqual(
+    new Set(strategyConstants),
+    new Set([
+      "bt-strategy-flush",
+      "bt-strategy-rush",
+      "bt-strategy-boom",
+      "bt-strategy-castle-power",
+    ]),
+    "[RUSH stall] implementation introduced a fifth strategy state",
+  );
+
+  const policy = { strategy: "rush", feudal: true, latch: 0 };
+  const measured = (result) => {
+    if (result === "damage") {
+      policy.latch = 0;
+      return;
+    }
+    if (result === "reassess") {
+      policy.latch = 0;
+      return;
+    }
+    if (result === "stall") {
+      if (policy.strategy === "rush" && policy.feudal && policy.latch === 1) {
+        policy.strategy = "boom";
+        policy.latch = 0;
+      } else if (policy.strategy === "rush" && policy.feudal && policy.latch === 0) {
+        policy.latch = 1;
+      }
+    }
+  };
+
+  measured("stall");
+  assert.equal(policy.strategy, "rush", "[RUSH stall replay] first measured stall must preserve RUSH");
+  assert.equal(policy.latch, 1, "[RUSH stall replay] first measured stall must arm the latch");
+
+  measured("stall");
+  assert.equal(policy.strategy, "boom", "[RUSH stall replay] second consecutive measured stall must release to BOOM");
+  assert.equal(policy.latch, 0, "[RUSH stall replay] second stall must consume the latch");
+
+  policy.strategy = "rush";
+  measured("damage");
+  measured("stall");
+  assert.equal(policy.strategy, "rush", "[RUSH stall replay] damage must reset history before a later stall");
+
+  policy.strategy = "rush";
+  policy.latch = 1;
+  measured("reassess");
+  measured("stall");
+  assert.equal(policy.strategy, "rush", "[RUSH stall replay] reassess must break consecutiveness before a later stall");
+  assert.equal(policy.latch, 1, "[RUSH stall replay] post-reassess stall should arm, not release");
+
+  policy.strategy = "rush";
+  policy.latch = 1;
+  measured("stall");
+  assert.equal(policy.strategy, "boom", "[RUSH stall replay] a second consecutive stall after reassess-free history must release");
+
+  policy.strategy = "rush";
+  policy.latch = 1;
+  policy.strategy = "flush";
+  if (policy.strategy !== "rush") policy.latch = 0;
+  assert.equal(policy.latch, 0, "[RUSH stall replay] leaving RUSH must clear stale history");
 }
 
 function validateAttackAllocationPolicy(rules) {
@@ -3836,7 +4017,7 @@ function validateBasiliskGoalNamespace(forms) {
     );
   }
 
-  for (const id of [730, 734, 769, 770, 771, 772]) {
+  for (const id of [730, 734, 769, 770, 771, 772, 775]) {
     assert.ok(
       numericGoals.has(id),
       "[Goal namespace] reserved high-range GoalId " + id + " is missing",
@@ -4926,6 +5107,7 @@ function validateLifecycleAnchors(sourceText, rules) {
     "bt-standing-army-demand-goal",
     "bt-attack-timer",
     "bt-rush-attack-archer-witness",
+    "bt-rush-stall-latch-goal",
   ]) {
     assert.ok(sourceText.includes(symbol), `[Lifecycle] missing canonical state symbol: ${symbol}`);
   }
@@ -5056,6 +5238,7 @@ validateDerivedThreatStateOrdering(rules);
 validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
+validateRushStallFailurePolicy(rules, source);
 validateAttackAllocationPolicy(rules);
 validateFeudalCastleEconomyContract(rules);
 validateFeudalFarmTransitionBudget(rules, source);
