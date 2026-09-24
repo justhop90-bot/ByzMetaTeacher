@@ -48,4 +48,10 @@ node validation/attack-four-quadrant-check.js validation/attack-four-quadrant-te
 
 The checker derives result and timer from measured \`delta\` and \`relative_force\`. It rejects mismatched recorded deltas, result goals, timers, missing quadrants, and cadence errors outside tolerance.
 
+## Community/meta fit
+
+This test deliberately stays inside the normal .per control idiom: timed attack-now, engine-native target/player facts, explicit persistent state, and up-reset-attack-now to regain script control. UserPatch documents up-reset-attack-now specifically for ending the persistent targeting loop created by attack-now, while community scripts commonly pair attack-now with timers and direct engine feasibility/count facts. The Duke-style community pattern also treats attacking as a bounded stateful lifecycle rather than an unbounded attack-now spam loop. building-count is used here only as a post-cycle world-state witness, not as a simulated tactical model.
+
+The Basilisk-specific choice is to classify structural progress first, then use relative force to split non-positive progress into STALLED versus REASSESS. That keeps the mechanism small and falsifiable. The attack measurement window is 180 seconds to stay close to practical timer-driven attack cadence rather than making each attack cycle a five-minute lock.
+
 Runtime evidence remains separate from static validation. Passing the checker means the captured telemetry is internally consistent; it does not certify that the game itself produced the intended tactical behavior.
