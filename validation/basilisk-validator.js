@@ -6,6 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
+const contractOnly = process.argv.includes("--contract-only");
 const controllerPath = path.resolve(
   process.argv[2] ?? path.join(repoRoot, "Basilisk", "Basilisk.per"),
 );
@@ -5397,24 +5398,28 @@ validateBackoffTimerUniqueness(rules);
 validateStateCoverage(rules);
 validateBasiliskPreemption(rules, source, repoRoot);
 validateTelemetryRing(rules, source, repoRoot);
-validatePreemptionReplay(repoRoot);
+if (!contractOnly) {
+  validatePreemptionReplay(repoRoot);
+}
 validateSourceOrder(rules);
-validateHandoffWiring(repoRoot, legacyValidatorPath);
+if (!contractOnly) {
+  validateHandoffWiring(repoRoot, legacyValidatorPath);
 
-const legacy = spawnSync(
-  process.execPath,
-  [legacyValidatorPath, controllerPath],
-  {
-    stdio: "inherit",
-    cwd: repoRoot,
-  },
-);
+  const legacy = spawnSync(
+    process.execPath,
+    [legacyValidatorPath, controllerPath],
+    {
+      stdio: "inherit",
+      cwd: repoRoot,
+    },
+  );
 
-assert.equal(
-  legacy.status,
-  0,
-  `[Harness] repair-lifecycle-replay.js failed with exit code ${legacy.status}`,
-);
+  assert.equal(
+    legacy.status,
+    0,
+    `[Harness] repair-lifecycle-replay.js failed with exit code ${legacy.status}`,
+  );
+}
 
 const controllerRelative = path.relative(repoRoot, controllerPath) || controllerPath;
 console.log(JSON.stringify({
