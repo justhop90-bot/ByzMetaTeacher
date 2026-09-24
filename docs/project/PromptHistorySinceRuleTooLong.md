@@ -2,7 +2,7 @@
 
 This file records the substantive prompts used after the rule-length repair phase so the teaching bot's repository retains the reasoning trail that produced the current audit.
 
-1. "Check this and fix the errors before we continue. Deep dive into aoe2de community and learn the common coding mistakes. https://github.com/justhop90-bot/ByzMetaTeacher/blob/main/LintTeachReport.txt"
+1. "Check this and fix the errors before we continue. Deep dive into aoe2de community and learn the common coding mistakes. https://github.com/justhop90-bot/ByzMetaTeacher/blob/main/docs/audits/LintTeachReport.txt"
 
 Purpose: audit the lint report against current AoE2DE community practice, distinguish real parser/rule-length failures from stale diagnostics, remove source artifacts such as Markdown fences, and preserve the teaching architecture.
 
@@ -25,7 +25,6 @@ Purpose: preserve this post-lint prompt trail and require a pre-publication stru
 ## Resulting repair doctrine
 
 Threat observations are state writers. Production-capacity thresholds and military-counter thresholds are separate policies and must not share a level goal merely because they observe the same unit family. Transient threat-state goals are reset before observation and then repopulated. Refactors must preserve the original consumer threshold unless an intentional gameplay change is explicitly requested. A structural audit is required before repository publication; it checks parenthesis balance, rule count, maximum direct rule children, source-line length, and presence of the intended dedicated counter goals.
-
 
 6. "Deep dive and turn yourself into a aoe2de ai-script debugger expert. Then I give you full authority and autonomy. Trace this code line for line, front and back. Lock down the basics."
 
