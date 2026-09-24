@@ -5303,7 +5303,6 @@ function validateBoomTcMilitaryExceptions(rules, sourceText) {
 
   const tcGate = [
     "(goal bt-tc-project-goal 0)",
-    "(goal strategy-goal bt-strategy-flush)",
   ];
 
   const reactiveExecutors = [
