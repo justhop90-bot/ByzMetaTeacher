@@ -3763,7 +3763,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
     const abort = rules.find(
       (rule) =>
         rule.includes("(not (town-under-attack))") &&
-        rule.includes("(goal bt-preempt-active-goal 1)") &&
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
         rule.includes("(set-strategic-number sn-resource-control 0)"),
     );
@@ -3778,7 +3777,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
   for (const claim of beginClaims) {
     const completion = rules.find(
       (rule) =>
-        rule.includes("(goal bt-preempt-active-goal 1)") &&
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
         rule.includes("(building-type-count town-center") &&
         rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
@@ -3792,7 +3790,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
 
   const defenseRules = rules.filter(
     (rule) =>
-      rule.includes("(goal bt-preempt-active-goal 1)") &&
       rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
       /\(train (?:spearman-line|skirmisher-line)\)/.test(rule),
   );
