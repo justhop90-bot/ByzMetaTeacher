@@ -98,19 +98,6 @@ try {
     return sourceText.slice(0, ruleStart) + patched + sourceText.slice(end);
   }
 
-  function mutateResearchRule(sourceText, tech, mutate, label) {
-    const action = "(research " + tech + ")";
-    const actionIndex = sourceText.indexOf(action);
-    assert.notEqual(actionIndex, -1, "[Self-test] research action missing: " + label);
-    const ruleStart = sourceText.lastIndexOf("(defrule", actionIndex);
-    const ruleEnd = sourceText.indexOf("\n(defrule", actionIndex);
-    const end = ruleEnd === -1 ? sourceText.length : ruleEnd;
-    const rule = sourceText.slice(ruleStart, end);
-    const mutated = mutate(rule);
-    assert.notEqual(mutated, rule, "[Self-test] mutation made no change: " + label);
-    return sourceText.slice(0, ruleStart) + mutated + sourceText.slice(end);
-  }
-
   function mutateRuleContaining(sourceText, requiredFragments, mutate, label) {
     const starts = [];
     let offset = 0;
