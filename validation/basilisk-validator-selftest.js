@@ -1014,7 +1014,7 @@ try {
       name: "imperial-bank-must-directly-stop-villagers",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -1031,7 +1031,7 @@ try {
       name: "imperial-bank-must-not-depend-on-cataphract-demand",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
