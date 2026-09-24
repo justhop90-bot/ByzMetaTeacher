@@ -98,6 +98,40 @@ try {
     return sourceText.slice(0, ruleStart) + patched + sourceText.slice(end);
   }
 
+  function mutateResearchRule(sourceText, tech, mutate, label) {
+    const action = "(research " + tech + ")";
+    const actionIndex = sourceText.indexOf(action);
+    assert.notEqual(actionIndex, -1, "[Self-test] research action missing: " + label);
+    const ruleStart = sourceText.lastIndexOf("(defrule", actionIndex);
+    const ruleEnd = sourceText.indexOf("\n(defrule", actionIndex);
+    const end = ruleEnd === -1 ? sourceText.length : ruleEnd;
+    const rule = sourceText.slice(ruleStart, end);
+    const mutated = mutate(rule);
+    assert.notEqual(mutated, rule, "[Self-test] mutation made no change: " + label);
+    return sourceText.slice(0, ruleStart) + mutated + sourceText.slice(end);
+  }
+
+  function mutateRuleContaining(sourceText, requiredFragments, mutate, label) {
+    const starts = [];
+    let offset = 0;
+    while (true) {
+      const start = sourceText.indexOf("(defrule", offset);
+      if (start === -1) break;
+      const end = sourceText.indexOf("\n(defrule", start);
+      const ruleEnd = end === -1 ? sourceText.length : end;
+      const rule = sourceText.slice(start, ruleEnd);
+      if (requiredFragments.every((fragment) => rule.includes(fragment))) {
+        starts.push([start, ruleEnd, rule]);
+      }
+      offset = ruleEnd;
+    }
+    assert.equal(starts.length, 1, "[Self-test] expected one matching rule: " + label);
+    const [start, end, rule] = starts[0];
+    const mutated = mutate(rule);
+    assert.notEqual(mutated, rule, "[Self-test] mutation made no change: " + label);
+    return sourceText.slice(0, start) + mutated + sourceText.slice(end);
+  }
+
   function setNumericDefconst(sourceText, name, value) {
     const marker = "(defconst " + name + " ";
     const start = sourceText.indexOf(marker);
@@ -606,6 +640,110 @@ try {
       source: baseline.replace(
         "    (goal bt-ranged-threat-goal 0)\n    (goal bt-blacksmith-ranged-army-goal 0)",
         "    (goal bt-ranged-threat-goal 0)",
+      ),
+    },
+    {
+      name: "blacksmith-scale-package-must-share-spear-witness",
+      expected: "[Blacksmith] Scale Mail package writer must share the Spear feasibility witness",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-research-cavalry-counter-package-goal 0)",
+          "(set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
+        ],
+        (rule) =>
+          rule
+            .replace(
+              "    (and\n        (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)\n        (unit-type-count-total spearman-line >= bt-spear-target-1)\n    )",
+              "    (goal bt-blacksmith-infantry-army-goal 1)",
+            ),
+        "Scale Mail package writer",
+      ),
+    },
+    {
+      name: "blacksmith-feudal-fletching-ca-witness",
+      expected: "[Blacksmith] Feudal Fletching executor must support Cavalry Archers",
+      source: mutateResearchRule(
+        baseline,
+        "ri-fletching",
+        (rule) =>
+          rule.replace(
+            "(unit-type-count-total cavalry-archer-line >= 3)",
+            "(unit-type-count-total cavalry-archer-line >= 4)",
+          ),
+        "Feudal Fletching CA witness",
+      ),
+    },
+    {
+      name: "blacksmith-ca-fletching-bodkin-bridge",
+      expected: "[Blacksmith] CA Fletching -> Bodkin progression is missing",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
+          "(up-research-status c: ri-fletching == research-complete)",
+          "(set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)",
+        ],
+        (rule) =>
+          rule.replace(
+            "(unit-type-count-total cavalry-archer-line >= 3)",
+            "(unit-type-count-total cavalry-archer-line >= 4)",
+          ),
+        "CA Fletching -> Bodkin bridge",
+      ),
+    },
+    {
+      name: "blacksmith-completed-pike-releases-package",
+      expected: "[Blacksmith] completed Pike package must release when Halberdier demand is absent",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-research-cavalry-counter-package-goal ri-pikeman)",
+          "(goal bt-halberdier-demand-goal 0)",
+          "(set-goal bt-research-cavalry-counter-package-goal 0)",
+        ],
+        () => "",
+        "Pike terminal",
+      ),
+    },
+    {
+      name: "blacksmith-completed-halberdier-releases-package",
+      expected: "[Blacksmith] completed Halberdier package must release when no Plate continuation fires",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-research-cavalry-counter-package-goal ri-halberdier)",
+          "(up-research-status c: ri-halberdier == research-complete)",
+          "(set-goal bt-research-cavalry-counter-package-goal 0)",
+        ],
+        () => "",
+        "Halberdier terminal",
+      ),
+    },
+    {
+      name: "castle-bank-defers-to-p0-crisis",
+      expected: "[Age banking] Castle bank must only claim the bank when no P0 crisis is active",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-castle-commitment-goal 1)",
+          "(set-goal train-civ-goal -1)",
+        ],
+        (rule) => rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
+        "Castle bank P0 guard",
+      ),
+    },
+    {
+      name: "imperial-bank-defers-to-p0-crisis",
+      expected: "[Age banking] Imperial bank must only claim the bank when no P0 crisis is active",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-imperial-commitment-goal 1)",
+          "(set-goal train-civ-goal -1)",
+        ],
+        (rule) => rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
+        "Imperial bank P0 guard",
       ),
     },
     {
