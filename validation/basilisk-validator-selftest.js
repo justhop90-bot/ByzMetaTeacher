@@ -793,7 +793,7 @@ try {
           ],
           (rule) =>
             rule.replace(
-              "    (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))\\n",
+              "    (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))\n",
               "",
             ),
           "Imperial prerequisite resource-mode override",
@@ -805,7 +805,7 @@ try {
       expected: "[Attack result]",
       source: (() => {
         const needle =
-          "    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)\\n";
+          "    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)\n";
         const index = baseline.indexOf(needle);
         assert.ok(
           index >= 0,
@@ -815,7 +815,7 @@ try {
           baseline.slice(0, index) +
           baseline.slice(index).replace(
             needle,
-            "    (up-compare-goal bt-attack-buildings-destroyed-goal == 0)\\n",
+            "    (up-compare-goal bt-attack-buildings-destroyed-goal == 0)\n",
           )
         );
       })(),
@@ -825,13 +825,13 @@ try {
       expected: "[Retry fairness]",
       source: (() => {
         const start = baseline.indexOf(
-          "(defrule\\n    (timer-triggered bt-research-blacksmith-failure-backoff-timer)",
+          "(defrule\n    (timer-triggered bt-research-blacksmith-failure-backoff-timer)",
         );
         assert.ok(
           start >= 0,
           "[Self-test] Blacksmith backoff expiry owner is missing",
         );
-        const end = baseline.indexOf("\\n(defrule", start + 8);
+        const end = baseline.indexOf("\n(defrule", start + 8);
         assert.ok(
           end > start,
           "[Self-test] Blacksmith backoff expiry owner bounds are missing",
