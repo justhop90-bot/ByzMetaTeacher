@@ -4638,6 +4638,39 @@ function validateBarracksSquiresArsonLifecycle(rules) {
   }
 }
 
+function validatePikemanLifecycle(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+  const executor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-cavalry-counter-package-goal ri-pikeman)") &&
+      rule.includes("(research ri-pikeman)") &&
+      rule.includes("(can-research-with-escrow ri-pikeman)") &&
+      rule.includes("(set-goal bt-research-barracks-claim-goal ri-pikeman)"),
+  );
+  assert.ok(executor, "[Pikeman] research executor is missing");
+  const text = normalize(executor);
+  assert.ok(
+    text.includes("(up-compare-goal bt-cavalry-counter-level-goal >= 1)") &&
+      text.includes("(up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)") &&
+      text.includes("(unit-type-count-total spearman-line >= bt-spear-target-2)"),
+    "[Pikeman] action boundary must re-check the package capability witness",
+  );
+  const completion = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-barracks-claim-goal ri-pikeman)") &&
+      rule.includes("(up-research-status c: ri-pikeman == research-complete)") &&
+      rule.includes("(set-goal bt-research-barracks-claim-goal 0)"),
+  );
+  assert.ok(completion, "[Pikeman] research claim completion reset is missing");
+  const watchdog = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-barracks-claim-goal ri-pikeman)") &&
+      rule.includes("(up-research-status c: ri-pikeman <= research-available)") &&
+      rule.includes("(set-goal bt-research-barracks-failure-backoff-goal ri-pikeman)"),
+  );
+  assert.ok(watchdog, "[Pikeman] Barracks research watchdog is missing");
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -4784,6 +4817,7 @@ validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateOnagerLifecycle(rules);
+validatePikemanLifecycle(rules);
 validateEliteVarangianResearchCapability(rules);
 validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
