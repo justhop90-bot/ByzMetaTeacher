@@ -4605,6 +4605,132 @@ function validateStrategicNarration(sourceText, rules) {
   );
 }
 
+function validateBlacksmithResearchLifecycle(rules) {
+  const blacksmithTechs = [
+    "ri-scale-mail",
+    "ri-chain-mail",
+    "ri-forging",
+    "ri-iron-casting",
+    "ri-plate-mail",
+    "ri-fletching",
+    "ri-bodkin-arrow",
+    "ri-padded-archer-armor",
+    "ri-leather-archer-armor",
+    "ri-ring-archer-armor",
+    "ri-bracer",
+  ];
+
+  const executors = [];
+  for (const tech of blacksmithTechs) {
+    for (const rule of rules) {
+      if (rule.includes("(research " + tech + ")")) executors.push([tech, rule]);
+    }
+  }
+  assert.ok(executors.length >= blacksmithTechs.length, "[Blacksmith] expected one or more executors per core technology");
+
+  for (const [tech, rule] of executors) {
+    assert.ok(
+      !rule.includes("(can-research-with-escrow castle-age)"),
+      "[Blacksmith] " + tech + " executor cannot use Castle feasibility as a discretionary-tech veto",
+    );
+    assert.ok(
+      !rule.includes("(can-research-with-escrow imperial-age)"),
+      "[Blacksmith] " + tech + " executor cannot use Imperial feasibility as a discretionary-tech veto",
+    );
+    assert.ok(
+      rule.includes("(building-type-count blacksmith >= 1)"),
+      "[Blacksmith] " + tech + " executor must witness Blacksmith capability",
+    );
+    assert.ok(
+      rule.includes("(can-research-with-escrow " + tech + ")"),
+      "[Blacksmith] " + tech + " executor must remain engine-feasibility gated",
+    );
+  }
+
+  const rangedWitness = rules.find(
+    (rule) =>
+      rule.includes("(set-goal bt-blacksmith-ranged-army-goal 1)") &&
+      rule.includes("(unit-type-count-total archer-line >= 3)") &&
+      rule.includes("(unit-type-count-total skirmisher-line >= 3)"),
+  );
+  assert.ok(
+    rangedWitness,
+    "[Blacksmith] friendly ranged composition witness is missing",
+  );
+
+  const infantryWitness = rules.find(
+    (rule) =>
+      rule.includes("(set-goal bt-blacksmith-infantry-army-goal 1)") &&
+      rule.includes("(unit-type-count-total spearman-line >= 3)") &&
+      rule.includes("(unit-type-count-total militiaman-line >= 3)"),
+  );
+  assert.ok(
+    infantryWitness,
+    "[Blacksmith] friendly infantry composition witness is missing",
+  );
+
+  requireRule(
+    rules,
+    "Blacksmith Fletching package",
+    "(goal bt-research-ranged-counter-package-goal 0)",
+    "(goal bt-blacksmith-ranged-army-goal 1)",
+    "(set-goal bt-research-ranged-counter-package-goal ri-fletching)",
+  );
+  requireRule(
+    rules,
+    "Blacksmith Scale Mail package",
+    "(goal bt-research-cavalry-counter-package-goal 0)",
+    "(goal bt-blacksmith-infantry-army-goal 1)",
+    "(set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
+  );
+
+  const rangedCancellation = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-ranged-threat-goal 0)") &&
+      rule.includes("(goal bt-blacksmith-ranged-army-goal 0)") &&
+      rule.includes("(set-goal bt-research-ranged-counter-package-goal 0)"),
+  );
+  assert.ok(
+    rangedCancellation,
+    "[Blacksmith] ranged package must survive threat loss while friendly ranged mass remains",
+  );
+
+  const infantryCancellation = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-cavalry-threat-goal 0)") &&
+      rule.includes("(goal bt-blacksmith-infantry-army-goal 0)") &&
+      rule.includes("(set-goal bt-research-cavalry-counter-package-goal 0)"),
+  );
+  assert.ok(
+    infantryCancellation,
+    "[Blacksmith] melee package must survive cavalry-threat loss while friendly infantry mass remains",
+  );
+
+  requireRule(
+    rules,
+    "Scale -> Feudal Forging",
+    "(goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
+    "(current-age == feudal-age)",
+    "(goal bt-blacksmith-infantry-army-goal 1)",
+    "(set-goal bt-research-cavalry-counter-package-goal ri-forging)",
+  );
+  requireRule(
+    rules,
+    "Scale -> Castle Chain Mail",
+    "(goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
+    "(current-age >= castle-age)",
+    "(set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)",
+  );
+  requireRule(
+    rules,
+    "Chain -> Iron Casting",
+    "(goal bt-research-cavalry-counter-package-goal ri-chain-mail)",
+    "(goal bt-blacksmith-infantry-army-goal 1)",
+    "(up-compare-goal bt-cavalry-counter-level-goal < 1)",
+    "(set-goal bt-research-cavalry-counter-package-goal ri-iron-casting)",
+  );
+}
+ 
 function validateEliteVarangianResearchCapability(rules) {
   const executor = rules.find(
     (rule) =>
@@ -4717,6 +4843,7 @@ validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateEliteVarangianResearchCapability(rules);
+validateBlacksmithResearchLifecycle(rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
 validateImperialPrerequisiteProviders(rules);
