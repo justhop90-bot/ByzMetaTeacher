@@ -829,6 +829,14 @@
 (defconst bt-housing-headroom-trigger 5)
 (defconst bt-housing-pending-cap 2)
 
+; Dropsite placement hygiene.
+(defconst bt-dropsite-placement-claim-goal 804)
+(defconst bt-dropsite-normal-separation 8)
+(defconst bt-dropsite-refresh-separation 4)
+(defconst bt-dropsite-radius-start 25)
+(defconst bt-dropsite-radius-step 3)
+(defconst bt-dropsite-radius-cap 40)
+
 ; Military composition targets.
 (defconst bt-spear-target-1 6)
 (defconst bt-spear-target-2 16)
@@ -1120,6 +1128,13 @@
     (set-goal bt-farm-transition-reserve-goal 2)
     (set-goal bt-farm-depleted-reserve-goal 3)
     (set-goal bt-housing-demand-goal 0)
+    (set-goal bt-dropsite-placement-claim-goal 0)
+    (set-strategic-number sn-defer-dropsite-update 1)
+    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-camp-max-distance bt-dropsite-radius-start)
+    (set-strategic-number sn-lumber-camp-max-distance bt-dropsite-radius-start)
+    (set-strategic-number sn-mining-camp-max-distance bt-dropsite-radius-start)
     (set-goal bt-standing-army-floor-goal 0)
     (disable-self)
 )
@@ -3626,62 +3641,135 @@
 ;================================================================
 ; 9. BASIC ECONOMIC BUILDINGS
 ;================================================================
+;----------------------------------------------------------------
+; 9A. BASIC DROPSITE + MAINTENANCE HYGIENE
+; First camps are created by the normal economic prerequisites. Refreshes
+; below are maintenance capabilities only: a known resource became too far
+; from an existing dropsite.
+;----------------------------------------------------------------
+
+; FIRST LUMBER CAMP
+; Keep the opening dropsite independent of dropsite-min-distance. The distance
+; fact is a maintenance signal, not the first-camp trigger.
 (defrule
     (building-type-count-total lumber-camp == 0)
     (civilian-population >= 7)
+    (up-pending-objects c: lumber-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
     (can-build lumber-camp)
 =>
     (build lumber-camp)
 )
 
+; FIRST MINING CAMP
 (defrule
     (building-type-count-total mining-camp == 0)
     (civilian-population >= 8)
+    (up-pending-objects c: mining-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
     (can-build mining-camp)
 =>
     (build mining-camp)
 )
 
-;----------------------------------------------------------------
-; VILLAGER / DROPSITE HYGIENE
-; Community-native maintenance rules. These are capability repairs only:
-; they do not create a second economic allocator.
-;----------------------------------------------------------------
+; Shared placement claim. Camp refreshes temporarily relax separation so a
+; dense resource cluster can get a useful dropsite without changing normal
+; town placement policy for the rest of the economy.
+(defrule
+    (goal bt-dropsite-placement-claim-goal 1)
+    (up-pending-objects c: lumber-camp == 0)
+    (up-pending-objects c: mining-camp == 0)
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)
+    (set-goal bt-dropsite-placement-claim-goal 0)
+)
 
-; 1. WOOD DROPSITE REFRESH
-; Keep wood walking distance bounded once a usable forest is actually known.
+; ADAPTIVE LUMBER-CAMP RADIUS
+; Each legitimate refresh attempt moves the lumber placement radius outward
+; by one bounded step. The engine-native build gate remains the final authority.
 (defrule
     (strategic-number sn-wood-gatherer-percentage > 0)
     (resource-found wood)
     (dropsite-min-distance wood > 8)
     (building-type-count-total lumber-camp < 4)
     (up-pending-objects c: lumber-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
+    (strategic-number sn-lumber-camp-max-distance < bt-dropsite-radius-cap)
+=>
+    (up-modify-sn sn-lumber-camp-max-distance c:+ bt-dropsite-radius-step)
+)
+
+; LUMBER-CAMP REFRESH
+; The temporary 4-tile separation / adjacent-dropsite permission exists only
+; while this construction attempt is live. Failed placement leaves no pending
+; object, so the claim is released and the normal policy is restored next pass.
+(defrule
+    (strategic-number sn-wood-gatherer-percentage > 0)
+    (resource-found wood)
+    (dropsite-min-distance wood > 8)
+    (building-type-count-total lumber-camp < 4)
+    (up-pending-objects c: lumber-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
     (can-build lumber-camp)
 =>
+    (set-strategic-number sn-allow-adjacent-dropsites 1)
+    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-refresh-separation)
+    (set-goal bt-dropsite-placement-claim-goal 1)
     (build lumber-camp)
 )
 
-; 2. GOLD DROPSITE REFRESH
+; ADAPTIVE MINING-CAMP RADIUS
+(defrule
+    (or
+        (and
+            (strategic-number sn-gold-gatherer-percentage > 0)
+            (resource-found gold)
+            (dropsite-min-distance gold > 8)
+        )
+        (and
+            (strategic-number sn-stone-gatherer-percentage > 0)
+            (resource-found stone)
+            (dropsite-min-distance stone > 8)
+        )
+    )
+    (building-type-count-total mining-camp < 3)
+    (up-pending-objects c: mining-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
+    (strategic-number sn-mining-camp-max-distance < bt-dropsite-radius-cap)
+=>
+    (up-modify-sn sn-mining-camp-max-distance c:+ bt-dropsite-radius-step)
+)
+
+; GOLD DROPSITE REFRESH
 (defrule
     (strategic-number sn-gold-gatherer-percentage > 0)
     (resource-found gold)
     (dropsite-min-distance gold > 8)
     (building-type-count-total mining-camp < 3)
     (up-pending-objects c: mining-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
     (can-build mining-camp)
 =>
+    (set-strategic-number sn-allow-adjacent-dropsites 1)
+    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-refresh-separation)
+    (set-goal bt-dropsite-placement-claim-goal 1)
     (build mining-camp)
 )
 
-; 3. STONE DROPSITE REFRESH
+; STONE DROPSITE REFRESH
 (defrule
     (strategic-number sn-stone-gatherer-percentage > 0)
     (resource-found stone)
     (dropsite-min-distance stone > 8)
     (building-type-count-total mining-camp < 3)
     (up-pending-objects c: mining-camp == 0)
+    (goal bt-dropsite-placement-claim-goal 0)
     (can-build mining-camp)
 =>
+    (set-strategic-number sn-allow-adjacent-dropsites 1)
+    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-refresh-separation)
+    (set-goal bt-dropsite-placement-claim-goal 1)
     (build mining-camp)
 )
 
