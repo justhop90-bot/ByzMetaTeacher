@@ -3255,6 +3255,112 @@ function validateFeudalCastleEconomyContract(rules) {
   );
 }
 
+function validateFeudalFarmTransitionBudget(rules, sourceText) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+  const nums = new Map(
+    [...sourceText.matchAll(/\(defconst\s+([A-Za-z0-9_-]+)\s+(-?\d+)\)/g)]
+      .map((m) => [m[1], Number(m[2])]),
+  );
+  assert.equal(
+    nums.get("bt-feudal-farm-wood-floor"),
+    385,
+    "[Feudal farm budget] wood floor must preserve 150W Blacksmith + 175W Market + 60W Farm",
+  );
+  assert.equal(
+    nums.get("bt-feudal-farm-reserve-villagers"),
+    26,
+    "[Feudal farm budget] reserve window must begin at 26 villagers",
+  );
+  assert.equal(
+    nums.get("bt-feudal-farm-wood-hold-goal"),
+    773,
+    "[Feudal farm budget] hold goal must own its dedicated goal id",
+  );
+
+  const writer = rules.filter(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(unit-type-count villager >= bt-feudal-farm-reserve-villagers)") &&
+      rule.includes("(unit-type-count villager < bt-castle-villagers)") &&
+      rule.includes("(food-amount >= 350)") &&
+      rule.includes("(not (can-research-with-escrow castle-age))") &&
+      rule.includes("(wood-amount < bt-feudal-farm-wood-floor)") &&
+      rule.includes("(set-goal bt-feudal-farm-wood-hold-goal 1)"),
+  );
+  assert.equal(
+    writer.length,
+    1,
+    "[Feudal farm budget] BOOM farm-budget writer must be unique and complete",
+  );
+
+  const release = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-feudal-farm-wood-hold-goal 1)") &&
+      rule.includes("(set-goal bt-feudal-farm-wood-hold-goal 0)") &&
+      rule.includes("(current-age != feudal-age)") &&
+      rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
+      rule.includes("(wood-amount >= bt-feudal-farm-wood-floor)") &&
+      rule.includes("(food-amount < 350)") &&
+      rule.includes("(not (goal strategy-goal bt-strategy-boom))"),
+  );
+  assert.equal(
+    release.length,
+    1,
+    "[Feudal farm budget] BOOM farm-budget release must be unique and retain all exit witnesses",
+  );
+
+  const farmExecutorIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(can-build-with-escrow farm)") &&
+      rule.includes("(build farm)") &&
+      rule.includes("(goal bt-feudal-farm-wood-hold-goal 0)") &&
+      rule.includes("(building-type-count-total farm < bt-farm-feudal-cap)"),
+  );
+  assert.ok(
+    farmExecutorIndex >= 0,
+    "[Feudal farm budget] Feudal farm executor must honor the BOOM wood hold",
+  );
+
+  const writerIndex = rules.indexOf(writer[0]);
+  const releaseIndex = rules.indexOf(release[0]);
+  assert.ok(
+    writerIndex < releaseIndex && releaseIndex < farmExecutorIndex,
+    "[Feudal farm budget] writer -> release -> Feudal farm executor source order is invalid",
+  );
+
+  const rawFarmGate = rules.find(
+    (rule) =>
+      rule.includes("(can-build-with-escrow farm)") &&
+      rule.includes("(wood-amount >= bt-feudal-farm-wood-floor)"),
+  );
+  assert.equal(
+    rawFarmGate,
+    undefined,
+    "[Feudal farm budget] escrow-aware farm executor must not duplicate the wood floor as a raw resource gate",
+  );
+
+  const pressureFarmExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(can-build-with-escrow farm)") &&
+      rule.includes("(build farm)"),
+  );
+  const flushFarmExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal strategy-goal bt-strategy-flush)") &&
+      rule.includes("(can-build-with-escrow farm)") &&
+      rule.includes("(build farm)"),
+  );
+  assert.ok(
+    !pressureFarmExecutor && !flushFarmExecutor,
+    "[Feudal farm budget] pressure postures must not inherit the BOOM-only farm hold",
+  );
+}
+
 function validateImperialSiegeAttackOrdering(rules) {
   const attackIndex = rules.findIndex(
     (rule) =>
@@ -5538,6 +5644,7 @@ validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
 validateAttackAllocationPolicy(rules);
 validateFeudalCastleEconomyContract(rules);
+validateFeudalFarmTransitionBudget(rules, source);
 validateImperialSiegeExit(rules, source);
 validateImperialSiegeAttackOrdering(rules);
 validateTcScaledFarms(rules);
