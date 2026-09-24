@@ -120,6 +120,7 @@
 (defconst bt-varangian-demand-goal 726)
 (defconst bt-varangian-target-goal 727)
 (defconst bt-varangian-fielded-goal 728)
+(defconst bt-varangian-count-scratch-goal 800)
 (defconst bt-varangian-target-level-2 4)
 (defconst bt-varangian-target-level-3 6)
 (defconst bt-varangian-logistica-min 6)
@@ -1384,10 +1385,10 @@
 =>
     (set-goal bt-varangian-fielded-goal 0)
     (set-goal bt-varangian-target-goal 0)
-    (up-get-fact unit-type-count-total varangian-guard temporary-goal)
-    (up-modify-goal bt-varangian-fielded-goal g:+ temporary-goal)
-    (up-get-fact unit-type-count-total elite-varangian-guard temporary-goal)
-    (up-modify-goal bt-varangian-fielded-goal g:+ temporary-goal)
+    (up-get-fact unit-type-count-total varangian-guard bt-varangian-count-scratch-goal)
+    (up-modify-goal bt-varangian-fielded-goal g:+ bt-varangian-count-scratch-goal)
+    (up-get-fact unit-type-count-total elite-varangian-guard bt-varangian-count-scratch-goal)
+    (up-modify-goal bt-varangian-fielded-goal g:+ bt-varangian-count-scratch-goal)
 )
 
 (defrule
