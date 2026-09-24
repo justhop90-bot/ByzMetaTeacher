@@ -3066,6 +3066,22 @@ function validateAttackResultLifecycle(rules) {
   );
   assert.equal(resultRules.length, 3, "[Attack result] expected damaged/stalled/reassess result consumers");
 
+  const gatherFailure = rules.find(
+    (rule) =>
+      rule.includes("(timer-triggered bt-attack-gather-watchdog-timer)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 1)"),
+  );
+  assert.ok(gatherFailure, "[Attack result] failed attack gathering must close as a stalled result");
+
+  const retreatFailure = rules.find(
+    (rule) =>
+      rule.includes("(goal retreat-now-goal 0)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 1)"),
+  );
+  assert.ok(retreatFailure, "[Attack result] emergency retreat must close as a stalled result");
+
   assert.ok(
     resultRules.some(
       (rule) =>
