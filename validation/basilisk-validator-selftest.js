@@ -2042,8 +2042,7 @@ try {
         ],
         (rule) =>
           rule.replace(
-            "    (goal strategy-goal bt-strategy-flush)
-",
+            "    (goal strategy-goal bt-strategy-flush)\\n",
             "",
           ),
         "BOOM FLUSH Castle-bank override",
