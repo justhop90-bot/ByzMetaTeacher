@@ -565,6 +565,25 @@ try {
       ),
     },
     {
+      name: "elite-varangian-barracks-authority-required",
+      expected: "[Elite Varangian] Imperial upgrade must use a Barracks capability witness",
+      source: (() => {
+        const action = "(research ri-elite-varangian-guard)";
+        const actionIndex = baseline.indexOf(action);
+        assert.notEqual(actionIndex, -1, "[Self-test] Elite Varangian research action missing");
+        const start = baseline.lastIndexOf("(defrule", actionIndex);
+        const end = baseline.indexOf("
+(defrule", actionIndex);
+        const ruleEnd = end === -1 ? baseline.length : end;
+        assert.ok(start >= 0 && start < ruleEnd, "[Self-test] Elite Varangian research rule bounds missing");
+        const rule = baseline.slice(start, ruleEnd);
+        const mutated = rule
+          .replace("(building-type-count-total barracks >= 1)", "(building-type-count-total castle >= 1)")
+          .replace("(goal bt-research-barracks-claim-goal 0)", "(goal bt-research-castle-claim-goal 0)");
+        return baseline.slice(0, start) + mutated + baseline.slice(ruleEnd);
+      })(),
+    },
+    {
       name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
       expected: "[DBA lifecycle]",
       source: (() => {
