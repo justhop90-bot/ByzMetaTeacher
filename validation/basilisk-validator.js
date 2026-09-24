@@ -5964,6 +5964,770 @@ function validateLifecycleAnchors(sourceText, rules) {
   );
 }
 
+function validateLineHygiene(text) {
+  const lines = text.split("\n");
+  const maxLength = Math.max(...lines.map((line) => line.length));
+  assert.ok(
+    maxLength <= 255,
+    `[Hygiene] controller line exceeds 255 characters (max observed: ${maxLength})`,
+  );
+  assert.ok(
+    !/\t/.test(text),
+    "[Hygiene] tab characters are not permitted in Basilisk.per",
+  );
+  return maxLength;
+}
+
+function validateRetryDoctrine(sourceText) {
+  const forbidden = [
+    "bt-research-barracks-max-retries",
+    "bt-stable-research-max-retries",
+    "bt-siege-research-max-retries",
+    "bt-economic-research-max-retries",
+    "bt-research-mining-camp-gold-shaft-mining-retry-goal",
+    "bt-research-barracks-pikeman-retry-goal",
+    "bt-research-stable-cavalier-retry-goal",
+    "bt-research-stable-paladin-retry-goal",
+    "bt-research-stable-heavy-camel-retry-goal",
+    "bt-research-siege-capped-ram-retry-goal",
+    "bt-research-siege-ram-retry-goal",
+    "bt-military-siege-workshop-retry-goal",
+  ];
+  for (const symbol of forbidden) {
+    assert.ok(
+      !sourceText.includes(symbol),
+      `[Retry doctrine] stale terminal-retry symbol remains: ${symbol}`,
+    );
+  }
+  assert.ok(
+    sourceText.includes("(defconst bt-research-failure-backoff-seconds 30)"),
+    "[Retry doctrine] shared bounded research backoff constant is missing",
+  );
+}
+
+function validateCastleCataphractImperialHandoff(rules) {
+  const writerIndex = ruleIndex(
+    rules,
+    "(current-age == castle-age)",
+    "(goal bt-castle-cataphract-demand-goal 0)",
+    "(set-goal bt-castle-cataphract-demand-goal 1)",
+  );
+  const writer = rules[writerIndex];
+  assert.ok(
+    writer.includes("(not (can-research-with-escrow imperial-age))"),
+    "[Castle-Cataphract/Imperial handoff] pre-Imperial Castle-Cataphract demand writer must refuse to create demand when Imperial is already research-feasible",
+  );
+}
+
+function validateAgeTransitionQueueGates(rules) {
+  const castleStop = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
+      rule.includes("(goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    castleStop,
+    "[Age transition] Castle villager stop gate is missing",
+  );
+  assert.ok(
+    !castleStop.includes("(can-research-with-escrow castle-age)"),
+    "[Age transition] Castle villager stop gate must not depend on research queue availability",
+  );
+
+  const castleExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(research castle-age)"),
+  );
+  assert.ok(
+    castleExecutor,
+    "[Age transition] Castle research executor is missing",
+  );
+  assert.ok(
+    castleExecutor.includes("(can-research-with-escrow castle-age)"),
+    "[Age transition] Castle research executor lost its engine feasibility guard",
+  );
+
+  const castleBankMilitaryProducers = [
+    "(train spearman-line)",
+    "(train skirmisher-line)",
+    "(train archer-line)",
+  ];
+  for (const action of castleBankMilitaryProducers) {
+    const producer = rules.find(
+      (rule) =>
+        rule.includes("(current-age >= feudal-age)") &&
+        rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+        rule.includes("(goal bt-castle-commitment-goal 0)") &&
+        rule.includes(action),
+    );
+    assert.ok(
+      producer,
+      "[Age transition] Feudal standing military producer must yield to Castle commitment: " +
+        action,
+    );
+  }
+
+  const rushArcherProducer = rules.find(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(goal unit-goal archer-line)") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)") &&
+      rule.includes("(train archer-line)"),
+  );
+  assert.ok(
+    rushArcherProducer,
+    "[Age transition] RUSH archer producer must yield to Castle commitment",
+  );
+
+  const imperialStop = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
+      rule.includes("(goal bt-imperial-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    imperialStop,
+    "[Age transition] Imperial villager stop gate is missing",
+  );
+  assert.ok(
+    !imperialStop.includes("(can-research-with-escrow imperial-age)"),
+    "[Age transition] Imperial villager stop gate must not depend on research queue availability",
+  );
+  assert.ok(
+    !imperialStop.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Age transition] Imperial villager stop gate must not depend on Castle Cataphract demand",
+  );
+
+  const imperialExecutor = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(goal bt-imperial-commitment-goal 1)") &&
+      rule.includes("(research imperial-age)"),
+  );
+  assert.ok(
+    imperialExecutor,
+    "[Age transition] Imperial research executor is missing",
+  );
+  assert.ok(
+    imperialExecutor.includes("(can-research-with-escrow imperial-age)"),
+    "[Age transition] Imperial research executor lost its engine feasibility guard",
+  );
+  assert.ok(
+    !imperialExecutor.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Age transition] Imperial research executor must not depend on Castle Cataphract demand",
+  );
+}
+
+function validateImperialPrerequisiteProviders(rules) {
+  const demandProducer = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(set-goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(not (can-research-with-escrow imperial-age))"),
+  );
+  assert.ok(
+    demandProducer,
+    "[Imperial prerequisites] Persistent second-provider demand producer is missing",
+  );
+  assert.ok(
+    demandProducer.includes("(building-type-count-total monastery >= 1)") &&
+      demandProducer.includes("(building-type-count-total university >= 1)") &&
+      demandProducer.includes("(building-type-count-total siege-workshop >= 1)"),
+    "[Imperial prerequisites] Demand producer must recognize Monastery, University, or Siege Workshop as the existing qualifying provider",
+  );
+
+  const fundingMode = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)"),
+  );
+  assert.ok(
+    fundingMode,
+    "[Imperial prerequisites] Temporary wood-priority funding mode is missing",
+  );
+  assert.ok(
+    !fundingMode.includes("(goal bt-resource-mode-goal 0)"),
+    "[Imperial prerequisites] Funding mode must be allowed to override Imperial bank-prep arbitration",
+  );
+  for (const crisis of [
+    "bt-resource-mode-food-crisis",
+    "bt-resource-mode-gold-crisis",
+    "bt-resource-mode-wood-crisis",
+  ]) {
+    assert.ok(
+      fundingMode.includes(`(not (goal bt-resource-mode-goal ${crisis}))`),
+      "[Imperial prerequisites] Funding mode must yield to " + crisis,
+    );
+  }
+
+  const fundingAllocation = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
+      rule.includes("(set-strategic-number sn-wood-gatherer-percentage 40)"),
+  );
+  assert.ok(
+    fundingAllocation,
+    "[Imperial prerequisites] Temporary wood-priority funding allocation is missing",
+  );
+  assert.ok(
+    fundingAllocation.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
+      fundingAllocation.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
+      fundingAllocation.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
+    "[Imperial prerequisites] Funding allocation percentages are incomplete",
+  );
+
+  const siegeBuilder = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(building-type-count-total castle < 1)") &&
+      rule.includes("(building-type-count-total siege-workshop < 1)") &&
+      rule.includes("(build siege-workshop)"),
+  );
+  assert.ok(
+    siegeBuilder,
+    "[Imperial prerequisites] Siege Workshop builder is missing",
+  );
+  assert.ok(
+    siegeBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
+    "[Imperial prerequisites] Siege Workshop builder must consume persistent prerequisite demand",
+  );
+  assert.ok(
+    siegeBuilder.includes("(or") &&
+      siegeBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      siegeBuilder.includes("(building-type-count-total university >= 1)"),
+    "[Imperial prerequisites] Siege Workshop must accept Monastery or University as the existing qualifying provider",
+  );
+  assert.ok(
+    !siegeBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Imperial prerequisites] Siege Workshop builder must not depend on Castle Cataphract demand",
+  );
+
+  const universityBuilder = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(building-type-count-total castle < 1)") &&
+      rule.includes("(building-type-count-total university < 1)") &&
+      rule.includes("(build university)"),
+  );
+  assert.ok(
+    universityBuilder,
+    "[Imperial prerequisites] University builder is missing",
+  );
+  assert.ok(
+    universityBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
+    "[Imperial prerequisites] University builder must consume persistent prerequisite demand",
+  );
+  assert.ok(
+    universityBuilder.includes("(or") &&
+      universityBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      universityBuilder.includes("(building-type-count-total siege-workshop >= 1)"),
+    "[Imperial prerequisites] University must accept Monastery or Siege Workshop as the existing qualifying provider",
+  );
+  assert.ok(
+    !universityBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
+    "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
+  );
+
+  const demandClearWorldState = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
+      rule.includes("(or") &&
+      rule.includes("(current-age >= imperial-age)") &&
+      rule.includes("(building-type-count-total castle >= 1)"),
+  );
+  assert.ok(
+    demandClearWorldState,
+    "[Imperial prerequisites] Demand-clear world-state lifecycle witness is missing",
+  );
+  assert.ok(
+    !demandClearWorldState.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] Demand clear must not depend on Cataphract demand",
+  );
+
+  const demandClearFeasibility = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
+      rule.includes("(can-research-with-escrow imperial-age)"),
+  );
+  assert.ok(
+    demandClearFeasibility,
+    "[Imperial prerequisites] Demand-clear Imperial-feasibility witness is missing",
+  );
+  assert.ok(
+    !demandClearFeasibility.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] Imperial-feasibility demand clear must not depend on Cataphract demand",
+  );
+}
+
+function validateAgeBankPriority(rules) {
+  const castleBank = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(unit-type-count villager >= bt-castle-villagers)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)") &&
+      rule.includes("(set-goal bt-castle-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    castleBank,
+    "[Age banking] Castle bank priority rule is missing",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Age banking] Castle bank must not be gated by military/Cataphract demand",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-feudal-eco-hold-goal"),
+    "[Age banking] Castle bank must not be gated by Feudal eco hold",
+  );
+  assert.ok(
+    !castleBank.includes("(goal bt-castle-commitment-goal 0)"),
+    "[Age banking] Castle bank must not require a prior commitment state",
+  );
+  assert.ok(
+    castleBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Castle bank must only claim the bank when no P0 crisis is active",
+  );
+
+  const imperialBank = rules.find(
+    (rule) =>
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(unit-type-count villager >= bt-imperial-villagers)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)") &&
+      rule.includes("(set-goal bt-imperial-commitment-goal 1)") &&
+      rule.includes("(set-goal train-civ-goal -1)"),
+  );
+  assert.ok(
+    imperialBank,
+    "[Age banking] Imperial bank priority rule is missing",
+  );
+  assert.ok(
+    imperialBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Imperial bank must only claim the bank when no P0 crisis is active",
+  );
+  assert.ok(
+    !imperialBank.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Age banking] Imperial bank must not be gated by Castle Cataphract demand",
+  );
+}
+
+function validateFeudalEcoResearchPriority(rules, sourceText) {
+  const forbidden = [
+    "(goal bt-research-cavalry-counter-package-goal 0)",
+    "(goal bt-research-ranged-counter-package-goal 0)",
+    "(goal bt-research-cataphract-package-goal 0)",
+    "(goal bt-research-siege-package-goal 0)",
+    "(goal bt-research-monk-package-goal 0)",
+  ];
+
+  const horseDemandWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-horse-collar-demand-goal 0)") &&
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-horse-collar == research-available)") &&
+      rule.includes("(building-type-count mill >= 1)") &&
+      rule.includes("(set-goal bt-horse-collar-demand-goal 1)"),
+  );
+  assert.ok(
+    horseDemandWriter,
+    "[Feudal eco] persistent Horse Collar demand writer is missing",
+  );
+
+  assert.ok(
+    sourceText.includes("(defconst bt-horse-collar-demand-goal 698)"),
+    "[Feudal eco] persistent Horse Collar demand goal constant is missing",
+  );
+
+  const horseExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
+      rule.includes("(research ri-horse-collar)"),
+  );
+  assert.ok(
+    horseExecutor,
+    "[Feudal eco] Horse Collar executor is missing",
+  );
+  for (const witness of [
+    "(current-age == feudal-age)",
+    "(can-research-with-escrow ri-horse-collar)",
+    "(goal bt-research-mill-claim-goal 0)",
+  ]) {
+    assert.ok(
+      horseExecutor.includes(witness),
+      "[Feudal eco] Horse Collar executor is missing witness: " + witness,
+    );
+  }
+  for (const veto of forbidden) {
+    assert.ok(
+      !horseExecutor.includes(veto),
+      "[Feudal eco] Horse Collar executor still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const dbaExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
+      rule.includes("(research ri-double-bit-axe)"),
+  );
+  assert.ok(
+    dbaExecutor,
+    "[Feudal eco] Double-Bit Axe executor is missing",
+  );
+  assert.ok(
+    dbaExecutor.includes("(not (goal bt-castle-commitment-goal 1))"),
+    "[Feudal eco] Double-Bit Axe executor must yield to Castle commitment",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !dbaExecutor.includes(veto),
+      "[Feudal eco] Double-Bit Axe executor still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const horseHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    horseHold,
+    "[Feudal eco] persistent Horse Collar hold rule is missing",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !horseHold.includes(veto),
+      "[Feudal eco] Horse Collar hold rule still contains unrelated package veto: " + veto,
+    );
+  }
+
+  const dbaHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    dbaHold,
+    "[Feudal eco] persistent Double-Bit Axe hold rule is missing",
+  );
+
+  const dbaImmediateHold = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(up-research-status c: ri-double-bit-axe == research-available)") &&
+      rule.includes("(can-research-with-escrow ri-double-bit-axe)") &&
+      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+  );
+  assert.ok(
+    dbaImmediateHold,
+    "[Feudal eco] first-pass Double-Bit Axe hold rule is missing",
+  );
+  assert.ok(
+    horseHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] Horse Collar hold must yield at the Castle villager threshold",
+  );
+  assert.ok(
+    dbaHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] Double-Bit Axe hold must yield at the Castle villager threshold",
+  );
+  assert.ok(
+    dbaImmediateHold.includes("(unit-type-count villager < bt-castle-villagers)"),
+    "[Feudal eco] first-pass Double-Bit Axe hold must yield at the Castle villager threshold",
+  );
+  for (const veto of forbidden) {
+    assert.ok(
+      !dbaHold.includes(veto),
+      "[Feudal eco] Double-Bit Axe hold rule still contains unrelated package veto: " + veto,
+    );
+  }
+}
+
+function validateEconomicResearchPackageIsolation(rules, sourceText) {
+  const forbidden = [
+    "(goal bt-research-cavalry-counter-package-goal 0)",
+    "(goal bt-research-ranged-counter-package-goal 0)",
+    "(goal bt-research-cataphract-package-goal 0)",
+    "(goal bt-research-siege-package-goal 0)",
+    "(goal bt-research-monk-package-goal 0)",
+  ];
+  const economicExecutors = [
+    ["ri-heavy-plow", "bt-heavy-plow-demand-goal"],
+    ["ri-gold-mining", "bt-gold-mining-demand-goal"],
+    ["ri-wheel-barrow", "bt-wheelbarrow-demand-goal"],
+    ["ri-hand-cart", "bt-hand-cart-demand-goal"],
+    ["ri-bow-saw", "bt-bow-saw-demand-goal"],
+    ["ri-gold-shaft-mining", "bt-gold-shaft-mining-demand-goal"],
+  ];
+
+  assert.ok(
+    sourceText.includes("(defconst bt-heavy-plow-demand-goal 699)"),
+    "[Castle eco] persistent Heavy Plow demand goal constant is missing",
+  );
+
+  const heavyPlowDemand = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-heavy-plow-demand-goal 0)") &&
+      rule.includes("(current-age == castle-age)") &&
+      rule.includes("(up-research-status c: ri-horse-collar >= research-complete)") &&
+      rule.includes("(building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)") &&
+      rule.includes("(up-research-status c: ri-heavy-plow == research-available)") &&
+      rule.includes("(set-goal bt-heavy-plow-demand-goal 1)"),
+  );
+  assert.ok(
+    heavyPlowDemand,
+    "[Castle eco] persistent Heavy Plow demand writer is missing",
+  );
+
+  const heavyPlowCompletion = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-mill-claim-goal ri-heavy-plow)") &&
+      rule.includes("(up-research-status c: ri-heavy-plow == research-complete)") &&
+      rule.includes("(set-goal bt-heavy-plow-demand-goal 0)"),
+  );
+  assert.ok(
+    heavyPlowCompletion,
+    "[Castle eco] Heavy Plow completion must clear persistent demand",
+  );
+
+  for (const [tech, demandGoal] of economicExecutors) {
+    const executor = rules.find(
+      (rule) =>
+        rule.includes("(goal " + demandGoal + " 1)") &&
+        rule.includes("(research " + tech + ")"),
+    );
+    assert.ok(
+      executor,
+      "[Castle eco] executor is missing for " + tech,
+    );
+    assert.ok(
+      executor.includes("(can-research-with-escrow " + tech + ")"),
+      "[Castle eco] executor lost engine-native feasibility gate for " + tech,
+    );
+    for (const veto of forbidden) {
+      assert.ok(
+        !executor.includes(veto),
+        "[Castle eco] " + tech + " executor still depends on unrelated military package veto: " + veto,
+      );
+    }
+  }
+}
+
+function validateMillPlacement(sourceText, rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  for (const [name, value] of [
+    ["bt-mill-placement-zone-size", "6"],
+    ["bt-mill-placement-separation-distance", "10"],
+  ]) {
+    assert.ok(
+      sourceText.includes("(defconst " + name + " " + value + ")"),
+      "[Mill placement] missing placement constant: " + name,
+    );
+  }
+
+  const laterMillExecutor = rules.find(
+    (rule) =>
+      rule.includes("(up-compare-goal bt-mill-project-goal >= 2)") &&
+      rule.includes("(current-age >= feudal-age)") &&
+      rule.includes("(building-type-count farm >= 1)") &&
+      rule.includes("(up-set-placement-data my-player-number farm c: 0)") &&
+      rule.includes("(up-build place-control 0 c: mill)"),
+  );
+  assert.ok(
+    laterMillExecutor,
+    "[Mill placement] later-Mill executor must use farm-anchored controlled placement",
+  );
+
+  const laterMillText = normalize(laterMillExecutor);
+  for (const witness of [
+    "(set-strategic-number sn-placement-zone-size bt-mill-placement-zone-size)",
+    "(set-strategic-number sn-dropsite-separation-distance bt-mill-placement-separation-distance)",
+  ]) {
+    assert.ok(
+      laterMillText.includes(witness),
+      "[Mill placement] executor missing placement hygiene: " + witness,
+    );
+  }
+
+  const secondMillFarmGate = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-mill-target-goal 1)") &&
+      rule.includes("(building-type-count mill >= 1)") &&
+      rule.includes("(set-goal bt-mill-target-goal 2)"),
+  );
+  assert.equal(
+    secondMillFarmGate.length,
+    2,
+    "[Mill lifecycle] expected separate 1-TC and 2+-TC farm-density gates for the second Mill",
+  );
+  for (const rule of secondMillFarmGate) {
+    assert.ok(
+      rule.includes("(building-type-count-total farm >= bt-mill-second-farm-threshold-"),
+      "[Mill lifecycle] second-Mill demand must remain farm-density gated",
+    );
+  }
+}
+
+function validateStateCoverage(rules) {
+  for (const state of [
+    "strategy-goal",
+    "unit-goal",
+    "bt-resource-mode-goal",
+    "attack-goal",
+  ]) {
+    const writerIndices = rules
+      .map((rule, index) =>
+        rule.includes(`(set-goal ${state}`) ? index : -1,
+      )
+      .filter((index) => index >= 0);
+    const readerIndices = rules
+      .map((rule, index) =>
+        rule.includes(`(goal ${state}`) ||
+        rule.includes(`(not (goal ${state}`) ? index : -1,
+      )
+      .filter((index) => index >= 0);
+    const actionReaderIndices = rules
+      .map((rule, index) =>
+        (
+          rule.includes(`(goal ${state}`) ||
+          rule.includes(`(not (goal ${state}`)
+        ) && /\((build|train|research|attack-now)\b/.test(rule)
+          ? index
+          : -1,
+      )
+      .filter((index) => index >= 0);
+
+    assert.ok(
+      writerIndices.length > 0,
+      `[State coverage] no writer exists for ${state}`,
+    );
+    assert.ok(
+      readerIndices.length > 0,
+      `[State coverage] no reader exists for ${state}`,
+    );
+    assert.ok(
+      actionReaderIndices.some((index) => index > writerIndices[0]),
+      `[State coverage] no engine-action consumer exists downstream of ${state}'s first writer`,
+    );
+  }
+}
+
+function validatePreemptionReplay(repoRootPath) {
+  const replayPath = path.join(
+    repoRootPath,
+    "validation",
+    "preemption-telemetry-replay.js",
+  );
+  assert.ok(
+    fs.existsSync(replayPath),
+    "[Preemption replay] deterministic replay harness is missing",
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [replayPath],
+    {
+      stdio: "inherit",
+      cwd: repoRootPath,
+    },
+  );
+
+  assert.equal(
+    result.status,
+    0,
+    "[Preemption replay] deterministic lifecycle replay failed with exit code " +
+      result.status,
+  );
+}
+
+function validateSourceOrder(rules) {
+  const firstStrategyWriterIndex = ruleIndex(rules, "(set-goal strategy-goal");
+  const finalStrategyWriterIndex = Math.max(
+    ...rules
+      .map((rule, index) =>
+        rule.includes("(set-goal strategy-goal") ? index : -1,
+      )
+      .filter((index) => index >= 0),
+  );
+  const resourceModeResetIndex = ruleIndex(
+    rules,
+    "(true)",
+    "(set-goal bt-resource-mode-goal 0)",
+  );
+  const firstProductionIndex = ruleIndex(
+    rules,
+    "(goal bt-standing-army-demand-goal 1)",
+    "(strategic-number sn-resource-control == 0)",
+    "(can-build barracks)",
+    "(build barracks)",
+  );
+  const attackIndex = ruleIndex(
+    rules,
+    "(timer-triggered bt-attack-timer)",
+    "(goal attack-goal 0)",
+    "(attack-now)",
+  );
+
+  for (let index = 0; index < finalStrategyWriterIndex; index += 1) {
+    const rule = rules[index];
+    if (
+      !rule.includes("(goal strategy-goal") &&
+      !rule.includes("(not (goal strategy-goal")
+    ) {
+      continue;
+    }
+    assert.ok(
+      !/(^|\s)\((build|train|research|attack-now)\b/.test(rule),
+      `[One-pass latency] strategy reader at rule ${index} before final strategy writer issues an engine action`,
+    );
+  }
+
+  assert.ok(
+    finalStrategyWriterIndex >= firstStrategyWriterIndex,
+    "[Source order] final strategy writer must not precede first strategy writer",
+  );
+  assert.ok(
+    finalStrategyWriterIndex < resourceModeResetIndex,
+    "[Source order] final strategy writer must precede resource-mode arbitration",
+  );
+  assert.ok(
+    resourceModeResetIndex < firstProductionIndex,
+    "[Source order] resource-mode arbitration must precede production",
+  );
+  assert.ok(
+    firstProductionIndex < attackIndex,
+    "[Source order] production capability must precede attack delivery",
+  );
+}
+
+function validateHandoffWiring(repoRootPath, legacyPath) {
+  assert.ok(
+    fs.existsSync(legacyPath),
+    "[Harness] legacy lifecycle regression validator is missing",
+  );
+  const legacySource = fs.readFileSync(legacyPath, "utf8");
+  assert.ok(
+    !legacySource.includes("ByzTeacher/ByzMetaTeacher.per"),
+    "[Harness] legacy validator still defaults to the obsolete ByzTeacher controller path",
+  );
+  assert.ok(
+    legacySource.includes("Basilisk") && legacySource.includes("Basilisk.per"),
+    "[Harness] legacy validator does not default to Basilisk/Basilisk.per",
+  );
+  assert.ok(
+    fs.existsSync(path.join(repoRootPath, "docs", "project", "VALIDATOR-HANDOFF.md")),
+    "[Harness] validator handoff document is missing",
+  );
+}
+
 const semanticDumpIndex = process.argv.indexOf("--dump-semantic-rules");
 if (semanticDumpIndex !== -1) {
   const outputPath = process.argv[semanticDumpIndex + 1];
