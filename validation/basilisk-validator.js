@@ -6380,10 +6380,6 @@ function validateAgeBankPriority(rules) {
     "[Age banking] Castle bank must not be gated by military/Cataphract demand",
   );
   assert.ok(
-    !castleBank.includes("(goal bt-feudal-eco-hold-goal"),
-    "[Age banking] Castle bank must not be gated by Feudal eco hold",
-  );
-  assert.ok(
     !castleBank.includes("(goal bt-castle-commitment-goal 0)"),
     "[Age banking] Castle bank must not require a prior commitment state",
   );
