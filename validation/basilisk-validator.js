@@ -3200,6 +3200,41 @@ function validateAttackAllocationPolicy(rules) {
   }
 }
 
+function validateFeudalCastleEconomyContract(rules) {
+  assert.ok(
+    rules.some((rule) => rule.includes("(defconst bt-castle-villagers 28)")),
+    "[Feudal economy] Castle transition threshold must be 28 villagers",
+  );
+  assert.ok(
+    rules.some((rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)"),
+    ),
+    "[Feudal economy] BOOM Feudal floor must be normalized to the two-unit economic-defense floor",
+  );
+  assert.ok(
+    rules.some((rule) =>
+      rule.includes("(up-compare-goal bt-standing-army-floor-goal == bt-feudal-boom-army-floor)") &&
+      rule.includes("(set-goal bt-standing-spear-target-goal bt-feudal-boom-spear-target)") &&
+      rule.includes("(set-goal bt-standing-skirm-target-goal bt-feudal-boom-skirm-target)"),
+    ),
+    "[Feudal economy] two-unit BOOM role targets are missing",
+  );
+
+  const attack = rules.find((rule) =>
+    rule.includes("(attack-now)") &&
+    rule.includes("(set-goal attack-goal 1)") &&
+    rule.includes("(goal bt-castle-commitment-goal 0)"),
+  );
+  assert.ok(
+    attack &&
+      attack.includes("(goal strategy-goal bt-strategy-rush)") &&
+      attack.includes("(goal strategy-goal bt-strategy-flush)"),
+    "[Feudal economy] Feudal attack authorization must be restricted to pressure postures and blocked during Castle commitment",
+  );
+}
+
 function validateImperialSiegeAttackOrdering(rules) {
   const attackIndex = rules.findIndex(
     (rule) =>
@@ -5482,6 +5517,7 @@ validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
 validateAttackAllocationPolicy(rules);
+validateFeudalCastleEconomyContract(rules);
 validateImperialSiegeExit(rules, source);
 validateImperialSiegeAttackOrdering(rules);
 validateTcScaledFarms(rules);
