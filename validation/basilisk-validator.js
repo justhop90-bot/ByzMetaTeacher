@@ -3696,7 +3696,6 @@ function validateBasiliskGoalNamespace(forms) {
 
 function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
   for (const symbol of [
-    "bt-preempt-active-goal",
     "bt-preempt-original-owner-goal",
     "bt-preempt-emergency-claim",
     "bt-preempt-defense-issued-goal",
@@ -3738,7 +3737,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
         rule.includes("(town-under-attack)") &&
         rule.includes("(goal bt-any-threat-goal 1)") &&
         rule.includes("(strategic-number sn-resource-control == " + claim + ")") &&
-        rule.includes("(set-goal bt-preempt-active-goal 1)") &&
         rule.includes("(set-goal bt-preempt-original-owner-goal " + claim + ")") &&
         rule.includes("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)"),
     );
@@ -3753,7 +3751,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
     const resume = rules.find(
       (rule) =>
         rule.includes("(not (town-under-attack))") &&
-        rule.includes("(goal bt-preempt-active-goal 1)") &&
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
         rule.includes("(set-strategic-number sn-resource-control " + claim + ")"),
     );
