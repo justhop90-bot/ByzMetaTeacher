@@ -1317,7 +1317,7 @@ try {
       name: "imperial-funding-mode-must-yield-to-p0-crisis",
       expected: "[Imperial prerequisites]",
       source: (() => {
-        const marker = "; Imperial prerequisite funding deliberately overrides age-bank arbitration, but P0";
+        const marker = "    ; Imperial prerequisite funding overrides age-bank arbitration, but P0";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial funding mode section missing");
         const needle = "    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))\n";
