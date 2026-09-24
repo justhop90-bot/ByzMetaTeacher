@@ -105,6 +105,14 @@ try {
     ruleSection(rule, "facts").some((expr) =>
       containsExpression([expr], head, values),
     );
+  const hasNegatedFact = (rule, head, values = []) =>
+    ruleSection(rule, "facts").some(
+      (expr) =>
+        expr?.kind === "expression" &&
+        expr.head === "not" &&
+        expr.args.length === 1 &&
+        containsExpression([expr.args[0]], head, values),
+    );
   const hasAction = (rule, head, values = []) =>
     ruleSection(rule, "actions").some((expr) =>
       containsExpression([expr], head, values),
@@ -402,9 +410,10 @@ try {
       hasAction(rule, "build", ["blacksmith"]),
   );
   assert.ok(
-    baseline.includes(
-      "(not (goal bt-resource-mode-goal bt-resource-mode-castle-bank))",
-    ),
+    hasNegatedFact(feudalBlacksmithAdmission, "goal", [
+      "bt-resource-mode-goal",
+      "bt-resource-mode-castle-bank",
+    ]),
     "[Semantic self-test] Feudal Blacksmith admission lost Castle-bank exclusion",
   );
 
@@ -741,6 +750,8 @@ try {
     "Feudal Castle-prerequisite Blacksmith builder",
     (rule) =>
       hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "goal", ["bt-castle-prereq-backoff-goal", "0"]) &&
+      hasNegatedFact(rule, "can-research-with-escrow", ["castle-age"]) &&
       hasAction(rule, "set-strategic-number", [
         "sn-resource-control",
         "bt-castle-blacksmith-claim",
