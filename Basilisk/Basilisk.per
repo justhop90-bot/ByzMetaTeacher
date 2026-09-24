@@ -824,6 +824,11 @@
 (defconst bt-feudal-farm-reserve-villagers 26)
 (defconst bt-feudal-farm-wood-floor 385)
 
+; Naga-style housing lifecycle policy.
+(defconst bt-housing-demand-goal 803)
+(defconst bt-housing-headroom-trigger 5)
+(defconst bt-housing-pending-cap 2)
+
 ; Military composition targets.
 (defconst bt-spear-target-1 6)
 (defconst bt-spear-target-2 16)
@@ -1114,6 +1119,7 @@
     (set-goal bt-university-backoff-goal 0)
     (set-goal bt-farm-transition-reserve-goal 2)
     (set-goal bt-farm-depleted-reserve-goal 3)
+    (set-goal bt-housing-demand-goal 0)
     (set-goal bt-standing-army-floor-goal 0)
     (disable-self)
 )
@@ -3561,28 +3567,60 @@
 ;================================================================
 ; 8. HOUSING
 ;================================================================
-; Resource-local housing hygiene. When a lumber camp already exists, place
-; the next house around that active woodline rather than defaulting every house
-; to the Town Center area. The generic housing rule remains the fallback.
+; Naga-style housing lifecycle.
+; Persistent demand opens early, before the population cap becomes an emergency.
+; One normal house may be pending; when the population margin is collapsing,
+; the same demand may queue one additional house, but never beyond two pending.
 (defrule
-    (housing-headroom <= 5)
-    (up-pending-objects c: house == 0)
-    (building-type-count-total lumber-camp >= 1)
-    (can-build house)
+    (or
+        (housing-headroom <= bt-housing-headroom-trigger)
+        (population-headroom <= 0)
+    )
 =>
-    (up-set-placement-data my-player-number lumber-camp c: 6)
-    (up-build place-control 0 c: house)
+    (set-goal bt-housing-demand-goal 1)
 )
 
-; Q: "How do I prevent a population-cap stall?"
+; First-house handling is deliberately separate from the normal executor.
+; The first house gets two builders, then the completed first house releases
+; the special builder count back to one for ordinary housing.
 (defrule
-    ; Keep one house ahead of the normal four-headroom trigger so fast villager
-    ; production and woodline expansions do not hit the population cap.
-    (housing-headroom <= 5)
-    (up-pending-objects c: house == 0)
+    (building-type-count-total house == 0)
+    (population-headroom > 0)
+    (housing-headroom <= bt-housing-headroom-trigger)
+    (up-pending-objects c: house < bt-housing-pending-cap)
+    (can-build house)
+=>
+    (up-assign-builders c: house c: 2)
+    (build house)
+)
+
+; Once any house is completed, ordinary housing uses one builder again.
+(defrule
+    (building-type-count house >= 1)
+=>
+    (up-assign-builders c: house c: 1)
+)
+
+; Generic fallback executor.
+; This is the normal path after the first house and remains independent of
+; lumber-camp existence or any preferred placement policy.
+(defrule
+    (goal bt-housing-demand-goal 1)
+    (building-type-count house >= 1)
+    (up-pending-objects c: house < bt-housing-pending-cap)
     (can-build house)
 =>
     (build house)
+)
+
+; Release housing demand only after the completed world state is healthy and
+; no additional house is already pending.
+(defrule
+    (goal bt-housing-demand-goal 1)
+    (housing-headroom > bt-housing-headroom-trigger)
+    (up-pending-objects c: house == 0)
+=>
+    (set-goal bt-housing-demand-goal 0)
 )
 
 ;================================================================
