@@ -456,7 +456,7 @@ try {
     },
     {
       name: "multi-target-include-rejected",
-      expected: "must contain exactly one quoted target",
+      expected: "requires exactly one path",
       source: baseline.replace(
         '(include "BasiliskTelemetry.xs")',
         '(include "BasiliskTelemetry.xs" "BasiliskTelemetry.xs")',
