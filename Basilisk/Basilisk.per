@@ -648,7 +648,6 @@
 ; 0A. TEMPORARY POLICY PREEMPTION + TELEMETRY
 ;================================================================
 ; Only discretionary BOOM TC resource claims may be preempted.
-(defconst bt-preempt-active-goal 729)
 (defconst bt-preempt-original-owner-goal 730)
 (defconst bt-preempt-defense-issued-goal 734)
 (defconst bt-preempt-emergency-claim 799)
@@ -994,7 +993,6 @@
 (defrule
     (true)
 =>
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-original-owner-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (disable-self)
@@ -5811,33 +5809,28 @@ cataphract-line < bt-cataphract-target-1)))))
 ; be displaced for one short defensive pulse. Age/prerequisite claims are not.
 (defrule
     (town-under-attack)
-    (goal bt-preempt-active-goal 0)
     (goal bt-tc-project-goal 2)
     (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (goal bt-any-threat-goal 1)
     (strategic-number sn-resource-control == bt-tc2-claim)
 =>
-    (set-goal bt-preempt-active-goal 1)
     (set-goal bt-preempt-original-owner-goal bt-tc2-claim)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
 )
 (defrule
     (town-under-attack)
-    (goal bt-preempt-active-goal 0)
     (goal bt-tc-project-goal 3)
     (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
     (goal bt-any-threat-goal 1)
     (strategic-number sn-resource-control == bt-tc3-claim)
 =>
-    (set-goal bt-preempt-active-goal 1)
     (set-goal bt-preempt-original-owner-goal bt-tc3-claim)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-defense-issued-goal 0)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (goal bt-cavalry-threat-goal 1)
@@ -5850,7 +5843,6 @@ cataphract-line < bt-cataphract-target-1)))))
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-defense-issued-goal 0)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (goal bt-ranged-threat-goal 1)
@@ -5864,7 +5856,6 @@ cataphract-line < bt-cataphract-target-1)))))
 
 (defrule
     (not (town-under-attack))
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc2-claim)
     (goal bt-tc-project-goal 2)
     (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
@@ -5874,13 +5865,11 @@ cataphract-line < bt-cataphract-target-1)))))
     (can-build town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc2-claim)
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
 )
 
 (defrule
     (not (town-under-attack))
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc3-claim)
     (goal bt-tc-project-goal 3)
     (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
@@ -5890,35 +5879,29 @@ cataphract-line < bt-cataphract-target-1)))))
     (can-build town-center)
 =>
     (set-strategic-number sn-resource-control bt-tc3-claim)
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc2-claim)
     (building-type-count town-center >= 2)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
 =>
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc3-claim)
     (building-type-count town-center >= 3)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
 =>
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
     (not (town-under-attack))
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc2-claim)
     (goal bt-tc-project-goal 2)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
@@ -5931,14 +5914,12 @@ cataphract-line < bt-cataphract-target-1)))))
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
     (not (town-under-attack))
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc3-claim)
     (goal bt-tc-project-goal 3)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
@@ -5951,29 +5932,24 @@ cataphract-line < bt-cataphract-target-1)))))
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc2-claim)
     (goal bt-tc-project-goal 0)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
 =>
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
 
 (defrule
-    (goal bt-preempt-active-goal 1)
     (goal bt-preempt-original-owner-goal bt-tc3-claim)
     (goal bt-tc-project-goal 0)
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
 =>
-    (set-goal bt-preempt-active-goal 0)
     (set-goal bt-preempt-defense-issued-goal 0)
     (set-strategic-number sn-resource-control 0)
 )
