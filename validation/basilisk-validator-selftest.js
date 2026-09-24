@@ -183,7 +183,8 @@ try {
         "ri-fletching",
       ]) &&
       hasFact(rule, "up-research-status", [
-        "c: ri-fletching",
+        "c:",
+        "ri-fletching",
         "==",
         "research-complete",
       ]) &&
@@ -207,12 +208,14 @@ try {
         "ri-fletching",
       ]) &&
       hasFact(rule, "up-research-status", [
-        "c: ri-fletching",
+        "c:",
+        "ri-fletching",
         "==",
         "research-complete",
       ]) &&
       hasFact(rule, "up-research-status", [
-        "c: ri-bodkin-arrow",
+        "c:",
+        "ri-bodkin-arrow",
         "==",
         "research-complete",
       ]) &&
@@ -230,7 +233,8 @@ try {
         "ri-pikeman",
       ]) &&
       hasFact(rule, "up-research-status", [
-        "c: ri-pikeman",
+        "c:",
+        "ri-pikeman",
         "==",
         "research-complete",
       ]) &&
@@ -249,7 +253,8 @@ try {
         "ri-halberdier",
       ]) &&
       hasFact(rule, "up-research-status", [
-        "c: ri-halberdier",
+        "c:",
+        "ri-halberdier",
         "==",
         "research-complete",
       ]) &&
