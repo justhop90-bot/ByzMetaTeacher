@@ -502,6 +502,7 @@
 (defconst bt-attack-gather-watchdog-timer 23)
 (defconst bt-attack-gather-watchdog-seconds 30)
 (defconst bt-attack-measurement-seconds 180)
+(defconst bt-attack-collapse-force-floor -5)
 (defconst bt-flush-army-floor-feudal 8)
 (defconst bt-flush-army-floor-castle 20)
 (defconst bt-flush-army-floor-imperial 30)
@@ -12899,7 +12900,36 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ; 19. ATTACK CYCLE RESET
 ;================================================================
 ;
-; Q: "How do we regain script control after attack-now?"
+; Severe combat collapse closes before the normal measurement reset. This
+; mirrors the community lifecycle pattern: a timer ending while the army has
+; become materially inferior is a retreat/rebuild event, not a normal result.
+;
+; The -5 force buffer is deliberately stronger than ordinary inferiority.
+; Mildly inferior cycles remain available to the four-quadrant result witness;
+; only the existing emergency threshold forces the army home.
+(defrule
+    (timer-triggered bt-attack-timer)
+    (goal attack-goal 1)
+    (or
+        (up-compare-goal bt-attack-reserve-goal < 0)
+        (up-compare-goal bt-relative-force-goal < bt-attack-collapse-force-floor)
+    )
+=>
+    (up-reset-attack-now)
+    (disable-timer bt-attack-gather-watchdog-timer)
+    (up-retreat-now)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
+    (set-goal attack-goal 0)
+    (disable-timer bt-attack-timer)
+    (enable-timer bt-retreat-timer 120)
+)
+
+;================================================================
+; 19A. ATTACK CYCLE MEASUREMENT
+;================================================================
+;
+; Q: "How do we regain script control after a normal attack-now cycle?"
 ;
 ; UserPatch supplies up-reset-attack-now for exactly this purpose.
 (defrule
