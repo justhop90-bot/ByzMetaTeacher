@@ -609,11 +609,11 @@ try {
       source: mutateRuleContaining(
         baseline,
         [
-          "(current-age == feudal-age)",
+          "(current-age >= castle-age)",
           "(building-type-count blacksmith >= 1)",
-          "(unit-type-count-total archer-line >= 3)",
           "(research ri-fletching)",
-          "(not (goal bt-imperial-commitment-goal 1))",
+          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
+          "(or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))",
         ],
         (rule) => {
           const needle = "(not (goal bt-imperial-commitment-goal 1))";
@@ -621,7 +621,7 @@ try {
           assert.notEqual(mutated, rule, "[Self-test] Fletching Imperial gate mutation made no change");
           return mutated;
         },
-        "Feudal Fletching Imperial commitment gate",
+        "Castle/Imperial Fletching feasibility gate",
       ),
     },
     {
