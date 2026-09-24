@@ -3028,7 +3028,6 @@ function validateDerivedThreatStateOrdering(rules) {
     "bt-any-threat-goal",
     "bt-cavalry-counter-level-goal",
     "bt-ranged-counter-level-goal",
-    "bt-spear-counter-level-goal",
     "bt-noncav-cavalry-level-goal",
   ];
   const reads = rules.flatMap((rule, index) =>
