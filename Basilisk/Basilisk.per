@@ -5140,6 +5140,19 @@
     (set-goal strategy-goal bt-strategy-castle-power)
 )
 
+; Castle-Power releases when its strategic infrastructure objective disappears.
+; Target selection is repaired earlier in source order, so this remains a
+; target-objective witness rather than a target-identity failure latch.
+(defrule
+    (goal strategy-goal bt-strategy-castle-power)
+    (current-age == castle-age)
+    (players-building-count target-player == 0)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
 ; Failed Castle-Power promotion is an explicit RUSH -> BOOM recovery.
 ; This is mutually exclusive with the promotion rule above because that rule
 ; changes strategy-goal away from RUSH before this rule can match in the same pass.
@@ -8862,7 +8875,10 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (or (up-compare-goal bt-standing-army-deficit-goal < 0) (or (unit-type-count-total spearman-line < bt-standing-spear-target-goal) (or (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal) (or (unit-type-count-total
@@ -8883,7 +8899,10 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
                 (goal strategy-goal bt-strategy-boom)
                 (or
                     (goal strategy-goal bt-strategy-flush)
-                    (goal strategy-goal bt-strategy-castle-power)
+                    (or
+                        (goal strategy-goal bt-strategy-rush)
+                        (goal strategy-goal bt-strategy-castle-power)
+                    )
                 )
             )
         ) (and (up-compare-goal bt-standing-army-deficit-goal >= 0) (and (unit-type-count-total spearman-line >= bt-standing-spear-target-goal) (and (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal) (and
@@ -9192,7 +9211,10 @@ cataphract-line < bt-cataphract-target-1)))))
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (current-age >= feudal-age)
@@ -9210,7 +9232,10 @@ cataphract-line < bt-cataphract-target-1)))))
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (current-age >= feudal-age)
