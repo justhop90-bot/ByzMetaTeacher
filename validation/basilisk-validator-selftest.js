@@ -850,23 +850,39 @@ try {
     {
       name: "feudal-boom-floor-regression-rejected",
       expected: "[Feudal economy]",
-      source: (() => {
-        const needle =
-          "    (goal strategy-goal bt-strategy-boom)\n=>\n    (set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Feudal BOOM floor rule is missing");
-        return baseline.slice(0, index) + baseline.slice(index + needle.length);
-      })(),
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(goal strategy-goal bt-strategy-boom)",
+          "(set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)\n",
+            "",
+          ),
+        "Feudal BOOM floor normalization",
+      ),
     },
     {
       name: "feudal-attack-castle-bank-regression-rejected",
       expected: "[Feudal economy]",
-      source: (() => {
-        const needle = "    (goal bt-castle-commitment-goal 0)\n";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Feudal Castle commitment gate is missing");
-        return baseline.slice(0, index) + baseline.slice(index + needle.length);
-      })(),
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(timer-triggered bt-attack-timer)",
+          "(goal attack-goal 0)",
+          "(attack-now)",
+          "(goal bt-castle-commitment-goal 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (goal bt-castle-commitment-goal 0)\n",
+            "",
+          ),
+        "Feudal attack Castle commitment gate",
+      ),
     },
     {
       name: "siege-abort-cancels-independent-demand-rejected",
