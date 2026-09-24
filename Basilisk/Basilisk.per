@@ -756,7 +756,7 @@
 ; pays back the wood economy before farms, houses, and production consume
 ; the Feudal wood reserve.
 (defconst bt-double-bit-axe-food-buffer 450)
-(defconst bt-double-bit-axe-wood-buffer 100)
+(defconst bt-double-bit-axe-wood-buffer 0)
 
 ; Stone Shaft Mining late-Castle maturity buffers.
 ; 50 villagers / 500 food / 250 wood keep this a mature economy project
@@ -14592,7 +14592,13 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 ; Existing spear mass + real cavalry threat + free resource claim.
 (defrule
     (current-age >= castle-age)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+        (and
+            (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+            (unit-type-count-total spearman-line >= bt-spear-target-2)
+        )
+    )
     (unit-type-count-total spearman-line >= 6)
     (or
 (players-unit-type-count any-enemy knight-line >= 6)
@@ -14767,6 +14773,63 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 =>
     (set-goal bt-research-barracks-claim-goal 0)
     (set-goal bt-halberdier-demand-goal 0)
+)
+
+; SQUIRES: mature spear/infantry package only. Reuse the Barracks capability
+; claim; do not create a second research scheduler or mutex.
+(defrule
+    (current-age >= castle-age)
+    (goal bt-blacksmith-infantry-army-goal 1)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+    (unit-type-count-total spearman-line >= bt-spear-target-2)
+    (up-research-status c: ri-squires == research-available)
+    (up-compare-goal bt-research-barracks-failure-backoff-goal != ri-squires)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count barracks >= 1)
+    (can-research-with-escrow ri-squires)
+    (goal bt-research-barracks-claim-goal 0)
+=>
+    (set-strategic-number sn-resource-control ri-squires)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-squires)
+    (set-goal bt-research-barracks-claim-goal ri-squires)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-research-barracks-claim-goal ri-squires)
+    (up-research-status c: ri-squires == research-complete)
+=>
+    (set-goal bt-research-barracks-claim-goal 0)
+)
+
+; ARSON: earlier Feudal infantry utility upgrade; same Barracks lifecycle.
+(defrule
+    (current-age >= feudal-age)
+    (goal bt-blacksmith-infantry-army-goal 1)
+    (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+    (unit-type-count-total spearman-line >= bt-spear-target-1)
+    (up-research-status c: ri-arson == research-available)
+    (up-compare-goal bt-research-barracks-failure-backoff-goal != ri-arson)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count barracks >= 1)
+    (can-research-with-escrow ri-arson)
+    (goal bt-research-barracks-claim-goal 0)
+=>
+    (set-strategic-number sn-resource-control ri-arson)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-arson)
+    (set-goal bt-research-barracks-claim-goal ri-arson)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-research-barracks-claim-goal ri-arson)
+    (up-research-status c: ri-arson == research-complete)
+=>
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 (defrule
@@ -15527,6 +15590,24 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 
 ;----------------------------------------------------------------
 ; PIKEMAN WATCHDOG EXPIRY
+(defrule
+    (goal bt-research-barracks-claim-goal ri-squires)
+    (up-research-status c: ri-squires <= research-available)
+=>
+    (set-goal bt-research-barracks-failure-backoff-goal ri-squires)
+    (enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-barracks-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-barracks-claim-goal ri-arson)
+    (up-research-status c: ri-arson <= research-available)
+=>
+    (set-goal bt-research-barracks-failure-backoff-goal ri-arson)
+    (enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-barracks-claim-goal 0)
+)
+
 (defrule
     (goal bt-research-barracks-claim-goal ri-pikeman)
     (up-research-status c: ri-pikeman <= research-available)
