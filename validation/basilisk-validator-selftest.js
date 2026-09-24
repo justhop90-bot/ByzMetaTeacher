@@ -557,6 +557,14 @@ try {
       ),
     },
     {
+      name: "elite-varangian-local-tech-id-required",
+      expected: "site-specific engine identifier 'ri-elite-varangian-guard'",
+      source: baseline.replace(
+        "(defconst ri-elite-varangian-guard 1454)",
+        "(defconst ri-elite-varangian-guard-invalid-placeholder 1454)",
+      ),
+    },
+    {
       name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
       expected: "[DBA lifecycle]",
       source: (() => {
