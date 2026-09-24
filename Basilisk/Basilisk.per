@@ -5965,23 +5965,33 @@ town-center >= 2)))))
     (not
         (and
             (current-age == feudal-age)
-            (up-research-status c: ri-horse-collar == research-available)
-            (building-type-count mill >= 1)
-            (or
-                (can-research-with-escrow ri-horse-collar)
-                (goal bt-research-mill-claim-goal ri-horse-collar)
+            (and
+                (up-research-status c: ri-horse-collar == research-available)
+                (and
+                    (building-type-count mill >= 1)
+                    (or
+                        (can-research-with-escrow ri-horse-collar)
+                        (goal bt-research-mill-claim-goal ri-horse-collar)
+                    )
+                )
             )
         )
     )
     (not
         (and
             (current-age == feudal-age)
-            (up-research-status c: ri-double-bit-axe == research-available)
-            (food-amount >= bt-double-bit-axe-food-buffer)
-            (wood-amount >= bt-double-bit-axe-wood-buffer)
-            (or
-                (can-research-with-escrow ri-double-bit-axe)
-                (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+            (and
+                (up-research-status c: ri-double-bit-axe == research-available)
+                (and
+                    (food-amount >= bt-double-bit-axe-food-buffer)
+                    (and
+                        (wood-amount >= bt-double-bit-axe-wood-buffer)
+                        (or
+                            (can-research-with-escrow ri-double-bit-axe)
+                            (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+                        )
+                    )
+                )
             )
         )
     )
@@ -6870,11 +6880,19 @@ sn-stone-gatherer-percentage == 0)))))
         (goal bt-cataphract-demand-goal 1)
         (and
             (goal strategy-goal bt-strategy-flush)
-            (goal unit-goal bt-unit-mix)
-            (unit-type-count-total spearman-line >= bt-spear-target-1)
-            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
-            (building-type-count-total stable >= 1)
-            (unit-type-count-total camel-line < bt-camel-target-1)
+            (and
+                (goal unit-goal bt-unit-mix)
+                (and
+                    (unit-type-count-total spearman-line >= bt-spear-target-1)
+                    (and
+                        (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                        (and
+                            (building-type-count-total stable >= 1)
+                            (unit-type-count-total camel-line < bt-camel-target-1)
+                        )
+                    )
+                )
+            )
         )
     )
     (research-available ri-gold-mining)
