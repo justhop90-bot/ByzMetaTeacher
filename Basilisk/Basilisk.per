@@ -1994,11 +1994,13 @@
             (up-compare-goal bt-standing-archer-target-goal > 0)
             (unit-type-count-total archer-line >= 3)
         )
-        (and
-            (up-compare-goal bt-standing-skirm-target-goal > 0)
-            (unit-type-count-total skirmisher-line >= 3)
+        (or
+            (and
+                (up-compare-goal bt-standing-skirm-target-goal > 0)
+                (unit-type-count-total skirmisher-line >= 3)
+            )
+            (goal bt-blacksmith-ranged-army-goal 1)
         )
-        (goal bt-blacksmith-ranged-army-goal 1)
     )
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (up-research-status c: ri-fletching < research-complete)
@@ -13052,7 +13054,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (current-age >= feudal-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
-    (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
+    (and (current-age == castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
@@ -13078,10 +13080,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
     (current-age == feudal-age)
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
@@ -13116,7 +13115,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (unit-type-count-total spearman-line >= bt-spear-target-1)
     (up-research-status c: ri-scale-mail == research-complete)
     (up-research-status c: ri-chain-mail < research-pending)
@@ -13164,10 +13163,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (unit-type-count-total skirmisher-line >= 3)
         )
     )
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
     (up-research-status c: ri-fletching < research-pending)
     (goal bt-ranged-threat-goal 1)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
@@ -13186,7 +13182,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 
 (defrule
     (current-age >= castle-age)
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-fletching < research-pending)
     (goal bt-ranged-threat-goal 1)
@@ -13256,7 +13252,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
         (up-research-status c: ri-crossbow == research-complete)
         (unit-type-count-total crossbowman >= bt-crossbow-target-castle)
     )
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
     (strategic-number sn-resource-control == 0)
@@ -13278,7 +13274,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
         (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
         (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
     )
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
     (strategic-number sn-resource-control == 0)
@@ -13300,7 +13296,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
                 (up-compare-goal bt-standing-archer-target-goal >= 3)
                 (unit-type-count-total archer-line >= 3)
             )
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
     (strategic-number sn-resource-control == 0)
@@ -13337,10 +13333,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (unit-type-count-total skirmisher-line >= 3)
         )
     )
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
+    (not (goal bt-castle-commitment-goal 1))
     (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-padded-archer-armor < research-pending)
     (goal bt-ranged-threat-goal 1)
@@ -13548,7 +13541,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 
 (defrule
     (current-age >= castle-age)
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-crossbow == research-complete)
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (or
@@ -13749,9 +13742,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (or
         (and
             (goal bt-scout-pressure-demand-goal 1)
-            (goal strategy-goal bt-strategy-boom)
-            (goal bt-any-threat-goal 0)
-            (unit-type-count-total scout-cavalry >= 3)
+            (and
+                (goal strategy-goal bt-strategy-boom)
+                (and
+                    (goal bt-any-threat-goal 0)
+                    (unit-type-count-total scout-cavalry >= 3)
+                )
+            )
         )
         (goal bt-research-cavalry-counter-package-goal ri-forging)
     )
