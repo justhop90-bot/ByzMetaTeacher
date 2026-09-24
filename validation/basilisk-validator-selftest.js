@@ -503,6 +503,38 @@ try {
     ].sort(),
     "[Semantic self-test] Feudal Blacksmith admission blocker inventory changed",
   );
+  const admissionAllBlockersState = {
+    castlePrereqBackoff: 1,
+    rangedPackage: 0,
+    castleCommitment: 1,
+    resourceMode: "bt-resource-mode-castle-bank",
+    blacksmithCompleted: 1,
+    blacksmithPending: 1,
+    resourceControl: 1,
+    canResearchCastle: false,
+    canBuildBlacksmith: false,
+  };
+  assert.deepEqual(
+    exactRuleBlockReasons(feudalBlacksmithAdmission, admissionAllBlockersState),
+    expectedAdmissionBlockReasons,
+    "[Semantic self-test] Feudal Blacksmith admission all-blocker inventory changed",
+  );
+  assert.deepEqual(
+    exactRuleBlockReasons(feudalBlacksmithAdmission, {
+      castlePrereqBackoff: 0,
+      rangedPackage: "ri-fletching",
+      castleCommitment: 0,
+      resourceMode: 0,
+      blacksmithCompleted: 0,
+      blacksmithPending: 0,
+      resourceControl: 0,
+      canResearchCastle: true,
+      canBuildBlacksmith: true,
+    }),
+    [],
+    "[Semantic self-test] Feudal Blacksmith admission has unexpected block reasons in the admissible state",
+  );
+
   const admissionBlockFixtures = [
     {
       name: "Castle bank + commitment wins",
@@ -951,6 +983,32 @@ try {
       ]) &&
       hasAction(rule, "build", ["blacksmith"]),
   );
+  const prereqAllBlockersState = {
+    castlePrereqBackoff: 1,
+    canResearchCastle: true,
+    blacksmithCompleted: 1,
+    blacksmithPending: 1,
+    resourceControl: 1,
+    canBuildBlacksmith: false,
+  };
+  assert.deepEqual(
+    exactPrereqRuleBlockReasons(castlePrereqBlacksmith, prereqAllBlockersState),
+    expectedPrereqBlockReasons,
+    "[Semantic self-test] Castle-prerequisite Blacksmith all-blocker inventory changed",
+  );
+  assert.deepEqual(
+    exactPrereqRuleBlockReasons(castlePrereqBlacksmith, {
+      castlePrereqBackoff: 0,
+      canResearchCastle: false,
+      blacksmithCompleted: 0,
+      blacksmithPending: 0,
+      resourceControl: 0,
+      canBuildBlacksmith: true,
+    }),
+    [],
+    "[Semantic self-test] Castle-prerequisite Blacksmith has unexpected block reasons in the admissible state",
+  );
+
   const prereqBlockFixtures = [
     {
       name: "Castle already researchable",
