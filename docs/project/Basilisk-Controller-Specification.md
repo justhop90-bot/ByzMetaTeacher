@@ -1699,3 +1699,114 @@ Every step downward increases complexity and therefore requires stronger proof.
 Every future Basilisk change is either moving toward this controller or moving away from it.
 
 No third category.
+
+---
+
+# 43. REMOVABLE-STATE DOCTRINE
+
+This section records the engineering lesson from the full lifecycle audit.
+
+Basilisk must default to ordinary repeated condition/action rules.
+
+A state variable is not justified because a lifecycle can be drawn around it. It is justified only when the state buys real control capability that current engine facts, existing strategic intent, engine-native feasibility, or deliberate rule order cannot provide.
+
+Before adding or keeping a goal, claim, timer, retry latch, stage, cursor, or mutex, ask:
+
+1. Can the engine already tell us the answer?
+2. Can current facts plus an existing demand express it?
+3. Can a direct can-build, can-train, or can-research boundary express it?
+4. Can current + queued or pending-object state prevent duplicate work?
+5. Can deliberate top-to-bottom rule order provide the required precedence?
+6. Is there a genuine multi-pass engine operation that cannot be represented directly?
+7. Is there a real resource/capability contention that requires ownership?
+8. Does removing the state cause an actual loss of control, rather than merely a loss of documentation?
+
+If the answer to 1-5 is yes, prefer deleting the state.
+
+The desired implementation bias is:
+
+current facts -> rule order -> can-* -> action -> reassess
+
+not:
+
+fact -> new goal -> claim -> stage -> timer -> executor -> completion goal -> release
+
+State is exceptional.
+Claims are rarer.
+Timers are rarer still.
+Multi-stage transactions are rarest.
+
+The project must not turn every ordinary heuristic into a lifecycle.
+
+## Audit principle
+
+When reviewing existing code, do not ask:
+
+Does this lifecycle have all its edges?
+
+Ask first:
+
+Does this lifecycle need to exist?
+
+Only if the answer is yes should lifecycle closure be audited.
+
+## Removal rule
+
+When two implementations produce the same game behavior, prefer the one with:
+
+- fewer persistent variables,
+- fewer writers,
+- fewer release paths,
+- fewer timers,
+- fewer global locks,
+- fewer intermediate stages,
+- more direct engine facts,
+- clearer same-pass precedence.
+
+Simplicity is not an aesthetic preference here. It is a reliability mechanism for the AoE2 .per rule engine.
+
+## North Star
+
+**We are building a heuristic player, not a state machine.**
+
+**Strategy is persistent intent.**
+
+**Demand is what must become true.**
+
+**Capability is what makes that demand executable.**
+
+**Feasibility belongs to the engine.**
+
+**Actions are requests.**
+
+**World-state changes are proof.**
+
+**Failures delay execution; they do not erase valid intent.**
+
+**State exists only where persistence or engine lifecycle genuinely requires it.**
+
+**The economy follows the strategy's binding shortage.**
+
+**Buildings follow capability demand.**
+
+**Production follows current + queued requirements.**
+
+**Research follows strategic value and opportunity cost.**
+
+**Military separates standing force from expendable attack force.**
+
+**Strategy changes because the position changes, not because the code reached a phase.**
+
+**Global locks are exceptional.**
+
+**Timers are temporal tools, not strategic truth.**
+
+**Rule order is part of the control surface and must be intentional.**
+
+**Static validation proves structure. Runtime/replay proves behavior.**
+
+**The game is the final witness.**
+
+Every future Basilisk change is either moving toward this controller or moving away from it.
+
+No third category.
