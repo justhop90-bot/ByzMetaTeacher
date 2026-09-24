@@ -13197,11 +13197,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (up-compare-goal bt-standing-archer-target-goal > 0)
             (unit-type-count-total archer-line >= 3)
         )
-        (and
-            (up-compare-goal bt-standing-skirm-target-goal > 0)
-            (unit-type-count-total skirmisher-line >= 3)
+        (or
+            (and
+                (up-compare-goal bt-standing-skirm-target-goal > 0)
+                (unit-type-count-total skirmisher-line >= 3)
+            )
+            (unit-type-count-total cavalry-archer-line >= 3)
         )
-        (unit-type-count-total cavalry-archer-line >= 3)
     )
     (not (goal bt-castle-commitment-goal 1))
     (up-research-status c: ri-fletching < research-pending)
