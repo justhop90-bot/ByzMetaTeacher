@@ -13212,6 +13212,16 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+=>
+    (set-strategic-number sn-resource-control ri-fletching)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-fletching)
+    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
+    (set-strategic-number sn-resource-control 0)
+)
+
 ; Feudal Cavalry-Archer Fletching uses a dedicated executor so the
 ; general ranged rule stays below the DE rule-element ceiling.
 (defrule
@@ -13228,16 +13238,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
-    (goal bt-research-ranged-counter-package-goal ri-fletching)
-=>
-    (set-strategic-number sn-resource-control ri-fletching)
-    (release-escrow food)
-    (release-escrow gold)
-    (research ri-fletching)
-    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
-    (set-strategic-number sn-resource-control 0)
-)
-
     (goal bt-research-ranged-counter-package-goal ri-fletching)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
