@@ -1052,7 +1052,11 @@ function validateIdentifiers(sourceText, repoRootPath) {
 
   // These engine-native aliases are not present as named AIRef identifiers.
   // They must therefore be explicitly materialized as local defconst values.
-  const engineSupplements = new Set(["siege-tower", "ri-logistica"]);
+  const engineSupplements = new Set([
+    "siege-tower",
+    "ri-logistica",
+    "ri-elite-varangian-guard",
+  ]);
   const runtimeRejectedAliases = new Map([
     ["arbalester", "arbalest"],
     ["ri-arbalester", "ri-arbalest"],
