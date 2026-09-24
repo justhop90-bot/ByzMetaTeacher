@@ -5311,6 +5311,11 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
       !(
         rule.includes("(goal strategy-goal bt-strategy-flush)") &&
         !rule.includes("(goal bt-castle-commitment-goal 0)")
+      ) &&
+      !(
+        rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+        rule.includes("(build barracks)") &&
+        !rule.includes("(up-compare-goal bt-standing-army-floor-goal")
       ),
   );
   assert.equal(
