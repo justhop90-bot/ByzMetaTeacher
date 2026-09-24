@@ -3232,9 +3232,121 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+  function validateXsChatDataCalls(xsSource) {
+    const calls = [];
+    let cursor = 0;
+
+    while (true) {
+      const callStart = xsSource.indexOf("xsChatData", cursor);
+      if (callStart < 0) break;
+
+      let open = callStart + "xsChatData".length;
+      while (open < xsSource.length && /\\s/.test(xsSource[open])) open++;
+      assert.equal(
+        xsSource[open],
+        "(",
+        "[Telemetry] malformed xsChatData call: missing opening parenthesis",
+      );
+
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+      let topLevelCommas = 0;
+      let close = -1;
+
+      for (let i = open; i < xsSource.length; i += 1) {
+        const ch = xsSource[i];
+
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (ch === "\\\\") {
+            escaped = true;
+          } else if (ch === '"') {
+            inString = false;
+          }
+          continue;
+        }
+
+        if (ch === '"') {
+          inString = true;
+          continue;
+        }
+
+        if (ch === "(") {
+          depth += 1;
+        } else if (ch === ")") {
+          depth -= 1;
+          if (depth === 0) {
+            close = i;
+            break;
+          }
+          assert.ok(
+            depth > 0,
+            "[Telemetry] malformed xsChatData call: unexpected closing parenthesis",
+          );
+        } else if (ch === "," && depth === 1) {
+          topLevelCommas += 1;
+        }
+      }
+
+      assert.notEqual(
+        close,
+        -1,
+        "[Telemetry] malformed xsChatData call: unterminated argument list",
+      );
+      assert.equal(
+        topLevelCommas,
+        0,
+        "[Telemetry] malformed xsChatData call: telemetry output must pass exactly one argument",
+      );
+
+      const argument = xsSource.slice(open + 1, close).trim();
+      assert.ok(
+        argument.length > 0,
+        "[Telemetry] malformed xsChatData call: empty argument list",
+      );
+      assert.ok(
+        argument.startsWith('"'),
+        "[Telemetry] malformed xsChatData call: first argument must be a string expression",
+      );
+
+      let after = close + 1;
+      while (after < xsSource.length && /\\s/.test(xsSource[after])) after++;
+      assert.equal(
+        xsSource[after],
+        ";",
+        "[Telemetry] malformed xsChatData call: call must terminate with semicolon",
+      );
+
+      calls.push(argument);
+      cursor = after + 1;
+    }
+
+    assert.equal(
+      calls.length,
+      2,
+      "[Telemetry] expected exactly two xsChatData calls: event line and overflow line",
+    );
+    return calls;
+  }
+
+  const xsChatDataCalls = validateXsChatDataCalls(xs);
   assert.ok(
-    (xs.match(/xsChatData\([^\n]*,\s*[^\n]*\)/g) || []).length >= 2,
-    "[Telemetry] XS telemetry output must use the two-argument xsChatData signature",
+    xsChatDataCalls[0].includes("BASILISK | PREEMPT | event=") &&
+      xsChatDataCalls[0].includes("seq=") &&
+      xsChatDataCalls[0].includes("owner=") &&
+      xsChatDataCalls[0].includes("flags=") &&
+      xsChatDataCalls[0].includes("time="),
+    "[Telemetry] event output must be one complete telemetry line",
+  );
+  assert.ok(
+    xsChatDataCalls[1].includes("BASILISK | PREEMPT | FIFO-OVERFLOW count="),
+    "[Telemetry] overflow output must be one complete line",
+  );
+  assert.ok(
+    !xsChatDataCalls.some((call) => /%[df]/.test(call)),
+    "[Telemetry] telemetry xsChatData must not use format placeholders",
   );
   assert.ok(xs.includes("while(count > 0 && processed < 4)"), "[Telemetry] drain is not bounded");
   assert.ok(xs.includes("xsSetGoal(BT_RING_READ"), "[Telemetry] XS drain does not advance read head");
