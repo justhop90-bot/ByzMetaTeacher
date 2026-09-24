@@ -100,8 +100,30 @@ for (const row of rows) {
   const actual = Number(row.next_attack_actual);
   const standingArmy = Number(row.standing_army_demand);
   const resultTime = Number(row.result_time);
+  const startTime = Number(row.start_time);
 
-  if (![startBuildings, endBuildings, recordedDelta, relativeForce, timerSeconds, due, actual, standingArmy, resultTime].every(Number.isFinite)) {
+  const requiredNumericFields = {
+    start_time: row.start_time,
+    result_time: row.result_time,
+    next_attack_due: row.next_attack_due,
+    start_buildings: row.start_buildings,
+    end_buildings: row.end_buildings,
+    delta: row.delta,
+    relative_force: row.relative_force,
+    attack_timer_seconds: row.attack_timer_seconds,
+    next_attack_actual: row.next_attack_actual,
+    standing_army_demand: row.standing_army_demand,
+  };
+  const blankFields = Object.entries(requiredNumericFields)
+    .filter(([, value]) => String(value).trim() === "")
+    .map(([key]) => key);
+
+  if (blankFields.length > 0) {
+    failures.push(row.test + ": missing telemetry fields: " + blankFields.join(", "));
+    continue;
+  }
+
+  if (![startBuildings, endBuildings, recordedDelta, relativeForce, timerSeconds, due, actual, standingArmy, startTime, resultTime].every(Number.isFinite)) {
     failures.push(row.test + ": non-numeric telemetry field");
     continue;
   }
