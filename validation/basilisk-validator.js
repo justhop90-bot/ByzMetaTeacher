@@ -3175,16 +3175,26 @@ function validateImperialSiegeExit(rules, sourceText) {
   for (const demand of [
     "bt-research-siege-package-goal",
     "bt-trebuchet-demand-goal",
+    "bt-trebuchet-target-goal",
     "bt-ram-demand-goal",
-    "bt-mangonel-demand-goal",
-    "bt-onager-demand-goal",
     "bt-bombard-cannon-demand-goal",
-    "bt-scorpion-demand-goal",
-    "bt-siege-tower-demand-goal",
   ]) {
     assert.ok(
       abort.includes("(set-goal " + demand + " 0)"),
-      "[Imperial siege] collapse exit must clear child demand " + demand,
+      "[Imperial siege] collapse exit must clear package-owned demand " + demand,
+    );
+  }
+
+  for (const demand of [
+    "bt-mangonel-demand-goal",
+    "bt-onager-demand-goal",
+    "bt-scorpion-demand-goal",
+    "bt-scorpion-ballistics-demand-goal",
+    "bt-siege-tower-demand-goal",
+  ]) {
+    assert.ok(
+      !abort.includes("(set-goal " + demand + " 0)"),
+      "[Imperial siege] collapse exit must not cancel generic independently-owned demand " + demand,
     );
   }
 }
