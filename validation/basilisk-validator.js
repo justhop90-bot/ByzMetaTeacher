@@ -3018,19 +3018,39 @@ function validateResourceModeArbiter(rules) {
     modeWriters.length >= 20,
     "[Resource mode] expected the layered mode arbitration writers",
   );
+  const explicitOverrides = modeWriters.filter(
+    ({ rule }) => !rule.includes("(goal bt-resource-mode-goal 0)"),
+  );
+  assert.equal(
+    explicitOverrides.length,
+    1,
+    "[Resource mode] only the documented Imperial-prerequisite override may bypass the mode-0 idle gate",
+  );
+  assert.ok(
+    explicitOverrides[0].rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))") &&
+      explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))") &&
+      explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))") &&
+      explicitOverrides[0].rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)"),
+    "[Resource mode] the mode-0 exception must be the documented Imperial-prerequisite override and must explicitly yield to all P0 crises",
+  );
+
   for (const { rule, index } of modeWriters) {
     assert.ok(
       index > resetIndex,
       "[Resource mode] mode writer must execute after the continuous reset",
     );
-    assert.ok(
-      rule.includes("(goal bt-resource-mode-goal 0)"),
-      "[Resource mode] every mode writer must be gated by idle mode 0; ownership is recomputed each pass",
-    );
+    if (!rule.includes("(goal bt-resource-mode-goal 0)")) continue;
   }
 
   const food = rules.findIndex((rule) =>
     rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-food-crisis)"),
+  );
+  const gold = rules.findIndex((rule) =>
+    rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-gold-crisis)"),
+  );
+  const wood = rules.findIndex((rule) =>
+    rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-wood-crisis)"),
   );
   const castleBank = rules.findIndex((rule) =>
     rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)"),
@@ -3038,8 +3058,14 @@ function validateResourceModeArbiter(rules) {
   const baseMode = rules.findIndex((rule) =>
     rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-trash)"),
   );
-  assert.ok(food > resetIndex && castleBank > food && baseMode > castleBank,
-    "[Resource mode] source order no longer encodes the intended P0 -> bank -> base priority");
+  assert.ok(
+    food > resetIndex &&
+      gold > food &&
+      wood > gold &&
+      castleBank > wood &&
+      baseMode > castleBank,
+    "[Resource mode] source order no longer encodes P0 food -> gold -> wood -> bank -> base priority",
+  );
 }
 
 function validateAttackResultLifecycle(rules) {
@@ -3094,7 +3120,7 @@ function validateAttackResultLifecycle(rules) {
   assert.ok(
     resultRules.some(
       (rule) =>
-        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal == 0)") &&
+        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal <= 0)") &&
         rule.includes("(up-compare-goal bt-relative-force-goal < 0)") &&
         rule.includes("(set-goal bt-standing-army-demand-goal 1)") &&
         rule.includes("(enable-timer bt-attack-timer 300)"),
@@ -3104,12 +3130,12 @@ function validateAttackResultLifecycle(rules) {
   assert.ok(
     resultRules.some(
       (rule) =>
-        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal == 0)") &&
+        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal <= 0)") &&
         rule.includes("(up-compare-goal bt-relative-force-goal >= 0)") &&
         rule.includes("bt-attack-result-reassess") &&
         rule.includes("(enable-timer bt-attack-timer 180)"),
     ),
-    "[Attack result] zero-damage parity path is missing",
+    "[Attack result] non-positive-damage parity path is missing",
   );
 }
 
@@ -3220,6 +3246,21 @@ function validateNoDuplicateRules(rules) {
 }
 
 function validateBackoffTimerUniqueness(rules) {
+  const expectedTimers = [
+    "bt-research-town-center-failure-backoff-timer",
+    "bt-research-mill-failure-backoff-timer",
+    "bt-research-lumber-camp-failure-backoff-timer",
+    "bt-research-mining-camp-failure-backoff-timer",
+    "bt-research-blacksmith-failure-backoff-timer",
+    "bt-research-university-failure-backoff-timer",
+    "bt-research-castle-failure-backoff-timer",
+    "bt-research-barracks-failure-backoff-timer",
+    "bt-research-archery-range-failure-backoff-timer",
+    "bt-research-stable-failure-backoff-timer",
+    "bt-research-siege-workshop-failure-backoff-timer",
+    "bt-research-monastery-failure-backoff-timer",
+    "bt-research-age-failure-backoff-timer",
+  ];
   const groups = new Map();
   for (const rule of rules) {
     const match = rule.match(
@@ -3231,11 +3272,17 @@ function validateBackoffTimerUniqueness(rules) {
     if (!reset) continue;
     groups.set(timer, (groups.get(timer) || 0) + 1);
   }
-  for (const [timer, count] of groups) {
+
+  assert.equal(
+    groups.size,
+    expectedTimers.length,
+    "[Retry fairness] expected exactly " + expectedTimers.length + " capability-local failure-backoff expiry owners; found " + groups.size,
+  );
+  for (const timer of expectedTimers) {
     assert.equal(
-      count,
+      groups.get(timer),
       1,
-      "[Retry fairness] failure-backoff timer must have one expiry owner: " + timer,
+      "[Retry fairness] failure-backoff timer must have exactly one expiry owner: " + timer,
     );
   }
 }
