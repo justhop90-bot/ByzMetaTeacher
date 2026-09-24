@@ -380,7 +380,6 @@
 ; Gold Shaft Mining economic research owns a persistent Castle BOOM demand.
 ; It remains separate from Gold Mining because Shaft Mining has its own
 ; strategic owner and must preserve demand across failed research starts.
-(defconst bt-gold-shaft-mining-demand-goal 687)
 ; Castle Cataphract research uses persistent premium demand plus capability-local bounded cooldown.
 
 ; University capability state.
@@ -6998,60 +6997,20 @@ sn-stone-gatherer-percentage == 0)))))
 ;================================================================
 ; 14J. GOLD SHAFT MINING DEMAND / RESEARCH
 ;================================================================
+; 14J. GOLD SHAFT MINING / DIRECT RESEARCH
+;================================================================
 ;
-; Gold Shaft Mining has a real strategic owner now.  The demand state is
-; deliberately separate from the research claim so a failed engine action
-; does not become a false strategic cancellation.
-;
-; Strategic witness:
-;   Castle BOOM
-;   + Gold Mining complete
-;   + TC2 matured
-;   + Imperial preparation is not currently taking precedence
-;
-; Demand persists through temporary resource contention and provider loss.
-; The Mining Camp claim remains execution state; failure cooldown is local to
-; this capability until the strategic demand disappears.
+; Gold Shaft Mining is a direct Castle-BOOM opportunity. The engine and
+; existing research claim/backoff state already answer whether this action
+; is currently legal, so no persistent demand mirror is required.
 (defrule
-    (goal bt-gold-shaft-mining-demand-goal 0)
     (current-age == castle-age)
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-gold-mining >= research-complete)
     (building-type-count-total town-center >= 2)
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (up-research-status c: ri-gold-shaft-mining < research-complete)
-=>
-    (set-goal bt-gold-shaft-mining-demand-goal 1)
-)
-
-; Strategic invalidation only.  Do not cancel because the Mining Camp is
-; temporarily absent or resources are temporarily insufficient.
-(defrule
-    (goal bt-gold-shaft-mining-demand-goal 1)
-    (goal bt-research-mining-camp-claim-goal 0)
-    (or
-        (current-age > castle-age)
-        (or
-            (not (goal strategy-goal bt-strategy-boom))
-            (or
-                (up-research-status c: ri-gold-mining < research-complete)
-                (or
-                    (can-research-with-escrow imperial-age)
-                    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-                )
-            )
-        )
-    )
-=> 
-    (set-goal bt-gold-shaft-mining-demand-goal 0)
-)
-
-; Execution is reliability-owned.  The strategic demand above is the only
-; policy witness this provider consumes; feasibility/claim/package gates
-; remain engine-execution constraints.
-(defrule
-    (goal bt-gold-shaft-mining-demand-goal 1)
+    (up-research-status c: ri-gold-shaft-mining == research-available)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)
     (strategic-number sn-resource-control == 0)
     (building-type-count mining-camp >= 1)
@@ -7066,13 +7025,12 @@ sn-stone-gatherer-percentage == 0)))))
     (set-strategic-number sn-resource-control 0)
 )
 
-; research-complete is the terminal witness for the Gold Shaft Mining claim.
+; research-complete is the terminal world-state witness.
 (defrule
     (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
     (up-research-status c: ri-gold-shaft-mining == research-complete)
 =>
     (set-goal bt-research-mining-camp-claim-goal 0)
-    (set-goal bt-gold-shaft-mining-demand-goal 0)
 )
 
 ;----------------------------------------------------------------
@@ -7086,7 +7044,7 @@ sn-stone-gatherer-percentage == 0)))))
     (set-goal bt-research-mining-camp-claim-goal 0)
 )
 
-;================================================================
+
 (defrule
     (current-age >= feudal-age)
     (goal strategy-goal bt-strategy-boom)
