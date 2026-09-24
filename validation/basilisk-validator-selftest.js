@@ -221,10 +221,11 @@ try {
           expr.args[1].value === "0") {
         return ["CASTLE_COMMITMENT_ACTIVE"];
       }
-      if (expr.head === "not" && hasNegatedFact({ args: [expr], ...rule }, "goal", [
-        "bt-resource-mode-goal",
-        "bt-resource-mode-castle-bank",
-      ])) {
+      if (expr.head === "not" &&
+          expr.args[0]?.kind === "expression" &&
+          expr.args[0].head === "goal" &&
+          expr.args[0].args[0]?.value === "bt-resource-mode-goal" &&
+          expr.args[0].args[1]?.value === "bt-resource-mode-castle-bank") {
         return ["CASTLE_BANK_ACTIVE"];
       }
       if (expr.head === "building-type-count-total" &&
