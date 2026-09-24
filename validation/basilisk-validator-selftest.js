@@ -1279,6 +1279,136 @@ try {
         ")\n",
     },
     {
+      name: "villager-hygiene-first-lumber-pending-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count-total lumber-camp == 0)",
+          "(up-pending-objects c: lumber-camp == 0)",
+        ],
+        (rule) =>
+          rule.replace("    (up-pending-objects c: lumber-camp == 0)\n", ""),
+        "first lumber pending guard",
+      ),
+    },
+    {
+      name: "villager-hygiene-first-mining-pending-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count-total mining-camp == 0)",
+          "(up-pending-objects c: mining-camp == 0)",
+        ],
+        (rule) =>
+          rule.replace("    (up-pending-objects c: mining-camp == 0)\n", ""),
+        "first mining pending guard",
+      ),
+    },
+    {
+      name: "villager-hygiene-lumber-radius-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(up-modify-sn sn-lumber-camp-max-distance c:+ bt-dropsite-radius-step)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (up-modify-sn sn-lumber-camp-max-distance c:+ bt-dropsite-radius-step)\n",
+            "",
+          ),
+        "adaptive lumber radius",
+      ),
+    },
+    {
+      name: "villager-hygiene-mining-radius-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(up-modify-sn sn-mining-camp-max-distance c:+ bt-dropsite-radius-step)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (up-modify-sn sn-mining-camp-max-distance c:+ bt-dropsite-radius-step)\n",
+            "",
+          ),
+        "adaptive mining radius",
+      ),
+    },
+    {
+      name: "villager-hygiene-lumber-adjacent-override-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(dropsite-min-distance wood > 8)",
+          "(set-strategic-number sn-allow-adjacent-dropsites 1)",
+          "(build lumber-camp)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-strategic-number sn-allow-adjacent-dropsites 1)\n",
+            "",
+          ),
+        "scoped lumber adjacent override",
+      ),
+    },
+    {
+      name: "villager-hygiene-mining-adjacent-override-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(dropsite-min-distance gold > 8)",
+          "(set-strategic-number sn-allow-adjacent-dropsites 1)",
+          "(build mining-camp)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-strategic-number sn-allow-adjacent-dropsites 1)\n",
+            "",
+          ),
+        "scoped mining adjacent override",
+      ),
+    },
+    {
+      name: "villager-hygiene-dropsite-restore-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-dropsite-placement-claim-goal 1)",
+          "(set-strategic-number sn-allow-adjacent-dropsites 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-strategic-number sn-allow-adjacent-dropsites 0)\n",
+            "",
+          ),
+        "dropsite override restoration",
+      ),
+    },
+    {
+      name: "villager-hygiene-dropsite-separation-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)",
+          "(set-strategic-number sn-allow-adjacent-dropsites 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)\n",
+            "",
+          ),
+        "dropsite normal separation restoration",
+      ),
+    },
+    {
       name: "villager-hygiene-wood-dropsite-regression",
       expected: "[Villager hygiene]",
       source: baseline.replace(
@@ -2296,6 +2426,14 @@ try {
     "villager-hygiene-house-builder-reset-regression",
     "villager-hygiene-house-fallback-can-build-regression",
     "villager-hygiene-local-house-placement-rejected",
+    "villager-hygiene-first-lumber-pending-regression",
+    "villager-hygiene-first-mining-pending-regression",
+    "villager-hygiene-lumber-radius-regression",
+    "villager-hygiene-mining-radius-regression",
+    "villager-hygiene-lumber-adjacent-override-regression",
+    "villager-hygiene-mining-adjacent-override-regression",
+    "villager-hygiene-dropsite-restore-regression",
+    "villager-hygiene-dropsite-separation-regression",
     "backoff-expiry-owner-missing-rejected",
     "siege-abort-cancels-independent-demand-rejected",
   ]);
