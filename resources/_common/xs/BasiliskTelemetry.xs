@@ -13,7 +13,7 @@ const int BT_SLOT_FLAGS_BASE = 755;
 const int BT_SLOT_TIME_BASE = 759;
 const int BT_SLOT_SEQUENCE_BASE = 763;
 
-string basiliskTelemetryEventName(int eventType) {
+string basiliskTelemetryEventName(int eventType = 0) {
     if(eventType == 1) return("PREEMPT-BEGIN");
     if(eventType == 2) return("DEFENSIVE-COUNTER");
     if(eventType == 3) return("PREEMPT-END");

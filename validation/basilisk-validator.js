@@ -3241,6 +3241,20 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
 
+  const xsFunctionDeclarations = [
+    ...xs.matchAll(/\b(?:mutable\s+)?(?:void|int|float|string|bool|vector)\s+[A-Za-z_][A-Za-z0-9_]*\s*\(([^)]*)\)/g),
+  ];
+  for (const match of xsFunctionDeclarations) {
+    const parameters = match[1].trim();
+    if (parameters.length === 0) continue;
+    for (const parameter of parameters.split(",")) {
+      assert.ok(
+        parameter.includes("="),
+        "[Telemetry XS] every declared function parameter must have a default value: " + parameter.trim(),
+      );
+    }
+  }
+
   const deployXsPath = path.join(
     repoRootPath,
     "resources",
