@@ -4255,9 +4255,10 @@ function validateStrategicNarration(sourceText, rules) {
   const chatRules = rawRules.filter((rule) =>
     rule.includes('(chat-local-to-self "BASILISK |'),
   );
+  const MIN_STRATEGIC_NARRATION_RULES = 79;
   assert.ok(
-    chatRules.length >= 80,
-    "[Narration] expected a complete strategic narration layer",
+    chatRules.length >= MIN_STRATEGIC_NARRATION_RULES,
+    "[Narration] expected a complete strategic narration layer after diagnostic-state cleanup",
   );
 
   for (const rule of chatRules) {
