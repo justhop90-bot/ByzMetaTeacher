@@ -1426,13 +1426,17 @@
     (goal bt-varangian-demand-goal 1)
     (or
         (current-age < castle-age)
-        (up-compare-goal bt-cavalry-counter-level-goal < 2)
-        (and
-            (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
-            (or
-                (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
-                (up-research-status c: ri-logistica == research-complete)
-                (goal bt-research-cataphract-package-goal ri-logistica)
+        (or
+            (up-compare-goal bt-cavalry-counter-level-goal < 2)
+            (and
+                (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
+                (or
+                    (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
+                    (or
+                        (up-research-status c: ri-logistica == research-complete)
+                        (goal bt-research-cataphract-package-goal ri-logistica)
+                    )
+                )
             )
         )
     )
@@ -2955,9 +2959,13 @@
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-castle-power)
             )
-            (unit-type-count villager >= 36)
-            (food-amount >= 500)
-            (gold-amount >= 200)
+            (and
+                (unit-type-count villager >= 36)
+                (and
+                    (food-amount >= 500)
+                    (gold-amount >= 200)
+                )
+            )
         )
     )
 =>
@@ -5731,8 +5739,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (not (goal strategy-goal bt-strategy-boom))
-        (not (can-afford-building town-center-foundation))
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
@@ -5755,8 +5765,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (not (goal strategy-goal bt-strategy-boom))
-        (not (can-afford-building town-center-foundation))
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
@@ -12526,9 +12538,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-imperial-siege-package-goal 1)
     (or
         (players-building-count target-player == 0)
-        (not (player-in-game target-player))
-        (current-age < imperial-age)
-        (building-type-count castle < 1)
+        (or
+            (not (player-in-game target-player))
+            (or
+                (current-age < imperial-age)
+                (building-type-count castle < 1)
+            )
+        )
     )
 =>
     (set-goal bt-trebuchet-demand-goal 0)
@@ -12598,13 +12614,15 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-ram-demand-goal 1)
     (or
         (players-building-count target-player == 0)
-        (and
-            (current-age == castle-age)
-            (goal attack-goal 0)
-        )
-        (and
-            (current-age >= imperial-age)
-            (goal bt-imperial-siege-package-goal 0)
+        (or
+            (and
+                (current-age == castle-age)
+                (goal attack-goal 0)
+            )
+            (and
+                (current-age >= imperial-age)
+                (goal bt-imperial-siege-package-goal 0)
+            )
         )
     )
 =>
