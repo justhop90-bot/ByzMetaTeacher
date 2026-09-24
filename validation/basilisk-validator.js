@@ -3140,6 +3140,36 @@ function validateAttackResultLifecycle(rules) {
   );
 }
 
+function validateImperialSiegeAttackOrdering(rules) {
+  const attackIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(timer-triggered bt-attack-timer)") &&
+      rule.includes("(current-age >= feudal-age)") &&
+      rule.includes("(players-building-count any-enemy > 0)") &&
+      rule.includes("(set-goal attack-goal 1)") &&
+      rule.includes("(attack-now)"),
+  );
+  const abortIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal bt-imperial-siege-package-goal 1)") &&
+      rule.includes("(military-population < bt-imperial-siege-abort-army-floor)") &&
+      rule.includes("(set-goal bt-imperial-siege-package-goal 0)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 1)"),
+  );
+  assert.ok(
+    attackIndex >= 0,
+    "[Imperial siege] attack opener not found for collapse-order validation",
+  );
+  assert.ok(
+    abortIndex >= 0,
+    "[Imperial siege] collapse rule not found for collapse-order validation",
+  );
+  assert.ok(
+    abortIndex < attackIndex,
+    "[Imperial siege] army-collapse abort must execute before attack authorization",
+  );
+}
+
 function validateImperialSiegeExit(rules, sourceText) {
   const nums = new Map(
     [...sourceText.matchAll(/\(defconst\s+([A-Za-z0-9_-]+)\s+(-?\d+)\)/g)]
@@ -5392,6 +5422,7 @@ validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
 validateImperialSiegeExit(rules, source);
+validateImperialSiegeAttackOrdering(rules);
 validateTcScaledFarms(rules);
 validateNoDuplicateRules(rules);
 validateBackoffTimerUniqueness(rules);
