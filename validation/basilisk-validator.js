@@ -5187,18 +5187,18 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     );
   }
 
-  const standingTrainRules = rules.filter(
+  const legacyStandaloneStandingTrainRules = rules.filter(
     (rule) =>
       rule.includes("(goal bt-standing-army-demand-goal 1)") &&
       rule.includes("(can-train ") &&
       rule.includes("(goal bt-castle-commitment-goal 0)") &&
-      rule.includes("(goal strategy-goal bt-strategy-flush)") &&
-      rule.includes("(or"),
+      !rule.includes("(goal strategy-goal bt-strategy-flush)") &&
+      !rule.includes("(or"),
   );
   assert.equal(
-    standingTrainRules.length,
+    legacyStandaloneStandingTrainRules.length,
     0,
-    "[BOOM] no standing-role train rule may expose the obsolete standalone Castle-bank gate",
+    "[BOOM] obsolete standalone Castle-bank standing-train gate remains",
   );
 
   const flushAwareStandingTrainRules = rules.filter(
