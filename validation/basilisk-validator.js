@@ -5396,7 +5396,7 @@ function validateBoomPaperReplay(rules, sourceText) {
   );
 
   policy.tcStage = "foundation-active";
-  capitalArbitration();
+  demandStanding();
   assert.equal(
     policy.standingDemand,
     1,
