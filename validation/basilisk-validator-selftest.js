@@ -1378,7 +1378,7 @@ try {
           baseline.slice(second + maturityWitness.length)
         );
       })(),
-    }
+    },
     {
       name: "narration-verbosity-gate-regression",
       expected: "[Narration]",
