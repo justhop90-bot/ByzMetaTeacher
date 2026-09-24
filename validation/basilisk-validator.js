@@ -3310,12 +3310,17 @@ function validateResourceModeArbiter(rules) {
     "[Resource mode] only the documented Imperial-prerequisite override may bypass the mode-0 idle gate",
   );
   assert.ok(
-    explicitOverrides[0].rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+    explicitOverrides[0].rule.includes("(current-age == castle-age)") &&
+      explicitOverrides[0].rule.includes("(building-type-count-total castle < 1)") &&
+      explicitOverrides[0].rule.includes("(not (can-research-with-escrow imperial-age))") &&
+      explicitOverrides[0].rule.includes("(building-type-count-total monastery >= 1)") &&
+      explicitOverrides[0].rule.includes("(building-type-count-total university >= 1)") &&
+      explicitOverrides[0].rule.includes("(building-type-count-total siege-workshop >= 1)") &&
       explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))") &&
       explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))") &&
       explicitOverrides[0].rule.includes("(not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))") &&
       explicitOverrides[0].rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)"),
-    "[Resource mode] the mode-0 exception must be the documented Imperial-prerequisite override and must explicitly yield to all P0 crises",
+    "[Resource mode] the mode-0 exception must be the live Imperial-prerequisite override and must explicitly yield to all P0 crises",
   );
 
   for (const { rule, index } of modeWriters) {
