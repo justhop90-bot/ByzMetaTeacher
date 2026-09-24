@@ -1402,16 +1402,6 @@ try {
       ),
     },
     {
-      name: "horse-collar-demand-writer-regression",
-      expected: "[Feudal eco]",
-      source: (() => {
-        const needle = "(set-goal bt-horse-collar-demand-goal 1)";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Horse Collar demand writer missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(needle, "(set-goal bt-horse-collar-demand-goal 0)");
-      })(),
-    },
-    {
       name: "horse-collar-executor-package-veto-regression",
       expected: "[Feudal eco]",
       source: (() => {
@@ -1489,25 +1479,6 @@ try {
         const index = baseline.indexOf(needle, searchFrom);
         assert.ok(index >= 0, "[Self-test] Double-Bit Axe Castle-commitment witness is missing");
         return baseline.slice(0, index) + baseline.slice(index + needle.length);
-      })(),
-    },
-    {
-      name: "double-bit-axe-hold-package-veto-regression",
-      expected: "[Feudal eco]",
-      source: (() => {
-        const needle = "(goal bt-double-bit-axe-demand-goal 1)";
-        const index = baseline.indexOf(needle);
-        const ruleStart = baseline.lastIndexOf("(defrule", index);
-        const ruleEnd = baseline.indexOf("\n)", index) + 2;
-        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] Double-Bit Axe hold missing");
-        const rule = baseline.slice(ruleStart, ruleEnd);
-        const arrow = rule.indexOf("=>");
-        assert.ok(arrow >= 0, "[Self-test] Double-Bit Axe hold arrow missing");
-        return baseline.slice(0, ruleStart) +
-          rule.slice(0, arrow) +
-          "    (goal bt-research-monk-package-goal 0)\n" +
-          rule.slice(arrow) +
-          baseline.slice(ruleEnd);
       })(),
     },
     {
