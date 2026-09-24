@@ -12892,6 +12892,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 =>
     (disable-timer bt-attack-gather-watchdog-timer)
     (up-reset-attack-now)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
     (set-goal attack-goal 0)
     (enable-timer bt-attack-timer 180)
 )
@@ -12995,6 +12997,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 
     ; Recall military forces.
     (up-retreat-now)
+
+    ; An emergency retreat is a failed attack result until the army regroups.
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
 
     ; End the attack cycle.
     (set-goal attack-goal 0)
