@@ -4918,11 +4918,24 @@ function validateLifecycleAnchors(sourceText, rules) {
   );
 }
 
-if (process.argv.includes("--dump-semantic-rules")) {
+const semanticDumpIndex = process.argv.indexOf("--dump-semantic-rules");
+if (semanticDumpIndex !== -1) {
+  const outputPath = process.argv[semanticDumpIndex + 1];
+  assert.ok(
+    outputPath,
+    "[Semantic dump] --dump-semantic-rules requires an output path",
+  );
   const semanticRules = parseStrictTopLevelForms(source).filter(
     (form) => form.head === "defrule",
   );
-  console.log(JSON.stringify(semanticRules));
+  fs.writeFileSync(outputPath, JSON.stringify(semanticRules), "utf8");
+  console.log(
+    JSON.stringify({
+      status: "PASS",
+      semanticRuleCount: semanticRules.length,
+      outputPath,
+    }),
+  );
   process.exit(0);
 }
 
