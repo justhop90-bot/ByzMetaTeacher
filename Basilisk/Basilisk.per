@@ -5959,62 +5959,34 @@ town-center >= 2)))))
     )
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-commitment-goal 0)
-    (not
+    (nand
         (and
-            (current-age == feudal-age)
+            (up-research-status c: ri-horse-collar == research-available)
             (and
-                (up-research-status c: ri-horse-collar == research-available)
-                (and
-                    (building-type-count mill >= 1)
-                    (or
-                        (can-research-with-escrow ri-horse-collar)
-                        (goal bt-research-mill-claim-goal ri-horse-collar)
-                    )
+                (building-type-count mill >= 1)
+                (or
+                    (can-research-with-escrow ri-horse-collar)
+                    (goal bt-research-mill-claim-goal ri-horse-collar)
                 )
             )
         )
+        (not (current-age == feudal-age))
     )
-    (not
-        (and
-            (current-age == feudal-age)
-            (and
-                (up-research-status c: ri-double-bit-axe == research-available)
-                (and
-                    (food-amount >= bt-double-bit-axe-food-buffer)
-                    (and
-                        (wood-amount >= bt-double-bit-axe-wood-buffer)
-                        (or
-                            (can-research-with-escrow ri-double-bit-axe)
-                            (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
-                        )
-                    )
-                )
-            )
-        )
-    )
-    (not
+    (nand
         (and
             (up-research-status c: ri-double-bit-axe == research-available)
             (and
                 (food-amount >= bt-double-bit-axe-food-buffer)
                 (and
                     (wood-amount >= bt-double-bit-axe-wood-buffer)
-                    (and
-                        (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
-                        (and
-                            (strategic-number sn-resource-control == 0)
-                            (and
-                                (building-type-count lumber-camp >= 1)
-                                (and
-                                    (can-research-with-escrow ri-double-bit-axe)
-                                    (goal bt-research-lumber-camp-claim-goal 0)
-                                )
-                            )
-                        )
+                    (or
+                        (can-research-with-escrow ri-double-bit-axe)
+                        (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
                     )
                 )
             )
         )
+        (not (current-age == feudal-age))
     )
     (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
 =>
