@@ -294,7 +294,13 @@
 ;   0 = no active execution failure
 ;   1 = Blacksmith construction failed
 ;   2 = Market construction failed
+(defconst bt-castle-prereq-failure-history-goal 60)
+(defconst bt-castle-prereq-failure-blacksmith 1)
+(defconst bt-castle-prereq-failure-market 2)
+(defconst bt-imperial-prereq-failure-history-goal 62)
 (defconst bt-imperial-prereq-backoff-goal 65)
+(defconst bt-imperial-prereq-failure-siege 1)
+(defconst bt-imperial-prereq-failure-university 2)
 (defconst bt-castle-prereq-manual-reset-trigger 60)
 
 ; Construction-failure reason retained as execution history.
@@ -395,6 +401,10 @@
 
 (defconst bt-farm-transition-reserve-goal 602)
 (defconst bt-farm-depleted-reserve-goal 603)
+(defconst bt-farm-demand-low 0)
+(defconst bt-farm-demand-medium 1)
+(defconst bt-farm-demand-high 2)
+(defconst bt-farm-demand-very-high 3)
 
 
 (defconst bt-standing-army-floor-goal 513)
@@ -446,6 +456,7 @@
 
 (defconst bt-siege-tower-wall-class 927)
 (defconst bt-siege-tower-payload-min 6)
+(defconst bt-siege-tower-max-wall-attempts 3)
 (defconst bt-siege-tower-last-wall-attempt 2)
 (defconst bt-siege-tower-failure-retry-cap 3)
 (defconst bt-siege-tower-wall-probe-interval 60)
@@ -528,6 +539,7 @@
 ; Once the mature BOOM/Castle-Power trigger earns the Castle project, tactical
 ; FLUSH/infantry changes must not withdraw that finite capability before completion.
 (defconst bt-castle-mature-commitment-goal 725)
+(defconst bt-castle-cataphract-failure-history-goal 586)
 (defconst bt-castle-cataphract-backoff-goal 588)
 (defconst bt-castle-cataphract-claim 589)
 (defconst bt-castle-cataphract-watchdog-timer 36)
@@ -662,6 +674,8 @@
 ; Crop Rotation is deliberately gated by a mature completed-farm base instead of generic Imperial affordability.
 (defconst bt-crop-rotation-farm-threshold 12)
 
+(defconst bt-imperial-food 667)
+(defconst bt-imperial-gold 536)
 
 ; Engine-native composite-cost witness goals.
 ; Cost-data commands require extended goals 41-508 and write four consecutive
@@ -684,18 +698,22 @@
 (defconst bt-scale-mail-bank-cost-goal 448)
 (defconst bt-scale-mail-bank-delta-food-goal 452)
 (defconst bt-scale-mail-bank-delta-wood-goal 453)
+(defconst bt-scale-mail-bank-delta-stone-goal 454)
 (defconst bt-scale-mail-bank-delta-gold-goal 455)
 (defconst bt-chain-mail-bank-cost-goal 456)
 (defconst bt-chain-mail-bank-delta-food-goal 460)
 (defconst bt-chain-mail-bank-delta-wood-goal 461)
+(defconst bt-chain-mail-bank-delta-stone-goal 462)
 (defconst bt-chain-mail-bank-delta-gold-goal 463)
 (defconst bt-pikeman-bank-cost-goal 464)
 (defconst bt-pikeman-bank-delta-food-goal 468)
 (defconst bt-pikeman-bank-delta-wood-goal 469)
+(defconst bt-pikeman-bank-delta-stone-goal 470)
 (defconst bt-pikeman-bank-delta-gold-goal 471)
 (defconst bt-elite-skirmisher-bank-cost-goal 472)
 (defconst bt-elite-skirmisher-bank-delta-food-goal 476)
 (defconst bt-elite-skirmisher-bank-delta-wood-goal 477)
+(defconst bt-elite-skirmisher-bank-delta-stone-goal 478)
 (defconst bt-elite-skirmisher-bank-delta-gold-goal 479)
 
 ; Double-Bit Axe early-Feudal demand buffers.
@@ -743,8 +761,11 @@
 (defconst bt-farm-feudal-cap 8)
 (defconst bt-farm-castle-cap 14)
 (defconst bt-farm-imperial-cap 24)
+(defconst bt-farm-feudal-emergency-food 150)
 (defconst bt-farm-castle-food-threshold 500)
+(defconst bt-farm-castle-emergency-food 200)
 (defconst bt-farm-imperial-food-threshold 700)
+(defconst bt-farm-build-wood 60)
 (defconst bt-feudal-farm-reserve-villagers 26)
 (defconst bt-feudal-farm-wood-floor 385)
 
@@ -862,6 +883,8 @@
 ; Production-capacity ceilings.
 ;
 ; These are controller tuning values, not engine constants.
+(defconst bt-max-barracks 10)
+(defconst bt-max-ranges 7)
 
 ;================================================================
 ; 2. INITIALIZATION
@@ -984,6 +1007,34 @@
 (defrule
     (true)
 =>
+    (set-goal bt-scout-pressure-demand-goal 0)
+    (set-goal bt-scout-target-player-goal 0)
+    (set-goal bt-castle-commitment-goal 0)
+    (set-goal bt-varangian-demand-goal 0)
+    (set-goal bt-varangian-target-goal 0)
+    (set-goal bt-varangian-fielded-goal 0)
+    (set-goal bt-castle-mature-commitment-goal 0)
+    (set-goal bt-imperial-commitment-goal 0)
+    (set-goal bt-imperial-prereq-demand-goal 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-research-age-failure-backoff-goal 0)
+    (set-goal bt-monastery-backoff-goal 0)
+    (set-goal bt-monk-demand-goal 0)
+    (set-goal bt-monk-target-goal 0)
+    (set-goal bt-imperial-siege-package-goal 0)
+    (set-goal bt-trebuchet-demand-goal 0)
+    (set-goal bt-trebuchet-target-goal 0)
+    (set-goal bt-research-monk-package-goal 0)
+    (set-goal bt-research-monastery-claim-goal 0)
+    (set-goal bt-research-monastery-failure-backoff-goal 0)
+    (disable-self)
+)
+(defrule
+    (true)
+=>
     (set-goal bt-research-town-center-failure-backoff-goal 0)
     (set-goal bt-research-mill-failure-backoff-goal 0)
     (set-goal bt-horse-collar-demand-goal 0)
@@ -1018,12 +1069,23 @@
     (set-goal bt-standing-army-demand-goal 0)
     (set-goal bt-standing-army-infra-goal 0)
     (set-goal bt-standing-army-deficit-goal 0)
+    (set-goal bt-standing-spear-target-goal 0)
+    (set-goal bt-standing-skirm-target-goal 0)
+    (set-goal bt-standing-archer-target-goal 0)
+    (set-goal bt-standing-camel-target-goal 0)
+    (set-goal bt-halberdier-demand-goal 0)
+    (set-goal bt-heavy-camel-demand-goal 0)
+    (set-goal bt-attack-reserve-goal 0)
     (disable-self)
 )
 
 (defrule
     (true)
 =>
+    (set-goal bt-university-demand-goal 0)
+    (set-goal bt-university-backoff-goal 0)
+    (set-goal bt-farm-transition-reserve-goal 2)
+    (set-goal bt-farm-depleted-reserve-goal 3)
     (set-goal bt-mangonel-demand-goal 0)
     (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-onager-demand-goal 0)
@@ -1067,7 +1129,9 @@
 =>
     (set-goal bt-military-siege-workshop-backoff-goal 0)
     (set-goal bt-ram-demand-goal 0)
+    (set-goal bt-scorpion-demand-goal 0)
     (set-goal bt-scorpion-ballistics-demand-goal 0)
+    (set-goal bt-bombard-cannon-demand-goal 0)
     (set-goal bt-bombard-university-backoff-goal 0)
     (set-goal bt-mill-backoff-goal 0)
     (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
@@ -1403,6 +1467,16 @@
     )
 =>
     (set-goal bt-ranged-counter-level-goal 3)
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 4)
+=>
+    
+)
+(defrule
+    (players-unit-type-count any-enemy spearman-line >= 8)
+=>
+    
 )
 (defrule
     (or
@@ -3139,6 +3213,34 @@
 ; meaningful food/gold reserves. It does not force a Castle immediately on
 ; reaching Castle Age and does not create a stone demand before the economy
 ; is ready to carry it.
+(defrule
+    (current-age == castle-age)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (building-type-count-total castle < 1)
+    (or
+        (and
+            (not (can-research-with-escrow imperial-age))
+            (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+        )
+        (and
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
+            (and
+                (unit-type-count villager >= 36)
+                (and
+                    (food-amount >= 500)
+                    (gold-amount >= 200)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
+    (set-goal bt-castle-mature-commitment-goal 1)
+)
 
 ; Withdraw an unclaimed project when the strategic reason disappears.
 ; A real pending Castle foundation is never abandoned by this rule.
@@ -3207,9 +3309,48 @@
 ; the civilization has aged past the original Castle-demand creation window.
 ; Imperial Cataphract recovery reuses the existing Castle project lifecycle after
 ; the civilization has aged past the original Castle-demand creation window.
+(defrule
+    (goal bt-cataphract-demand-goal 1)
+    (goal bt-castle-cataphract-demand-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
+=>
+    (set-goal bt-castle-cataphract-demand-goal 1)
+)
 
 ; Construction failure is temporary execution state. Once the
 ; strategic trigger disappears, the failure-history witness is cleared for future use.
+(defrule
+    (goal bt-castle-cataphract-failure-history-goal 1)
+    (or
+        (current-age >= imperial-age)
+        (or
+        (building-type-count-total castle >= 1)
+        (or
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-flush)
+            )
+        )
+        (or
+        (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-1)
+        (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
+            )
+            )
+            )
+    )
+=>
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
+)
 
 ; Imperial age authority owns the transition once the civilian threshold is
 ; reached. Castle/Cataphract capability state is independent of this age gate.
@@ -8115,6 +8256,28 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; using trigger ID 60.  The event stays pending while another
 ; subsystem owns sn-resource-control, then is acknowledged only after
 ; the reset can safely release the mutex.
+(defrule
+    (event-detected trigger bt-castle-prereq-manual-reset-trigger)
+    (or
+        (up-compare-goal bt-castle-prereq-failure-history-goal != 0)
+        (up-compare-goal bt-imperial-prereq-failure-history-goal != 0)
+    )
+    (strategic-number sn-resource-control == 0)
+=>
+    (acknowledge-event trigger bt-castle-prereq-manual-reset-trigger)
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+    (set-goal bt-blacksmith-repair-backoff-goal 0)
+    (disable-timer bt-blacksmith-repair-watchdog-timer)
+    (disable-timer bt-blacksmith-repair-backoff-timer)
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (disable-timer bt-imperial-prereq-backoff-timer)
+)
 
 ;---------------------------------------------------------------
 ; 15E. CASTLE PREREQUISITE: BLACKSMITH
@@ -8122,6 +8285,21 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; Failed Castle-age feasibility is the demand witness.
 ; The shared resource mutex prevents collision with age/research,
 ; TC, and other capital-consuming systems.
+(defrule
+    (current-age == feudal-age)
+    (goal bt-castle-prereq-failure-history-goal 0)
+    (goal bt-castle-prereq-backoff-goal 0)
+    (not (can-research-with-escrow castle-age))
+    (building-type-count-total blacksmith < 1)
+    (up-pending-objects c: blacksmith == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow blacksmith)
+=>
+    (set-strategic-number sn-resource-control bt-castle-blacksmith-claim)
+    (release-escrow wood)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+    (build blacksmith)
+)
 
 ;---------------------------------------------------------------
 ; CASTLE/IMPERIAL BLACKSMITH CAPABILITY RECOVERY
@@ -8214,6 +8392,22 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; Market is downstream of Blacksmith completion.  If Castle becomes
 ; researchable through Blacksmith + another qualifying Feudal building,
 ; no redundant Market is forced.
+(defrule
+    (current-age == feudal-age)
+    (goal bt-castle-prereq-failure-history-goal 0)
+    (goal bt-castle-prereq-backoff-goal 0)
+    (building-type-count blacksmith >= 1)
+    (not (can-research-with-escrow castle-age))
+    (building-type-count-total market < 1)
+    (up-pending-objects c: market == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow market)
+=>
+    (set-strategic-number sn-resource-control bt-castle-market-claim)
+    (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
+    (release-escrow wood)
+    (build market)
+)
 
 ; Market completion is the world-state witness.
 (defrule
@@ -8230,11 +8424,82 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; 15G. CASTLE CAPABILITY FOR CATAPHRACTS
 ;---------------------------------------------------------------
 
+(defrule
+    ; Package-owned Castle placement. Field control and stone are prerequisites,
+    ; and place-control remains the engine-native placement executor.
+    (goal bt-castle-cataphract-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 1)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (current-age >= imperial-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (strategic-number sn-resource-control == 0)
+    (building-available castle)
+    (can-build-with-escrow castle)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (stone-amount >= bt-forward-castle-stone-floor)
+    (up-compare-goal bt-relative-force-goal >= bt-forward-castle-force-floor)
+    (up-compare-goal bt-attack-reserve-goal >= bt-forward-castle-reserve-floor)
+=>
+    (set-strategic-number sn-resource-control bt-castle-cataphract-claim)
+    (release-escrow stone)
+    (set-strategic-number sn-placement-to-center 0)
+    (set-strategic-number sn-placement-zone-size 5)
+    (set-strategic-number sn-placement-fail-delta 0)
+    (up-set-placement-data target-player -1 c: -6)
+    (up-assign-builders c: castle c: 4)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+    (up-build place-control 0 c: castle)
+    (set-strategic-number sn-placement-to-center 1)
+)
 
 
+(defrule
+    ; Original pre-Imperial Cataphract Castle executor.
+    (goal bt-castle-cataphract-demand-goal 1)
+    (goal bt-imperial-siege-package-goal 0)
+    (goal bt-castle-cataphract-failure-history-goal 0)
+    (goal bt-castle-cataphract-backoff-goal 0)
+    (current-age >= castle-age)
+    (building-type-count-total castle < 1)
+    (up-pending-objects c: castle == 0)
+    (strategic-number sn-resource-control == 0)
+    (building-available castle)
+    (can-build-with-escrow castle)
+=>
+    (set-strategic-number sn-resource-control bt-castle-cataphract-claim)
+    (release-escrow stone)
+    (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+    (build castle)
+)
 
 ; Completed Castle is the actual capability witness.
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (building-type-count castle >= 1)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-mature-commitment-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
 
+(defrule
+    (building-type-count castle >= 1)
+    (goal bt-castle-cataphract-demand-goal 1)
+    (strategic-number sn-resource-control != bt-castle-cataphract-claim)
+=>
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-demand-goal 0)
+    (set-goal bt-castle-mature-commitment-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+)
 
 ;----------------------------------------------------------------
 ; CASTLE CATAPHRACT CONSTRUCTION WATCHDOG
@@ -8249,6 +8514,25 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (disable-timer bt-castle-cataphract-watchdog-timer)
     (up-assign-builders c: castle c: bt-foundation-stall-builder-count)
     (enable-timer bt-castle-cataphract-watchdog-timer bt-castle-cataphract-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-castle-cataphract-claim)
+    (timer-triggered bt-castle-cataphract-watchdog-timer)
+    (up-pending-objects c: castle == 0)
+=>
+    (disable-timer bt-castle-cataphract-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 1)
+    (set-goal bt-castle-cataphract-backoff-goal 1)
+    (enable-timer bt-castle-cataphract-backoff-timer bt-castle-cataphract-backoff-seconds)
+)
+(defrule
+    (goal bt-castle-cataphract-backoff-goal 1)
+    (timer-triggered bt-castle-cataphract-backoff-timer)
+=>
+    (disable-timer bt-castle-cataphract-backoff-timer)
+    (set-goal bt-castle-cataphract-backoff-goal 0)
+    (set-goal bt-castle-cataphract-failure-history-goal 0)
 )
 
 ;---------------------------------------------------------------
@@ -8266,6 +8550,27 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; alternatives are absent it is the deterministic preferred second provider.
 ; If Siege Workshop is not currently buildable, University can claim the same
 ; one-of-three completion path later in the pass.
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-demand-goal 1)
+    (goal bt-imperial-prereq-failure-history-goal 0)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total castle < 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total university >= 1)
+    )
+    (building-type-count-total siege-workshop < 1)
+    (up-pending-objects c: siege-workshop == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow siege-workshop)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-siege-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
+    (build siege-workshop)
+)
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-siege-claim)
@@ -8277,6 +8582,17 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (set-strategic-number sn-resource-control 0)
 )
 
+(defrule
+    (building-type-count siege-workshop >= 1)
+    (goal bt-imperial-prereq-failure-history-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    )
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+)
 
 ;---------------------------------------------------------------
 ; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY FALLBACK
@@ -8284,6 +8600,27 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; University is the alternate second provider. When Monastery or Siege
 ; Workshop already exists, completing University gives the second qualifying
 ; Castle-age building and should immediately satisfy the Imperial prerequisite.
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-demand-goal 1)
+    (goal bt-imperial-prereq-failure-history-goal 0)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total castle < 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total siege-workshop >= 1)
+    )
+    (building-type-count-total university < 1)
+    (up-pending-objects c: university == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow university)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-university-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
+    (build university)
+)
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-university-claim)
@@ -8295,6 +8632,17 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (set-strategic-number sn-resource-control 0)
 )
 
+(defrule
+    (building-type-count university >= 1)
+    (goal bt-imperial-prereq-failure-history-goal 0)
+    (or
+        (strategic-number sn-resource-control == 0)
+        (strategic-number sn-resource-control == bt-imperial-university-claim)
+    )
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
+)
 
 ;---------------------------------------------------------------
 ; 15J. CASTLE -> IMPERIAL PREREQUISITE WATCHDOG
@@ -8326,6 +8674,36 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (up-assign-builders c: market c: bt-foundation-stall-builder-count)
     (enable-timer bt-castle-prereq-watchdog-timer bt-castle-prereq-watchdog-seconds)
 )
+(defrule
+    (strategic-number sn-resource-control == bt-castle-blacksmith-claim)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: blacksmith == 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-failure-history-goal bt-castle-prereq-failure-blacksmith)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-castle-market-claim)
+    (timer-triggered bt-castle-prereq-watchdog-timer)
+    (up-pending-objects c: market == 0)
+=>
+    (disable-timer bt-castle-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-castle-prereq-failure-history-goal bt-castle-prereq-failure-market)
+    (set-goal bt-castle-prereq-backoff-goal 1)
+    (enable-timer bt-castle-prereq-backoff-timer bt-castle-prereq-backoff-seconds)
+)
+(defrule
+    (goal bt-castle-prereq-backoff-goal 1)
+    (timer-triggered bt-castle-prereq-backoff-timer)
+=>
+    (disable-timer bt-castle-prereq-backoff-timer)
+    (set-goal bt-castle-prereq-failure-history-goal 0)
+    (set-goal bt-castle-prereq-backoff-goal 0)
+)
 
 ;----------------------------------------------------------------
 ; IMPERIAL PREREQUISITE CONSTRUCTION WATCHDOG
@@ -8348,6 +8726,36 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (disable-timer bt-imperial-prereq-watchdog-timer)
     (up-assign-builders c: university c: bt-foundation-stall-builder-count)
     (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-siege-claim)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: siege-workshop == 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-failure-history-goal bt-imperial-prereq-failure-siege)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-seconds)
+)
+(defrule
+    (strategic-number sn-resource-control == bt-imperial-university-claim)
+    (timer-triggered bt-imperial-prereq-watchdog-timer)
+    (up-pending-objects c: university == 0)
+=>
+    (disable-timer bt-imperial-prereq-watchdog-timer)
+    (set-strategic-number sn-resource-control 0)
+    (set-goal bt-imperial-prereq-failure-history-goal bt-imperial-prereq-failure-university)
+    (set-goal bt-imperial-prereq-backoff-goal 1)
+    (enable-timer bt-imperial-prereq-backoff-timer bt-imperial-prereq-backoff-seconds)
+)
+(defrule
+    (goal bt-imperial-prereq-backoff-goal 1)
+    (timer-triggered bt-imperial-prereq-backoff-timer)
+=>
+    (disable-timer bt-imperial-prereq-backoff-timer)
+    (set-goal bt-imperial-prereq-failure-history-goal 0)
+    (set-goal bt-imperial-prereq-backoff-goal 0)
 )
 
 ;----------------------------------------------------------------
