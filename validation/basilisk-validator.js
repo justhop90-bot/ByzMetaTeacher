@@ -49,6 +49,7 @@ function stripComments(text) {
       result += ch;
     } else if (ch === ";") {
       inComment = true;
+      result += " ";
     } else {
       result += ch;
     }
