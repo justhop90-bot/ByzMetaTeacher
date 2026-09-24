@@ -4733,6 +4733,87 @@ function validateRangedCounterLifecycle(rules) {
   }
 }
 
+function validateCataphractResearchLifecycle(rules) {
+  const findResearch = (tech) =>
+    rules.find(
+      (rule) =>
+        rule.includes("(research " + tech + ")") &&
+        rule.includes("(goal bt-research-cataphract-package-goal " + tech + ")") &&
+        rule.includes("(can-research-with-escrow " + tech + ")") &&
+        rule.includes("(goal bt-research-castle-claim-goal 0)"),
+    );
+
+  const logistica = findResearch("ri-logistica");
+  assert.ok(logistica, "[Cataphract] Logistica research executor is missing");
+  assert.ok(
+    logistica.includes("(goal bt-cataphract-demand-goal 1)") ||
+      logistica.includes("(goal bt-varangian-demand-goal 1)"),
+    "[Cataphract] Logistica action boundary must retain a live premium-demand witness",
+  );
+  assert.ok(
+    logistica.includes("(players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-2)") &&
+      logistica.includes("(unit-type-count cataphract-line >= bt-cataphract-target-1)"),
+    "[Cataphract] Logistica action boundary must re-check the tier-2 capability witness",
+  );
+
+  const elite = findResearch("ri-elite-cataphract");
+  assert.ok(elite, "[Cataphract] Elite Cataphract research executor is missing");
+  assert.ok(
+    elite.includes("(goal bt-cataphract-demand-goal 1)") &&
+      elite.includes("(players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-3)") &&
+      elite.includes("(unit-type-count cataphract-line >= bt-cataphract-target-2)") &&
+      elite.includes("(up-research-status c: ri-logistica == research-complete)"),
+    "[Cataphract] Elite action boundary must re-check the live tier-3 witness",
+  );
+
+  for (const tech of ["ri-logistica", "ri-elite-cataphract"]) {
+    const completion = rules.find(
+      (rule) =>
+        rule.includes("(goal bt-research-castle-claim-goal " + tech + ")") &&
+        rule.includes("(up-research-status c: " + tech + " == research-complete)") &&
+        rule.includes("(set-goal bt-research-castle-claim-goal 0)"),
+    );
+    assert.ok(completion, "[Cataphract] " + tech + " Castle claim completion reset is missing");
+
+    const watchdog = rules.find(
+      (rule) =>
+        rule.includes("(goal bt-research-castle-claim-goal " + tech + ")") &&
+        rule.includes("(up-research-status c: " + tech + " <= research-available)") &&
+        rule.includes("(set-goal bt-research-castle-failure-backoff-goal " + tech + ")") &&
+        rule.includes("(enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)") &&
+        rule.includes("(set-goal bt-research-castle-claim-goal 0)"),
+    );
+    assert.ok(watchdog, "[Cataphract] " + tech + " Castle failure watchdog is missing");
+  }
+
+  for (const tech of ["ri-logistica", "ri-elite-cataphract"]) {
+    const lossRecovery = rules.find(
+      (rule) =>
+        rule.includes("(goal bt-research-castle-claim-goal " + tech + ")") &&
+        rule.includes("(building-type-count castle == 0)") &&
+        rule.includes("(up-research-status c: " + tech + " <= research-available)") &&
+        rule.includes("(set-goal bt-research-castle-failure-backoff-goal " + tech + ")") &&
+        rule.includes("(set-goal bt-research-castle-claim-goal 0)"),
+    );
+    assert.ok(
+      lossRecovery,
+      "[Cataphract] " + tech + " Castle-loss path must record backoff before releasing the claim",
+    );
+  }
+
+  const release = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-cataphract-package-goal ri-logistica)") &&
+      rule.includes("(up-research-status c: ri-logistica == research-complete)") &&
+      rule.includes("(players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)") &&
+      rule.includes("(set-goal bt-research-cataphract-package-goal 0)"),
+  );
+  assert.ok(
+    release,
+    "[Cataphract] completed Logistica cursor must release when Elite tier is not live",
+  );
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -4881,6 +4962,7 @@ validateLifecycleAnchors(source, rules);
 validateOnagerLifecycle(rules);
 validatePikemanLifecycle(rules);
 validateRangedCounterLifecycle(rules);
+validateCataphractResearchLifecycle(rules);
 validateEliteVarangianResearchCapability(rules);
 validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
