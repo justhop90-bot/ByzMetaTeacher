@@ -5191,12 +5191,14 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     (rule) =>
       rule.includes("(goal bt-standing-army-demand-goal 1)") &&
       rule.includes("(can-train ") &&
-      rule.includes("(goal bt-castle-commitment-goal 0)"),
+      rule.includes("(goal bt-castle-commitment-goal 0)") &&
+      rule.includes("(goal strategy-goal bt-strategy-flush)") &&
+      rule.includes("(or"),
   );
   assert.equal(
     standingTrainRules.length,
     0,
-    "[BOOM] standing-role train rules must use the FLUSH-aware Castle-bank gate",
+    "[BOOM] no standing-role train rule may expose the obsolete standalone Castle-bank gate",
   );
 
   const flushAwareStandingTrainRules = rules.filter(
