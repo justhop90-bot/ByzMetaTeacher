@@ -871,6 +871,8 @@
 ; Engine-native dropsite hygiene: a new camp/mill does not become a
 ; live dropsite until construction completes. This complements the
 ; pending-object guards in the resource refresh rules below.
+; Runtime initialization. Keep engine-policy state separate from diagnostic memory
+; so the initialization rule stays comfortably inside the DE element limit.
 (defrule
     (true)
 =>
@@ -886,6 +888,14 @@
     (set-escrow-percentage gold 30)
     (set-escrow-percentage stone 0)
     (set-goal train-civ-goal 1)
+    (disable-self)
+)
+
+; Diagnostic initialization. Chat telemetry remains chat-local and is not
+; part of gameplay state, but its storage still obeys the engine limit.
+(defrule
+    (true)
+=>
     (set-goal bt-debug-verbosity-goal 1)
     (set-goal bt-debug-last-opening-goal 0)
     (set-goal bt-debug-last-threat-goal 0)
