@@ -3467,7 +3467,7 @@ function validateRushStallFailurePolicy(rules, sourceText) {
 
   assert.ok(
     sourceText.includes(
-      "(set-goal bt-attack-result-goal bt-attack-result-none)\\n    (set-goal bt-rush-stall-latch-goal 0)\\n",
+      "(set-goal bt-attack-result-goal bt-attack-result-none)\n    (set-goal bt-rush-stall-latch-goal 0)\n",
     ),
     "[RUSH stall] stall latch is not initialized to zero in the strategy/threat initialization rule",
   );
