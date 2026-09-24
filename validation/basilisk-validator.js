@@ -4515,6 +4515,42 @@ function validateEliteVarangianResearchCapability(rules) {
     "[Elite Varangian] research must remain escrow-feasibility gated",
   );
 
+  const eliteTargetWriter = rules.find(
+    (rule) =>
+      rule.includes("(current-age >= imperial-age)") &&
+      rule.includes("(up-compare-goal bt-ranged-counter-level-goal < 2)") &&
+      rule.includes("(players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)") &&
+      rule.includes("(goal bt-cataphract-demand-goal 0)") &&
+      rule.includes("(up-research-status c: ri-logistica == research-complete)") &&
+      rule.includes("(set-goal bt-varangian-target-goal bt-varangian-elite-target-level)"),
+  );
+  assert.ok(
+    eliteTargetWriter,
+    "[Elite Varangian] 12-Guard target writer is missing or disconnected from the elite gate",
+  );
+
+  const eliteProducer = rules.find(
+    (rule) =>
+      rule.includes("(train elite-varangian-guard)") &&
+      rule.includes("(can-train-with-escrow elite-varangian-guard)") &&
+      rule.includes("(up-research-status c: ri-elite-varangian-guard == research-complete)"),
+  );
+  assert.ok(
+    eliteProducer,
+    "[Elite Varangian] production must require the completed Elite research state",
+  );
+
+  const regularProducer = rules.find(
+    (rule) =>
+      rule.includes("(train varangian-guard)") &&
+      rule.includes("(can-train-with-escrow varangian-guard)") &&
+      rule.includes("(up-research-status c: ri-elite-varangian-guard < research-pending)"),
+  );
+  assert.ok(
+    regularProducer,
+    "[Elite Varangian] regular production must stop once Elite research is pending",
+  );
+
   const completion = rules.find(
     (rule) =>
       rule.includes("(goal bt-research-barracks-claim-goal ri-elite-varangian-guard)") &&
