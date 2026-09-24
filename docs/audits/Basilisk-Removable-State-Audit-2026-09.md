@@ -356,3 +356,23 @@ The subtractive pass has now removed:
 - one immutable map mirror.
 
 The remaining small-reader states have been reviewed individually. Castle mature commitment, Feudal eco hold, farm wood hold, housing demand, research backoff, Monk/Trebuchet targets, attack measurement, and Siege Tower cycle state each preserve information that current engine facts do not independently retain across passes. Preemption state remains the next risky area for controlled simplification, but `bt-preempt-active-goal` and `bt-preempt-defense-issued-goal` should not be deleted blindly because they currently bound an actual emergency-control path.
+
+## Final subtractive pass in this cycle
+
+Two more gameplay shadows were removed after the first cleanup pass.
+
+### Feudal eco hold
+
+`bt-feudal-eco-hold-goal` was a same-pass scratch latch. It was reset to zero every evaluation pass, written by three rules, and consumed by exactly one Fast-Castle bank rule. Its writers simply encoded current Horse Collar/Double-Bit Axe feasibility and demand. The bank rule now tests those same current facts directly, so no persistence or lifecycle memory is required.
+
+### Spear counter level
+
+`bt-spear-counter-level-goal` was a three-level derived state, but its only consumer asked whether the value was at least one. The existing `bt-cavalry-threat-goal` already represents the same threshold: three or more enemy cavalry-class units. The three spear-counter writers and the unused intermediate state were removed; the standing-archer target rule now consumes the existing cavalry threat witness directly.
+
+### Preemption active latch
+
+`bt-preempt-active-goal` was also shadow state. Once preemption starts, `sn-resource-control == bt-preempt-emergency-claim` is the actual engine-facing ownership witness. The begin rules already acquire that emergency claim only from the TC2/TC3 claims, and every defense/resume/abort/completion rule already requires the emergency claim. The active latch therefore added no independent control capability and was removed. `bt-preempt-original-owner-goal` remains because it remembers whether the interrupted project was TC2 or TC3, and `bt-preempt-defense-issued-goal` remains because it intentionally bounds emergency production to a single pulse.
+
+The controller has now been statically rechecked at this HEAD: balanced parentheses, zero logical-arity violations, zero duplicate numeric GoalIds, 987 rules, 505 constants, and all 86 diagnostic chat rules retained.
+
+The remaining low-reader gameplay states are not being deleted merely because they have few readers. They each preserve either cross-pass intent, an explicit target, a real cooldown, an asynchronous engine lifecycle, a measurement snapshot, or a multi-step execution witness.
