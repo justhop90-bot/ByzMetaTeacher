@@ -783,7 +783,7 @@ try {
     },
     {
       name: "resource-mode-override-without-p0-exclusion-rejected",
-      expected: "[Resource mode]",
+      expected: "mode-0 exception",
       source: (() => {
         return mutateRuleContaining(
           baseline,
