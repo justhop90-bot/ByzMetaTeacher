@@ -5899,7 +5899,7 @@ function validateBoomPaperReplay(rules, sourceText) {
     rules.some(
       (rule) =>
         rule.includes("(goal bt-tc-project-goal 2)") &&
-        rule.includes("(goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
+        rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
     ),
     "[BOOM replay] TC2 stone resource-mode handoff missing",
   );
@@ -5907,7 +5907,7 @@ function validateBoomPaperReplay(rules, sourceText) {
     rules.some(
       (rule) =>
         rule.includes("(goal bt-tc-project-goal 3)") &&
-        rule.includes("(goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
+        rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
     ),
     "[BOOM replay] TC3 stone resource-mode handoff missing",
   );
