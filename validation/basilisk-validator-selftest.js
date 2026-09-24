@@ -997,7 +997,7 @@ try {
       name: "castle-bank-must-not-depend-on-feudal-eco-hold",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD CASTLE OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.";
+        const marker = "(defrule\n    ; HARD CASTLE OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE"";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Castle bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -1014,7 +1014,7 @@ try {
       name: "imperial-bank-must-directly-stop-villagers",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE"";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
