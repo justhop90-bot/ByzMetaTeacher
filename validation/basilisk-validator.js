@@ -3811,9 +3811,8 @@ function validateFeudalFarmTransitionBudget(rules, sourceText) {
 function validateImperialSiegeAttackOrdering(rules) {
   const attackIndex = rules.findIndex(
     (rule) =>
-      rule.includes("(timer-triggered bt-attack-timer)") &&
-      rule.includes("(current-age >= feudal-age)") &&
-      rule.includes("(players-building-count any-enemy > 0)") &&
+      rule.includes("(current-age >= castle-age)") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)") &&
       rule.includes("(set-goal attack-goal 1)") &&
       rule.includes("(attack-now)"),
   );
