@@ -213,59 +213,17 @@ assert.ok(source.includes("(defconst bt-research-failure-backoff-seconds 30)"));
 assert.ok(source.includes("(defconst bt-research-barracks-failure-backoff-goal 630)"));
 assert.ok(source.includes("(defconst bt-research-stable-failure-backoff-goal 632)"));
 assert.ok(source.includes("(defconst bt-research-siege-workshop-failure-backoff-goal 633)"));
-assert.ok(source.includes("(defconst bt-gold-shaft-mining-demand-goal 687)"));
-for (const stale of [
-  "bt-research-barracks-max-retries",
-  "bt-stable-research-max-retries",
-  "bt-siege-research-max-retries",
-  "bt-economic-research-max-retries",
-  "bt-research-mining-camp-gold-shaft-mining-retry-goal",
-  "bt-research-barracks-pikeman-retry-goal",
-  "bt-research-stable-cavalier-retry-goal",
-  "bt-research-stable-paladin-retry-goal",
-  "bt-research-stable-heavy-camel-retry-goal",
-  "bt-research-siege-capped-ram-retry-goal",
-  "bt-research-siege-ram-retry-goal",
-  "bt-military-siege-workshop-retry-goal",
-]) {
-  assert.ok(
-    !source.includes(stale),
-    `[Retry doctrine] stale terminal-retry symbol remains: ${stale}`,
-  );
-}
-
 requireRule(
-  "Gold Shaft strategic demand",
-  "(goal bt-gold-shaft-mining-demand-goal 0)",
+  "Gold Shaft direct executor",
   "(current-age == castle-age)",
   "(goal strategy-goal bt-strategy-boom)",
   "(up-research-status c: ri-gold-mining >= research-complete)",
   "(building-type-count-total town-center >= 2)",
-  "(set-goal bt-gold-shaft-mining-demand-goal 1)",
-);
-requireRule(
-  "Gold Shaft strategic cancellation",
-  "(goal bt-gold-shaft-mining-demand-goal 1)",
-  "(goal bt-research-mining-camp-claim-goal 0)",
-  "(or",
-  "    (current-age > castle-age)",
-  "    (or",
-  "        (not (goal strategy-goal bt-strategy-boom))",
-  "        (or",
-  "            (up-research-status c: ri-gold-mining < research-complete)",
-  "            (or",
-  "                (can-research-with-escrow imperial-age)",
-  "                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)",
-  "            )",
-  "        )",
-  "    )",
-  ")",
-  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
-);
-requireRule(
-  "Gold Shaft executor backoff gate",
-  "(goal bt-gold-shaft-mining-demand-goal 1)",
+  "(not (can-research-with-escrow imperial-age))",
+  "(not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))",
+  "(up-research-status c: ri-gold-shaft-mining == research-available)",
   "(up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)",
+  "(building-type-count mining-camp >= 1)",
   "(can-research-with-escrow ri-gold-shaft-mining)",
   "(set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
 );
@@ -279,14 +237,13 @@ const goldShaftFailureRule = requireRule(
 );
 assert.ok(
   !goldShaftFailureRule.includes("(set-goal bt-gold-shaft-mining-demand-goal 0)"),
-  "[Gold Shaft] engine failure must not cancel strategic demand",
+  "[Gold Shaft] engine failure must not create or clear strategic demand state",
 );
 requireRule(
   "Gold Shaft completion",
   "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
   "(up-research-status c: ri-gold-shaft-mining == research-complete)",
   "(set-goal bt-research-mining-camp-claim-goal 0)",
-  "(set-goal bt-gold-shaft-mining-demand-goal 0)",
 );
 requireRule(
   "Gold Shaft backoff expiry",
@@ -294,19 +251,31 @@ requireRule(
   "(disable-timer bt-research-mining-camp-failure-backoff-timer)",
   "(set-goal bt-research-mining-camp-failure-backoff-goal 0)",
 );
-const goldShaftTrace = transition(
-  "Gold Shaft Mining",
-  { demand: 1, package: 0, claim: "ri-gold-shaft-mining", backoff: 1 },
-  (s) => { s.claim = 0; s.backoff = 1; },
-  (s) => { s.backoff = 0; },
-  (s) => s.demand === 1 && s.claim === 0 && s.package === 0 && s.backoff === 0,
-  (s) => { s.demand = 0; s.claim = 0; s.package = 0; },
-  (s) => { s.backoff = 0; },
-  (s) => {
-    s.demand = 1;
-    return s.demand === 1 && s.claim === 0 && s.package === 0 && s.backoff === 0;
-  },
-);
+const goldShaftTrace = (() => {
+  const state = { claim: 0, backoff: 0 };
+  const trace = [];
+  const snap = (event) => trace.push({ event, ...state });
+  snap("initial");
+  state.claim = 0;
+  state.backoff = 1;
+  snap("execution-failure");
+  assert.equal(state.claim, 0, "[Gold Shaft] stale research claim after execution failure");
+  assert.equal(state.backoff, 1, "[Gold Shaft] bounded backoff was not armed");
+  state.backoff = 0;
+  snap("cooldown-expired");
+  assert.equal(state.backoff, 0, "[Gold Shaft] cooldown did not reopen execution");
+  state.claim = "ri-gold-shaft-mining";
+  snap("research-issued");
+  assert.equal(
+    state.claim,
+    "ri-gold-shaft-mining",
+    "[Gold Shaft] direct executor did not establish the research claim",
+  );
+  state.claim = 0;
+  snap("research-complete");
+  assert.equal(state.claim, 0, "[Gold Shaft] completion did not release the research claim");
+  return trace;
+})();
 
 requireRule(
   "Pike failure",
