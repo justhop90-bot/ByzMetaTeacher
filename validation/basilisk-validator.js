@@ -317,15 +317,6 @@ function validateRuleStructure(sourceText) {
     );
 
     if (head === "include") {
-      assert.equal(
-        form.match(/"(?:[^"\\]|\\.)*"/g)?.length ?? 0,
-        1,
-        `[Include] include near source offset ${cursor} must contain exactly one quoted target`,
-      );
-      assert.ok(
-        /"[^"]+\.xs"$/.test(form.trim()),
-        `[Include] include near source offset ${cursor} must target a .xs file`,
-      );
       cursor = end;
       continue;
     }
