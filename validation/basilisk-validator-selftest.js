@@ -102,9 +102,13 @@ try {
   };
 
   const hasFact = (rule, head, values = []) =>
-    containsExpression(ruleSection(rule, "facts"), head, values);
+    ruleSection(rule, "facts").some((expr) =>
+      containsExpression([expr], head, values),
+    );
   const hasAction = (rule, head, values = []) =>
-    containsExpression(ruleSection(rule, "actions"), head, values);
+    ruleSection(rule, "actions").some((expr) =>
+      containsExpression([expr], head, values),
+    );
 
   const scalePackage = findSemanticRule(
     "Scale Mail package writer",
