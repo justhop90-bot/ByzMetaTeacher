@@ -565,7 +565,6 @@
 ; intentionally committed; it is cleared only by the Imperial-age world-state witness.
 (defconst bt-imperial-commitment-goal 710)
 ; Persistent demand to secure the second Castle-age building required for Imperial.
-(defconst bt-imperial-prereq-demand-goal 711)
 ; Feudal eco window hold: 1 means Horse Collar or Double-Bit Axe can execute now.
 ; Late-Feudal BOOM farm budget. The 385W floor reserves 150W Blacksmith + 175W Market + 60W Farm.
 ; Hold only the final two-villager BOOM window before the hard 28-villager Castle boundary; pressure postures and food-emergency farms remain independent.
@@ -961,32 +960,6 @@
 )
 
 ; Initialize scouting, age-prerequisite, and standing-army state.
-(defrule
-    (true)
-=>
-    (set-goal bt-scout-pressure-demand-goal 0)
-    (set-goal bt-scout-target-player-goal 0)
-    (set-goal bt-castle-commitment-goal 0)
-    (set-goal bt-varangian-demand-goal 0)
-    (set-goal bt-varangian-target-goal 0)
-    (set-goal bt-varangian-fielded-goal 0)
-    (set-goal bt-castle-mature-commitment-goal 0)
-    (set-goal bt-imperial-commitment-goal 0)
-    (set-goal bt-imperial-prereq-demand-goal 0)
-    (set-goal bt-castle-prereq-backoff-goal 0)
-            (set-goal bt-imperial-prereq-backoff-goal 0)
-    (set-goal bt-research-age-failure-backoff-goal 0)
-    (set-goal bt-monastery-backoff-goal 0)
-    (set-goal bt-monk-demand-goal 0)
-    (set-goal bt-monk-target-goal 0)
-    (set-goal bt-imperial-siege-package-goal 0)
-    (set-goal bt-trebuchet-demand-goal 0)
-    (set-goal bt-trebuchet-target-goal 0)
-    (set-goal bt-research-monk-package-goal 0)
-    (set-goal bt-research-monastery-claim-goal 0)
-    (set-goal bt-research-monastery-failure-backoff-goal 0)
-    (disable-self)
-)
 
 (defrule
     (true)
@@ -5896,9 +5869,15 @@ town-center >= 2)))))
 ; One existing qualifying Castle-age building creates a persistent demand
 ; for the second provider. Siege is first in source order; University
 ; Workshop is therefore the deterministic first choice; University remains the fallback. This state is independent of Cataphract strategy.
+
+; Clear prerequisite demand when the world already proves Imperial/Castle completion.
+
+; Clear prerequisite demand when the engine proves Imperial is immediately researchable.
+
+; Temporarily favor wood while the second Castle-age provider is outstanding.
+
 (defrule
     (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 0)
     (building-type-count-total castle < 1)
     (not (can-research-with-escrow imperial-age))
     (or
@@ -5908,44 +5887,12 @@ town-center >= 2)))))
             (building-type-count-total siege-workshop >= 1)
         )
     )
-=>
-    (set-goal bt-imperial-prereq-demand-goal 1)
-)
-
-; Clear prerequisite demand when the world already proves Imperial/Castle completion.
-(defrule
-    (goal bt-imperial-prereq-demand-goal 1)
-    (or
-        (current-age >= imperial-age)
-        (building-type-count-total castle >= 1)
-    )
-=>
-    (set-goal bt-imperial-prereq-demand-goal 0)
-)
-
-; Clear prerequisite demand when the engine proves Imperial is immediately researchable.
-(defrule
-    (goal bt-imperial-prereq-demand-goal 1)
-    (can-research-with-escrow imperial-age)
-=>
-    (set-goal bt-imperial-prereq-demand-goal 0)
-)
-
-; Temporarily favor wood while the second Castle-age provider is outstanding.
-(defrule
-    ; Imperial prerequisite funding overrides age-bank arbitration, but P0
-    ; resource crises retain ownership until the crisis clears.
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))
     (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)
 )
-
 ;----------------------------------------------------------------
 ; BASILISK STRATEGIC NARRATION: CASTLE GATE
 ; Pure diagnostics. These rules never write strategic state.
@@ -8072,27 +8019,6 @@ sn-stone-gatherer-percentage == 0)))))
 ; alternatives are absent it is the deterministic preferred second provider.
 ; If Siege Workshop is not currently buildable, University can claim the same
 ; one-of-three completion path later in the pass.
-(defrule
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
-    (or
-        (building-type-count-total monastery >= 1)
-        (building-type-count-total university >= 1)
-    )
-    (building-type-count-total siege-workshop < 1)
-    (up-pending-objects c: siege-workshop == 0)
-    (strategic-number sn-resource-control == 0)
-    (can-build-with-escrow siege-workshop)
-=>
-    (set-strategic-number sn-resource-control bt-imperial-siege-claim)
-    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
-    (release-escrow wood)
-    (build siege-workshop)
-)
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-siege-claim)
@@ -8122,27 +8048,6 @@ sn-stone-gatherer-percentage == 0)))))
 ; University is the alternate second provider. When Monastery or Siege
 ; Workshop already exists, completing University gives the second qualifying
 ; Castle-age building and should immediately satisfy the Imperial prerequisite.
-(defrule
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
-    (or
-        (building-type-count-total monastery >= 1)
-        (building-type-count-total siege-workshop >= 1)
-    )
-    (building-type-count-total university < 1)
-    (up-pending-objects c: university == 0)
-    (strategic-number sn-resource-control == 0)
-    (can-build-with-escrow university)
-=>
-    (set-strategic-number sn-resource-control bt-imperial-university-claim)
-    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
-    (release-escrow wood)
-    (build university)
-)
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-university-claim)
@@ -8224,6 +8129,25 @@ sn-stone-gatherer-percentage == 0)))))
         (set-goal bt-castle-prereq-backoff-goal 0)
 )
 
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total castle < 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total university >= 1)
+    )
+    (building-type-count-total siege-workshop < 1)
+    (up-pending-objects c: siege-workshop == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow siege-workshop)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-siege-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
+    (build siege-workshop)
+)
 ;----------------------------------------------------------------
 ; IMPERIAL PREREQUISITE CONSTRUCTION WATCHDOG
 ; Siege Workshop and University are serialized capability providers. Their
@@ -8274,6 +8198,25 @@ sn-stone-gatherer-percentage == 0)))))
         (set-goal bt-imperial-prereq-backoff-goal 0)
 )
 
+(defrule
+    (current-age == castle-age)
+    (goal bt-imperial-prereq-backoff-goal 0)
+    (building-type-count-total castle < 1)
+    (not (can-research-with-escrow imperial-age))
+    (or
+        (building-type-count-total monastery >= 1)
+        (building-type-count-total siege-workshop >= 1)
+    )
+    (building-type-count-total university < 1)
+    (up-pending-objects c: university == 0)
+    (strategic-number sn-resource-control == 0)
+    (can-build-with-escrow university)
+=>
+    (set-strategic-number sn-resource-control bt-imperial-university-claim)
+    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
+    (release-escrow wood)
+    (build university)
+)
 ;----------------------------------------------------------------
 ; MONASTERY CONSTRUCTION WATCHDOG
 (defrule
@@ -11717,28 +11660,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ; research packages that explicitly require this building.
 
 
-(defrule
-    (current-age >= castle-age)
-    (building-type-count-total university == 0)
-    (up-pending-objects c: university == 0)
-    (goal bt-university-backoff-goal 0)
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
-    (or
-            (building-type-count-total monastery >= 1)
-            (building-type-count-total siege-workshop >= 1)
-        )
-    (building-type-count-total university < 1)
-    (strategic-number sn-resource-control == 0)
-=>
-    (set-strategic-number sn-resource-control bt-imperial-university-claim)
-    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
-    (release-escrow wood)
-    (build university)
-)
 ;----------------------------------------------------------------
 ; UNIVERSITY CONSTRUCTION WATCHDOG
 (defrule
