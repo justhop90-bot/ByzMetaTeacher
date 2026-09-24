@@ -1207,9 +1207,22 @@ try {
     {
       name: "boom-tc-project-arbitration-regression-rejected",
       expected: "[BOOM] active TC2/TC3 project must suppress discretionary standing demand",
-      source: baseline.replace(
-        "(goal bt-tc-stage-goal bt-tc-stage-demanded)",
-        "(goal bt-tc-stage-goal bt-tc-stage-resource-claimed)",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal strategy-goal bt-strategy-boom)",
+          "(goal bt-standing-army-demand-goal 1)",
+          "(goal bt-tc-project-goal 2)",
+          "(goal bt-tc-project-goal 3)",
+          "(goal bt-tc-stage-goal bt-tc-stage-demanded)",
+          "(set-goal bt-standing-army-demand-goal 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "(goal bt-tc-stage-goal bt-tc-stage-demanded)",
+            "(goal bt-tc-stage-goal bt-tc-stage-resource-claimed)",
+          ),
+        "BOOM TC project arbitration",
       ),
     },
     {
@@ -1231,17 +1244,40 @@ try {
     {
       name: "boom-flush-castle-bank-override-regression-rejected",
       expected: "[BOOM] expected Spear/Skirm/Archer standing train rules to carry the FLUSH bank override",
-      source: baseline.replace(
-        "    (or\n        (goal bt-castle-commitment-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )",
-        "    (goal bt-castle-commitment-goal 0)",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-standing-army-demand-goal 1)",
+          "(can-train spearman-line)",
+          "(goal bt-castle-commitment-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (goal strategy-goal bt-strategy-flush)
+",
+            "",
+          ),
+        "BOOM FLUSH Castle-bank override",
       ),
     },
     {
       name: "boom-capability-bank-gate-regression-rejected",
       expected: "[BOOM] every standing military capability rule must carry the FLUSH-aware Castle-bank gate",
-      source: baseline.replace(
-        "    (or\n        (goal bt-castle-commitment-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n    (strategic-number sn-resource-control == 0)",
-        "    (strategic-number sn-resource-control == 0)",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-standing-army-demand-goal 1)",
+          "(build barracks)",
+          "(goal bt-castle-commitment-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (or\n        (goal bt-castle-commitment-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n",
+            "",
+          ),
+        "BOOM capability Castle-bank gate",
       ),
     },
     {
