@@ -9159,6 +9159,25 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
     (set-goal bt-standing-army-demand-goal 0)
 )
 
+; BOOM TC2/TC3 MILITARY OWNERSHIP POLICY.
+; The TC capital project owns discretionary BOOM investment until foundation
+; placement. The policy is deliberately narrower than "stop the army":
+;
+;   MAY CONTINUE DURING PRE-FOUNDATION TC2/TC3:
+;     * reactive counter packages: Monk, Mangonel, Scorpion, Camel;
+;     * their required capability may be built when the reactive demand is live;
+;     * production already queued before TC arbitration is not retroactively canceled.
+;
+;   MUST YIELD NEW PRODUCTION AUTHORIZATION:
+;     * primary Castle BOOM packages: Knight, Crossbow;
+;     * offensive building-assault packages: Ram, Siege Tower;
+;     * ordinary standing-floor production and discretionary standing infrastructure.
+;
+; Imperial-only packages are outside the simultaneous Castle-TC2/TC3 state and
+; therefore do not receive a special TC exception. A package's strategic demand
+; may remain latched, but its protected executor must enforce the capital boundary.
+; FLUSH remains the emergency override for standing/capital conflicts.
+
 ; BOOM capital-project arbitration.
 ; Once TC2/TC3 has become a persistent project, discretionary BOOM standing
 ; demand yields until the project reaches foundation/completion.
@@ -9396,6 +9415,10 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (goal bt-ram-demand-goal 1)
     (current-age >= castle-age)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count siege-workshop >= 1)
     (or
@@ -9417,6 +9440,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
     (current-age >= castle-age)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count siege-workshop >= 1)
     (unit-type-count-total siege-tower < 1)
@@ -11318,6 +11345,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
     (goal bt-ram-demand-goal 0)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (goal bt-scorpion-demand-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
@@ -12340,6 +12371,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (goal bt-counter-veto-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (unit-type-count battering-ram-line < bt-ram-response-target)
 =>
     (set-goal bt-ram-demand-goal 1)
