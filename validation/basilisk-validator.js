@@ -25,8 +25,8 @@ function stripComments(text) {
 
   for (const ch of text) {
     if (inComment) {
+      result += ch === "\n" ? "\n" : " ";
       if (ch === "\n") {
-        result += "\n";
         inComment = false;
       }
       continue;
