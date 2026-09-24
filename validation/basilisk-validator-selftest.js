@@ -866,6 +866,69 @@ try {
       ),
     },
     {
+    {
+      name: "feudal-farm-budget-floor-regression-rejected",
+      expected: "[Feudal farm budget]",
+      source: baseline.replace(
+        "(defconst bt-feudal-farm-wood-floor 385)",
+        "(defconst bt-feudal-farm-wood-floor 330)",
+      ),
+    },
+    {
+      name: "feudal-farm-budget-hold-regression-rejected",
+      expected: "[Feudal farm budget]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(goal strategy-goal bt-strategy-boom)",
+          "(set-goal bt-feudal-farm-wood-hold-goal 1)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (wood-amount < bt-feudal-farm-wood-floor)\n",
+            "",
+          ),
+        "Feudal BOOM farm-budget writer",
+      ),
+    },
+    {
+      name: "feudal-farm-budget-emergency-escape-regression-rejected",
+      expected: "[Feudal farm budget]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(goal strategy-goal bt-strategy-boom)",
+          "(set-goal bt-feudal-farm-wood-hold-goal 1)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (food-amount >= 350)\n",
+            "",
+          ),
+        "Feudal BOOM farm-budget emergency escape",
+      ),
+    },
+    {
+      name: "feudal-farm-budget-executor-regression-rejected",
+      expected: "[Feudal farm budget]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(can-build-with-escrow farm)",
+          "(build farm)",
+          "(building-type-count-total farm < bt-farm-feudal-cap)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (goal bt-feudal-farm-wood-hold-goal 0)\n",
+            "",
+          ),
+        "Feudal farm executor hold",
+      ),
+    },
       name: "feudal-attack-castle-bank-regression-rejected",
       expected: "[Feudal economy]",
       source: mutateRuleContaining(
@@ -2120,6 +2183,10 @@ try {
     "elite-varangian-local-tech-id-required",
     "resource-mode-override-without-p0-exclusion-rejected",
     "attack-negative-result-bucket-rejected",
+    "feudal-farm-budget-floor-regression-rejected",
+    "feudal-farm-budget-hold-regression-rejected",
+    "feudal-farm-budget-emergency-escape-regression-rejected",
+    "feudal-farm-budget-executor-regression-rejected",
     "backoff-expiry-owner-missing-rejected",
     "siege-abort-cancels-independent-demand-rejected",
   ]);
@@ -2191,6 +2258,10 @@ try {
           "attack-result-non-positive-partition",
           "backoff-expiry-owner-exact-inventory",
           "imperial-siege-abort-package-ownership",
+          "feudal-farm-budget-floor",
+          "feudal-farm-budget-hold-writer",
+          "feudal-farm-budget-emergency-escape",
+          "feudal-farm-budget-executor-hold",
         ],
         parserSyntaxClasses: [
           "missing-closing-parenthesis",
