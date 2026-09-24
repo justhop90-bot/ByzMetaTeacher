@@ -6575,9 +6575,9 @@ function validateMillPlacement(sourceText, rules) {
 
   const secondMillFarmGate = rules.filter(
     (rule) =>
-      rule.includes("(goal bt-mill-target-goal 1)") &&
+      rule.includes("(goal bt-mill-project-goal 0)") &&
       rule.includes("(building-type-count mill >= 1)") &&
-      rule.includes("(set-goal bt-mill-target-goal 2)"),
+      rule.includes("(set-goal bt-mill-project-goal 2)"),
   );
   assert.equal(
     secondMillFarmGate.length,
