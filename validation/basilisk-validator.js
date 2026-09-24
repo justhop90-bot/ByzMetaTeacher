@@ -5046,75 +5046,75 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     );
   }
 
-  const boomFloorRules = [
+  const boomFloors = [
     {
-      label: "TC1 standing floor",
-      tc: "(building-type-count town-center < 2)",
+      label: "TC1",
+      facts: [
+        "(current-age == castle-age)",
+        "(goal strategy-goal bt-strategy-boom)",
+        "(building-type-count town-center < 2)",
+      ],
       value: "bt-castle-boom-army-floor-tc1",
     },
     {
-      label: "TC2 standing floor",
-      tc:
-        "(building-type-count town-center >= 2)" +
+      label: "TC2",
+      facts: [
+        "(current-age == castle-age)",
+        "(goal strategy-goal bt-strategy-boom)",
+        "(building-type-count town-center >= 2)",
         "(building-type-count town-center < 3)",
+      ],
       value: "bt-castle-boom-army-floor-tc2",
     },
     {
-      label: "TC3 standing floor",
-      tc: "(building-type-count town-center >= 3)",
+      label: "TC3",
+      facts: [
+        "(current-age == castle-age)",
+        "(goal strategy-goal bt-strategy-boom)",
+        "(building-type-count town-center >= 3)",
+      ],
       value: "bt-castle-boom-army-floor-tc3",
     },
   ];
 
-  for (const entry of boomFloorRules) {
+  for (const entry of boomFloors) {
     const matches = rules.filter(
       (rule) =>
-        rule.includes("(current-age == castle-age)") &&
-        rule.includes("(goal strategy-goal bt-strategy-boom)") &&
-        entry.tc
-          .split(")(")
-          .filter(Boolean)
-          .every((fragment, index, parts) => {
-            const token =
-              (index === 0 ? "(" : "(") + fragment + (index === parts.length - 1 ? ")" : ")");
-            return rule.includes(token);
-          }) &&
-        rule.includes("(set-goal bt-standing-army-floor-goal " + entry.value + ")"),
+        entry.facts.every((fact) => rule.includes(fact)) &&
+        rule.includes(
+          "(set-goal bt-standing-army-floor-goal " + entry.value + ")",
+        ),
     );
     assert.equal(
       matches.length,
       1,
-      "[BOOM] " + entry.label + " writer must exist exactly once",
+      "[BOOM] " + entry.label + " standing-floor writer must exist exactly once",
     );
   }
 
   for (const value of ["12", "16", "20"]) {
-    const badBoomPressureFloor = rules.filter(
-      (rule) =>
-        rule.includes("(current-age == castle-age)") &&
-        rule.includes("(goal strategy-goal bt-strategy-boom)") &&
-        rule.includes(
-          "(set-goal bt-standing-army-floor-goal " + value + ")",
-        ),
-    );
     assert.equal(
-      badBoomPressureFloor.length,
+      rules.filter(
+        (rule) =>
+          rule.includes("(current-age == castle-age)") &&
+          rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+          rule.includes(
+            "(set-goal bt-standing-army-floor-goal " + value + ")",
+          ),
+      ).length,
       0,
       "[BOOM] Castle BOOM must not use pressure floor " + value,
     );
-  }
 
-  for (const value of ["12", "16", "20"]) {
-    const castlePowerFloor = rules.find(
-      (rule) =>
-        rule.includes("(current-age == castle-age)") &&
-        rule.includes("(goal strategy-goal bt-strategy-castle-power)") &&
-        rule.includes(
-          "(set-goal bt-standing-army-floor-goal " + value + ")",
-        ),
-    );
     assert.ok(
-      castlePowerFloor,
+      rules.some(
+        (rule) =>
+          rule.includes("(current-age == castle-age)") &&
+          rule.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+          rule.includes(
+            "(set-goal bt-standing-army-floor-goal " + value + ")",
+          ),
+      ),
       "[BOOM] Castle-Power must retain Castle pressure floor " + value,
     );
   }
@@ -5167,7 +5167,7 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
       rule.includes("(unit-type-count-total archer-line < 4)"),
   );
   assert.ok(
-    knightSelector && knightSelector.includes("(building-type-count town-center >= 2)"),
+    knightSelector?.includes("(building-type-count town-center >= 2)"),
     "[BOOM] generic Knight selection must wait for TC2",
   );
 
@@ -5183,14 +5183,14 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     "[BOOM] Knight demand writer must yield during an active TC project",
   );
 
-  const knightCancel = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-knight-demand-goal 1)") &&
-      rule.includes("(set-goal bt-knight-demand-goal 0)") &&
-      rule.includes("(goal bt-tc-project-goal 2)"),
-  );
   assert.ok(
-    knightCancel,
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-knight-demand-goal 1)") &&
+        rule.includes("(set-goal bt-knight-demand-goal 0)") &&
+        rule.includes("(goal bt-tc-project-goal 2)") &&
+        rule.includes("(goal bt-tc-project-goal 3)"),
+    ),
     "[BOOM] active Knight demand must cancel when BOOM TC2/TC3 project begins",
   );
 
@@ -5206,23 +5206,23 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     "[BOOM] Crossbow demand writer must yield during a BOOM TC project while preserving Castle-Power",
   );
 
-  const crossbowCancel = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-crossbow-demand-goal 1)") &&
-      rule.includes("(set-goal bt-crossbow-demand-goal 0)") &&
-      rule.includes("(goal bt-tc-project-goal 2)") &&
-      rule.includes("(goal bt-tc-project-goal 3)"),
-  );
   assert.ok(
-    crossbowCancel,
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-crossbow-demand-goal 1)") &&
+        rule.includes("(set-goal bt-crossbow-demand-goal 0)") &&
+        rule.includes("(goal bt-tc-project-goal 2)") &&
+        rule.includes("(goal bt-tc-project-goal 3)"),
+    ),
     "[BOOM] active Crossbow demand must cancel when BOOM TC2/TC3 project begins",
   );
 
   for (const unit of ["knight-line", "crossbowman"]) {
+    const demand = unit === "knight-line" ? "bt-knight-demand-goal" : "bt-crossbow-demand-goal";
     const trainRule = rules.find(
       (rule) =>
         rule.includes("(train " + unit + ")") &&
-        rule.includes("(goal bt-" + (unit === "knight-line" ? "knight" : "crossbow") + "-demand-goal 1)") &&
+        rule.includes("(goal " + demand + " 1)") &&
         rule.includes("(goal bt-resource-mode-goal bt-resource-mode-castle-boom)"),
     );
     assert.ok(
@@ -5269,14 +5269,6 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     "[BOOM] Stable capability must yield during an active BOOM TC project",
   );
 
-  const tcProjectWriterIndices = rules
-    .map((rule, index) => ({ rule, index }))
-    .filter(
-      ({ rule }) =>
-        rule.includes("(goal bt-tc-project-goal 0)") &&
-        rule.includes("(set-goal bt-tc-project-goal 2)"),
-    )
-    .map(({ index }) => index);
   const tcArbitrationIndex = rules.indexOf(tcArbitration);
   const militarySectionFirstTrainIndex = rules.findIndex(
     (rule) =>
@@ -5289,8 +5281,13 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
       tcArbitrationIndex < militarySectionFirstTrainIndex,
     "[BOOM] capital arbitration must precede military production",
   );
+
   assert.ok(
-    tcProjectWriterIndices.length > 0,
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-tc-project-goal 0)") &&
+        rule.includes("(set-goal bt-tc-project-goal 2)"),
+    ),
     "[BOOM] TC2 project demand writer is missing",
   );
 }
