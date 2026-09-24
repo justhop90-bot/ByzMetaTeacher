@@ -525,7 +525,6 @@
 (defconst bt-any-threat-goal 36)
 (defconst bt-cavalry-counter-level-goal 42)
 (defconst bt-ranged-counter-level-goal 43)
-(defconst bt-spear-counter-level-goal 44)
 (defconst bt-noncav-cavalry-level-goal 41)
 (defconst bt-target-military-scratch-goal 505)
 (defconst bt-relative-force-goal 506)
@@ -964,7 +963,7 @@
     (true)
 =>
     (set-goal bt-ranged-counter-level-goal 0)
-    (set-goal bt-spear-counter-level-goal 0)
+    
     (set-goal bt-noncav-cavalry-level-goal 0)
     (set-goal bt-standing-spear-target-goal 0)
     (set-goal bt-standing-skirm-target-goal 0)
@@ -1260,7 +1259,7 @@
     (set-goal bt-any-threat-goal 0)
     (set-goal bt-cavalry-counter-level-goal 0)
     (set-goal bt-ranged-counter-level-goal 0)
-    (set-goal bt-spear-counter-level-goal 0)
+    
     (set-goal bt-noncav-cavalry-level-goal 0)
 )
 (defrule
@@ -1364,11 +1363,6 @@
 =>
     (set-goal bt-ranged-counter-level-goal 2)
 )
-;---------------------------------------------------------------
-; VARANGIAN GUARD DERIVED PACKAGE STATE
-; Update 185872 adds Byzantines a Castle-age Barracks shock-infantry
-; line. The premium package is deliberately narrower than the cheap
-; Spear/Camel response: it enters only at substantial cavalry pressure.
 (defrule
     (true)
 =>
@@ -1379,14 +1373,12 @@
     (up-get-fact unit-type-count-total elite-varangian-guard bt-varangian-count-scratch-goal)
     (up-modify-goal bt-varangian-fielded-goal g:+ bt-varangian-count-scratch-goal)
 )
-
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-cavalry-counter-level-goal >= 3)
 =>
     (set-goal bt-varangian-target-goal bt-varangian-target-level-3)
 )
-
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-cavalry-counter-level-goal >= 2)
@@ -1394,10 +1386,6 @@
 =>
     (set-goal bt-varangian-target-goal bt-varangian-target-level-2)
 )
-
-; Create the premium package only when the cheaper standing response is
-; not already in deficit and the Cataphract package does not own the
-; current premium-gold decision.
 (defrule
     (current-age >= castle-age)
     (goal bt-varangian-demand-goal 0)
@@ -1407,11 +1395,6 @@
 =>
     (set-goal bt-varangian-demand-goal 1)
 )
-
-; Withdraw the tactical package when cavalry pressure falls away or
-; the desired Guard mass is already present. At the larger six-Guard
-; tier, keep the demand alive until Logistica is researched so the new
-; Byzantine trample interaction is actually reachable.
 (defrule
     (goal bt-varangian-demand-goal 1)
     (or
@@ -1430,10 +1413,6 @@
 =>
     (set-goal bt-varangian-demand-goal 0)
 )
-
-; Update 185872: Logistica now gives both Cataphracts and Varangian Guards
-; trample damage. Earn it only for the six-Guard package, preserving the
-; existing Cataphract premium research path.
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-varangian-demand-goal 1)
@@ -1442,10 +1421,6 @@
 =>
     (set-goal bt-research-cataphract-package-goal ri-logistica)
 )
-
-; Imperial follow-on: only buy Elite Varangian Guard after Logistica,
-; a real 12-Guard mass, and favorable battlefield conditions. This uses the
-; existing shared premium-research cursor; there is no second research system.
 (defrule
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-cataphract-demand-goal 0)
@@ -1460,8 +1435,6 @@
 =>
     (set-goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
 )
-
-; Strategic invalidation applies only before the upgrade has actually started.
 (defrule
     (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
     (up-research-status c: ri-elite-varangian-guard < research-pending)
@@ -1484,15 +1457,12 @@
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
-
 (defrule
     (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
     (up-research-status c: ri-elite-varangian-guard == research-complete)
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
-
-
 (defrule
     (or
         (players-unit-type-count any-enemy archer-line >= 20)
@@ -1504,14 +1474,13 @@
 (defrule
     (players-unit-type-count any-enemy spearman-line >= 4)
 =>
-    (set-goal bt-spear-counter-level-goal 1)
+    
 )
 (defrule
     (players-unit-type-count any-enemy spearman-line >= 8)
 =>
-    (set-goal bt-spear-counter-level-goal 2)
+    
 )
-; Non-Camel cavalry capacity: 10/15.
 (defrule
     (or
         (players-unit-type-count any-enemy knight-line >= 10)
@@ -9130,7 +9099,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule (up-compare-goal bt-ranged-counter-level-goal >= 3) =>
     (up-modify-goal bt-standing-skirm-target-goal c:max bt-skirm-target-3)
 )
-(defrule (up-compare-goal bt-spear-counter-level-goal >= 1) =>
+(defrule (goal bt-cavalry-threat-goal 1) =>
     (up-modify-goal bt-standing-archer-target-goal c:max 3)
 )
 
