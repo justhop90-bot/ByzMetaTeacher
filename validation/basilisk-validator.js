@@ -5295,6 +5295,136 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     ),
     "[BOOM] TC2 project demand writer is missing",
   );
+  const tcDemandWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule }) =>
+        rule.includes("(current-age >= castle-age)") &&
+        rule.includes("(goal bt-tc-project-goal 0)") &&
+        (rule.includes("(set-goal bt-tc-project-goal 2)") ||
+          rule.includes("(set-goal bt-tc-project-goal 3)")),
+    );
+  assert.equal(
+    tcDemandWriters.length,
+    2,
+    "[BOOM source order] TC2/TC3 demand writers must remain exactly two",
+  );
+
+  const tcClaimWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule }) =>
+        rule.includes("(goal bt-tc-stage-goal bt-tc-stage-demanded)") &&
+        rule.includes("(strategic-number sn-resource-control == 0)") &&
+        rule.includes("(can-build-with-escrow town-center)") &&
+        (rule.includes(
+          "(set-strategic-number sn-resource-control bt-tc2-claim)",
+        ) ||
+          rule.includes(
+            "(set-strategic-number sn-resource-control bt-tc3-claim)",
+          )),
+    );
+  assert.equal(
+    tcClaimWriters.length,
+    2,
+    "[BOOM source order] TC2/TC3 resource-claim providers must remain exactly two",
+  );
+
+  const tcPreemptionBegins = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule }) =>
+        rule.includes("(town-under-attack)") &&
+        (rule.includes(
+          "(set-goal bt-preempt-original-owner-goal bt-tc2-claim)",
+        ) ||
+          rule.includes(
+            "(set-goal bt-preempt-original-owner-goal bt-tc3-claim)",
+          )) &&
+        rule.includes(
+          "(set-strategic-number sn-resource-control bt-preempt-emergency-claim)",
+        ),
+    );
+  assert.equal(
+    tcPreemptionBegins.length,
+    2,
+    "[BOOM source order] TC2/TC3 preemption openers must remain exactly two",
+  );
+
+  const firstCapacityConsumer = rules.findIndex(
+    (rule) =>
+      /\\(build (?:barracks|archery-range|stable)\\)/.test(rule) &&
+      rule.includes("(goal bt-tc-project-goal 2)") &&
+      rule.includes("(goal bt-tc-project-goal 3)"),
+  );
+  assert.ok(
+    firstCapacityConsumer >= 0,
+    "[BOOM source order] no TC-aware production-capability consumer found",
+  );
+
+  const firstMilitaryArbitrationConsumer = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(train spearman-line)"),
+  );
+  assert.ok(
+    firstMilitaryArbitrationConsumer >= 0,
+    "[BOOM source order] no standing-army military executor found",
+  );
+
+  const tcArbitrationIndex = rules.indexOf(tcArbitration);
+  const lastResourceModeWriter = maxRuleIndex(
+    (rule) => rule.includes("(set-goal bt-resource-mode-goal "),
+    "resource-mode writer",
+  );
+
+  const firstTcDemandWriter = Math.min(...tcDemandWriters.map(({ index }) => index));
+  const lastTcDemandWriter = Math.max(...tcDemandWriters.map(({ index }) => index));
+  const firstTcClaimWriter = Math.min(...tcClaimWriters.map(({ index }) => index));
+  const lastTcClaimWriter = Math.max(...tcClaimWriters.map(({ index }) => index));
+  const firstPreemptionBegin = Math.min(
+    ...tcPreemptionBegins.map(({ index }) => index),
+  );
+  const lastPreemptionBegin = Math.max(
+    ...tcPreemptionBegins.map(({ index }) => index),
+  );
+
+  assert.ok(
+    lastResourceModeWriter < firstTcDemandWriter,
+    "[BOOM source order] TC demand must observe completed resource-mode arbitration",
+  );
+  assert.ok(
+    lastTcDemandWriter < firstTcClaimWriter,
+    "[BOOM source order] TC resource claims must follow persistent TC demand",
+  );
+  assert.ok(
+    lastTcClaimWriter < firstPreemptionBegin,
+    "[BOOM source order] TC preemption must be able to see a claim created in the same pass",
+  );
+  assert.ok(
+    lastPreemptionBegin < firstCapacityConsumer,
+    "[BOOM source order] TC preemption must run before TC-aware production capability",
+  );
+  assert.ok(
+    firstCapacityConsumer < tcArbitrationIndex,
+    "[BOOM source order] TC-aware production capability must run before standing-demand arbitration",
+  );
+  assert.ok(
+    tcArbitrationIndex < firstMilitaryArbitrationConsumer,
+    "[BOOM source order] capital arbitration must run before standing military production",
+  );
+
+  for (const deadState of [
+    "bt-debug-last-age-event-goal",
+    "bt-debug-last-tc-project-goal",
+  ]) {
+    assert.equal(
+      sourceText.includes(deadState),
+      false,
+      "[State hygiene] dead debug state must not return: " + deadState,
+    );
+  }
+
 }
 
 
