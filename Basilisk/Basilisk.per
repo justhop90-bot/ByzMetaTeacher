@@ -742,13 +742,9 @@
 
 ; Map-aware Byzantine opening policy state. These goals carry intent only;
 ; strategy, resource allocation, and production remain downstream owners.
-(defconst bt-opening-map-goal 688)
 (defconst bt-opening-plan-goal 689)
 (defconst bt-opening-underlay-goal 691)
 (defconst bt-opening-threat-goal 692)
-(defconst bt-opening-map-arabia 1)
-(defconst bt-opening-map-arena 2)
-(defconst bt-opening-map-generic 3)
 (defconst bt-opening-plan-arabia-standard 1)
 (defconst bt-opening-plan-arabia-pressure 2)
 (defconst bt-opening-plan-arabia-fast-castle 3)
@@ -946,7 +942,6 @@
     (true)
 =>
     (set-goal strategy-goal bt-strategy-boom)
-    (set-goal bt-opening-map-goal 0)
     (set-goal bt-opening-plan-goal 0)
     (set-goal bt-opening-underlay-goal 0)
     (set-goal bt-opening-threat-goal bt-opening-threat-none)
@@ -4814,32 +4809,7 @@
 ;================================================================
 ; 12E. MAP-AWARE OPENING SELECTION
 ;================================================================
-; Strategic wire:
-;   MAP / EARLY OPPONENT SIGNALS -> OPENING PLAN -> EXISTING STRATEGY
-;
-; This layer owns opening intent only. It never writes strategy-goal,
-; unit-goal, resource mode, gatherer percentages, escrow, production
-; claims, or research state.
-(defrule
-    (goal bt-opening-map-goal 0)
-    (map-type arabia)
-=>
-    (set-goal bt-opening-map-goal bt-opening-map-arabia)
-)
-(defrule
-    (goal bt-opening-map-goal 0)
-    (map-type arena)
-=>
-    (set-goal bt-opening-map-goal bt-opening-map-arena)
-)
-(defrule
-    (goal bt-opening-map-goal 0)
-    (not (map-type arabia))
-    (not (map-type arena))
-=>
-    (set-goal bt-opening-map-goal bt-opening-map-generic)
-)
-
+; Map type is an engine fact. No persistent mirror is needed.
 ; Recompute the opening-pressure witness every pass.
 (defrule
     (true)
@@ -4934,7 +4904,7 @@
     (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
-    (goal bt-opening-map-goal bt-opening-map-arabia)
+    (map-type arabia)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arabia-standard)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
@@ -4943,7 +4913,7 @@
     (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
-    (goal bt-opening-map-goal bt-opening-map-arena)
+    (map-type arena)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arena-fast-castle)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
@@ -4952,7 +4922,8 @@
     (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
-    (goal bt-opening-map-goal bt-opening-map-generic)
+    (not (map-type arabia))
+    (not (map-type arena))
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-generic-defensive)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
@@ -4962,7 +4933,7 @@
 ; infrastructure is treated as a greedy/under-defended opening signal.
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-arabia)
+    (map-type arabia)
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
     (game-time >= 300)
@@ -4980,7 +4951,7 @@
 ; shows no military infrastructure.
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-arabia)
+    (map-type arabia)
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
     (game-time >= 300)
@@ -4999,7 +4970,7 @@
 ; or a merely suspected military opening.
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-arabia)
+    (map-type arabia)
     (current-age == dark-age)
     (game-time >= 300)
     (or
@@ -5015,7 +4986,7 @@
 ; Anti-Rush above.
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-arena)
+    (map-type arena)
     (up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)
     (current-age == dark-age)
     (game-time >= 180)
@@ -5028,7 +4999,8 @@
 ; market/no-military greed signal.
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-generic)
+    (not (map-type arabia))
+    (not (map-type arena))
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
     (game-time >= 300)
@@ -5044,7 +5016,8 @@
 )
 (defrule
     (goal bt-opening-plan-goal 0)
-    (goal bt-opening-map-goal bt-opening-map-generic)
+    (not (map-type arabia))
+    (not (map-type arena))
     (current-age == dark-age)
     (game-time >= 300)
 =>
