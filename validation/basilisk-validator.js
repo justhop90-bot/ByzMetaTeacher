@@ -3664,11 +3664,8 @@ function validateAttackAllocationPolicy(rules) {
 }
 
 function validateFeudalCastleEconomyContract(rules) {
-  const castleThresholdIndex = rules.findIndex((rule) =>
-    rule.includes("(defconst bt-castle-villagers 28)"),
-  );
   assert.ok(
-    castleThresholdIndex >= 0,
+    sourceText.includes("(defconst bt-castle-villagers 28)"),
     "[Feudal economy] Castle transition threshold must be 28 villagers",
   );
 
