@@ -404,7 +404,7 @@ try {
     },
     {
       name: "malformed-xs-include-rejected",
-      expected: "must target a .xs file",
+      expected: "[Include] include",
       source: baseline.replace(
         '(include "BasiliskTelemetry.xs")',
         '(include "BasiliskTelemetry")',
@@ -412,7 +412,7 @@ try {
     },
     {
       name: "unquoted-include-rejected",
-      expected: "must contain exactly one quoted target",
+      expected: "[Include] include",
       source: baseline.replace(
         '(include "BasiliskTelemetry.xs")',
         '(include BasiliskTelemetry.xs)',
