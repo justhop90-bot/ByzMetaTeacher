@@ -3070,10 +3070,19 @@ function validateResourceModeArbiter(rules) {
 }
 
 function validateAttackResultLifecycle(rules) {
+  const measurementConstant = rules.find((rule) =>
+    rule.includes("(defconst bt-attack-measurement-seconds 180)"),
+  );
+  assert.ok(
+    measurementConstant,
+    "[Attack result] attack measurement window must use the community-aligned 180s cadence",
+  );
+
   const start = rules.find((rule) =>
     rule.includes("(attack-now)") &&
     rule.includes("(up-get-target-fact building-count 0 bt-attack-target-buildings-start-goal)") &&
-    rule.includes("(set-goal bt-attack-result-goal bt-attack-result-none)"),
+    rule.includes("(set-goal bt-attack-result-goal bt-attack-result-none)") &&
+    rule.includes("(enable-timer bt-attack-timer bt-attack-measurement-seconds)"),
   );
   assert.ok(start, "[Attack result] attack entry lacks infrastructure snapshot/result reset");
 
