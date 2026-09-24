@@ -13197,12 +13197,9 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (up-compare-goal bt-standing-archer-target-goal > 0)
             (unit-type-count-total archer-line >= 3)
         )
-        (or
-            (and
-                (up-compare-goal bt-standing-skirm-target-goal > 0)
-                (unit-type-count-total skirmisher-line >= 3)
-            )
-            (unit-type-count-total cavalry-archer-line >= 3)
+        (and
+            (up-compare-goal bt-standing-skirm-target-goal > 0)
+            (unit-type-count-total skirmisher-line >= 3)
         )
     )
     (not (goal bt-castle-commitment-goal 1))
@@ -13215,6 +13212,32 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-fletching)
     (goal bt-research-blacksmith-claim-goal 0)
+; Feudal Cavalry-Archer Fletching uses a dedicated executor so the
+; general ranged rule stays below the DE rule-element ceiling.
+(defrule
+    (current-age == feudal-age)
+    (building-type-count blacksmith >= 1)
+    (unit-type-count-total cavalry-archer-line >= 3)
+    (not (goal bt-castle-commitment-goal 1))
+    (up-research-status c: ri-fletching < research-pending)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
+    (strategic-number sn-resource-control == 0)
+    (can-research-with-escrow ri-fletching)
+    (goal bt-research-blacksmith-claim-goal 0)
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+=>
+    (set-strategic-number sn-resource-control ri-fletching)
+    (release-escrow food)
+    (release-escrow gold)
+    (research ri-fletching)
+    (set-goal bt-research-blacksmith-claim-goal ri-fletching)
+    (set-strategic-number sn-resource-control 0)
+)
+
     (goal bt-research-ranged-counter-package-goal ri-fletching)
 =>
     (set-strategic-number sn-resource-control ri-fletching)
