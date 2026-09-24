@@ -6203,35 +6203,21 @@ function validateAgeTransitionQueueGates(rules) {
 }
 
 function validateImperialPrerequisiteProviders(rules) {
-  const demandProducer = rules.find(
+  const fundingMode = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
-      rule.includes("(set-goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
       rule.includes("(not (can-research-with-escrow imperial-age))"),
   );
   assert.ok(
-    demandProducer,
-    "[Imperial prerequisites] Persistent second-provider demand producer is missing",
-  );
-  assert.ok(
-    demandProducer.includes("(building-type-count-total monastery >= 1)") &&
-      demandProducer.includes("(building-type-count-total university >= 1)") &&
-      demandProducer.includes("(building-type-count-total siege-workshop >= 1)"),
-    "[Imperial prerequisites] Demand producer must recognize Monastery, University, or Siege Workshop as the existing qualifying provider",
-  );
-
-  const fundingMode = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
-      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)"),
-  );
-  assert.ok(
     fundingMode,
-    "[Imperial prerequisites] Temporary wood-priority funding mode is missing",
+    "[Imperial prerequisites] direct second-provider funding-mode selector is missing",
   );
   assert.ok(
-    !fundingMode.includes("(goal bt-resource-mode-goal 0)"),
-    "[Imperial prerequisites] Funding mode must be allowed to override Imperial bank-prep arbitration",
+    fundingMode.includes("(building-type-count-total monastery >= 1)") &&
+      fundingMode.includes("(building-type-count-total university >= 1)") &&
+      fundingMode.includes("(building-type-count-total siege-workshop >= 1)"),
+    "[Imperial prerequisites] funding-mode selector must recognize Monastery, University, or Siege Workshop as the existing qualifying provider",
   );
   for (const crisis of [
     "bt-resource-mode-food-crisis",
@@ -6240,7 +6226,7 @@ function validateImperialPrerequisiteProviders(rules) {
   ]) {
     assert.ok(
       fundingMode.includes(`(not (goal bt-resource-mode-goal ${crisis}))`),
-      "[Imperial prerequisites] Funding mode must yield to " + crisis,
+      "[Imperial prerequisites] funding mode must yield to " + crisis,
     );
   }
 
@@ -6251,97 +6237,128 @@ function validateImperialPrerequisiteProviders(rules) {
   );
   assert.ok(
     fundingAllocation,
-    "[Imperial prerequisites] Temporary wood-priority funding allocation is missing",
+    "[Imperial prerequisites] temporary wood-priority funding allocation is missing",
   );
   assert.ok(
     fundingAllocation.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
       fundingAllocation.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
       fundingAllocation.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
-    "[Imperial prerequisites] Funding allocation percentages are incomplete",
+    "[Imperial prerequisites] funding allocation percentages are incomplete",
   );
 
   const siegeBuilder = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
+      rule.includes("(goal bt-imperial-prereq-backoff-goal 0)") &&
       rule.includes("(building-type-count-total castle < 1)") &&
       rule.includes("(building-type-count-total siege-workshop < 1)") &&
+      rule.includes("(up-pending-objects c: siege-workshop == 0)") &&
+      rule.includes("(strategic-number sn-resource-control == 0)") &&
+      rule.includes("(can-build-with-escrow siege-workshop)") &&
       rule.includes("(build siege-workshop)"),
   );
   assert.ok(
     siegeBuilder,
-    "[Imperial prerequisites] Siege Workshop builder is missing",
+    "[Imperial prerequisites] direct Siege Workshop capability provider is missing",
   );
   assert.ok(
-    siegeBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
-    "[Imperial prerequisites] Siege Workshop builder must consume persistent prerequisite demand",
+    siegeBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      siegeBuilder.includes("(building-type-count-total university >= 1)") &&
+      siegeBuilder.includes("(not (can-research-with-escrow imperial-age)"),
+    "[Imperial prerequisites] Siege Workshop provider must require an existing qualifying provider and unfinished Imperial Age",
   );
   assert.ok(
-    siegeBuilder.includes("(or") &&
-      siegeBuilder.includes("(building-type-count-total monastery >= 1)") &&
-      siegeBuilder.includes("(building-type-count-total university >= 1)"),
-    "[Imperial prerequisites] Siege Workshop must accept Monastery or University as the existing qualifying provider",
+    siegeBuilder.includes("(set-strategic-number sn-resource-control bt-imperial-siege-claim)"),
+    "[Imperial prerequisites] Siege Workshop provider must claim the shared resource mutex",
   );
   assert.ok(
-    !siegeBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
-    "[Imperial prerequisites] Siege Workshop builder must not depend on Castle Cataphract demand",
+    !siegeBuilder.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] Siege Workshop provider must not depend on Castle Cataphract demand",
   );
 
   const universityBuilder = rules.find(
     (rule) =>
       rule.includes("(current-age == castle-age)") &&
+      rule.includes("(goal bt-imperial-prereq-backoff-goal 0)") &&
       rule.includes("(building-type-count-total castle < 1)") &&
       rule.includes("(building-type-count-total university < 1)") &&
+      rule.includes("(up-pending-objects c: university == 0)") &&
+      rule.includes("(strategic-number sn-resource-control == 0)") &&
+      rule.includes("(can-build-with-escrow university)") &&
       rule.includes("(build university)"),
   );
   assert.ok(
     universityBuilder,
-    "[Imperial prerequisites] University builder is missing",
+    "[Imperial prerequisites] direct University fallback capability provider is missing",
   );
   assert.ok(
-    universityBuilder.includes("(goal bt-imperial-prereq-demand-goal 1)"),
-    "[Imperial prerequisites] University builder must consume persistent prerequisite demand",
+    universityBuilder.includes("(building-type-count-total monastery >= 1)") &&
+      universityBuilder.includes("(building-type-count-total siege-workshop >= 1)") &&
+      universityBuilder.includes("(not (can-research-with-escrow imperial-age)"),
+    "[Imperial prerequisites] University provider must require an existing qualifying provider and unfinished Imperial Age",
   );
   assert.ok(
-    universityBuilder.includes("(or") &&
-      universityBuilder.includes("(building-type-count-total monastery >= 1)") &&
-      universityBuilder.includes("(building-type-count-total siege-workshop >= 1)"),
-    "[Imperial prerequisites] University must accept Monastery or Siege Workshop as the existing qualifying provider",
+    universityBuilder.includes("(set-strategic-number sn-resource-control bt-imperial-university-claim)"),
+    "[Imperial prerequisites] University provider must claim the shared resource mutex",
   );
   assert.ok(
-    !universityBuilder.includes("(goal bt-castle-cataphract-demand-goal 0)"),
-    "[Imperial prerequisites] University builder must not depend on Castle Cataphract demand",
+    !universityBuilder.includes("(goal bt-castle-cataphract-demand-goal"),
+    "[Imperial prerequisites] University provider must not depend on Castle Cataphract demand",
   );
 
-  const demandClearWorldState = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
-      rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
-      rule.includes("(or") &&
-      rule.includes("(current-age >= imperial-age)") &&
-      rule.includes("(building-type-count-total castle >= 1)"),
-  );
-  assert.ok(
-    demandClearWorldState,
-    "[Imperial prerequisites] Demand-clear world-state lifecycle witness is missing",
-  );
-  assert.ok(
-    !demandClearWorldState.includes("(goal bt-castle-cataphract-demand-goal"),
-    "[Imperial prerequisites] Demand clear must not depend on Cataphract demand",
-  );
+  for (const [claim, building] of [
+    ["bt-imperial-siege-claim", "siege-workshop"],
+    ["bt-imperial-university-claim", "university"],
+  ]) {
+    const completion = rules.find(
+      (rule) =>
+        rule.includes(`(strategic-number sn-resource-control == ${claim})`) &&
+        rule.includes(`(building-type-count ${building} >= 1)`) &&
+        rule.includes("(set-goal bt-imperial-prereq-backoff-goal 0)") &&
+        rule.includes("(set-strategic-number sn-resource-control 0)"),
+    );
+    assert.ok(
+      completion,
+      "[Imperial prerequisites] " + building + " completion must release the shared claim and clear backoff",
+    );
 
-  const demandClearFeasibility = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
-      rule.includes("(set-goal bt-imperial-prereq-demand-goal 0)") &&
-      rule.includes("(can-research-with-escrow imperial-age)"),
+    const watchdog = rules.find(
+      (rule) =>
+        rule.includes(`(strategic-number sn-resource-control == ${claim})`) &&
+        rule.includes("(timer-triggered bt-imperial-prereq-watchdog-timer)") &&
+        rule.includes("(up-pending-objects c: " + building + " > 0)"),
+    );
+    assert.ok(
+      watchdog,
+      "[Imperial prerequisites] " + building + " watchdog support is missing",
+    );
+
+    const failure = rules.find(
+      (rule) =>
+        rule.includes(`(strategic-number sn-resource-control == ${claim})`) &&
+        rule.includes("(timer-triggered bt-imperial-prereq-watchdog-timer)") &&
+        rule.includes("(up-pending-objects c: " + building + " == 0)") &&
+        rule.includes("(set-goal bt-imperial-prereq-backoff-goal 1)") &&
+        rule.includes("(set-strategic-number sn-resource-control 0)"),
+    );
+    assert.ok(
+      failure,
+      "[Imperial prerequisites] " + building + " watchdog failure must release ownership and arm bounded backoff",
+    );
+  }
+
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-imperial-prereq-backoff-goal 1)") &&
+        rule.includes("(timer-triggered bt-imperial-prereq-backoff-timer)") &&
+        rule.includes("(set-goal bt-imperial-prereq-backoff-goal 0)"),
+    ),
+    "[Imperial prerequisites] bounded backoff release is missing",
   );
   assert.ok(
-    demandClearFeasibility,
-    "[Imperial prerequisites] Demand-clear Imperial-feasibility witness is missing",
-  );
-  assert.ok(
-    !demandClearFeasibility.includes("(goal bt-castle-cataphract-demand-goal"),
-    "[Imperial prerequisites] Imperial-feasibility demand clear must not depend on Cataphract demand",
+    !rules.some((rule) => rule.includes("bt-imperial-prereq-demand-goal")),
+    "[Imperial prerequisites] obsolete persistent prerequisite demand goal must remain removed",
   );
 }
 
