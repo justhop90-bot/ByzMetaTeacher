@@ -158,7 +158,7 @@ try {
   const caFletching = findSemanticRule(
     "Feudal Cavalry-Archer Fletching executor",
     (rule) =>
-      hasFact(rule, "current-age", ["feudal-age"]) &&
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
       hasFact(rule, "unit-type-count-total", [
         "cavalry-archer-line",
         ">=",
@@ -262,7 +262,7 @@ try {
   findSemanticRule(
     "hard Castle bank",
     (rule) =>
-      hasFact(rule, "current-age", ["feudal-age"]) &&
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
       hasFact(rule, "unit-type-count", [
         "villager",
         ">=",
@@ -282,7 +282,7 @@ try {
   findSemanticRule(
     "hard Imperial bank",
     (rule) =>
-      hasFact(rule, "current-age", ["castle-age"]) &&
+      hasFact(rule, "current-age", ["==", "castle-age"]) &&
       hasFact(rule, "unit-type-count", [
         "villager",
         ">=",
