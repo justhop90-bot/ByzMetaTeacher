@@ -419,6 +419,14 @@ try {
       ),
     },
     {
+      name: "telemetry-xs-goal-id-drift-rejected",
+      expected: "[Telemetry namespace] XS BT_RING_READ",
+      source: baseline.replace(
+        "(defconst bt-telemetry-read-head-goal 736)",
+        "(defconst bt-telemetry-read-head-goal 900)",
+      ),
+    },
+    {
       name: "multi-target-include-rejected",
       expected: "must contain exactly one quoted target",
       source: baseline.replace(
