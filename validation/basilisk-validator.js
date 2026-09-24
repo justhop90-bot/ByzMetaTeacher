@@ -3297,8 +3297,7 @@ function validateResourceModeArbiter(rules) {
     .map((rule, index) => ({ rule, index }))
     .filter(
       ({ rule }) =>
-        /\(set-goal bt-resource-mode-goal [^)]+\)/.test(rule) &&
-        !rule.includes("(set-goal bt-resource-mode-goal 0)"),
+        /\(set-goal bt-resource-mode-goal (?!0\))[^)]+\)/.test(rule),
     );
   assert.ok(
     modeWriters.length >= 20,
