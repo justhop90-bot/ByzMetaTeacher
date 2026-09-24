@@ -12941,7 +12941,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 (defrule
     (goal attack-goal 0)
     (goal bt-attack-result-goal bt-attack-result-none)
-    (up-compare-goal bt-attack-buildings-destroyed-goal == 0)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
     (up-compare-goal bt-relative-force-goal < 0)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-stalled)
@@ -12954,7 +12954,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 (defrule
     (goal attack-goal 0)
     (goal bt-attack-result-goal bt-attack-result-none)
-    (up-compare-goal bt-attack-buildings-destroyed-goal == 0)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
     (up-compare-goal bt-relative-force-goal >= 0)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-reassess)
