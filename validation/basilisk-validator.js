@@ -3070,6 +3070,22 @@ function validateResourceModeArbiter(rules) {
 }
 
 function validateAttackResultLifecycle(rules) {
+  const collapseConstant = rules.find((rule) =>
+    rule.includes("(defconst bt-attack-collapse-force-floor -5)"),
+  );
+  assert.ok(
+    collapseConstant,
+    "[Attack result] severe-collapse force floor is missing",
+  );
+
+  const collapseIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(timer-triggered bt-attack-timer)") &&
+      rule.includes("(goal attack-goal 1)") &&
+      rule.includes("bt-attack-collapse-force-floor") &&
+      rule.includes("(up-retreat-now)") &&
+      rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)"),
+  );
   const measurementConstant = rules.find((rule) =>
     rule.includes("(defconst bt-attack-measurement-seconds 180)"),
   );
@@ -3085,6 +3101,18 @@ function validateAttackResultLifecycle(rules) {
     rule.includes("(enable-timer bt-attack-timer bt-attack-measurement-seconds)"),
   );
   assert.ok(start, "[Attack result] attack entry lacks infrastructure snapshot/result reset");
+
+  const measurementIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(timer-triggered bt-attack-timer)") &&
+      rule.includes("(goal attack-goal 1)") &&
+      rule.includes("(up-get-target-fact building-count 0 bt-attack-target-buildings-now-goal)") &&
+      rule.includes("(set-goal attack-goal 0)"),
+  );
+  assert.ok(
+    collapseIndex >= 0 && measurementIndex >= 0 && collapseIndex < measurementIndex,
+    "[Attack result] severe-collapse close must precede normal attack measurement reset",
+  );
 
   const end = rules.find((rule) =>
     rule.includes("(timer-triggered bt-attack-timer)") &&
