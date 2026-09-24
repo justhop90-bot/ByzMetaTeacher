@@ -4602,6 +4602,68 @@ function validateBarracksSquiresArsonLifecycle(rules) {
   }
 }
 
+function validateOnagerLifecycle(rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  const executor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-onager-demand-goal 1)") &&
+      rule.includes("(up-research-status c: ri-onager == research-complete)") &&
+      rule.includes("(train onager)") &&
+      rule.includes("(can-train onager)"),
+  );
+  assert.ok(executor, "[Onager] research-complete train executor is missing");
+  const executorText = normalize(executor);
+  assert.ok(
+    executorText.includes("(unit-type-count-total onager < bt-onager-response-target)"),
+    "[Onager] production cap must count queued/current Onagers",
+  );
+  assert.ok(
+    !executorText.includes("(unit-type-count-total mangonel-line < bt-onager-response-target)"),
+    "[Onager] production cap must not use the Mangonel line",
+  );
+
+  const invalidator = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-onager-demand-goal 1)") &&
+      rule.includes("(set-goal bt-onager-demand-goal 0)") &&
+      rule.includes("(strategic-number sn-resource-control != ri-onager)"),
+  );
+  assert.ok(invalidator, "[Onager] demand invalidator is missing");
+  const invalidatorText = normalize(invalidator);
+  assert.ok(
+    invalidatorText.includes("(goal bt-research-siege-workshop-claim-goal 0)"),
+    "[Onager] active research claim must protect demand invalidation",
+  );
+  assert.ok(
+    !invalidatorText.includes("(not (up-research-status c: ri-onager == research-available))"),
+    "[Onager] demand invalidator must not treat research-pending/complete as failure",
+  );
+
+  const researchExecutor = rules.find(
+    (rule) =>
+      rule.includes("(research ri-onager)") &&
+      rule.includes("(can-research-with-escrow ri-onager)") &&
+      rule.includes("(set-goal bt-research-siege-workshop-claim-goal ri-onager)"),
+  );
+  assert.ok(
+    researchExecutor,
+    "[Onager] research executor must pair feasibility, action, and persistent claim",
+  );
+
+  const completion = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-onager-demand-goal 1)") &&
+      rule.includes("(up-research-status c: ri-onager == research-complete)") &&
+      rule.includes("(unit-type-count onager >= bt-onager-response-target)") &&
+      rule.includes("(set-goal bt-onager-demand-goal 0)"),
+  );
+  assert.ok(
+    completion,
+    "[Onager] demand completion must use actual completed Onagers",
+  );
+}
+
 function validateLifecycleAnchors(sourceText, rules) {
   for (const symbol of [
     "bt-strategy-boom",
@@ -4685,6 +4747,7 @@ validateRetryDoctrine(source);
 validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
+validateOnagerLifecycle(rules);
 validateEliteVarangianResearchCapability(rules);
 validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
