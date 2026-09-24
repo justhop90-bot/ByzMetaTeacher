@@ -6701,18 +6701,35 @@ function validatePreemptionReplay(repoRootPath) {
 
 function validateSourceOrder(rules) {
   const firstStrategyWriterIndex = ruleIndex(rules, "(set-goal strategy-goal");
-  const finalStrategyWriterIndex = Math.max(
-    ...rules
-      .map((rule, index) =>
-        rule.includes("(set-goal strategy-goal") ? index : -1,
-      )
-      .filter((index) => index >= 0),
+  const firstResourceModeWriterIndex = rules.findIndex(
+    (rule, index) =>
+      index > firstStrategyWriterIndex &&
+      rule.includes("(set-goal bt-resource-mode-goal ") &&
+      !rule.includes("(true)"),
   );
-  const resourceModeResetIndex = ruleIndex(
-    rules,
-    "(true)",
-    "(set-goal bt-resource-mode-goal 0)",
+  assert.ok(
+    firstResourceModeWriterIndex > firstStrategyWriterIndex,
+    "[Source order] resource-mode arbitration writer must exist after primary strategy selection",
   );
+
+  const strategySelectionWriterIndices = rules
+    .map((rule, index) =>
+      index < firstResourceModeWriterIndex &&
+      rule.includes("(set-goal strategy-goal")
+        ? index
+        : -1,
+    )
+    .filter((index) => index >= 0);
+
+  assert.ok(
+    strategySelectionWriterIndices.length > 0,
+    "[Source order] primary strategy-selection writers are missing",
+  );
+
+  const finalStrategySelectionWriterIndex = Math.max(
+    ...strategySelectionWriterIndices,
+  );
+
   const firstProductionIndex = ruleIndex(
     rules,
     "(goal bt-standing-army-demand-goal 1)",
@@ -6727,7 +6744,7 @@ function validateSourceOrder(rules) {
     "(attack-now)",
   );
 
-  for (let index = 0; index < finalStrategyWriterIndex; index += 1) {
+  for (let index = 0; index < finalStrategySelectionWriterIndex; index += 1) {
     const rule = rules[index];
     if (
       !rule.includes("(goal strategy-goal") &&
@@ -6737,20 +6754,20 @@ function validateSourceOrder(rules) {
     }
     assert.ok(
       !/(^|\s)\((build|train|research|attack-now)\b/.test(rule),
-      `[One-pass latency] strategy reader at rule ${index} before final strategy writer issues an engine action`,
+      "[One-pass latency] strategy reader before final strategy-selection writer issues an engine action",
     );
   }
 
   assert.ok(
-    finalStrategyWriterIndex >= firstStrategyWriterIndex,
-    "[Source order] final strategy writer must not precede first strategy writer",
+    finalStrategySelectionWriterIndex >= firstStrategyWriterIndex,
+    "[Source order] final strategy-selection writer must not precede first strategy writer",
   );
   assert.ok(
-    finalStrategyWriterIndex < resourceModeResetIndex,
-    "[Source order] final strategy writer must precede resource-mode arbitration",
+    finalStrategySelectionWriterIndex < firstResourceModeWriterIndex,
+    "[Source order] strategy selection must precede resource-mode arbitration",
   );
   assert.ok(
-    resourceModeResetIndex < firstProductionIndex,
+    firstResourceModeWriterIndex < firstProductionIndex,
     "[Source order] resource-mode arbitration must precede production",
   );
   assert.ok(
