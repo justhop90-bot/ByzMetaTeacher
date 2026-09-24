@@ -11,12 +11,12 @@ const validatorPath = path.join(repoRoot, "validation", "basilisk-validator.js")
 const controllerPath = path.join(repoRoot, "Basilisk", "Basilisk.per");
 const baseline = fs.readFileSync(controllerPath, "utf8");
 
-function runValidator(sourceText, name) {
+function runValidator(sourceText, name, extraArgs = []) {
   const tempPath = path.join(tempRoot, name + ".per");
   fs.writeFileSync(tempPath, sourceText, "utf8");
   const result = spawnSync(
     process.execPath,
-    [validatorPath, tempPath],
+    [validatorPath, tempPath, ...extraArgs],
     { cwd: repoRoot, encoding: "utf8" },
   );
   return {
@@ -571,7 +571,7 @@ try {
 
   const ruleLengthReports = [];
   for (const testCase of ruleLengthCases) {
-    const result = runValidator(testCase.source, testCase.name);
+    const result = runValidator(testCase.source, testCase.name, ["--contract-only"]);
     assert.equal(
       result.status,
       testCase.expectedStatus,
@@ -1989,7 +1989,7 @@ try {
 
   const boundaryPassReports = [];
   for (const boundary of boundaryPasses) {
-    const result = runValidator(boundary.source, boundary.name);
+    const result = runValidator(boundary.source, boundary.name, ["--contract-only"]);
     assert.equal(
       result.status,
       0,
@@ -2070,7 +2070,7 @@ try {
 
   const reports = [];
   for (const mutation of criticalMutations) {
-    const result = runValidator(mutation.source, mutation.name);
+    const result = runValidator(mutation.source, mutation.name, ["--contract-only"]);
     assert.notEqual(
       result.status,
       0,
