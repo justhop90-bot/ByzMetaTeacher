@@ -2637,80 +2637,66 @@ function validateFarmEscrowContracts(rules) {
   }
 }
 
-function validateDoubleBitAxeLifecycle(rules) {
+function validateEcoResearchDemandRemoval(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
-  const demandWriter = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-double-bit-axe-demand-goal 0)") &&
-      rule.includes("(set-goal bt-double-bit-axe-demand-goal 1)"),
-  );
-  assert.ok(
-    demandWriter,
-    "[DBA lifecycle] Double-Bit Axe demand writer is missing",
-  );
-  const demandText = normalize(demandWriter);
-  for (const prerequisite of [
-    "(current-age == feudal-age)",
-    "(food-amount >= bt-double-bit-axe-food-buffer)",
-    "(wood-amount >= bt-double-bit-axe-wood-buffer)",
-    "(up-research-status c: ri-double-bit-axe == research-available)",
-  ]) {
+  const retired = [
+    "bt-horse-collar-demand-goal",
+    "bt-double-bit-axe-demand-goal",
+    "bt-gold-mining-demand-goal",
+  ];
+  for (const symbol of retired) {
     assert.ok(
-      demandText.includes(prerequisite),
-      "[DBA lifecycle] demand writer is missing prerequisite: " + prerequisite,
+      !rules.some((rule) => rule.includes(symbol)),
+      "[Eco demand removal] retired demand goal remains: " + symbol,
     );
   }
 
-  const releaseRules = rules.filter(
-    (rule) =>
-      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
-      rule.includes("(set-goal bt-double-bit-axe-demand-goal 0)"),
-  );
-  assert.ok(
-    releaseRules.length > 0,
-    "[DBA lifecycle] demand release rule is missing",
-  );
-
-  for (const releaseRule of releaseRules) {
-    const releaseText = normalize(releaseRule);
-    assert.ok(
-      !releaseText.includes("(can-research-with-escrow castle-age)"),
-      "[DBA lifecycle] Castle feasibility must not clear Double-Bit Axe demand before execution",
-    );
-    assert.ok(
-      releaseText.includes("(not (food-amount >= bt-double-bit-axe-food-buffer))"),
-      "[DBA lifecycle] demand release must preserve the configured food buffer",
-    );
-    assert.ok(
-      releaseText.includes("(not (wood-amount >= bt-double-bit-axe-wood-buffer))"),
-      "[DBA lifecycle] demand release must preserve the configured wood buffer",
-    );
-    assert.ok(
-      releaseText.includes("(up-research-status c: ri-double-bit-axe >= research-pending)"),
-      "[DBA lifecycle] demand release must clear an already-pending/researching DBA",
-    );
-  }
-
-  const executor = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
-      rule.includes("(research ri-double-bit-axe)"),
-  );
-  assert.ok(
-    executor,
-    "[DBA lifecycle] Double-Bit Axe research executor is missing",
-  );
-  const executorText = normalize(executor);
+  const horse = rules.find((rule) => rule.includes("(research ri-horse-collar)"));
+  assert.ok(horse, "[Eco demand removal] Horse Collar executor is missing");
+  const horseText = normalize(horse);
   for (const witness of [
     "(current-age == feudal-age)",
+    "(up-research-status c: ri-horse-collar == research-available)",
+    "(building-type-count mill >= 1)",
+    "(can-research-with-escrow ri-horse-collar)",
+    "(goal bt-research-mill-claim-goal 0)",
+  ]) {
+    assert.ok(horseText.includes(witness), "[Eco demand removal] Horse Collar executor is missing witness: " + witness);
+  }
+
+  const dba = rules.find((rule) => rule.includes("(research ri-double-bit-axe)"));
+  assert.ok(dba, "[Eco demand removal] Double-Bit Axe executor is missing");
+  const dbaText = normalize(dba);
+  for (const witness of [
+    "(current-age == feudal-age)",
+    "(up-research-status c: ri-double-bit-axe == research-available)",
+    "(food-amount >= bt-double-bit-axe-food-buffer)",
+    "(wood-amount >= bt-double-bit-axe-wood-buffer)",
+    "(not (goal bt-castle-commitment-goal 1))",
     "(can-research-with-escrow ri-double-bit-axe)",
     "(goal bt-research-lumber-camp-claim-goal 0)",
   ]) {
-    assert.ok(
-      executorText.includes(witness),
-      "[DBA lifecycle] executor is missing witness: " + witness,
-    );
+    assert.ok(dbaText.includes(witness), "[Eco demand removal] Double-Bit Axe executor is missing witness: " + witness);
+  }
+
+  const gold = rules.find((rule) => rule.includes("(research ri-gold-mining)"));
+  assert.ok(gold, "[Eco demand removal] Gold Mining executor is missing");
+  const goldText = normalize(gold);
+  for (const witness of [
+    "(current-age >= castle-age)",
+    "(research-available ri-gold-mining)",
+    "(goal bt-cataphract-demand-goal 1)",
+    "(goal strategy-goal bt-strategy-flush)",
+    "(goal unit-goal bt-unit-mix)",
+    "(unit-type-count-total spearman-line >= bt-spear-target-1)",
+    "(up-compare-goal bt-noncav-cavalry-level-goal >= 1)",
+    "(building-type-count-total stable >= 1)",
+    "(unit-type-count-total camel-line < bt-camel-target-1)",
+    "(can-research-with-escrow ri-gold-mining)",
+    "(goal bt-research-mining-camp-claim-goal 0)",
+  ]) {
+    assert.ok(goldText.includes(witness), "[Eco demand removal] Gold Mining executor is missing witness: " + witness);
   }
 }
 
@@ -4547,6 +4533,7 @@ validateEconomicResearchPackageIsolation(rules, source);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
+validateEcoResearchDemandRemoval(rules);
 validateMillPlacement(source, rules);
 validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
