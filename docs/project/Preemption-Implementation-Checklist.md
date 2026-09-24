@@ -64,7 +64,7 @@ Cross-reference: UGC programmer guide; parser diagnostics.
 ## 12. Goal namespace
 Status: IMPLEMENTED
 Historical collision fixed: bt-imperial-commitment-goal and bt-debug-last-strategy-goal previously shared GoalId 710.
-Diagnostic strategy latch moved to GoalId 768. Telemetry occupies Goals 729-766.
+Diagnostic strategy latch moved to GoalId 768. The former telemetry GoalIds 729-766 are now retired.
 Validator rejects duplicate numeric GoalIds.
 
 ## 13. Timer-driven telemetry
