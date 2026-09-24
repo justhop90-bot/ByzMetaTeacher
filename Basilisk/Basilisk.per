@@ -5868,6 +5868,148 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
 )
 
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-defense-issued-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (goal bt-cavalry-threat-goal 1)
+    (building-type-count-total barracks >= 1)
+    (up-pending-objects c: spearman-line == 0)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+    (set-goal bt-preempt-defense-issued-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-defense-issued-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (goal bt-ranged-threat-goal 1)
+    (building-type-count-total archery-range >= 1)
+    (up-pending-objects c: skirmisher-line == 0)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+    (set-goal bt-preempt-defense-issued-goal 1)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal strategy-goal bt-strategy-boom)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc2-claim)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal strategy-goal bt-strategy-boom)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc3-claim)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (building-type-count town-center >= 2)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (building-type-count town-center >= 3)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 2)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-idle)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
+    )
+=>
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 3)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-idle)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
+    )
+=>
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-active-goal 1)
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-active-goal 0)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
 ; 14D. BYZANTINE RESOURCE ALLOCATION
 ;================================================================
 ; CONSUMES existing strategy/composition/project state. Never writes it.
