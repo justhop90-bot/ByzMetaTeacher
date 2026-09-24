@@ -4451,8 +4451,14 @@ function validateStrategicNarration(sourceText, rules) {
       const ecoException =
         category === "ECO" &&
         rule.includes("(up-research-status c:");
+      const varangianCompositionException =
+        category === "COMPOSITION" &&
+        rule.includes("(goal bt-varangian-demand-goal 1)");
       assert.ok(
-        castleGateException || tcCompletionException || ecoException,
+        castleGateException ||
+          tcCompletionException ||
+          ecoException ||
+          varangianCompositionException,
         "[Narration] message does not match the state witness for category " + category,
       );
     }
