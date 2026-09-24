@@ -3618,7 +3618,7 @@ function validateHandoffWiring(repoRootPath, legacyPath) {
     "[Harness] legacy validator does not default to Basilisk/Basilisk.per",
   );
   assert.ok(
-    fs.existsSync(path.join(repoRootPath, "validation", "VALIDATOR-HANDOFF.md")),
+    fs.existsSync(path.join(repoRootPath, "docs", "project", "VALIDATOR-HANDOFF.md")),
     "[Harness] validator handoff document is missing",
   );
 }
