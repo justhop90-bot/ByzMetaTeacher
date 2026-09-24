@@ -6423,128 +6423,67 @@ function validateFeudalEcoResearchPriority(rules, sourceText) {
     "(goal bt-research-monk-package-goal 0)",
   ];
 
-  const horseDemandWriter = rules.find(
+  const horseExecutor = rules.find(
     (rule) =>
-      rule.includes("(goal bt-horse-collar-demand-goal 0)") &&
       rule.includes("(current-age == feudal-age)") &&
       rule.includes("(up-research-status c: ri-horse-collar == research-available)") &&
       rule.includes("(building-type-count mill >= 1)") &&
-      rule.includes("(set-goal bt-horse-collar-demand-goal 1)"),
-  );
-  assert.ok(
-    horseDemandWriter,
-    "[Feudal eco] persistent Horse Collar demand writer is missing",
-  );
-
-  assert.ok(
-    sourceText.includes("(defconst bt-horse-collar-demand-goal 698)"),
-    "[Feudal eco] persistent Horse Collar demand goal constant is missing",
-  );
-
-  const horseExecutor = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
-      rule.includes("(research ri-horse-collar)"),
+      rule.includes("(can-research-with-escrow ri-horse-collar)") &&
+      rule.includes("(research ri-horse-collar)") &&
+      rule.includes("(goal bt-research-mill-claim-goal 0)"),
   );
   assert.ok(
     horseExecutor,
-    "[Feudal eco] Horse Collar executor is missing",
+    "[Feudal eco] Horse Collar direct-feasibility executor is missing",
   );
-  for (const witness of [
-    "(current-age == feudal-age)",
-    "(can-research-with-escrow ri-horse-collar)",
-    "(goal bt-research-mill-claim-goal 0)",
-  ]) {
-    assert.ok(
-      horseExecutor.includes(witness),
-      "[Feudal eco] Horse Collar executor is missing witness: " + witness,
-    );
-  }
+  assert.ok(
+    horseExecutor.includes("(not (goal bt-castle-commitment-goal 1))") &&
+      horseExecutor.includes("(strategic-number sn-resource-control == 0)"),
+    "[Feudal eco] Horse Collar executor must yield to Castle commitment and shared resource ownership",
+  );
   for (const veto of forbidden) {
     assert.ok(
       !horseExecutor.includes(veto),
-      "[Feudal eco] Horse Collar executor still contains unrelated package veto: " + veto,
+      "[Feudal eco] Horse Collar executor still contains unrelated military package veto: " + veto,
     );
   }
 
-  const dbaExecutor = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
-      rule.includes("(research ri-double-bit-axe)"),
-  );
-  assert.ok(
-    dbaExecutor,
-    "[Feudal eco] Double-Bit Axe executor is missing",
-  );
-  assert.ok(
-    dbaExecutor.includes("(not (goal bt-castle-commitment-goal 1))"),
-    "[Feudal eco] Double-Bit Axe executor must yield to Castle commitment",
-  );
-  for (const veto of forbidden) {
-    assert.ok(
-      !dbaExecutor.includes(veto),
-      "[Feudal eco] Double-Bit Axe executor still contains unrelated package veto: " + veto,
-    );
-  }
-
-  const horseHold = rules.find(
-    (rule) =>
-      rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal bt-horse-collar-demand-goal 1)") &&
-      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
-  );
-  assert.ok(
-    horseHold,
-    "[Feudal eco] persistent Horse Collar hold rule is missing",
-  );
-  for (const veto of forbidden) {
-    assert.ok(
-      !horseHold.includes(veto),
-      "[Feudal eco] Horse Collar hold rule still contains unrelated package veto: " + veto,
-    );
-  }
-
-  const dbaHold = rules.find(
-    (rule) =>
-      rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal bt-double-bit-axe-demand-goal 1)") &&
-      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
-  );
-  assert.ok(
-    dbaHold,
-    "[Feudal eco] persistent Double-Bit Axe hold rule is missing",
-  );
-
-  const dbaImmediateHold = rules.find(
+  const doubleBitAxeExecutor = rules.find(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
       rule.includes("(up-research-status c: ri-double-bit-axe == research-available)") &&
       rule.includes("(can-research-with-escrow ri-double-bit-axe)") &&
-      rule.includes("(set-goal bt-feudal-eco-hold-goal 1)"),
+      rule.includes("(research ri-double-bit-axe)") &&
+      rule.includes("(goal bt-research-lumber-camp-claim-goal 0)"),
   );
   assert.ok(
-    dbaImmediateHold,
-    "[Feudal eco] first-pass Double-Bit Axe hold rule is missing",
+    doubleBitAxeExecutor,
+    "[Feudal eco] Double-Bit Axe direct-feasibility executor is missing",
   );
   assert.ok(
-    horseHold.includes("(unit-type-count villager < bt-castle-villagers)"),
-    "[Feudal eco] Horse Collar hold must yield at the Castle villager threshold",
-  );
-  assert.ok(
-    dbaHold.includes("(unit-type-count villager < bt-castle-villagers)"),
-    "[Feudal eco] Double-Bit Axe hold must yield at the Castle villager threshold",
-  );
-  assert.ok(
-    dbaImmediateHold.includes("(unit-type-count villager < bt-castle-villagers)"),
-    "[Feudal eco] first-pass Double-Bit Axe hold must yield at the Castle villager threshold",
+    doubleBitAxeExecutor.includes("(not (goal bt-castle-commitment-goal 1))"),
+    "[Feudal eco] Double-Bit Axe executor must yield to Castle commitment",
   );
   for (const veto of forbidden) {
     assert.ok(
-      !dbaHold.includes(veto),
-      "[Feudal eco] Double-Bit Axe hold rule still contains unrelated package veto: " + veto,
+      !doubleBitAxeExecutor.includes(veto),
+      "[Feudal eco] Double-Bit Axe executor still contains unrelated military package veto: " + veto,
+    );
+  }
+
+  for (const obsoleteState of [
+    "bt-horse-collar-demand-goal",
+    "bt-double-bit-axe-demand-goal",
+    "bt-feudal-eco-hold-goal",
+  ]) {
+    assert.equal(
+      sourceText.includes(obsoleteState),
+      false,
+      "[Feudal eco] obsolete cached eco state must remain removed: " + obsoleteState,
     );
   }
 }
+
 
 function validateEconomicResearchPackageIsolation(rules, sourceText) {
   const forbidden = [
@@ -6554,58 +6493,27 @@ function validateEconomicResearchPackageIsolation(rules, sourceText) {
     "(goal bt-research-siege-package-goal 0)",
     "(goal bt-research-monk-package-goal 0)",
   ];
-  const economicExecutors = [
-    ["ri-heavy-plow", "bt-heavy-plow-demand-goal"],
-    ["ri-gold-mining", "bt-gold-mining-demand-goal"],
-    ["ri-wheel-barrow", "bt-wheelbarrow-demand-goal"],
-    ["ri-hand-cart", "bt-hand-cart-demand-goal"],
-    ["ri-bow-saw", "bt-bow-saw-demand-goal"],
-    ["ri-gold-shaft-mining", "bt-gold-shaft-mining-demand-goal"],
+
+  const executors = [
+    ["ri-heavy-plow", "bt-research-mill-claim-goal"],
+    ["ri-gold-mining", "bt-research-mining-camp-claim-goal"],
+    ["ri-wheel-barrow", "bt-research-town-center-claim-goal"],
+    ["ri-hand-cart", "bt-research-town-center-claim-goal"],
+    ["ri-bow-saw", "bt-research-lumber-camp-claim-goal"],
+    ["ri-gold-shaft-mining", "bt-research-mining-camp-claim-goal"],
   ];
 
-  assert.ok(
-    sourceText.includes("(defconst bt-heavy-plow-demand-goal 699)"),
-    "[Castle eco] persistent Heavy Plow demand goal constant is missing",
-  );
-
-  const heavyPlowDemand = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-heavy-plow-demand-goal 0)") &&
-      rule.includes("(current-age == castle-age)") &&
-      rule.includes("(up-research-status c: ri-horse-collar >= research-complete)") &&
-      rule.includes("(building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)") &&
-      rule.includes("(up-research-status c: ri-heavy-plow == research-available)") &&
-      rule.includes("(set-goal bt-heavy-plow-demand-goal 1)"),
-  );
-  assert.ok(
-    heavyPlowDemand,
-    "[Castle eco] persistent Heavy Plow demand writer is missing",
-  );
-
-  const heavyPlowCompletion = rules.find(
-    (rule) =>
-      rule.includes("(goal bt-research-mill-claim-goal ri-heavy-plow)") &&
-      rule.includes("(up-research-status c: ri-heavy-plow == research-complete)") &&
-      rule.includes("(set-goal bt-heavy-plow-demand-goal 0)"),
-  );
-  assert.ok(
-    heavyPlowCompletion,
-    "[Castle eco] Heavy Plow completion must clear persistent demand",
-  );
-
-  for (const [tech, demandGoal] of economicExecutors) {
+  for (const [tech, claimGoal] of executors) {
     const executor = rules.find(
       (rule) =>
-        rule.includes("(goal " + demandGoal + " 1)") &&
-        rule.includes("(research " + tech + ")"),
+        rule.includes("(research " + tech + ")") &&
+        rule.includes("(can-research-with-escrow " + tech + ")") &&
+        rule.includes("(goal " + claimGoal + " 0)") &&
+        rule.includes("(set-goal " + claimGoal + " " + tech + ")"),
     );
     assert.ok(
       executor,
-      "[Castle eco] executor is missing for " + tech,
-    );
-    assert.ok(
-      executor.includes("(can-research-with-escrow " + tech + ")"),
-      "[Castle eco] executor lost engine-native feasibility gate for " + tech,
+      "[Castle eco] direct research executor is missing for " + tech,
     );
     for (const veto of forbidden) {
       assert.ok(
@@ -6613,6 +6521,21 @@ function validateEconomicResearchPackageIsolation(rules, sourceText) {
         "[Castle eco] " + tech + " executor still depends on unrelated military package veto: " + veto,
       );
     }
+  }
+
+  for (const obsoleteState of [
+    "bt-heavy-plow-demand-goal",
+    "bt-gold-mining-demand-goal",
+    "bt-wheelbarrow-demand-goal",
+    "bt-hand-cart-demand-goal",
+    "bt-bow-saw-demand-goal",
+    "bt-gold-shaft-mining-demand-goal",
+  ]) {
+    assert.equal(
+      sourceText.includes(obsoleteState),
+      false,
+      "[Castle eco] obsolete cached eco demand state must remain removed: " + obsoleteState,
+    );
   }
 }
 
