@@ -6017,6 +6017,27 @@ town-center >= 2)))))
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-stone)
 )
 
+; CASTLE STONE COMPLETION / RELEASE
+; Stone allocation is a temporary economic execution mode. The live Castle
+; project owns it only until the resource witness is satisfied, the Castle
+; exists, or the project demand disappears. Do not leave the economy trapped
+; on stone after the 650-stone prerequisite has already been secured.
+(defrule
+    (or
+        (goal bt-resource-mode-goal bt-resource-mode-castle-stone)
+        (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+    )
+    (or
+        (stone-amount >= 650)
+        (or
+            (building-type-count-total castle >= 1)
+            (goal bt-castle-cataphract-demand-goal 0)
+        )
+    )
+=>
+    (set-goal bt-resource-mode-goal 0)
+)
+
 ; P2 TC STONE. Consume persistent TC project state; never recreate demand here.
 (defrule
     (goal bt-resource-mode-goal 0)
