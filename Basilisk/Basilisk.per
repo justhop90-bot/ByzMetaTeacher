@@ -5959,7 +5959,7 @@ town-center >= 2)))))
     )
     (goal bt-castle-cataphract-demand-goal 0)
     (goal bt-castle-commitment-goal 0)
-    (nand
+    (not
         (and
             (up-research-status c: ri-horse-collar == research-available)
             (and
@@ -5970,9 +5970,8 @@ town-center >= 2)))))
                 )
             )
         )
-        (not (current-age == feudal-age))
     )
-    (nand
+    (not
         (and
             (up-research-status c: ri-double-bit-axe == research-available)
             (and
@@ -5986,7 +5985,6 @@ town-center >= 2)))))
                 )
             )
         )
-        (not (current-age == feudal-age))
     )
     (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
 =>
