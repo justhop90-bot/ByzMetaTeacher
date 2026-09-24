@@ -12701,8 +12701,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (current-age >= feudal-age)
     (or
         (current-age >= castle-age)
-        (goal strategy-goal bt-strategy-rush)
-        (goal strategy-goal bt-strategy-flush)
+        (or
+            (goal strategy-goal bt-strategy-rush)
+            (goal strategy-goal bt-strategy-flush)
+        )
     )
     (goal bt-castle-commitment-goal 0)
     (players-building-count any-enemy > 0)
