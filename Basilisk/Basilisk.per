@@ -12524,6 +12524,9 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (up-research-status c: ri-fletching == research-complete)
     (up-research-status c: ri-crossbow < research-pending)
     (building-type-count archery-range >= 1)
+    (goal bt-crossbow-demand-goal 1)
+    (goal bt-arbalest-demand-goal 0)
+    (up-compare-goal bt-standing-crossbow-target-goal > 0)
     (or
         (goal strategy-goal bt-strategy-boom)
         (goal strategy-goal bt-strategy-castle-power)
@@ -13038,6 +13041,22 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (or
         (goal bt-ranged-threat-goal 1)
         (goal bt-blacksmith-ranged-army-goal 1)
+    )
+    (or
+        (and
+            (goal unit-goal crossbowman)
+            (and
+                (up-research-status c: ri-arbalest == research-complete)
+                (unit-type-count-total arbalest >= bt-crossbow-target-mature)
+            )
+        )
+        (or
+            (and
+                (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
+                (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
+            )
+            (unit-type-count-total cavalry-archer >= 6)
+        )
     )
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
