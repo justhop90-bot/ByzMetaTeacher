@@ -7626,31 +7626,43 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
             )
         )
     )
-    (or
-        (and
-            (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
-            (and
-                (building-type-count-total town-center >= 2)
-                (and
-                    (unit-type-count villager >= bt-stone-shaft-villagers)
-                    (and
-                        (food-amount >= bt-stone-shaft-food-buffer)
-                        (wood-amount >= bt-stone-shaft-wood-buffer)
-                    )
-                )
-            )
-        )
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-shaft-mining)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count mining-camp >= 1)
+    (can-research-with-escrow ri-stone-shaft-mining)
+    (goal bt-research-mining-camp-claim-goal 0)
+    (goal bt-research-cavalry-counter-package-goal 0)
+    (goal bt-research-ranged-counter-package-goal 0)
+    (goal bt-research-cataphract-package-goal 0)
+    (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
+    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+    (building-type-count-total town-center >= 2)
+    (unit-type-count villager >= bt-stone-shaft-villagers)
+    (food-amount >= bt-stone-shaft-food-buffer)
+    (wood-amount >= bt-stone-shaft-wood-buffer)
+=>
+    (set-strategic-number sn-resource-control ri-stone-shaft-mining)
+    (release-escrow food)
+    (release-escrow wood)
+    (research ri-stone-shaft-mining)
+    (set-goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
+    (set-strategic-number sn-resource-control 0)
+)
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (not (town-under-attack))
+    (up-research-status c: ri-stone-mining == research-complete)
+    (research-available ri-stone-shaft-mining)
+    (not
         (and
             (building-type-count-total castle >= 2)
             (and
                 (unit-type-count villager >= bt-stone-shaft-villagers)
-                (and
-                    (food-amount >= bt-stone-shaft-food-buffer)
-                    (and
-                        (wood-amount >= bt-stone-shaft-wood-buffer)
-                        (stone-amount < 650)
-                    )
-                )
+                (stone-amount >= 650)
             )
         )
     )
@@ -7666,6 +7678,11 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
     (goal bt-research-monk-package-goal 0)
+    (building-type-count-total castle >= 2)
+    (unit-type-count villager >= bt-stone-shaft-villagers)
+    (food-amount >= bt-stone-shaft-food-buffer)
+    (wood-amount >= bt-stone-shaft-wood-buffer)
+    (stone-amount < 650)
 =>
     (set-strategic-number sn-resource-control ri-stone-shaft-mining)
     (release-escrow food)
