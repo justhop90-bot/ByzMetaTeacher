@@ -928,6 +928,21 @@ try {
         "Feudal farm executor hold",
       ),
     },
+    {
+      name: "feudal-farm-budget-bypass-executor-regression-rejected",
+      expected: "[Feudal farm budget]",
+      source:
+        baseline +
+        "\n(defrule\n" +
+        "    (current-age == feudal-age)\n" +
+        "    (can-build-with-escrow farm)\n" +
+        "    (building-type-count-total farm < bt-farm-feudal-cap)\n" +
+        "    (up-pending-objects c: farm == 0)\n" +
+        "=>\n" +
+        "    (build farm)\n" +
+        ")\n",
+    },
+    {
       name: "feudal-attack-castle-bank-regression-rejected",
       expected: "[Feudal economy]",
       source: mutateRuleContaining(
@@ -2186,6 +2201,7 @@ try {
     "feudal-farm-budget-hold-regression-rejected",
     "feudal-farm-budget-emergency-escape-regression-rejected",
     "feudal-farm-budget-executor-regression-rejected",
+    "feudal-farm-budget-bypass-executor-regression-rejected",
     "backoff-expiry-owner-missing-rejected",
     "siege-abort-cancels-independent-demand-rejected",
   ]);
@@ -2261,6 +2277,7 @@ try {
           "feudal-farm-budget-hold-writer",
           "feudal-farm-budget-emergency-escape",
           "feudal-farm-budget-executor-hold",
+          "feudal-farm-budget-bypass-executor",
         ],
         parserSyntaxClasses: [
           "missing-closing-parenthesis",
