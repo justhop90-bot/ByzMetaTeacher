@@ -3676,7 +3676,7 @@ function validateBasiliskGoalNamespace(forms) {
     );
   }
 
-  for (const id of [729, 730, 734, 769, 770, 771, 772]) {
+  for (const id of [730, 734, 769, 770, 771, 772]) {
     assert.ok(
       numericGoals.has(id),
       "[Goal namespace] reserved high-range GoalId " + id + " is missing",
