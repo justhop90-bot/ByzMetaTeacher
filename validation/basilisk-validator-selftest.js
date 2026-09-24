@@ -782,6 +782,64 @@ try {
       })(),
     },
     {
+      name: "resource-mode-override-without-p0-exclusion-rejected",
+      expected: "[Resource mode]",
+      source: (() => {
+        return mutateRuleContaining(
+          baseline,
+          [
+            "(goal bt-imperial-prereq-demand-goal 1)",
+            "(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)",
+          ],
+          (rule) =>
+            rule.replace(
+              "    (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))\\n",
+              "",
+            ),
+          "Imperial prerequisite resource-mode override",
+        );
+      })(),
+    },
+    {
+      name: "attack-negative-result-bucket-rejected",
+      expected: "[Attack result]",
+      source: (() => {
+        const needle =
+          "    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)\\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(
+          index >= 0,
+          "[Self-test] attack non-positive result witness is missing",
+        );
+        return (
+          baseline.slice(0, index) +
+          baseline.slice(index).replace(
+            needle,
+            "    (up-compare-goal bt-attack-buildings-destroyed-goal == 0)\\n",
+          )
+        );
+      })(),
+    },
+    {
+      name: "backoff-expiry-owner-missing-rejected",
+      expected: "[Retry fairness]",
+      source: (() => {
+        const start = baseline.indexOf(
+          "(defrule\\n    (timer-triggered bt-research-blacksmith-failure-backoff-timer)",
+        );
+        assert.ok(
+          start >= 0,
+          "[Self-test] Blacksmith backoff expiry owner is missing",
+        );
+        const end = baseline.indexOf("\\n(defrule", start + 8);
+        assert.ok(
+          end > start,
+          "[Self-test] Blacksmith backoff expiry owner bounds are missing",
+        );
+        return baseline.slice(0, start) + baseline.slice(end);
+      })(),
+    },
+    {
       name: "unknown-duc-identifier",
       expected: "constant-operand",
       source: baseline.replace(
@@ -1977,6 +2035,9 @@ try {
     "bare-siege-tower-object-slot-rejected",
     "bare-logistica-tech-slot-rejected-without-defconst",
     "elite-varangian-local-tech-id-required",
+    "resource-mode-override-without-p0-exclusion-rejected",
+    "attack-negative-result-bucket-rejected",
+    "backoff-expiry-owner-missing-rejected",
   ]);
   const criticalMutations = mutations.filter((mutation) =>
     criticalMutationNames.has(mutation.name),
@@ -2042,6 +2103,9 @@ try {
           "scouting-enemy-loop-without-home-grace",
           "two-man-saw-demand-lumberjack-maturity-witness",
           "two-man-saw-executor-lumberjack-maturity-witness",
+          "resource-mode-explicit-override-contract",
+          "attack-result-non-positive-partition",
+          "backoff-expiry-owner-exact-inventory",
         ],
         parserSyntaxClasses: [
           "missing-closing-parenthesis",
