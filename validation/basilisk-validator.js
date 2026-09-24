@@ -2488,6 +2488,47 @@ function validateAIRefGoalOutputSafety(sourceText) {
   }
 }
 
+
+function validateBombardTrebuchetDucLifecycle(rules) {
+  const arm = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-bombard-cannon-demand-goal 1)") &&
+      rule.includes("(goal bt-bombard-trebuchet-duc-armed-goal 0)") &&
+      rule.includes("(players-unit-type-count target-player trebuchet-set >= 1)") &&
+      rule.includes("(set-goal bt-bombard-trebuchet-duc-armed-goal 1)") &&
+      rule.includes("(set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)"),
+  );
+  assert.ok(
+    arm,
+    "[BBC DUC] armed-entry lifecycle edge is missing",
+  );
+
+  const disarmOnTargetLoss = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-bombard-cannon-demand-goal 1)") &&
+      rule.includes("(goal bt-bombard-trebuchet-duc-armed-goal 1)") &&
+      rule.includes("(players-unit-type-count target-player trebuchet-set < 1)") &&
+      rule.includes("(set-goal bt-bombard-trebuchet-duc-armed-goal 0)") &&
+      rule.includes("(set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)") &&
+      rule.includes("(disable-timer bt-bombard-trebuchet-target-timer)"),
+  );
+  assert.ok(
+    disarmOnTargetLoss,
+    "[BBC DUC] armed latch must disarm when the enemy Trebuchet witness disappears",
+  );
+
+  const demandCleanup = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-bombard-cannon-demand-goal 0)") &&
+      rule.includes("(goal bt-bombard-trebuchet-duc-armed-goal 1)") &&
+      rule.includes("(set-goal bt-bombard-trebuchet-duc-armed-goal 0)"),
+  );
+  assert.ok(
+    demandCleanup,
+    "[BBC DUC] strategic-demand cleanup must clear the armed latch",
+  );
+}
+
 function validateAIRefDucSearchBounds(sourceText) {
   const sanitized = sanitizeStructure(sourceText);
 
@@ -5681,6 +5722,7 @@ const commandReport = validateAIRefCommandVocabulary(source, rules, repoRoot);
 validateAIRefCommandSchema(source, rules, repoRoot);
 validateAIRefTypedComparisonSyntax(source);
 validateAIRefDucStateSafety(source);
+validateBombardTrebuchetDucLifecycle(rules);
 validateAIRefGoalOutputSafety(source);
 validateAIRefDucSearchBounds(source);
 validateLineHygiene(source);
@@ -5758,6 +5800,7 @@ console.log(JSON.stringify({
     "AIRef command arity, parameter-family, type-prefix, and typed-operand schema contracts",
     "AIRef documented enum/value-family validation for symbolic Const slots",
     "AIRef retained-search DUC target-scope validation",
+    "BBC DUC armed/target-loss lifecycle contract",
     "AIRef parameter-specific numeric range validation",
     "AIRef split typed-comparison syntax validation",
     "typed c:/g:/s: operand resolution and timer identifiers",
