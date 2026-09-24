@@ -563,8 +563,6 @@
 (defconst bt-resource-mode-food-crisis 18)
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
-(defconst bt-gold-mining-demand-goal 47)
-(defconst bt-double-bit-axe-demand-goal 48)
 (defconst bt-wheelbarrow-demand-goal 49)
 (defconst bt-hand-cart-demand-goal 50)
 (defconst bt-bow-saw-demand-goal 51)
@@ -587,9 +585,6 @@
 ; Late-Feudal BOOM farm budget. The 385W floor reserves 150W Blacksmith + 175W Market + 60W Farm.
 ; Hold only the final two-villager BOOM window before the hard 28-villager Castle boundary; pressure postures and food-emergency farms remain independent.
 (defconst bt-feudal-farm-wood-hold-goal 773)
-; Persistent Feudal Horse Collar demand. 1 means the Feudal eco upgrade
-; remains wanted until completion or the Feudal window closes.
-(defconst bt-horse-collar-demand-goal 698)
 ; Persistent Castle Heavy Plow demand. 1 means the farm-efficiency upgrade
 ; remains wanted until completion or Imperial priority invalidates the window.
 (defconst bt-heavy-plow-demand-goal 699)
@@ -960,8 +955,6 @@
 (defrule
     (true)
 =>
-    (set-goal bt-gold-mining-demand-goal 0)
-    (set-goal bt-double-bit-axe-demand-goal 0)
     (set-goal bt-wheelbarrow-demand-goal 0)
     (set-goal bt-hand-cart-demand-goal 0)
     (set-goal bt-bow-saw-demand-goal 0)
@@ -1021,7 +1014,6 @@
 =>
     (set-goal bt-research-town-center-failure-backoff-goal 0)
     (set-goal bt-research-mill-failure-backoff-goal 0)
-    (set-goal bt-horse-collar-demand-goal 0)
     (set-goal bt-research-lumber-camp-failure-backoff-goal 0)
     (set-goal bt-research-mining-camp-failure-backoff-goal 0)
     (set-goal bt-research-blacksmith-failure-backoff-goal 0)
@@ -4067,35 +4059,12 @@
 ;================================================================
 ; 11. HORSE COLLAR
 ;================================================================
-; Horse Collar has persistent Feudal demand so a temporary research
-; collision cannot erase the upgrade from the decision state.
+; Horse Collar is a current Feudal eco opportunity. No cached demand goal
+; is required: the same world-state facts reconstruct the opportunity on
+; every pass, while the claim/backoff goals retain real execution state.
 (defrule
-    (goal bt-horse-collar-demand-goal 0)
     (current-age == feudal-age)
     (up-research-status c: ri-horse-collar == research-available)
-    (building-type-count mill >= 1)
-=>
-    (set-goal bt-horse-collar-demand-goal 1)
-)
-
-; Closing the Feudal window clears only an unneeded future demand.
-; A live research claim remains execution-owned until completion.
-(defrule
-    (goal bt-horse-collar-demand-goal 1)
-    (goal bt-research-mill-claim-goal 0)
-    (or
-        (current-age != feudal-age)
-        (up-research-status c: ri-horse-collar == research-complete)
-    )
-=>
-    (set-goal bt-horse-collar-demand-goal 0)
-)
-
-; Actual execution keeps the engine-native can-research gate, but unrelated
-; military package cursors no longer veto the Feudal eco investment.
-(defrule
-    (goal bt-horse-collar-demand-goal 1)
-    (current-age == feudal-age)
     (up-compare-goal bt-research-mill-failure-backoff-goal != ri-horse-collar)
     (strategic-number sn-resource-control == 0)
     (not (goal bt-castle-commitment-goal 1))
@@ -4119,7 +4088,6 @@
     (up-research-status c: ri-horse-collar == research-complete)
 =>
     (set-goal bt-research-mill-claim-goal 0)
-    (set-goal bt-horse-collar-demand-goal 0)
 )
 
 ;================================================================
@@ -5996,7 +5964,9 @@ town-center >= 2)))))
     (goal bt-castle-commitment-goal 0)
     (not
         (and
-            (goal bt-horse-collar-demand-goal 1)
+            (current-age == feudal-age)
+            (up-research-status c: ri-horse-collar == research-available)
+            (building-type-count mill >= 1)
             (or
                 (can-research-with-escrow ri-horse-collar)
                 (goal bt-research-mill-claim-goal ri-horse-collar)
@@ -6005,7 +5975,10 @@ town-center >= 2)))))
     )
     (not
         (and
-            (goal bt-double-bit-axe-demand-goal 1)
+            (current-age == feudal-age)
+            (up-research-status c: ri-double-bit-axe == research-available)
+            (food-amount >= bt-double-bit-axe-food-buffer)
+            (wood-amount >= bt-double-bit-axe-wood-buffer)
             (or
                 (can-research-with-escrow ri-double-bit-axe)
                 (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
@@ -6848,50 +6821,17 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 
-; 14E. DOUBLE-BIT AXE DEMAND
+; 14E. DOUBLE-BIT AXE RESEARCH LIFECYCLE
 ;================================================================
 ;
-; DBA demand is an explicit early-Feudal wood-productivity investment.
-; The predicate uses only existing world state plus fixed tuning buffers:
-;   - Feudal age
-;   - 450 food
-;   - 100 wood
-;   - Castle commitment is not already active
-;   - technology is still available
-;
-; The demand signal does not own sn-resource-control. The existing
-; research lifecycle below remains the only claim/action authority.
+; Double-Bit Axe is a current Feudal eco opportunity. The food/wood
+; buffers are policy, while the claim/backoff state belongs to execution.
+; No cached demand goal is required.
 (defrule
-    (goal bt-double-bit-axe-demand-goal 0)
     (current-age == feudal-age)
     (up-research-status c: ri-double-bit-axe == research-available)
     (food-amount >= bt-double-bit-axe-food-buffer)
     (wood-amount >= bt-double-bit-axe-wood-buffer)
-=>
-    (set-goal bt-double-bit-axe-demand-goal 1)
-)
-
-; Demand release is allowed to clear only when no DBA claim owns the
-; shared resource register. An active DBA research attempt stays alive
-; until completion or watchdog recovery.
-(defrule
-    (goal bt-double-bit-axe-demand-goal 1)
-    (goal bt-research-lumber-camp-claim-goal 0)
-    (or (current-age != feudal-age) (or (not (food-amount >= bt-double-bit-axe-food-buffer)) (or (not (wood-amount >= bt-double-bit-axe-wood-buffer)) (up-research-status c: ri-double-bit-axe >=
-research-pending))))
-=>
-    (set-goal bt-double-bit-axe-demand-goal 0)
-)
-
-;================================================================
-; 14E-B. DOUBLE-BIT AXE RESEARCH LIFECYCLE
-;================================================================
-;
-; Existing claim -> escrow -> watchdog -> research -> completion
-; control remains authoritative. Demand never performs the action.
-(defrule
-    (goal bt-double-bit-axe-demand-goal 1)
-    (current-age == feudal-age)
     (not (goal bt-castle-commitment-goal 1))
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-double-bit-axe)
     (strategic-number sn-resource-control == 0)
@@ -6912,76 +6852,34 @@ research-pending))))
     (up-research-status c: ri-double-bit-axe == research-complete)
 =>
     (set-goal bt-research-lumber-camp-claim-goal 0)
-    (set-goal bt-double-bit-axe-demand-goal 0)
 )
 
 ;================================================================
-; 14E. GOLD MINING DEMAND
+; 14E. GOLD MINING RESEARCH LIFECYCLE
 ;================================================================
 ;
-; Gold Mining is downstream of SUSTAINED premium-gold demand.
-;
-; "Sustained" means an existing gold-paying consumer remains active:
+; Gold Mining is downstream of sustained premium-gold demand:
 ;   - Cataphract demand
-;   - existing Castle mixed-composition Camel demand
+;   - the existing Castle mixed-composition Camel demand
 ;
-; It is NOT driven by:
-;   - low gold stockpile
-;   - Castle Age by itself
-;   - an age-up gold bank
-;   - the resource allocator inventing a new strategy
-;
-; Imperial-age preparation is explicitly excluded while the age is
-; researchable. The existing age-up rule remains the only authority
-; that spends the bank for the age transition.
-;
-; This is a technology-demand state. It creates no strategy, unit-goal,
-; Cataphract demand, or resource claim.
-;
-; Initial value is established once in section 2 initialization.
-; This section owns only demand/release transitions.
-;
-; Existing premium consumer -> Gold Mining demand.
+; The strategic predicate is evaluated directly at the action boundary.
+; The mining-camp claim/backoff remains the real execution state.
 (defrule
     (current-age >= castle-age)
     (or
         (goal bt-cataphract-demand-goal 1)
-        (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total
-stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))
+        (and
+            (goal strategy-goal bt-strategy-flush)
+            (goal unit-goal bt-unit-mix)
+            (unit-type-count-total spearman-line >= bt-spear-target-1)
+            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+            (building-type-count-total stable >= 1)
+            (unit-type-count-total camel-line < bt-camel-target-1)
+        )
     )
     (research-available ri-gold-mining)
     (not (can-research-with-escrow imperial-age))
     (strategic-number sn-resource-control != imperial-age)
-=>
-    (set-goal bt-gold-mining-demand-goal 1)
-)
-
-; When premium demand disappears, the technology-demand signal clears.
-; An active Gold Mining claim keeps the demand alive until completion or
-; watchdog recovery. The demand layer never cancels research.
-(defrule
-    (goal bt-gold-mining-demand-goal 1)
-    (goal bt-research-mining-camp-claim-goal 0)
-    (or (can-research-with-escrow imperial-age) (or (strategic-number sn-resource-control == imperial-age) (not
-            (or
-                (goal bt-cataphract-demand-goal 1)
-                (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and (up-compare-goal
-bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1)))))))
-            )
-        )))
-=>
-    (set-goal bt-gold-mining-demand-goal 0)
-)
-
-;================================================================
-; 14F. GOLD MINING RESEARCH LIFECYCLE
-;================================================================
-;
-; Existing sn-resource-control arbitration remains authoritative.
-; can-research-with-escrow remains the final research feasibility gate.
-(defrule
-    (goal bt-gold-mining-demand-goal 1)
-    (current-age >= feudal-age)
     (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-mining)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
@@ -6989,7 +6887,6 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
         (can-research-with-escrow castle-age)
         (goal bt-castle-commitment-goal 1)
     ))
-    (not (can-research-with-escrow imperial-age))
     (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-gold-mining)
     (goal bt-research-mining-camp-claim-goal 0)
@@ -7008,7 +6905,6 @@ bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) 
     (up-research-status c: ri-gold-mining == research-complete)
 =>
     (set-goal bt-research-mining-camp-claim-goal 0)
-    (set-goal bt-gold-mining-demand-goal 0)
 )
 
 ;================================================================
@@ -9864,83 +9760,56 @@ cataphract-line < bt-cataphract-target-1)))))
 ;----------------------------------------------------------------
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-horse-collar-demand-goal 1)
+    (goal bt-research-mill-claim-goal ri-horse-collar)
     (up-compare-goal bt-debug-last-eco-event-goal != 1)
 =>
-    (chat-local-to-self "BASILISK | ECO | Horse Collar: demand active.")
+    (chat-local-to-self "BASILISK | ECO | Horse Collar: research started.")
     (set-goal bt-debug-last-eco-event-goal 1)
 )
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-research-mill-claim-goal ri-horse-collar)
+    (up-research-status c: ri-horse-collar == research-complete)
     (up-compare-goal bt-debug-last-eco-event-goal != 2)
 =>
-    (chat-local-to-self "BASILISK | ECO | Horse Collar: research started.")
+    (chat-local-to-self "BASILISK | ECO | Horse Collar: complete.")
     (set-goal bt-debug-last-eco-event-goal 2)
 )
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (up-research-status c: ri-horse-collar == research-complete)
+    (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
     (up-compare-goal bt-debug-last-eco-event-goal != 3)
 =>
-    (chat-local-to-self "BASILISK | ECO | Horse Collar: complete.")
+    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: research started.")
     (set-goal bt-debug-last-eco-event-goal 3)
 )
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-double-bit-axe-demand-goal 1)
+    (up-research-status c: ri-double-bit-axe == research-complete)
     (up-compare-goal bt-debug-last-eco-event-goal != 4)
 =>
-    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: demand active.")
+    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: complete.")
     (set-goal bt-debug-last-eco-event-goal 4)
 )
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-research-lumber-camp-claim-goal ri-double-bit-axe)
+    (goal bt-research-mining-camp-claim-goal ri-gold-mining)
     (up-compare-goal bt-debug-last-eco-event-goal != 5)
 =>
-    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: research started.")
+    (chat-local-to-self "BASILISK | ECO | Gold Mining: research started.")
     (set-goal bt-debug-last-eco-event-goal 5)
 )
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (up-research-status c: ri-double-bit-axe == research-complete)
+    (up-research-status c: ri-gold-mining == research-complete)
     (up-compare-goal bt-debug-last-eco-event-goal != 6)
 =>
-    (chat-local-to-self "BASILISK | ECO | Double-Bit Axe: complete.")
-    (set-goal bt-debug-last-eco-event-goal 6)
-)
-
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-gold-mining-demand-goal 1)
-    (up-compare-goal bt-debug-last-eco-event-goal != 7)
-=>
-    (chat-local-to-self "BASILISK | ECO | Gold Mining: demand active.")
-    (set-goal bt-debug-last-eco-event-goal 7)
-)
-
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-research-mining-camp-claim-goal ri-gold-mining)
-    (up-compare-goal bt-debug-last-eco-event-goal != 8)
-=>
-    (chat-local-to-self "BASILISK | ECO | Gold Mining: research started.")
-    (set-goal bt-debug-last-eco-event-goal 8)
-)
-
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (up-research-status c: ri-gold-mining == research-complete)
-    (up-compare-goal bt-debug-last-eco-event-goal != 9)
-=>
     (chat-local-to-self "BASILISK | ECO | Gold Mining: complete.")
-    (set-goal bt-debug-last-eco-event-goal 9)
+    (set-goal bt-debug-last-eco-event-goal 6)
 )
 
 (defrule
