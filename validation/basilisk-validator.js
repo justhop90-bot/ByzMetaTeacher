@@ -4360,13 +4360,24 @@ function validateStrategicNarration(sourceText, rules) {
     "[Narration] threat narration must observe finalized threat state",
   );
 
-  const firstStrategyWriter = maxRuleIndex(
-    (rule) => rule.includes("(set-goal strategy-goal bt-strategy-"),
-    "strategy writer",
+  const strategyNarratorIndex = firstNarrator("BASILISK | STRATEGY | FLUSH");
+  const strategySelectionWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule, index }) =>
+        index < strategyNarratorIndex &&
+        rule.includes("(set-goal strategy-goal bt-strategy-"),
+    );
+  assert.ok(
+    strategySelectionWriters.length > 0,
+    "[Narration] primary strategy-selection writers are missing before strategy narration",
+  );
+  const lastStrategySelectionWriter = Math.max(
+    ...strategySelectionWriters.map(({ index }) => index),
   );
   assert.ok(
-    firstNarrator("BASILISK | STRATEGY | FLUSH") > firstStrategyWriter,
-    "[Narration] strategy narration must observe finalized strategy state",
+    strategyNarratorIndex > lastStrategySelectionWriter,
+    "[Narration] strategy narration must observe finalized strategy-selection state",
   );
 
   const firstResourceWriter = maxRuleIndex(
