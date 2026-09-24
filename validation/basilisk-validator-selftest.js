@@ -310,6 +310,19 @@ try {
     "BLACKSMITH_NOT_BUILDABLE",
   ];
 
+  const assertExactRuleBlockOrder = (actual, expected, label) => {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new Error(
+        "[Semantic self-test] " +
+          label +
+          " rule-block reason order changed; expected=" +
+          expected.join(" -> ") +
+          "; actual=" +
+          actual.join(" -> "),
+      );
+    }
+  };
+
   const boomFloorTc1 = findSemanticRule(
     "Castle BOOM TC1 standing floor",
     (rule) =>
@@ -755,10 +768,48 @@ try {
     "[Semantic self-test] Feudal Blacksmith admission lost Castle-bank exclusion",
   );
 
-  assert.deepEqual(
+  const swapRuleFacts = (rule, firstIndex, secondIndex) => {
+    const clone = {
+      ...rule,
+      args: [...rule.args],
+    };
+    const arrow = clone.args.findIndex(
+      (arg) => arg.kind === "atom" && arg.value === "=>",
+    );
+    assert.ok(arrow > secondIndex, "[Semantic self-test] cannot swap rule facts before =>");
+    [clone.args[firstIndex], clone.args[secondIndex]] = [
+      clone.args[secondIndex],
+      clone.args[firstIndex],
+    ];
+    return clone;
+  };
+
+  const admissionOrderFailureMessage =
+    "[Semantic self-test] Feudal Blacksmith admission rule-block reason order changed; expected=" +
+    expectedAdmissionBlockReasonOrder.join(" -> ") +
+    "; actual=" +
+    [
+      expectedAdmissionBlockReasonOrder[1],
+      expectedAdmissionBlockReasonOrder[0],
+      ...expectedAdmissionBlockReasonOrder.slice(2),
+    ].join(" -> ");
+  assert.throws(
+    () =>
+      assertExactRuleBlockOrder(
+        orderedAdmissionBlockReasonsFromRule(
+          swapRuleFacts(feudalBlacksmithAdmission, 0, 1),
+        ),
+        expectedAdmissionBlockReasonOrder,
+        "Feudal Blacksmith admission",
+      ),
+    (error) => error instanceof Error && error.message === admissionOrderFailureMessage,
+    "[Semantic self-test] Feudal Blacksmith admission exact order failure message changed",
+  );
+
+  assertExactRuleBlockOrder(
     orderedAdmissionBlockReasonsFromRule(feudalBlacksmithAdmission),
     expectedAdmissionBlockReasonOrder,
-    "[Semantic self-test] Feudal Blacksmith admission rule-block reason order changed",
+    "Feudal Blacksmith admission",
   );
 
   findSemanticRule(
@@ -1210,10 +1261,32 @@ try {
     );
   }
 
-  assert.deepEqual(
+  const prereqOrderFailureMessage =
+    "[Semantic self-test] Castle-prerequisite Blacksmith rule-block reason order changed; expected=" +
+    expectedPrereqBlockReasonOrder.join(" -> ") +
+    "; actual=" +
+    [
+      expectedPrereqBlockReasonOrder[1],
+      expectedPrereqBlockReasonOrder[0],
+      ...expectedPrereqBlockReasonOrder.slice(2),
+    ].join(" -> ");
+  assert.throws(
+    () =>
+      assertExactRuleBlockOrder(
+        orderedPrereqBlockReasonsFromRule(
+          swapRuleFacts(castlePrereqBlacksmith, 0, 1),
+        ),
+        expectedPrereqBlockReasonOrder,
+        "Castle-prerequisite Blacksmith",
+      ),
+    (error) => error instanceof Error && error.message === prereqOrderFailureMessage,
+    "[Semantic self-test] Castle-prerequisite Blacksmith exact order failure message changed",
+  );
+
+  assertExactRuleBlockOrder(
     orderedPrereqBlockReasonsFromRule(castlePrereqBlacksmith),
     expectedPrereqBlockReasonOrder,
-    "[Semantic self-test] Castle-prerequisite Blacksmith rule-block reason order changed",
+    "Castle-prerequisite Blacksmith",
   );
 
   const postCastleBlacksmithRecovery = findSemanticRule(
