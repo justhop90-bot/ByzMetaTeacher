@@ -1248,6 +1248,157 @@ try {
       ),
     },
     {
+      name: "boom-tc-ram-demand-gate-regression-rejected",
+      expected: "[BOOM TC military] Ram demand writer can arm during a pending TC project",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-ram-demand-goal 1)",
+          "(goal attack-goal 1)",
+          "(goal bt-tc-project-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (or\n        (goal bt-tc-project-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n",
+            "",
+          ),
+        "BOOM TC Ram demand boundary",
+      ),
+    },
+    {
+      name: "boom-tc-ram-executor-gate-regression-rejected",
+      expected: "[BOOM TC military] Ram executor lacks the active-TC capital boundary",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-ram-demand-goal 1)",
+          "(train battering-ram-line)",
+          "(goal bt-tc-project-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (or\n        (goal bt-tc-project-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n",
+            "",
+          ),
+        "BOOM TC Ram executor boundary",
+      ),
+    },
+    {
+      name: "boom-tc-siege-tower-demand-gate-regression-rejected",
+      expected: "[BOOM TC military] Siege Tower demand writer can arm during a pending TC project",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-siege-tower-demand-goal 1)",
+          "(goal attack-goal 1)",
+          "(goal bt-tc-project-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (or\n        (goal bt-tc-project-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n",
+            "",
+          ),
+        "BOOM TC Siege Tower demand boundary",
+      ),
+    },
+    {
+      name: "boom-tc-siege-tower-executor-gate-regression-rejected",
+      expected: "[BOOM TC military] Siege Tower executor lacks the active-TC capital boundary",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-siege-tower-demand-goal 1)",
+          "(goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)",
+          "(train siege-tower)",
+          "(goal bt-tc-project-goal 0)",
+          "(goal strategy-goal bt-strategy-flush)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (or\n        (goal bt-tc-project-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n",
+            "",
+          ),
+        "BOOM TC Siege Tower executor boundary",
+      ),
+    },
+    {
+      name: "boom-tc-reactive-monk-overgate-regression-rejected",
+      expected: "[BOOM TC military] Monk is incorrectly blocked by the TC project gate",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-monk-demand-goal 1)",
+          "(building-type-count monastery >= 1)",
+          "(train monk)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (strategic-number sn-resource-control == 0)\n",
+            "    (goal bt-tc-project-goal 0)\n    (strategic-number sn-resource-control == 0)\n",
+          ),
+        "BOOM TC Monk exception",
+      ),
+    },
+    {
+      name: "boom-tc-reactive-mangonel-overgate-regression-rejected",
+      expected: "[BOOM TC military] Mangonel is incorrectly blocked by the TC project gate",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-mangonel-demand-goal 1)",
+          "(building-type-count siege-workshop >= 1)",
+          "(train mangonel-line)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (strategic-number sn-resource-control == 0)\n",
+            "    (goal bt-tc-project-goal 0)\n    (strategic-number sn-resource-control == 0)\n",
+          ),
+        "BOOM TC Mangonel exception",
+      ),
+    },
+    {
+      name: "boom-tc-reactive-scorpion-overgate-regression-rejected",
+      expected: "[BOOM TC military] Scorpion is incorrectly blocked by the TC project gate",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-scorpion-demand-goal 1)",
+          "(building-type-count siege-workshop >= 1)",
+          "(train scorpion-line)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (strategic-number sn-resource-control == 0)\n",
+            "    (goal bt-tc-project-goal 0)\n    (strategic-number sn-resource-control == 0)\n",
+          ),
+        "BOOM TC Scorpion exception",
+      ),
+    },
+    {
+      name: "boom-tc-reactive-camel-overgate-regression-rejected",
+      expected: "[BOOM TC military] Camel reactive executor must remain available during a pending TC project",
+      source: (() => {
+        const action = "(train camel)";
+        const actionIndex = baseline.indexOf(action);
+        assert.ok(actionIndex >= 0, "[Self-test] Camel executor missing");
+        const start = baseline.lastIndexOf("(defrule", actionIndex);
+        const end = baseline.indexOf("\n)", actionIndex) + 2;
+        const rule = baseline.slice(start, end);
+        return (
+          baseline.slice(0, start) +
+          rule.replace(
+            "    (strategic-number sn-resource-control == 0)\n",
+            "    (goal bt-tc-project-goal 0)\n    (strategic-number sn-resource-control == 0)\n",
+          ) +
+          baseline.slice(end)
+        );
+      })(),
+    },
+    {
       name: "boom-flush-castle-bank-override-regression-rejected",
       expected: "[BOOM] expected Spear/Skirm/Archer standing train rules to carry the FLUSH bank override",
       source: mutateRuleContaining(
@@ -2588,6 +2739,15 @@ try {
     "boom-tc-project-arbitration-regression-rejected",
     "boom-knight-tc2-gate-regression-rejected",
     "boom-crossbow-tc-gate-regression-rejected",
+    "boom-tc-ram-demand-gate-regression-rejected",
+    "boom-tc-ram-executor-gate-regression-rejected",
+    "boom-tc-siege-tower-demand-gate-regression-rejected",
+    "boom-tc-siege-tower-executor-gate-regression-rejected",
+    "boom-tc-reactive-monk-overgate-regression-rejected",
+    "boom-tc-reactive-mangonel-overgate-regression-rejected",
+    "boom-tc-reactive-scorpion-overgate-regression-rejected",
+    "boom-tc-reactive-camel-overgate-regression-rejected",
+
     "boom-flush-castle-bank-override-regression-rejected",
     "boom-capability-bank-gate-regression-rejected",
     "feudal-farm-budget-floor-regression-rejected",
