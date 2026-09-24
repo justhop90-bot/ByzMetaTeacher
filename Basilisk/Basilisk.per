@@ -12617,6 +12617,23 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 )
 
 (defrule
+    ; Siege posture requires a real field army. Losing the army below the
+    ; abort floor is a strategic result, not a temporary production failure.
+    (goal bt-imperial-siege-package-goal 1)
+    (current-age >= imperial-age)
+    (player-in-game target-player)
+    (players-building-count target-player > 0)
+    (military-population < bt-imperial-siege-abort-army-floor)
+=>
+    (set-goal bt-imperial-siege-package-goal 0)
+    (set-goal bt-standing-army-demand-goal 1)
+    (set-goal bt-research-siege-package-goal 0)
+    (set-goal bt-trebuchet-demand-goal 0)
+    (set-goal bt-trebuchet-target-goal 0)
+    (set-goal bt-ram-demand-goal 0)
+    (set-goal bt-bombard-cannon-demand-goal 0)
+)
+(defrule
     (timer-triggered bt-attack-timer)
     (current-age >= feudal-age)
     (players-building-count any-enemy > 0)
@@ -12696,23 +12713,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (set-goal bt-trebuchet-target-goal 0)
 )
 
-(defrule
-    ; Siege posture requires a real field army. Losing the army below the
-    ; abort floor is a strategic result, not a temporary production failure.
-    (goal bt-imperial-siege-package-goal 1)
-    (current-age >= imperial-age)
-    (player-in-game target-player)
-    (players-building-count target-player > 0)
-    (military-population < bt-imperial-siege-abort-army-floor)
-=>
-    (set-goal bt-imperial-siege-package-goal 0)
-    (set-goal bt-standing-army-demand-goal 1)
-    (set-goal bt-research-siege-package-goal 0)
-    (set-goal bt-trebuchet-demand-goal 0)
-    (set-goal bt-trebuchet-target-goal 0)
-    (set-goal bt-ram-demand-goal 0)
-    (set-goal bt-bombard-cannon-demand-goal 0)
-)
 
 ; Missing Castle recovery reuses the existing Castle demand/capability owner.
 ; Do not require 650 stone before creating the demand: the Castle-stone
