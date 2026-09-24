@@ -7608,58 +7608,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; economy. The existing TC3 stone mode is the only persistent late-Castle
 ; stone-project witness available without introducing another state store.
 
-; Withdraw pending Shaft demand when an immediate late-Castle
-; prerequisite or safety condition disappears. Active Shaft research
-; remains protected by sn-resource-control.
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 1)
-    (goal bt-research-mining-camp-claim-goal 0)
-    (or (current-age != castle-age) (or (can-research-with-escrow imperial-age) (or (strategic-number sn-resource-control == imperial-age) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (or (town-under-attack) (or
-(not (goal strategy-goal bt-strategy-boom)) (or (not (up-research-status c: ri-stone-mining == research-complete)) (not (research-available ri-stone-shaft-mining)))))))))
-=>
-    (set-goal bt-stone-shaft-mining-demand-goal 0)
-)
-
-; Withdraw pending Shaft demand when neither accepted Castle/TC stone
-; maturity path remains valid.
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 1)
-    (goal bt-research-mining-camp-claim-goal 0)
-    (and
-            (not
-                        (and
-                                        (current-age == castle-age)
-                                        (and
-                                                            (goal strategy-goal bt-strategy-boom)
-                                                            (and
-                                                                                    (not
-                                                                                                                (town-under-attack)
-                                                                                                            )
-                                                                                    (and
-                                                                                                                (up-research-status c: ri-stone-mining == research-complete)
-                                                                                                                (and
-                                                                                                                                                (research-available ri-stone-shaft-mining)
-                                                                                                                                                (and
-                                                                                                                                                                                    (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
-                                                                                                                                                                                    (building-type-count-total town-center >= 2)
-                                                                                                                                                                                )
-                                                                                                                                            )
-                                                                                                            )
-                                                                                )
-                                                        )
-                                    )
-                    )
-            (not
-                        (and
-                                        (building-type-count-total castle >= 2)
-                                        (stone-amount < 650)
-                                    )
-                    )
-        )
-=>
-    (set-goal bt-stone-shaft-mining-demand-goal 0)
-)
-
 ;----------------------------------------------------------------
 ; 14L-D. STONE SHAFT MINING RESEARCH
 ;----------------------------------------------------------------
