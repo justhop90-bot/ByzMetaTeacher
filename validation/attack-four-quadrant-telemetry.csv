@@ -1,5 +1,5 @@
 test,start_time,result_time,next_attack_due,start_buildings,end_buildings,delta,relative_force,result_goal,attack_timer_enabled,attack_timer_seconds,next_attack_actual,standing_army_demand
 Q1 +delta/parity,,,,10,9,1,0,DAMAGED,true,120,,0
 Q2 zero-delta/parity,,,,10,10,0,0,REASSESS,true,180,,0
-Q3 zero-delta/inferior,,,,10,10,0,-10,STALLED,true,300,,1
-Q4 negative-delta/inferior,,,,10,12,-2,-10,STALLED,true,300,,1
+Q3 zero-delta/inferior,,,,10,10,0,-2,STALLED,true,300,,1
+Q4 negative-delta/inferior,,,,10,12,-2,-2,STALLED,true,300,,1
