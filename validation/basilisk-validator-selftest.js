@@ -38,6 +38,255 @@ try {
     "[Self-test] baseline controller did not pass the real validator",
   );
 
+  const semanticResult = spawnSync(
+    process.execPath,
+    [validatorPath, controllerPath, "--dump-semantic-rules"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(
+    semanticResult.status,
+    0,
+    "[Self-test] semantic rule dump failed",
+  );
+  const semanticRules = JSON.parse(semanticResult.stdout);
+
+  const findSemanticRule = (label, predicate) => {
+    const matches = semanticRules.filter(predicate);
+    assert.equal(
+      matches.length,
+      1,
+      "[Semantic self-test] " + label + " expected exactly one matching rule; found " + matches.length,
+    );
+    return matches[0];
+  };
+
+  const ruleSection = (rule, side) => {
+    const arrow = rule.args.findIndex(
+      (arg) => arg.kind === "atom" && arg.value === "=>",
+    );
+    assert.ok(arrow >= 0, "[Semantic self-test] rule has no => separator");
+    return side === "actions"
+      ? rule.args.slice(arrow + 1)
+      : rule.args.slice(0, arrow);
+  };
+
+  const containsExpression = (expressions, head, values = []) => {
+    const visit = (expr) => {
+      if (!expr || expr.kind !== "expression") return false;
+      if (
+        expr.head === head &&
+        expr.args.length === values.length &&
+        values.every(
+          (value, index) =>
+            expr.args[index]?.kind === "atom" &&
+            expr.args[index].value === value,
+        )
+      ) {
+        return true;
+      }
+      return expr.args.some((child) => visit(child));
+    };
+    return expressions.some((expr) => visit(expr));
+  };
+
+  const hasFact = (rule, head, values = []) =>
+    containsExpression(ruleSection(rule, "facts"), head, values);
+  const hasAction = (rule, head, values = []) =>
+    containsExpression(ruleSection(rule, "actions"), head, values);
+
+  const scalePackage = findSemanticRule(
+    "Scale Mail package writer",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-scale-mail",
+      ]),
+  );
+  assert.ok(
+    hasFact(scalePackage, "up-compare-goal", [
+      "bt-standing-spear-target-goal",
+      ">=",
+      "bt-spear-target-1",
+    ]) &&
+      hasFact(scalePackage, "unit-type-count-total", [
+        "spearman-line",
+        ">=",
+        "bt-spear-target-1",
+      ]),
+    "[Semantic self-test] Scale Mail writer and executor capability witnesses are disconnected",
+  );
+
+  const scaleExecutors = semanticRules.filter((rule) =>
+    hasAction(rule, "research", ["ri-scale-mail"]),
+  );
+  assert.ok(
+    scaleExecutors.length > 0,
+    "[Semantic self-test] Scale Mail has no research executor",
+  );
+  for (const rule of scaleExecutors) {
+    assert.ok(
+      hasFact(rule, "up-compare-goal", [
+        "bt-standing-spear-target-goal",
+        ">=",
+        "bt-spear-target-1",
+      ]) &&
+        hasFact(rule, "unit-type-count-total", [
+          "spearman-line",
+          ">=",
+          "bt-spear-target-1",
+        ]),
+      "[Semantic self-test] Scale Mail executor lacks its writer capability witness",
+    );
+  }
+
+  const caFletching = findSemanticRule(
+    "Feudal Cavalry-Archer Fletching executor",
+    (rule) =>
+      hasFact(rule, "current-age", ["feudal-age"]) &&
+      hasFact(rule, "unit-type-count-total", [
+        "cavalry-archer-line",
+        ">=",
+        "3",
+      ]) &&
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasAction(rule, "research", ["ri-fletching"]),
+  );
+  assert.ok(
+    hasFact(caFletching, "can-research-with-escrow", ["ri-fletching"]),
+    "[Semantic self-test] CA Fletching executor lacks escrow feasibility",
+  );
+
+  findSemanticRule(
+    "CA Fletching -> Bodkin bridge",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c: ri-fletching",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "current-age", [">=", "castle-age"]) &&
+      hasFact(rule, "unit-type-count-total", [
+        "cavalry-archer-line",
+        ">=",
+        "3",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-bodkin-arrow",
+      ]),
+  );
+
+  findSemanticRule(
+    "Fletching terminal package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c: ri-fletching",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c: ri-bodkin-arrow",
+        "==",
+        "research-complete",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-ranged-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "completed Pike package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-pikeman",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c: ri-pikeman",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "goal", ["bt-halberdier-demand-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "completed Halberdier package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-halberdier",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c: ri-halberdier",
+        "==",
+        "research-complete",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "hard Castle bank",
+    (rule) =>
+      hasFact(rule, "current-age", ["feudal-age"]) &&
+      hasFact(rule, "unit-type-count", [
+        "villager",
+        ">=",
+        "bt-castle-villagers",
+      ]) &&
+      hasFact(rule, "goal", ["bt-resource-mode-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-resource-mode-goal",
+        "bt-resource-mode-castle-bank",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-castle-commitment-goal",
+        "1",
+      ]),
+  );
+
+  findSemanticRule(
+    "hard Imperial bank",
+    (rule) =>
+      hasFact(rule, "current-age", ["castle-age"]) &&
+      hasFact(rule, "unit-type-count", [
+        "villager",
+        ">=",
+        "bt-imperial-villagers",
+      ]) &&
+      hasFact(rule, "goal", ["bt-resource-mode-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-resource-mode-goal",
+        "bt-resource-mode-imperial-bank-prep",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-imperial-commitment-goal",
+        "1",
+      ]),
+  );
+
   const stringSafeController =
     baseline +
     '\n(defrule\n    (true)\n=>\n    (chat-local-to-self "validator literal (paren) ; semicolon")\n)\n';
@@ -639,115 +888,13 @@ try {
         "    (goal bt-ranged-threat-goal 0)",
       ),
     },
-    {
-      name: "blacksmith-scale-package-must-share-spear-witness",
-      expected: "[Blacksmith] Scale Mail package writer must share the Spear feasibility witness",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-research-cavalry-counter-package-goal 0)",
-          "(set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
-        ],
-        (rule) =>
-          rule
-            .replace(
-              "    (and\n        (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)\n        (unit-type-count-total spearman-line >= bt-spear-target-1)\n    )",
-              "    (goal bt-blacksmith-infantry-army-goal 1)",
-            ),
-        "Scale Mail package writer",
-      ),
-    },
-    {
-      name: "blacksmith-feudal-fletching-ca-witness",
-      expected: "[Blacksmith] Feudal Fletching executor must support Cavalry Archers",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(current-age == feudal-age)",
-          "(unit-type-count-total cavalry-archer-line >= 3)",
-          "(research ri-fletching)",
-          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
-        ],
-        (rule) =>
-          rule.replace(
-            "(unit-type-count-total cavalry-archer-line >= 3)",
-            "(unit-type-count-total cavalry-archer-line >= 4)",
-          ),
-        "Feudal Fletching CA witness",
-      ),
-    },
-    {
-      name: "blacksmith-ca-fletching-bodkin-bridge",
-      expected: "[Blacksmith] CA Fletching -> Bodkin progression is missing",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
-          "(up-research-status c: ri-fletching == research-complete)",
-          "(set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)",
-        ],
-        (rule) =>
-          rule.replace(
-            "(unit-type-count-total cavalry-archer-line >= 3)",
-            "(unit-type-count-total cavalry-archer-line >= 4)",
-          ),
-        "CA Fletching -> Bodkin bridge",
-      ),
-    },
-    {
-      name: "blacksmith-completed-pike-releases-package",
-      expected: "[Blacksmith] completed Pike package must release when Halberdier demand is absent",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-research-cavalry-counter-package-goal ri-pikeman)",
-          "(goal bt-halberdier-demand-goal 0)",
-          "(set-goal bt-research-cavalry-counter-package-goal 0)",
-        ],
-        () => "",
-        "Pike terminal",
-      ),
-    },
-    {
-      name: "blacksmith-completed-halberdier-releases-package",
-      expected: "[Blacksmith] completed Halberdier package must release when no Plate continuation fires",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-research-cavalry-counter-package-goal ri-halberdier)",
-          "(up-research-status c: ri-halberdier == research-complete)",
-          "(set-goal bt-research-cavalry-counter-package-goal 0)",
-        ],
-        () => "",
-        "Halberdier terminal",
-      ),
-    },
-    {
-      name: "castle-bank-defers-to-p0-crisis",
-      expected: "[Age banking] Castle bank must only claim the bank when no P0 crisis is active",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(set-goal bt-castle-commitment-goal 1)",
-          "(set-goal train-civ-goal -1)",
-        ],
-        (rule) => rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
-        "Castle bank P0 guard",
-      ),
-    },
-    {
-      name: "imperial-bank-defers-to-p0-crisis",
-      expected: "[Age banking] Imperial bank must only claim the bank when no P0 crisis is active",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(set-goal bt-imperial-commitment-goal 1)",
-          "(set-goal train-civ-goal -1)",
-        ],
-        (rule) => rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
-        "Imperial bank P0 guard",
-      ),
-    },
+
+
+
+
+
+
+
     {
       name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
       expected: "[DBA lifecycle]",
