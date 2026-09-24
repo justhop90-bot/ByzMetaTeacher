@@ -606,20 +606,23 @@ try {
     {
       name: "blacksmith-feasibility-veto-regression",
       expected: "[Blacksmith] ri-fletching executor cannot use Imperial feasibility as a discretionary-tech veto",
-      source: (() => {
-        const action = "(research ri-fletching)";
-        const actionIndex = baseline.indexOf(action);
-        assert.notEqual(actionIndex, -1, "[Self-test] Fletching research action missing");
-        const start = baseline.lastIndexOf("(defrule", actionIndex);
-        const end = baseline.indexOf("\n(defrule", actionIndex);
-        const ruleEnd = end === -1 ? baseline.length : end;
-        assert.ok(start >= 0 && start < ruleEnd, "[Self-test] Fletching research rule bounds missing");
-        const rule = baseline.slice(start, ruleEnd);
-        const needle = "(not (goal bt-imperial-commitment-goal 1))";
-        assert.ok(rule.includes(needle), "[Self-test] Fletching Imperial commitment gate missing");
-        const mutated = rule.replace(needle, "(not (can-research-with-escrow imperial-age))");
-        return baseline.slice(0, start) + mutated + baseline.slice(ruleEnd);
-      })(),
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(building-type-count blacksmith >= 1)",
+          "(unit-type-count-total archer-line >= 3)",
+          "(research ri-fletching)",
+          "(not (goal bt-imperial-commitment-goal 1))",
+        ],
+        (rule) => {
+          const needle = "(not (goal bt-imperial-commitment-goal 1))";
+          const mutated = rule.replace(needle, "(not (can-research-with-escrow imperial-age))");
+          assert.notEqual(mutated, rule, "[Self-test] Fletching Imperial gate mutation made no change");
+          return mutated;
+        },
+        "Feudal Fletching Imperial commitment gate",
+      ),
     },
     {
       name: "blacksmith-ranged-threat-loss-cancellation-regression",
