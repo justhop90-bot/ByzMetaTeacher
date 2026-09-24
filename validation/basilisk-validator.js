@@ -3296,6 +3296,35 @@ function validateStateCoverage(rules) {
   }
 }
 
+
+function validatePreemptionReplay(repoRootPath) {
+  const replayPath = path.join(
+    repoRootPath,
+    "validation",
+    "preemption-telemetry-replay.js",
+  );
+  assert.ok(
+    fs.existsSync(replayPath),
+    "[Preemption replay] deterministic replay harness is missing",
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [replayPath],
+    {
+      stdio: "inherit",
+      cwd: repoRootPath,
+    },
+  );
+
+  assert.equal(
+    result.status,
+    0,
+    "[Preemption replay] deterministic lifecycle replay failed with exit code " +
+      result.status,
+  );
+}
+
 function validateHandoffWiring(repoRootPath, legacyPath) {
   assert.ok(
     fs.existsSync(legacyPath),
@@ -4367,6 +4396,7 @@ validateAttackContracts(rules);
 validateStateCoverage(rules);
 validateBasiliskPreemption(rules, source, repoRoot);
 validateTelemetryRing(rules, source, repoRoot);
+validatePreemptionReplay(repoRoot);
 validateSourceOrder(rules);
 validateHandoffWiring(repoRoot, legacyValidatorPath);
 
