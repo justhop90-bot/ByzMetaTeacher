@@ -3385,8 +3385,8 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   );
   assert.equal(
     xsFunctionSignatures.get("basiliskTelemetryEventName"),
-    "int eventType",
-    "[Telemetry XS] basiliskTelemetryEventName signature drifted from int eventType",
+    "int eventType = 0",
+    "[Telemetry XS] basiliskTelemetryEventName signature drifted from int eventType = 0",
   );
 
   const supportedXsCalls = new Set(["xsGetGoal", "xsSetGoal", "xsChatData"]);
