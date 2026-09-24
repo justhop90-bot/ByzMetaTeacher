@@ -6,8 +6,6 @@ This repository keeps the executable Basilisk controller separate from the accum
 
 - `Basilisk/Basilisk.per` — authoritative Basilisk controller. Runtime code; left untouched by this cleanup.
 - `Basiliskload.per` — minimal loader for the Basilisk controller.
-- `BasiliskTelemetry.xs` — canonical telemetry source.
-- `resources/_common/xs/BasiliskTelemetry.xs` — deployable telemetry copy.
 - `validation/` — repository validators and lifecycle replay/self-test tools.
 - `tools/` — maintenance scripts that are not part of the runtime controller.
 - `docs/project/` — Basilisk design notes, implementation checklists, and project history.
