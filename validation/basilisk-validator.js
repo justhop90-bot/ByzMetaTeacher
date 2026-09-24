@@ -5236,7 +5236,9 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
   const capabilityRules = rules.filter(
     (rule) =>
       /\(build (?:barracks|archery-range|stable)\)/.test(rule) &&
-      /bt-standing-(?:army-demand|spear-target|knight-target|camel-target)-goal/.test(rule),
+      /bt-standing-(?:army-demand|spear-target|knight-target|camel-target)-goal/.test(rule) &&
+      !rule.includes("(goal bt-scout-pressure-demand-goal 1)") &&
+      !rule.includes("(goal strategy-goal bt-strategy-flush)"),
   );
   assert.equal(
     capabilityRules.length,
