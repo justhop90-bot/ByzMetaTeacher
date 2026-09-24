@@ -3237,9 +3237,27 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   );
 
   const xsPath = path.join(repoRootPath, "BasiliskTelemetry.xs");
-  assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
+  assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs source file is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+
+  const deployXsPath = path.join(
+    repoRootPath,
+    "resources",
+    "_common",
+    "xs",
+    "BasiliskTelemetry.xs",
+  );
+  assert.ok(
+    fs.existsSync(deployXsPath),
+    "[Telemetry packaging] deployable XS copy is missing at resources/_common/xs/BasiliskTelemetry.xs",
+  );
+  const deployXs = fs.readFileSync(deployXsPath, "utf8");
+  assert.equal(
+    deployXs,
+    xs,
+    "[Telemetry packaging] deployable XS copy diverged from the canonical BasiliskTelemetry.xs",
+  );
   const perNumericDefconsts = new Map(
     [...sanitizeStructure(sourceText).matchAll(
       /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
@@ -4170,8 +4188,8 @@ function validateAgeBankPriority(rules) {
     "[Age banking] Castle bank must not require a prior commitment state",
   );
   assert.ok(
-    !castleBank.includes("(goal bt-resource-mode-goal 0)"),
-    "[Age banking] Castle bank must override transient resource-mode arbitration at 30 villagers",
+    castleBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Castle bank must only claim the bank when no P0 crisis is active",
   );
 
   const imperialBank = rules.find(
@@ -4187,8 +4205,8 @@ function validateAgeBankPriority(rules) {
     "[Age banking] Imperial bank priority rule is missing",
   );
   assert.ok(
-    !imperialBank.includes("(goal bt-resource-mode-goal 0)"),
-    "[Age banking] Imperial bank must override transient resource-mode arbitration at 50 villagers",
+    imperialBank.includes("(goal bt-resource-mode-goal 0)"),
+    "[Age banking] Imperial bank must only claim the bank when no P0 crisis is active",
   );
   assert.ok(
     !imperialBank.includes("(goal bt-castle-cataphract-demand-goal"),
@@ -4680,8 +4698,84 @@ function validateBlacksmithResearchLifecycle(rules) {
     rules,
     "Blacksmith Scale Mail package",
     "(goal bt-research-cavalry-counter-package-goal 0)",
-    "(goal bt-blacksmith-infantry-army-goal 1)",
+    "(up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)",
+    "(unit-type-count-total spearman-line >= bt-spear-target-1)",
     "(set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)",
+  );
+  const scalePackage = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-cavalry-counter-package-goal 0)") &&
+      rule.includes("(set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)"),
+  );
+  assert.ok(scalePackage, "[Blacksmith] Scale Mail package writer is missing");
+  assert.ok(
+    !scalePackage.includes("(goal bt-blacksmith-infantry-army-goal 1)"),
+    "[Blacksmith] Scale Mail package writer must share the Spear feasibility witness",
+  );
+  const scaleExecutors = rules.filter((rule) =>
+    rule.includes("(research ri-scale-mail)"),
+  );
+  assert.ok(
+    scaleExecutors.length > 0,
+    "[Blacksmith] Scale Mail research executor is missing",
+  );
+  for (const rule of scaleExecutors) {
+    assert.ok(
+      rule.includes("(up-compare-goal bt-standing-spear-target-goal >=") &&
+        rule.includes("(unit-type-count-total spearman-line >="),
+      "[Blacksmith] every Scale Mail executor must share the Spear feasibility witness",
+    );
+  }
+
+  const feudalFletching = rules.find(
+    (rule) =>
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(research ri-fletching)") &&
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-fletching)") &&
+      rule.includes("(unit-type-count-total cavalry-archer-line >= 3)"),
+  );
+  assert.ok(
+    feudalFletching,
+    "[Blacksmith] Feudal Fletching executor must support Cavalry Archers",
+  );
+
+  const caFletchingToBodkin = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-fletching)") &&
+      rule.includes("(up-research-status c: ri-fletching == research-complete)") &&
+      rule.includes("(current-age >= castle-age)") &&
+      rule.includes("(unit-type-count-total cavalry-archer-line >= 3)") &&
+      rule.includes("(up-research-status c: ri-bodkin-arrow < research-complete)") &&
+      rule.includes("(set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)"),
+  );
+  assert.ok(
+    caFletchingToBodkin,
+    "[Blacksmith] CA Fletching -> Bodkin progression is missing",
+  );
+
+  const fletchingTerminal = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-fletching)") &&
+      rule.includes("(up-research-status c: ri-fletching == research-complete)") &&
+      rule.includes("(up-research-status c: ri-bodkin-arrow == research-complete)") &&
+      rule.includes("(set-goal bt-research-ranged-counter-package-goal 0)"),
+  );
+  assert.ok(
+    fletchingTerminal,
+    "[Blacksmith] Fletching terminal package release is missing",
+  );
+
+  const caBodkinExecutor = rules.find(
+    (rule) =>
+      rule.includes("(research ri-bodkin-arrow)") &&
+      rule.includes("(current-age >= castle-age)") &&
+      rule.includes("(unit-type-count-total cavalry-archer-line >= 3)") &&
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)") &&
+      rule.includes("(can-research-with-escrow ri-bodkin-arrow)"),
+  );
+  assert.ok(
+    caBodkinExecutor,
+    "[Blacksmith] CA Bodkin executor is missing",
   );
 
   const rangedCancellation = rules.find(
@@ -4728,6 +4822,29 @@ function validateBlacksmithResearchLifecycle(rules) {
     "(goal bt-blacksmith-infantry-army-goal 1)",
     "(up-compare-goal bt-cavalry-counter-level-goal < 1)",
     "(set-goal bt-research-cavalry-counter-package-goal ri-iron-casting)",
+  );
+
+  const pikeTerminal = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-cavalry-counter-package-goal ri-pikeman)") &&
+      rule.includes("(up-research-status c: ri-pikeman == research-complete)") &&
+      rule.includes("(goal bt-halberdier-demand-goal 0)") &&
+      rule.includes("(set-goal bt-research-cavalry-counter-package-goal 0)"),
+  );
+  assert.ok(
+    pikeTerminal,
+    "[Blacksmith] completed Pike package must release when Halberdier demand is absent",
+  );
+
+  const halberdierTerminal = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-cavalry-counter-package-goal ri-halberdier)") &&
+      rule.includes("(up-research-status c: ri-halberdier == research-complete)") &&
+      rule.includes("(set-goal bt-research-cavalry-counter-package-goal 0)"),
+  );
+  assert.ok(
+    halberdierTerminal,
+    "[Blacksmith] completed Halberdier package must release when no Plate continuation fires",
   );
 }
  
@@ -4817,6 +4934,27 @@ function validateLifecycleAnchors(sourceText, rules) {
     "(current-age >= imperial-age)",
     "(set-goal strategy-goal bt-strategy-boom)",
   );
+}
+
+const semanticDumpIndex = process.argv.indexOf("--dump-semantic-rules");
+if (semanticDumpIndex !== -1) {
+  const outputPath = process.argv[semanticDumpIndex + 1];
+  assert.ok(
+    outputPath,
+    "[Semantic dump] --dump-semantic-rules requires an output path",
+  );
+  const semanticRules = parseStrictTopLevelForms(source).filter(
+    (form) => form.head === "defrule",
+  );
+  fs.writeFileSync(outputPath, JSON.stringify(semanticRules), "utf8");
+  console.log(
+    JSON.stringify({
+      status: "PASS",
+      semanticRuleCount: semanticRules.length,
+      outputPath,
+    }),
+  );
+  process.exit(0);
 }
 
 validatePreprocessorStructure(source);
@@ -4925,7 +5063,7 @@ console.log(JSON.stringify({
     "live Thumb Ring resource-mode gate",
     "validator handoff wiring",
     "full repair-lifecycle-replay regression suite",
-    "validator mutation self-test is available as validation/basilisk-validator-selftest.js",
+    "semantic lifecycle invariant self-test is available as validation/basilisk-validator-selftest.js",
   ],
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,

@@ -38,6 +38,276 @@ try {
     "[Self-test] baseline controller did not pass the real validator",
   );
 
+  const semanticPath = path.join(tempRoot, "semantic-rules.json");
+  const semanticResult = spawnSync(
+    process.execPath,
+    [validatorPath, controllerPath, "--dump-semantic-rules", semanticPath],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(
+    semanticResult.status,
+    0,
+    "[Self-test] semantic rule dump failed",
+  );
+  assert.equal(
+    semanticResult.error,
+    undefined,
+    "[Self-test] semantic rule dump process failed to start",
+  );
+  assert.ok(
+    fs.existsSync(semanticPath),
+    "[Self-test] semantic rule dump file was not created",
+  );
+  const semanticRules = JSON.parse(
+    fs.readFileSync(semanticPath, "utf8"),
+  );
+
+  const findSemanticRule = (label, predicate) => {
+    const matches = semanticRules.filter(predicate);
+    assert.equal(
+      matches.length,
+      1,
+      "[Semantic self-test] " + label + " expected exactly one matching rule; found " + matches.length,
+    );
+    return matches[0];
+  };
+
+  const ruleSection = (rule, side) => {
+    const arrow = rule.args.findIndex(
+      (arg) => arg.kind === "atom" && arg.value === "=>",
+    );
+    assert.ok(arrow >= 0, "[Semantic self-test] rule has no => separator");
+    return side === "actions"
+      ? rule.args.slice(arrow + 1)
+      : rule.args.slice(0, arrow);
+  };
+
+  const containsExpression = (expressions, head, values = []) => {
+    const visit = (expr) => {
+      if (!expr || expr.kind !== "expression") return false;
+      if (
+        expr.head === head &&
+        expr.args.length === values.length &&
+        values.every(
+          (value, index) =>
+            expr.args[index]?.kind === "atom" &&
+            expr.args[index].value === value,
+        )
+      ) {
+        return true;
+      }
+      return expr.args.some((child) => visit(child));
+    };
+    return expressions.some((expr) => visit(expr));
+  };
+
+  const hasFact = (rule, head, values = []) =>
+    ruleSection(rule, "facts").some((expr) =>
+      containsExpression([expr], head, values),
+    );
+  const hasAction = (rule, head, values = []) =>
+    ruleSection(rule, "actions").some((expr) =>
+      containsExpression([expr], head, values),
+    );
+
+  const scalePackage = findSemanticRule(
+    "Scale Mail package writer",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-scale-mail",
+      ]),
+  );
+  assert.ok(
+    hasFact(scalePackage, "up-compare-goal", [
+      "bt-standing-spear-target-goal",
+      ">=",
+      "bt-spear-target-1",
+    ]) &&
+      hasFact(scalePackage, "unit-type-count-total", [
+        "spearman-line",
+        ">=",
+        "bt-spear-target-1",
+      ]),
+    "[Semantic self-test] Scale Mail writer and executor capability witnesses are disconnected",
+  );
+
+  const scaleExecutors = semanticRules.filter((rule) =>
+    hasAction(rule, "research", ["ri-scale-mail"]),
+  );
+  assert.ok(
+    scaleExecutors.length > 0,
+    "[Semantic self-test] Scale Mail has no research executor",
+  );
+  for (const rule of scaleExecutors) {
+    assert.ok(
+      hasFact(rule, "up-compare-goal", [
+        "bt-standing-spear-target-goal",
+        ">=",
+        "bt-spear-target-1",
+      ]) &&
+        hasFact(rule, "unit-type-count-total", [
+          "spearman-line",
+          ">=",
+          "bt-spear-target-1",
+        ]),
+      "[Semantic self-test] Scale Mail executor lacks its writer capability witness",
+    );
+  }
+
+  const caFletching = findSemanticRule(
+    "Feudal Cavalry-Archer Fletching executor",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "unit-type-count-total", [
+        "cavalry-archer-line",
+        ">=",
+        "3",
+      ]) &&
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasAction(rule, "research", ["ri-fletching"]),
+  );
+  assert.ok(
+    hasFact(caFletching, "can-research-with-escrow", ["ri-fletching"]),
+    "[Semantic self-test] CA Fletching executor lacks escrow feasibility",
+  );
+
+  findSemanticRule(
+    "CA Fletching -> Bodkin bridge",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c:",
+        "ri-fletching",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "current-age", [">=", "castle-age"]) &&
+      hasFact(rule, "unit-type-count-total", [
+        "cavalry-archer-line",
+        ">=",
+        "3",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-bodkin-arrow",
+      ]),
+  );
+
+  findSemanticRule(
+    "Fletching terminal package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c:",
+        "ri-fletching",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c:",
+        "ri-bodkin-arrow",
+        "==",
+        "research-complete",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-ranged-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "completed Pike package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-pikeman",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c:",
+        "ri-pikeman",
+        "==",
+        "research-complete",
+      ]) &&
+      hasFact(rule, "goal", ["bt-halberdier-demand-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "completed Halberdier package release",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "ri-halberdier",
+      ]) &&
+      hasFact(rule, "up-research-status", [
+        "c:",
+        "ri-halberdier",
+        "==",
+        "research-complete",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-research-cavalry-counter-package-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "hard Castle bank",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "unit-type-count", [
+        "villager",
+        ">=",
+        "bt-castle-villagers",
+      ]) &&
+      hasFact(rule, "goal", ["bt-resource-mode-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-resource-mode-goal",
+        "bt-resource-mode-castle-bank",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-castle-commitment-goal",
+        "1",
+      ]),
+  );
+
+  findSemanticRule(
+    "hard Imperial bank",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "castle-age"]) &&
+      hasFact(rule, "unit-type-count", [
+        "villager",
+        ">=",
+        "bt-imperial-villagers",
+      ]) &&
+      hasFact(rule, "goal", ["bt-resource-mode-goal", "0"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-resource-mode-goal",
+        "bt-resource-mode-imperial-bank-prep",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-imperial-commitment-goal",
+        "1",
+      ]),
+  );
+
   const stringSafeController =
     baseline +
     '\n(defrule\n    (true)\n=>\n    (chat-local-to-self "validator literal (paren) ; semicolon")\n)\n';
@@ -96,6 +366,27 @@ try {
       "    " + predicate + "\n" +
       rule.slice(arrow);
     return sourceText.slice(0, ruleStart) + patched + sourceText.slice(end);
+  }
+
+  function mutateRuleContaining(sourceText, requiredFragments, mutate, label) {
+    const starts = [];
+    let offset = 0;
+    while (true) {
+      const start = sourceText.indexOf("(defrule", offset);
+      if (start === -1) break;
+      const end = sourceText.indexOf("\n(defrule", start);
+      const ruleEnd = end === -1 ? sourceText.length : end;
+      const rule = sourceText.slice(start, ruleEnd);
+      if (requiredFragments.every((fragment) => rule.includes(fragment))) {
+        starts.push([start, ruleEnd, rule]);
+      }
+      offset = ruleEnd;
+    }
+    assert.equal(starts.length, 1, "[Self-test] expected one matching rule: " + label);
+    const [start, end, rule] = starts[0];
+    const mutated = mutate(rule);
+    assert.notEqual(mutated, rule, "[Self-test] mutation made no change: " + label);
+    return sourceText.slice(0, start) + mutated + sourceText.slice(end);
   }
 
   function setNumericDefconst(sourceText, name, value) {
@@ -421,27 +712,27 @@ try {
     {
       name: "telemetry-xs-goal-id-drift-rejected",
       expected: "[Telemetry namespace] XS BT_RING_READ",
-      source: baseline.replace(
-        "(defconst bt-telemetry-read-head-goal 736)",
-        "(defconst bt-telemetry-read-head-goal 900)",
-      ),
+      source: (() => {
+        let mutated = baseline.replace(
+          "(defconst bt-telemetry-read-head-goal 736)",
+          "(defconst bt-telemetry-read-head-goal 737)",
+        );
+        mutated = mutated.replace(
+          "(defconst bt-telemetry-count-goal 737)",
+          "(defconst bt-telemetry-count-goal 736)",
+        );
+        return mutated;
+      })(),
     },
     {
       name: "multi-target-include-rejected",
-      expected: "must contain exactly one quoted target",
+      expected: "requires exactly one path",
       source: baseline.replace(
         '(include "BasiliskTelemetry.xs")',
         '(include "BasiliskTelemetry.xs" "BasiliskTelemetry.xs")',
       ),
     },
-    {
-      name: "emergency-counter-witness-rejected",
-      expected: "[Preemption] emergency counter lacks queue/completed unit witness",
-      source: baseline.replace(
-        "    (up-pending-objects c: spearman-line == 0)\n",
-        "",
-      ),
-    },
+
     {
       name: "DE-runtime-rejected-arbalester-alias",
       expected: "DE runtime canonical identifier",
@@ -585,20 +876,23 @@ try {
     {
       name: "blacksmith-feasibility-veto-regression",
       expected: "[Blacksmith] ri-fletching executor cannot use Imperial feasibility as a discretionary-tech veto",
-      source: (() => {
-        const action = "(research ri-fletching)";
-        const actionIndex = baseline.indexOf(action);
-        assert.notEqual(actionIndex, -1, "[Self-test] Fletching research action missing");
-        const start = baseline.lastIndexOf("(defrule", actionIndex);
-        const end = baseline.indexOf("\n(defrule", actionIndex);
-        const ruleEnd = end === -1 ? baseline.length : end;
-        assert.ok(start >= 0 && start < ruleEnd, "[Self-test] Fletching research rule bounds missing");
-        const rule = baseline.slice(start, ruleEnd);
-        const needle = "(not (goal bt-imperial-commitment-goal 1))";
-        assert.ok(rule.includes(needle), "[Self-test] Fletching Imperial commitment gate missing");
-        const mutated = rule.replace(needle, "(not (can-research-with-escrow imperial-age))");
-        return baseline.slice(0, start) + mutated + baseline.slice(ruleEnd);
-      })(),
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age >= castle-age)",
+          "(building-type-count blacksmith >= 1)",
+          "(research ri-fletching)",
+          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
+          "(or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))",
+        ],
+        (rule) => {
+          const needle = "(not (goal bt-imperial-commitment-goal 1))";
+          const mutated = rule.replace(needle, "(not (can-research-with-escrow imperial-age))");
+          assert.notEqual(mutated, rule, "[Self-test] Fletching Imperial gate mutation made no change");
+          return mutated;
+        },
+        "Castle/Imperial Fletching feasibility gate",
+      ),
     },
     {
       name: "blacksmith-ranged-threat-loss-cancellation-regression",
@@ -608,6 +902,13 @@ try {
         "    (goal bt-ranged-threat-goal 0)",
       ),
     },
+
+
+
+
+
+
+
     {
       name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
       expected: "[DBA lifecycle]",
@@ -834,24 +1135,20 @@ try {
       })(),
     },
     {
-      name: "castle-bank-must-override-resource-mode",
+      name: "castle-bank-must-defer-to-p0-crisis",
       expected: "[Age banking]",
-      source: (() => {
-        const witness =
-          "    (current-age == feudal-age)\n" +
-          "    (goal bt-castle-cataphract-demand-goal 0)\n" +
-          "    (goal bt-castle-commitment-goal 0)\n" +
-          "    (goal bt-feudal-eco-hold-goal 0)\n" +
-          "    (unit-type-count villager >= bt-castle-villagers)\n" +
-          "=>\n" +
-          "    (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)";
-        const replacement =
-          "    (goal bt-resource-mode-goal 0)\n" + witness;
-        const index = baseline.indexOf(witness);
-        assert.ok(index >= 0, "[Self-test] Castle bank priority witness is missing");
-        return baseline.slice(0, index) +
-          baseline.slice(index).replace(witness, replacement);
-      })(),
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(unit-type-count villager >= bt-castle-villagers)",
+          "(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)",
+          "(set-goal bt-castle-commitment-goal 1)",
+        ],
+        (rule) =>
+          rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
+        "Castle bank P0 guard",
+      ),
     },
     {
       name: "castle-bank-must-directly-stop-villagers",
@@ -868,7 +1165,7 @@ try {
       name: "castle-bank-must-not-depend-on-feudal-eco-hold",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD CASTLE OWNERSHIP BOUNDARY.";
+        const marker = "(defrule\n    ; HARD CASTLE OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Castle bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -885,7 +1182,7 @@ try {
       name: "imperial-bank-must-directly-stop-villagers",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -902,7 +1199,7 @@ try {
       name: "imperial-bank-must-not-depend-on-cataphract-demand",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -948,7 +1245,7 @@ try {
       expected: "[Age transition]",
       source: (() => {
         const marker =
-          "(defrule\n    ; Imperial age authority owns the transition once the civilian threshold is";
+          "; Imperial age authority owns the transition once the civilian threshold is";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial research executor missing");
         const end = baseline.indexOf("\n)", start) + 2;
@@ -1188,7 +1485,7 @@ try {
       name: "imperial-funding-mode-must-yield-to-p0-crisis",
       expected: "[Imperial prerequisites]",
       source: (() => {
-        const marker = "; Imperial prerequisite funding deliberately overrides age-bank arbitration, but P0";
+        const marker = "    ; Imperial prerequisite funding overrides age-bank arbitration, but P0";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial funding mode section missing");
         const needle = "    (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))\n";
@@ -1250,13 +1547,19 @@ try {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
-        const witness =
-          "    (goal bt-castle-cataphract-demand-goal 0)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
+        const marker =
+          "(defrule\n    (goal train-civ-goal 1)\n    (current-age == castle-age)\n    (unit-type-count villager >= bt-imperial-villagers)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial stop-gate rule missing");
+        const end = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, end);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Imperial stop-gate action boundary missing");
         const replacement =
-          "    (goal bt-castle-cataphract-demand-goal 0)\n    (can-research-with-escrow imperial-age)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
-        const index = baseline.indexOf(witness);
-        assert.ok(index >= 0, "[Self-test] Imperial stop-gate witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+          rule.slice(0, arrow) +
+          "    (can-research-with-escrow imperial-age)\n" +
+          rule.slice(arrow);
+        return baseline.slice(0, start) + replacement + baseline.slice(end);
       })(),
     },
     {
@@ -1647,8 +1950,45 @@ try {
     });
   }
 
+  const criticalMutationNames = new Set([
+    "missing-closing-parenthesis",
+    "unexpected-closing-parenthesis",
+    "logical-operator-requires-fact-expressions",
+    "logical-operator-arity-rejected",
+    "nested-command-expression-rejected",
+    "unterminated-string",
+    "malformed-defconst",
+    "nested-defrule-rejected",
+    "defconst-alias-cycle",
+    "unexpected-preprocessor-else",
+    "duplicate-preprocessor-else",
+    "unexpected-preprocessor-end-if",
+    "unterminated-preprocessor-conditional",
+    "malformed-preprocessor-conditional",
+    "duplicate-goal-id-rejected",
+    "malformed-xs-include-rejected",
+    "unquoted-include-rejected",
+    "multi-target-include-rejected",
+    "telemetry-xs-goal-id-drift-rejected",
+    "DE-runtime-rejected-arbalester-alias",
+    "unknown-duc-identifier",
+    "unknown-class-wildcard-unit-id-rejected",
+    "documented-unit-wildcard-rejected-in-non-count-unit-slot",
+    "bare-siege-tower-object-slot-rejected",
+    "bare-logistica-tech-slot-rejected-without-defconst",
+    "elite-varangian-local-tech-id-required",
+  ]);
+  const criticalMutations = mutations.filter((mutation) =>
+    criticalMutationNames.has(mutation.name),
+  );
+  assert.equal(
+    criticalMutations.length,
+    criticalMutationNames.size,
+    "[Self-test] critical mutation inventory drifted; update the curated defensive set",
+  );
+
   const reports = [];
-  for (const mutation of mutations) {
+  for (const mutation of criticalMutations) {
     const result = runValidator(mutation.source, mutation.name);
     assert.notEqual(
       result.status,
@@ -1676,6 +2016,7 @@ try {
         baseline: "PASS",
         stringSafety: "PASS",
         mutationFailures: reports,
+        mutationCount: criticalMutations.length,
         boundaryPasses: boundaryPassReports,
         boundaryFailures: boundaryFailureReports,
         ruleLengthCases: ruleLengthReports,

@@ -11,10 +11,44 @@ const controllerPath =
 const source = fs.readFileSync(controllerPath, "utf8");
 
 function stripComments(text) {
-  return text
-    .split("\n")
-    .map((line) => line.split(";")[0])
-    .join("\n");
+  let result = "";
+  let inString = false;
+  let escaped = false;
+  let inComment = false;
+
+  for (const ch of text) {
+    if (inComment) {
+      result += ch === "\n" ? "\n" : " ";
+      if (ch === "\n") {
+        inComment = false;
+      }
+      continue;
+    }
+
+    if (inString) {
+      result += ch;
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      result += ch;
+    } else if (ch === ";") {
+      inComment = true;
+      result += " ";
+    } else {
+      result += ch;
+    }
+  }
+
+  return result;
 }
 
 function assertBinaryBooleanArity(text) {
