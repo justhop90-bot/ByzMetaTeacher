@@ -595,7 +595,6 @@ console.log(JSON.stringify({
 for (const constant of [
   "bt-opening-map-goal",
   "bt-opening-plan-goal",
-  "bt-opening-stage-goal",
   "bt-opening-underlay-goal",
   "bt-opening-threat-goal",
   "bt-opening-plan-arabia-standard",
@@ -661,7 +660,7 @@ requireRule(
 );
 requireRule(
   "Anti-Rush commitment",
-  "(goal bt-opening-stage-goal bt-opening-stage-selecting)",
+  "(goal bt-opening-plan-goal 0)",
   "(up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)",
   "(set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)",
 );
