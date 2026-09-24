@@ -3359,12 +3359,9 @@ function validateResourceModeArbiter(rules) {
   );
 }
 
-function validateAttackResultLifecycle(rules) {
-  const collapseConstant = rules.find((rule) =>
-    rule.includes("(defconst bt-attack-collapse-force-floor -5)"),
-  );
+function validateAttackResultLifecycle(rules, sourceText) {
   assert.ok(
-    collapseConstant,
+    sourceText.includes("(defconst bt-attack-collapse-force-floor -5)"),
     "[Attack result] severe-collapse force floor is missing",
   );
 
@@ -3376,11 +3373,8 @@ function validateAttackResultLifecycle(rules) {
       rule.includes("(up-retreat-now)") &&
       rule.includes("(set-goal bt-attack-result-goal bt-attack-result-stalled)"),
   );
-  const measurementConstant = rules.find((rule) =>
-    rule.includes("(defconst bt-attack-measurement-seconds 180)"),
-  );
   assert.ok(
-    measurementConstant,
+    sourceText.includes("(defconst bt-attack-measurement-seconds 180)"),
     "[Attack result] attack measurement window must use the community-aligned 180s cadence",
   );
 
@@ -6839,7 +6833,7 @@ validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
 validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
-validateAttackResultLifecycle(rules);
+validateAttackResultLifecycle(rules, source);
 validateRushStallFailurePolicy(rules, source);
 validateBoomEconomicLifecycle(rules, source);
 validateBoomPaperReplay(rules, source);
