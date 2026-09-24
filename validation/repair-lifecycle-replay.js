@@ -632,25 +632,26 @@ requireRule(
 );
 requireRule(
   "Arabia Early Pressure",
-  "(goal bt-opening-map-goal bt-opening-map-arabia)",
+  "(map-type arabia)",
   "(players-building-type-count target-player market >= 1)",
   "(set-goal bt-opening-plan-goal bt-opening-plan-arabia-pressure)",
 );
 requireRule(
   "Arabia Fast Castle",
-  "(goal bt-opening-map-goal bt-opening-map-arabia)",
+  "(map-type arabia)",
   "(players-current-age target-player == dark-age)",
   "(players-military-population target-player <= 1)",
   "(set-goal bt-opening-plan-goal bt-opening-plan-arabia-fast-castle)",
 );
 requireRule(
   "Arena Fast Castle",
-  "(goal bt-opening-map-goal bt-opening-map-arena)",
+  "(map-type arena)",
   "(set-goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)",
 );
 requireRule(
   "Generic pressure fallback",
-  "(goal bt-opening-map-goal bt-opening-map-generic)",
+  "(not (map-type arabia))
+  (not (map-type arena))",
   "(set-goal bt-opening-plan-goal bt-opening-plan-generic-pressure)",
 );
 requireRule(
