@@ -1435,7 +1435,6 @@
                     (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
                     (or
                         (up-research-status c: ri-logistica == research-complete)
-                        (goal bt-research-cataphract-package-goal ri-logistica)
                     )
                 )
             )
@@ -14044,7 +14043,10 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 ; Cataphract premium research. Actual completed Cataphracts qualify the
 ; upgrade; queue-inclusive totals remain the production/completion witness.
 (defrule
-    (goal bt-cataphract-demand-goal 1)
+    (or
+        (goal bt-cataphract-demand-goal 1)
+        (goal bt-varangian-demand-goal 1)
+    )
     (current-age >= imperial-age)
     (building-type-count-total castle >= 1)
     (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-2)
