@@ -572,8 +572,7 @@ try {
         const actionIndex = baseline.indexOf(action);
         assert.notEqual(actionIndex, -1, "[Self-test] Elite Varangian research action missing");
         const start = baseline.lastIndexOf("(defrule", actionIndex);
-        const end = baseline.indexOf("
-(defrule", actionIndex);
+        const end = baseline.indexOf("\n(defrule", actionIndex);
         const ruleEnd = end === -1 ? baseline.length : end;
         assert.ok(start >= 0 && start < ruleEnd, "[Self-test] Elite Varangian research rule bounds missing");
         const rule = baseline.slice(start, ruleEnd);
