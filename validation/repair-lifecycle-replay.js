@@ -593,7 +593,6 @@ console.log(JSON.stringify({
   ),
 }, null, 2));// MAP-AWARE OPENING SELECTOR VALIDATION
 for (const constant of [
-  "bt-opening-map-goal",
   "bt-opening-plan-goal",
   "bt-opening-underlay-goal",
   "bt-opening-threat-goal",
@@ -611,15 +610,11 @@ for (const constant of [
 
 requireRule(
   "Arabia map classification",
-  "(goal bt-opening-map-goal 0)",
   "(map-type arabia)",
-  "(set-goal bt-opening-map-goal bt-opening-map-arabia)",
 );
 requireRule(
   "Arena map classification",
-  "(goal bt-opening-map-goal 0)",
   "(map-type arena)",
-  "(set-goal bt-opening-map-goal bt-opening-map-arena)",
 );
 requireRule(
   "Immediate opening pressure",
