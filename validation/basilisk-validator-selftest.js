@@ -466,8 +466,8 @@ try {
       name: "emergency-counter-witness-rejected",
       expected: "[Preemption] emergency counter lacks queue/completed unit witness",
       source: baseline.replace(
-        "    (up-pending-objects c: spearman-line == 0)\n",
-        "",
+        "    (building-type-count-total barracks >= 1)\n    (up-pending-objects c: spearman-line == 0)\n    (can-train spearman-line)\n",
+        "    (building-type-count-total barracks >= 1)\n    (can-train spearman-line)\n",
       ),
     },
     {
