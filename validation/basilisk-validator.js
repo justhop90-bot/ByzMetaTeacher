@@ -2639,135 +2639,283 @@ function validateFarmEscrowContracts(rules) {
 
 function validateEcoResearchDemandRemoval(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
-
   const retired = [
     "bt-horse-collar-demand-goal",
     "bt-double-bit-axe-demand-goal",
     "bt-gold-mining-demand-goal",
+    "bt-wheelbarrow-demand-goal",
+    "bt-hand-cart-demand-goal",
+    "bt-bow-saw-demand-goal",
+    "bt-two-man-saw-demand-goal",
+    "bt-gold-shaft-mining-demand-goal",
+    "bt-stone-mining-demand-goal",
+    "bt-stone-shaft-mining-demand-goal",
+    "bt-heavy-plow-demand-goal",
+    "bt-housing-demand-goal",
+    "bt-mill-target-goal",
+    "bt-university-demand-goal",
+    "bt-imperial-prereq-demand-goal",
+    "bt-castle-prereq-failure-history-goal",
+    "bt-imperial-prereq-failure-history-goal",
+    "bt-castle-cataphract-failure-history-goal",
   ];
   for (const symbol of retired) {
     assert.ok(
       !rules.some((rule) => rule.includes(symbol)),
-      "[Eco demand removal] retired demand goal remains: " + symbol,
+      "[State removal] retired goal remains: " + symbol,
     );
   }
 
-  const horse = rules.find((rule) => rule.includes("(research ri-horse-collar)"));
-  assert.ok(horse, "[Eco demand removal] Horse Collar executor is missing");
-  const horseText = normalize(horse);
-  for (const witness of [
-    "(current-age == feudal-age)",
-    "(up-research-status c: ri-horse-collar == research-available)",
-    "(building-type-count mill >= 1)",
-    "(can-research-with-escrow ri-horse-collar)",
-    "(goal bt-research-mill-claim-goal 0)",
-  ]) {
-    assert.ok(horseText.includes(witness), "[Eco demand removal] Horse Collar executor is missing witness: " + witness);
+  const requireResearchRule = (tech, witnesses, label) => {
+    const rule = rules.find(
+      (candidate) =>
+        candidate.includes("(research " + tech + ")") &&
+        candidate.includes("(can-research-with-escrow " + tech + ")"),
+    );
+    assert.ok(rule, "[Eco direct] " + label + " research executor is missing");
+    const text = normalize(rule);
+    for (const witness of witnesses) {
+      assert.ok(
+        text.includes(witness),
+        "[Eco direct] " + label + " is missing witness: " + witness,
+      );
+    }
+    return rule;
+  };
+
+  requireResearchRule(
+    "ri-horse-collar",
+    [
+      "(current-age == feudal-age)",
+      "(up-research-status c: ri-horse-collar == research-available)",
+      "(building-type-count mill >= 1)",
+      "(goal bt-research-mill-claim-goal 0)",
+    ],
+    "Horse Collar",
+  );
+  requireResearchRule(
+    "ri-double-bit-axe",
+    [
+      "(current-age == feudal-age)",
+      "(up-research-status c: ri-double-bit-axe == research-available)",
+      "(food-amount >= bt-double-bit-axe-food-buffer)",
+      "(wood-amount >= bt-double-bit-axe-wood-buffer)",
+      "(not (goal bt-castle-commitment-goal 1))",
+      "(goal bt-research-lumber-camp-claim-goal 0)",
+    ],
+    "Double-Bit Axe",
+  );
+  requireResearchRule(
+    "ri-gold-mining",
+    [
+      "(current-age >= castle-age)",
+      "(research-available ri-gold-mining)",
+      "(goal bt-cataphract-demand-goal 1)",
+      "(goal strategy-goal bt-strategy-flush)",
+      "(goal unit-goal bt-unit-mix)",
+      "(unit-type-count-total spearman-line >= bt-spear-target-1)",
+      "(up-compare-goal bt-noncav-cavalry-level-goal >= 1)",
+      "(building-type-count-total stable >= 1)",
+      "(unit-type-count-total camel-line < bt-camel-target-1)",
+      "(goal bt-research-mining-camp-claim-goal 0)",
+    ],
+    "Gold Mining",
+  );
+  requireResearchRule(
+    "ri-hand-cart",
+    [
+      "(current-age >= castle-age)",
+      "(goal strategy-goal bt-strategy-boom)",
+      "(up-research-status c: ri-wheel-barrow >= research-complete)",
+      "(building-type-count-total town-center >= 3)",
+      "(up-compare-goal bt-research-town-center-failure-backoff-goal != ri-hand-cart)",
+      "(goal bt-research-town-center-claim-goal 0)",
+    ],
+    "Hand Cart",
+  );
+  requireResearchRule(
+    "ri-heavy-plow",
+    [
+      "(current-age == castle-age)",
+      "(up-research-status c: ri-horse-collar >= research-complete)",
+      "(building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)",
+      "(up-compare-goal bt-research-mill-failure-backoff-goal != ri-heavy-plow)",
+      "(goal bt-research-mill-claim-goal 0)",
+    ],
+    "Heavy Plow",
+  );
+  requireResearchRule(
+    "ri-two-man-saw",
+    [
+      "(current-age >= imperial-age)",
+      "(unit-type-count villager >= bt-two-man-saw-villagers)",
+      "(unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)",
+      "(goal strategy-goal bt-strategy-boom)",
+      "(not (goal bt-cataphract-demand-goal 1))",
+      "(goal bt-research-lumber-camp-claim-goal 0)",
+    ],
+    "Two-Man Saw",
+  );
+
+  const stoneRules = rules.filter(
+    (rule) =>
+      rule.includes("(research ri-stone-mining)") &&
+      rule.includes("(set-goal bt-research-mining-camp-claim-goal ri-stone-mining)"),
+  );
+  assert.equal(
+    stoneRules.length,
+    6,
+    "[Stone direct] expected six direct Stone Mining action-boundary rules",
+  );
+  assert.ok(
+    stoneRules.filter((rule) => rule.includes("bt-resource-mode-castle-stone-premium")).length >= 2,
+    "[Stone direct] Castle-stone policy branch is missing",
+  );
+  assert.ok(
+    stoneRules.filter((rule) => rule.includes("bt-resource-mode-tc-stone-premium")).length >= 2,
+    "[Stone direct] TC-stone-premium policy branch is missing",
+  );
+  assert.ok(
+    stoneRules.filter((rule) => rule.includes("bt-resource-mode-tc-stone")).length >= 2,
+    "[Stone direct] TC-stone policy branch is missing",
+  );
+  assert.ok(
+    stoneRules.filter((rule) => rule.includes("(goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)")).length >= 3,
+    "[Stone direct] Imperial-bank-safe branch is missing",
+  );
+  for (const rule of stoneRules) {
+    const text = normalize(rule);
+    for (const witness of [
+      "(current-age >= feudal-age)",
+      "(goal strategy-goal bt-strategy-boom)",
+      "(can-research-with-escrow ri-stone-mining)",
+      "(goal bt-research-mining-camp-claim-goal 0)",
+      "(up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-mining)",
+    ]) {
+      assert.ok(text.includes(witness), "[Stone direct] missing witness: " + witness);
+    }
   }
 
-  const dba = rules.find((rule) => rule.includes("(research ri-double-bit-axe)"));
-  assert.ok(dba, "[Eco demand removal] Double-Bit Axe executor is missing");
-  const dbaText = normalize(dba);
+  const housing = rules.find(
+    (rule) =>
+      rule.includes("(build house)") &&
+      rule.includes("(housing-headroom <= bt-housing-headroom-trigger)") &&
+      rule.includes("(building-type-count house >= 1)"),
+  );
+  assert.ok(housing, "[Housing direct] normal house executor must consume current headroom");
+  assert.ok(
+    housing.includes("(population-headroom <= 0)"),
+    "[Housing direct] emergency population-headroom witness is missing",
+  );
+
+  const millRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-mill-project-goal 0)") &&
+      rule.includes("(set-goal bt-mill-project-goal"),
+  );
+  assert.equal(
+    millRules.length,
+    5,
+    "[Mill direct] expected five current-fact Mill project selectors",
+  );
+  assert.ok(
+    millRules.some((rule) => rule.includes("(civilian-population >= 10)") && rule.includes("(set-goal bt-mill-project-goal 1)")),
+    "[Mill direct] first-Mill selector is missing",
+  );
+  assert.ok(
+    millRules.filter((rule) => rule.includes("(set-goal bt-mill-project-goal 2)")).length === 2,
+    "[Mill direct] second-Mill selectors are missing",
+  );
+  assert.ok(
+    millRules.filter((rule) => rule.includes("(set-goal bt-mill-project-goal 3)")).length === 2,
+    "[Mill direct] third-Mill selectors are missing",
+  );
+
+  const universityRules = rules.filter(
+    (rule) =>
+      rule.includes("(build university)") &&
+      rule.includes("(can-build-with-escrow university)"),
+  );
+  assert.ok(universityRules.length >= 2, "[University direct] shared University capability providers are missing");
+  assert.ok(
+    universityRules.some((rule) => rule.includes("(goal bt-research-siege-package-goal ri-ballistics)") || rule.includes("(goal bt-research-siege-package-goal ri-chemistry)")),
+    "[University direct] siege research capability witness is missing",
+  );
+  assert.ok(
+    universityRules.some((rule) => rule.includes("(building-type-count-total monastery >= 1)") && rule.includes("(building-type-count-total siege-workshop >= 1)")),
+    "[University direct] Imperial two-of-three provider witness is missing",
+  );
+
+  const imperialFunding = rules.find(
+    (rule) => rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
+      rule.includes("(building-type-count-total monastery >= 1)"),
+  );
+  assert.ok(imperialFunding, "[Imperial direct] prerequisite funding rule is missing");
   for (const witness of [
-    "(current-age == feudal-age)",
-    "(up-research-status c: ri-double-bit-axe == research-available)",
-    "(food-amount >= bt-double-bit-axe-food-buffer)",
-    "(wood-amount >= bt-double-bit-axe-wood-buffer)",
-    "(not (goal bt-castle-commitment-goal 1))",
-    "(can-research-with-escrow ri-double-bit-axe)",
-    "(goal bt-research-lumber-camp-claim-goal 0)",
+    "(current-age == castle-age)",
+    "(building-type-count-total castle < 1)",
+    "(not (can-research-with-escrow imperial-age))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-gold-crisis))",
+    "(not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))",
   ]) {
-    assert.ok(dbaText.includes(witness), "[Eco demand removal] Double-Bit Axe executor is missing witness: " + witness);
+    assert.ok(
+      imperialFunding.includes(witness),
+      "[Imperial direct] funding rule is missing witness: " + witness,
+    );
   }
 
-  const gold = rules.find((rule) => rule.includes("(research ri-gold-mining)"));
-  assert.ok(gold, "[Eco demand removal] Gold Mining executor is missing");
-  const goldText = normalize(gold);
-  for (const witness of [
-    "(current-age >= castle-age)",
-    "(research-available ri-gold-mining)",
-    "(goal bt-cataphract-demand-goal 1)",
-    "(goal strategy-goal bt-strategy-flush)",
-    "(goal unit-goal bt-unit-mix)",
-    "(unit-type-count-total spearman-line >= bt-spear-target-1)",
-    "(up-compare-goal bt-noncav-cavalry-level-goal >= 1)",
-    "(building-type-count-total stable >= 1)",
-    "(unit-type-count-total camel-line < bt-camel-target-1)",
-    "(can-research-with-escrow ri-gold-mining)",
-    "(goal bt-research-mining-camp-claim-goal 0)",
-  ]) {
-    assert.ok(goldText.includes(witness), "[Eco demand removal] Gold Mining executor is missing witness: " + witness);
-  }
+  const imperialSiege = rules.find(
+    (rule) =>
+      rule.includes("(build siege-workshop)") &&
+      rule.includes("(can-build-with-escrow siege-workshop)") &&
+      rule.includes("(goal bt-imperial-prereq-backoff-goal 0)") &&
+      rule.includes("(building-type-count-total monastery >= 1)"),
+  );
+  const imperialUniversity = rules.find(
+    (rule) =>
+      rule.includes("(build university)") &&
+      rule.includes("(can-build-with-escrow university)") &&
+      rule.includes("(goal bt-imperial-prereq-backoff-goal 0)") &&
+      rule.includes("(building-type-count-total monastery >= 1)") &&
+      rule.includes("(building-type-count-total siege-workshop >= 1)"),
+  );
+  assert.ok(imperialSiege, "[Imperial direct] Siege Workshop provider is missing");
+  assert.ok(imperialUniversity, "[Imperial direct] University provider is missing");
 }
 
 function validateLateEcoTechnologyMaturity(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
-
   const cropRotationExecutor = rules.find(
     (rule) =>
       rule.includes("(research ri-crop-rotation)") &&
       rule.includes("(set-goal bt-research-mill-claim-goal ri-crop-rotation)"),
   );
-  assert.ok(
-    cropRotationExecutor,
-    "[Late-eco lifecycle] Crop Rotation research executor is missing",
-  );
+  assert.ok(cropRotationExecutor, "[Late-eco lifecycle] Crop Rotation research executor is missing");
   const cropText = normalize(cropRotationExecutor);
   for (const witness of [
     "(current-age >= imperial-age)",
     "(building-type-count farm >= bt-crop-rotation-farm-threshold)",
     "(can-research-with-escrow ri-crop-rotation)",
   ]) {
-    assert.ok(
-      cropText.includes(witness),
-      "[Late-eco lifecycle] Crop Rotation executor is missing maturity witness: " + witness,
-    );
-  }
-
-  const twoManDemandWriter = rules.find(
-    (rule) =>
-      rule.includes("(set-goal bt-two-man-saw-demand-goal 1)"),
-  );
-  assert.ok(
-    twoManDemandWriter,
-    "[Late-eco lifecycle] Two-Man Saw demand writer is missing",
-  );
-  const twoManDemandText = normalize(twoManDemandWriter);
-  for (const witness of [
-    "(current-age >= imperial-age)",
-    "(unit-type-count villager >= bt-two-man-saw-villagers)",
-    "(unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)",
-    "(goal strategy-goal bt-strategy-boom)",
-    "(research-available ri-two-man-saw)",
-  ]) {
-    assert.ok(
-      twoManDemandText.includes(witness),
-      "[Late-eco lifecycle] Two-Man Saw demand writer is missing maturity witness: " + witness,
-    );
+    assert.ok(cropText.includes(witness), "[Late-eco lifecycle] Crop Rotation executor is missing maturity witness: " + witness);
   }
 
   const twoManExecutor = rules.find(
     (rule) =>
-      rule.includes("(goal bt-two-man-saw-demand-goal 1)") &&
-      rule.includes("(research ri-two-man-saw)"),
+      rule.includes("(research ri-two-man-saw)") &&
+      rule.includes("(can-research-with-escrow ri-two-man-saw)"),
   );
-  assert.ok(
-    twoManExecutor,
-    "[Late-eco lifecycle] Two-Man Saw research executor is missing",
-  );
-  const twoManExecutorText = normalize(twoManExecutor);
+  assert.ok(twoManExecutor, "[Late-eco lifecycle] Two-Man Saw direct executor is missing");
+  const twoManText = normalize(twoManExecutor);
   for (const witness of [
     "(current-age >= imperial-age)",
     "(unit-type-count villager >= bt-two-man-saw-villagers)",
     "(unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)",
     "(goal strategy-goal bt-strategy-boom)",
     "(not (goal bt-cataphract-demand-goal 1))",
-    "(can-research-with-escrow ri-two-man-saw)",
   ]) {
-    assert.ok(
-      twoManExecutorText.includes(witness),
-      "[Late-eco lifecycle] Two-Man Saw executor is missing maturity witness: " + witness,
-    );
+    assert.ok(twoManText.includes(witness), "[Late-eco lifecycle] Two-Man Saw direct executor is missing witness: " + witness);
   }
 }
 
@@ -4535,7 +4683,6 @@ validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateEcoResearchDemandRemoval(rules);
 validateMillPlacement(source, rules);
-validateDoubleBitAxeLifecycle(rules);
 validateLateEcoTechnologyMaturity(rules);
 validateScoutingLifecycle(source, rules);
 validateVillagerHygiene(rules);
