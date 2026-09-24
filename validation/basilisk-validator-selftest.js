@@ -584,6 +584,24 @@ try {
       })(),
     },
     {
+      name: "blacksmith-feasibility-veto-regression",
+      expected: "[Blacksmith] ri-fletching executor cannot use Imperial feasibility as a discretionary-tech veto",
+      source: (() => {
+        const needle = "(not (goal bt-imperial-commitment-goal 1))";
+        const idx = baseline.indexOf(needle);
+        assert.notEqual(idx, -1, "[Self-test] Blacksmith commitment gate missing");
+        return baseline.slice(0, idx) + "(not (can-research-with-escrow imperial-age))" + baseline.slice(idx + needle.length);
+      })(),
+    },
+    {
+      name: "blacksmith-ranged-threat-loss-cancellation-regression",
+      expected: "[Blacksmith] ranged package must survive threat loss while friendly ranged mass remains",
+      source: baseline.replace(
+        "    (goal bt-ranged-threat-goal 0)\n    (goal bt-blacksmith-ranged-army-goal 0)",
+        "    (goal bt-ranged-threat-goal 0)",
+      ),
+    },
+    {
       name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
       expected: "[DBA lifecycle]",
       source: (() => {
