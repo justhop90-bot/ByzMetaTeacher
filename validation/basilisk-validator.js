@@ -304,6 +304,7 @@ function validateRuleStructure(sourceText) {
     );
 
     const form = sanitized.slice(cursor, end);
+    const rawForm = sourceText.slice(cursor, end);
     const headMatch = form.match(/^\(\s*([A-Za-z][A-Za-z0-9_-]*)/);
     assert.ok(
       headMatch,
@@ -317,19 +318,20 @@ function validateRuleStructure(sourceText) {
     );
 
     if (head === "include") {
-      assert.equal(
-        form.match(/"(?:[^"\\]|\\.)*"/g)?.length ?? 0,
-        1,
+      const includeMatch = rawForm.match(
+        /^\(\s*include\s+"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)$/,
+      );
+      assert.ok(
+        includeMatch,
         `[Include] include near source offset ${cursor} must contain exactly one quoted target`,
       );
       assert.ok(
-        /"[^"]+\.xs"$/.test(form.trim()),
+        includeMatch[1].toLowerCase().endsWith(".xs"),
         `[Include] include near source offset ${cursor} must target a .xs file`,
       );
       cursor = end;
       continue;
     }
-
     if (head === "defrule") {
       const arrowPositions = [...form.matchAll(/=>/g)].map((match) => match.index);
       assert.equal(
