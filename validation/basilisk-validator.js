@@ -5310,6 +5310,7 @@ console.log(JSON.stringify({
     "completed/pending build witnesses tied to the built building",
     "duplicate and out-of-range defconst diagnostics",
     "attack-now timer/idle/completion contracts",
+    "repeated Feudal RUSH stall release and consecutive-failure replay",
     "critical state writer/reader/action coverage",
     "pre-final-strategy one-pass action ban",
     "strategy -> resource-mode -> production -> attack source order",
