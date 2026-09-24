@@ -5032,7 +5032,7 @@ console.log(JSON.stringify({
     "live Thumb Ring resource-mode gate",
     "validator handoff wiring",
     "full repair-lifecycle-replay regression suite",
-    "validator mutation self-test is available as validation/basilisk-validator-selftest.js",
+    "semantic lifecycle invariant self-test is available as validation/basilisk-validator-selftest.js",
   ],
   maxControllerLine: engineLimitReport.maxLineLength,
   maxRuleElements: engineLimitReport.worstElements,
