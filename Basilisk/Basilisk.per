@@ -11898,6 +11898,19 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
 )
 
+; A live DUC arm is only justified while an actionable Trebuchet witness exists.
+; If the current Trebuchet mass disappears, release the latch so a later
+; Trebuchet commitment can re-arm the targeting lifecycle.
+(defrule
+    (goal bt-bombard-cannon-demand-goal 1)
+    (goal bt-bombard-trebuchet-duc-armed-goal 1)
+    (players-unit-type-count target-player trebuchet-set < 1)
+=>
+    (disable-timer bt-bombard-trebuchet-target-timer)
+    (set-goal bt-bombard-trebuchet-duc-armed-goal 0)
+    (set-goal bt-bombard-trebuchet-duc-stage-goal bt-bombard-trebuchet-duc-stage-idle)
+)
+
 ; Demand cleanup owns all BBC DUC state.
 (defrule
     (goal bt-bombard-cannon-demand-goal 0)
