@@ -1031,7 +1031,7 @@ try {
       name: "imperial-bank-must-not-depend-on-cataphract-demand",
       expected: "[Age banking]",
       source: (() => {
-        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.";
+        const marker = "(defrule\n    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] hard Imperial bank rule missing");
         const ruleEnd = baseline.indexOf("\n)", start) + 2;
@@ -1379,13 +1379,19 @@ try {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
-        const witness =
-          "    (goal bt-castle-cataphract-demand-goal 0)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
+        const marker =
+          "(defrule\n    (goal train-civ-goal 1)\n    (current-age == castle-age)\n    (unit-type-count villager >= bt-imperial-villagers)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] Imperial stop-gate rule missing");
+        const end = baseline.indexOf("\n)", start) + 2;
+        const rule = baseline.slice(start, end);
+        const arrow = rule.indexOf("=>");
+        assert.ok(arrow >= 0, "[Self-test] Imperial stop-gate action boundary missing");
         const replacement =
-          "    (goal bt-castle-cataphract-demand-goal 0)\n    (can-research-with-escrow imperial-age)\n=>\n    ; Imperial bank ownership stops civilian queue growth";
-        const index = baseline.indexOf(witness);
-        assert.ok(index >= 0, "[Self-test] Imperial stop-gate witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(witness, replacement);
+          rule.slice(0, arrow) +
+          "    (can-research-with-escrow imperial-age)\n" +
+          rule.slice(arrow);
+        return baseline.slice(0, start) + replacement + baseline.slice(end);
       })(),
     },
     {
