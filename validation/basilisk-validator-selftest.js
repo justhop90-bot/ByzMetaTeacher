@@ -973,6 +973,7 @@ try {
         baseline,
         [
           "(current-age == feudal-age)",
+          "(unit-type-count villager >= bt-castle-villagers)",
           "(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)",
           "(goal bt-castle-commitment-goal 1)",
         ],
