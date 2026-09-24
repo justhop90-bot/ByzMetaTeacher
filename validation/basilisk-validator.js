@@ -5372,7 +5372,6 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     "[BOOM source order] no standing-army military executor found",
   );
 
-  const tcArbitrationIndex = rules.indexOf(tcArbitration);
   const lastResourceModeWriter = maxRuleIndex(
     (rule) => rule.includes("(set-goal bt-resource-mode-goal "),
     "resource-mode writer",
