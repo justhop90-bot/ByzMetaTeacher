@@ -3410,7 +3410,7 @@ function validateAttackResultLifecycle(rules) {
       rule.includes("(goal bt-attack-result-goal bt-attack-result-none)") &&
       /\\(set-goal bt-attack-result-goal bt-attack-result-(damaged|stalled|reassess)\\)/.test(rule),
   );
-  assert.equal(resultRules.length, 4, "[Attack result] expected damaged, first-stall, generic-stall, and reassess result consumers");
+  assert.equal(resultRules.length, 5, "[Attack result] expected damaged, second-stall, first-stall, generic-stall, and reassess result consumers");
 
   const gatherFailure = rules.find(
     (rule) =>
