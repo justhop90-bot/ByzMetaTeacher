@@ -3201,24 +3201,31 @@ function validateAttackAllocationPolicy(rules) {
 }
 
 function validateFeudalCastleEconomyContract(rules) {
+  const castleThresholdIndex = rules.findIndex((rule) =>
+    rule.includes("(defconst bt-castle-villagers 28)"),
+  );
   assert.ok(
-    rules.some((rule) => rule.includes("(defconst bt-castle-villagers 28)")),
+    castleThresholdIndex >= 0,
     "[Feudal economy] Castle transition threshold must be 28 villagers",
   );
-  assert.ok(
-    rules.some((rule) =>
-      rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
-      rule.includes("(set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)"),
-    ),
-    "[Feudal economy] BOOM Feudal floor must be normalized to the two-unit economic-defense floor",
+
+  const boomFloorIndex = rules.findIndex((rule) =>
+    rule.includes("(current-age == feudal-age)") &&
+    rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+    rule.includes("(set-goal bt-standing-army-floor-goal bt-feudal-boom-army-floor)"),
   );
   assert.ok(
-    rules.some((rule) =>
-      rule.includes("(up-compare-goal bt-standing-army-floor-goal == bt-feudal-boom-army-floor)") &&
-      rule.includes("(set-goal bt-standing-spear-target-goal bt-feudal-boom-spear-target)") &&
-      rule.includes("(set-goal bt-standing-skirm-target-goal bt-feudal-boom-skirm-target)"),
-    ),
+    boomFloorIndex >= 0,
+    "[Feudal economy] BOOM Feudal floor must be normalized to the two-unit economic-defense floor",
+  );
+
+  const roleIndex = rules.findIndex((rule) =>
+    rule.includes("(up-compare-goal bt-standing-army-floor-goal == bt-feudal-boom-army-floor)") &&
+    rule.includes("(set-goal bt-standing-spear-target-goal bt-feudal-boom-spear-target)") &&
+    rule.includes("(set-goal bt-standing-skirm-target-goal bt-feudal-boom-skirm-target)"),
+  );
+  assert.ok(
+    roleIndex >= 0,
     "[Feudal economy] two-unit BOOM role targets are missing",
   );
 
@@ -3230,8 +3237,21 @@ function validateFeudalCastleEconomyContract(rules) {
   assert.ok(
     attack &&
       attack.includes("(goal strategy-goal bt-strategy-rush)") &&
-      attack.includes("(goal strategy-goal bt-strategy-flush)"),
+      attack.includes("(goal strategy-goal bt-strategy-flush)") &&
+      !attack.includes("(goal strategy-goal bt-strategy-boom)"),
     "[Feudal economy] Feudal attack authorization must be restricted to pressure postures and blocked during Castle commitment",
+  );
+
+  const floorWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) =>
+      rule.includes("(set-goal bt-standing-army-floor-goal") &&
+      rule.includes("(current-age == feudal-age)"),
+    )
+    .map(({ index }) => index);
+  assert.ok(
+    floorWriters.length > 0 && boomFloorIndex > Math.max(...floorWriters.filter((index) => index !== boomFloorIndex)),
+    "[Feudal economy] BOOM floor normalization must execute after generic Feudal floor writers",
   );
 }
 
