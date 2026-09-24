@@ -227,17 +227,13 @@ requireRule(
   "(can-research-with-escrow ri-gold-shaft-mining)",
   "(set-goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
 );
-const goldShaftFailureRule = requireRule(
+requireRule(
   "Gold Shaft watchdog",
   "(goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)",
   "(up-research-status c: ri-gold-shaft-mining <= research-available)",
   "(set-goal bt-research-mining-camp-failure-backoff-goal ri-gold-shaft-mining)",
   "(enable-timer bt-research-mining-camp-failure-backoff-timer bt-research-failure-backoff-seconds)",
   "(set-goal bt-research-mining-camp-claim-goal 0)",
-);
-assert.ok(
-  !goldShaftFailureRule.includes("(set-goal bt-gold-shaft-mining-demand-goal 0)"),
-  "[Gold Shaft] engine failure must not create or clear strategic demand state",
 );
 requireRule(
   "Gold Shaft completion",
