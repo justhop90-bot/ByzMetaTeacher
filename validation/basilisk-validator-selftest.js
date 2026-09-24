@@ -975,7 +975,7 @@ try {
           "(current-age == feudal-age)",
           "(unit-type-count villager >= bt-castle-villagers)",
           "(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)",
-          "(goal bt-castle-commitment-goal 1)",
+          "(set-goal bt-castle-commitment-goal 1)",
         ],
         (rule) =>
           rule.replace("    (goal bt-resource-mode-goal 0)\n", ""),
