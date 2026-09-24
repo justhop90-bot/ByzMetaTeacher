@@ -3310,16 +3310,21 @@ function validateFeudalFarmTransitionBudget(rules, sourceText) {
     "[Feudal farm budget] BOOM farm-budget release must be unique and retain all exit witnesses",
   );
 
-  const farmExecutorIndex = rules.findIndex(
+  const feudalFarmExecutors = rules.filter(
     (rule) =>
       rule.includes("(current-age == feudal-age)") &&
       rule.includes("(can-build-with-escrow farm)") &&
       rule.includes("(build farm)") &&
-      rule.includes("(goal bt-feudal-farm-wood-hold-goal 0)") &&
       rule.includes("(building-type-count-total farm < bt-farm-feudal-cap)"),
   );
+  assert.equal(
+    feudalFarmExecutors.length,
+    1,
+    "[Feudal farm budget] exactly one Feudal farm executor may exist so no pressure posture can bypass the BOOM wood hold",
+  );
+  const farmExecutorIndex = rules.indexOf(feudalFarmExecutors[0]);
   assert.ok(
-    farmExecutorIndex >= 0,
+    feudalFarmExecutors[0].includes("(goal bt-feudal-farm-wood-hold-goal 0)"),
     "[Feudal farm budget] Feudal farm executor must honor the BOOM wood hold",
   );
 
@@ -3339,25 +3344,6 @@ function validateFeudalFarmTransitionBudget(rules, sourceText) {
     rawFarmGate,
     undefined,
     "[Feudal farm budget] escrow-aware farm executor must not duplicate the wood floor as a raw resource gate",
-  );
-
-  const pressureFarmExecutor = rules.find(
-    (rule) =>
-      rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
-      rule.includes("(can-build-with-escrow farm)") &&
-      rule.includes("(build farm)"),
-  );
-  const flushFarmExecutor = rules.find(
-    (rule) =>
-      rule.includes("(current-age == feudal-age)") &&
-      rule.includes("(goal strategy-goal bt-strategy-flush)") &&
-      rule.includes("(can-build-with-escrow farm)") &&
-      rule.includes("(build farm)"),
-  );
-  assert.ok(
-    !pressureFarmExecutor && !flushFarmExecutor,
-    "[Feudal farm budget] pressure postures must not inherit the BOOM-only farm hold",
   );
 }
 
