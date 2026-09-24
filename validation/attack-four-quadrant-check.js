@@ -33,7 +33,7 @@ function expectedTimer(result) {
 
 if (!fs.existsSync(inputPath)) {
   fail("[Attack test] telemetry file not found: " + inputPath);
-  return;
+  process.exit(1);
 }
 
 const rows = parseCsv(fs.readFileSync(inputPath, "utf8"));
