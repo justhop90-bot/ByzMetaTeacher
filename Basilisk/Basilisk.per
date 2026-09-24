@@ -125,6 +125,9 @@
 (defconst bt-varangian-target-goal 727)
 (defconst bt-varangian-fielded-goal 728)
 (defconst bt-varangian-count-scratch-goal 800)
+; Persistent friendly-army witnesses for blacksmith technology policy.
+(defconst bt-blacksmith-ranged-army-goal 801)
+(defconst bt-blacksmith-infantry-army-goal 802)
 (defconst bt-varangian-target-level-2 4)
 (defconst bt-varangian-target-level-3 6)
 (defconst bt-varangian-logistica-min 6)
@@ -1072,6 +1075,12 @@
     (set-goal bt-research-lumber-camp-failure-backoff-goal 0)
     (set-goal bt-research-mining-camp-failure-backoff-goal 0)
     (set-goal bt-research-blacksmith-failure-backoff-goal 0)
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+    (set-goal bt-research-ranged-counter-package-goal 0)
+    (set-goal bt-research-cataphract-package-goal 0)
+    (set-goal bt-research-siege-package-goal 0)
+    (set-goal bt-blacksmith-ranged-army-goal 0)
+    (set-goal bt-blacksmith-infantry-army-goal 0)
     (set-goal bt-research-university-failure-backoff-goal 0)
     (set-goal bt-research-castle-failure-backoff-goal 0)
     (set-goal bt-research-barracks-failure-backoff-goal 0)
@@ -1772,6 +1781,38 @@
 =>
     (set-goal bt-research-monk-package-goal 0)
 )
+; BLACKSMITH FRIENDLY-ARMY WITNESSES
+; Friendly mass keeps its blacksmith package alive even when enemy threat
+; observations fall away. Unit counts are live engine facts, not threat latches.
+(defrule
+    (true)
+=>
+    (set-goal bt-blacksmith-ranged-army-goal 0)
+    (set-goal bt-blacksmith-infantry-army-goal 0)
+)
+(defrule
+    (or
+        (unit-type-count-total archer-line >= 3)
+        (or
+            (unit-type-count-total skirmisher-line >= 3)
+            (unit-type-count-total cavalry-archer-line >= 3)
+        )
+    )
+=>
+    (set-goal bt-blacksmith-ranged-army-goal 1)
+)
+(defrule
+    (or
+        (unit-type-count-total spearman-line >= 3)
+        (or
+            (unit-type-count-total militiaman-line >= 3)
+            (up-compare-goal bt-varangian-fielded-goal >= 3)
+        )
+    )
+=>
+    (set-goal bt-blacksmith-infantry-army-goal 1)
+)
+
 ; RESEARCH PACKAGE PRIORITY
 ;================================================================
 ; Package goal value:
@@ -1785,14 +1826,20 @@
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+        (goal bt-blacksmith-infantry-army-goal 1)
+    )
     (up-research-status c: ri-scale-mail < research-complete)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-scale-mail)
 )
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
+        (goal bt-blacksmith-infantry-army-goal 1)
+    )
     (up-research-status c: ri-scale-mail == research-complete)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-mail)
     (up-research-status c: ri-chain-mail < research-complete)
@@ -1819,7 +1866,13 @@
 )
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+        (and
+            (goal bt-blacksmith-infantry-army-goal 1)
+            (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
+        )
+    )
     (current-age >= imperial-age)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
     (up-research-status c: ri-halberdier == research-complete)
@@ -1831,9 +1884,31 @@
 (defrule
     (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
     (up-research-status c: ri-scale-mail == research-complete)
+    (current-age == feudal-age)
+    (goal bt-blacksmith-infantry-army-goal 1)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-forging)
+    (up-research-status c: ri-forging < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-forging)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-scale-mail)
+    (up-research-status c: ri-scale-mail == research-complete)
+    (current-age >= castle-age)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-chain-mail)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
+    (up-research-status c: ri-chain-mail == research-complete)
+    (current-age >= castle-age)
+    (goal bt-blacksmith-infantry-army-goal 1)
+    (up-compare-goal bt-cavalry-counter-level-goal < 1)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-iron-casting)
+    (up-research-status c: ri-iron-casting < research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal ri-iron-casting)
 )
 (defrule
     (goal bt-research-cavalry-counter-package-goal ri-chain-mail)
@@ -1862,6 +1937,18 @@
     (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
 )
 (defrule
+    (goal bt-research-cavalry-counter-package-goal ri-forging)
+    (up-research-status c: ri-forging == research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-iron-casting)
+    (up-research-status c: ri-iron-casting == research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+(defrule
     (goal bt-research-cavalry-counter-package-goal ri-plate-mail)
     (up-research-status c: ri-plate-mail == research-complete)
 =>
@@ -1871,6 +1958,7 @@
     (up-compare-goal bt-research-cavalry-counter-package-goal != 0)
     (up-compare-goal bt-cavalry-counter-level-goal < 1)
     (goal bt-cavalry-threat-goal 0)
+    (goal bt-blacksmith-infantry-army-goal 0)
     (goal bt-halberdier-demand-goal 0)
 =>
     (set-goal bt-research-cavalry-counter-package-goal 0)
@@ -1897,7 +1985,10 @@
 ; FLETCHING: establish a real ranged response package.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (or
         (and
             (up-compare-goal bt-standing-archer-target-goal > 0)
@@ -1907,6 +1998,7 @@
             (up-compare-goal bt-standing-skirm-target-goal > 0)
             (unit-type-count-total skirmisher-line >= 3)
         )
+        (goal bt-blacksmith-ranged-army-goal 1)
     )
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-fletching)
     (up-research-status c: ri-fletching < research-complete)
@@ -1941,7 +2033,10 @@
 ; simultaneously claim the same package slot.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= castle-age)
@@ -1985,7 +2080,10 @@
 ; FLETCHING -> ELITE SKIRMISHER: primary Byzantine ranged counter.
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= castle-age)
@@ -2006,11 +2104,30 @@
     (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
 )
 
+; FLETCHING -> ELITE SKIRMISHER: friendly ranged mass keeps the package alive.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+    (goal bt-crossbow-demand-goal 0)
+    (goal bt-arbalest-demand-goal 0)
+    (current-age >= castle-age)
+    (goal bt-blacksmith-ranged-army-goal 1)
+    (up-compare-goal bt-standing-skirm-target-goal > 0)
+    (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
+    (up-compare-goal bt-research-archery-range-failure-backoff-goal != ri-elite-skirmisher)
+    (up-research-status c: ri-elite-skirmisher < research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
+)
+
 ; FLETCHING -> PADDED ARMOR: defensive support when the primary counter
 ; branch does not own the package.
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (up-research-status c: ri-fletching == research-complete)
     (or
@@ -2043,14 +2160,20 @@
         )
         (or
         (and
-            (goal bt-ranged-threat-goal 1)
+            (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
             (and
             (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
             (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
                     )
         )
         (and
-            (goal bt-ranged-threat-goal 1)
+            (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
             (and
             (up-compare-goal bt-standing-archer-target-goal >= 3)
             (unit-type-count-total archer-line >= 3)
@@ -2071,7 +2194,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (current-age >= castle-age)
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-1)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-1)
@@ -2085,7 +2211,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-elite-skirmisher)
     (up-research-status c: ri-elite-skirmisher == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (current-age >= imperial-age)
     (up-research-status c: ri-bodkin-arrow == research-complete)
     (or
@@ -2117,7 +2246,10 @@
 ; available/completed. Elite completion alone is not strategic authority.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
@@ -2136,7 +2268,10 @@
 )
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
@@ -2154,7 +2289,10 @@
         )
         (and
             (unit-type-count-total cavalry-archer >= 6)
-            (goal bt-ranged-threat-goal 1)
+            (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
         )
             )
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bracer)
@@ -2167,7 +2305,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
     (up-research-status c: ri-bodkin-arrow == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)
     (unit-type-count-total skirmisher-line >= bt-skirm-target-2)
     (up-compare-goal bt-ranged-counter-level-goal >= 2)
@@ -2182,7 +2323,10 @@
 ; PADDED ARCHER ARMOR: defensive support for an actual ranged response.
 (defrule
     (goal bt-research-ranged-counter-package-goal 0)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (up-research-status c: ri-fletching == research-complete)
@@ -2206,7 +2350,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-padded-archer-armor)
     (up-research-status c: ri-padded-archer-armor == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (or
@@ -2230,7 +2377,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-leather-archer-armor)
     (up-research-status c: ri-leather-archer-armor == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
@@ -2262,7 +2412,10 @@
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)
     (up-research-status c: ri-ring-archer-armor == research-complete)
-    (goal bt-ranged-threat-goal 1)
+    (or
+        (goal bt-ranged-threat-goal 1)
+        (goal bt-blacksmith-ranged-army-goal 1)
+    )
     (goal bt-crossbow-demand-goal 0)
     (goal bt-arbalest-demand-goal 0)
     (current-age >= imperial-age)
@@ -2395,6 +2548,7 @@
             )
     )
     (goal bt-ranged-threat-goal 0)
+    (goal bt-blacksmith-ranged-army-goal 0)
 =>
     (set-goal bt-research-ranged-counter-package-goal 0)
 )
@@ -13750,10 +13904,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
                 (goal bt-ranged-threat-goal 1)
             )
         )
-    (and (current-age == feudal-age) (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    )))
+    (and (current-age == feudal-age) (not (goal bt-castle-commitment-goal 1)))
     (up-research-status c: ri-scale-barding < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-barding)
@@ -13811,7 +13962,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
         )
     )
     (current-age == castle-age)
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (up-research-status c: ri-scale-barding < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (not (goal bt-resource-mode-goal bt-resource-mode-food-crisis))
@@ -13841,7 +13992,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ; at the target, so it cannot be a prerequisite for the upgrade.
 (defrule
     (current-age >= castle-age)
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-scale-barding == research-complete)
     (or
