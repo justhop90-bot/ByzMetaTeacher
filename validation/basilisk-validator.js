@@ -3241,7 +3241,7 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
       if (callStart < 0) break;
 
       let open = callStart + "xsChatData".length;
-      while (open < xsSource.length && /\\s/.test(xsSource[open])) open++;
+      while (open < xsSource.length && /\s/.test(xsSource[open])) open++;
       assert.equal(
         xsSource[open],
         "(",
@@ -3260,7 +3260,7 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
         if (inString) {
           if (escaped) {
             escaped = false;
-          } else if (ch === "\\\\") {
+          } else if (ch === "\\") {
             escaped = true;
           } else if (ch === '"') {
             inString = false;
@@ -3312,7 +3312,7 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
       );
 
       let after = close + 1;
-      while (after < xsSource.length && /\\s/.test(xsSource[after])) after++;
+      while (after < xsSource.length && /\s/.test(xsSource[after])) after++;
       assert.equal(
         xsSource[after],
         ";",
