@@ -4912,6 +4912,70 @@ function validateEliteVarangianResearchCapability(rules) {
   );
 }
 
+
+function validateBarracksSquiresArsonLifecycle(rules) {
+  const lifecycles = [
+    ["Squires", "ri-squires"],
+    ["Arson", "ri-arson"],
+  ];
+
+  for (const [label, tech] of lifecycles) {
+    const executor = rules.find(
+      (rule) =>
+        rule.includes("(research " + tech + ")") &&
+        rule.includes("(building-type-count barracks >= 1)") &&
+        rule.includes("(goal bt-research-barracks-claim-goal 0)") &&
+        rule.includes("(can-research-with-escrow " + tech + ")"),
+    );
+    assert.ok(
+      executor,
+      "[" + label + "] Barracks research executor is missing or does not use the shared claim/escrow contract",
+    );
+    assert.ok(
+      executor.includes(
+        "(up-compare-goal bt-research-barracks-failure-backoff-goal != " + tech + ")",
+      ),
+      "[" + label + "] executor is missing Barracks-local failure backoff",
+    );
+
+    const completion = rules.find(
+      (rule) =>
+        rule.includes(
+          "(goal bt-research-barracks-claim-goal " + tech + ")",
+        ) &&
+        rule.includes(
+          "(up-research-status c: " + tech + " == research-complete)",
+        ) &&
+        rule.includes("(set-goal bt-research-barracks-claim-goal 0)"),
+    );
+    assert.ok(
+      completion,
+      "[" + label + "] Barracks claim completion release is missing",
+    );
+
+    const watchdog = rules.find(
+      (rule) =>
+        rule.includes(
+          "(goal bt-research-barracks-claim-goal " + tech + ")",
+        ) &&
+        rule.includes(
+          "(up-research-status c: " + tech + " <= research-available)",
+        ) &&
+        rule.includes(
+          "(set-goal bt-research-barracks-failure-backoff-goal " + tech + ")",
+        ) &&
+        rule.includes(
+          "(enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)",
+        ) &&
+        rule.includes("(set-goal bt-research-barracks-claim-goal 0)"),
+    );
+    assert.ok(
+      watchdog,
+      "[" + label + "] failed research must arm Barracks backoff and release the shared claim",
+    );
+  }
+}
+
 function validateLifecycleAnchors(sourceText, rules) {
   for (const symbol of [
     "bt-strategy-boom",
@@ -4995,6 +5059,7 @@ validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
 validateEliteVarangianResearchCapability(rules);
+validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
