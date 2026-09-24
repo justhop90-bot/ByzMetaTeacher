@@ -5297,6 +5297,185 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
   );
 }
 
+
+function validateBoomTcMilitaryExceptions(rules, sourceText) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  const tcGate = [
+    "(goal bt-tc-project-goal 0)",
+    "(goal strategy-goal bt-strategy-flush)",
+  ];
+
+  const reactiveExecutors = [
+    {
+      label: "Monk",
+      action: "(train monk)",
+      demand: "(goal bt-monk-demand-goal 1)",
+      witness: "(building-type-count monastery >= 1)",
+    },
+    {
+      label: "Mangonel",
+      action: "(train mangonel-line)",
+      demand: "(goal bt-mangonel-demand-goal 1)",
+      witness: "(building-type-count siege-workshop >= 1)",
+    },
+    {
+      label: "Scorpion",
+      action: "(train scorpion-line)",
+      demand: "(goal bt-scorpion-demand-goal 1)",
+      witness: "(players-unit-type-count target-player militiaman-line >= bt-scorpion-trigger-infantry)",
+    },
+  ];
+
+  for (const entry of reactiveExecutors) {
+    const executor = rules.find(
+      (rule) =>
+        rule.includes(entry.action) &&
+        rule.includes(entry.demand),
+    );
+    assert.ok(
+      executor,
+      "[BOOM TC military] reactive exception executor is missing: " + entry.label,
+    );
+    const text = normalize(executor);
+    assert.ok(
+      text.includes(entry.witness),
+      "[BOOM TC military] reactive exception lost its capability/target witness: " + entry.label,
+    );
+    assert.ok(
+      !text.includes("(goal bt-tc-project-goal 0)"),
+      "[BOOM TC military] " + entry.label + " is incorrectly blocked by the TC project gate",
+    );
+  }
+
+  const camel = rules.find(
+    (rule) =>
+      rule.includes("(train camel)") &&
+      rule.includes("(up-compare-goal bt-standing-camel-target-goal > 0)"),
+  );
+  assert.ok(
+    camel,
+    "[BOOM TC military] Camel reactive executor is missing",
+  );
+  assert.ok(
+    !camel.includes("(goal bt-tc-project-goal 0)"),
+    "[BOOM TC military] Camel reactive executor must remain available during a pending TC project",
+  );
+  assert.ok(
+    sourceText.includes("(players-unit-type-count any-enemy knight-line >= 6)") &&
+      sourceText.includes("(players-unit-type-count any-enemy war-elephant-line >= 3)") &&
+      sourceText.includes("(players-unit-type-count any-enemy scout-cavalry-line >= 10)"),
+    "[BOOM TC military] Camel exception must retain direct enemy-cavalry/equivalent witnesses",
+  );
+
+  const protectedExecutors = [
+    {
+      label: "Knight",
+      action: "(train knight-line)",
+      demand: "(goal bt-knight-demand-goal 1)",
+    },
+    {
+      label: "Crossbow",
+      action: "(train crossbowman)",
+      demand: "(goal bt-crossbow-demand-goal 1)",
+    },
+    {
+      label: "Ram",
+      action: "(train battering-ram-line)",
+      demand: "(goal bt-ram-demand-goal 1)",
+    },
+    {
+      label: "Siege Tower",
+      action: "(train siege-tower)",
+      demand: "(goal bt-siege-tower-demand-goal 1)",
+    },
+  ];
+
+  for (const entry of protectedExecutors) {
+    const executor = rules.find(
+      (rule) =>
+        rule.includes(entry.action) &&
+        rule.includes(entry.demand),
+    );
+    assert.ok(
+      executor,
+      "[BOOM TC military] protected executor is missing: " + entry.label,
+    );
+    const text = normalize(executor);
+    for (const gate of tcGate) {
+      assert.ok(
+        text.includes(gate),
+        "[BOOM TC military] " + entry.label + " executor lacks the active-TC capital boundary: " + gate,
+      );
+    }
+  }
+
+  const protectedDemandWriters = [
+    {
+      label: "Ram",
+      action: "(set-goal bt-ram-demand-goal 1)",
+      witness: "(goal attack-goal 1)",
+    },
+    {
+      label: "Siege Tower",
+      action: "(set-goal bt-siege-tower-demand-goal 1)",
+      witness: "(goal attack-goal 1)",
+    },
+  ];
+
+  for (const entry of protectedDemandWriters) {
+    const writer = rules.find(
+      (rule) =>
+        rule.includes(entry.action) &&
+        rule.includes(entry.witness),
+    );
+    assert.ok(
+      writer,
+      "[BOOM TC military] protected demand writer is missing: " + entry.label,
+    );
+    const text = normalize(writer);
+    for (const gate of tcGate) {
+      assert.ok(
+        text.includes(gate),
+        "[BOOM TC military] " + entry.label + " demand writer can arm during a pending TC project: " + gate,
+      );
+    }
+  }
+
+  const tcArbitration = rules.find(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(goal bt-tc-project-goal 2)") &&
+      rule.includes("(goal bt-tc-project-goal 3)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 0)"),
+  );
+  assert.ok(
+    tcArbitration,
+    "[BOOM TC military] TC arbitration rule is missing",
+  );
+
+  for (const demand of [
+    "bt-monk-demand-goal",
+    "bt-mangonel-demand-goal",
+    "bt-scorpion-demand-goal",
+  ]) {
+    assert.ok(
+      !tcArbitration.includes("(set-goal " + demand + " 0)"),
+      "[BOOM TC military] capital arbitration must not cancel reactive demand: " + demand,
+    );
+  }
+
+  assert.ok(
+    !tcArbitration.includes("(set-goal bt-ram-demand-goal 0)"),
+    "[BOOM TC military] capital arbitration must not pretend queued Ram production can be unspent",
+  );
+  assert.ok(
+    !tcArbitration.includes("(set-goal bt-siege-tower-demand-goal 0)"),
+    "[BOOM TC military] capital arbitration must not tear down an already-active Siege Tower state machine",
+  );
+}
+
 function validateBoomPaperReplay(rules, sourceText) {
   const policy = {
     strategy: "boom",
