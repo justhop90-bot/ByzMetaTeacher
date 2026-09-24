@@ -4605,6 +4605,56 @@ function validateStrategicNarration(sourceText, rules) {
   );
 }
 
+function validateEliteVarangianResearchCapability(rules) {
+  const executor = rules.find(
+    (rule) =>
+      rule.includes("(research ri-elite-varangian-guard)") &&
+      rule.includes("(goal bt-research-cataphract-package-goal ri-elite-varangian-guard)"),
+  );
+  assert.ok(
+    executor,
+    "[Elite Varangian] shared premium research executor is missing",
+  );
+  assert.ok(
+    executor.includes("(building-type-count-total barracks >= 1)"),
+    "[Elite Varangian] Imperial upgrade must use a Barracks capability witness",
+  );
+  assert.ok(
+    executor.includes("(goal bt-research-barracks-claim-goal 0)"),
+    "[Elite Varangian] research must use the Barracks claim",
+  );
+  assert.ok(
+    executor.includes("(up-compare-goal bt-research-barracks-failure-backoff-goal != ri-elite-varangian-guard)"),
+    "[Elite Varangian] research must use Barracks-local failure backoff",
+  );
+  assert.ok(
+    executor.includes("(can-research-with-escrow ri-elite-varangian-guard)"),
+    "[Elite Varangian] research must remain escrow-feasibility gated",
+  );
+
+  const completion = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-barracks-claim-goal ri-elite-varangian-guard)") &&
+      rule.includes("(up-research-status c: ri-elite-varangian-guard == research-complete)") &&
+      rule.includes("(set-goal bt-research-barracks-claim-goal 0)"),
+  );
+  assert.ok(
+    completion,
+    "[Elite Varangian] Barracks research claim completion reset is missing",
+  );
+
+  const watchdog = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-barracks-claim-goal ri-elite-varangian-guard)") &&
+      rule.includes("(up-research-status c: ri-elite-varangian-guard <= research-available)") &&
+      rule.includes("(set-goal bt-research-barracks-failure-backoff-goal ri-elite-varangian-guard)"),
+  );
+  assert.ok(
+    watchdog,
+    "[Elite Varangian] Barracks research watchdog is missing",
+  );
+}
+
 function validateLifecycleAnchors(sourceText, rules) {
   for (const symbol of [
     "bt-strategy-boom",
@@ -4666,6 +4716,7 @@ validateRetryDoctrine(source);
 validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
 validateLifecycleAnchors(source, rules);
+validateEliteVarangianResearchCapability(rules);
 validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
 validateImperialPrerequisiteProviders(rules);
