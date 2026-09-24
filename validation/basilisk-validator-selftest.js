@@ -197,6 +197,118 @@ try {
     "BLACKSMITH_NOT_BUILDABLE",
   ];
 
+  const orderedAdmissionBlockReasonsFromRule = (rule) =>
+    ruleSection(rule, "facts").flatMap((expr) => {
+      if (!expr || expr.kind !== "expression") return [];
+      if (expr.head === "goal" &&
+          expr.args[0]?.kind === "atom" &&
+          expr.args[0].value === "bt-castle-prereq-backoff-goal" &&
+          expr.args[1]?.kind === "atom" &&
+          expr.args[1].value === "0") {
+        return ["CASTLE_PREREQ_BACKOFF_ACTIVE"];
+      }
+      if (expr.head === "goal" &&
+          expr.args[0]?.kind === "atom" &&
+          expr.args[0].value === "bt-research-ranged-counter-package-goal" &&
+          expr.args[1]?.kind === "atom" &&
+          expr.args[1].value === "ri-fletching") {
+        return ["FLETCHING_PACKAGE_NOT_ACTIVE"];
+      }
+      if (expr.head === "goal" &&
+          expr.args[0]?.kind === "atom" &&
+          expr.args[0].value === "bt-castle-commitment-goal" &&
+          expr.args[1]?.kind === "atom" &&
+          expr.args[1].value === "0") {
+        return ["CASTLE_COMMITMENT_ACTIVE"];
+      }
+      if (expr.head === "not" && hasNegatedFact({ args: [expr], ...rule }, "goal", [
+        "bt-resource-mode-goal",
+        "bt-resource-mode-castle-bank",
+      ])) {
+        return ["CASTLE_BANK_ACTIVE"];
+      }
+      if (expr.head === "building-type-count-total" &&
+          expr.args[0]?.value === "blacksmith" &&
+          expr.args[1]?.value === "<" &&
+          expr.args[2]?.value === "1") {
+        return ["BLACKSMITH_ALREADY_PRESENT"];
+      }
+      if (expr.head === "up-pending-objects") {
+        return ["BLACKSMITH_BUILD_PENDING"];
+      }
+      if (expr.head === "strategic-number" &&
+          expr.args[0]?.value === "sn-resource-control" &&
+          expr.args[1]?.value === "==" &&
+          expr.args[2]?.value === "0") {
+        return ["RESOURCE_MUTEX_BUSY"];
+      }
+      if (expr.head === "can-research-with-escrow" &&
+          expr.args[0]?.value === "castle-age") {
+        return ["CASTLE_NOT_RESEARCHABLE"];
+      }
+      if (expr.head === "can-build-with-escrow" &&
+          expr.args[0]?.value === "blacksmith") {
+        return ["BLACKSMITH_NOT_BUILDABLE"];
+      }
+      return [];
+    });
+
+  const orderedPrereqBlockReasonsFromRule = (rule) =>
+    ruleSection(rule, "facts").flatMap((expr) => {
+      if (!expr || expr.kind !== "expression") return [];
+      if (expr.head === "goal" &&
+          expr.args[0]?.value === "bt-castle-prereq-backoff-goal" &&
+          expr.args[1]?.value === "0") {
+        return ["CASTLE_PREREQ_BACKOFF_ACTIVE"];
+      }
+      if (expr.head === "not" &&
+          expr.args[0]?.kind === "expression" &&
+          expr.args[0].head === "can-research-with-escrow" &&
+          expr.args[0].args[0]?.value === "castle-age") {
+        return ["CASTLE_ALREADY_RESEARCHABLE"];
+      }
+      if (expr.head === "building-type-count-total" &&
+          expr.args[0]?.value === "blacksmith" &&
+          expr.args[1]?.value === "<" &&
+          expr.args[2]?.value === "1") {
+        return ["BLACKSMITH_ALREADY_PRESENT"];
+      }
+      if (expr.head === "up-pending-objects") {
+        return ["BLACKSMITH_BUILD_PENDING"];
+      }
+      if (expr.head === "strategic-number" &&
+          expr.args[0]?.value === "sn-resource-control" &&
+          expr.args[1]?.value === "==" &&
+          expr.args[2]?.value === "0") {
+        return ["RESOURCE_MUTEX_BUSY"];
+      }
+      if (expr.head === "can-build-with-escrow" &&
+          expr.args[0]?.value === "blacksmith") {
+        return ["BLACKSMITH_NOT_BUILDABLE"];
+      }
+      return [];
+    });
+
+  const expectedAdmissionBlockReasonOrder = [
+    "CASTLE_PREREQ_BACKOFF_ACTIVE",
+    "FLETCHING_PACKAGE_NOT_ACTIVE",
+    "CASTLE_COMMITMENT_ACTIVE",
+    "CASTLE_BANK_ACTIVE",
+    "BLACKSMITH_ALREADY_PRESENT",
+    "BLACKSMITH_BUILD_PENDING",
+    "RESOURCE_MUTEX_BUSY",
+    "CASTLE_NOT_RESEARCHABLE",
+    "BLACKSMITH_NOT_BUILDABLE",
+  ];
+  const expectedPrereqBlockReasonOrder = [
+    "CASTLE_PREREQ_BACKOFF_ACTIVE",
+    "CASTLE_ALREADY_RESEARCHABLE",
+    "BLACKSMITH_ALREADY_PRESENT",
+    "BLACKSMITH_BUILD_PENDING",
+    "RESOURCE_MUTEX_BUSY",
+    "BLACKSMITH_NOT_BUILDABLE",
+  ];
+
   const boomFloorTc1 = findSemanticRule(
     "Castle BOOM TC1 standing floor",
     (rule) =>
@@ -640,6 +752,12 @@ try {
       "bt-resource-mode-castle-bank",
     ]),
     "[Semantic self-test] Feudal Blacksmith admission lost Castle-bank exclusion",
+  );
+
+  assert.deepEqual(
+    orderedAdmissionBlockReasonsFromRule(feudalBlacksmithAdmission),
+    expectedAdmissionBlockReasonOrder,
+    "[Semantic self-test] Feudal Blacksmith admission rule-block reason order changed",
   );
 
   findSemanticRule(
@@ -1090,6 +1208,12 @@ try {
       "[Semantic self-test] Castle-prerequisite Blacksmith block mismatch: " + fixture.name,
     );
   }
+
+  assert.deepEqual(
+    orderedPrereqBlockReasonsFromRule(castlePrereqBlacksmith),
+    expectedPrereqBlockReasonOrder,
+    "[Semantic self-test] Castle-prerequisite Blacksmith rule-block reason order changed",
+  );
 
   const postCastleBlacksmithRecovery = findSemanticRule(
     "Post-Castle Blacksmith capability recovery",
