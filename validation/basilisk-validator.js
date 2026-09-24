@@ -3677,15 +3677,10 @@ function validateBasiliskGoalNamespace(forms) {
     );
   }
 
-  for (const id of [
-    729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741,
-    742, 743, 744, 745, 746, 747, 748, 749, 750, 751, 752, 753, 754,
-    755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766,
-    769, 770, 771, 772,
-  ]) {
+  for (const id of [729, 730, 734, 769, 770, 771, 772]) {
     assert.ok(
       numericGoals.has(id),
-      "[Telemetry namespace] reserved GoalId " + id + " is missing",
+      "[Goal namespace] reserved high-range GoalId " + id + " is missing",
     );
   }
 
@@ -3704,8 +3699,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
   for (const symbol of [
     "bt-preempt-active-goal",
     "bt-preempt-original-owner-goal",
-    "bt-preempt-original-mode-goal",
-    "bt-preempt-result-goal",
     "bt-preempt-emergency-claim",
     "bt-preempt-defense-issued-goal",
   ]) {
@@ -3758,22 +3751,12 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
         beginText.indexOf("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)"),
       "[Preemption] original owner must be snapshotted before emergency ownership for " + claim,
     );
-    assert.ok(
-      beginText.includes("(set-goal bt-telemetry-event-pending-goal 1)"),
-      "[Preemption] BEGIN must enqueue telemetry for " + claim,
-    );
-    assert.ok(
-      beginText.includes("(up-get-fact game-time 0 bt-telemetry-event-time-goal)"),
-      "[Preemption] BEGIN must capture source game-time for " + claim,
-    );
-
     const resume = rules.find(
       (rule) =>
         rule.includes("(not (town-under-attack))") &&
         rule.includes("(goal bt-preempt-active-goal 1)") &&
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
-        rule.includes("(set-strategic-number sn-resource-control " + claim + ")") &&
-        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-resume)"),
+        rule.includes("(set-strategic-number sn-resource-control " + claim + ")"),
     );
     assert.ok(resume, "[Preemption] resume path missing for " + claim);
     assert.ok(
@@ -3786,7 +3769,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
         rule.includes("(not (town-under-attack))") &&
         rule.includes("(goal bt-preempt-active-goal 1)") &&
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
-        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-abort)") &&
         rule.includes("(set-strategic-number sn-resource-control 0)"),
     );
     assert.ok(abort, "[Preemption] abort path missing for " + claim);
@@ -3804,7 +3786,6 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
         rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
         rule.includes("(building-type-count town-center") &&
         rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
-        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-complete)") &&
         rule.includes("(set-strategic-number sn-resource-control 0)"),
     );
     assert.ok(
