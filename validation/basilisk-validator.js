@@ -3663,7 +3663,7 @@ function validateAttackAllocationPolicy(rules) {
   }
 }
 
-function validateFeudalCastleEconomyContract(rules) {
+function validateFeudalCastleEconomyContract(rules, sourceText) {
   assert.ok(
     sourceText.includes("(defconst bt-castle-villagers 28)"),
     "[Feudal economy] Castle transition threshold must be 28 villagers",
@@ -6847,7 +6847,7 @@ validateRushStallFailurePolicy(rules, source);
 validateBoomEconomicLifecycle(rules, source);
 validateBoomPaperReplay(rules, source);
 validateAttackAllocationPolicy(rules);
-validateFeudalCastleEconomyContract(rules);
+validateFeudalCastleEconomyContract(rules, source);
 validateFeudalFarmTransitionBudget(rules, source);
 validateImperialSiegeExit(rules, source);
 validateImperialSiegeAttackOrdering(rules);
