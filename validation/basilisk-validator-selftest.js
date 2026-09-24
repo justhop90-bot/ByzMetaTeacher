@@ -110,6 +110,175 @@ try {
       containsExpression([expr], head, values),
     );
 
+  const boomFloorTc1 = findSemanticRule(
+    "Castle BOOM TC1 standing floor",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "castle-age"]) &&
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+      hasFact(rule, "building-type-count", ["town-center", "<", "2"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-standing-army-floor-goal",
+        "bt-castle-boom-army-floor-tc1",
+      ]),
+  );
+  const boomFloorTc2 = findSemanticRule(
+    "Castle BOOM TC2 standing floor",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "castle-age"]) &&
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+      hasFact(rule, "building-type-count", ["town-center", ">=", "2"]) &&
+      hasFact(rule, "building-type-count", ["town-center", "<", "3"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-standing-army-floor-goal",
+        "bt-castle-boom-army-floor-tc2",
+      ]),
+  );
+  const boomFloorTc3 = findSemanticRule(
+    "Castle BOOM TC3 standing floor",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "castle-age"]) &&
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+      hasFact(rule, "building-type-count", ["town-center", ">=", "3"]) &&
+      hasAction(rule, "set-goal", [
+        "bt-standing-army-floor-goal",
+        "bt-castle-boom-army-floor-tc3",
+      ]),
+  );
+  assert.ok(boomFloorTc1 && boomFloorTc2 && boomFloorTc3);
+  assert.equal(
+    semanticRules.filter(
+      (rule) =>
+        hasFact(rule, "current-age", ["==", "castle-age"]) &&
+        hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+        (hasAction(rule, "set-goal", [
+          "bt-standing-army-floor-goal",
+          "12",
+        ]) ||
+          hasAction(rule, "set-goal", [
+            "bt-standing-army-floor-goal",
+            "16",
+          ]) ||
+          hasAction(rule, "set-goal", [
+            "bt-standing-army-floor-goal",
+            "20",
+          ])),
+    ).length,
+    0,
+    "[Semantic self-test] Castle BOOM still contains a pressure-sized standing floor",
+  );
+
+  findSemanticRule(
+    "BOOM TC project standing-demand arbitration",
+    (rule) =>
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+      hasFact(rule, "goal", ["bt-standing-army-demand-goal", "1"]) &&
+      hasFact(rule, "goal", ["bt-tc-project-goal", "2"]) &&
+      hasFact(rule, "goal", ["bt-tc-project-goal", "3"]) &&
+      hasFact(rule, "goal", [
+        "bt-tc-stage-goal",
+        "bt-tc-stage-demanded",
+      ]) &&
+      hasFact(rule, "goal", [
+        "bt-tc-stage-goal",
+        "bt-tc-stage-resource-claimed",
+      ]) &&
+      hasFact(rule, "goal", [
+        "bt-tc-stage-goal",
+        "bt-tc-stage-placement-pending",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-standing-army-demand-goal",
+        "0",
+      ]),
+  );
+
+  findSemanticRule(
+    "BOOM Knight TC2 gate",
+    (rule) =>
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-boom"]) &&
+      hasFact(rule, "building-type-count", [
+        "town-center",
+        ">=",
+        "2",
+      ]) &&
+      hasAction(rule, "set-goal", ["unit-goal", "knight-line"]),
+  );
+
+  findSemanticRule(
+    "Crossbow demand BOOM TC gate",
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-crossbow-demand-goal",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-crossbow-demand-goal",
+        "1",
+      ]) &&
+      hasFact(rule, "goal", [
+        "strategy-goal",
+        "bt-strategy-castle-power",
+      ]) &&
+      hasFact(rule, "goal", ["bt-tc-project-goal", "0"]),
+  );
+
+  const standingTrainRules = semanticRules.filter(
+    (rule) =>
+      hasFact(rule, "goal", [
+        "bt-standing-army-demand-goal",
+        "1",
+      ]) &&
+      ruleSection(rule, "actions").some((expr) => expr.head === "train"),
+  );
+  assert.equal(
+    standingTrainRules.length,
+    3,
+    "[Semantic self-test] expected exactly three shared standing-role train rules",
+  );
+  for (const rule of standingTrainRules) {
+    assert.ok(
+      hasFact(rule, "goal", [
+        "strategy-goal",
+        "bt-strategy-flush",
+      ]) &&
+        hasFact(rule, "goal", [
+          "bt-castle-commitment-goal",
+          "0",
+        ]),
+      "[Semantic self-test] standing train rule lost the FLUSH-aware Castle-bank gate",
+    );
+  }
+
+  const standingCapabilityRules = semanticRules.filter(
+    (rule) =>
+      ruleSection(rule, "actions").some(
+        (expr) =>
+          expr.head === "build" &&
+          ["barracks", "archery-range", "stable"].includes(
+            expr.args[0]?.value,
+          ),
+      ) &&
+      JSON.stringify(rule).includes("bt-standing-"),
+  );
+  assert.equal(
+    standingCapabilityRules.length,
+    18,
+    "[Semantic self-test] standing capability family count changed",
+  );
+  for (const rule of standingCapabilityRules) {
+    assert.ok(
+      hasFact(rule, "goal", [
+        "bt-castle-commitment-goal",
+        "0",
+      ]) &&
+        hasFact(rule, "goal", [
+          "strategy-goal",
+          "bt-strategy-flush",
+        ]),
+      "[Semantic self-test] standing capability lost the Castle-bank emergency gate",
+    );
+  }
+
   const scalePackage = findSemanticRule(
     "Scale Mail package writer",
     (rule) =>
@@ -1017,6 +1186,54 @@ try {
             "",
           ),
         "Feudal BOOM floor normalization",
+      ),
+    },
+    {
+      name: "boom-castle-floor-tc2-regression-rejected",
+      expected: "[BOOM] TC2 standing-floor writer must exist exactly once",
+      source: baseline.replace(
+        "(set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc2)",
+        "(set-goal bt-standing-army-floor-goal 12)",
+      ),
+    },
+    {
+      name: "boom-tc-project-arbitration-regression-rejected",
+      expected: "[BOOM] active TC2/TC3 project must suppress discretionary standing demand",
+      source: baseline.replace(
+        "(goal bt-tc-stage-goal bt-tc-stage-demanded)",
+        "(goal bt-tc-stage-goal bt-tc-stage-resource-claimed)",
+      ),
+    },
+    {
+      name: "boom-knight-tc2-gate-regression-rejected",
+      expected: "[BOOM] generic Knight selection must wait for TC2",
+      source: baseline.replace(
+        "    (building-type-count town-center >= 2)\n    (unit-type-count-total archer-line < 4)\n",
+        "    (unit-type-count-total archer-line < 4)\n",
+      ),
+    },
+    {
+      name: "boom-crossbow-tc-gate-regression-rejected",
+      expected: "[BOOM] Crossbow demand writer must yield during a BOOM TC project while preserving Castle-Power",
+      source: baseline.replace(
+        "    (not (goal bt-any-threat-goal 1))\n    (or\n        (goal strategy-goal bt-strategy-castle-power)\n        (goal bt-tc-project-goal 0)\n    )",
+        "    (not (goal bt-any-threat-goal 1))",
+      ),
+    },
+    {
+      name: "boom-flush-castle-bank-override-regression-rejected",
+      expected: "[BOOM] expected Spear/Skirm/Archer standing train rules to carry the FLUSH bank override",
+      source: baseline.replace(
+        "    (or\n        (goal bt-castle-commitment-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )",
+        "    (goal bt-castle-commitment-goal 0)",
+      ),
+    },
+    {
+      name: "boom-capability-bank-gate-regression-rejected",
+      expected: "[BOOM] every standing military capability rule must carry the FLUSH-aware Castle-bank gate",
+      source: baseline.replace(
+        "    (or\n        (goal bt-castle-commitment-goal 0)\n        (goal strategy-goal bt-strategy-flush)\n    )\n    (strategic-number sn-resource-control == 0)",
+        "    (strategic-number sn-resource-control == 0)",
       ),
     },
     {
@@ -2317,6 +2534,12 @@ try {
     "rush-first-stall-latch-regression-rejected",
     "rush-stall-damage-reset-regression-rejected",
     "rush-reassess-reset-regression-rejected",
+    "boom-castle-floor-tc2-regression-rejected",
+    "boom-tc-project-arbitration-regression-rejected",
+    "boom-knight-tc2-gate-regression-rejected",
+    "boom-crossbow-tc-gate-regression-rejected",
+    "boom-flush-castle-bank-override-regression-rejected",
+    "boom-capability-bank-gate-regression-rejected",
     "feudal-farm-budget-floor-regression-rejected",
     "feudal-farm-budget-hold-regression-rejected",
     "feudal-farm-budget-emergency-escape-regression-rejected",
@@ -2403,6 +2626,7 @@ try {
           "attack-result-non-positive-partition",
           "repeated-feudal-rush-stall-release",
           "rush-stall-damage-and-reassess-reset",
+          "castle-boom-economic-arbitration",
           "backoff-expiry-owner-exact-inventory",
           "imperial-siege-abort-package-ownership",
           "feudal-farm-budget-floor",
