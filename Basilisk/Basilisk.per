@@ -13386,7 +13386,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
         (goal bt-ranged-threat-goal 1)
         (goal bt-blacksmith-ranged-army-goal 1)
     )
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-padded-archer-armor)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-padded-archer-armor)
@@ -13482,7 +13482,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (or
@@ -13509,7 +13509,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (and
@@ -13536,7 +13536,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (current-age >= castle-age)
     (up-research-status c: ri-padded-archer-armor == research-complete)
     (and
