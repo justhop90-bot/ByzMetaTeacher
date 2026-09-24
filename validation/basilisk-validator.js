@@ -2761,102 +2761,119 @@ function validateVillagerHygiene(rules) {
     dropsiteSafety.includes("(true)"),
     "[Villager hygiene] dropsite update deferral must be a one-time initialization policy",
   );
-
-  const housingDemand = requireRule(
-    "(set-goal bt-housing-demand-goal 1)",
-    "persistent housing demand writer",
-  );
-  assert.ok(
-    housingDemand.includes("(housing-headroom <= bt-housing-headroom-trigger)"),
-    "[Villager hygiene] housing demand must open at the early headroom trigger",
-  );
-  assert.ok(
-    housingDemand.includes("(population-headroom <= 0)"),
-    "[Villager hygiene] housing demand must have an emergency population-headroom trigger",
-  );
-
-  const firstHouse = requireRule(
-    "(building-type-count-total house == 0)",
-    "first-house executor",
-  );
   for (const witness of [
-    "(population-headroom > 0)",
-    "(up-pending-objects c: house < bt-housing-pending-cap)",
-    "(can-build house)",
-    "(up-assign-builders c: house c: 2)",
-    "(build house)",
+    "(set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)",
+    "(set-strategic-number sn-allow-adjacent-dropsites 0)",
+    "(set-strategic-number sn-camp-max-distance bt-dropsite-radius-start)",
+    "(set-strategic-number sn-lumber-camp-max-distance bt-dropsite-radius-start)",
+    "(set-strategic-number sn-mining-camp-max-distance bt-dropsite-radius-start)",
   ]) {
     assert.ok(
-      firstHouse.includes(witness),
-      "[Villager hygiene] first-house executor is missing witness: " + witness,
+      dropsiteSafety.includes(witness),
+      "[Villager hygiene] dropsite initialization is missing witness: " + witness,
     );
   }
 
-  const builderReset = requireRule(
-    "(up-assign-builders c: house c: 1)",
-    "normal house builder reset",
-  );
-  assert.ok(
-    builderReset.includes("(building-type-count house >= 1)"),
-    "[Villager hygiene] normal house builder reset must wait for a completed house",
-  );
+  for (const [campType, population] of [
+    ["lumber-camp", "7"],
+    ["mining-camp", "8"],
+  ]) {
+    const first = rules.find(
+      (rule) =>
+        rule.includes("(building-type-count-total " + campType + " == 0)") &&
+        rule.includes("(civilian-population >= " + population + ")") &&
+        rule.includes("(build " + campType + ")"),
+    );
+    assert.ok(
+      first,
+      "[Villager hygiene] first " + campType + " executor is missing",
+    );
+    for (const witness of [
+      "(up-pending-objects c: " + campType + " == 0)",
+      "(goal bt-dropsite-placement-claim-goal 0)",
+      "(can-build " + campType + ")",
+    ]) {
+      assert.ok(
+        first.includes(witness),
+        "[Villager hygiene] first " + campType + " is missing witness: " + witness,
+      );
+    }
+  }
 
-  const houseExecutor = requireRule(
-    "(goal bt-housing-demand-goal 1)",
-    "generic housing fallback executor",
+  const dropsiteRelease = requireRule(
+    "(set-goal bt-dropsite-placement-claim-goal 0)",
+    "dropsite placement claim release",
   );
   for (const witness of [
-    "(building-type-count house >= 1)",
-    "(up-pending-objects c: house < bt-housing-pending-cap)",
-    "(can-build house)",
-    "(build house)",
+    "(goal bt-dropsite-placement-claim-goal 1)",
+    "(up-pending-objects c: lumber-camp == 0)",
+    "(up-pending-objects c: mining-camp == 0)",
+    "(set-strategic-number sn-allow-adjacent-dropsites 0)",
+    "(set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)",
   ]) {
     assert.ok(
-      houseExecutor.includes(witness),
-      "[Villager hygiene] generic housing fallback is missing witness: " + witness,
+      dropsiteRelease.includes(witness),
+      "[Villager hygiene] dropsite placement release is missing witness: " + witness,
     );
   }
 
-  const housingRelease = requireRule(
-    "(set-goal bt-housing-demand-goal 0)",
-    "housing demand release",
+  const lumberRadius = requireRule(
+    "(up-modify-sn sn-lumber-camp-max-distance c:+ bt-dropsite-radius-step)",
+    "adaptive lumber-camp placement radius",
   );
   for (const witness of [
-    "(housing-headroom > bt-housing-headroom-trigger)",
-    "(up-pending-objects c: house == 0)",
+    "(resource-found wood)",
+    "(dropsite-min-distance wood > 8)",
+    "(strategic-number sn-lumber-camp-max-distance < bt-dropsite-radius-cap)",
   ]) {
     assert.ok(
-      housingRelease.includes(witness),
-      "[Villager hygiene] housing release is missing witness: " + witness,
+      lumberRadius.includes(witness),
+      "[Villager hygiene] lumber adaptive radius is missing witness: " + witness,
     );
   }
 
-  assert.ok(
-    !rules.some((rule) =>
-      rule.includes("(up-set-placement-data my-player-number lumber-camp c: 6)") &&
-      rule.includes("(up-build place-control 0 c: house)"),
-    ),
-    "[Villager hygiene] normal housing policy must not depend on lumber-local placement",
+  const miningRadius = requireRule(
+    "(up-modify-sn sn-mining-camp-max-distance c:+ bt-dropsite-radius-step)",
+    "adaptive mining-camp placement radius",
   );
+  for (const witness of [
+    "(resource-found gold)",
+    "(resource-found stone)",
+    "(dropsite-min-distance gold > 8)",
+    "(dropsite-min-distance stone > 8)",
+    "(strategic-number sn-mining-camp-max-distance < bt-dropsite-radius-cap)",
+  ]) {
+    assert.ok(
+      miningRadius.includes(witness),
+      "[Villager hygiene] mining adaptive radius is missing witness: " + witness,
+    );
+  }
 
   for (const resource of ["wood", "gold", "stone"]) {
     const campType = resource === "wood" ? "lumber-camp" : "mining-camp";
-    const rule = requireRule(
-      "(dropsite-min-distance " + resource + " > 8)",
-      resource + " dropsite refresh",
+    const rule = rules.find(
+      (candidate) =>
+        candidate.includes("(dropsite-min-distance " + resource + " > 8)") &&
+        candidate.includes("(build " + campType + ")") &&
+        candidate.includes("(set-goal bt-dropsite-placement-claim-goal 1)"),
     );
     assert.ok(
-      rule.includes("(resource-found " + resource + ")"),
-      "[Villager hygiene] " + resource + " refresh must require a found resource",
+      rule,
+      "[Villager hygiene] " + resource + " dropsite refresh executor is missing",
     );
-    assert.ok(
-      rule.includes("(up-pending-objects c: " + campType + " == 0)"),
-      "[Villager hygiene] " + resource + " refresh must be pending-safe",
-    );
-    assert.ok(
-      rule.includes("(can-build " + campType + ")"),
-      "[Villager hygiene] " + resource + " refresh must use engine build feasibility",
-    );
+    for (const witness of [
+      "(resource-found " + resource + ")",
+      "(up-pending-objects c: " + campType + " == 0)",
+      "(goal bt-dropsite-placement-claim-goal 0)",
+      "(can-build " + campType + ")",
+      "(set-strategic-number sn-allow-adjacent-dropsites 1)",
+      "(set-strategic-number sn-dropsite-separation-distance bt-dropsite-refresh-separation)",
+    ]) {
+      assert.ok(
+        rule.includes(witness),
+        "[Villager hygiene] " + resource + " refresh is missing witness: " + witness,
+      );
+    }
   }
 
   const attacker = requireRule(
