@@ -2709,7 +2709,7 @@ function validateEcoResearchDemandRemoval(rules) {
     "ri-gold-mining",
     [
       "(current-age >= castle-age)",
-      "(research-available ri-gold-mining)",
+      "(up-research-status c: ri-gold-mining == research-available)",
       "(goal bt-cataphract-demand-goal 1)",
       "(goal strategy-goal bt-strategy-flush)",
       "(goal unit-goal bt-unit-mix)",
