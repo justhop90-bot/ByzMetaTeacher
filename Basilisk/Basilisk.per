@@ -2959,9 +2959,14 @@
                 (goal strategy-goal bt-strategy-boom)
                 (goal strategy-goal bt-strategy-castle-power)
             )
-            (unit-type-count villager >= 36)
-            (food-amount >= 500)
-            (gold-amount >= 200)
+            (and
+                (unit-type-count villager >= 36)
+                (and
+                    (food-amount >= 500)
+                    (gold-amount >= 200)
+                )
+            )
+        )
         )
     )
 =>
