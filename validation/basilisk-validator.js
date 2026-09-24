@@ -3066,6 +3066,7 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
     const begin = rules.find(
       (rule) =>
         rule.includes("(town-under-attack)") &&
+        rule.includes("(goal bt-any-threat-goal 1)") &&
         rule.includes("(strategic-number sn-resource-control == " + claim + ")") &&
         rule.includes("(set-goal bt-preempt-active-goal 1)") &&
         rule.includes("(set-goal bt-preempt-original-owner-goal " + claim + ")") &&
