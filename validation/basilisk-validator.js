@@ -3237,9 +3237,27 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   );
 
   const xsPath = path.join(repoRootPath, "BasiliskTelemetry.xs");
-  assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
+  assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs source file is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+
+  const deployXsPath = path.join(
+    repoRootPath,
+    "resources",
+    "_common",
+    "xs",
+    "BasiliskTelemetry.xs",
+  );
+  assert.ok(
+    fs.existsSync(deployXsPath),
+    "[Telemetry packaging] deployable XS copy is missing at resources/_common/xs/BasiliskTelemetry.xs",
+  );
+  const deployXs = fs.readFileSync(deployXsPath, "utf8");
+  assert.equal(
+    deployXs,
+    xs,
+    "[Telemetry packaging] deployable XS copy diverged from the canonical BasiliskTelemetry.xs",
+  );
   const perNumericDefconsts = new Map(
     [...sanitizeStructure(sourceText).matchAll(
       /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
