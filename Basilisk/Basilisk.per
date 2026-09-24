@@ -3095,15 +3095,16 @@
 ; This demand is created in Castle Age, before Imperial authority is
 ; evaluated below. It is strategic intent, not production authorization.
 ;
-; Two valid reasons own the same finite Castle capability package:
+; Three valid reasons own the same finite Castle capability package:
 ;   1) real infantry pressure justifies the Cataphract/defensive Castle;
 ;   2) a mature Castle economy should secure the Byzantine Castle capability
-;      before Imperial makes the decision irrelevant.
+;      before Imperial makes the decision irrelevant;
+;   3) Arena Fast Castle already committed to an immediate Castle project.
 ;
 ; The mature-economy trigger deliberately waits for 36 villagers plus
-; meaningful food/gold reserves. It does not force a Castle immediately on
-; reaching Castle Age and does not create a stone demand before the economy
-; is ready to carry it.
+; meaningful food/gold reserves. The Arena branch is deliberately different:
+; its opening plan is the upstream decision, and the Feudal Castle-bank already
+; prepares the 650-stone prerequisite without inventing a second demand state.
 (defrule
     (current-age == castle-age)
     (goal bt-castle-cataphract-demand-goal 0)
@@ -3127,6 +3128,7 @@
                 )
             )
         )
+        (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
     )
 =>
     (set-goal bt-castle-cataphract-demand-goal 1)
@@ -5967,7 +5969,7 @@ town-center >= 2)))))
     (can-research-with-escrow castle-age)
     (unit-type-count villager < bt-castle-villagers)
 =>
-    (chat-local-to-self "BASILISK | AGE | Castle blocked: waiting for 30 villagers.")
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: waiting for 28 villagers.")
     (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-villagers)
 )
 
@@ -6326,14 +6328,35 @@ sn-stone-gatherer-percentage == 0)))))
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
+; Arena Fast Castle pre-funds the existing Castle project while the
+; Castle-bank still owns the Feudal age-up. This is not a new resource mode:
+; P0 crisis rules can still preempt the bank, and the opening plan itself is
+; the live strategic witness. Stop diverting villagers once 650 stone exists.
 (defrule
     (goal bt-resource-mode-goal bt-resource-mode-castle-bank)
+    (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
+    (stone-amount < 650)
+    (or (not (strategic-number sn-food-gatherer-percentage == 50)) (or (not (strategic-number sn-wood-gatherer-percentage == 15)) (or (not (strategic-number sn-gold-gatherer-percentage == 20)) (not (strategic-number
+sn-stone-gatherer-percentage == 15)))))
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+    (set-strategic-number sn-wood-gatherer-percentage 15)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 15)
+)
+
+(defrule
+    (goal bt-resource-mode-goal bt-resource-mode-castle-bank)
+    (or
+        (not (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle))
+        (stone-amount >= 650)
+    )
     (or (not (strategic-number sn-food-gatherer-percentage == 55)) (or (not (strategic-number sn-wood-gatherer-percentage == 15)) (or (not (strategic-number sn-gold-gatherer-percentage == 30)) (not (strategic-number
 sn-stone-gatherer-percentage == 0)))))
 =>
     (set-strategic-number sn-food-gatherer-percentage 55)
-    (set-strategic-number sn-wood-gatherer-percentage 15)
-    (set-strategic-number sn-gold-gatherer-percentage 30)
+    (set-strategic-number sn-wood-gatherer-percentage 30)
+    (set-strategic-number sn-gold-gatherer-percentage 15)
     (set-strategic-number sn-stone-gatherer-percentage 0)
 )
 
