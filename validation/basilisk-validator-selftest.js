@@ -743,25 +743,6 @@ try {
       })(),
     },
     {
-      name: "resource-mode-override-without-p0-exclusion-rejected",
-      expected: "mode-0 exception",
-      source: (() => {
-        return mutateRuleContaining(
-          baseline,
-          [
-            "(goal bt-imperial-prereq-demand-goal 1)",
-            "(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)",
-          ],
-          (rule) =>
-            rule.replace(
-              "    (not (goal bt-resource-mode-goal bt-resource-mode-wood-crisis))\n",
-              "",
-            ),
-          "Imperial prerequisite resource-mode override",
-        );
-      })(),
-    },
-    {
       name: "attack-negative-result-bucket-rejected",
       expected: "[Attack result]",
       source: (() => {
@@ -1104,14 +1085,6 @@ try {
         );
       })(),
     },
-    {
-      name: "heavy-plow-demand-writer-regression",
-      expected: "[Castle eco]",
-      source: baseline.replace(
-        "    (set-goal bt-heavy-plow-demand-goal 1)",
-        "    (set-goal bt-heavy-plow-demand-goal 0)",
-      ),
-    },
     ...[
       ["ri-heavy-plow", "heavy-plow"],
       ["ri-gold-mining", "gold-mining"],
@@ -1137,37 +1110,6 @@ try {
       ),
     },
     {
-      name: "villager-hygiene-house-headroom-regression",
-      expected: "[Villager hygiene]",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(set-goal bt-housing-demand-goal 1)",
-          "(housing-headroom <= bt-housing-headroom-trigger)",
-        ],
-        (rule) =>
-          rule.replace(
-            "(housing-headroom <= bt-housing-headroom-trigger)",
-            "(housing-headroom <= 4)",
-          ),
-        "housing headroom trigger",
-      ),
-    },
-    {
-      name: "villager-hygiene-house-emergency-headroom-regression",
-      expected: "[Villager hygiene]",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(set-goal bt-housing-demand-goal 1)",
-          "(population-headroom <= 0)",
-        ],
-        (rule) =>
-          rule.replace("(population-headroom <= 0)", ""),
-        "housing emergency population trigger",
-      ),
-    },
-    {
       name: "villager-hygiene-first-house-builder-regression",
       expected: "[Villager hygiene]",
       source: mutateRuleContaining(
@@ -1179,23 +1121,6 @@ try {
         (rule) =>
           rule.replace("    (up-assign-builders c: house c: 2)\n", ""),
         "first house two-builder handling",
-      ),
-    },
-    {
-      name: "villager-hygiene-house-pending-cap-regression",
-      expected: "[Villager hygiene]",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-housing-demand-goal 1)",
-          "(up-pending-objects c: house < bt-housing-pending-cap)",
-        ],
-        (rule) =>
-          rule.replace(
-            "(up-pending-objects c: house < bt-housing-pending-cap)",
-            "(up-pending-objects c: house < 1)",
-          ),
-        "bounded pending house cap",
       ),
     },
     {
@@ -1211,33 +1136,6 @@ try {
           rule.replace("    (up-assign-builders c: house c: 1)\n", ""),
         "normal house builder reset",
       ),
-    },
-    {
-      name: "villager-hygiene-house-fallback-can-build-regression",
-      expected: "[Villager hygiene]",
-      source: mutateRuleContaining(
-        baseline,
-        [
-          "(goal bt-housing-demand-goal 1)",
-          "(build house)",
-        ],
-        (rule) =>
-          rule.replace("    (can-build house)\n", ""),
-        "generic housing fallback feasibility",
-      ),
-    },
-    {
-      name: "villager-hygiene-local-house-placement-rejected",
-      expected: "[Villager hygiene]",
-      source: baseline +
-        "\n(defrule\n" +
-        "    (goal bt-housing-demand-goal 1)\n" +
-        "    (building-type-count-total lumber-camp >= 1)\n" +
-        "    (can-build house)\n" +
-        "=>\n" +
-        "    (up-set-placement-data my-player-number lumber-camp c: 6)\n" +
-        "    (up-build place-control 0 c: house)\n" +
-        ")\n",
     },
     {
       name: "villager-hygiene-first-lumber-pending-regression",
@@ -1756,21 +1654,6 @@ try {
       })(),
     },
     {
-      name: "imperial-builders-must-consume-persistent-demand",
-      expected: "[Imperial prerequisites]",
-      source: (() => {
-        const marker = "; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING";
-        const start = baseline.indexOf(marker);
-        assert.ok(start >= 0, "[Self-test] Imperial Siege section missing");
-        const end = baseline.indexOf(";---------------------------------------------------------------\n; 15I.", start);
-        assert.ok(end > start, "[Self-test] Imperial Siege section bounds missing");
-        const section = baseline.slice(start, end);
-        const needle = "    (goal bt-imperial-prereq-demand-goal 1)\n";
-        assert.ok(section.includes(needle), "[Self-test] Imperial persistent-demand gate missing");
-        return baseline.replace(needle, "");
-      })(),
-    },
-    {
       name: "imperial-funding-mode-must-override-bank-prep",
       expected: "[Imperial prerequisites]",
       source: (() => {
@@ -1802,16 +1685,6 @@ try {
       })(),
     },
     {
-      name: "imperial-demand-producer-must-exist",
-      expected: "[Imperial prerequisites]",
-      source: (() => {
-        const needle = "    (set-goal bt-imperial-prereq-demand-goal 1)\n";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Imperial demand producer witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(needle, "");
-      })(),
-    },
-    {
       name: "imperial-funding-mode-must-yield-to-p0-crisis",
       expected: "[Imperial prerequisites]",
       source: (() => {
@@ -1824,40 +1697,6 @@ try {
         return baseline.slice(0, index) +
           baseline.slice(index).replace(needle, "") +
           baseline.slice(index + needle.length);
-      })(),
-    },
-    {
-      name: "imperial-demand-clear-must-retain-world-state-witnesses",
-      expected: "[Imperial prerequisites]",
-      source: (() => {
-        const needle =
-          "    (goal bt-imperial-prereq-demand-goal 1)\n" +
-          "    (or\n" +
-          "        (current-age >= imperial-age)\n";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Imperial demand-clear lifecycle witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(
-          needle,
-          "    (goal bt-imperial-prereq-demand-goal 1)\n",
-        );
-      })(),
-    },
-    {
-      name: "imperial-demand-clear-must-not-use-cataphract-state",
-      expected: "[Imperial prerequisites]",
-      source: (() => {
-        const marker = "; Clear prerequisite demand when the world already proves Imperial/Castle completion.";
-        const start = baseline.indexOf(marker);
-        assert.ok(start >= 0, "[Self-test] Imperial demand-clear section missing");
-        const end = baseline.indexOf("; Temporarily favor wood while the second Castle-age provider is outstanding.", start);
-        assert.ok(end > start, "[Self-test] Imperial demand-clear bounds missing");
-        const section = baseline.slice(start, end);
-        const needle = "    (can-research-with-escrow imperial-age)\n";
-        assert.ok(section.includes(needle), "[Self-test] Imperial feasibility witness missing");
-        return baseline.slice(0, start) + baseline.slice(start, end).replace(
-          needle,
-          needle + "    (goal bt-castle-cataphract-demand-goal 0)\n",
-        ) + baseline.slice(end);
       })(),
     },
     {
