@@ -603,6 +603,10 @@
 (defconst bt-attack-result-damaged 1)
 (defconst bt-attack-result-stalled 2)
 (defconst bt-attack-result-reassess 3)
+; Persistent one-bit memory for consecutive Feudal RUSH stalls.
+; 1 means the previous measured RUSH attack stalled with no structural damage
+; while Basilisk was materially behind. A second such result releases RUSH.
+(defconst bt-rush-stall-latch-goal 775)
 (defconst bt-debug-last-tc-project-goal 712)
 (defconst bt-debug-castle-block-backoff 1)
 (defconst bt-debug-castle-block-mutex 2)
@@ -921,6 +925,7 @@
     (set-goal bt-attack-target-buildings-now-goal 0)
     (set-goal bt-attack-buildings-destroyed-goal 0)
     (set-goal bt-attack-result-goal bt-attack-result-none)
+    (set-goal bt-rush-stall-latch-goal 0)
     (set-goal bt-cavalry-threat-goal 0)
     (set-goal bt-ranged-threat-goal 0)
     (set-goal bt-spear-threat-goal 0)
@@ -5281,6 +5286,18 @@
     (not (goal bt-any-threat-goal 1))
 =>
     (set-goal strategy-goal bt-strategy-boom)
+)
+
+;----------------------------------------------------------------
+; Consecutive RUSH-failure memory is only meaningful while RUSH survives.
+; Any explicit strategy exit clears the latch before downstream consumers
+; see the new posture. This keeps target-loss, FLUSH, and Castle-Power exits
+; from contaminating a future Feudal RUSH.
+(defrule
+    (not (goal strategy-goal bt-strategy-rush))
+    (up-compare-goal bt-rush-stall-latch-goal != 0)
+=>
+    (set-goal bt-rush-stall-latch-goal 0)
 )
 
 ;================================================================
@@ -12218,8 +12235,48 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (up-compare-goal bt-attack-buildings-destroyed-goal >= 1)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-damaged)
+    ; Structural damage breaks any consecutive stalled-RUSH sequence.
+    (set-goal bt-rush-stall-latch-goal 0)
     ; Damage was achieved; reopen normal attack cadence quickly.
     (enable-timer bt-attack-timer 120)
+)
+
+; Second consecutive measured Feudal RUSH stall: release the pressure posture.
+; This is deliberately before the generic stalled-result consumer. The result
+; remains STALLED and gets the normal 300s regroup cooldown, but the strategy
+; switches to BOOM for the next strategy pass.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (goal bt-rush-stall-latch-goal 1)
+    (goal attack-goal 0)
+    (goal bt-attack-result-goal bt-attack-result-none)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
+    (up-compare-goal bt-relative-force-goal < 0)
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal bt-rush-stall-latch-goal 0)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
+    (enable-timer bt-attack-timer 300)
+)
+
+; First consecutive measured Feudal RUSH stall: keep RUSH, remember one fail.
+; Emergency retreat/gather failures do not enter here because they write the
+; STALLED result directly instead of passing through the measured classifier.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (goal bt-rush-stall-latch-goal 0)
+    (goal attack-goal 0)
+    (goal bt-attack-result-goal bt-attack-result-none)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
+    (up-compare-goal bt-relative-force-goal < 0)
+=>
+    (set-goal bt-rush-stall-latch-goal 1)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
+    (enable-timer bt-attack-timer 300)
 )
 
 (defrule
@@ -12242,6 +12299,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (up-compare-goal bt-relative-force-goal >= 0)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-reassess)
+    ; Reassessment is not a consecutive inferior-force stall.
+    (set-goal bt-rush-stall-latch-goal 0)
     ; No damage but no immediate defeat either: use the normal cooldown
     ; while scouting/composition state decides whether the next push changes.
     (enable-timer bt-attack-timer 180)
