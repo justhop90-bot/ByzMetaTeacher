@@ -501,6 +501,7 @@
 
 (defconst bt-attack-gather-watchdog-timer 23)
 (defconst bt-attack-gather-watchdog-seconds 30)
+(defconst bt-attack-measurement-seconds 180)
 (defconst bt-flush-army-floor-feudal 8)
 (defconst bt-flush-army-floor-castle 20)
 (defconst bt-flush-army-floor-imperial 30)
@@ -12670,8 +12671,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     ; attack-now should NOT be spammed.
     (attack-now)
 
-    ; Hold the attack cycle for five minutes before resetting it.
-    (enable-timer bt-attack-timer 300)
+    ; Hold the attack cycle for three minutes before resetting it.
+    (enable-timer bt-attack-timer bt-attack-measurement-seconds)
     
 
 )
