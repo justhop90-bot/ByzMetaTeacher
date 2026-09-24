@@ -2762,17 +2762,81 @@ function validateVillagerHygiene(rules) {
     "[Villager hygiene] dropsite update deferral must be a one-time initialization policy",
   );
 
-  const house = requireRule("(housing-headroom <= 5)", "preemptive housing rule");
-  assert.ok(house.includes("(up-pending-objects c: house == 0)"), "[Villager hygiene] housing rule must stay pending-safe");
-  assert.ok(house.includes("(can-build house)"), "[Villager hygiene] housing rule must use engine build feasibility");
+  const housingDemand = requireRule(
+    "(set-goal bt-housing-demand-goal 1)",
+    "persistent housing demand writer",
+  );
   assert.ok(
-    rules.some(
-      (rule) =>
-        rule.includes("(building-type-count-total lumber-camp >= 1)") &&
-        rule.includes("(up-set-placement-data my-player-number lumber-camp c: 6)") &&
-        rule.includes("(up-build place-control 0 c: house)"),
+    housingDemand.includes("(housing-headroom <= bt-housing-headroom-trigger)"),
+    "[Villager hygiene] housing demand must open at the early headroom trigger",
+  );
+  assert.ok(
+    housingDemand.includes("(population-headroom <= 0)"),
+    "[Villager hygiene] housing demand must have an emergency population-headroom trigger",
+  );
+
+  const firstHouse = requireRule(
+    "(building-type-count-total house == 0)",
+    "first-house executor",
+  );
+  for (const witness of [
+    "(population-headroom > 0)",
+    "(up-pending-objects c: house < bt-housing-pending-cap)",
+    "(can-build house)",
+    "(up-assign-builders c: house c: 2)",
+    "(build house)",
+  ]) {
+    assert.ok(
+      firstHouse.includes(witness),
+      "[Villager hygiene] first-house executor is missing witness: " + witness,
+    );
+  }
+
+  const builderReset = requireRule(
+    "(up-assign-builders c: house c: 1)",
+    "normal house builder reset",
+  );
+  assert.ok(
+    builderReset.includes("(building-type-count house >= 1)"),
+    "[Villager hygiene] normal house builder reset must wait for a completed house",
+  );
+
+  const houseExecutor = requireRule(
+    "(goal bt-housing-demand-goal 1)",
+    "generic housing fallback executor",
+  );
+  for (const witness of [
+    "(building-type-count house >= 1)",
+    "(up-pending-objects c: house < bt-housing-pending-cap)",
+    "(can-build house)",
+    "(build house)",
+  ]) {
+    assert.ok(
+      houseExecutor.includes(witness),
+      "[Villager hygiene] generic housing fallback is missing witness: " + witness,
+    );
+  }
+
+  const housingRelease = requireRule(
+    "(set-goal bt-housing-demand-goal 0)",
+    "housing demand release",
+  );
+  for (const witness of [
+    "(housing-headroom > bt-housing-headroom-trigger)",
+    "(up-pending-objects c: house == 0)",
+  ]) {
+    assert.ok(
+      housingRelease.includes(witness),
+      "[Villager hygiene] housing release is missing witness: " + witness,
+    );
+  }
+
+  assert.ok(
+    !rules.some((rule) =>
+      rule.includes("(up-set-placement-data my-player-number lumber-camp c: 6)") &&
+      rule.includes("(up-build place-control 0 c: house)"),
     ),
-    "[Villager hygiene] lumber-local house placement rule is missing",
+    "[Villager hygiene] normal housing policy must not depend on lumber-local placement",
   );
 
   for (const resource of ["wood", "gold", "stone"]) {
