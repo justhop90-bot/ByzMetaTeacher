@@ -6370,53 +6370,33 @@ town-center >= 2)))))
 ; P3 PREMIUM-GOLD.
 (defrule
     (goal bt-resource-mode-goal 0)
-    (current-age == imperial-age)
-    (or (goal bt-bombard-cannon-demand-goal 1) (or (goal bt-cataphract-demand-goal 1) (and (goal strategy-goal bt-strategy-flush) (and (goal unit-goal bt-unit-mix) (and (unit-type-count-total spearman-line >= bt-spear-target-1) (and
-(up-compare-goal bt-noncav-cavalry-level-goal >= 1) (and (building-type-count-total stable >= 1) (unit-type-count-total camel-line < bt-camel-target-1))))))))
-=>
-    (set-goal bt-resource-mode-goal bt-resource-mode-imperial-power)
-)
-
-(defrule
-    (goal bt-resource-mode-goal 0)
     (or
         (goal strategy-goal bt-strategy-castle-power)
         (or
             (goal bt-varangian-demand-goal 1)
             (or
                 (goal bt-bombard-cannon-demand-goal 1)
-            (or
-                (goal bt-cataphract-demand-goal 1)
                 (or
-                    (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
-                    (and
-                        (current-age >= castle-age)
-                    (and
-                        (goal strategy-goal bt-strategy-flush)
+                    (goal bt-cataphract-demand-goal 1)
+                    (or
+                        (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
                         (and
+                            (current-age >= castle-age)
+                            (goal strategy-goal bt-strategy-flush)
                             (goal unit-goal bt-unit-mix)
-                            (and
-                                (unit-type-count-total spearman-line >= bt-spear-target-1)
-                                (and
-                                    (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
-                                    (and
-                                        (building-type-count-total stable >= 1)
-                                        (unit-type-count-total camel-line < bt-camel-target-1)
-                                    )
-                                )
-                            )
+                            (unit-type-count-total spearman-line >= bt-spear-target-1)
+                            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                            (building-type-count-total stable >= 1)
+                            (unit-type-count-total camel-line < bt-camel-target-1)
                         )
                     )
                 )
-                )
             )
-        )
         )
     )
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-premium-gold)
 )
-
 ; P3 CHEAP-TRASH. Existing Spear/Skirm demand drives food/wood-heavy mode.
 (defrule
     (goal bt-resource-mode-goal 0)
