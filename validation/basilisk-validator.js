@@ -3899,8 +3899,8 @@ function validateImperialPrerequisiteProviders(rules) {
 
   const fundingMode = rules.find(
     (rule) =>
-      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
-      rule.includes("(set-strategic-number sn-wood-gatherer-percentage 40)"),
+      rule.includes("(goal bt-imperial-prereq-demand-goal 1)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)"),
   );
   assert.ok(
     fundingMode,
@@ -3920,11 +3920,21 @@ function validateImperialPrerequisiteProviders(rules) {
       "[Imperial prerequisites] Funding mode must yield to " + crisis,
     );
   }
+
+  const fundingAllocation = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-imperial-prereq)") &&
+      rule.includes("(set-strategic-number sn-wood-gatherer-percentage 40)"),
+  );
   assert.ok(
-    fundingMode.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
-      fundingMode.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
-      fundingMode.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
-    "[Imperial prerequisites] Funding mode percentages are incomplete",
+    fundingAllocation,
+    "[Imperial prerequisites] Temporary wood-priority funding allocation is missing",
+  );
+  assert.ok(
+    fundingAllocation.includes("(set-strategic-number sn-food-gatherer-percentage 45)") &&
+      fundingAllocation.includes("(set-strategic-number sn-gold-gatherer-percentage 15)") &&
+      fundingAllocation.includes("(set-strategic-number sn-stone-gatherer-percentage 0)"),
+    "[Imperial prerequisites] Funding allocation percentages are incomplete",
   );
 
   const siegeBuilder = rules.find(
