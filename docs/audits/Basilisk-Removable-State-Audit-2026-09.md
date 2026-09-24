@@ -296,3 +296,29 @@ It is carrying a surplus of lifecycle sophistication in places where ordinary .p
 The safest high-value cleanup is subtractive.
 
 Improve the controller by making the engine do more of the work.
+
+
+## September 24, 2026 implementation follow-through
+
+The subtractive audit was applied with one deliberate exception: the `chat-local-to-self` diagnostic layer stays. The chat rules do not participate in gameplay arbitration and are not large enough to justify turning replay diagnostics into an external instrumentation project.
+
+Removed from runtime:
+
+- The `BasiliskTelemetry.xs` include.
+- The four-slot telemetry FIFO and XS drain timer.
+- All 32 telemetry GoalIds.
+- Preemption metadata whose only consumer was telemetry: `bt-preempt-original-mode-goal`, `bt-preempt-reason-goal`, and `bt-preempt-result-goal`, plus their reason/result constants.
+- The two XS source copies.
+
+Kept intentionally:
+
+- All 86 `BASILISK | ...` chat rules.
+- Actual preemption control state.
+- Strategic and tactical state with gameplay consumers.
+
+Two additional gameplay-state reductions were made because the duplication was mechanical rather than architectural:
+
+- `bt-monastery-failure-history-goal` was removed. Its only lifecycle was set together with `bt-monastery-backoff-goal`, read together with it, and cleared together with it. The backoff timer already provided the full execution delay.
+- `bt-blacksmith-repair-failure-history-goal` was removed for the same reason. Its manual reset participation was replaced by the existing blacksmith repair backoff state.
+
+The next audit target is not "find more state." It is "prove a state variable is redundant." In particular, persistent intent such as Castle maturity, farm transition reserves, housing demand, research-provider claims, attack measurement, and the Siege Tower execution path currently demonstrate independent control value and remain in place pending stronger evidence.
