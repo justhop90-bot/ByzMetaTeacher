@@ -21,6 +21,24 @@ Scope: Castle BOOM as the primary economic strategy. This checklist is the paper
 - [x] Shared standing-unit production retains the Castle-bank veto during BOOM.
 - [x] FLUSH may override the Castle bank for emergency standing production.
 
+## Military package exception policy during an active TC2/TC3 project
+
+The TC project owns discretionary BOOM investment through the pre-foundation stages. It does not mean "stop producing all military."
+
+Allowed to continue while TC2/TC3 is demanded, resource-claimed, or placement-pending:
+- Reactive counter packages: Monk, Mangonel, Scorpion, and Camel, provided their existing enemy/target witnesses remain valid.
+- Required capability construction for one of those live reactive packages may continue through the existing resource mutex.
+- Production already queued before TC arbitration is not retroactively canceled; queue-inclusive execution ceilings still apply.
+
+Blocked from issuing new production while the BOOM TC project is pre-foundation:
+- Primary Castle BOOM packages: Knight and Crossbow.
+- Offensive building-assault packages: Ram and Siege Tower.
+- Ordinary standing-floor production and discretionary standing infrastructure.
+
+Imperial-only military packages are outside the simultaneous Castle-age TC2/TC3 state and therefore receive no special TC exception. FLUSH remains the emergency override where the controller's existing emergency ownership rules explicitly permit it.
+
+The policy is about new resource expenditure. It does not forcibly tear down an already-active attack/siege state machine merely because a TC project became demanded on a later pass.
+
 ## Town Center capital project
 
 - [x] TC2 remains persistent demand at the existing 32-villager / 350-food / 300-wood maturity threshold.
@@ -108,6 +126,10 @@ Scope: Castle BOOM as the primary economic strategy. This checklist is the paper
 - [x] Castle-bank emergency override is checked by the main validator.
 - [x] Standing capability-family ownership is checked by the main validator.
 - [x] Deterministic BOOM paper replay is executed as part of validator invocation.
+- [x] Active-TC military exception policy is explicit: Monk/Mangonel/Scorpion/Camel may continue; Knight/Crossbow/Ram/Siege Tower must yield new production.
+- [x] Active-TC policy does not retroactively cancel already queued production.
+- [x] Protected Ram and Siege Tower demand writers and executors carry the active-TC capital boundary.
+- [x] Reactive Monk/Mangonel/Scorpion/Camel executors are explicitly tested against accidental TC gating.
 - [x] BOOM mutations are included in the critical self-test inventory.
 - [x] Critical mutation inventory has no missing names.
 - [x] Controller strategy inventory remains exactly FLUSH=200, RUSH=201, BOOM=202, Castle-Power=203.
