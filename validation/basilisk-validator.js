@@ -4918,21 +4918,49 @@ function validateRangedCounterLifecycle(rules) {
     "[Ranged] Crossbow action boundary must re-check its live role demand",
   );
 
-  const ring = rules.find(
+  const ringExecutors = rules.filter(
     (rule) =>
       rule.includes("(goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)") &&
       rule.includes("(research ri-ring-archer-armor)") &&
       rule.includes("(can-research-with-escrow ri-ring-archer-armor)") &&
       rule.includes("(set-goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)"),
   );
-  assert.ok(ring, "[Ranged] Ring Mail research executor is missing");
-  const ringText = normalize(ring);
+  assert.equal(
+    ringExecutors.length,
+    2,
+    "[Ranged] Ring Mail must retain two composition-specific research executors",
+  );
+
+  const ringCrossbow = ringExecutors.find((rule) =>
+    rule.includes("(goal unit-goal crossbowman)"),
+  );
+  const ringAlt = ringExecutors.find((rule) =>
+    rule.includes("(goal bt-standing-skirm-target-goal >= bt-skirm-target-2)") ||
+    rule.includes("(unit-type-count-total cavalry-archer >= 6)"),
+  );
   assert.ok(
-    ringText.includes("(unit-type-count-total arbalest >= bt-crossbow-target-mature)") &&
-      ringText.includes("(up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)") &&
-      ringText.includes("(unit-type-count-total skirmisher-line >= bt-skirm-target-2)") &&
-      ringText.includes("(unit-type-count-total cavalry-archer >= 6)"),
-    "[Ranged] Ring Mail action boundary must re-check a live mature ranged army witness",
+    ringCrossbow,
+    "[Ranged] Ring Mail Crossbow branch is missing",
+  );
+  assert.ok(
+    ringAlt,
+    "[Ranged] Ring Mail Skirmisher/Cavalry-Archer branch is missing",
+  );
+
+  const ringCrossbowText = normalize(ringCrossbow);
+  assert.ok(
+    ringCrossbowText.includes("(unit-type-count-total arbalest >= bt-crossbow-target-mature)"),
+    "[Ranged] Ring Mail Crossbow action boundary must re-check a live mature ranged army witness",
+  );
+
+  const ringAltText = normalize(ringAlt);
+  assert.ok(
+    (
+      ringAltText.includes("(up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)") &&
+      ringAltText.includes("(unit-type-count-total skirmisher-line >= bt-skirm-target-2)")
+    ) ||
+      ringAltText.includes("(unit-type-count-total cavalry-archer >= 6)"),
+    "[Ranged] Ring Mail alternate action boundary must re-check a live mature ranged army witness",
   );
 
   for (const tech of ["ri-crossbow", "ri-ring-archer-armor"]) {
