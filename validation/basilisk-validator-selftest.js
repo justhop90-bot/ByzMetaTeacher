@@ -1077,7 +1077,7 @@ try {
       expected: "[Age transition]",
       source: (() => {
         const marker =
-          "(defrule\n    ; Imperial age authority owns the transition once the civilian threshold is";
+          "; Imperial age authority owns the transition once the civilian threshold is";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial research executor missing");
         const end = baseline.indexOf("\n)", start) + 2;
