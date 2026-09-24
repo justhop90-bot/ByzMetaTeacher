@@ -3691,6 +3691,7 @@ function validateFeudalCastleEconomyContract(rules, sourceText) {
 
   const attack = rules.find((rule) =>
     rule.includes("(attack-now)") &&
+    rule.includes("(current-age == feudal-age)") &&
     rule.includes("(set-goal attack-goal 1)") &&
     rule.includes("(goal bt-castle-commitment-goal 0)"),
   );
