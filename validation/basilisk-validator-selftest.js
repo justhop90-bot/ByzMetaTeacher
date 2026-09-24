@@ -866,7 +866,6 @@ try {
       ),
     },
     {
-    {
       name: "feudal-farm-budget-floor-regression-rejected",
       expected: "[Feudal farm budget]",
       source: baseline.replace(
