@@ -5034,6 +5034,267 @@ function validateCastleStoneLifecycle(rules) {
   );
 }
 
+function validateBoomEconomicLifecycle(rules, sourceText) {
+  for (const [symbol, value] of [
+    ["bt-castle-boom-army-floor-tc1", "4"],
+    ["bt-castle-boom-army-floor-tc2", "6"],
+    ["bt-castle-boom-army-floor-tc3", "8"],
+  ]) {
+    assert.ok(
+      sourceText.includes("(defconst " + symbol + " " + value + ")"),
+      "[BOOM] missing canonical " + symbol + "=" + value,
+    );
+  }
+
+  const boomFloorRules = [
+    {
+      label: "TC1 standing floor",
+      tc: "(building-type-count town-center < 2)",
+      value: "bt-castle-boom-army-floor-tc1",
+    },
+    {
+      label: "TC2 standing floor",
+      tc:
+        "(building-type-count town-center >= 2)" +
+        "(building-type-count town-center < 3)",
+      value: "bt-castle-boom-army-floor-tc2",
+    },
+    {
+      label: "TC3 standing floor",
+      tc: "(building-type-count town-center >= 3)",
+      value: "bt-castle-boom-army-floor-tc3",
+    },
+  ];
+
+  for (const entry of boomFloorRules) {
+    const matches = rules.filter(
+      (rule) =>
+        rule.includes("(current-age == castle-age)") &&
+        rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+        entry.tc
+          .split(")(")
+          .filter(Boolean)
+          .every((fragment, index, parts) => {
+            const token =
+              (index === 0 ? "(" : "(") + fragment + (index === parts.length - 1 ? ")" : ")");
+            return rule.includes(token);
+          }) &&
+        rule.includes("(set-goal bt-standing-army-floor-goal " + entry.value + ")"),
+    );
+    assert.equal(
+      matches.length,
+      1,
+      "[BOOM] " + entry.label + " writer must exist exactly once",
+    );
+  }
+
+  for (const value of ["12", "16", "20"]) {
+    const badBoomPressureFloor = rules.filter(
+      (rule) =>
+        rule.includes("(current-age == castle-age)") &&
+        rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+        rule.includes(
+          "(set-goal bt-standing-army-floor-goal " + value + ")",
+        ),
+    );
+    assert.equal(
+      badBoomPressureFloor.length,
+      0,
+      "[BOOM] Castle BOOM must not use pressure floor " + value,
+    );
+  }
+
+  for (const value of ["12", "16", "20"]) {
+    const castlePowerFloor = rules.find(
+      (rule) =>
+        rule.includes("(current-age == castle-age)") &&
+        rule.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+        rule.includes(
+          "(set-goal bt-standing-army-floor-goal " + value + ")",
+        ),
+    );
+    assert.ok(
+      castlePowerFloor,
+      "[BOOM] Castle-Power must retain Castle pressure floor " + value,
+    );
+  }
+
+  const standingTrainRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(can-train ") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)"),
+  );
+  assert.equal(
+    standingTrainRules.length,
+    0,
+    "[BOOM] standing-role train rules must use the FLUSH-aware Castle-bank gate",
+  );
+
+  const flushAwareStandingTrainRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(can-train ") &&
+      rule.includes("(goal strategy-goal bt-strategy-flush)") &&
+      rule.includes("(goal bt-castle-commitment-goal 0)"),
+  );
+  assert.equal(
+    flushAwareStandingTrainRules.length,
+    3,
+    "[BOOM] expected Spear/Skirm/Archer standing train rules to carry the FLUSH bank override",
+  );
+
+  const tcArbitration = rules.find(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(goal bt-tc-project-goal 2)") &&
+      rule.includes("(goal bt-tc-project-goal 3)") &&
+      rule.includes("(goal bt-tc-stage-goal bt-tc-stage-demanded)") &&
+      rule.includes("(goal bt-tc-stage-goal bt-tc-stage-resource-claimed)") &&
+      rule.includes("(goal bt-tc-stage-goal bt-tc-stage-placement-pending)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 0)"),
+  );
+  assert.ok(
+    tcArbitration,
+    "[BOOM] active TC2/TC3 project must suppress discretionary standing demand",
+  );
+
+  const knightSelector = rules.find(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+      rule.includes("(set-goal unit-goal knight-line)") &&
+      rule.includes("(unit-type-count-total archer-line < 4)"),
+  );
+  assert.ok(
+    knightSelector && knightSelector.includes("(building-type-count town-center >= 2)"),
+    "[BOOM] generic Knight selection must wait for TC2",
+  );
+
+  const knightWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-knight-demand-goal 0)") &&
+      rule.includes("(set-goal bt-knight-demand-goal 1)"),
+  );
+  assert.ok(
+    knightWriter &&
+      knightWriter.includes("(goal bt-tc-project-goal 2)") &&
+      knightWriter.includes("(goal bt-tc-project-goal 3)"),
+    "[BOOM] Knight demand writer must yield during an active TC project",
+  );
+
+  const knightCancel = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-knight-demand-goal 1)") &&
+      rule.includes("(set-goal bt-knight-demand-goal 0)") &&
+      rule.includes("(goal bt-tc-project-goal 2)"),
+  );
+  assert.ok(
+    knightCancel,
+    "[BOOM] active Knight demand must cancel when BOOM TC2/TC3 project begins",
+  );
+
+  const crossbowWriter = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-crossbow-demand-goal 0)") &&
+      rule.includes("(set-goal bt-crossbow-demand-goal 1)"),
+  );
+  assert.ok(
+    crossbowWriter &&
+      crossbowWriter.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+      crossbowWriter.includes("(goal bt-tc-project-goal 0)"),
+    "[BOOM] Crossbow demand writer must yield during a BOOM TC project while preserving Castle-Power",
+  );
+
+  const crossbowCancel = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-crossbow-demand-goal 1)") &&
+      rule.includes("(set-goal bt-crossbow-demand-goal 0)") &&
+      rule.includes("(goal bt-tc-project-goal 2)") &&
+      rule.includes("(goal bt-tc-project-goal 3)"),
+  );
+  assert.ok(
+    crossbowCancel,
+    "[BOOM] active Crossbow demand must cancel when BOOM TC2/TC3 project begins",
+  );
+
+  for (const unit of ["knight-line", "crossbowman"]) {
+    const trainRule = rules.find(
+      (rule) =>
+        rule.includes("(train " + unit + ")") &&
+        rule.includes("(goal bt-" + (unit === "knight-line" ? "knight" : "crossbow") + "-demand-goal 1)") &&
+        rule.includes("(goal bt-resource-mode-goal bt-resource-mode-castle-boom)"),
+    );
+    assert.ok(
+      trainRule &&
+        trainRule.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+        trainRule.includes("(goal bt-tc-project-goal 0)"),
+      "[BOOM] " + unit + " train boundary must yield during an active BOOM TC project",
+    );
+  }
+
+  const capabilityRules = rules.filter(
+    (rule) =>
+      /\(build (?:barracks|archery-range|stable)\)/.test(rule) &&
+      /bt-standing-(?:army-demand|spear-target|knight-target|camel-target)-goal/.test(rule),
+  );
+  assert.equal(
+    capabilityRules.length,
+    18,
+    "[BOOM] expected the complete 18-rule standing capability family",
+  );
+  assert.ok(
+    capabilityRules.every(
+      (rule) =>
+        rule.includes("(goal bt-castle-commitment-goal 0)") &&
+        rule.includes("(goal strategy-goal bt-strategy-flush)"),
+    ),
+    "[BOOM] every standing military capability rule must carry the FLUSH-aware Castle-bank gate",
+  );
+
+  const stableCapabilityRules = capabilityRules.filter((rule) =>
+    rule.includes("(build stable)"),
+  );
+  assert.equal(
+    stableCapabilityRules.length,
+    3,
+    "[BOOM] expected three Castle Stable capability rules",
+  );
+  assert.ok(
+    stableCapabilityRules.every(
+      (rule) =>
+        rule.includes("(goal bt-tc-project-goal 2)") &&
+        rule.includes("(goal bt-tc-project-goal 3)"),
+    ),
+    "[BOOM] Stable capability must yield during an active BOOM TC project",
+  );
+
+  const tcProjectWriterIndices = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule }) =>
+        rule.includes("(goal bt-tc-project-goal 0)") &&
+        rule.includes("(set-goal bt-tc-project-goal 2)"),
+    )
+    .map(({ index }) => index);
+  const tcArbitrationIndex = rules.indexOf(tcArbitration);
+  const militarySectionFirstTrainIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal bt-standing-army-demand-goal 1)") &&
+      rule.includes("(train spearman-line)"),
+  );
+  assert.ok(
+    tcArbitrationIndex > -1 &&
+      militarySectionFirstTrainIndex > -1 &&
+      tcArbitrationIndex < militarySectionFirstTrainIndex,
+    "[BOOM] capital arbitration must precede military production",
+  );
+  assert.ok(
+    tcProjectWriterIndices.length > 0,
+    "[BOOM] TC2 project demand writer is missing",
+  );
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -5238,6 +5499,7 @@ validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
 validateRushStallFailurePolicy(rules, source);
+validateBoomEconomicLifecycle(rules, source);
 validateAttackAllocationPolicy(rules);
 validateFeudalCastleEconomyContract(rules);
 validateFeudalFarmTransitionBudget(rules, source);
@@ -5310,6 +5572,7 @@ console.log(JSON.stringify({
     "duplicate and out-of-range defconst diagnostics",
     "attack-now timer/idle/completion contracts",
     "repeated Feudal RUSH stall release and consecutive-failure replay",
+    "Castle BOOM standing-floor maturity and military-capability arbitration",
     "critical state writer/reader/action coverage",
     "pre-final-strategy one-pass action ban",
     "strategy -> resource-mode -> production -> attack source order",
