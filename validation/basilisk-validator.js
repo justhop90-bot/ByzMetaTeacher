@@ -4165,6 +4165,34 @@ function validateRetryDoctrine(sourceText) {
   );
 }
 
+function extractRawRules(text) {
+  const rawRules = [];
+  const sanitized = sanitizeStructure(text);
+  let cursor = 0;
+  while ((cursor = sanitized.indexOf("(defrule", cursor)) !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = cursor; i < sanitized.length; i += 1) {
+      if (sanitized[i] === "(") depth += 1;
+      else if (sanitized[i] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    assert.notEqual(
+      end,
+      -1,
+      "[Missing closing parenthesis] raw defrule begins near source offset " + cursor,
+    );
+    rawRules.push(text.slice(cursor, end));
+    cursor = end;
+  }
+  return rawRules;
+}
+
 function validateAgeNarrationLatches(sourceText, rules) {
   const latches = [
     "bt-debug-age-feudal-bank-goal",
@@ -4180,7 +4208,8 @@ function validateAgeNarrationLatches(sourceText, rules) {
   for (const latch of latches) {
     assert.ok(sourceText.includes(latch), "[Narration] missing independent age latch: " + latch);
   }
-  const ageMessages = rules.filter(
+  const rawRules = extractRawRules(sourceText);
+  const ageMessages = rawRules.filter(
     (rule) => rule.includes('(chat-local-to-self "BASILISK | AGE |') &&
       rule.includes("(set-goal bt-debug-age-"),
   );
@@ -4215,7 +4244,8 @@ function validateStrategicNarration(sourceText, rules) {
     "[Narration] default verbosity gate is not initialized to level 1",
   );
 
-  const chatRules = rules.filter((rule) =>
+  const rawRules = extractRawRules(sourceText);
+  const chatRules = rawRules.filter((rule) =>
     rule.includes('(chat-local-to-self "BASILISK |'),
   );
   assert.ok(
@@ -4292,9 +4322,8 @@ function validateStrategicNarration(sourceText, rules) {
   }
 
   function firstNarrator(message) {
-    const index = ruleIndex(
-      rules,
-      '(chat-local-to-self "' + message,
+    const index = rawRules.findIndex((rule) =>
+      rule.includes('(chat-local-to-self "' + message),
     );
     assert.ok(index >= 0, "[Narration] missing narrator: " + message);
     return index;
