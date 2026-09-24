@@ -4814,6 +4814,36 @@ function validateCataphractResearchLifecycle(rules) {
   );
 }
 
+function validateCastleStoneLifecycle(rules) {
+  const stoneModeRelease = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-castle-stone)") &&
+      rule.includes("(goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)") &&
+      rule.includes("(stone-amount >= 650)") &&
+      rule.includes("(building-type-count-total castle >= 1)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 0)") &&
+      rule.includes("(set-goal bt-resource-mode-goal 0)"),
+  );
+  assert.ok(
+    stoneModeRelease,
+    "[Castle Stone] stone allocation must have a terminal release witness",
+  );
+
+  const stoneModeDemand = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-resource-mode-goal 0)") &&
+      rule.includes("(current-age >= castle-age)") &&
+      rule.includes("(building-type-count-total castle < 1)") &&
+      rule.includes("(stone-amount < 650)") &&
+      rule.includes("(goal bt-castle-cataphract-demand-goal 1)") &&
+      rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-stone)"),
+  );
+  assert.ok(
+    stoneModeDemand,
+    "[Castle Stone] stone mode must be driven by a live Castle demand and 650-stone deficit",
+  );
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -4963,6 +4993,7 @@ validateOnagerLifecycle(rules);
 validatePikemanLifecycle(rules);
 validateRangedCounterLifecycle(rules);
 validateCataphractResearchLifecycle(rules);
+validateCastleStoneLifecycle(rules);
 validateEliteVarangianResearchCapability(rules);
 validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
