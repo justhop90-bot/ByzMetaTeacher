@@ -362,6 +362,52 @@ try {
     "[Semantic self-test] CA Fletching executor lacks escrow feasibility",
   );
 
+  const feudalBlacksmithAdmission = findSemanticRule(
+    "Feudal Fletching Blacksmith capability admission",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "goal", ["bt-castle-prereq-backoff-goal", "0"]) &&
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasFact(rule, "goal", ["bt-castle-commitment-goal", "0"]) &&
+      hasFact(rule, "building-type-count-total", [
+        "blacksmith",
+        "<",
+        "1",
+      ]) &&
+      hasFact(rule, "up-pending-objects", [
+        "c:",
+        "blacksmith",
+        "==",
+        "0",
+      ]) &&
+      hasFact(rule, "strategic-number", [
+        "sn-resource-control",
+        "==",
+        "0",
+      ]) &&
+      hasFact(rule, "can-research-with-escrow", ["castle-age"]) &&
+      hasFact(rule, "can-build-with-escrow", ["blacksmith"]) &&
+      hasAction(rule, "set-strategic-number", [
+        "sn-resource-control",
+        "bt-castle-blacksmith-claim",
+      ]) &&
+      hasAction(rule, "release-escrow", ["wood"]) &&
+      hasAction(rule, "enable-timer", [
+        "bt-castle-prereq-watchdog-timer",
+        "bt-castle-prereq-watchdog-seconds",
+      ]) &&
+      hasAction(rule, "build", ["blacksmith"]),
+  );
+  assert.ok(
+    baseline.includes(
+      "(not (goal bt-resource-mode-goal bt-resource-mode-castle-bank))",
+    ),
+    "[Semantic self-test] Feudal Blacksmith admission lost Castle-bank exclusion",
+  );
+
   findSemanticRule(
     "CA Fletching -> Bodkin bridge",
     (rule) =>
@@ -691,6 +737,49 @@ try {
   );
 
   const semanticIndex = (rule) => semanticRules.indexOf(rule);
+  const castlePrereqBlacksmith = findSemanticRule(
+    "Feudal Castle-prerequisite Blacksmith builder",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasAction(rule, "set-strategic-number", [
+        "sn-resource-control",
+        "bt-castle-blacksmith-claim",
+      ]) &&
+      hasAction(rule, "build", ["blacksmith"]),
+  );
+  const postCastleBlacksmithRecovery = findSemanticRule(
+    "Post-Castle Blacksmith capability recovery",
+    (rule) =>
+      hasFact(rule, "current-age", [">=", "castle-age"]) &&
+      hasFact(rule, "goal", ["bt-blacksmith-repair-backoff-goal", "0"]) &&
+      hasAction(rule, "set-strategic-number", [
+        "sn-resource-control",
+        "bt-blacksmith-repair-claim",
+      ]) &&
+      hasAction(rule, "build", ["blacksmith"]),
+  );
+  const feudalPackageBlacksmithBuilders = semanticRules.filter(
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "goal", [
+        "bt-research-ranged-counter-package-goal",
+        "ri-fletching",
+      ]) &&
+      hasAction(rule, "build", ["blacksmith"]),
+  );
+  assert.equal(
+    feudalPackageBlacksmithBuilders.length,
+    1,
+    "[Semantic self-test] exactly one Feudal Fletching rule may admit Blacksmith capability",
+  );
+  assert.ok(
+    semanticIndex(castlePrereqBlacksmith) < semanticIndex(feudalBlacksmithAdmission),
+    "[Semantic self-test] existing Castle-prerequisite Blacksmith builder must retain first ownership",
+  );
+  assert.ok(
+    semanticIndex(feudalBlacksmithAdmission) < semanticIndex(postCastleBlacksmithRecovery),
+    "[Semantic self-test] Feudal package admission must remain before post-Castle Blacksmith recovery",
+  );
   assert.ok(
     semanticIndex(rushDamageReset) < semanticIndex(rushStallSecond),
     "[Semantic self-test] structural damage result must resolve before RUSH stall release",
