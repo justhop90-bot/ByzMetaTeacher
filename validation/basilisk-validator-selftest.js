@@ -1178,18 +1178,105 @@ try {
     {
       name: "villager-hygiene-house-headroom-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "(housing-headroom <= 5)",
-        "(housing-headroom <= 4)",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-housing-demand-goal 1)",
+          "(housing-headroom <= bt-housing-headroom-trigger)",
+        ],
+        (rule) =>
+          rule.replace(
+            "(housing-headroom <= bt-housing-headroom-trigger)",
+            "(housing-headroom <= 4)",
+          ),
+        "housing headroom trigger",
       ),
     },
     {
-      name: "villager-hygiene-lumber-local-house-placement-regression",
+      name: "villager-hygiene-house-emergency-headroom-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "    (up-set-placement-data my-player-number lumber-camp c: 6)\n",
-        "",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-housing-demand-goal 1)",
+          "(population-headroom <= 0)",
+        ],
+        (rule) =>
+          rule.replace("(population-headroom <= 0)", ""),
+        "housing emergency population trigger",
       ),
+    },
+    {
+      name: "villager-hygiene-first-house-builder-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count-total house == 0)",
+          "(up-assign-builders c: house c: 2)",
+        ],
+        (rule) =>
+          rule.replace("    (up-assign-builders c: house c: 2)\n", ""),
+        "first house two-builder handling",
+      ),
+    },
+    {
+      name: "villager-hygiene-house-pending-cap-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-housing-demand-goal 1)",
+          "(up-pending-objects c: house < bt-housing-pending-cap)",
+        ],
+        (rule) =>
+          rule.replace(
+            "(up-pending-objects c: house < bt-housing-pending-cap)",
+            "(up-pending-objects c: house < 1)",
+          ),
+        "bounded pending house cap",
+      ),
+    },
+    {
+      name: "villager-hygiene-house-builder-reset-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count house >= 1)",
+          "(up-assign-builders c: house c: 1)",
+        ],
+        (rule) =>
+          rule.replace("    (up-assign-builders c: house c: 1)\n", ""),
+        "normal house builder reset",
+      ),
+    },
+    {
+      name: "villager-hygiene-house-fallback-can-build-regression",
+      expected: "[Villager hygiene]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-housing-demand-goal 1)",
+          "(build house)",
+        ],
+        (rule) =>
+          rule.replace("    (can-build house)\n", ""),
+        "generic housing fallback feasibility",
+      ),
+    },
+    {
+      name: "villager-hygiene-local-house-placement-rejected",
+      expected: "[Villager hygiene]",
+      source: baseline +
+        "\n(defrule\n" +
+        "    (goal bt-housing-demand-goal 1)\n" +
+        "    (building-type-count-total lumber-camp >= 1)\n" +
+        "    (can-build house)\n" +
+        "=>\n" +
+        "    (up-set-placement-data my-player-number lumber-camp c: 6)\n" +
+        "    (up-build place-control 0 c: house)\n" +
+        ")\n",
     },
     {
       name: "villager-hygiene-wood-dropsite-regression",
@@ -2202,6 +2289,13 @@ try {
     "feudal-farm-budget-emergency-escape-regression-rejected",
     "feudal-farm-budget-executor-regression-rejected",
     "feudal-farm-budget-bypass-executor-regression-rejected",
+    "villager-hygiene-house-headroom-regression",
+    "villager-hygiene-house-emergency-headroom-regression",
+    "villager-hygiene-first-house-builder-regression",
+    "villager-hygiene-house-pending-cap-regression",
+    "villager-hygiene-house-builder-reset-regression",
+    "villager-hygiene-house-fallback-can-build-regression",
+    "villager-hygiene-local-house-placement-rejected",
     "backoff-expiry-owner-missing-rejected",
     "siege-abort-cancels-independent-demand-rejected",
   ]);
