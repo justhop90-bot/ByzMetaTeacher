@@ -5297,6 +5297,234 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
   );
 }
 
+function validateBoomPaperReplay(rules, sourceText) {
+  const policy = {
+    strategy: "boom",
+    age: "castle",
+    tc: 1,
+    tcProject: 0,
+    tcStage: "idle",
+    floor: 4,
+    standingDemand: 1,
+    castleCommitment: 0,
+    threat: false,
+    knightUnitGoal: false,
+    knightDemand: 0,
+    crossbowDemand: 0,
+  };
+
+  const recomputeFloor = () => {
+    if (policy.age !== "castle" || policy.strategy !== "boom") return;
+    if (policy.tc < 2) policy.floor = 4;
+    else if (policy.tc < 3) policy.floor = 6;
+    else policy.floor = 8;
+  };
+
+  const capitalArbitration = () => {
+    if (
+      policy.strategy === "boom" &&
+      (policy.tcProject === 2 || policy.tcProject === 3) &&
+      ["demanded", "resource-claimed", "placement-pending"].includes(policy.tcStage)
+    ) {
+      policy.standingDemand = 0;
+      policy.knightDemand = 0;
+      policy.crossbowDemand = 0;
+    }
+  };
+
+  const demandStanding = () => {
+    if (policy.strategy === "boom" && policy.age === "castle") {
+      policy.standingDemand = 1;
+    }
+    capitalArbitration();
+  };
+
+  const startTc2 = () => {
+    policy.tcProject = 2;
+    policy.tcStage = "demanded";
+    capitalArbitration();
+  };
+
+  const startTc3 = () => {
+    policy.tcProject = 3;
+    policy.tcStage = "demanded";
+    capitalArbitration();
+  };
+
+  const completeTc = (count) => {
+    policy.tc = count;
+    policy.tcProject = 0;
+    policy.tcStage = "idle";
+    recomputeFloor();
+    demandStanding();
+  };
+
+  recomputeFloor();
+  assert.equal(policy.floor, 4, "[BOOM replay] Castle BOOM at one TC must use floor 4");
+
+  policy.tc = 1;
+  policy.knightUnitGoal = true;
+  assert.equal(
+    policy.tc >= 2,
+    false,
+    "[BOOM replay] generic Knight posture must not qualify at one TC",
+  );
+
+  startTc2();
+  assert.equal(policy.tcProject, 2, "[BOOM replay] TC2 demand did not persist");
+  assert.equal(policy.tcStage, "demanded", "[BOOM replay] TC2 did not enter demanded stage");
+  assert.equal(
+    policy.standingDemand,
+    0,
+    "[BOOM replay] active TC2 demand did not suppress standing military demand",
+  );
+
+  policy.tcStage = "resource-claimed";
+  capitalArbitration();
+  assert.equal(
+    policy.standingDemand,
+    0,
+    "[BOOM replay] TC resource claim did not retain capital priority",
+  );
+
+  policy.tcStage = "placement-pending";
+  capitalArbitration();
+  assert.equal(
+    policy.standingDemand,
+    0,
+    "[BOOM replay] TC placement pending did not retain capital priority",
+  );
+
+  policy.tcStage = "foundation-active";
+  capitalArbitration();
+  assert.equal(
+    policy.standingDemand,
+    1,
+    "[BOOM replay] foundation-active TC incorrectly retained pre-foundation military suppression",
+  );
+  assert.equal(
+    policy.floor,
+    4,
+    "[BOOM replay] standing floor must remain TC1 until TC2 actually completes",
+  );
+
+  completeTc(2);
+  assert.equal(policy.floor, 6, "[BOOM replay] TC2 completion did not raise BOOM floor to 6");
+  assert.equal(
+    policy.standingDemand,
+    1,
+    "[BOOM replay] TC2 completion did not restore normal standing-demand evaluation",
+  );
+  assert.equal(
+    policy.tc >= 2,
+    true,
+    "[BOOM replay] Knight eligibility witness did not become true after TC2",
+  );
+
+  startTc3();
+  assert.equal(policy.tcProject, 3, "[BOOM replay] TC3 demand did not persist");
+  assert.equal(
+    policy.standingDemand,
+    0,
+    "[BOOM replay] active TC3 demand did not suppress standing military demand",
+  );
+
+  completeTc(3);
+  assert.equal(policy.floor, 8, "[BOOM replay] TC3 completion did not raise BOOM floor to 8");
+  assert.equal(
+    policy.standingDemand,
+    1,
+    "[BOOM replay] TC3 completion did not restore normal standing-demand evaluation",
+  );
+
+  policy.castleCommitment = 1;
+  assert.equal(
+    policy.strategy === "flush" || policy.castleCommitment === 0,
+    false,
+    "[BOOM replay] Castle commitment unexpectedly allowed normal standing production",
+  );
+  policy.strategy = "flush";
+  assert.equal(
+    policy.strategy === "flush",
+    true,
+    "[BOOM replay] FLUSH emergency override did not activate",
+  );
+
+  policy.strategy = "boom";
+  policy.castleCommitment = 0;
+  policy.tc = 1;
+  policy.knightUnitGoal = false;
+  assert.equal(
+    policy.knightUnitGoal && policy.tc >= 2,
+    false,
+    "[BOOM replay] generic Knight posture incorrectly activated before TC2",
+  );
+  policy.tc = 2;
+  policy.knightUnitGoal = true;
+  assert.equal(
+    policy.knightUnitGoal && policy.tc >= 2,
+    true,
+    "[BOOM replay] generic Knight posture failed its TC2 maturity witness",
+  );
+
+  assert.ok(
+    sourceText.includes("(set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc1)"),
+    "[BOOM replay] TC1 floor writer missing",
+  );
+  assert.ok(
+    sourceText.includes("(set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc2)"),
+    "[BOOM replay] TC2 floor writer missing",
+  );
+  assert.ok(
+    sourceText.includes("(set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc3)"),
+    "[BOOM replay] TC3 floor writer missing",
+  );
+
+  const farmScale2 = rules.find(
+    (rule) =>
+      rule.includes("(building-type-count-total town-center >= 2)") &&
+      rule.includes("(up-modify-goal bt-farm-transition-reserve-goal c:+ 2)") &&
+      rule.includes("(up-modify-goal bt-farm-depleted-reserve-goal c:+ 3)"),
+  );
+  const farmScale3 = rules.find(
+    (rule) =>
+      rule.includes("(building-type-count-total town-center >= 3)") &&
+      rule.includes("(up-modify-goal bt-farm-transition-reserve-goal c:+ 2)") &&
+      rule.includes("(up-modify-goal bt-farm-depleted-reserve-goal c:+ 3)"),
+  );
+  assert.ok(farmScale2, "[BOOM replay] 2-TC farm scaling witness missing");
+  assert.ok(farmScale3, "[BOOM replay] 3-TC farm scaling witness missing");
+
+  for (const tech of ["ri-wheel-barrow", "ri-hand-cart", "ri-bow-saw", "ri-gold-shaft-mining"]) {
+    assert.ok(
+      rules.some(
+        (rule) =>
+          rule.includes("(goal strategy-goal bt-strategy-boom)") &&
+          rule.includes(tech) &&
+          rule.includes("(can-research-with-escrow " + tech + ")"),
+      ),
+      "[BOOM replay] BOOM eco-research lifecycle missing engine-feasibility witness for " + tech,
+    );
+  }
+
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-tc-project-goal 2)") &&
+        rule.includes("(goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
+    ),
+    "[BOOM replay] TC2 stone resource-mode handoff missing",
+  );
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(goal bt-tc-project-goal 3)") &&
+        rule.includes("(goal bt-resource-mode-goal bt-resource-mode-tc-stone)"),
+    ),
+    "[BOOM replay] TC3 stone resource-mode handoff missing",
+  );
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -5502,6 +5730,7 @@ validateAttackContracts(rules);
 validateAttackResultLifecycle(rules);
 validateRushStallFailurePolicy(rules, source);
 validateBoomEconomicLifecycle(rules, source);
+validateBoomPaperReplay(rules, source);
 validateAttackAllocationPolicy(rules);
 validateFeudalCastleEconomyContract(rules);
 validateFeudalFarmTransitionBudget(rules, source);
@@ -5575,6 +5804,7 @@ console.log(JSON.stringify({
     "attack-now timer/idle/completion contracts",
     "repeated Feudal RUSH stall release and consecutive-failure replay",
     "Castle BOOM standing-floor maturity and military-capability arbitration",
+    "Castle BOOM deterministic paper replay and economic milestone witnesses",
     "critical state writer/reader/action coverage",
     "pre-final-strategy one-pass action ban",
     "strategy -> resource-mode -> production -> attack source order",
