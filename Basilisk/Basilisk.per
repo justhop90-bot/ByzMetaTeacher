@@ -1826,9 +1826,9 @@
 (defrule
     (goal bt-research-cavalry-counter-package-goal 0)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-mail)
-    (or
-        (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-        (goal bt-blacksmith-infantry-army-goal 1)
+    (and
+        (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-1)
+        (unit-type-count-total spearman-line >= bt-spear-target-1)
     )
     (up-research-status c: ri-scale-mail < research-complete)
 =>
@@ -1935,6 +1935,21 @@
     (up-research-status c: ri-plate-mail < research-complete)
 =>
     (set-goal bt-research-cavalry-counter-package-goal ri-plate-mail)
+)
+
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-pikeman)
+    (up-research-status c: ri-pikeman == research-complete)
+    (goal bt-halberdier-demand-goal 0)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
+)
+
+(defrule
+    (goal bt-research-cavalry-counter-package-goal ri-halberdier)
+    (up-research-status c: ri-halberdier == research-complete)
+=>
+    (set-goal bt-research-cavalry-counter-package-goal 0)
 )
 (defrule
     (goal bt-research-cavalry-counter-package-goal ri-forging)
@@ -2124,6 +2139,28 @@
 
 ; FLETCHING -> PADDED ARMOR: defensive support when the primary counter
 ; branch does not own the package.
+; CAVALRY-ARCHER FLETCHING -> BODKIN
+; A real CA mass earns the universal ranged attack progression once Fletching
+; is complete. This closes the CA-only path before terminal release.
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+    (current-age >= castle-age)
+    (unit-type-count-total cavalry-archer-line >= 3)
+    (up-research-status c: ri-bodkin-arrow < research-complete)
+    (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
+=>
+    (set-goal bt-research-ranged-counter-package-goal ri-bodkin-arrow)
+)
+
+(defrule
+    (goal bt-research-ranged-counter-package-goal ri-fletching)
+    (up-research-status c: ri-fletching == research-complete)
+    (up-research-status c: ri-bodkin-arrow == research-complete)
+=>
+    (set-goal bt-research-ranged-counter-package-goal 0)
+)
+
 (defrule
     (goal bt-research-ranged-counter-package-goal ri-fletching)
     (or
@@ -6230,10 +6267,11 @@ town-center >= 2)))))
 )
 
 (defrule
-    ; HARD CASTLE OWNERSHIP BOUNDARY.
-    ; At 30 villagers, Feudal eco holds, military posture, opening labels,
-    ; and transient resource modes no longer own the TC decision. Castle
-    ; transition owns the bank and civilian queue immediately.
+    ; HARD CASTLE OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.
+    ; At 30 villagers, lower-priority Feudal eco, military posture, opening
+    ; labels, and transient modes no longer own the TC decision. A P0 food,
+    ; gold, or wood crisis remains sovereign until resolved.
+    (goal bt-resource-mode-goal 0)
     (current-age == feudal-age)
     (unit-type-count villager >= bt-castle-villagers)
 =>
@@ -6250,10 +6288,11 @@ town-center >= 2)))))
 )
 
 (defrule
-    ; HARD IMPERIAL OWNERSHIP BOUNDARY.
-    ; At 50 villagers, Castle eco holds, military posture, capability projects,
-    ; and transient resource modes no longer own the TC decision. Imperial
-    ; transition owns the bank and civilian queue immediately.
+    ; HARD IMPERIAL OWNERSHIP BOUNDARY WHEN NO P0 CRISIS IS ACTIVE.
+    ; At 50 villagers, lower-priority Castle eco, military posture, capability
+    ; projects, and transient modes no longer own the TC decision. A P0 food,
+    ; gold, or wood crisis remains sovereign until resolved.
+    (goal bt-resource-mode-goal 0)
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
     (or
@@ -13162,6 +13201,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (up-compare-goal bt-standing-skirm-target-goal > 0)
             (unit-type-count-total skirmisher-line >= 3)
         )
+        (unit-type-count-total cavalry-archer-line >= 3)
     )
     (not (goal bt-castle-commitment-goal 1))
     (up-research-status c: ri-fletching < research-pending)
@@ -13299,9 +13339,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (current-age >= castle-age)
     (building-type-count blacksmith >= 1)
     (and
-                (up-compare-goal bt-standing-archer-target-goal >= 3)
-                (unit-type-count-total archer-line >= 3)
-            )
+    (unit-type-count-total cavalry-archer-line >= 3)
     (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-bodkin-arrow < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-bodkin-arrow)
