@@ -4,12 +4,12 @@ import assert from "node:assert/strict";
 
 const CAPACITY = 4;
 
-function makeState() {
+function makeState(initialOwner = 510) {
   return {
     preemptActive: 0,
     originalOwner: 0,
     result: 0,
-    mutex: 0,
+    mutex: initialOwner,
     tcProject: 2,
     tcStage: "resource-claimed",
     watchdogAge: 17,
@@ -94,7 +94,7 @@ function drain(state, limit = 4) {
 
 // Completion while preempted: never restore the stale owner.
 {
-  const state = makeState();
+  const state = makeState(509);
   begin(state, 509);
   const watchdogBefore = state.watchdogAge;
   complete(state);
@@ -120,15 +120,19 @@ function drain(state, limit = 4) {
 
 // Project disappears while preempted: emergency owner terminates without resurrection.
 {
-  const state = makeState();
+  const state = makeState(509);
   begin(state, 509);
   state.tcProject = 0;
   state.tcStage = "idle";
+  state.mutex = 799;
+  state.preemptActive = 1;
+  state.result = 0;
   state.mutex = 0;
   state.preemptActive = 0;
   state.result = 3;
   assert.equal(state.mutex, 0);
   assert.equal(state.tcProject, 0);
+  assert.equal(state.result, 3);
 }
 
 // Rapid begin -> defense -> end remains ordered.
