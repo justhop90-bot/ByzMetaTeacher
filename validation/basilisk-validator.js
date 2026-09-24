@@ -2995,7 +2995,235 @@ function validateAttackContracts(rules) {
 }
 
 
-function validateBasiliskGoalNamespace(forms) {
+function validateResourceModeArbiter(rules) {
+  const resetIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(true)") &&
+      rule.includes("(set-goal bt-resource-mode-goal 0)") &&
+      !rule.includes("(disable-self)"),
+  );
+  assert.ok(
+    resetIndex >= 0,
+    "[Resource mode] continuous mode recomputation reset is missing",
+  );
+
+  const modeWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(
+      ({ rule }) =>
+        /\(set-goal bt-resource-mode-goal [^)]+\)/.test(rule) &&
+        !rule.includes("(set-goal bt-resource-mode-goal 0)"),
+    );
+  assert.ok(
+    modeWriters.length >= 20,
+    "[Resource mode] expected the layered mode arbitration writers",
+  );
+  for (const { rule, index } of modeWriters) {
+    assert.ok(
+      index > resetIndex,
+      "[Resource mode] mode writer must execute after the continuous reset",
+    );
+    assert.ok(
+      rule.includes("(goal bt-resource-mode-goal 0)"),
+      "[Resource mode] every mode writer must be gated by idle mode 0; ownership is recomputed each pass",
+    );
+  }
+
+  const food = rules.findIndex((rule) =>
+    rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-food-crisis)"),
+  );
+  const castleBank = rules.findIndex((rule) =>
+    rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)"),
+  );
+  const baseMode = rules.findIndex((rule) =>
+    rule.includes("(set-goal bt-resource-mode-goal bt-resource-mode-imperial-trash)"),
+  );
+  assert.ok(food > resetIndex && castleBank > food && baseMode > castleBank,
+    "[Resource mode] source order no longer encodes the intended P0 -> bank -> base priority");
+}
+
+function validateAttackResultLifecycle(rules) {
+  const start = rules.find((rule) =>
+    rule.includes("(attack-now)") &&
+    rule.includes("(up-get-target-fact building-count 0 bt-attack-target-buildings-start-goal)") &&
+    rule.includes("(set-goal bt-attack-result-goal bt-attack-result-none)"),
+  );
+  assert.ok(start, "[Attack result] attack entry lacks infrastructure snapshot/result reset");
+
+  const end = rules.find((rule) =>
+    rule.includes("(timer-triggered bt-attack-timer)") &&
+    rule.includes("(goal attack-goal 1)") &&
+    rule.includes("(up-get-target-fact building-count 0 bt-attack-target-buildings-now-goal)") &&
+    rule.includes("(up-modify-goal bt-attack-buildings-destroyed-goal g:= bt-attack-target-buildings-start-goal)") &&
+    rule.includes("(set-goal attack-goal 0)"),
+  );
+  assert.ok(end, "[Attack result] attack timer lacks a completed infrastructure-result witness");
+
+  const resultRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal attack-goal 0)") &&
+      rule.includes("(goal bt-attack-result-goal bt-attack-result-none)"),
+  );
+  assert.equal(resultRules.length, 3, "[Attack result] expected damaged/stalled/reassess result consumers");
+
+  assert.ok(
+    resultRules.some(
+      (rule) =>
+        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal >= 1)") &&
+        rule.includes("bt-attack-result-damaged") &&
+        rule.includes("(enable-timer bt-attack-timer 120)"),
+    ),
+    "[Attack result] damaged result path is missing",
+  );
+  assert.ok(
+    resultRules.some(
+      (rule) =>
+        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal == 0)") &&
+        rule.includes("(up-compare-goal bt-relative-force-goal < 0)") &&
+        rule.includes("(set-goal bt-standing-army-demand-goal 1)") &&
+        rule.includes("(enable-timer bt-attack-timer 300)"),
+    ),
+    "[Attack result] stalled/behind result path must rebuild the standing army",
+  );
+  assert.ok(
+    resultRules.some(
+      (rule) =>
+        rule.includes("(up-compare-goal bt-attack-buildings-destroyed-goal == 0)") &&
+        rule.includes("(up-compare-goal bt-relative-force-goal >= 0)") &&
+        rule.includes("bt-attack-result-reassess") &&
+        rule.includes("(enable-timer bt-attack-timer 180)"),
+    ),
+    "[Attack result] zero-damage parity path is missing",
+  );
+}
+
+function validateImperialSiegeExit(rules, sourceText) {
+  const nums = new Map(
+    [...sourceText.matchAll(/\(defconst\s+([A-Za-z0-9_-]+)\s+(-?\d+)\)/g)]
+      .map((m) => [m[1], Number(m[2])]),
+  );
+  assert.equal(
+    nums.get("bt-imperial-siege-army-floor"),
+    30,
+    "[Imperial siege] entry floor changed unexpectedly",
+  );
+  assert.equal(
+    nums.get("bt-imperial-siege-abort-army-floor"),
+    20,
+    "[Imperial siege] abort floor must provide a 10-unit hysteresis band",
+  );
+
+  const entry = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-siege-package-goal 0)") &&
+      rule.includes("(current-age >= imperial-age)") &&
+      rule.includes("(up-compare-goal bt-standing-army-floor-goal >= bt-imperial-siege-army-floor)") &&
+      rule.includes("(set-goal bt-imperial-siege-package-goal 1)"),
+  );
+  assert.ok(entry, "[Imperial siege] package entry gate is missing");
+
+  const abort = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-imperial-siege-package-goal 1)") &&
+      rule.includes("(military-population < bt-imperial-siege-abort-army-floor)") &&
+      rule.includes("(set-goal bt-imperial-siege-package-goal 0)") &&
+      rule.includes("(set-goal bt-standing-army-demand-goal 1)"),
+  );
+  assert.ok(abort, "[Imperial siege] military-collapse exit is missing");
+  for (const demand of [
+    "bt-research-siege-package-goal",
+    "bt-trebuchet-demand-goal",
+    "bt-ram-demand-goal",
+    "bt-mangonel-demand-goal",
+    "bt-onager-demand-goal",
+    "bt-bombard-cannon-demand-goal",
+    "bt-scorpion-demand-goal",
+    "bt-siege-tower-demand-goal",
+  ]) {
+    assert.ok(
+      abort.includes("(set-goal " + demand + " 0)"),
+      "[Imperial siege] collapse exit must clear child demand " + demand,
+    );
+  }
+}
+
+function validateTcScaledFarms(rules) {
+  const twoTc = rules.filter(
+    (rule) =>
+      rule.includes("(building-type-count-total town-center >= 2)") &&
+      rule.includes("(up-modify-goal bt-farm-transition-reserve-goal c:+ 2)") &&
+      rule.includes("(up-modify-goal bt-farm-depleted-reserve-goal c:+ 3)"),
+  );
+  const threeTc = rules.filter(
+    (rule) =>
+      rule.includes("(building-type-count-total town-center >= 3)") &&
+      rule.includes("(up-modify-goal bt-farm-transition-reserve-goal c:+ 2)") &&
+      rule.includes("(up-modify-goal bt-farm-depleted-reserve-goal c:+ 3)"),
+  );
+  assert.equal(twoTc.length, 1, "[Farm capacity] missing unique 2-TC reserve correction");
+  assert.equal(threeTc.length, 1, "[Farm capacity] missing unique 3-TC reserve correction");
+
+  const baseWriters = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) => rule.includes("(set-goal bt-farm-transition-reserve-goal"));
+  const correctionIndices = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) =>
+      rule.includes("(up-modify-goal bt-farm-transition-reserve-goal c:+ 2)"),
+    )
+    .map(({ index }) => index);
+  const firstFarmExecutor = rules.findIndex(
+    (rule) => rule.includes("(build farm)") && rule.includes("(can-build-with-escrow farm)"),
+  );
+
+  assert.ok(
+    correctionIndices.length === 2 &&
+      Math.min(...correctionIndices) > Math.max(...baseWriters.map(({ index }) => index)),
+    "[Farm capacity] TC corrections must run after the age/population reserve model",
+  );
+  assert.ok(
+    firstFarmExecutor > Math.max(...correctionIndices),
+    "[Farm capacity] TC correction must precede farm execution",
+  );
+}
+
+function validateNoDuplicateRules(rules) {
+  const seen = new Map();
+  const normalize = (rule) =>
+    rule.replace(/;[^\n]*/g, "").replace(/\s+/g, " ").trim();
+  for (const rule of rules) {
+    const key = normalize(rule);
+    seen.set(key, (seen.get(key) || 0) + 1);
+  }
+  const duplicates = [...seen.entries()].filter(([, count]) => count > 1);
+  assert.equal(
+    duplicates.length,
+    0,
+    "[Rule hygiene] exact executable defrule duplicates remain: " + duplicates.length,
+  );
+}
+
+function validateBackoffTimerUniqueness(rules) {
+  const groups = new Map();
+  for (const rule of rules) {
+    const match = rule.match(
+      /\(timer-triggered (bt-research-[A-Za-z0-9-]+-failure-backoff-timer)\)/,
+    );
+    if (!match) continue;
+    const timer = match[1];
+    const reset = /\(set-goal (bt-research-[A-Za-z0-9-]+-failure-backoff-goal) 0\)/.test(rule);
+    if (!reset) continue;
+    groups.set(timer, (groups.get(timer) || 0) + 1);
+  }
+  for (const [timer, count] of groups) {
+    assert.equal(
+      count,
+      1,
+      "[Retry fairness] failure-backoff timer must have one expiry owner: " + timer,
+    );
+  }
+}
+\nfunction validateBasiliskGoalNamespace(forms) {
   const numericGoals = new Map();
   for (const form of forms) {
     if (form.head !== "defconst") continue;
@@ -3019,6 +3247,7 @@ function validateBasiliskGoalNamespace(forms) {
     729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741,
     742, 743, 744, 745, 746, 747, 748, 749, 750, 751, 752, 753, 754,
     755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766,
+    769, 770, 771, 772,
   ]) {
     assert.ok(
       numericGoals.has(id),
@@ -3225,8 +3454,8 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
       rule.includes("(up-compare-goal bt-telemetry-count-goal < 4)") &&
       rule.includes("(goal bt-telemetry-write-head-goal"),
     ).length,
-    12,
-    "[Telemetry] expected three four-slot FIFO append groups",
+    4,
+    "[Telemetry] expected one four-slot FIFO append group",
   );
 
   assert.equal(
@@ -3234,8 +3463,8 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
       rule.includes("(goal bt-telemetry-event-pending-goal 1)") &&
       rule.includes("(up-compare-goal bt-telemetry-count-goal >= 4)"),
     ).length,
-    3,
-    "[Telemetry] each event stage must explicitly handle FIFO overflow",
+    1,
+    "[Telemetry] exactly one FIFO overflow rule is expected",
   );
 
   assert.equal(
@@ -5084,7 +5313,13 @@ validateLateEcoTechnologyMaturity(rules);
 validateScoutingLifecycle(source, rules);
 validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
+validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
+validateAttackResultLifecycle(rules);
+validateImperialSiegeExit(rules, source);
+validateTcScaledFarms(rules);
+validateNoDuplicateRules(rules);
+validateBackoffTimerUniqueness(rules);
 validateStateCoverage(rules);
 validateBasiliskPreemption(rules, source, repoRoot);
 validateTelemetryRing(rules, source, repoRoot);
