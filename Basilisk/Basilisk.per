@@ -13744,23 +13744,30 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 ; Knight support: Forging -> Iron Casting and cavalry armor.
 ; Feudal Forging belongs to a real Scout-pressure package.
 (defrule
-    (goal bt-scout-pressure-demand-goal 1)
     (current-age == feudal-age)
-    (goal strategy-goal bt-strategy-boom)
-    (goal bt-any-threat-goal 0)
     (building-type-count blacksmith >= 1)
-    (not (or
-        (can-research-with-escrow castle-age)
-        (goal bt-castle-commitment-goal 1)
-    ))
-    (unit-type-count-total scout-cavalry >= 3)
+    (or
+        (and
+            (goal bt-scout-pressure-demand-goal 1)
+            (goal strategy-goal bt-strategy-boom)
+            (goal bt-any-threat-goal 0)
+            (unit-type-count-total scout-cavalry >= 3)
+        )
+        (goal bt-research-cavalry-counter-package-goal ri-forging)
+    )
+    (not (goal bt-castle-commitment-goal 1))
     (up-research-status c: ri-forging < research-pending)
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
     (goal bt-research-blacksmith-claim-goal 0)
-    (goal bt-research-cavalry-counter-package-goal 0)
-    (goal bt-research-ranged-counter-package-goal 0)
+    (or
+        (goal bt-research-cavalry-counter-package-goal ri-forging)
+        (and
+            (goal bt-research-cavalry-counter-package-goal 0)
+            (goal bt-research-ranged-counter-package-goal 0)
+        )
+    )
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
@@ -13784,18 +13791,29 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
         (unit-type-count-total knight-line >= bt-knight-target-castle)
         (or
             (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
-            (unit-type-count-total camel-line >= bt-camel-target-1)
+            (or
+                (unit-type-count-total camel-line >= bt-camel-target-1)
+                (or
+                    (goal bt-blacksmith-infantry-army-goal 1)
+                    (goal bt-research-cavalry-counter-package-goal ri-forging)
+                )
+            )
         )
     )
     (up-research-status c: ri-forging < research-pending)
-    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-imperial-commitment-goal 1))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-forging)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-forging)
     (goal bt-research-blacksmith-claim-goal 0)
-    (goal bt-research-cavalry-counter-package-goal 0)
-    (goal bt-research-ranged-counter-package-goal 0)
+    (or
+        (goal bt-research-cavalry-counter-package-goal ri-forging)
+        (and
+            (goal bt-research-cavalry-counter-package-goal 0)
+            (goal bt-research-ranged-counter-package-goal 0)
+        )
+    )
 =>
     (set-strategic-number sn-resource-control ri-forging)
     (release-escrow food)
@@ -13806,14 +13824,20 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
 
 (defrule
     (current-age >= castle-age)
-    (or (current-age > castle-age) (not (can-research-with-escrow imperial-age)))
+    (or (current-age > castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (building-type-count blacksmith >= 1)
     (up-research-status c: ri-forging == research-complete)
     (or
         (unit-type-count-total knight-line >= bt-knight-target-castle)
         (or
             (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
-            (unit-type-count-total camel-line >= bt-camel-target-1)
+            (or
+                (unit-type-count-total camel-line >= bt-camel-target-1)
+                (or
+                    (goal bt-blacksmith-infantry-army-goal 1)
+                    (goal bt-research-cavalry-counter-package-goal ri-iron-casting)
+                )
+            )
         )
     )
     (up-research-status c: ri-iron-casting < research-pending)
@@ -13824,8 +13848,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-iron-casting)
     (goal bt-research-blacksmith-claim-goal 0)
-    (goal bt-research-cavalry-counter-package-goal 0)
-    (goal bt-research-ranged-counter-package-goal 0)
+    (or
+        (goal bt-research-cavalry-counter-package-goal ri-iron-casting)
+        (and
+            (goal bt-research-cavalry-counter-package-goal 0)
+            (goal bt-research-ranged-counter-package-goal 0)
+        )
+    )
 =>
     (set-strategic-number sn-resource-control ri-iron-casting)
     (release-escrow food)
@@ -13878,7 +13907,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
                 (goal bt-ranged-threat-goal 1)
             )
         )
-    (and (current-age == castle-age) (not (can-research-with-escrow imperial-age)))
+    (and (current-age == castle-age) (not (goal bt-imperial-commitment-goal 1)))
     (up-research-status c: ri-scale-barding < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (up-compare-goal bt-research-blacksmith-failure-backoff-goal != ri-scale-barding)
@@ -14448,7 +14477,10 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (up-research-status c: ri-halberdier == research-complete)
     (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
     (unit-type-count-total spearman-line >= bt-spear-target-2)
-    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (or
+        (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+        (goal bt-blacksmith-infantry-army-goal 1)
+    )
     (up-research-status c: ri-plate-mail < research-pending)
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
