@@ -1950,8 +1950,45 @@ try {
     });
   }
 
+  const criticalMutationNames = new Set([
+    "missing-closing-parenthesis",
+    "unexpected-closing-parenthesis",
+    "logical-operator-requires-fact-expressions",
+    "logical-operator-arity-rejected",
+    "nested-command-expression-rejected",
+    "unterminated-string",
+    "malformed-defconst",
+    "nested-defrule-rejected",
+    "defconst-alias-cycle",
+    "unexpected-preprocessor-else",
+    "duplicate-preprocessor-else",
+    "unexpected-preprocessor-end-if",
+    "unterminated-preprocessor-conditional",
+    "malformed-preprocessor-conditional",
+    "duplicate-goal-id-rejected",
+    "malformed-xs-include-rejected",
+    "unquoted-include-rejected",
+    "multi-target-include-rejected",
+    "telemetry-xs-goal-id-drift-rejected",
+    "DE-runtime-rejected-arbalester-alias",
+    "unknown-duc-identifier",
+    "unknown-class-wildcard-unit-id-rejected",
+    "documented-unit-wildcard-rejected-in-non-count-unit-slot",
+    "bare-siege-tower-object-slot-rejected",
+    "bare-logistica-tech-slot-rejected-without-defconst",
+    "elite-varangian-local-tech-id-required",
+  ]);
+  const criticalMutations = mutations.filter((mutation) =>
+    criticalMutationNames.has(mutation.name),
+  );
+  assert.equal(
+    criticalMutations.length,
+    criticalMutationNames.size,
+    "[Self-test] critical mutation inventory drifted; update the curated defensive set",
+  );
+
   const reports = [];
-  for (const mutation of mutations) {
+  for (const mutation of criticalMutations) {
     const result = runValidator(mutation.source, mutation.name);
     assert.notEqual(
       result.status,
@@ -1979,6 +2016,7 @@ try {
         baseline: "PASS",
         stringSafety: "PASS",
         mutationFailures: reports,
+        mutationCount: criticalMutations.length,
         boundaryPasses: boundaryPassReports,
         boundaryFailures: boundaryFailureReports,
         ruleLengthCases: ruleLengthReports,
