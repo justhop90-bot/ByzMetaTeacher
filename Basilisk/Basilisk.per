@@ -401,10 +401,6 @@
 
 (defconst bt-farm-transition-reserve-goal 602)
 (defconst bt-farm-depleted-reserve-goal 603)
-(defconst bt-farm-demand-low 0)
-(defconst bt-farm-demand-medium 1)
-(defconst bt-farm-demand-high 2)
-(defconst bt-farm-demand-very-high 3)
 
 
 (defconst bt-standing-army-floor-goal 513)
@@ -456,7 +452,6 @@
 
 (defconst bt-siege-tower-wall-class 927)
 (defconst bt-siege-tower-payload-min 6)
-(defconst bt-siege-tower-max-wall-attempts 3)
 (defconst bt-siege-tower-last-wall-attempt 2)
 (defconst bt-siege-tower-failure-retry-cap 3)
 (defconst bt-siege-tower-wall-probe-interval 60)
@@ -674,8 +669,6 @@
 ; Crop Rotation is deliberately gated by a mature completed-farm base instead of generic Imperial affordability.
 (defconst bt-crop-rotation-farm-threshold 12)
 
-(defconst bt-imperial-food 667)
-(defconst bt-imperial-gold 536)
 
 ; Engine-native composite-cost witness goals.
 ; Cost-data commands require extended goals 41-508 and write four consecutive
@@ -698,22 +691,18 @@
 (defconst bt-scale-mail-bank-cost-goal 448)
 (defconst bt-scale-mail-bank-delta-food-goal 452)
 (defconst bt-scale-mail-bank-delta-wood-goal 453)
-(defconst bt-scale-mail-bank-delta-stone-goal 454)
 (defconst bt-scale-mail-bank-delta-gold-goal 455)
 (defconst bt-chain-mail-bank-cost-goal 456)
 (defconst bt-chain-mail-bank-delta-food-goal 460)
 (defconst bt-chain-mail-bank-delta-wood-goal 461)
-(defconst bt-chain-mail-bank-delta-stone-goal 462)
 (defconst bt-chain-mail-bank-delta-gold-goal 463)
 (defconst bt-pikeman-bank-cost-goal 464)
 (defconst bt-pikeman-bank-delta-food-goal 468)
 (defconst bt-pikeman-bank-delta-wood-goal 469)
-(defconst bt-pikeman-bank-delta-stone-goal 470)
 (defconst bt-pikeman-bank-delta-gold-goal 471)
 (defconst bt-elite-skirmisher-bank-cost-goal 472)
 (defconst bt-elite-skirmisher-bank-delta-food-goal 476)
 (defconst bt-elite-skirmisher-bank-delta-wood-goal 477)
-(defconst bt-elite-skirmisher-bank-delta-stone-goal 478)
 (defconst bt-elite-skirmisher-bank-delta-gold-goal 479)
 
 ; Double-Bit Axe early-Feudal demand buffers.
@@ -761,11 +750,8 @@
 (defconst bt-farm-feudal-cap 8)
 (defconst bt-farm-castle-cap 14)
 (defconst bt-farm-imperial-cap 24)
-(defconst bt-farm-feudal-emergency-food 150)
 (defconst bt-farm-castle-food-threshold 500)
-(defconst bt-farm-castle-emergency-food 200)
 (defconst bt-farm-imperial-food-threshold 700)
-(defconst bt-farm-build-wood 60)
 (defconst bt-feudal-farm-reserve-villagers 26)
 (defconst bt-feudal-farm-wood-floor 385)
 
@@ -883,8 +869,6 @@
 ; Production-capacity ceilings.
 ;
 ; These are controller tuning values, not engine constants.
-(defconst bt-max-barracks 10)
-(defconst bt-max-ranges 7)
 
 ;================================================================
 ; 2. INITIALIZATION
@@ -1467,16 +1451,6 @@
     )
 =>
     (set-goal bt-ranged-counter-level-goal 3)
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 4)
-=>
-    
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 8)
-=>
-    
 )
 (defrule
     (or
