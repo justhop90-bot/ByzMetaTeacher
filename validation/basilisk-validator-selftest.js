@@ -263,10 +263,16 @@ try {
         "bt-scout-pressure-demand-goal",
         "1",
       ]) &&
-      !hasFact(rule, "goal", [
-        "strategy-goal",
-        "bt-strategy-flush",
-      ]),
+      !(
+        hasFact(rule, "goal", [
+          "strategy-goal",
+          "bt-strategy-flush",
+        ]) &&
+        !hasFact(rule, "goal", [
+          "bt-castle-commitment-goal",
+          "0",
+        ])
+      ),
   );
   assert.equal(
     standingCapabilityRules.length,
