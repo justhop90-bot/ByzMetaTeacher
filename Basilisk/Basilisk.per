@@ -744,7 +744,6 @@
 ; strategy, resource allocation, and production remain downstream owners.
 (defconst bt-opening-map-goal 688)
 (defconst bt-opening-plan-goal 689)
-(defconst bt-opening-stage-goal 690)
 (defconst bt-opening-underlay-goal 691)
 (defconst bt-opening-threat-goal 692)
 (defconst bt-opening-map-arabia 1)
@@ -758,9 +757,6 @@
 (defconst bt-opening-plan-anti-rush 6)
 (defconst bt-opening-plan-generic-pressure 7)
 (defconst bt-opening-plan-generic-defensive 8)
-(defconst bt-opening-stage-selecting 0)
-(defconst bt-opening-stage-committed 1)
-(defconst bt-opening-stage-complete 2)
 (defconst bt-opening-threat-none 0)
 (defconst bt-opening-threat-suspected 1)
 (defconst bt-opening-threat-confirmed 2)
@@ -952,7 +948,6 @@
     (set-goal strategy-goal bt-strategy-boom)
     (set-goal bt-opening-map-goal 0)
     (set-goal bt-opening-plan-goal 0)
-    (set-goal bt-opening-stage-goal bt-opening-stage-selecting)
     (set-goal bt-opening-underlay-goal 0)
     (set-goal bt-opening-threat-goal bt-opening-threat-none)
     (set-goal unit-goal bt-unit-mix)
@@ -4936,40 +4931,37 @@
 
 ; Anti-Rush is the highest-priority opening commitment.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
     (goal bt-opening-map-goal bt-opening-map-arabia)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arabia-standard)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
     (goal bt-opening-map-goal bt-opening-map-arena)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arena-fast-castle)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age == dark-age)
     (goal bt-opening-map-goal bt-opening-map-generic)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-generic-defensive)
     (set-goal bt-opening-plan-goal bt-opening-plan-anti-rush)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; Arabia early pressure: visible market investment with no military
 ; infrastructure is treated as a greedy/under-defended opening signal.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-arabia)
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
@@ -4982,13 +4974,12 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arabia-pressure)
     (set-goal bt-opening-plan-goal bt-opening-plan-arabia-pressure)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; Arabia FC only when the target is known, still Dark, lightly armed, and
 ; shows no military infrastructure.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-arabia)
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
@@ -5002,13 +4993,12 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arabia-fast-castle)
     (set-goal bt-opening-plan-goal bt-opening-plan-arabia-fast-castle)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; Arabia Standard is the conservative fallback for incomplete information
 ; or a merely suspected military opening.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-arabia)
     (current-age == dark-age)
     (game-time >= 300)
@@ -5019,13 +5009,12 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arabia-standard)
     (set-goal bt-opening-plan-goal bt-opening-plan-arabia-standard)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; Arena FC is the safe default. Confirmed pressure was already claimed by
 ; Anti-Rush above.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-arena)
     (up-compare-goal bt-opening-threat-goal < bt-opening-threat-confirmed)
     (current-age == dark-age)
@@ -5033,13 +5022,12 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arena-fast-castle)
     (set-goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; Generic maps remain conservative unless the opponent supplies the same
 ; market/no-military greed signal.
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-generic)
     (goal bt-opening-threat-goal bt-opening-threat-none)
     (current-age == dark-age)
@@ -5053,23 +5041,21 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-generic-pressure)
     (set-goal bt-opening-plan-goal bt-opening-plan-generic-pressure)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 (defrule
-    (goal bt-opening-stage-goal bt-opening-stage-selecting)
+    (goal bt-opening-plan-goal 0)
     (goal bt-opening-map-goal bt-opening-map-generic)
     (current-age == dark-age)
     (game-time >= 300)
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-generic-defensive)
     (set-goal bt-opening-plan-goal bt-opening-plan-generic-defensive)
-    (set-goal bt-opening-stage-goal bt-opening-stage-committed)
 )
 
 ; A confirmed early rush temporarily overrides the saved base opening until
 ; Castle Age. Existing FLUSH handles later threats beyond the opening.
 (defrule
-    (up-compare-goal bt-opening-stage-goal >= bt-opening-stage-committed)
+    (up-compare-goal bt-opening-plan-goal != 0)
     (up-compare-goal bt-opening-threat-goal >= bt-opening-threat-confirmed)
     (current-age < castle-age)
     (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
@@ -5131,14 +5117,12 @@
 =>
     (set-goal bt-opening-underlay-goal bt-opening-plan-arena-boom)
     (set-goal bt-opening-plan-goal bt-opening-plan-arena-boom)
-    (set-goal bt-opening-stage-goal bt-opening-stage-complete)
 )
 
 (defrule
     (goal bt-opening-stage-goal bt-opening-stage-committed)
     (current-age >= feudal-age)
 =>
-    (set-goal bt-opening-stage-goal bt-opening-stage-complete)
 )
 
 ;----------------------------------------------------------------
@@ -5883,8 +5867,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (chat-local-to-self "BASILISK | COMPOSITION | CAMELS")
     (set-goal bt-debug-last-unit-goal camel-line)
 )
-
-
 
 ;================================================================
 ; 13H. TEMPORARY POLICY PREEMPTION
@@ -8047,11 +8029,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 =>
     (build barracks)
 )
-
-
-
-
-
 
 ;---------------------------------------------------------------
 ; 15A.1 ROLE-TARGET BARRACK CAPACITY
