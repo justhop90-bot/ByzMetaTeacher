@@ -38,10 +38,10 @@ if (!fs.existsSync(inputPath)) {
 
 const rows = parseCsv(fs.readFileSync(inputPath, "utf8"));
 const expectedQuadrants = [
-  "Q1 +delta/parity",
-  "Q2 zero-delta/parity",
-  "Q3 zero-delta/inferior",
-  "Q4 negative-delta/inferior",
+  { name: "Q1 +delta/parity", deltaPositive: true, forceInferior: false, standingArmy: 0 },
+  { name: "Q2 zero-delta/parity", deltaPositive: false, forceInferior: false, standingArmy: 0 },
+  { name: "Q3 zero-delta/inferior", deltaPositive: false, forceInferior: true, standingArmy: 1 },
+  { name: "Q4 negative-delta/inferior", deltaPositive: false, forceInferior: true, standingArmy: 1 },
 ];
 
 const required = [
@@ -57,14 +57,15 @@ const required = [
   "attack_timer_enabled",
   "attack_timer_seconds",
   "next_attack_actual",
+  "standing_army_demand",
 ];
 
 const failures = [];
 const seen = new Set();
 
-for (const key of expectedQuadrants) {
-  const row = rows.find((candidate) => candidate.test === key);
-  if (row) seen.add(key);
+for (const quadrant of expectedQuadrants) {
+  const row = rows.find((candidate) => candidate.test === quadrant.name);
+  if (row) seen.add(quadrant.name);
 }
 
 for (const key of required) {
@@ -77,11 +78,17 @@ if (rows.length !== 4) {
   failures.push("expected exactly 4 populated test rows, found " + rows.length);
 }
 
-for (const key of expectedQuadrants) {
-  if (!seen.has(key)) failures.push("missing quadrant row: " + key);
+for (const quadrant of expectedQuadrants) {
+  if (!seen.has(quadrant.name)) failures.push("missing quadrant row: " + quadrant.name);
 }
 
 for (const row of rows) {
+  const quadrant = expectedQuadrants.find((candidate) => candidate.name === row.test);
+  if (!quadrant) {
+    failures.push("unexpected quadrant row: " + row.test);
+    continue;
+  }
+
   const startBuildings = Number(row.start_buildings);
   const endBuildings = Number(row.end_buildings);
   const recordedDelta = Number(row.delta);
@@ -91,8 +98,10 @@ for (const row of rows) {
   const timerSeconds = Number(row.attack_timer_seconds);
   const due = Number(row.next_attack_due);
   const actual = Number(row.next_attack_actual);
+  const standingArmy = Number(row.standing_army_demand);
+  const resultTime = Number(row.result_time);
 
-  if (![startBuildings, endBuildings, recordedDelta, relativeForce, timerSeconds, due, actual].every(Number.isFinite)) {
+  if (![startBuildings, endBuildings, recordedDelta, relativeForce, timerSeconds, due, actual, standingArmy, resultTime].every(Number.isFinite)) {
     failures.push(row.test + ": non-numeric telemetry field");
     continue;
   }
@@ -102,6 +111,31 @@ for (const row of rows) {
     failures.push(
       row.test + ": delta mismatch; expected " + computedDelta + ", recorded " + recordedDelta
     );
+  }
+
+  const actualDeltaClassPass = quadrant.deltaPositive ? computedDelta > 0 : computedDelta <= 0;
+  if (!actualDeltaClassPass) {
+    failures.push(
+      row.test + ": delta quadrant mismatch; measured delta=" + computedDelta
+    );
+  }
+
+  const actualForceClassPass = quadrant.forceInferior ? relativeForce < 0 : relativeForce >= 0;
+  if (!actualForceClassPass) {
+    failures.push(
+      row.test + ": force quadrant mismatch; measured relative force=" + relativeForce
+    );
+  }
+
+  if (standingArmy !== quadrant.standingArmy) {
+    failures.push(
+      row.test + ": standing-army demand mismatch; expected " + quadrant.standingArmy +
+      ", recorded " + standingArmy
+    );
+  }
+
+  if (resultTime < Number(row.start_time)) {
+    failures.push(row.test + ": result_time precedes start_time");
   }
 
   const expected = expectedResult(computedDelta, relativeForce);
@@ -119,6 +153,14 @@ for (const row of rows) {
     );
   }
 
+  const expectedDue = resultTime + expectedSeconds;
+  const dueError = due - expectedDue;
+  if (Math.abs(dueError) > toleranceSeconds) {
+    failures.push(
+      row.test + ": timer due-time error " + dueError + "s exceeds ±" + toleranceSeconds + "s"
+    );
+  }
+
   const cadenceError = actual - due;
   if (Math.abs(cadenceError) > toleranceSeconds) {
     failures.push(
@@ -131,7 +173,7 @@ for (const row of rows) {
   console.log(
     row.test + ": " + expectedDeltaClass + " + " + expectedForceClass +
     " -> " + expected + "; timer=" + expectedSeconds +
-    "s; cadenceError=" + cadenceError + "s"
+    "s; dueError=" + dueError + "s; cadenceError=" + cadenceError + "s"
   );
 }
 
