@@ -322,3 +322,37 @@ Two additional gameplay-state reductions were made because the duplication was m
 - `bt-blacksmith-repair-failure-history-goal` was removed for the same reason. Its manual reset participation was replaced by the existing blacksmith repair backoff state.
 
 The next audit target is not "find more state." It is "prove a state variable is redundant." In particular, persistent intent such as Castle maturity, farm transition reserves, housing demand, research-provider claims, attack measurement, and the Siege Tower execution path currently demonstrate independent control value and remain in place pending stronger evidence.
+
+
+## Second-pass gameplay-state tightening
+
+Two additional state reductions were verified against the live controller and then removed.
+
+### Opening stage shadow state
+
+`bt-opening-stage-goal` was only a one-bit mirror of `bt-opening-plan-goal`:
+
+- it started in `selecting`;
+- every selection rule required `selecting`;
+- every selection rule wrote a nonzero opening plan and then `committed`;
+- the opening plan was never reset to zero after initialization;
+- the only later `committed` reader merely permitted the anti-rush override;
+- the later `complete` value had no gameplay consumer.
+
+The equivalent control surface is simply `bt-opening-plan-goal == 0` for selection and `bt-opening-plan-goal != 0` for post-selection behavior. The stage goal and all three stage constants were therefore pure shadow state.
+
+### Opening map mirror
+
+`bt-opening-map-goal` was an immutable mirror of the engine's `map-type` fact. It was written once during classification and then used only to restate `arabia`, `arena`, or generic-map status. Since map type is directly available to every rule and does not change during a normal match, the persistent mirror purchased no control capability.
+
+Opening selection now consumes `map-type` directly. `bt-opening-underlay-goal` remains because it is not a mirror: it preserves the base opening while Anti-Rush temporarily overrides `bt-opening-plan-goal`.
+
+### Current high-confidence state verdict
+
+The subtractive pass has now removed:
+- dead diagnostic/telemetry machinery;
+- two duplicate failure-history latches;
+- one opening-stage shadow;
+- one immutable map mirror.
+
+The remaining small-reader states have been reviewed individually. Castle mature commitment, Feudal eco hold, farm wood hold, housing demand, research backoff, Monk/Trebuchet targets, attack measurement, and Siege Tower cycle state each preserve information that current engine facts do not independently retain across passes. Preemption state remains the next risky area for controlled simplification, but `bt-preempt-active-goal` and `bt-preempt-defense-issued-goal` should not be deleted blindly because they currently bound an actual emergency-control path.
