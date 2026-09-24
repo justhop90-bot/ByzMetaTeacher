@@ -334,6 +334,13 @@ try {
       source: baseline + "\n(defrule\n    (or true (true))\n=>\n    (do-nothing)\n)\n",
     },
     {
+      name: "logical-operator-arity-rejected",
+      expected: "has 3 operands; expected exactly 2",
+      source:
+        baseline +
+        "\n(defrule\n    (or (true) (true) (true))\n=>\n    (do-nothing)\n)\n",
+    },
+    {
       name: "nested-command-expression-rejected",
       expected: "contains a nested expression argument",
       source: baseline + "\n(defrule\n    (true)\n=>\n    (up-build place-normal 0 c: (castle))\n)\n",
@@ -397,10 +404,26 @@ try {
     },
     {
       name: "malformed-xs-include-rejected",
-      expected: "[Include] include",
+      expected: "must target a .xs file",
       source: baseline.replace(
         '(include "BasiliskTelemetry.xs")',
         '(include "BasiliskTelemetry")',
+      ),
+    },
+    {
+      name: "unquoted-include-rejected",
+      expected: "must contain exactly one quoted target",
+      source: baseline.replace(
+        '(include "BasiliskTelemetry.xs")',
+        '(include BasiliskTelemetry.xs)',
+      ),
+    },
+    {
+      name: "multi-target-include-rejected",
+      expected: "must contain exactly one quoted target",
+      source: baseline.replace(
+        '(include "BasiliskTelemetry.xs")',
+        '(include "BasiliskTelemetry.xs" "BasiliskTelemetry.xs")',
       ),
     },
     {
