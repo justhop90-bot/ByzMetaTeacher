@@ -663,9 +663,14 @@ try {
     {
       name: "blacksmith-feudal-fletching-ca-witness",
       expected: "[Blacksmith] Feudal Fletching executor must support Cavalry Archers",
-      source: mutateResearchRule(
+      source: mutateRuleContaining(
         baseline,
-        "ri-fletching",
+        [
+          "(current-age == feudal-age)",
+          "(unit-type-count-total cavalry-archer-line >= 3)",
+          "(research ri-fletching)",
+          "(goal bt-research-ranged-counter-package-goal ri-fletching)",
+        ],
         (rule) =>
           rule.replace(
             "(unit-type-count-total cavalry-archer-line >= 3)",
