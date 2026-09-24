@@ -3286,7 +3286,8 @@ function validateBackoffTimerUniqueness(rules) {
     );
   }
 }
-\nfunction validateBasiliskGoalNamespace(forms) {
+
+function validateBasiliskGoalNamespace(forms) {
   const numericGoals = new Map();
   for (const form of forms) {
     if (form.head !== "defconst") continue;
