@@ -4262,7 +4262,7 @@ function validateStrategicNarration(sourceText, rules) {
       rule.includes("(up-compare-goal bt-debug-last-") ||
       (
         rule.includes('(chat-local-to-self "BASILISK | AGE |') &&
-        /\\(goal bt-debug-age-[A-Za-z0-9-]+ 0\\)/.test(rule)
+        /\(goal bt-debug-age-[A-Za-z0-9-]+ 0\)/.test(rule)
       );
     assert.ok(
       edgeTriggered,
