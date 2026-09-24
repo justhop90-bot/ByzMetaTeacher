@@ -523,7 +523,7 @@ try {
 
   const strategyValues = new Set(
     [...baseline.matchAll(
-      /\\(defconst\\s+(bt-strategy-[A-Za-z0-9_-]+)\\s+(-?\\d+)\\)/g,
+      /\(defconst\s+(bt-strategy-[A-Za-z0-9_-]+)\s+(-?\d+)\)/g,
     )].map((match) => match[1] + "=" + match[2]),
   );
   assert.deepEqual(
