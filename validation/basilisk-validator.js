@@ -3465,13 +3465,12 @@ function validateRushStallFailurePolicy(rules, sourceText) {
     "[RUSH stall] persistent stall latch must use GoalId 775",
   );
 
-  const initIndex = rules.findIndex(
-    (rule) =>
-      rule.includes("(true)") &&
-      rule.includes("(set-goal bt-strategy-boom)") &&
-      rule.includes("(set-goal bt-rush-stall-latch-goal 0)"),
+  assert.ok(
+    sourceText.includes(
+      "(set-goal bt-attack-result-goal bt-attack-result-none)\\n    (set-goal bt-rush-stall-latch-goal 0)\\n",
+    ),
+    "[RUSH stall] stall latch is not initialized to zero in the strategy/threat initialization rule",
   );
-  assert.ok(initIndex >= 0, "[RUSH stall] stall latch is not initialized to zero");
 
   const rushWriterIndices = rules
     .map((rule, index) => ({ rule, index }))
