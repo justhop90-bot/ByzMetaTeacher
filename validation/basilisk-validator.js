@@ -5447,10 +5447,16 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
     "[BOOM source order] no standing-army military executor found",
   );
 
-  const lastResourceModeWriter = maxRuleIndex(
-    (rule) => rule.includes("(set-goal bt-resource-mode-goal "),
-    "resource-mode writer",
+  const resourceModeWriterIndices = rules
+    .map((rule, index) =>
+      rule.includes("(set-goal bt-resource-mode-goal ") ? index : -1,
+    )
+    .filter((index) => index >= 0);
+  assert.ok(
+    resourceModeWriterIndices.length > 0,
+    "[BOOM source order] resource-mode writer not found",
   );
+  const lastResourceModeWriter = Math.max(...resourceModeWriterIndices);
 
   const firstTcDemandWriter = Math.min(...tcDemandWriters.map(({ index }) => index));
   const lastTcDemandWriter = Math.max(...tcDemandWriters.map(({ index }) => index));
