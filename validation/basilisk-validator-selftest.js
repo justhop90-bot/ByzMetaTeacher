@@ -821,6 +821,25 @@ try {
       })(),
     },
     {
+      name: "siege-abort-cancels-independent-demand-rejected",
+      expected: "[Imperial siege]",
+      source: (() => {
+        return mutateRuleContaining(
+          baseline,
+          [
+            "(military-population < bt-imperial-siege-abort-army-floor)",
+            "(set-goal bt-standing-army-demand-goal 1)",
+          ],
+          (rule) =>
+            rule.replace(
+              "    (set-goal bt-standing-army-demand-goal 1)\n",
+              "    (set-goal bt-standing-army-demand-goal 1)\n    (set-goal bt-mangonel-demand-goal 0)\n",
+            ),
+          "Imperial siege abort generic-demand ownership",
+        );
+      })(),
+    },
+    {
       name: "backoff-expiry-owner-missing-rejected",
       expected: "[Retry fairness]",
       source: (() => {
@@ -2038,6 +2057,7 @@ try {
     "resource-mode-override-without-p0-exclusion-rejected",
     "attack-negative-result-bucket-rejected",
     "backoff-expiry-owner-missing-rejected",
+    "siege-abort-cancels-independent-demand-rejected",
   ]);
   const criticalMutations = mutations.filter((mutation) =>
     criticalMutationNames.has(mutation.name),
@@ -2106,6 +2126,7 @@ try {
           "resource-mode-explicit-override-contract",
           "attack-result-non-positive-partition",
           "backoff-expiry-owner-exact-inventory",
+          "imperial-siege-abort-package-ownership",
         ],
         parserSyntaxClasses: [
           "missing-closing-parenthesis",
