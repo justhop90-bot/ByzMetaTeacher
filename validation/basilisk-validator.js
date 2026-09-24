@@ -3258,7 +3258,10 @@ function validateAttackContracts(rules) {
       rule.includes("(goal attack-goal 0)"),
       `[Attack contract] attack-now rule ${index} lacks attack-goal idle gating`,
     );
-    if (rule.includes("(goal strategy-goal bt-strategy-castle-power)")) {
+    if (
+      rule.includes("(goal strategy-goal bt-strategy-castle-power)") &&
+      !rule.includes("(not (goal strategy-goal bt-strategy-castle-power))")
+    ) {
       assert.ok(
         rule.includes("(unit-type-count crossbowman >= bt-standing-crossbow-target-goal)"),
         `[Attack completion] Castle-Power attack rule ${index} lacks actual Crossbow completion witness`,
