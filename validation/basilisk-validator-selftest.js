@@ -38,9 +38,10 @@ try {
     "[Self-test] baseline controller did not pass the real validator",
   );
 
+  const semanticPath = path.join(tempRoot, "semantic-rules.json");
   const semanticResult = spawnSync(
     process.execPath,
-    [validatorPath, controllerPath, "--dump-semantic-rules"],
+    [validatorPath, controllerPath, "--dump-semantic-rules", semanticPath],
     { cwd: repoRoot, encoding: "utf8" },
   );
   assert.equal(
@@ -48,7 +49,18 @@ try {
     0,
     "[Self-test] semantic rule dump failed",
   );
-  const semanticRules = JSON.parse(semanticResult.stdout);
+  assert.equal(
+    semanticResult.error,
+    undefined,
+    "[Self-test] semantic rule dump process failed to start",
+  );
+  assert.ok(
+    fs.existsSync(semanticPath),
+    "[Self-test] semantic rule dump file was not created",
+  );
+  const semanticRules = JSON.parse(
+    fs.readFileSync(semanticPath, "utf8"),
+  );
 
   const findSemanticRule = (label, predicate) => {
     const matches = semanticRules.filter(predicate);
