@@ -4173,6 +4173,34 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
 
 }
 
+function extractRawRules(text) {
+  const rawRules = [];
+  const sanitized = sanitizeStructure(text);
+  let cursor = 0;
+  while ((cursor = sanitized.indexOf("(defrule", cursor)) !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = cursor; i < sanitized.length; i += 1) {
+      if (sanitized[i] === "(") depth += 1;
+      else if (sanitized[i] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    assert.notEqual(
+      end,
+      -1,
+      "[Missing closing parenthesis] raw defrule begins near source offset " + cursor,
+    );
+    rawRules.push(text.slice(cursor, end));
+    cursor = end;
+  }
+  return rawRules;
+}
+
 function validateAgeNarrationLatches(sourceText, rules) {
   const latches = [
     "bt-debug-age-feudal-bank-goal",
@@ -4209,7 +4237,6 @@ function validateStrategicNarration(sourceText, rules) {
     "bt-debug-last-unit-goal",
     "bt-debug-last-strategy-goal",
     "bt-debug-last-castle-block-goal",
-    "bt-debug-last-age-event-goal",
     "bt-debug-last-eco-event-goal",
     "bt-debug-last-tc-stage-goal",
   ]) {
@@ -6003,6 +6030,19 @@ function validateRetryDoctrine(sourceText) {
     sourceText.includes("(defconst bt-research-failure-backoff-seconds 30)"),
     "[Retry doctrine] shared bounded research backoff constant is missing",
   );
+}
+
+function ruleIndex(rules, ...needles) {
+  const index = rules.findIndex((rule) =>
+    needles.every((needle) => renderRule(rule).includes(needle)),
+  );
+  assert.notEqual(index, -1, "[Source order] rule not found: " + needles.join(" | "));
+  return index;
+}
+
+function requireRule(rules, label, ...needles) {
+  ruleIndex(rules, ...needles);
+  return label;
 }
 
 function validateCastleCataphractImperialHandoff(rules) {
