@@ -6058,13 +6058,10 @@ town-center >= 2)))))
     (unit-type-count villager >= bt-imperial-villagers)
     (or
         (building-type-count-total castle >= 1)
-        (and
-            (goal bt-castle-cataphract-demand-goal 0)
-            (not
-                (or
-                    (goal strategy-goal bt-strategy-boom)
-                    (goal strategy-goal bt-strategy-castle-power)
-                )
+        (not
+            (or
+                (goal strategy-goal bt-strategy-boom)
+                (goal strategy-goal bt-strategy-castle-power)
             )
         )
     )
