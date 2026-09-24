@@ -4671,6 +4671,68 @@ function validatePikemanLifecycle(rules) {
   assert.ok(watchdog, "[Pikeman] Barracks research watchdog is missing");
 }
 
+function validateRangedCounterLifecycle(rules) {
+  const normalize = (rule) => rule.replace(/\\s+/g, " ");
+
+  const crossbow = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-crossbow)") &&
+      rule.includes("(research ri-crossbow)") &&
+      rule.includes("(can-research-with-escrow ri-crossbow)") &&
+      rule.includes("(set-goal bt-research-archery-range-claim-goal ri-crossbow)"),
+  );
+  assert.ok(crossbow, "[Ranged] Crossbow research executor is missing");
+  const crossbowText = normalize(crossbow);
+  assert.ok(
+    crossbowText.includes("(goal bt-crossbow-demand-goal 1)") &&
+      crossbowText.includes("(goal bt-arbalest-demand-goal 0)") &&
+      crossbowText.includes("(up-compare-goal bt-standing-crossbow-target-goal > 0)"),
+    "[Ranged] Crossbow action boundary must re-check its live role demand",
+  );
+
+  const ring = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-research-ranged-counter-package-goal ri-ring-archer-armor)") &&
+      rule.includes("(research ri-ring-archer-armor)") &&
+      rule.includes("(can-research-with-escrow ri-ring-archer-armor)") &&
+      rule.includes("(set-goal bt-research-blacksmith-claim-goal ri-ring-archer-armor)"),
+  );
+  assert.ok(ring, "[Ranged] Ring Mail research executor is missing");
+  const ringText = normalize(ring);
+  assert.ok(
+    ringText.includes("(unit-type-count-total arbalest >= bt-crossbow-target-mature)") &&
+      ringText.includes("(up-compare-goal bt-standing-skirm-target-goal >= bt-skirm-target-2)") &&
+      ringText.includes("(unit-type-count-total skirmisher-line >= bt-skirm-target-2)") &&
+      ringText.includes("(unit-type-count-total cavalry-archer >= 6)"),
+    "[Ranged] Ring Mail action boundary must re-check a live mature ranged army witness",
+  );
+
+  for (const tech of ["ri-crossbow", "ri-ring-archer-armor"]) {
+    const claimGoal =
+      tech === "ri-crossbow"
+        ? "bt-research-archery-range-claim-goal"
+        : "bt-research-blacksmith-claim-goal";
+    const backoffGoal =
+      tech === "ri-crossbow"
+        ? "bt-research-archery-range-failure-backoff-goal"
+        : "bt-research-blacksmith-failure-backoff-goal";
+    const completion = rules.find(
+      (rule) =>
+        rule.includes(`(goal ${claimGoal} ${tech})`) &&
+        rule.includes(`(up-research-status c: ${tech} == research-complete)`) &&
+        rule.includes(`(set-goal ${claimGoal} 0)`),
+    );
+    assert.ok(completion, `[Ranged] ${tech} claim completion reset is missing`);
+    const watchdog = rules.find(
+      (rule) =>
+        rule.includes(`(goal ${claimGoal} ${tech})`) &&
+        rule.includes(`(up-research-status c: ${tech} <= research-available)`) &&
+        rule.includes(`(set-goal ${backoffGoal} ${tech})`),
+    );
+    assert.ok(watchdog, `[Ranged] ${tech} failure watchdog is missing`);
+  }
+}
+
 function validateOnagerLifecycle(rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -4818,6 +4880,7 @@ validateAgeNarrationLatches(source, rules);
 validateLifecycleAnchors(source, rules);
 validateOnagerLifecycle(rules);
 validatePikemanLifecycle(rules);
+validateRangedCounterLifecycle(rules);
 validateEliteVarangianResearchCapability(rules);
 validateBarracksSquiresArsonLifecycle(rules);
 validateBlacksmithResearchLifecycle(rules);
