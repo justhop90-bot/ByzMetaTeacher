@@ -389,6 +389,29 @@ try {
       source: baseline + "\n#load-if-defined\n#end-if\n",
     },
     {
+      name: "duplicate-goal-id-rejected",
+      expected: "[Goal namespace] duplicate GoalId 768",
+      source:
+        baseline +
+        "\n(defconst validator-duplicate-goal 768)\n",
+    },
+    {
+      name: "malformed-xs-include-rejected",
+      expected: "[Include] include",
+      source: baseline.replace(
+        '(include "BasiliskTelemetry.xs")',
+        '(include "BasiliskTelemetry")',
+      ),
+    },
+    {
+      name: "emergency-counter-witness-rejected",
+      expected: "[Preemption] emergency counter lacks queue/completed unit witness",
+      source: baseline.replace(
+        "    (up-pending-objects c: spearman-line == 0)\n",
+        "",
+      ),
+    },
+    {
       name: "DE-runtime-rejected-arbalester-alias",
       expected: "DE runtime canonical identifier",
       source: baseline.replace(/\barbalest\b/g, "arbalester"),

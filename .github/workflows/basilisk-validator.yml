@@ -1,0 +1,21 @@
+name: Basilisk Validator
+
+on:
+  push:
+    branches:
+      - main
+      - basilisk-preemption-telemetry
+  pull_request:
+
+jobs:
+  basilisk-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run Basilisk validator
+        run: node validation/basilisk-validator.js
+      - name: Run Basilisk validator self-test
+        run: node validation/basilisk-validator-selftest.js

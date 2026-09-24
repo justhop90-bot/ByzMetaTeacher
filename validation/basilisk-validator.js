@@ -312,9 +312,23 @@ function validateRuleStructure(sourceText) {
 
     const head = headMatch[1];
     assert.ok(
-      head === "defconst" || head === "defrule",
+      head === "defconst" || head === "defrule" || head === "include",
       `[Top-level syntax] unsupported top-level form '${head}' near source offset ${cursor}`,
     );
+
+    if (head === "include") {
+      assert.equal(
+        form.match(/"(?:[^"\\]|\\.)*"/g)?.length ?? 0,
+        1,
+        `[Include] include near source offset ${cursor} must contain exactly one quoted target`,
+      );
+      assert.ok(
+        /"[^"]+\.xs"$/.test(form.trim()),
+        `[Include] include near source offset ${cursor} must target a .xs file`,
+      );
+      cursor = end;
+      continue;
+    }
 
     if (head === "defrule") {
       const arrowPositions = [...form.matchAll(/=>/g)].map((match) => match.index);
@@ -625,6 +639,20 @@ function validateParserGradeRuleStructure(sourceText) {
   }
 
   for (const form of forms) {
+    if (form.head === "include") {
+      assert.equal(
+        form.args.length,
+        1,
+        "[Include] include at line " + form.line + " requires exactly one path",
+      );
+      assert.ok(
+        form.args[0].kind === "atom" &&
+          /^".+\.xs"$/.test(form.args[0].value),
+        "[Include] include at line " + form.line + " must target a .xs file",
+      );
+      continue;
+    }
+
     if (form.head === "defconst") {
       assert.equal(
         form.args.length,
@@ -2951,6 +2979,280 @@ function validateAttackContracts(rules) {
   }
 }
 
+
+function validateBasiliskGoalNamespace(forms) {
+  const numericGoals = new Map();
+  for (const form of forms) {
+    if (form.head !== "defconst") continue;
+    const name = form.args[0]?.value;
+    const value = form.args[1]?.value;
+    if (!name || !/goal$/i.test(name) || !/^-?\d+$/.test(value ?? "")) continue;
+    const id = Number(value);
+    if (!numericGoals.has(id)) numericGoals.set(id, []);
+    numericGoals.get(id).push(name);
+  }
+
+  for (const [id, names] of numericGoals.entries()) {
+    assert.equal(
+      names.length,
+      1,
+      "[Goal namespace] duplicate GoalId " + id + ": " + names.join(", "),
+    );
+  }
+
+  for (const id of [
+    729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741,
+    742, 743, 744, 745, 746, 747, 748, 749, 750, 751, 752, 753, 754,
+    755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766,
+  ]) {
+    assert.ok(
+      numericGoals.has(id),
+      "[Telemetry namespace] reserved GoalId " + id + " is missing",
+    );
+  }
+
+  assert.ok(
+    forms.some(
+      (form) =>
+        form.head === "defconst" &&
+        form.args[0]?.value === "bt-debug-last-strategy-goal" &&
+        form.args[1]?.value === "768",
+    ),
+    "[Goal namespace] diagnostic strategy latch must use GoalId 768 after the historical 710 collision",
+  );
+}
+
+function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
+  for (const symbol of [
+    "bt-preempt-active-goal",
+    "bt-preempt-original-owner-goal",
+    "bt-preempt-original-mode-goal",
+    "bt-preempt-result-goal",
+    "bt-preempt-emergency-claim",
+    "bt-preempt-defense-issued-goal",
+  ]) {
+    assert.ok(
+      sourceText.includes(symbol),
+      "[Preemption] missing required state: " + symbol,
+    );
+  }
+
+  const forbiddenClaims = [
+    "bt-castle-blacksmith-claim",
+    "bt-castle-market-claim",
+    "bt-castle-cataphract-claim",
+    "bt-imperial-siege-claim",
+    "bt-imperial-university-claim",
+    "bt-monastery-claim",
+    "bt-mill-claim",
+    "bt-university-claim",
+    "bt-bombard-university-claim",
+    "bt-military-siege-workshop-claim",
+  ];
+  for (const claim of forbiddenClaims) {
+    assert.ok(
+      !rules.some(
+        (rule) =>
+          rule.includes("(town-under-attack)") &&
+          rule.includes("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)") &&
+          rule.includes(claim),
+      ),
+      "[Preemption] protected claim is eligible for emergency displacement: " + claim,
+    );
+  }
+
+  const beginClaims = ["bt-tc2-claim", "bt-tc3-claim"];
+  for (const claim of beginClaims) {
+    const begin = rules.find(
+      (rule) =>
+        rule.includes("(town-under-attack)") &&
+        rule.includes("(goal bt-any-threat-goal 1)") &&
+        rule.includes("(strategic-number sn-resource-control == " + claim + ")") &&
+        rule.includes("(set-goal bt-preempt-active-goal 1)") &&
+        rule.includes("(set-goal bt-preempt-original-owner-goal " + claim + ")") &&
+        rule.includes("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)"),
+    );
+    assert.ok(begin, "[Preemption] begin handshake missing for " + claim);
+
+    const beginText = begin.replace(/\s+/g, " ");
+    assert.ok(
+      beginText.indexOf("(set-goal bt-preempt-original-owner-goal " + claim + ")") <
+        beginText.indexOf("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)"),
+      "[Preemption] original owner must be snapshotted before emergency ownership for " + claim,
+    );
+    assert.ok(
+      beginText.includes("(set-goal bt-telemetry-event-pending-goal 1)"),
+      "[Preemption] BEGIN must enqueue telemetry for " + claim,
+    );
+    assert.ok(
+      beginText.includes("(up-get-fact game-time 0 bt-telemetry-event-time-goal)"),
+      "[Preemption] BEGIN must capture source game-time for " + claim,
+    );
+
+    const resume = rules.find(
+      (rule) =>
+        rule.includes("(not (town-under-attack))") &&
+        rule.includes("(goal bt-preempt-active-goal 1)") &&
+        rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
+        rule.includes("(set-strategic-number sn-resource-control " + claim + ")") &&
+        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-resume)"),
+    );
+    assert.ok(resume, "[Preemption] resume path missing for " + claim);
+    assert.ok(
+      !/\((?:disable|enable)-timer\s+bt-tc[23]-watchdog-timer\b/.test(resume),
+      "[Preemption] resume path must not reset TC watchdog timer for " + claim,
+    );
+
+    const abort = rules.find(
+      (rule) =>
+        rule.includes("(not (town-under-attack))") &&
+        rule.includes("(goal bt-preempt-active-goal 1)") &&
+        rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
+        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-abort)") &&
+        rule.includes("(set-strategic-number sn-resource-control 0)"),
+    );
+    assert.ok(abort, "[Preemption] abort path missing for " + claim);
+    assert.ok(
+      abort.includes("(set-goal bt-tc-stage-goal bt-tc-stage-demanded)"),
+      "[Preemption] abort must return " + claim + " to persistent TC demand",
+    );
+  }
+
+    
+  for (const claim of beginClaims) {
+    const completion = rules.find(
+      (rule) =>
+        rule.includes("(goal bt-preempt-active-goal 1)") &&
+        rule.includes("(goal bt-preempt-original-owner-goal " + claim + ")") &&
+        rule.includes("(building-type-count town-center") &&
+        rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
+        rule.includes("(set-goal bt-preempt-result-goal bt-preempt-result-complete)") &&
+        rule.includes("(set-strategic-number sn-resource-control 0)"),
+    );
+    assert.ok(
+      completion,
+      "[Preemption] completion path must terminate emergency ownership for " + claim,
+    );
+  }
+
+  const defenseRules = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-preempt-active-goal 1)") &&
+      rule.includes("(strategic-number sn-resource-control == bt-preempt-emergency-claim)") &&
+      /\(train (?:spearman-line|skirmisher-line)\)/.test(rule),
+  );
+  assert.equal(
+    defenseRules.length,
+    2,
+    "[Preemption] expected exactly two bounded emergency counter rules",
+  );
+  for (const rule of defenseRules) {
+    assert.ok(
+      rule.includes("(can-train "),
+      "[Preemption] emergency counter lacks engine-native feasibility",
+    );
+    assert.ok(
+      /up-pending-objects c: (?:spearman-line|skirmisher-line)/.test(rule) ||
+        /unit-type-count-total (?:spearman-line|skirmisher-line)/.test(rule),
+      "[Preemption] emergency counter lacks queue/completed unit witness",
+    );
+  }
+
+  const preemptionRules = rules.filter((rule) =>
+    rule.includes("bt-preempt-"),
+  );
+  for (const rule of preemptionRules) {
+    assert.ok(
+      !rule.includes("(disable-timer bt-tc2-watchdog-timer)") &&
+        !rule.includes("(enable-timer bt-tc2-watchdog-timer") &&
+        !rule.includes("(disable-timer bt-tc3-watchdog-timer)") &&
+        !rule.includes("(enable-timer bt-tc3-watchdog-timer"),
+      "[Preemption] capability watchdog may not be reset by interruption logic",
+    );
+  }
+
+  assert.equal(
+    rules.filter((rule) =>
+      rule.includes("(set-strategic-number sn-resource-control bt-preempt-emergency-claim)")
+    ).length,
+    2,
+    "[Preemption] exactly two claim classes may acquire emergency ownership",
+  );
+
+  assert.ok(
+    sourceText.includes('(xs-script-call "basiliskTelemetryDrain")'),
+    "[Preemption] explicit XS drain call is missing",
+  );
+  assert.ok(
+    fs.existsSync(path.join(repoRootPath, "BasiliskTelemetry.xs")),
+    "[Preemption] XS telemetry consumer file is missing",
+  );
+}
+
+function validateTelemetryRing(rules, sourceText, repoRootPath) {
+  const required = [
+    "bt-telemetry-write-head-goal",
+    "bt-telemetry-read-head-goal",
+    "bt-telemetry-count-goal",
+    "bt-telemetry-sequence-goal",
+    "bt-telemetry-overflow-goal",
+    "bt-telemetry-overflow-state-goal",
+    "bt-telemetry-event-pending-goal",
+  ];
+  for (const symbol of required) {
+    assert.ok(sourceText.includes(symbol), "[Telemetry] missing ring state: " + symbol);
+  }
+
+  assert.equal(
+    rules.filter((rule) =>
+      rule.includes("(goal bt-telemetry-event-pending-goal 1)") &&
+      rule.includes("(up-compare-goal bt-telemetry-count-goal < 4)") &&
+      rule.includes("(goal bt-telemetry-write-head-goal"),
+    ).length,
+    12,
+    "[Telemetry] expected three four-slot FIFO append groups",
+  );
+
+  assert.equal(
+    rules.filter((rule) =>
+      rule.includes("(goal bt-telemetry-event-pending-goal 1)") &&
+      rule.includes("(up-compare-goal bt-telemetry-count-goal >= 4)"),
+    ).length,
+    3,
+    "[Telemetry] each event stage must explicitly handle FIFO overflow",
+  );
+
+  assert.equal(
+    rules.filter((rule) => rule.includes("(xs-script-call \"basiliskTelemetryDrain\")")).length,
+    1,
+    "[Telemetry] exactly one explicit XS drain rule is expected",
+  );
+
+  const xsPath = path.join(repoRootPath, "BasiliskTelemetry.xs");
+  assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
+  const xs = fs.readFileSync(xsPath, "utf8");
+  assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+  assert.ok(
+    (xs.match(/xsChatData\([^\n]*,\s*[^\n]*\)/g) || []).length >= 2,
+    "[Telemetry] XS telemetry output must use the two-argument xsChatData signature",
+  );
+  assert.ok(xs.includes("while(count > 0 && processed < 4)"), "[Telemetry] drain is not bounded");
+  assert.ok(xs.includes("xsSetGoal(BT_RING_READ"), "[Telemetry] XS drain does not advance read head");
+  assert.ok(xs.includes("xsSetGoal(BT_RING_COUNT"), "[Telemetry] XS drain does not decrement occupancy");
+  assert.ok(
+    !/xsSet(?:StrategicNumber|Goal)\((?:729|730|731|732|733|734|799)\b/.test(xs),
+    "[Telemetry] XS consumer must not mutate preemption control state",
+  );
+
+  let braces = 0;
+  for (const ch of xs) {
+    if (ch === "{") braces += 1;
+    if (ch === "}") braces -= 1;
+    assert.ok(braces >= 0, "[Telemetry] XS has an unexpected closing brace");
+  }
+  assert.equal(braces, 0, "[Telemetry] XS braces are unbalanced");
+}
+
 function validateStateCoverage(rules) {
   for (const state of [
     "strategy-goal",
@@ -2993,6 +3295,35 @@ function validateStateCoverage(rules) {
       `[State coverage] no engine-action consumer exists downstream of ${state}'s first writer`,
     );
   }
+}
+
+
+function validatePreemptionReplay(repoRootPath) {
+  const replayPath = path.join(
+    repoRootPath,
+    "validation",
+    "preemption-telemetry-replay.js",
+  );
+  assert.ok(
+    fs.existsSync(replayPath),
+    "[Preemption replay] deterministic replay harness is missing",
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [replayPath],
+    {
+      stdio: "inherit",
+      cwd: repoRootPath,
+    },
+  );
+
+  assert.equal(
+    result.status,
+    0,
+    "[Preemption replay] deterministic lifecycle replay failed with exit code " +
+      result.status,
+  );
 }
 
 function validateHandoffWiring(repoRootPath, legacyPath) {
@@ -4025,6 +4356,8 @@ function validateLifecycleAnchors(sourceText, rules) {
 }
 
 validatePreprocessorStructure(source);
+const parsedForms = parseStrictTopLevelForms(source);
+validateBasiliskGoalNamespace(parsedForms);
 validateParserGradeRuleStructure(source);
 validateRuleStructure(source);
 validateBalancedParens(source);
@@ -4049,8 +4382,8 @@ validateCastleCataphractImperialHandoff(rules);
 validateAgeTransitionQueueGates(rules);
 validateImperialPrerequisiteProviders(rules);
 validateAgeBankPriority(rules);
-validateFeudalEcoResearchPriority(rules, sourceText);
-validateEconomicResearchPackageIsolation(rules, sourceText);
+validateFeudalEcoResearchPriority(rules, source);
+validateEconomicResearchPackageIsolation(rules, source);
 validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
@@ -4062,6 +4395,9 @@ validateVillagerHygiene(rules);
 validateDerivedThreatStateOrdering(rules);
 validateAttackContracts(rules);
 validateStateCoverage(rules);
+validateBasiliskPreemption(rules, source, repoRoot);
+validateTelemetryRing(rules, source, repoRoot);
+validatePreemptionReplay(repoRoot);
 validateSourceOrder(rules);
 validateHandoffWiring(repoRoot, legacyValidatorPath);
 
