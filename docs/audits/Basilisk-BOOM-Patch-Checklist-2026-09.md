@@ -147,4 +147,4 @@ The policy is about new resource expenditure. It does not forcibly tear down an 
 
 ## Runtime handoff
 
-Runtime validation remains outside this patch pass. The owner should eventually execute the controlled 1-TC, 2-TC, 3-TC, Castle-bank/FLUSH, Knight, Crossbow, and TC-project interruption scenarios against the live AoE2DE game and treat those observations as the final behavioral witness.
+Runtime validation remains outside this patch pass. The owner should eventually execute the controlled 1-TC, 2-TC, 3-TC, Castle-bank/FLUSH, Knight, Crossbow, reactive Monk/Mangonel/Scorpion/Camel during a TC project, Ram/Siege Tower suppression, and TC-project interruption scenarios against the live AoE2DE game and treat those observations as the final behavioral witness.
