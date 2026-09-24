@@ -2329,6 +2329,24 @@ try {
         "\n(defrule\n    (true)\n=>\n    (up-full-reset-search)\n    (up-target-objects 0 action-default -1 -1)\n)\n",
     },
     {
+      name: "bbc-duc-target-loss-disarm-regression",
+      expected: "[BBC DUC] armed latch must disarm when the enemy Trebuchet witness disappears",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-bombard-cannon-demand-goal 1)",
+          "(goal bt-bombard-trebuchet-duc-armed-goal 1)",
+          "(players-unit-type-count target-player trebuchet-set < 1)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal bt-bombard-trebuchet-duc-armed-goal 0)\n",
+            "",
+          ),
+        "BBC DUC target-loss disarm",
+      ),
+    },
+    {
       name: "command-numeric-range-mismatch",
       expected: "command-numeric-range-mismatch",
       source:
@@ -2537,6 +2555,7 @@ try {
         "strict-enum-value-mismatch",
         "unsafe-set-target-object",
         "unscoped-duc-target",
+    "bbc-duc-target-loss-disarm-regression",
         ],
       },
       null,
