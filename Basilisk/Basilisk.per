@@ -563,12 +563,9 @@
 (defconst bt-resource-mode-food-crisis 18)
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
-(defconst bt-wheelbarrow-demand-goal 49)
 (defconst bt-hand-cart-demand-goal 50)
-(defconst bt-bow-saw-demand-goal 51)
 (defconst bt-two-man-saw-demand-goal 52)
 (defconst bt-stone-mining-demand-goal 53)
-(defconst bt-stone-shaft-mining-demand-goal 54)
 (defconst bt-scout-target-player-goal 55)
 (defconst bt-scout-pressure-demand-goal 56)
 (defconst bt-natural-food-state-goal 57)
@@ -955,13 +952,13 @@
 (defrule
     (true)
 =>
-    (set-goal bt-wheelbarrow-demand-goal 0)
+
     (set-goal bt-hand-cart-demand-goal 0)
-    (set-goal bt-bow-saw-demand-goal 0)
+
     (set-goal bt-heavy-plow-demand-goal 0)
     (set-goal bt-two-man-saw-demand-goal 0)
     (set-goal bt-stone-mining-demand-goal 0)
-    (set-goal bt-stone-shaft-mining-demand-goal 0)
+
     (disable-self)
 )
 
@@ -6933,8 +6930,12 @@ sn-stone-gatherer-percentage == 0)))))
 ; three-TC-only luxury.  The Feudal path uses a 30-villager maturity
 ; witness but yields to an immediately executable Castle transition.
 ; The Castle path becomes valid at two TCs or 30 villagers.
+
+; Withdraw pending demand only when its maturity window or opportunity
+; priority disappears. Active Wheelbarrow research remains claim-owned.
+
+; Demand -> claim -> release Food + Wood escrow -> research.
 (defrule
-    (goal bt-wheelbarrow-demand-goal 0)
     (goal strategy-goal bt-strategy-boom)
     (up-research-status c: ri-wheel-barrow == research-available)
     (or
@@ -6959,55 +6960,6 @@ sn-stone-gatherer-percentage == 0)))))
             )
         )
     )
-=>
-    (set-goal bt-wheelbarrow-demand-goal 1)
-)
-
-; Withdraw pending demand only when its maturity window or opportunity
-; priority disappears. Active Wheelbarrow research remains claim-owned.
-(defrule
-    (goal bt-wheelbarrow-demand-goal 1)
-    (goal bt-research-town-center-claim-goal 0)
-    (or
-        (can-research-with-escrow imperial-age)
-        (or
-            (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-            (not
-                (and
-                (up-research-status c: ri-wheel-barrow == research-available)
-                (or
-                    (and
-                        (current-age == feudal-age)
-                        (and
-                            (unit-type-count villager >= bt-wheelbarrow-feudal-villagers)
-                            (and
-                                (goal bt-castle-commitment-goal 0)
-                                (not (can-research-with-escrow castle-age))
-                            )
-                        )
-                    )
-                    (and
-                        (current-age >= castle-age)
-                        (and
-                            (or
-                                (building-type-count-total town-center >= 2)
-                                (unit-type-count villager >= bt-wheelbarrow-castle-villagers)
-                            )
-                            (not (can-research-with-escrow imperial-age))
-                        )
-                    )
-                )
-            )
-        )
-    ))
-=>
-    (set-goal bt-wheelbarrow-demand-goal 0)
-)
-
-; Demand -> claim -> release Food + Wood escrow -> research.
-(defrule
-    (goal bt-wheelbarrow-demand-goal 1)
-    (current-age >= feudal-age)
     (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-wheel-barrow)
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
@@ -7025,13 +6977,6 @@ sn-stone-gatherer-percentage == 0)))))
     (set-strategic-number sn-resource-control 0)
 )
 
-(defrule
-    (goal bt-research-town-center-claim-goal ri-wheel-barrow)
-    (up-research-status c: ri-wheel-barrow == research-complete)
-=>
-    (set-goal bt-research-town-center-claim-goal 0)
-    (set-goal bt-wheelbarrow-demand-goal 0)
-)
 
 ;----------------------------------------------------------------
 ; WHEELBARROW WATCHDOG EXPIRY
@@ -7207,6 +7152,12 @@ sn-stone-gatherer-percentage == 0)))))
 ;
 ; During Imperial-bank-prep, Bow Saw is allowed only when the exact
 ; composite obligation Imperial Age + Bow Saw remains fundable.
+
+; Withdraw only a pending Bow Saw demand when its maturity or resource
+; priority disappears. An active claim owns sn-resource-control until
+; completion or watchdog recovery.
+
+; Demand -> claim -> release Food + Wood escrow -> research.
 (defrule
     (current-age >= castle-age)
     (goal strategy-goal bt-strategy-boom)
@@ -7217,63 +7168,20 @@ sn-stone-gatherer-percentage == 0)))))
     (not (can-research-with-escrow imperial-age))
     (or
         (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-        (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal bt-bow-saw-bank-delta-gold-goal
->= 0))))
-    )
-    (up-research-status c: ri-bow-saw == research-available)
-=>
-    (set-goal bt-bow-saw-demand-goal 1)
-)
-
-; Withdraw only a pending Bow Saw demand when its maturity or resource
-; priority disappears. An active claim owns sn-resource-control until
-; completion or watchdog recovery.
-(defrule
-    (goal bt-bow-saw-demand-goal 1)
-    (goal bt-research-lumber-camp-claim-goal 0)
-    (can-research-with-escrow imperial-age)
-=>
-    (set-goal bt-bow-saw-demand-goal 0)
-)
-(defrule
-    (goal bt-bow-saw-demand-goal 1)
-    (goal bt-research-lumber-camp-claim-goal 0)
-    (and
-            (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-            (not
-                (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal
-bt-bow-saw-bank-delta-gold-goal >= 0))))
+        (and
+            (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0)
+            (and
+                (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0)
+                (and
+                    (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0)
+                    (up-compare-goal bt-bow-saw-bank-delta-gold-goal >= 0)
+                )
             )
         )
-=>
-    (set-goal bt-bow-saw-demand-goal 0)
-)
-(defrule
-    (goal bt-bow-saw-demand-goal 1)
-    (goal bt-research-lumber-camp-claim-goal 0)
-    (not
-            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (or (building-type-count-total town-center >= 2) (unit-type-count villager >= bt-bow-saw-villagers)) (and (not (can-research-with-escrow imperial-age)) (and (or
-                    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-                    (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal
-bt-bow-saw-bank-delta-gold-goal >= 0))))
-                ) (up-research-status c: ri-bow-saw == research-available))))))
-        )
-=>
-    (set-goal bt-bow-saw-demand-goal 0)
-)
-
-; Demand -> claim -> release Food + Wood escrow -> research.
-(defrule
-    (goal bt-bow-saw-demand-goal 1)
-    (current-age >= castle-age)
+    )
+    (up-research-status c: ri-bow-saw == research-available)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-bow-saw)
     (strategic-number sn-resource-control == 0)
-    (not (can-research-with-escrow imperial-age))
-    (or
-        (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-        (and (up-compare-goal bt-bow-saw-bank-delta-food-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-wood-goal >= 0) (and (up-compare-goal bt-bow-saw-bank-delta-stone-goal >= 0) (up-compare-goal bt-bow-saw-bank-delta-gold-goal
->= 0))))
-    )
     (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-bow-saw)
     (goal bt-research-lumber-camp-claim-goal 0)
@@ -7287,13 +7195,6 @@ bt-bow-saw-bank-delta-gold-goal >= 0))))
 )
 
 ; research-complete is the terminal witness for the Bow Saw claim.
-(defrule
-    (goal bt-research-lumber-camp-claim-goal ri-bow-saw)
-    (up-research-status c: ri-bow-saw == research-complete)
-=>
-    (set-goal bt-research-lumber-camp-claim-goal 0)
-    (set-goal bt-bow-saw-demand-goal 0)
-)
 
 ;----------------------------------------------------------------
 ; BOW SAW WATCHDOG EXPIRY
@@ -7706,41 +7607,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; Shaft Mining is deliberately gated behind a much larger Castle
 ; economy. The existing TC3 stone mode is the only persistent late-Castle
 ; stone-project witness available without introducing another state store.
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 0)
-    (current-age == castle-age)
-    (goal strategy-goal bt-strategy-boom)
-    (not (town-under-attack))
-    (up-research-status c: ri-stone-mining == research-complete)
-    (research-available ri-stone-shaft-mining)
-    (not
-        (and (building-type-count-total castle >= 2) (and (unit-type-count villager >= bt-stone-shaft-villagers) (stone-amount >= 650)))
-    )
-    (and (goal bt-resource-mode-goal bt-resource-mode-tc-stone) (and (building-type-count-total town-center >= 2) (and (unit-type-count villager >= bt-stone-shaft-villagers) (and (food-amount >= bt-stone-shaft-food-buffer) (wood-amount
->= bt-stone-shaft-wood-buffer)))))
-    (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (strategic-number sn-resource-control != imperial-age)
-=>
-    (set-goal bt-stone-shaft-mining-demand-goal 1)
-)
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 0)
-    (current-age == castle-age)
-    (goal strategy-goal bt-strategy-boom)
-    (not (town-under-attack))
-    (up-research-status c: ri-stone-mining == research-complete)
-    (research-available ri-stone-shaft-mining)
-    (not
-        (and (building-type-count-total castle >= 2) (and (unit-type-count villager >= bt-stone-shaft-villagers) (stone-amount >= 650)))
-    )
-    (and (building-type-count-total castle >= 2) (and (unit-type-count villager >= bt-stone-shaft-villagers) (and (food-amount >= bt-stone-shaft-food-buffer) (and (wood-amount >= bt-stone-shaft-wood-buffer) (stone-amount < 650)))))
-    (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (strategic-number sn-resource-control != imperial-age)
-=>
-    (set-goal bt-stone-shaft-mining-demand-goal 1)
-)
 
 ; Withdraw pending Shaft demand when an immediate late-Castle
 ; prerequisite or safety condition disappears. Active Shaft research
@@ -7756,31 +7622,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 
 ; Withdraw pending Shaft demand when neither accepted Castle/TC stone
 ; maturity path remains valid.
-(defrule
-    (goal bt-stone-shaft-mining-demand-goal 1)
-    (goal bt-research-mining-camp-claim-goal 0)
-    (not
-            (and
-                        (unit-type-count villager >= bt-stone-shaft-villagers)
-                        (and
-                                        (food-amount >= bt-stone-shaft-food-buffer)
-                                        (and
-                                                            (wood-amount >= bt-stone-shaft-wood-buffer)
-                                                            (and
-                                                                                    (not
-                                                                                                                (can-research-with-escrow imperial-age)
-                                                                                                            )
-                                                                                    (not
-                                                                                                                (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-                                                                                                            )
-                                                                                )
-                                                        )
-                                    )
-                    )
-        )
-=>
-    (set-goal bt-stone-shaft-mining-demand-goal 0)
-)
 (defrule
     (goal bt-stone-shaft-mining-demand-goal 1)
     (goal bt-research-mining-camp-claim-goal 0)
@@ -7823,14 +7664,52 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; 14L-D. STONE SHAFT MINING RESEARCH
 ;----------------------------------------------------------------
 (defrule
-    (goal bt-stone-shaft-mining-demand-goal 1)
     (current-age == castle-age)
     (goal strategy-goal bt-strategy-boom)
+    (not (town-under-attack))
     (up-research-status c: ri-stone-mining == research-complete)
-    (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-shaft-mining)
-    (strategic-number sn-resource-control == 0)
+    (research-available ri-stone-shaft-mining)
+    (not
+        (and
+            (building-type-count-total castle >= 2)
+            (and
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (stone-amount >= 650)
+            )
+        )
+    )
+    (or
+        (and
+            (goal bt-resource-mode-goal bt-resource-mode-tc-stone)
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (unit-type-count villager >= bt-stone-shaft-villagers)
+                    (and
+                        (food-amount >= bt-stone-shaft-food-buffer)
+                        (wood-amount >= bt-stone-shaft-wood-buffer)
+                    )
+                )
+            )
+        )
+        (and
+            (building-type-count-total castle >= 2)
+            (and
+                (unit-type-count villager >= bt-stone-shaft-villagers)
+                (and
+                    (food-amount >= bt-stone-shaft-food-buffer)
+                    (and
+                        (wood-amount >= bt-stone-shaft-wood-buffer)
+                        (stone-amount < 650)
+                    )
+                )
+            )
+        )
+    )
     (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-stone-shaft-mining)
+    (strategic-number sn-resource-control == 0)
     (building-type-count mining-camp >= 1)
     (can-research-with-escrow ri-stone-shaft-mining)
     (goal bt-research-mining-camp-claim-goal 0)
@@ -7849,13 +7728,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 )
 
 ; research-complete is the terminal witness for Stone Shaft Mining.
-(defrule
-    (goal bt-research-mining-camp-claim-goal ri-stone-shaft-mining)
-    (up-research-status c: ri-stone-shaft-mining == research-complete)
-=>
-    (set-goal bt-research-mining-camp-claim-goal 0)
-    (set-goal bt-stone-shaft-mining-demand-goal 0)
-)
 
 ;================================================================
 
@@ -9830,14 +9702,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-debug-last-eco-event-goal 6)
 )
 
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-wheelbarrow-demand-goal 1)
-    (up-compare-goal bt-debug-last-eco-event-goal != 10)
-=>
-    (chat-local-to-self "BASILISK | ECO | Wheelbarrow: demand active.")
-    (set-goal bt-debug-last-eco-event-goal 10)
-)
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
@@ -9884,14 +9748,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-debug-last-eco-event-goal 15)
 )
 
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-bow-saw-demand-goal 1)
-    (up-compare-goal bt-debug-last-eco-event-goal != 16)
-=>
-    (chat-local-to-self "BASILISK | ECO | Bow Saw: demand active.")
-    (set-goal bt-debug-last-eco-event-goal 16)
-)
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
