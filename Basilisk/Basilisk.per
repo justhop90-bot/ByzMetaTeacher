@@ -14154,37 +14154,38 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (set-goal bt-research-castle-claim-goal 0)
 )
 
-; Elite Varangian Guard is an Imperial Barracks upgrade, but the research
-; still belongs to the shared Castle claim and escrow authority.
+; Elite Varangian Guard is an Imperial Barracks upgrade. Research it through
+; the existing Barracks claim/escrow authority; the premium strategy cursor
+; remains shared with the Cataphract/Logistica package.
 (defrule
     (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
     (goal bt-cataphract-demand-goal 0)
     (goal bt-varangian-demand-goal 0)
     (current-age >= imperial-age)
-    (building-type-count-total castle >= 1)
+    (building-type-count-total barracks >= 1)
     (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-elite-target-level)
     (up-research-status c: ri-logistica == research-complete)
     (up-research-status c: ri-elite-varangian-guard < research-pending)
     (up-compare-goal bt-cavalry-counter-level-goal >= 2)
     (up-compare-goal bt-ranged-counter-level-goal < 2)
     (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
-    (up-compare-goal bt-research-castle-failure-backoff-goal != ri-elite-varangian-guard)
+    (up-compare-goal bt-research-barracks-failure-backoff-goal != ri-elite-varangian-guard)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-elite-varangian-guard)
-    (goal bt-research-castle-claim-goal 0)
+    (goal bt-research-barracks-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-elite-varangian-guard)
     (release-escrow food)
     (release-escrow gold)
     (research ri-elite-varangian-guard)
-    (set-goal bt-research-castle-claim-goal ri-elite-varangian-guard)
+    (set-goal bt-research-barracks-claim-goal ri-elite-varangian-guard)
     (set-strategic-number sn-resource-control 0)
 )
 (defrule
-    (goal bt-research-castle-claim-goal ri-elite-varangian-guard)
+    (goal bt-research-barracks-claim-goal ri-elite-varangian-guard)
     (up-research-status c: ri-elite-varangian-guard == research-complete)
 =>
-    (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 ;================================================================
@@ -15128,12 +15129,12 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 )
 
 (defrule
-    (goal bt-research-castle-claim-goal ri-elite-varangian-guard)
+    (goal bt-research-barracks-claim-goal ri-elite-varangian-guard)
     (up-research-status c: ri-elite-varangian-guard <= research-available)
 =>
-    (set-goal bt-research-castle-failure-backoff-goal ri-elite-varangian-guard)
-    (enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)
-    (set-goal bt-research-castle-claim-goal 0)
+    (set-goal bt-research-barracks-failure-backoff-goal ri-elite-varangian-guard)
+    (enable-timer bt-research-barracks-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-barracks-claim-goal 0)
 )
 
 ;----------------------------------------------------------------
