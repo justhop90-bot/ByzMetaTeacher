@@ -821,6 +821,25 @@ try {
       })(),
     },
     {
+      name: "attack-feudal-allocation-missing-rejected",
+      expected: "[Attack allocation]",
+      source: (() => {
+        const start = baseline.indexOf(
+          "(defrule (up-compare-goal bt-standing-army-floor-goal == 4)",
+        );
+        assert.ok(
+          start >= 0,
+          "[Self-test] Feudal attack allocation rule is missing",
+        );
+        const end = baseline.indexOf("))", start);
+        assert.ok(
+          end > start,
+          "[Self-test] Feudal attack allocation rule bounds are missing",
+        );
+        return baseline.slice(0, start) + baseline.slice(end + 2);
+      })(),
+    },
+    {
       name: "siege-abort-cancels-independent-demand-rejected",
       expected: "[Imperial siege]",
       source: (() => {
