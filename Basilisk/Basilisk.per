@@ -1441,9 +1441,7 @@
                 (up-compare-goal bt-varangian-fielded-goal >= bt-varangian-target-goal)
                 (or
                     (up-compare-goal bt-varangian-target-goal < bt-varangian-logistica-min)
-                    (or
-                        (up-research-status c: ri-logistica == research-complete)
-                    )
+                    (up-research-status c: ri-logistica == research-complete)
                 )
             )
         )
@@ -6382,12 +6380,22 @@ town-center >= 2)))))
                         (goal bt-research-cataphract-package-goal ri-elite-varangian-guard)
                         (and
                             (current-age >= castle-age)
-                            (goal strategy-goal bt-strategy-flush)
-                            (goal unit-goal bt-unit-mix)
-                            (unit-type-count-total spearman-line >= bt-spear-target-1)
-                            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
-                            (building-type-count-total stable >= 1)
-                            (unit-type-count-total camel-line < bt-camel-target-1)
+                            (and
+                                (goal strategy-goal bt-strategy-flush)
+                                (and
+                                    (goal unit-goal bt-unit-mix)
+                                    (and
+                                        (unit-type-count-total spearman-line >= bt-spear-target-1)
+                                        (and
+                                            (up-compare-goal bt-noncav-cavalry-level-goal >= 1)
+                                            (and
+                                                (building-type-count-total stable >= 1)
+                                                (unit-type-count-total camel-line < bt-camel-target-1)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
                         )
                     )
                 )
