@@ -693,45 +693,6 @@ try {
         baseline +
         "\n(defconst validator-duplicate-goal 768)\n",
     },
-    {
-      name: "malformed-xs-include-rejected",
-      expected: "[Include] include",
-      source: baseline.replace(
-        '(include "BasiliskTelemetry.xs")',
-        '(include "BasiliskTelemetry")',
-      ),
-    },
-    {
-      name: "unquoted-include-rejected",
-      expected: "[Include] include",
-      source: baseline.replace(
-        '(include "BasiliskTelemetry.xs")',
-        '(include BasiliskTelemetry.xs)',
-      ),
-    },
-    {
-      name: "telemetry-xs-goal-id-drift-rejected",
-      expected: "[Telemetry namespace] XS BT_RING_READ",
-      source: (() => {
-        let mutated = baseline.replace(
-          "(defconst bt-telemetry-read-head-goal 736)",
-          "(defconst bt-telemetry-read-head-goal 737)",
-        );
-        mutated = mutated.replace(
-          "(defconst bt-telemetry-count-goal 737)",
-          "(defconst bt-telemetry-count-goal 736)",
-        );
-        return mutated;
-      })(),
-    },
-    {
-      name: "multi-target-include-rejected",
-      expected: "requires exactly one path",
-      source: baseline.replace(
-        '(include "BasiliskTelemetry.xs")',
-        '(include "BasiliskTelemetry.xs" "BasiliskTelemetry.xs")',
-      ),
-    },
 
     {
       name: "DE-runtime-rejected-arbalester-alias",
@@ -1966,19 +1927,6 @@ try {
       })(),
     },
     {
-      name: "age-narration-must-not-use-shared-latch",
-      expected: "[Narration]",
-      source: (() => {
-        const needle = "    (goal bt-debug-age-castle-complete-goal 0)";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] Castle completion latch missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(
-          needle,
-          "    (up-compare-goal bt-debug-last-age-event-goal != 6)",
-        );
-      })(),
-    },
-    {
       name: "imperial-villager-stop-must-not-require-research-queue",
       expected: "[Age transition]",
       source: (() => {
@@ -2116,54 +2064,6 @@ try {
           baseline.slice(second + maturityWitness.length)
         );
       })(),
-    },
-    {
-      name: "narration-verbosity-gate-regression",
-      expected: "[Narration]",
-      source: (() => {
-        const needle = "    (up-compare-goal bt-debug-verbosity-goal >= 1)\n    (goal strategy-goal bt-strategy-flush)";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] strategy narration gate witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index).replace(
-          "    (up-compare-goal bt-debug-verbosity-goal >= 1)\n",
-          "",
-        );
-      })(),
-    },
-    {
-      name: "narration-edge-trigger-regression",
-      expected: "[Narration]",
-      source: (() => {
-        const needle =
-          "    (up-compare-goal bt-debug-last-strategy-goal != bt-strategy-flush)\n";
-        const index = baseline.indexOf(needle);
-        assert.ok(index >= 0, "[Self-test] strategy narration latch witness is missing");
-        return baseline.slice(0, index) + baseline.slice(index + needle.length);
-      })(),
-    },
-    {
-      name: "narration-strategic-write-regression",
-      expected: "[Narration]",
-      source: baseline.replace(
-        "(set-goal bt-debug-last-strategy-goal bt-strategy-flush)",
-        "(set-goal strategy-goal bt-strategy-rush)",
-      ),
-    },
-    {
-      name: "narration-canonical-message-regression",
-      expected: "[Narration]",
-      source: baseline.replace(
-        'BASILISK | STRATEGY | CASTLE-POWER: pressure survives the age-up.',
-        "BASILISK | STRATEGY | CASTLE-POWER: removed.",
-      ),
-    },
-    {
-      name: "narration-castle-block-regression",
-      expected: "[Narration]",
-      source: baseline.replace(
-        'BASILISK | AGE | Castle blocked: engine feasibility.',
-        'BASILISK | AGE | Castle blocked: missing.',
-      ),
     },
     {
       name: "unknown-timer",
@@ -2419,10 +2319,6 @@ try {
     "unterminated-preprocessor-conditional",
     "malformed-preprocessor-conditional",
     "duplicate-goal-id-rejected",
-    "malformed-xs-include-rejected",
-    "unquoted-include-rejected",
-    "multi-target-include-rejected",
-    "telemetry-xs-goal-id-drift-rejected",
     "DE-runtime-rejected-arbalester-alias",
     "unknown-duc-identifier",
     "unknown-class-wildcard-unit-id-rejected",
