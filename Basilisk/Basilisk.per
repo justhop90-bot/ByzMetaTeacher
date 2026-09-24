@@ -583,7 +583,6 @@
 (defconst bt-debug-last-castle-block-goal 705)
 (defconst bt-debug-last-tc-stage-goal 706)
 (defconst bt-debug-last-tc-complete-goal 707)
-(defconst bt-debug-last-age-event-goal 708)
 (defconst bt-debug-age-feudal-bank-goal 713)
 (defconst bt-debug-age-feudal-start-goal 714)
 (defconst bt-debug-age-feudal-complete-goal 715)
@@ -607,7 +606,6 @@
 ; 1 means the previous measured RUSH attack stalled with no structural damage
 ; while Basilisk was materially behind. A second such result releases RUSH.
 (defconst bt-rush-stall-latch-goal 775)
-(defconst bt-debug-last-tc-project-goal 712)
 (defconst bt-debug-castle-block-backoff 1)
 (defconst bt-debug-castle-block-mutex 2)
 (defconst bt-debug-castle-block-feasibility 3)
@@ -897,7 +895,6 @@
     (set-goal bt-debug-last-castle-block-goal 0)
     (set-goal bt-debug-last-tc-stage-goal 0)
     (set-goal bt-debug-last-tc-complete-goal 1)
-    (set-goal bt-debug-last-age-event-goal 0)
     (set-goal bt-debug-age-feudal-bank-goal 0)
     (set-goal bt-debug-age-feudal-start-goal 0)
     (set-goal bt-debug-age-feudal-complete-goal 0)
@@ -909,7 +906,6 @@
     (set-goal bt-debug-age-imperial-complete-goal 0)
     (set-goal bt-debug-last-eco-event-goal 0)
     (set-goal bt-debug-last-strategy-goal 0)
-    (set-goal bt-debug-last-tc-project-goal 0)
     (disable-self)
 )
 
@@ -3126,20 +3122,22 @@
             (not (can-research-with-escrow imperial-age))
             (players-unit-type-count any-enemy militiaman-line >= bt-cataphract-enemy-threshold-1)
         )
-        (and
-            (or
-                (goal strategy-goal bt-strategy-boom)
-                (goal strategy-goal bt-strategy-castle-power)
-            )
+        (or
             (and
-                (unit-type-count villager >= 36)
+                (or
+                    (goal strategy-goal bt-strategy-boom)
+                    (goal strategy-goal bt-strategy-castle-power)
+                )
                 (and
-                    (food-amount >= 500)
-                    (gold-amount >= 200)
+                    (unit-type-count villager >= 36)
+                    (and
+                        (food-amount >= 500)
+                        (gold-amount >= 200)
+                    )
                 )
             )
+            (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
         )
-        (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
     )
 =>
     (set-goal bt-castle-cataphract-demand-goal 1)
@@ -3216,7 +3214,6 @@
 (defrule
     (goal bt-cataphract-demand-goal 1)
     (goal bt-castle-cataphract-demand-goal 0)
-    (goal bt-castle-cataphract-backoff-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
     (current-age >= imperial-age)
     (building-type-count-total castle < 1)
@@ -5637,158 +5634,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-debug-last-unit-goal camel-line)
 )
 
-;================================================================
-; 13H. TEMPORARY POLICY PREEMPTION
-;================================================================
-; TC2/TC3 are discretionary BOOM projects. Their resource claims may
-; be displaced for one short defensive pulse. Age/prerequisite claims are not.
-(defrule
-    (town-under-attack)
-    (goal bt-tc-project-goal 2)
-    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (goal bt-any-threat-goal 1)
-    (strategic-number sn-resource-control == bt-tc2-claim)
-=>
-    (set-goal bt-preempt-original-owner-goal bt-tc2-claim)
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
-)
-(defrule
-    (town-under-attack)
-    (goal bt-tc-project-goal 3)
-    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (goal bt-any-threat-goal 1)
-    (strategic-number sn-resource-control == bt-tc3-claim)
-=>
-    (set-goal bt-preempt-original-owner-goal bt-tc3-claim)
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
-)
-
-(defrule
-    (goal bt-preempt-defense-issued-goal 0)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (goal bt-cavalry-threat-goal 1)
-    (building-type-count-total barracks >= 1)
-    (up-pending-objects c: spearman-line == 0)
-    (can-train spearman-line)
-=>
-    (train spearman-line)
-    (set-goal bt-preempt-defense-issued-goal 1)
-)
-
-(defrule
-    (goal bt-preempt-defense-issued-goal 0)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (goal bt-ranged-threat-goal 1)
-    (building-type-count-total archery-range >= 1)
-    (up-pending-objects c: skirmisher-line == 0)
-    (can-train skirmisher-line)
-=>
-    (train skirmisher-line)
-    (set-goal bt-preempt-defense-issued-goal 1)
-)
-
-(defrule
-    (not (town-under-attack))
-    (goal bt-preempt-original-owner-goal bt-tc2-claim)
-    (goal bt-tc-project-goal 2)
-    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (goal strategy-goal bt-strategy-boom)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (can-afford-building town-center-foundation)
-    (can-build town-center)
-=>
-    (set-strategic-number sn-resource-control bt-tc2-claim)
-    (set-goal bt-preempt-defense-issued-goal 0)
-)
-
-(defrule
-    (not (town-under-attack))
-    (goal bt-preempt-original-owner-goal bt-tc3-claim)
-    (goal bt-tc-project-goal 3)
-    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (goal strategy-goal bt-strategy-boom)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (can-afford-building town-center-foundation)
-    (can-build town-center)
-=>
-    (set-strategic-number sn-resource-control bt-tc3-claim)
-    (set-goal bt-preempt-defense-issued-goal 0)
-)
-
-(defrule
-    (goal bt-preempt-original-owner-goal bt-tc2-claim)
-    (building-type-count town-center >= 2)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-=>
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (goal bt-preempt-original-owner-goal bt-tc3-claim)
-    (building-type-count town-center >= 3)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-=>
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (not (town-under-attack))
-    (goal bt-preempt-original-owner-goal bt-tc2-claim)
-    (goal bt-tc-project-goal 2)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (or
-        (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (or
-            (not (goal strategy-goal bt-strategy-boom))
-            (not (can-afford-building town-center-foundation))
-        )
-    )
-=>
-    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (not (town-under-attack))
-    (goal bt-preempt-original-owner-goal bt-tc3-claim)
-    (goal bt-tc-project-goal 3)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-    (or
-        (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (or
-            (not (goal strategy-goal bt-strategy-boom))
-            (not (can-afford-building town-center-foundation))
-        )
-    )
-=>
-    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (goal bt-preempt-original-owner-goal bt-tc2-claim)
-    (goal bt-tc-project-goal 0)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-=>
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
-(defrule
-    (goal bt-preempt-original-owner-goal bt-tc3-claim)
-    (goal bt-tc-project-goal 0)
-    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
-=>
-    (set-goal bt-preempt-defense-issued-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
-
 ; 14D. BYZANTINE RESOURCE ALLOCATION
 ;================================================================
 ; CONSUMES existing strategy/composition/project state. Never writes it.
@@ -6850,7 +6695,6 @@ sn-stone-gatherer-percentage == 0)))))
     (strategic-number sn-resource-control == 0)
     (not (can-research-with-escrow feudal-age))
     (not (goal bt-castle-commitment-goal 1))
-    (not (can-research-with-escrow imperial-age))
     (building-type-count town-center >= 1)
     (can-research-with-escrow ri-wheel-barrow)
     (goal bt-research-town-center-claim-goal 0)
@@ -7531,6 +7375,234 @@ sn-stone-gatherer-percentage == 0)))))
 ; 15. PRODUCTION CAPACITY
 ;================================================================
 ;================================================================
+; TC2 / TC3 BOOM PROJECT DEMAND + RESOURCE CLAIM
+;================================================================
+; Strategic TC demand and resource ownership are evaluated after resource-mode
+; arbitration and before production-capacity consumers. This preserves the
+; Castle-bank owner while making the project visible to same-pass capacity,
+; preemption, and military arbitration.
+;------------------------------
+; TC2 strategic demand.
+;------------------------------
+(defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (unit-type-count villager >= 32)
+    (food-amount >= 350)
+    (wood-amount >= 300)
+    (building-type-count town-center >= 1)
+    (building-type-count-total town-center < 2)
+=>
+    (set-goal bt-tc-project-goal 2)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+; TC3 strategic demand.
+(defrule
+    (goal bt-tc-project-goal 0)
+    (goal bt-tc-stage-goal bt-tc-stage-idle)
+    (goal strategy-goal bt-strategy-boom)
+    (current-age >= castle-age)
+    (unit-type-count villager >= 45)
+    (food-amount >= 500)
+    (wood-amount >= 300)
+    (building-type-count town-center >= 2)
+    (building-type-count-total town-center < 3)
+=>
+    (set-goal bt-tc-project-goal 3)
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+)
+
+;------------------------------
+; TC2 resource-claim provider.
+;------------------------------
+(defrule
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total town-center < 2)
+    (not (up-pending-placement c: town-center))
+    (can-build-with-escrow town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc2-claim)
+    (release-escrow food)
+    (release-escrow wood)
+    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
+)
+
+; TC3 resource-claim provider.
+(defrule
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count-total town-center < 3)
+    (not (up-pending-placement c: town-center))
+    (can-build-with-escrow town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc3-claim)
+    (release-escrow food)
+    (release-escrow wood)
+    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
+)
+
+;================================================================
+; TC2 / TC3 TEMPORARY EMERGENCY PREEMPTION
+;================================================================
+; TC2/TC3 are discretionary BOOM projects. Their resource claims may
+; be displaced for one short defensive pulse. Age/prerequisite claims are not.
+(defrule
+    (town-under-attack)
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal bt-any-threat-goal 1)
+    (strategic-number sn-resource-control == bt-tc2-claim)
+=>
+    (set-goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
+)
+(defrule
+    (town-under-attack)
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal bt-any-threat-goal 1)
+    (strategic-number sn-resource-control == bt-tc3-claim)
+=>
+    (set-goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
+)
+
+(defrule
+    (goal bt-preempt-defense-issued-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (goal bt-cavalry-threat-goal 1)
+    (building-type-count-total barracks >= 1)
+    (up-pending-objects c: spearman-line == 0)
+    (can-train spearman-line)
+=>
+    (train spearman-line)
+    (set-goal bt-preempt-defense-issued-goal 1)
+)
+
+(defrule
+    (goal bt-preempt-defense-issued-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (goal bt-ranged-threat-goal 1)
+    (building-type-count-total archery-range >= 1)
+    (up-pending-objects c: skirmisher-line == 0)
+    (can-train skirmisher-line)
+=>
+    (train skirmisher-line)
+    (set-goal bt-preempt-defense-issued-goal 1)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 2)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal strategy-goal bt-strategy-boom)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc2-claim)
+    (set-goal bt-preempt-defense-issued-goal 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 3)
+    (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+    (goal strategy-goal bt-strategy-boom)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (can-afford-building town-center-foundation)
+    (can-build town-center)
+=>
+    (set-strategic-number sn-resource-control bt-tc3-claim)
+    (set-goal bt-preempt-defense-issued-goal 0)
+)
+
+(defrule
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (building-type-count town-center >= 2)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (building-type-count town-center >= 3)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 2)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-idle)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
+    )
+=>
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (not (town-under-attack))
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 3)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-idle)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
+    )
+=>
+    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-original-owner-goal bt-tc2-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+(defrule
+    (goal bt-preempt-original-owner-goal bt-tc3-claim)
+    (goal bt-tc-project-goal 0)
+    (strategic-number sn-resource-control == bt-preempt-emergency-claim)
+=>
+    (set-goal bt-preempt-defense-issued-goal 0)
+    (set-strategic-number sn-resource-control 0)
+)
+
+
+;================================================================
 ; 15. PRODUCTION CAPACITY
 ;================================================================
 ;
@@ -7843,11 +7915,13 @@ sn-stone-gatherer-percentage == 0)))))
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -7869,11 +7943,13 @@ sn-stone-gatherer-percentage == 0)))))
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -7893,11 +7969,13 @@ sn-stone-gatherer-percentage == 0)))))
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -7941,7 +8019,6 @@ sn-stone-gatherer-percentage == 0)))))
 ; TC, and other capital-consuming systems.
 (defrule
     (current-age == feudal-age)
-    (goal bt-castle-prereq-backoff-goal 0)
     (goal bt-castle-prereq-backoff-goal 0)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total blacksmith < 1)
@@ -8071,7 +8148,6 @@ sn-stone-gatherer-percentage == 0)))))
 (defrule
     (current-age == feudal-age)
     (goal bt-castle-prereq-backoff-goal 0)
-    (goal bt-castle-prereq-backoff-goal 0)
     (building-type-count blacksmith >= 1)
     (not (can-research-with-escrow castle-age))
     (building-type-count-total market < 1)
@@ -8106,7 +8182,6 @@ sn-stone-gatherer-percentage == 0)))))
     (goal bt-castle-cataphract-demand-goal 1)
     (goal bt-imperial-siege-package-goal 1)
     (goal bt-castle-cataphract-backoff-goal 0)
-    (goal bt-castle-cataphract-backoff-goal 0)
     (current-age >= imperial-age)
     (building-type-count-total castle < 1)
     (up-pending-objects c: castle == 0)
@@ -8136,7 +8211,6 @@ sn-stone-gatherer-percentage == 0)))))
     ; Original pre-Imperial Cataphract Castle executor.
     (goal bt-castle-cataphract-demand-goal 1)
     (goal bt-imperial-siege-package-goal 0)
-    (goal bt-castle-cataphract-backoff-goal 0)
     (goal bt-castle-cataphract-backoff-goal 0)
     (current-age >= castle-age)
     (building-type-count-total castle < 1)
@@ -9212,8 +9286,10 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
     )
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        )
     )
 =>
     (set-goal bt-standing-army-demand-goal 0)
@@ -9871,77 +9947,9 @@ cataphract-line < bt-cataphract-target-1)))))
 ;       -> COMPLETION
 ;       -> REASSESS DEMAND
 ;
-; A failed execution must not destroy a still-valid strategic demand.
-; Watchdogs only release stale execution ownership or renew foundation
-; support. They remain execution support only and never alter strategic demand.
-
-;------------------------------
-; TC2 strategic demand.
-;------------------------------
-(defrule
-    (goal bt-tc-project-goal 0)
-    (goal bt-tc-stage-goal bt-tc-stage-idle)
-    (goal strategy-goal bt-strategy-boom)
-    (current-age >= castle-age)
-    (unit-type-count villager >= 32)
-    (food-amount >= 350)
-    (wood-amount >= 300)
-    (building-type-count town-center >= 1)
-    (building-type-count-total town-center < 2)
-=>
-    (set-goal bt-tc-project-goal 2)
-    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-)
-
-; TC3 strategic demand.
-(defrule
-    (goal bt-tc-project-goal 0)
-    (goal bt-tc-stage-goal bt-tc-stage-idle)
-    (goal strategy-goal bt-strategy-boom)
-    (current-age >= castle-age)
-    (unit-type-count villager >= 45)
-    (food-amount >= 500)
-    (wood-amount >= 300)
-    (building-type-count town-center >= 2)
-    (building-type-count-total town-center < 3)
-=>
-    (set-goal bt-tc-project-goal 3)
-    (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
-)
-
-;------------------------------
-; TC2 resource-claim provider.
-;------------------------------
-(defrule
-    (goal bt-tc-project-goal 2)
-    (goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total town-center < 2)
-    (not (up-pending-placement c: town-center))
-    (can-build-with-escrow town-center)
-=>
-    (set-strategic-number sn-resource-control bt-tc2-claim)
-    (release-escrow food)
-    (release-escrow wood)
-    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (enable-timer bt-tc2-watchdog-timer bt-tc-watchdog-seconds)
-)
-
-; TC3 resource-claim provider.
-(defrule
-    (goal bt-tc-project-goal 3)
-    (goal bt-tc-stage-goal bt-tc-stage-demanded)
-    (strategic-number sn-resource-control == 0)
-    (building-type-count-total town-center < 3)
-    (not (up-pending-placement c: town-center))
-    (can-build-with-escrow town-center)
-=>
-    (set-strategic-number sn-resource-control bt-tc3-claim)
-    (release-escrow food)
-    (release-escrow wood)
-    (set-goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-    (enable-timer bt-tc3-watchdog-timer bt-tc-watchdog-seconds)
-)
+; Strategic demand and resource claim are evaluated before production arbitration.
+; This section owns only TC placement, foundation support, cancellation,
+; completion, and execution recovery after a project already exists.
 
 ;------------------------------
 ; TC2 single execution provider.
