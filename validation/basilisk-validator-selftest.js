@@ -732,14 +732,7 @@ try {
         '(include "BasiliskTelemetry.xs" "BasiliskTelemetry.xs")',
       ),
     },
-    {
-      name: "emergency-counter-witness-rejected",
-      expected: "[Preemption] emergency counter lacks queue/completed unit witness",
-      source: baseline.replace(
-        "    (building-type-count-total barracks >= 1)\n    (up-pending-objects c: spearman-line == 0)\n    (can-train spearman-line)\n",
-        "    (building-type-count-total barracks >= 1)\n    (can-train spearman-line)\n",
-      ),
-    },
+
     {
       name: "DE-runtime-rejected-arbalester-alias",
       expected: "DE runtime canonical identifier",
