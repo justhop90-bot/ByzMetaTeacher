@@ -2756,6 +2756,22 @@ function validateEcoResearchDemandRemoval(rules) {
     ],
     "Two-Man Saw",
   );
+  requireResearchRule(
+    "ri-gold-shaft-mining",
+    [
+      "(current-age == castle-age)",
+      "(goal strategy-goal bt-strategy-boom)",
+      "(up-research-status c: ri-gold-mining >= research-complete)",
+      "(building-type-count-total town-center >= 2)",
+      "(not (can-research-with-escrow imperial-age))",
+      "(not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))",
+      "(up-research-status c: ri-gold-shaft-mining == research-available)",
+      "(up-compare-goal bt-research-mining-camp-failure-backoff-goal != ri-gold-shaft-mining)",
+      "(building-type-count mining-camp >= 1)",
+      "(goal bt-research-mining-camp-claim-goal 0)",
+    ],
+    "Gold Shaft Mining",
+  );
 
   const stoneRules = rules.filter(
     (rule) =>
