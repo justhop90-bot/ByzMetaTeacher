@@ -3574,7 +3574,7 @@ function validateRushStallFailurePolicy(rules, sourceText) {
     "[RUSH stall] second-stall rule must be an explicit strategy transition, not a hidden result code",
   );
 
-  const strategyConstants = [...sourceText.matchAll(/\\(defconst\\s+(bt-strategy-[A-Za-z0-9_-]+)\\s+(-?\\d+)\\)/g)]
+  const strategyConstants = [...sourceText.matchAll(/\(defconst\s+(bt-strategy-[A-Za-z0-9_-]+)\s+(-?\d+)\)/g)]
     .map((match) => match[1]);
   assert.deepEqual(
     new Set(strategyConstants),
