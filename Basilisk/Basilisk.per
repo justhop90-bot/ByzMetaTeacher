@@ -556,8 +556,6 @@
 (defconst bt-resource-mode-food-crisis 18)
 (defconst bt-resource-mode-gold-crisis 19)
 (defconst bt-resource-mode-wood-crisis 20)
-(defconst bt-hand-cart-demand-goal 50)
-(defconst bt-two-man-saw-demand-goal 52)
 (defconst bt-stone-mining-demand-goal 53)
 (defconst bt-scout-target-player-goal 55)
 (defconst bt-scout-pressure-demand-goal 56)
@@ -577,7 +575,6 @@
 (defconst bt-feudal-farm-wood-hold-goal 773)
 ; Persistent Castle Heavy Plow demand. 1 means the farm-efficiency upgrade
 ; remains wanted until completion or Imperial priority invalidates the window.
-(defconst bt-heavy-plow-demand-goal 699)
 ; Diagnostic narration state. These goals remember only already-decided state.
 ; They never participate in strategy, production, resource allocation, or research.
 (defconst bt-debug-verbosity-goal 700)
@@ -951,18 +948,6 @@
     (disable-self)
 )
 
-(defrule
-    (true)
-=>
-
-    (set-goal bt-hand-cart-demand-goal 0)
-
-    (set-goal bt-heavy-plow-demand-goal 0)
-    (set-goal bt-two-man-saw-demand-goal 0)
-    (set-goal bt-stone-mining-demand-goal 0)
-
-    (disable-self)
-)
 
 
 ; Initialize preemption ownership and telemetry transport state.
@@ -4065,71 +4050,17 @@
 )
 
 ;================================================================
-; 11A. CASTLE FARM TECHNOLOGY
-;================================================================
-; Heavy Plow is the Castle-age continuation of the Mill farm lifecycle.
-; Demand starts on a modest 8-farm base so the upgrade arrives before the
-; economy has already spent a pile of wood compensating for the missing tech.
 (defrule
-    (goal bt-heavy-plow-demand-goal 0)
     (current-age == castle-age)
     (up-research-status c: ri-horse-collar >= research-complete)
     (building-type-count-total farm >= bt-mill-second-farm-threshold-1tc)
     (up-research-status c: ri-heavy-plow == research-available)
     (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-=>
-    (set-goal bt-heavy-plow-demand-goal 1)
-)
-
-; Strategic invalidation only. Temporary resource contention and provider
-; loss do not erase Heavy Plow demand; the executor owns feasibility.
-; Four independent invalidation witnesses. Keep each rule parser-simple:
-; demand is cleared whenever any terminal strategic condition becomes true.
-(defrule
-    (goal bt-heavy-plow-demand-goal 1)
-    (goal bt-research-mill-claim-goal 0)
-    (current-age > castle-age)
-=>
-    (set-goal bt-heavy-plow-demand-goal 0)
-)
-
-(defrule
-    (goal bt-heavy-plow-demand-goal 1)
-    (goal bt-research-mill-claim-goal 0)
-    (up-research-status c: ri-heavy-plow >= research-complete)
-=>
-    (set-goal bt-heavy-plow-demand-goal 0)
-)
-
-(defrule
-    (goal bt-heavy-plow-demand-goal 1)
-    (goal bt-research-mill-claim-goal 0)
-    (can-research-with-escrow imperial-age)
-=>
-    (set-goal bt-heavy-plow-demand-goal 0)
-)
-
-(defrule
-    (goal bt-heavy-plow-demand-goal 1)
-    (goal bt-research-mill-claim-goal 0)
-    (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)
-=>
-    (set-goal bt-heavy-plow-demand-goal 0)
-)
-
-; Demand -> claim -> release Food + Wood escrow -> research.
-; Military package cursors are strategic intent, not eco-tech feasibility.
-(defrule
-    (goal bt-heavy-plow-demand-goal 1)
-    (current-age == castle-age)
     (up-compare-goal bt-research-mill-failure-backoff-goal != ri-heavy-plow)
     (strategic-number sn-resource-control == 0)
-    (not (can-research-with-escrow imperial-age))
     (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
     (building-type-count mill >= 1)
     (can-research-with-escrow ri-heavy-plow)
-    (goal bt-research-mill-claim-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-heavy-plow)
     (release-escrow food)
@@ -4138,14 +4069,23 @@
     (set-goal bt-research-mill-claim-goal ri-heavy-plow)
     (set-strategic-number sn-resource-control 0)
 )
+; 11A. CASTLE FARM TECHNOLOGY
+;================================================================
+; Heavy Plow is the Castle-age continuation of the Mill farm lifecycle.
+; Demand starts on a modest 8-farm base so the upgrade arrives before the
+; economy has already spent a pile of wood compensating for the missing tech.
 
-(defrule
-    (goal bt-research-mill-claim-goal ri-heavy-plow)
-    (up-research-status c: ri-heavy-plow == research-complete)
-=>
-    (set-goal bt-research-mill-claim-goal 0)
-    (set-goal bt-heavy-plow-demand-goal 0)
-)
+; Strategic invalidation only. Temporary resource contention and provider
+; loss do not erase Heavy Plow demand; the executor owns feasibility.
+; Four independent invalidation witnesses. Keep each rule parser-simple:
+; demand is cleared whenever any terminal strategic condition becomes true.
+
+
+
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+; Military package cursors are strategic intent, not eco-tech feasibility.
+
 
 ;================================================================
 ; 11B. IMPERIAL FARM TECHNOLOGY
@@ -7011,6 +6951,28 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 ;================================================================
+(defrule
+    (current-age >= castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (up-research-status c: ri-wheel-barrow >= research-complete)
+    (or
+            (building-type-count-total town-center >= 3)
+            (unit-type-count villager >= bt-hand-cart-villagers)
+        )
+    (not (can-research-with-escrow imperial-age))
+    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
+    (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-hand-cart)
+    (strategic-number sn-resource-control == 0)
+    (building-type-count town-center >= 1)
+    (can-research-with-escrow ri-hand-cart)
+=>
+    (set-strategic-number sn-resource-control ri-hand-cart)
+    (release-escrow food)
+    (release-escrow wood)
+    (research ri-hand-cart)
+    (set-goal bt-research-town-center-claim-goal ri-hand-cart)
+    (set-strategic-number sn-resource-control 0)
+)
 ; 14H. HAND CART DEMAND / RESEARCH LIFECYCLE
 ;================================================================
 ;
@@ -7021,65 +6983,14 @@ sn-stone-gatherer-percentage == 0)))))
 ;
 ; The existing Imperial feasibility veto also prevents an immediate
 ; Imperial-age bank from being cannibalized.
-(defrule
-    (current-age >= castle-age)
-    (goal strategy-goal bt-strategy-boom)
-    (up-research-status c: ri-wheel-barrow >= research-complete)
-    (or
-        (building-type-count-total town-center >= 3)
-        (unit-type-count villager >= bt-hand-cart-villagers)
-    )
-    (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (up-research-status c: ri-hand-cart == research-available)
-=>
-    (set-goal bt-hand-cart-demand-goal 1)
-)
 
 ; Withdraw only a pending demand when its maturity or opportunity-cost
 ; witness disappears. An active Hand Cart claim owns the mutex until
 ; completion or watchdog recovery.
-(defrule
-    (goal bt-hand-cart-demand-goal 1)
-    (goal bt-research-town-center-claim-goal 0)
-    (or (can-research-with-escrow imperial-age) (or (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep) (not
-            (and (current-age >= castle-age) (and (goal strategy-goal bt-strategy-boom) (and (up-research-status c: ri-wheel-barrow >= research-complete) (and (or
-                    (building-type-count-total town-center >= 3)
-                    (unit-type-count villager >= bt-hand-cart-villagers)
-                ) (and (not (can-research-with-escrow imperial-age)) (and (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep)) (up-research-status c: ri-hand-cart == research-available)))))))
-        )))
-=>
-    (set-goal bt-hand-cart-demand-goal 0)
-)
 
 ; Demand -> claim -> release Food + Wood escrow -> research.
-(defrule
-    (goal bt-hand-cart-demand-goal 1)
-    (current-age >= castle-age)
-    (up-compare-goal bt-research-town-center-failure-backoff-goal != ri-hand-cart)
-    (strategic-number sn-resource-control == 0)
-    (not (can-research-with-escrow imperial-age))
-    (not (goal bt-resource-mode-goal bt-resource-mode-imperial-bank-prep))
-    (building-type-count town-center >= 1)
-    (can-research-with-escrow ri-hand-cart)
-    (goal bt-research-town-center-claim-goal 0)
-=>
-    (set-strategic-number sn-resource-control ri-hand-cart)
-    (release-escrow food)
-    (release-escrow wood)
-    (research ri-hand-cart)
-    (set-goal bt-research-town-center-claim-goal ri-hand-cart)
-    (set-strategic-number sn-resource-control 0)
-)
 
 ; research-complete is the terminal witness for the Hand Cart claim.
-(defrule
-    (goal bt-research-town-center-claim-goal ri-hand-cart)
-    (up-research-status c: ri-hand-cart == research-complete)
-=>
-    (set-goal bt-research-town-center-claim-goal 0)
-    (set-goal bt-hand-cart-demand-goal 0)
-)
 
 ;----------------------------------------------------------------
 ; HAND CART WATCHDOG EXPIRY
@@ -7159,50 +7070,14 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 ;================================================================
-; 14K. TWO-MAN SAW DEMAND / RESEARCH LIFECYCLE
-;================================================================
-;
-; Two-Man Saw is the terminal Imperial wood-productivity investment.
-; Imperial BOOM is the strategic owner, but the upgrade also waits for a
-; mature villager economy and a real lumberjack base so the 300F/200W,
-; 100-second investment has time to pay back.
 (defrule
     (current-age >= imperial-age)
     (unit-type-count villager >= bt-two-man-saw-villagers)
     (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-cataphract-demand-goal 1))
-    (research-available ri-two-man-saw)
-=>
-    (set-goal bt-two-man-saw-demand-goal 1)
-)
-
-; Withdraw only a pending demand when Imperial power demand takes
-; priority or the technology is no longer available. An active
-; Two-Man Saw claim remains protected by sn-resource-control.
-(defrule
-    (goal bt-two-man-saw-demand-goal 1)
-    (goal bt-research-lumber-camp-claim-goal 0)
-    (or
-        (goal bt-cataphract-demand-goal 1)
-        (not
-            (and (current-age >= imperial-age) (and (goal strategy-goal bt-strategy-boom) (and (not (goal bt-cataphract-demand-goal 1)) (research-available ri-two-man-saw))))
-        )
-    )
-=>
-    (set-goal bt-two-man-saw-demand-goal 0)
-)
-
-; Demand -> claim -> release Food + Wood escrow -> research.
-(defrule
-    (goal bt-two-man-saw-demand-goal 1)
-    (current-age >= imperial-age)
-    (unit-type-count villager >= bt-two-man-saw-villagers)
-    (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)
-    (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
     (strategic-number sn-resource-control == 0)
-    (not (goal bt-cataphract-demand-goal 1))
     (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-two-man-saw)
     (goal bt-research-lumber-camp-claim-goal 0)
@@ -7210,7 +7085,6 @@ sn-stone-gatherer-percentage == 0)))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
-    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-two-man-saw)
     (release-escrow food)
@@ -7219,15 +7093,21 @@ sn-stone-gatherer-percentage == 0)))))
     (set-goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
     (set-strategic-number sn-resource-control 0)
 )
+; 14K. TWO-MAN SAW DEMAND / RESEARCH LIFECYCLE
+;================================================================
+;
+; Two-Man Saw is the terminal Imperial wood-productivity investment.
+; Imperial BOOM is the strategic owner, but the upgrade also waits for a
+; mature villager economy and a real lumberjack base so the 300F/200W,
+; 100-second investment has time to pay back.
+
+; Withdraw only a pending demand when Imperial power demand takes
+; priority or the technology is no longer available. An active
+; Two-Man Saw claim remains protected by sn-resource-control.
+
+; Demand -> claim -> release Food + Wood escrow -> research.
 
 ; research-complete is the terminal witness for the Two-Man Saw claim.
-(defrule
-    (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
-    (up-research-status c: ri-two-man-saw == research-complete)
-=>
-    (set-goal bt-research-lumber-camp-claim-goal 0)
-    (set-goal bt-two-man-saw-demand-goal 0)
-)
 
 ;----------------------------------------------------------------
 ; TWO-MAN SAW WATCHDOG EXPIRY
@@ -9617,14 +9497,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-debug-last-eco-event-goal 12)
 )
 
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-hand-cart-demand-goal 1)
-    (up-compare-goal bt-debug-last-eco-event-goal != 13)
-=>
-    (chat-local-to-self "BASILISK | ECO | Hand Cart: demand active.")
-    (set-goal bt-debug-last-eco-event-goal 13)
-)
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
@@ -9663,14 +9535,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-goal bt-debug-last-eco-event-goal 18)
 )
 
-(defrule
-    (up-compare-goal bt-debug-verbosity-goal >= 2)
-    (goal bt-heavy-plow-demand-goal 1)
-    (up-compare-goal bt-debug-last-eco-event-goal != 19)
-=>
-    (chat-local-to-self "BASILISK | ECO | Heavy Plow: demand active.")
-    (set-goal bt-debug-last-eco-event-goal 19)
-)
 
 (defrule
     (up-compare-goal bt-debug-verbosity-goal >= 2)
