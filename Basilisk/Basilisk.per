@@ -3724,13 +3724,17 @@
     (or
         (and
             (strategic-number sn-gold-gatherer-percentage > 0)
-            (resource-found gold)
-            (dropsite-min-distance gold > 8)
+            (and
+                (resource-found gold)
+                (dropsite-min-distance gold > 8)
+            )
         )
         (and
             (strategic-number sn-stone-gatherer-percentage > 0)
-            (resource-found stone)
-            (dropsite-min-distance stone > 8)
+            (and
+                (resource-found stone)
+                (dropsite-min-distance stone > 8)
+            )
         )
     )
     (building-type-count-total mining-camp < 3)
