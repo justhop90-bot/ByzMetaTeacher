@@ -12538,9 +12538,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-imperial-siege-package-goal 1)
     (or
         (players-building-count target-player == 0)
-        (not (player-in-game target-player))
-        (current-age < imperial-age)
-        (building-type-count castle < 1)
+        (or
+            (not (player-in-game target-player))
+            (or
+                (current-age < imperial-age)
+                (building-type-count castle < 1)
+            )
+        )
     )
 =>
     (set-goal bt-trebuchet-demand-goal 0)
@@ -12610,13 +12614,15 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-ram-demand-goal 1)
     (or
         (players-building-count target-player == 0)
-        (and
-            (current-age == castle-age)
-            (goal attack-goal 0)
-        )
-        (and
-            (current-age >= imperial-age)
-            (goal bt-imperial-siege-package-goal 0)
+        (or
+            (and
+                (current-age == castle-age)
+                (goal attack-goal 0)
+            )
+            (and
+                (current-age >= imperial-age)
+                (goal bt-imperial-siege-package-goal 0)
+            )
         )
     )
 =>
