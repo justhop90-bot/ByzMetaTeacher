@@ -3193,6 +3193,7 @@ function validateBasiliskPreemption(rules, sourceText, repoRootPath) {
 }
 
 function validateTelemetryRing(rules, sourceText, repoRootPath) {
+  const rawRules = extractRawRules(sourceText);
   const required = [
     "bt-telemetry-write-head-goal",
     "bt-telemetry-read-head-goal",
@@ -3226,7 +3227,7 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   );
 
   assert.equal(
-    rules.filter((rule) => rule.includes("(xs-script-call \"basiliskTelemetryDrain\")")).length,
+    rawRules.filter((rule) => rule.includes("(xs-script-call \"basiliskTelemetryDrain\")")).length,
     1,
     "[Telemetry] exactly one explicit XS drain rule is expected",
   );
