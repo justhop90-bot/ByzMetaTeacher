@@ -1066,17 +1066,21 @@ assert.ok(
   "[Resource boundary] Thumb Ring executor lost its live allowed resource-mode gate",
 );
 
-const lastStrategyWriterIndex = Math.max(
-  ...rules
-    .map((rule, index) =>
-      renderRule(rule).includes("(set-goal strategy-goal") ? index : -1,
-    )
-    .filter((index) => index >= 0),
-);
 const resourceModeResetIndex = ruleIndex(
   "(true)",
   "(set-goal bt-resource-mode-goal 0)",
 );
+const strategySelectionWriterIndices = rules
+  .map((rule, index) =>
+    index < resourceModeResetIndex &&
+    renderRule(rule).includes("(set-goal strategy-goal") ? index : -1,
+  )
+  .filter((index) => index >= 0);
+assert.ok(
+  strategySelectionWriterIndices.length > 0,
+  "[Strategy boundary] no primary strategy-selection writer exists before resource-mode arbitration",
+);
+const lastStrategyWriterIndex = Math.max(...strategySelectionWriterIndices);
 const rangedExecutorRules = [
   ["ri-fletching", ["(goal bt-ranged-threat-goal 1)"]],
   ["ri-padded-archer-armor", ["(goal bt-ranged-threat-goal 1)"]],
