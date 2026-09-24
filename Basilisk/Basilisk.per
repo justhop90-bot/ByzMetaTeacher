@@ -594,6 +594,9 @@
 (defconst bt-imperial-prereq-demand-goal 711)
 ; Feudal eco window hold: 1 means Horse Collar or Double-Bit Axe can execute now.
 (defconst bt-feudal-eco-hold-goal 694)
+; Late-Feudal BOOM farm budget. The 385W floor reserves 150W Blacksmith + 175W Market + 60W Farm.
+; Hold only the final two-villager BOOM window before the hard 28-villager Castle boundary; pressure postures and food-emergency farms remain independent.
+(defconst bt-feudal-farm-wood-hold-goal 773)
 ; Persistent Feudal Horse Collar demand. 1 means the Feudal eco upgrade
 ; remains wanted until completion or the Feudal window closes.
 (defconst bt-horse-collar-demand-goal 698)
@@ -818,6 +821,8 @@
 (defconst bt-farm-castle-emergency-food 200)
 (defconst bt-farm-imperial-food-threshold 700)
 (defconst bt-farm-build-wood 60)
+(defconst bt-feudal-farm-reserve-villagers 26)
+(defconst bt-feudal-farm-wood-floor 385)
 
 ; Military composition targets.
 (defconst bt-spear-target-1 6)
@@ -4500,6 +4505,41 @@
     (up-modify-goal bt-farm-depleted-reserve-goal c:+ 3)
 )
 
+; Late-Feudal BOOM farm budget.
+; Preserve enough wood for the Castle prerequisite package plus one farm.
+; This is a policy hold outside the escrow-aware farm executor, so farm
+; feasibility remains engine-native and emergency food production can still pass.
+(defrule
+    (current-age == feudal-age)
+    (goal strategy-goal bt-strategy-boom)
+    (unit-type-count villager >= bt-feudal-farm-reserve-villagers)
+    (unit-type-count villager < bt-castle-villagers)
+    (food-amount >= 350)
+    (not (can-research-with-escrow castle-age))
+    (wood-amount < bt-feudal-farm-wood-floor)
+=>
+    (set-goal bt-feudal-farm-wood-hold-goal 1)
+)
+
+(defrule
+    (goal bt-feudal-farm-wood-hold-goal 1)
+    (or
+        (current-age != feudal-age)
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (or
+                (unit-type-count villager >= bt-castle-villagers)
+                (or
+                    (wood-amount >= bt-feudal-farm-wood-floor)
+                    (food-amount < 350)
+                )
+            )
+        )
+    )
+=>
+    (set-goal bt-feudal-farm-wood-hold-goal 0)
+)
+
 ;----------------------------------------------------------------
 ; 11A. FEUDAL FARM CAPACITY
 ;----------------------------------------------------------------
@@ -4507,6 +4547,7 @@
     (current-age == feudal-age)
     (strategic-number sn-resource-control == 0)
     (up-pending-objects c: farm == 0)
+    (goal bt-feudal-farm-wood-hold-goal 0)
     (or
         (and (food-amount < 350) (idle-farm-count == 0))
         (or
@@ -6186,6 +6227,7 @@ town-center >= 2)))))
     (true)
 =>
     (set-goal bt-feudal-eco-hold-goal 0)
+    (set-goal bt-feudal-farm-wood-hold-goal 0)
 )
 
 ; Feudal eco priority. This state is evaluated immediately before Castle
