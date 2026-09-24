@@ -2853,8 +2853,10 @@ function validateEcoResearchDemandRemoval(rules) {
   );
   assert.ok(universityRules.length >= 2, "[University direct] shared University capability providers are missing");
   assert.ok(
-    universityRules.some((rule) => rule.includes("(goal bt-research-siege-package-goal ri-ballistics)") || rule.includes("(goal bt-research-siege-package-goal ri-chemistry)")),
-    "[University direct] siege research capability witness is missing",
+    universityRules.some((rule) =>
+      rule.includes("(goal bt-bombard-cannon-demand-goal 1)"),
+    ),
+    "[University direct] BBC/chemistry capability witness is missing",
   );
   assert.ok(
     universityRules.some((rule) => rule.includes("(building-type-count-total monastery >= 1)") && rule.includes("(building-type-count-total siege-workshop >= 1)")),
