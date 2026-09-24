@@ -4918,6 +4918,14 @@ function validateLifecycleAnchors(sourceText, rules) {
   );
 }
 
+if (process.argv.includes("--dump-semantic-rules")) {
+  const semanticRules = parseStrictTopLevelForms(source).filter(
+    (form) => form.head === "defrule",
+  );
+  console.log(JSON.stringify(semanticRules));
+  process.exit(0);
+}
+
 validatePreprocessorStructure(source);
 const parsedForms = parseStrictTopLevelForms(source);
 validateBasiliskGoalNamespace(parsedForms);
