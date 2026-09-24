@@ -258,7 +258,15 @@ try {
             expr.args[0]?.value,
           ),
       ) &&
-      JSON.stringify(rule).includes("bt-standing-"),
+      JSON.stringify(rule).includes("bt-standing-") &&
+      !hasFact(rule, "goal", [
+        "bt-scout-pressure-demand-goal",
+        "1",
+      ]) &&
+      !hasFact(rule, "goal", [
+        "strategy-goal",
+        "bt-strategy-flush",
+      ]),
   );
   assert.equal(
     standingCapabilityRules.length,
