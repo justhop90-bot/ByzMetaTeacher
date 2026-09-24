@@ -444,7 +444,7 @@ try {
       expected: "[Telemetry namespace] XS BT_RING_READ",
       source: baseline.replace(
         "(defconst bt-telemetry-read-head-goal 736)",
-        "(defconst bt-telemetry-read-head-goal 900)",
+        "(defconst bt-telemetry-read-head-goal 767)",
       ),
     },
     {
