@@ -14597,23 +14597,7 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
 ;
 ; Existing spear mass + real cavalry threat + free resource claim.
 (defrule
-    (current-age >= castle-age)
-    (or
-        (and
-            (up-compare-goal bt-cavalry-counter-level-goal >= 1)
-            (or
-(players-unit-type-count any-enemy knight-line >= 6)
-(or
-(players-unit-type-count any-enemy camel-line >= 6)
-(or
-(players-unit-type-count any-enemy cataphract-line >= 6)
-(players-unit-type-count any-enemy scout-cavalry-line >= 6))))
-        )
-        (and
-            (up-compare-goal bt-standing-spear-target-goal >= bt-spear-target-2)
-            (unit-type-count-total spearman-line >= bt-spear-target-2)
-        )
-    )
+    (goal bt-research-cavalry-counter-package-goal ri-pikeman)
     (up-compare-goal bt-research-barracks-failure-backoff-goal != ri-pikeman)
     (strategic-number sn-resource-control == 0)
     (or
@@ -14629,7 +14613,6 @@ bt-resource-mode-goal bt-resource-mode-food-crisis) (goal bt-resource-mode-goal 
     (building-type-count barracks >= 1)
     (can-research-with-escrow ri-pikeman)
     (goal bt-research-barracks-claim-goal 0)
-    (goal bt-research-cavalry-counter-package-goal ri-pikeman)
 =>
     (set-strategic-number sn-resource-control ri-pikeman)
     (release-escrow food)
