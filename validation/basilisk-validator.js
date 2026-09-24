@@ -3236,6 +3236,123 @@ function validateTelemetryRing(rules, sourceText, repoRootPath) {
   assert.ok(fs.existsSync(xsPath), "[Telemetry] BasiliskTelemetry.xs is missing");
   const xs = fs.readFileSync(xsPath, "utf8");
   assert.ok(xs.includes("void basiliskTelemetryDrain()"), "[Telemetry] drain function is missing");
+  const perNumericDefconsts = new Map(
+    [...sanitizeStructure(sourceText).matchAll(
+      /\(defconst\s+([A-Za-z][A-Za-z0-9_-]*)\s+(-?\d+)\)/g,
+    )].map((match) => [match[1], Number(match[2])]),
+  );
+
+  const xsNumericConsts = new Map(
+    [...xs.matchAll(
+      /\bconst\s+int\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*;/g,
+    )].map((match) => [match[1], Number(match[2])]),
+  );
+
+  const telemetryGoalBindings = new Map([
+    ["BT_DEBUG_VERBOSITY", "bt-debug-verbosity-goal"],
+    ["BT_RING_READ", "bt-telemetry-read-head-goal"],
+    ["BT_RING_COUNT", "bt-telemetry-count-goal"],
+    ["BT_RING_OVERFLOW", "bt-telemetry-overflow-goal"],
+    ["BT_RING_OVERFLOW_STATE", "bt-telemetry-overflow-state-goal"],
+    ["BT_SLOT_EVENT_BASE", "bt-telemetry-slot0-event-goal"],
+    ["BT_SLOT_OWNER_BASE", "bt-telemetry-slot0-owner-goal"],
+    ["BT_SLOT_FLAGS_BASE", "bt-telemetry-slot0-flags-goal"],
+    ["BT_SLOT_TIME_BASE", "bt-telemetry-slot0-time-goal"],
+    ["BT_SLOT_SEQUENCE_BASE", "bt-telemetry-slot0-sequence-goal"],
+  ]);
+
+  for (const [xsName, perName] of telemetryGoalBindings) {
+    assert.ok(
+      xsNumericConsts.has(xsName),
+      "[Telemetry namespace] XS constant " + xsName + " is missing",
+    );
+    assert.ok(
+      perNumericDefconsts.has(perName),
+      "[Telemetry namespace] controller defconst " + perName + " is missing",
+    );
+    assert.equal(
+      xsNumericConsts.get(xsName),
+      perNumericDefconsts.get(perName),
+      "[Telemetry namespace] XS " + xsName + "=" + xsNumericConsts.get(xsName) +
+        " diverges from controller " + perName + "=" + perNumericDefconsts.get(perName),
+    );
+  }
+
+  const telemetrySlotFamilies = [
+    ["event", "BT_SLOT_EVENT_BASE", [
+      "bt-telemetry-slot0-event-goal",
+      "bt-telemetry-slot1-event-goal",
+      "bt-telemetry-slot2-event-goal",
+      "bt-telemetry-slot3-event-goal",
+    ]],
+    ["owner", "BT_SLOT_OWNER_BASE", [
+      "bt-telemetry-slot0-owner-goal",
+      "bt-telemetry-slot1-owner-goal",
+      "bt-telemetry-slot2-owner-goal",
+      "bt-telemetry-slot3-owner-goal",
+    ]],
+    ["flags", "BT_SLOT_FLAGS_BASE", [
+      "bt-telemetry-slot0-flags-goal",
+      "bt-telemetry-slot1-flags-goal",
+      "bt-telemetry-slot2-flags-goal",
+      "bt-telemetry-slot3-flags-goal",
+    ]],
+    ["time", "BT_SLOT_TIME_BASE", [
+      "bt-telemetry-slot0-time-goal",
+      "bt-telemetry-slot1-time-goal",
+      "bt-telemetry-slot2-time-goal",
+      "bt-telemetry-slot3-time-goal",
+    ]],
+    ["sequence", "BT_SLOT_SEQUENCE_BASE", [
+      "bt-telemetry-slot0-sequence-goal",
+      "bt-telemetry-slot1-sequence-goal",
+      "bt-telemetry-slot2-sequence-goal",
+      "bt-telemetry-slot3-sequence-goal",
+    ]],
+  ];
+
+  for (const [family, xsBaseName, goalNames] of telemetrySlotFamilies) {
+    const base = xsNumericConsts.get(xsBaseName);
+    for (let offset = 0; offset < goalNames.length; offset += 1) {
+      assert.ok(
+        perNumericDefconsts.has(goalNames[offset]),
+        "[Telemetry namespace] " + family + " slot goal " + goalNames[offset] + " is missing",
+      );
+      assert.equal(
+        perNumericDefconsts.get(goalNames[offset]),
+        base + offset,
+        "[Telemetry namespace] " + xsBaseName + "=" + base +
+          " does not map " + goalNames[offset] + " to expected slot offset " + offset,
+      );
+    }
+  }
+
+  const xsFunctionSignatures = new Map();
+  for (const match of xs.matchAll(
+    /\b(?:void|int|string|float|bool)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*\{/g,
+  )) {
+    xsFunctionSignatures.set(match[1], match[2].trim());
+  }
+
+  assert.equal(
+    xsFunctionSignatures.get("basiliskTelemetryDrain"),
+    "",
+    "[Telemetry XS] basiliskTelemetryDrain must remain a zero-parameter xs-script-call entry point",
+  );
+  assert.equal(
+    xsFunctionSignatures.get("basiliskTelemetryEventName"),
+    "int eventType",
+    "[Telemetry XS] basiliskTelemetryEventName signature drifted from int eventType",
+  );
+
+  const supportedXsCalls = new Set(["xsGetGoal", "xsSetGoal", "xsChatData"]);
+  for (const match of xs.matchAll(/\b(xs[A-Za-z0-9_]*)\s*\(/g)) {
+    assert.ok(
+      supportedXsCalls.has(match[1]),
+      "[Telemetry XS] unsupported or misspelled XS call '" + match[1] + "'",
+    );
+  }
+
   function validateXsChatDataCalls(xsSource) {
     const calls = [];
     let cursor = 0;
