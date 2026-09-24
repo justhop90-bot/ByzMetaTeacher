@@ -180,6 +180,9 @@
 (defconst bt-strategy-rush 201)
 (defconst bt-strategy-boom 202)
 (defconst bt-strategy-castle-power 203)
+; RUSH attack authorization requires the same completed four-Archer core
+; already used by the RUSH -> CASTLE-POWER transition.
+(defconst bt-rush-attack-archer-witness 4)
 
 ; TC resource-claim values use currently unused high strategic-number IDs.
 ; They are state values stored in the existing sn-resource-control mutex.
@@ -5257,6 +5260,25 @@
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
     (not (goal strategy-goal bt-strategy-castle-power))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+;----------------------------------------------------------------
+; 13F-2. FEUDAL RUSH OBJECTIVE LOSS -> BOOM
+;----------------------------------------------------------------
+; RUSH is a pressure posture, not a permanent Feudal mode.  Once the
+; current target has no remaining buildings, the attack objective has
+; disappeared.  Threat response still has priority because those writers
+; ran earlier in this pass.  This rule is deliberately after every
+; opening-plan RUSH writer so the pressure plan cannot resurrect RUSH
+; later in the same pass.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (players-building-count target-player <= 0)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
 =>
     (set-goal strategy-goal bt-strategy-boom)
 )
@@ -11880,6 +11902,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
             (up-compare-goal bt-standing-crossbow-target-goal > 0)
             (unit-type-count crossbowman >= bt-standing-crossbow-target-goal)
         )
+    )
+    ; RUSH has its own Archer production path, outside the generic
+    ; standing-role targets.  Attack therefore needs a completed Archer
+    ; witness before the pressure posture can authorize attack-now.
+    (or
+        (not (goal strategy-goal bt-strategy-rush))
+        (unit-type-count archer-line >= bt-rush-attack-archer-witness)
     )
     (goal bt-counter-veto-goal 0)
     (goal bt-standing-army-demand-goal 0)
