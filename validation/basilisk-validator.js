@@ -5428,7 +5428,7 @@ function validateBoomEconomicLifecycle(rules, sourceText) {
 
   const firstCapacityConsumer = rules.findIndex(
     (rule) =>
-      /\\(build (?:barracks|archery-range|stable)\\)/.test(rule) &&
+      /\(build (?:barracks|archery-range|stable)\)/.test(rule) &&
       rule.includes("(goal bt-tc-project-goal 2)") &&
       rule.includes("(goal bt-tc-project-goal 3)"),
   );
