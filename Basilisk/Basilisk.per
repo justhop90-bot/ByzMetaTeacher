@@ -5868,11 +5868,6 @@ cataphract-line < bt-cataphract-target-1)))))
     (set-strategic-number sn-resource-control bt-preempt-emergency-claim)
 )
 
-(defrule
-=>
-    (xs-script-call "basiliskTelemetryDrain")
-)
-
 ; 14D. BYZANTINE RESOURCE ALLOCATION
 ;================================================================
 ; CONSUMES existing strategy/composition/project state. Never writes it.
