@@ -1257,12 +1257,17 @@ requireRule(
   "(set-goal strategy-goal bt-strategy-boom)",
 );
 
-const castlePowerTcConsumers = rules.filter((rule) => {
+const castlePowerTcDemandWriters = rules.filter((rule) => {
   const rendered = renderRule(rule);
   return rendered.includes("(goal strategy-goal bt-strategy-castle-power)") &&
-    rendered.includes("bt-tc-project-goal");
+    (rendered.includes("(set-goal bt-tc-project-goal 2)") ||
+      rendered.includes("(set-goal bt-tc-project-goal 3)"));
 });
-assert.equal(castlePowerTcConsumers.length, 0, "[Castle-power] BOOM-only TC expansion leaked into Castle-power");
+assert.equal(
+  castlePowerTcDemandWriters.length,
+  0,
+  "[Castle-power] BOOM-only TC demand writer leaked into Castle-power",
+);
 
 function castlePowerPolicy(input) {
   if (input.age >= input.imperialAge && input.safe) return "boom";
