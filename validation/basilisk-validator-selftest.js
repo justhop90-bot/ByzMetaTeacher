@@ -406,6 +406,137 @@ try {
     );
   }
 
+  const rushStallSecond = findSemanticRule(
+    "second consecutive Feudal RUSH stall release",
+    (rule) =>
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-rush"]) &&
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "goal", ["bt-rush-stall-latch-goal", "1"]) &&
+      hasFact(rule, "goal", ["attack-goal", "0"]) &&
+      hasFact(rule, "goal", ["bt-attack-result-goal", "bt-attack-result-none"]) &&
+      hasFact(rule, "up-compare-goal", [
+        "bt-attack-buildings-destroyed-goal",
+        "<=",
+        "0",
+      ]) &&
+      hasFact(rule, "up-compare-goal", [
+        "bt-relative-force-goal",
+        "<",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "strategy-goal",
+        "bt-strategy-boom",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-rush-stall-latch-goal",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-attack-result-goal",
+        "bt-attack-result-stalled",
+      ]),
+  );
+
+  const rushStallFirst = findSemanticRule(
+    "first consecutive Feudal RUSH stall latch",
+    (rule) =>
+      hasFact(rule, "goal", ["strategy-goal", "bt-strategy-rush"]) &&
+      hasFact(rule, "current-age", ["==", "feudal-age"]) &&
+      hasFact(rule, "goal", ["bt-rush-stall-latch-goal", "0"]) &&
+      hasFact(rule, "goal", ["attack-goal", "0"]) &&
+      hasFact(rule, "goal", ["bt-attack-result-goal", "bt-attack-result-none"]) &&
+      hasFact(rule, "up-compare-goal", [
+        "bt-attack-buildings-destroyed-goal",
+        "<=",
+        "0",
+      ]) &&
+      hasFact(rule, "up-compare-goal", [
+        "bt-relative-force-goal",
+        "<",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-rush-stall-latch-goal",
+        "1",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-attack-result-goal",
+        "bt-attack-result-stalled",
+      ]),
+  );
+
+  const rushDamageReset = findSemanticRule(
+    "structural damage clears RUSH stall latch",
+    (rule) =>
+      hasFact(rule, "up-compare-goal", [
+        "bt-attack-buildings-destroyed-goal",
+        ">=",
+        "1",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-attack-result-goal",
+        "bt-attack-result-damaged",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-rush-stall-latch-goal",
+        "0",
+      ]),
+  );
+
+  const rushReassessReset = findSemanticRule(
+    "RUSH reassess clears stall latch",
+    (rule) =>
+      hasFact(rule, "up-compare-goal", [
+        "bt-attack-buildings-destroyed-goal",
+        "<=",
+        "0",
+      ]) &&
+      hasFact(rule, "up-compare-goal", [
+        "bt-relative-force-goal",
+        ">=",
+        "0",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-attack-result-goal",
+        "bt-attack-result-reassess",
+      ]) &&
+      hasAction(rule, "set-goal", [
+        "bt-rush-stall-latch-goal",
+        "0",
+      ]),
+  );
+
+  const semanticIndex = (rule) => semanticRules.indexOf(rule);
+  assert.ok(
+    semanticIndex(rushDamageReset) < semanticIndex(rushStallSecond),
+    "[Semantic self-test] structural damage result must resolve before RUSH stall release",
+  );
+  assert.ok(
+    semanticIndex(rushStallSecond) < semanticIndex(rushStallFirst),
+    "[Semantic self-test] second-stall release must preempt the first-stall latch path",
+  );
+  assert.ok(
+    semanticIndex(rushStallFirst) < semanticIndex(rushReassessReset),
+    "[Semantic self-test] first-stall latch must precede reassessment",
+  );
+
+  const strategyValues = new Set(
+    [...baseline.matchAll(
+      /\\(defconst\\s+(bt-strategy-[A-Za-z0-9_-]+)\\s+(-?\\d+)\\)/g,
+    )].map((match) => match[1] + "=" + match[2]),
+  );
+  assert.deepEqual(
+    strategyValues,
+    new Set([
+      "bt-strategy-flush=200",
+      "bt-strategy-rush=201",
+      "bt-strategy-boom=202",
+      "bt-strategy-castle-power=203",
+    ]),
+    "[Semantic self-test] strategy state inventory changed while implementing RUSH failure memory",
+  );
+
   const boundaryPasses = [
     {
       name: "documented-unit-wildcard-count-slot-passes",
@@ -761,6 +892,87 @@ try {
           )
         );
       })(),
+    },
+    {
+      name: "rush-stall-latch-id-regression-rejected",
+      expected: "[RUSH stall] persistent stall latch must use GoalId 775",
+      source: baseline.replace(
+        "(defconst bt-rush-stall-latch-goal 775)",
+        "(defconst bt-rush-stall-latch-goal 776)",
+      ),
+    },
+    {
+      name: "rush-second-stall-release-regression-rejected",
+      expected: "[RUSH stall] second consecutive inferior stall release is missing",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal strategy-goal bt-strategy-rush)",
+          "(goal bt-rush-stall-latch-goal 1)",
+          "(set-goal strategy-goal bt-strategy-boom)",
+          "(set-goal bt-attack-result-goal bt-attack-result-stalled)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal strategy-goal bt-strategy-boom)\n",
+            "    (set-goal strategy-goal bt-strategy-rush)\n",
+          ),
+        "second consecutive RUSH stall release",
+      ),
+    },
+    {
+      name: "rush-first-stall-latch-regression-rejected",
+      expected: "[RUSH stall] first consecutive inferior stall latch is missing",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal strategy-goal bt-strategy-rush)",
+          "(goal bt-rush-stall-latch-goal 0)",
+          "(set-goal bt-rush-stall-latch-goal 1)",
+          "(set-goal bt-attack-result-goal bt-attack-result-stalled)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal bt-rush-stall-latch-goal 1)\n",
+            "",
+          ),
+        "first consecutive RUSH stall latch",
+      ),
+    },
+    {
+      name: "rush-stall-damage-reset-regression-rejected",
+      expected: "[RUSH stall] structural damage must clear the latch",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(up-compare-goal bt-attack-buildings-destroyed-goal >= 1)",
+          "(set-goal bt-attack-result-goal bt-attack-result-damaged)",
+          "(set-goal bt-rush-stall-latch-goal 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal bt-rush-stall-latch-goal 0)\n",
+            "",
+          ),
+        "structural damage RUSH stall reset",
+      ),
+    },
+    {
+      name: "rush-reassess-reset-regression-rejected",
+      expected: "[RUSH stall] reassessment must clear the latch",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(set-goal bt-attack-result-goal bt-attack-result-reassess)",
+          "(set-goal bt-rush-stall-latch-goal 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (set-goal bt-rush-stall-latch-goal 0)\n",
+            "",
+          ),
+        "RUSH reassessment stall reset",
+      ),
     },
     {
       name: "attack-feudal-allocation-missing-rejected",
@@ -2101,6 +2313,11 @@ try {
     "elite-varangian-local-tech-id-required",
     "resource-mode-override-without-p0-exclusion-rejected",
     "attack-negative-result-bucket-rejected",
+    "rush-stall-latch-id-regression-rejected",
+    "rush-second-stall-release-regression-rejected",
+    "rush-first-stall-latch-regression-rejected",
+    "rush-stall-damage-reset-regression-rejected",
+    "rush-reassess-reset-regression-rejected",
     "feudal-farm-budget-floor-regression-rejected",
     "feudal-farm-budget-hold-regression-rejected",
     "feudal-farm-budget-emergency-escape-regression-rejected",
@@ -2190,6 +2407,8 @@ try {
           "two-man-saw-executor-lumberjack-maturity-witness",
           "resource-mode-explicit-override-contract",
           "attack-result-non-positive-partition",
+          "repeated-feudal-rush-stall-release",
+          "rush-stall-damage-and-reassess-reset",
           "backoff-expiry-owner-exact-inventory",
           "imperial-siege-abort-package-ownership",
           "feudal-farm-budget-floor",
