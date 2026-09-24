@@ -3263,6 +3263,16 @@ function validateAttackContracts(rules) {
         `[Attack completion] Castle-Power attack rule ${index} lacks actual Crossbow completion witness`,
       );
     }
+    if (rule.includes("(goal strategy-goal bt-strategy-rush)")) {
+      assert.ok(
+        rule.includes("(unit-type-count archer-line >= bt-rush-attack-archer-witness)"),
+        `[Attack completion] RUSH attack rule ${index} lacks completed Archer capability witness`,
+      );
+      assert.ok(
+        !rule.includes("(unit-type-count-total archer-line >= bt-rush-attack-archer-witness)"),
+        `[Attack completion] RUSH attack rule ${index} must not use queue-inclusive Archer count as its completion witness`,
+      );
+    }
   }
 }
 
@@ -4915,6 +4925,7 @@ function validateLifecycleAnchors(sourceText, rules) {
     "bt-resource-mode-goal",
     "bt-standing-army-demand-goal",
     "bt-attack-timer",
+    "bt-rush-attack-archer-witness",
   ]) {
     assert.ok(sourceText.includes(symbol), `[Lifecycle] missing canonical state symbol: ${symbol}`);
   }
@@ -4934,6 +4945,36 @@ function validateLifecycleAnchors(sourceText, rules) {
     "(goal strategy-goal bt-strategy-rush)",
     "(current-age >= castle-age)",
     "(set-goal strategy-goal bt-strategy-boom)",
+  );
+  requireRule(
+    rules,
+    "Feudal RUSH objective-loss release",
+    "(goal strategy-goal bt-strategy-rush)",
+    "(current-age == feudal-age)",
+    "(players-building-count target-player <= 0)",
+    "(not (town-under-attack))",
+    "(not (goal bt-any-threat-goal 1))",
+    "(set-goal strategy-goal bt-strategy-boom)",
+  );
+
+  const rushWriterIndices = rules
+    .map((rule, index) => ({ rule, index }))
+    .filter(({ rule }) => rule.includes("(set-goal strategy-goal bt-strategy-rush)"))
+    .map(({ index }) => index);
+  const rushReleaseIndex = rules.findIndex(
+    (rule) =>
+      rule.includes("(goal strategy-goal bt-strategy-rush)") &&
+      rule.includes("(current-age == feudal-age)") &&
+      rule.includes("(players-building-count target-player <= 0)") &&
+      rule.includes("(set-goal strategy-goal bt-strategy-boom)"),
+  );
+  assert.ok(
+    rushReleaseIndex >= 0,
+    "[Lifecycle] Feudal RUSH objective-loss release rule cannot be located",
+  );
+  assert.ok(
+    rushWriterIndices.length > 0 && rushReleaseIndex > Math.max(...rushWriterIndices),
+    "[Lifecycle] Feudal RUSH objective-loss release must occur after every RUSH writer",
   );
   requireRule(
     rules,
