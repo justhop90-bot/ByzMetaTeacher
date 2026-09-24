@@ -615,8 +615,8 @@ requireRule(
 );
 requireRule(
   "Generic pressure fallback",
-  "(not (map-type arabia))
-  (not (map-type arena))",
+  "(not (map-type arabia))",
+  "(not (map-type arena))",
   "(set-goal bt-opening-plan-goal bt-opening-plan-generic-pressure)",
 );
 requireRule(
