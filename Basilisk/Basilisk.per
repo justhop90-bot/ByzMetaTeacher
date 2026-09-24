@@ -3090,17 +3090,7 @@
     (current-age == castle-age)
     (unit-type-count villager >= bt-imperial-villagers)
     (goal bt-imperial-commitment-goal 1)
-    (or
-        (building-type-count-total castle >= 1)
-        (and
-            (not
-                (or
-                    (goal strategy-goal bt-strategy-boom)
-                    (goal strategy-goal bt-strategy-castle-power)
-                )
-            )
-        )
-    )
+    (building-type-count-total castle >= 1)
     (up-compare-goal bt-research-age-failure-backoff-goal != imperial-age)
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow imperial-age)
