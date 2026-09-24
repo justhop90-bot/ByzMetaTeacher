@@ -489,7 +489,7 @@ try {
       hasAction(rule, "build", ["blacksmith"]),
   );
   assert.deepEqual(
-    expectedAdmissionBlockReasons.sort(),
+    [...expectedAdmissionBlockReasons].sort(),
     [
       "CASTLE_PREREQ_BACKOFF_ACTIVE",
       "FLETCHING_PACKAGE_NOT_ACTIVE",
