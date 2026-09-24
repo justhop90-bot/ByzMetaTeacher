@@ -972,11 +972,11 @@ function addKnownIdentifier(set, value) {
 
 function validateIdentifiers(sourceText, repoRootPath) {
   const registryFiles = {
-    object: path.join(repoRootPath, "extracted", "inventories", "airef-object-inventory.json"),
-    tech: path.join(repoRootPath, "extracted", "inventories", "airef-tech-inventory.json"),
-    strategicNumber: path.join(repoRootPath, "extracted", "inventories", "airef-strategic-number-inventory.json"),
-    class: path.join(repoRootPath, "extracted", "inventories", "airef-class-inventory.json"),
-    valueFamily: path.join(repoRootPath, "extracted", "inventories", "airef-value-family-inventory.json"),
+    object: path.join(repoRootPath, "docs", "reference", "inventories", "airef-object-inventory.json"),
+    tech: path.join(repoRootPath, "docs", "reference", "inventories", "airef-tech-inventory.json"),
+    strategicNumber: path.join(repoRootPath, "docs", "reference", "inventories", "airef-strategic-number-inventory.json"),
+    class: path.join(repoRootPath, "docs", "reference", "inventories", "airef-class-inventory.json"),
+    valueFamily: path.join(repoRootPath, "docs", "reference", "inventories", "airef-value-family-inventory.json"),
   };
   const known = {
     defconst: new Set(),
@@ -1199,7 +1199,8 @@ function validateIdentifiers(sourceText, repoRootPath) {
 function validateAIRefCommandVocabulary(sourceText, rules, repoRootPath) {
   const inventoryPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-command-inventory.json",
   );
@@ -1467,7 +1468,8 @@ function parseCommandExpressions(text) {
 function loadAIRefCommandSchema(repoRootPath) {
   const schemaPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-command-schema.json",
   );
@@ -1496,7 +1498,8 @@ function loadAIRefCommandSchema(repoRootPath) {
 
   const commandInventoryPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-command-inventory.json",
   );
@@ -1596,31 +1599,36 @@ function loadAIRefCommandSchema(repoRootPath) {
 function loadAIRefSchemaSymbolFamilies(sourceText, repoRootPath) {
   const strategicNumberPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-strategic-number-inventory.json",
   );
   const techPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-tech-inventory.json",
   );
   const objectPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-object-inventory.json",
   );
   const classPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-class-inventory.json",
   );
   const valueFamilyPath = path.join(
     repoRootPath,
-    "extracted",
+    "docs",
+    "reference",
     "inventories",
     "airef-value-family-inventory.json",
   );
