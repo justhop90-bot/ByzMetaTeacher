@@ -5739,8 +5739,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (not (goal strategy-goal bt-strategy-boom))
-        (not (can-afford-building town-center-foundation))
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
@@ -5763,8 +5765,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (strategic-number sn-resource-control == bt-preempt-emergency-claim)
     (or
         (goal bt-tc-stage-goal bt-tc-stage-idle)
-        (not (goal strategy-goal bt-strategy-boom))
-        (not (can-afford-building town-center-foundation))
+        (or
+            (not (goal strategy-goal bt-strategy-boom))
+            (not (can-afford-building town-center-foundation))
+        )
     )
 =>
     (set-goal bt-tc-stage-goal bt-tc-stage-demanded)
