@@ -250,8 +250,7 @@ try {
     "mill",
     (rule) =>
       hasFact(rule, "goal", ["bt-mill-project-goal", "1"]) &&
-      hasFact(rule, "building-type-count-total", ["mill", "==", "0"]) &&
-      hasFact(rule, "civilian-population", [">=", "10"]) &&
+      hasAction(rule, "up-assign-builders", ["c:", "mill", "c:", "1"]) &&
       hasAction(rule, "build", ["mill"]),
   );
   assertOpeningBuilderHandoff(
