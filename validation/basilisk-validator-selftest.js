@@ -2738,7 +2738,6 @@ try {
       })(),
     },
     {
-    {
       name: "villager-hygiene-first-lumber-pending-regression",
       expected: "[Villager hygiene]",
       source: mutateRuleContaining(
