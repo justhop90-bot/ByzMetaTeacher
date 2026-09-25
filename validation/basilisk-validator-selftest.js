@@ -803,11 +803,35 @@ try {
       expectedAdmissionBlockReasonOrder[0],
       ...expectedAdmissionBlockReasonOrder.slice(2),
     ].join(" -> ");
+  const admissionFacts = ruleSection(feudalBlacksmithAdmission, "facts");
+  const admissionBackoffIndex = admissionFacts.findIndex(
+    (expr) =>
+      expr?.kind === "expression" &&
+      expr.head === "goal" &&
+      expr.args[0]?.value === "bt-castle-prereq-backoff-goal" &&
+      expr.args[1]?.value === "0",
+  );
+  const admissionPackageIndex = admissionFacts.findIndex(
+    (expr) =>
+      expr?.kind === "expression" &&
+      expr.head === "goal" &&
+      expr.args[0]?.value === "bt-research-ranged-counter-package-goal" &&
+      expr.args[1]?.value === "ri-fletching",
+  );
+  assert.ok(
+    admissionBackoffIndex >= 0 && admissionPackageIndex >= 0,
+    "[Semantic self-test] could not locate Feudal Blacksmith admission order anchors",
+  );
+
   assert.throws(
     () =>
       assertExactRuleBlockOrder(
         orderedAdmissionBlockReasonsFromRule(
-          swapRuleFacts(feudalBlacksmithAdmission, 0, 1),
+          swapRuleFacts(
+            feudalBlacksmithAdmission,
+            admissionBackoffIndex,
+            admissionPackageIndex,
+          ),
         ),
         expectedAdmissionBlockReasonOrder,
         "Feudal Blacksmith admission",
