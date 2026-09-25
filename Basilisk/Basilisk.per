@@ -635,6 +635,8 @@
 (defconst bt-attack-result-damaged 1)
 (defconst bt-attack-result-stalled 2)
 (defconst bt-attack-result-reassess 3)
+; One-pass attack authorization handoff. It is set by the attack-readiness rule and consumed immediately by its executor.
+(defconst bt-attack-execution-pending-goal 832)
 ; Persistent one-bit memory for consecutive Feudal RUSH stalls.
 ; 1 means the previous measured RUSH attack stalled with no structural damage
 ; while Basilisk was materially behind. A second such result releases RUSH.
@@ -1048,6 +1050,7 @@
     (set-goal bt-attack-target-buildings-now-goal 0)
     (set-goal bt-attack-buildings-destroyed-goal 0)
     (set-goal bt-attack-result-goal bt-attack-result-none)
+    (set-goal bt-attack-execution-pending-goal 0)
     (set-goal bt-rush-stall-latch-goal 0)
     (set-goal bt-cavalry-threat-goal 0)
     (set-goal bt-ranged-threat-goal 0)
@@ -13251,7 +13254,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
         )
     )
     ; RUSH has its own Archer production path, outside the generic
-    ; standing-role targets.  Attack therefore needs a completed Archer
+    ; standing-role targets. Attack therefore needs a completed Archer
     ; witness before the pressure posture can authorize attack-now.
     (or
         (not (goal strategy-goal bt-strategy-rush))
@@ -13262,6 +13265,14 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
+=>
+    ; Authorization is a one-pass handoff. The executor below consumes it
+    ; immediately, so attack-now cannot repeat on later passes.
+    (set-goal bt-attack-execution-pending-goal 1)
+)
+
+(defrule
+    (goal bt-attack-execution-pending-goal 1)
 =>
     ; Mark the attack cycle active BEFORE attack-now.
     (set-goal attack-goal 1)
@@ -13279,8 +13290,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
 
     ; Hold the attack cycle for three minutes before resetting it.
     (enable-timer bt-attack-timer bt-attack-measurement-seconds)
-    
-
+    (set-goal bt-attack-execution-pending-goal 0)
 )
 
 ;---------------------------------------------------------------
