@@ -4720,16 +4720,20 @@
         (game-time >= bt-scout-home-grace)
         (and
             (resource-found food)
-            (resource-found wood)
-            (resource-found gold)
-            (or
+            (and
+                (resource-found wood)
                 (and
-                    (dropsite-min-distance live-boar >= 0)
-                    (dropsite-min-distance live-boar <= 32)
-                )
-                (and
-                    (dropsite-min-distance deer-hunting >= 0)
-                    (dropsite-min-distance deer-hunting <= 32)
+                    (resource-found gold)
+                    (or
+                        (and
+                            (dropsite-min-distance live-boar >= 0)
+                            (dropsite-min-distance live-boar <= 32)
+                        )
+                        (and
+                            (dropsite-min-distance deer-hunting >= 0)
+                            (dropsite-min-distance deer-hunting <= 32)
+                        )
+                    )
                 )
             )
         )
