@@ -2956,16 +2956,18 @@ try {
         const marker = "; 15H. CASTLE -> IMPERIAL PREREQUISITE: SECOND QUALIFYING BUILDING";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial Siege section missing");
-        const end = baseline.indexOf(";---------------------------------------------------------------\n; 15I.", start);
-        assert.ok(end > start, "[Self-test] Imperial Siege section bounds missing");
-        const section = baseline.slice(start, end);
+        const buildIndex = baseline.indexOf("(build siege-workshop)", start);
+        assert.ok(buildIndex > start, "[Self-test] Imperial Siege builder action missing");
         const needle =
           "    (or\n" +
           "        (building-type-count-total monastery >= 1)\n" +
           "        (building-type-count-total university >= 1)\n" +
           "    )";
-        assert.ok(section.includes(needle), "[Self-test] Siege two-of-three provider witness missing");
-        return baseline.replace(needle, "    (building-type-count-total monastery >= 1)");
+        const index = baseline.lastIndexOf(needle, buildIndex);
+        assert.ok(index > start, "[Self-test] Siege two-of-three provider witness missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(needle, "    (building-type-count-total monastery >= 1)") +
+          baseline.slice(index + needle.length);
       })(),
     },
     {
@@ -2975,16 +2977,18 @@ try {
         const marker = "; 15I. CASTLE -> IMPERIAL PREREQUISITE: UNIVERSITY FALLBACK";
         const start = baseline.indexOf(marker);
         assert.ok(start >= 0, "[Self-test] Imperial University section missing");
-        const end = baseline.indexOf(";----------------------------------------------------------------\n; CASTLE PREREQUISITE CONSTRUCTION WATCHDOG", start);
-        assert.ok(end > start, "[Self-test] Imperial University section bounds missing");
-        const section = baseline.slice(start, end);
+        const buildIndex = baseline.indexOf("(build university)", start);
+        assert.ok(buildIndex > start, "[Self-test] Imperial University builder action missing");
         const needle =
           "    (or\n" +
           "        (building-type-count-total monastery >= 1)\n" +
           "        (building-type-count-total siege-workshop >= 1)\n" +
           "    )";
-        assert.ok(section.includes(needle), "[Self-test] University two-of-three provider witness missing");
-        return baseline.replace(needle, "    (building-type-count-total monastery >= 1)");
+        const index = baseline.lastIndexOf(needle, buildIndex);
+        assert.ok(index > start, "[Self-test] University two-of-three provider witness missing");
+        return baseline.slice(0, index) +
+          baseline.slice(index).replace(needle, "    (building-type-count-total monastery >= 1)") +
+          baseline.slice(index + needle.length);
       })(),
     },
     {
