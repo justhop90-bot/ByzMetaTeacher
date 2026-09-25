@@ -2098,6 +2098,7 @@ try {
           "(can-train spearman-line)",
           "(goal bt-castle-commitment-goal 0)",
           "(goal strategy-goal bt-strategy-flush)",
+          "(up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)",
         ],
         (rule) =>
           rule.replace(
