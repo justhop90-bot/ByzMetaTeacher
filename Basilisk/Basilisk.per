@@ -8741,11 +8741,13 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -8767,11 +8769,13 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -8791,11 +8795,13 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (not
         (and
             (goal strategy-goal bt-strategy-boom)
-            (or
-                (goal bt-tc-project-goal 2)
-                (goal bt-tc-project-goal 3)
+            (and
+                (or
+                    (goal bt-tc-project-goal 2)
+                    (goal bt-tc-project-goal 3)
+                )
+                (not (goal strategy-goal bt-strategy-flush))
             )
-            (not (goal strategy-goal bt-strategy-flush))
         )
     )
     (strategic-number sn-resource-control == 0)
@@ -10126,8 +10132,10 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
     )
     (or
         (goal bt-tc-stage-goal bt-tc-stage-demanded)
-        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
-        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        (or
+            (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+            (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+        )
     )
 =>
     (set-goal bt-standing-army-demand-goal 0)
