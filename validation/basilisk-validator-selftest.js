@@ -118,6 +118,152 @@ try {
       containsExpression([expr], head, values),
     );
 
+  const actionIndex = (rule, head, values = []) =>
+    ruleSection(rule, "actions").findIndex((expr) =>
+      expr?.kind === "expression" &&
+      expr.head === head &&
+      expr.args.length === values.length &&
+      values.every(
+        (value, index) =>
+          expr.args[index]?.kind === "atom" &&
+          expr.args[index].value === value,
+      ),
+    );
+
+  const constructionActivation = findSemanticRule(
+    "new-building-system activation",
+    (rule) => hasAction(rule, "set-strategic-number", [
+      "sn-enable-new-building-system",
+      "1",
+    ]),
+  );
+  assert.equal(
+    ruleSection(constructionActivation, "actions").filter((expr) =>
+      expr?.kind === "expression" &&
+      expr.head === "up-assign-builders",
+    ).length,
+    0,
+    "[Construction scheduler] activation rule must not mutate builder assignments",
+  );
+  assert.ok(
+    hasAction(constructionActivation, "set-strategic-number", [
+      "sn-cap-civilian-builders",
+      "200",
+    ]),
+    "[Construction scheduler] activation rule lost the builder cap",
+  );
+  assert.ok(
+    hasAction(constructionActivation, "disable-self"),
+    "[Construction scheduler] activation rule must be one-shot",
+  );
+
+  const builderPolicy = findSemanticRule(
+    "post-activation builder policy",
+    (rule) =>
+      hasFact(rule, "game-time", [">", "0"]) &&
+      hasAction(rule, "up-assign-builders", ["c:", "farm", "c:", "1"]) &&
+      hasAction(rule, "up-assign-builders", ["c:", "castle", "c:", "1"]) &&
+      hasAction(rule, "disable-self") &&
+      !hasAction(rule, "set-strategic-number", [
+        "sn-enable-new-building-system",
+        "1",
+      ]),
+  );
+  const baselineBuilderAssignments = [
+    "farm",
+    "house",
+    "town-center-foundation",
+    "mill",
+    "mining-camp",
+    "lumber-camp",
+    "barracks",
+    "archery-range",
+    "stable",
+    "blacksmith",
+    "market",
+    "monastery",
+    "university",
+    "siege-workshop",
+    "castle",
+  ];
+  for (const building of baselineBuilderAssignments) {
+    assert.ok(
+      hasAction(builderPolicy, "up-assign-builders", [
+        "c:",
+        building,
+        "c:",
+        "1",
+      ]),
+      "[Construction scheduler] missing baseline builder assignment for " + building,
+    );
+  }
+
+  const assertOpeningBuilderHandoff = (label, building, predicate) => {
+    const rule = findSemanticRule(label, predicate);
+    const buildIndex = actionIndex(rule, "build", [building]);
+    const assignIndex = actionIndex(rule, "up-assign-builders", [
+      "c:",
+      building,
+      "c:",
+      "1",
+    ]);
+    assert.ok(
+      assignIndex >= 0,
+      "[Construction scheduler] " + label + " does not assign its builder count",
+    );
+    assert.ok(
+      assignIndex < buildIndex,
+      "[Construction scheduler] " + label + " assigns builders after build",
+    );
+  };
+
+  assertOpeningBuilderHandoff(
+    "first lumber camp builder handoff",
+    "lumber-camp",
+    (rule) =>
+      hasFact(rule, "building-type-count-total", ["lumber-camp", "==", "0"]) &&
+      hasFact(rule, "civilian-population", [">=", "7"]) &&
+      hasFact(rule, "up-pending-objects", [
+        "c:",
+        "lumber-camp",
+        "==",
+        "0",
+      ]) &&
+      hasAction(rule, "build", ["lumber-camp"]),
+  );
+  assertOpeningBuilderHandoff(
+    "first mining camp builder handoff",
+    "mining-camp",
+    (rule) =>
+      hasFact(rule, "building-type-count-total", ["mining-camp", "==", "0"]) &&
+      hasFact(rule, "civilian-population", [">=", "8"]) &&
+      hasFact(rule, "up-pending-objects", [
+        "c:",
+        "mining-camp",
+        "==",
+        "0",
+      ]) &&
+      hasAction(rule, "build", ["mining-camp"]),
+  );
+  assertOpeningBuilderHandoff(
+    "first mill builder handoff",
+    "mill",
+    (rule) =>
+      hasFact(rule, "goal", ["bt-mill-project-goal", "1"]) &&
+      hasFact(rule, "building-type-count-total", ["mill", "==", "0"]) &&
+      hasFact(rule, "civilian-population", [">=", "10"]) &&
+      hasAction(rule, "build", ["mill"]),
+  );
+  assertOpeningBuilderHandoff(
+    "first barracks builder handoff",
+    "barracks",
+    (rule) =>
+      hasFact(rule, "building-type-count-total", ["barracks", "==", "0"]) &&
+      hasFact(rule, "civilian-population", [">=", "12"]) &&
+      hasAction(rule, "build", ["barracks"]),
+  );
+
+
   const exactRuleBlockReasons = (rule, state) => {
     const reasons = [];
     const has = (head, values) => hasFact(rule, head, values);
