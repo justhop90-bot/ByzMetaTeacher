@@ -4566,70 +4566,6 @@
     (enable-timer bt-scouting-timer bt-scout-first-pulse)
 )
 
-; W34. CASTLE-TRANSITION RESCAN COMPLETION
-; Completion witness:
-;   1. target-player's current Town Center is searchable;
-;   2. a fielded Basilisk Scout is physically within 8 tiles of that TC.
-; The search-state records are deliberately separate from the TC point pair:
-;   811-812 = point
-;   813-816 = TC search state
-;   817-820 = Scout proximity search state
-;
-; Probe the target player's current Town Center.
-(defrule
-    (goal bt-scout-phase-goal bt-scout-phase-3)
-    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
-    (goal bt-scout-objective-state-goal bt-scout-objective-active)
-    (player-in-game target-player)
-    (up-compare-goal bt-scout-target-player-goal > 0)
-=>
-    (up-full-reset-search)
-    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
-    (up-find-remote c: town-center c: 1)
-    (up-get-search-state bt-scout-w34-tc-local-total-goal)
-)
-
-; Persist the current target-player TC point only after the current TC search
-; has produced at least one remote result.
-(defrule
-    (goal bt-scout-phase-goal bt-scout-phase-3)
-    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
-    (goal bt-scout-objective-state-goal bt-scout-objective-active)
-    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
-=>
-    (up-set-target-object search-remote c: 0)
-    (up-get-point position-object bt-scout-w34-tc-point-goal)
-)
-
-; Rebuild the local search around the freshly persisted TC point and look for
-; a fielded Basilisk Scout inside the 8-tile completion envelope.
-(defrule
-    (goal bt-scout-phase-goal bt-scout-phase-3)
-    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
-    (goal bt-scout-objective-state-goal bt-scout-objective-active)
-    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
-=>
-    (up-full-reset-search)
-    (up-set-target-point bt-scout-w34-tc-point-goal)
-    (up-filter-distance c: -1 c: 8)
-    (up-find-local c: scout-cavalry-line c: 40)
-    (up-get-search-state bt-scout-w34-scout-local-total-goal)
-)
-
-; W34 completion. This is intentionally an observation witness, not a route
-; completion or timer witness.
-(defrule
-    (goal bt-scout-phase-goal bt-scout-phase-3)
-    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
-    (goal bt-scout-objective-state-goal bt-scout-objective-active)
-    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
-    (up-compare-goal bt-scout-w34-scout-local-total-goal >= 1)
-=>
-    (set-goal bt-scout-phase-goal bt-scout-phase-4)
-    (set-goal bt-scout-objective-goal bt-scout-objective-none)
-    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
-)
-
 ; W12. FEUDAL SURVEILLANCE
 (defrule
     (up-compare-goal bt-scout-phase-goal == bt-scout-phase-1)
@@ -4667,13 +4603,14 @@
 
 ; Q: "How does the AI deliberately search for the enemy?"
 ;
-; up-send-scout directs a land/water scout to a strategic location.
+; up-send-scout is reserved for concrete targeted Scout objectives.
+; Native exploration remains the normal map-coverage actuator.
 ;
 ; Community pattern:
 ;   - one exploration group is the normal baseline;
-;   - scout-flank performs the opening search;
-;   - scout-enemy is used only after the target player's location is known;
-;   - extra Scout production is a finite Feudal pressure commitment.
+;   - the opening home envelope is handled by native exploration;
+;   - scout-enemy is used only for deliberate enemy-base acquisition/rescan;
+;   - extra Scout production remains a finite Feudal pressure commitment.
 ;
 ;---------------------------------------------------------------
 ; 12A. NORMAL SCOUT BASELINE STATE MACHINE
