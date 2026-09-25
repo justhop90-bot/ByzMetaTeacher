@@ -3075,46 +3075,76 @@ try {
       ),
     },
     {
-      name: "scouting-home-pulse-too-slow-rejected",
+      name: "scouting-home-boundary-not-180-rejected",
       expected: "[Scouting lifecycle]",
       source: baseline.replace(
-        "(defconst bt-scout-home-pulse 60)",
-        "(defconst bt-scout-home-pulse 120)",
+        "(defconst bt-scout-home-grace 180)",
+        "(defconst bt-scout-home-grace 300)",
       ),
     },
     {
-      name: "scouting-home-loop-without-target-fallback-rejected",
+      name: "scouting-enemy-pulse-not-60-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "(defconst bt-scout-enemy-pulse 60)",
+        "(defconst bt-scout-enemy-pulse 180)",
+      ),
+    },
+    {
+      name: "scouting-home-contract-without-gold-rejected",
       expected: "[Scouting lifecycle]",
       source: (() => {
-        const witness =
-          "        (players-building-count target-player <= 0)\n";
-        const ruleNeedle =
-          "(up-send-scout bt-land-explore-group scout-flank)";
-        const ruleStart = baseline.lastIndexOf("(defrule", baseline.indexOf(ruleNeedle));
-        const ruleEnd = baseline.indexOf("\n)", baseline.indexOf(ruleNeedle)) + 2;
-        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] home scouting rule missing");
-        const rule = baseline.slice(ruleStart, ruleEnd);
-        assert.ok(rule.includes(witness), "[Self-test] home scouting target fallback witness missing");
-        return baseline.slice(0, ruleStart) + rule.replace(witness, "") + baseline.slice(ruleEnd);
+        const marker =
+          "(goal bt-scout-baseline-state-goal bt-scout-baseline-home)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] home contract rule missing");
+        const index = baseline.indexOf("    (resource-found gold)\n", start);
+        assert.ok(index >= 0, "[Self-test] home gold witness missing");
+        return baseline.slice(0, index) + baseline.slice(index + "    (resource-found gold)\n".length);
       })(),
     },
     {
-      name: "scouting-enemy-loop-without-home-grace-rejected",
+      name: "scouting-target-selection-waits-for-building-rejected",
       expected: "[Scouting lifecycle]",
       source: (() => {
-        const witness = "    (game-time >= bt-scout-home-grace)\n";
-        const ruleNeedle =
-          "(up-send-scout bt-land-explore-group scout-enemy)";
-        const ruleStart = baseline.lastIndexOf("(defrule", baseline.indexOf(ruleNeedle));
-        const ruleEnd = baseline.indexOf("\n)", baseline.indexOf(ruleNeedle)) + 2;
-        assert.ok(ruleStart >= 0 && ruleEnd > ruleStart, "[Self-test] enemy scouting rule missing");
-        const rule = baseline.slice(ruleStart, ruleEnd);
-        assert.ok(rule.includes(witness), "[Self-test] enemy scouting home-grace witness missing");
-        return baseline.slice(0, ruleStart) + rule.replace(witness, "    (game-time >= 120)\n") + baseline.slice(ruleEnd);
+        const needle =
+          "    (up-find-player enemy find-closest bt-scout-target-player-goal)\n";
+        const index = baseline.indexOf(needle);
+        assert.ok(index >= 0, "[Self-test] target selection action missing");
+        return baseline.slice(0, index) +
+          "    (players-building-count any-enemy > 0)\n" +
+          baseline.slice(index);
       })(),
     },
     {
-      name: "crop-rotation-without-mature-farm-base-rejected",
+      name: "scouting-enemy-acquisition-without-tc-witness-rejected",
+      expected: "[Scouting lifecycle]",
+      source: baseline.replace(
+        "    (up-find-remote c: town-center c: 1)\n    (up-get-search-state bt-scout-enemy-tc-local-total-goal)",
+        "    (up-get-search-state bt-scout-enemy-tc-local-total-goal)",
+      ),
+    },
+    {
+      name: "scouting-enemy-handoff-without-reset-rejected",
+      expected: "[Scouting lifecycle]",
+      source: (() => {
+        const marker =
+          "(set-goal bt-scout-baseline-state-goal bt-scout-baseline-explore)";
+        const start = baseline.indexOf(marker);
+        assert.ok(start >= 0, "[Self-test] enemy completion rule missing");
+        const index = baseline.indexOf("    (up-reset-scouts)\n", start);
+        assert.ok(index >= 0, "[Self-test] enemy completion reset missing");
+        return baseline.slice(0, index) + baseline.slice(index + "    (up-reset-scouts)\n".length);
+      })(),
+    },
+    {
+      name: "scouting-flank-dispatch-rejected",
+      expected: "[Scouting lifecycle]",
+      source:
+        baseline +
+        "\n(defrule\n    (true)\n=>\n    (unit-type-count scout-cavalry-line >= 1)\n    (up-send-scout bt-land-explore-group scout-flank)\n)\n",
+    },
+          name: "crop-rotation-without-mature-farm-base-rejected",
       expected: "[Late-eco lifecycle]",
       source: baseline.replace(
         "    (building-type-count farm >= bt-crop-rotation-farm-threshold)\n",
@@ -3525,7 +3555,13 @@ try {
           "late-threat-state-block-rejected",
           "castle-cataphract-demand-cannot-block-ready-imperial",
           "scouting-first-pulse-not-30-rejected",
-          "scouting-home-pulse-too-slow-rejected",
+          "scouting-home-boundary-not-180-rejected",
+           "scouting-enemy-pulse-not-60-rejected",
+           "scouting-home-contract-without-gold-rejected",
+           "scouting-target-selection-waits-for-building-rejected",
+           "scouting-enemy-acquisition-without-tc-witness-rejected",
+           "scouting-enemy-handoff-without-reset-rejected",
+           "scouting-flank-dispatch-rejected",
           "villager-hygiene-house-headroom-regression",
           "villager-hygiene-lumber-local-house-placement-regression",
           "villager-hygiene-wood-dropsite-regression",
