@@ -248,9 +248,8 @@
 
 ; Existing/community timer identifiers.
 (defconst bt-scouting-timer 3)
-; Explicit opening pulse, then the normal home-exploration interval.
+; Explicit opening pulse for a bounded targeted Scout job.
 (defconst bt-scout-first-pulse 30)
-(defconst bt-scout-home-pulse 60)
 ; Protect home-resource exploration through roughly the first five minutes.
 (defconst bt-scout-home-grace 180)
 (defconst bt-scout-enemy-pulse 60)
@@ -4744,20 +4743,6 @@
     (enable-timer bt-scouting-timer bt-scout-first-pulse)
 )
 
-; Enemy-base acquisition pulse. This is a temporary override of the native
-; explorer, not the new default Scout controller.
-(defrule
-    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
-    (timer-triggered bt-scouting-timer)
-    (unit-type-count scout-cavalry-line >= 1)
-    (up-compare-goal bt-scout-target-player-goal > 0)
-    (player-in-game target-player)
-=>
-    (up-reset-scouts)
-    (up-send-scout bt-land-explore-group scout-enemy)
-    (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
-)
-
 ; Probe the target-player TC during the acquisition state.
 (defrule
     (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
@@ -4802,27 +4787,25 @@
     (up-reset-scouts)
 )
 
-;---------------------------------------------------------------
-; 12B. CASTLE TRANSITION RESCAN
-;---------------------------------------------------------------
-; W34 uses the same disciplined lifecycle: targeted action first, then an
-; engine-observable TC/Scout proximity witness, then immediate handoff to the
-; native exploration baseline.
+; Enemy-base acquisition pulse. This is a temporary override of the native
+; explorer, not the new default Scout controller.
 (defrule
-    (goal bt-scout-phase-goal bt-scout-phase-3)
-    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
-    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
     (timer-triggered bt-scouting-timer)
     (unit-type-count scout-cavalry-line >= 1)
-    (player-in-game target-player)
     (up-compare-goal bt-scout-target-player-goal > 0)
+    (player-in-game target-player)
 =>
     (up-reset-scouts)
     (up-send-scout bt-land-explore-group scout-enemy)
     (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
 )
 
-; Probe the current enemy TC during W34.
+;---------------------------------------------------------------
+; 12B. CASTLE TRANSITION RESCAN
+;---------------------------------------------------------------
+; W34 uses the same disciplined lifecycle: observe first, complete if the
+; Scout has already reacquired the anchor, otherwise issue the targeted action.
 (defrule
     (goal bt-scout-phase-goal bt-scout-phase-3)
     (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
@@ -4869,6 +4852,23 @@
     (disable-timer bt-scouting-timer)
     (up-reset-scouts)
 )
+
+; Only if W34 did not complete on this timer pulse do we issue another direct
+; enemy-base acquisition order.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (timer-triggered bt-scouting-timer)
+    (unit-type-count scout-cavalry-line >= 1)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+=>
+    (up-reset-scouts)
+    (up-send-scout bt-land-explore-group scout-enemy)
+    (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
+)
+
 
 ;---------------------------------------------------------------
 ; 12C. FEUDAL SCOUT-PRESSURE DEMAND
