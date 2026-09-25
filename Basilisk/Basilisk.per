@@ -1476,16 +1476,6 @@
     (set-goal bt-ranged-counter-level-goal 3)
 )
 (defrule
-    (players-unit-type-count any-enemy spearman-line >= 4)
-=>
-    
-)
-(defrule
-    (players-unit-type-count any-enemy spearman-line >= 8)
-=>
-    
-)
-(defrule
     (or
         (players-unit-type-count any-enemy knight-line >= 10)
         (or
