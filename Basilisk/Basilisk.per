@@ -715,6 +715,21 @@
 (defconst bt-scout-home-contract-goal 808)
 (defconst bt-scout-preempt-goal 809)
 (defconst bt-scout-stuck-goal 810)
+
+; W34 Castle-rescan scratch state.
+; 811-812 = current target-player TC point pair.
+; 813-816 = TC search-state record.
+; 817-820 = friendly Scout proximity search-state record.
+(defconst bt-scout-w34-tc-point-goal 811)
+(defconst bt-scout-w34-tc-point-y-goal 812)
+(defconst bt-scout-w34-tc-local-total-goal 813)
+(defconst bt-scout-w34-tc-local-results-goal 814)
+(defconst bt-scout-w34-tc-remote-total-goal 815)
+(defconst bt-scout-w34-tc-remote-results-goal 816)
+(defconst bt-scout-w34-scout-local-total-goal 817)
+(defconst bt-scout-w34-scout-local-results-goal 818)
+(defconst bt-scout-w34-scout-remote-total-goal 819)
+(defconst bt-scout-w34-scout-remote-results-goal 820)
 (defconst bt-scout-phase-0 0)
 (defconst bt-scout-phase-1 1)
 (defconst bt-scout-phase-2 2)
@@ -4503,6 +4518,8 @@
     )
 =>
     (set-goal bt-scout-phase-goal bt-scout-phase-5)
+    (set-goal bt-scout-objective-goal bt-scout-objective-none)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
 )
 
 ; W23. CASTLE TRANSITION
@@ -4517,12 +4534,73 @@
     )
 =>
     (set-goal bt-scout-phase-goal bt-scout-phase-3)
+    (set-goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-active)
 )
 
 ; W34. CASTLE-TRANSITION RESCAN COMPLETION
-; Intentionally no fabricated completion predicate is added here. The next
-; objective patch must supply a concrete Castle-rescan information witness.
-; W45 above always bypasses this edge when Imperial is eligible.
+; Completion witness:
+;   1. target-player's current Town Center is searchable;
+;   2. a fielded Basilisk Scout is physically within 8 tiles of that TC.
+; The search-state records are deliberately separate from the TC point pair:
+;   811-812 = point
+;   813-816 = TC search state
+;   817-820 = Scout proximity search state
+;
+; Probe the target player's current Town Center.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state bt-scout-w34-tc-local-total-goal)
+)
+
+; Persist the current target-player TC point only after the current TC search
+; has produced at least one remote result.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object bt-scout-w34-tc-point-goal)
+)
+
+; Rebuild the local search around the freshly persisted TC point and look for
+; a fielded Basilisk Scout inside the 8-tile completion envelope.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
+=>
+    (up-full-reset-search)
+    (up-set-target-point bt-scout-w34-tc-point-goal)
+    (up-filter-distance c: -1 c: 8)
+    (up-find-local c: scout-cavalry-line c: 40)
+    (up-get-search-state bt-scout-w34-scout-local-total-goal)
+)
+
+; W34 completion. This is intentionally an observation witness, not a route
+; completion or timer witness.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
+    (up-compare-goal bt-scout-w34-scout-local-total-goal >= 1)
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-4)
+    (set-goal bt-scout-objective-goal bt-scout-objective-none)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
+)
 
 ; W12. FEUDAL SURVEILLANCE
 (defrule
