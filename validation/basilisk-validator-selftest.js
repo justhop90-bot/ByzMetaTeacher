@@ -3144,7 +3144,8 @@ try {
         baseline +
         "\n(defrule\n    (true)\n=>\n    (unit-type-count scout-cavalry-line >= 1)\n    (up-send-scout bt-land-explore-group scout-flank)\n)\n",
     },
-          name: "crop-rotation-without-mature-farm-base-rejected",
+    {
+      name: "crop-rotation-without-mature-farm-base-rejected",
       expected: "[Late-eco lifecycle]",
       source: baseline.replace(
         "    (building-type-count farm >= bt-crop-rotation-farm-threshold)\n",
