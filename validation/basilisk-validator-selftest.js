@@ -226,6 +226,57 @@ try {
     "[Construction placement policy] missing explicit town-size policy",
   );
 
+  const darkEmergencyFarmExecutor = findSemanticRule(
+    "Dark-age emergency farm executor",
+    (rule) =>
+      hasFact(rule, "current-age", ["==", "dark-age"]) &&
+      hasFact(rule, "goal", [
+        "bt-natural-food-state-goal",
+        "bt-natural-food-depleted",
+      ]) &&
+      hasFact(rule, "food-amount", ["<", "350"]) &&
+      hasFact(rule, "strategic-number", [
+        "sn-resource-control",
+        "==",
+        "0",
+      ]) &&
+      hasFact(rule, "up-pending-objects", ["c:", "farm", "==", "0"]) &&
+      hasFact(rule, "building-type-count-total", [
+        "farm",
+        "<",
+        "bt-farm-dark-emergency-cap",
+      ]) &&
+      hasFact(rule, "can-build-with-escrow", ["farm"]) &&
+      hasAction(rule, "build", ["farm"]),
+  );
+  assert.ok(
+    hasAction(darkEmergencyFarmExecutor, "release-escrow", ["wood"]),
+    "[Dark farm fallback] emergency farm executor must release wood escrow before build",
+  );
+  assert.ok(
+    actionIndex(darkEmergencyFarmExecutor, "release-escrow", ["wood"]) <
+      actionIndex(darkEmergencyFarmExecutor, "build", ["farm"]),
+    "[Dark farm fallback] wood escrow must be released before the farm build action",
+  );
+
+  const widenedDarkFarmCap = runValidator(
+    baseline.replace(
+      "(defconst bt-farm-dark-emergency-cap 3)",
+      "(defconst bt-farm-dark-emergency-cap 4)",
+    ),
+    "dark-farm-cap-too-large",
+  );
+  assert.notEqual(
+    widenedDarkFarmCap.status,
+    0,
+    "[Dark farm fallback] validator must reject an emergency farm cap above 3",
+  );
+  assert.match(
+    widenedDarkFarmCap.output,
+    /canonical emergency farm cap must be exactly 3/,
+    "[Dark farm fallback] cap regression must fail on the canonical bound",
+  );
+
   const assertOpeningBuilderHandoff = (label, building, predicate) => {
     const rule = findSemanticRule(label, predicate);
     const buildIndex = actionIndex(rule, "build", [building]);
