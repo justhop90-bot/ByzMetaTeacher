@@ -252,8 +252,8 @@
 (defconst bt-scout-first-pulse 30)
 (defconst bt-scout-home-pulse 60)
 ; Protect home-resource exploration through roughly the first five minutes.
-(defconst bt-scout-home-grace 300)
-(defconst bt-scout-enemy-pulse 180)
+(defconst bt-scout-home-grace 180)
+(defconst bt-scout-enemy-pulse 60)
 (defconst bt-attack-timer 4)
 (defconst bt-retreat-timer 15)
 
@@ -715,6 +715,30 @@
 (defconst bt-scout-home-contract-goal 808)
 (defconst bt-scout-preempt-goal 809)
 (defconst bt-scout-stuck-goal 810)
+
+; Normal-scout baseline state machine.
+; 0 = native home-resource exploration
+; 1 = deliberate enemy-base acquisition
+; 2 = native general-map exploration
+(defconst bt-scout-baseline-state-goal 821)
+(defconst bt-scout-baseline-home 0)
+(defconst bt-scout-baseline-enemy 1)
+(defconst bt-scout-baseline-explore 2)
+
+; Early enemy-base acquisition scratch state.
+; 822-823 = target-player TC point pair.
+; 824-827 = target-player TC search-state record.
+; 828-831 = friendly Scout proximity search-state record.
+(defconst bt-scout-enemy-tc-point-goal 822)
+(defconst bt-scout-enemy-tc-point-y-goal 823)
+(defconst bt-scout-enemy-tc-local-total-goal 824)
+(defconst bt-scout-enemy-tc-local-results-goal 825)
+(defconst bt-scout-enemy-tc-remote-total-goal 826)
+(defconst bt-scout-enemy-tc-remote-results-goal 827)
+(defconst bt-scout-enemy-scout-local-total-goal 828)
+(defconst bt-scout-enemy-scout-local-results-goal 829)
+(defconst bt-scout-enemy-scout-remote-total-goal 830)
+(defconst bt-scout-enemy-scout-remote-results-goal 831)
 
 ; W34 Castle-rescan scratch state.
 ; 811-812 = current target-player TC point pair.
@@ -4503,6 +4527,7 @@
     (set-goal bt-scout-home-contract-goal 0)
     (set-goal bt-scout-preempt-goal 0)
     (set-goal bt-scout-stuck-goal 0)
+    (set-goal bt-scout-baseline-state-goal bt-scout-baseline-home)
     (disable-self)
 )
 
@@ -4520,6 +4545,9 @@
     (set-goal bt-scout-phase-goal bt-scout-phase-5)
     (set-goal bt-scout-objective-goal bt-scout-objective-none)
     (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
+    (set-goal bt-scout-baseline-state-goal bt-scout-baseline-explore)
+    (disable-timer bt-scouting-timer)
+    (up-reset-scouts)
 )
 
 ; W23. CASTLE TRANSITION
@@ -4536,6 +4564,7 @@
     (set-goal bt-scout-phase-goal bt-scout-phase-3)
     (set-goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
     (set-goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (enable-timer bt-scouting-timer bt-scout-first-pulse)
 )
 
 ; W34. CASTLE-TRANSITION RESCAN COMPLETION
@@ -4648,18 +4677,20 @@
 ;   - extra Scout production is a finite Feudal pressure commitment.
 ;
 ;---------------------------------------------------------------
-; 12A. TARGET SELECTION
+; 12A. NORMAL SCOUT BASELINE STATE MACHINE
 ;---------------------------------------------------------------
-; The controller already consumes target-player throughout military
-; interpretation and attack readiness, but previously had no local
-; writer.  Select the closest active enemy once enemy information exists,
-; then copy that player number into the engine's target-player selector.
+; Auto Scout is the floor: native exploration owns ordinary Scout movement.
+; Basilisk only takes control for two concrete early jobs:
+;   1. finish the local information envelope;
+;   2. deliberately acquire the enemy TC once that envelope is sufficient.
 ;
-; This is intentionally minimal.  In 1v1, the result is deterministic.
-; In team games, closest-enemy remains the repository's simple policy;
-; it is not a full multi-enemy threat allocator.
+; After the enemy TC is reacquired, native exploration gets the Scout back.
+; We do not repeatedly alternate flank/enemy sends against the engine explorer.
+
+; Select the closest enemy player as soon as a valid target is missing.
+; Do not wait for a visible enemy building: the Scout's job here is to find
+; the enemy base, not merely react after another subsystem already found it.
 (defrule
-    (players-building-count any-enemy > 0)
     (or
         (strategic-number sn-target-player-number <= 0)
         (not (player-in-game target-player))
@@ -4675,49 +4706,172 @@
     (up-modify-sn sn-target-player-number g:= bt-scout-target-player-goal)
 )
 
-;---------------------------------------------------------------
-; 12B. INITIAL / REPEATED ENEMY SEARCH
-;---------------------------------------------------------------
-; Search remains timer-driven.  The target-specific witness prevents
-; another enemy's visible building from authorizing targeted scouting.
-; scout-cavalry-line is used only as an availability witness so an
-; upgraded Light Cavalry/Hussar scout remains a mobile reconnaissance asset.
+; Home contract:
+;   - food, wood, and gold are locally known;
+;   - nearby hunt is known when available;
+;   - otherwise the native home-exploration boundary provides the bounded
+;     fallback so missing boar/secondary food cannot deadlock enemy scouting.
+;
+; Sheep-specific completion is intentionally not fabricated here. Native
+; exploration remains the actuator for herdable discovery.
 (defrule
-    (timer-triggered bt-scouting-timer)
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-home)
+    (unit-type-count scout-cavalry-line >= 1)
     (or
-        (game-time < bt-scout-home-grace)
-        (or
-            (sheep-and-forage-too-far)
-            (players-building-count target-player <= 0)
+        (game-time >= bt-scout-home-grace)
+        (and
+            (resource-found food)
+            (resource-found wood)
+            (resource-found gold)
+            (or
+                (and
+                    (dropsite-min-distance live-boar >= 0)
+                    (dropsite-min-distance live-boar <= 32)
+                )
+                (and
+                    (dropsite-min-distance deer-hunting >= 0)
+                    (dropsite-min-distance deer-hunting <= 32)
+                )
+            )
         )
     )
-    (unit-type-count scout-cavalry-line >= 1)
-    (strategic-number sn-number-explore-groups > 0)
 =>
-    (up-send-scout bt-land-explore-group scout-flank)
-    (enable-timer bt-scouting-timer bt-scout-home-pulse)
+    (set-goal bt-scout-home-contract-goal 1)
+    (set-goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
+    (set-goal bt-scout-objective-goal bt-scout-objective-find-enemy)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (up-reset-scouts)
+    (enable-timer bt-scouting-timer bt-scout-first-pulse)
 )
 
-;---------------------------------------------------------------
-; 12C. TARGETED ENEMY SCOUTING
-;---------------------------------------------------------------
-;
-; scout-enemy is legal only after target-player has an actual known
-; building witness.  any-enemy is deliberately not used here.
+; Enemy-base acquisition pulse. This is a temporary override of the native
+; explorer, not the new default Scout controller.
 (defrule
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
     (timer-triggered bt-scouting-timer)
-    (game-time >= bt-scout-home-grace)
-    (not (sheep-and-forage-too-far))
-    (players-building-count target-player > 0)
     (unit-type-count scout-cavalry-line >= 1)
-    (strategic-number sn-number-explore-groups > 0)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (player-in-game target-player)
 =>
+    (up-reset-scouts)
     (up-send-scout bt-land-explore-group scout-enemy)
     (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
 )
 
+; Probe the target-player TC during the acquisition state.
+(defrule
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
+    (timer-triggered bt-scouting-timer)
+    (unit-type-count scout-cavalry-line >= 1)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+    (player-in-game target-player)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state bt-scout-enemy-tc-local-total-goal)
+)
+
+; If the current target TC is searchable, store its point and search for a
+; fielded Basilisk Scout inside the 8-tile acquisition envelope.
+(defrule
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
+    (timer-triggered bt-scouting-timer)
+    (up-compare-goal bt-scout-enemy-tc-remote-total-goal >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object bt-scout-enemy-tc-point-goal)
+    (up-full-reset-search)
+    (up-set-target-point bt-scout-enemy-tc-point-goal)
+    (up-filter-distance c: -1 c: 8)
+    (up-find-local c: scout-cavalry-line c: 40)
+    (up-get-search-state bt-scout-enemy-scout-local-total-goal)
+)
+
+; Enemy-base milestone. The Scout has physically reacquired the enemy TC, so
+; stop issuing custom Scout orders and hand control back to native exploration.
+(defrule
+    (goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)
+    (up-compare-goal bt-scout-enemy-tc-remote-total-goal >= 1)
+    (up-compare-goal bt-scout-enemy-scout-local-total-goal >= 1)
+=>
+    (set-goal bt-scout-baseline-state-goal bt-scout-baseline-explore)
+    (set-goal bt-scout-objective-goal bt-scout-objective-none)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
+    (disable-timer bt-scouting-timer)
+    (up-reset-scouts)
+)
+
 ;---------------------------------------------------------------
-; 12D. FEUDAL SCOUT-PRESSURE DEMAND
+; 12B. CASTLE TRANSITION RESCAN
+;---------------------------------------------------------------
+; W34 uses the same disciplined lifecycle: targeted action first, then an
+; engine-observable TC/Scout proximity witness, then immediate handoff to the
+; native exploration baseline.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (timer-triggered bt-scouting-timer)
+    (unit-type-count scout-cavalry-line >= 1)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+=>
+    (up-reset-scouts)
+    (up-send-scout bt-land-explore-group scout-enemy)
+    (enable-timer bt-scouting-timer bt-scout-enemy-pulse)
+)
+
+; Probe the current enemy TC during W34.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (timer-triggered bt-scouting-timer)
+    (unit-type-count scout-cavalry-line >= 1)
+    (player-in-game target-player)
+    (up-compare-goal bt-scout-target-player-goal > 0)
+=>
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number g:= bt-scout-target-player-goal)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state bt-scout-w34-tc-local-total-goal)
+)
+
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (timer-triggered bt-scouting-timer)
+    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object bt-scout-w34-tc-point-goal)
+    (up-full-reset-search)
+    (up-set-target-point bt-scout-w34-tc-point-goal)
+    (up-filter-distance c: -1 c: 8)
+    (up-find-local c: scout-cavalry-line c: 40)
+    (up-get-search-state bt-scout-w34-scout-local-total-goal)
+)
+
+; W34 completion: current enemy TC reacquired by a fielded Scout.
+(defrule
+    (goal bt-scout-phase-goal bt-scout-phase-3)
+    (goal bt-scout-objective-goal bt-scout-objective-castle-rescan)
+    (goal bt-scout-objective-state-goal bt-scout-objective-active)
+    (up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)
+    (up-compare-goal bt-scout-w34-scout-local-total-goal >= 1)
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-4)
+    (set-goal bt-scout-baseline-state-goal bt-scout-baseline-explore)
+    (set-goal bt-scout-objective-goal bt-scout-objective-none)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
+    (disable-timer bt-scouting-timer)
+    (up-reset-scouts)
+)
+
+;---------------------------------------------------------------
+; 12C. FEUDAL SCOUT-PRESSURE DEMAND
 ;---------------------------------------------------------------
 ; This is a narrow opening demand, not a new strategy system.
 ;
