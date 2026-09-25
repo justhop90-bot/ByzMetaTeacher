@@ -2211,6 +2211,7 @@ try {
         baseline,
         [
           "(timer-triggered bt-attack-timer)",
+          "(current-age == feudal-age)",
           "(goal attack-goal 0)",
           "(attack-now)",
           "(goal bt-castle-commitment-goal 0)",
