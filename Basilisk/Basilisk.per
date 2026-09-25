@@ -1125,9 +1125,9 @@
 =>
     (set-strategic-number sn-number-explore-groups 1)
     ; Naga/Stock-AI baseline: no mandatory full-map opening exploration;
-    ; require one enemy object and keep the normal land group bounded.
+    ; keep the normal land group bounded. Enemy-location qualification remains
+    ; owned by Basilisk's target-player search rather than an unsupported SN.
     (set-strategic-number sn-initial-exploration-required 0)
-    (set-strategic-number sn-number-enemy-objects-required 1)
     (set-strategic-number sn-minimum-explore-group-size 1)
     (set-strategic-number sn-maximum-explore-group-size 1)
     ; Let the engine's normal explorer policy own the opening search.
