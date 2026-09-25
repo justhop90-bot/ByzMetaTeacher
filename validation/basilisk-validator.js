@@ -2983,13 +2983,17 @@ function validateVillagerHygiene(rules) {
     for (const witness of [
       "(up-pending-objects c: " + campType + " == 0)",
       "(goal bt-dropsite-placement-claim-goal 0)",
-      "(can-build " + campType + ")",
     ]) {
       assert.ok(
         first.includes(witness),
         "[Villager hygiene] first " + campType + " is missing witness: " + witness,
       );
     }
+    assert.ok(
+      first.includes("(can-build " + campType + ")") ||
+        first.includes("(can-build-with-escrow " + campType + ")"),
+      "[Villager hygiene] first " + campType + " is missing a build-feasibility witness",
+    );
   }
 
   const dropsiteRelease = requireRule(
@@ -6656,6 +6660,106 @@ function validateEconomicResearchPackageIsolation(rules, sourceText) {
   }
 }
 
+
+function validateConstructionPlacementPolicies(sourceText, rules) {
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
+
+  for (const [name, value] of [
+    ["bt-mill-max-distance", "25"],
+    ["bt-maximum-town-size", "30"],
+  ]) {
+    assert.ok(
+      sourceText.includes("(defconst " + name + " " + value + ")"),
+      "[Construction placement policy] missing policy constant: " + name,
+    );
+  }
+
+  const runtimePolicy = rules.find(
+    (rule) =>
+      rule.includes("(true)") &&
+      rule.includes("(set-strategic-number sn-mill-max-distance bt-mill-max-distance)") &&
+      rule.includes("(set-strategic-number sn-maximum-town-size bt-maximum-town-size)") &&
+      rule.includes("(disable-self)"),
+  );
+  assert.ok(
+    runtimePolicy,
+    "[Construction placement policy] one-shot runtime placement policy is missing",
+  );
+
+  const firstMill = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-mill-project-goal 1)") &&
+      rule.includes("(build mill)") &&
+      (rule.includes("(can-build mill)") ||
+        rule.includes("(can-build-with-escrow mill)")),
+  );
+  assert.ok(
+    firstMill,
+    "[Construction placement policy] first Mill must remain on normal build placement and therefore consume sn-mill-max-distance",
+  );
+  assert.ok(
+    !firstMill.includes("(up-build place-control 0 c: mill)"),
+    "[Construction placement policy] first Mill must not silently switch to controlled placement",
+  );
+
+  const laterMill = rules.find(
+    (rule) =>
+      rule.includes("(up-compare-goal bt-mill-project-goal >= 2)") &&
+      rule.includes("(up-build place-control 0 c: mill)"),
+  );
+  assert.ok(
+    laterMill,
+    "[Construction placement policy] later Mills must retain their explicit controlled-placement path",
+  );
+
+  const townSizeConsumers = [
+    "house",
+    "barracks",
+    "farm",
+    "archery-range",
+    "stable",
+    "blacksmith",
+    "market",
+    "castle",
+    "siege-workshop",
+    "university",
+    "monastery",
+  ];
+  for (const building of townSizeConsumers) {
+    assert.ok(
+      rules.some((rule) => rule.includes("(build " + building + ")")),
+      "[Construction placement policy] no normal build consumer exists for " + building,
+    );
+  }
+
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(up-build place-control 0 c: town-center)") &&
+        rule.includes("(up-assign-builders c: town-center-foundation c: bt-tc-builder-count)"),
+    ),
+    "[Construction placement policy] TC controlled-placement executor must remain separate from sn-maximum-town-size",
+  );
+  assert.ok(
+    rules.some(
+      (rule) =>
+        rule.includes("(up-build place-control 0 c: castle)") &&
+        rule.includes("(up-assign-builders c: castle c: 4)"),
+    ),
+    "[Construction placement policy] forward Castle controlled-placement executor must remain separate from sn-maximum-town-size",
+  );
+
+  const normalizedRuntime = normalize(runtimePolicy);
+  assert.ok(
+    normalizedRuntime.includes("(set-strategic-number sn-mill-max-distance bt-mill-max-distance)"),
+    "[Construction placement policy] Mill distance witness missing",
+  );
+  assert.ok(
+    normalizedRuntime.includes("(set-strategic-number sn-maximum-town-size bt-maximum-town-size)"),
+    "[Construction placement policy] town-size witness missing",
+  );
+}
+
 function validateMillPlacement(sourceText, rules) {
   const normalize = (rule) => rule.replace(/\s+/g, " ");
 
@@ -6944,6 +7048,7 @@ validateEngineActionContracts(rules, identifierReport.objectLinesByName);
 validateScoutActionContracts(rules);
 validateFarmEscrowContracts(rules);
 validateEcoResearchDemandRemoval(rules);
+validateConstructionPlacementPolicies(source, rules);
 validateMillPlacement(source, rules);
 validateLateEcoTechnologyMaturity(rules);
 validateScoutingLifecycle(source, rules);
