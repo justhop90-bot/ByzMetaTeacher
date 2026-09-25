@@ -2836,7 +2836,10 @@ try {
       source: (() => {
         const witness =
           "    (goal bt-standing-army-demand-goal 1)\n" +
-          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (or\n" +
+          "        (goal bt-castle-commitment-goal 0)\n" +
+          "        (goal strategy-goal bt-strategy-flush)\n" +
+          "    )\n" +
           "    (strategic-number sn-resource-control == 0)\n" +
           "    (building-type-count-total barracks >= 1)";
         const replacement =
@@ -2854,7 +2857,10 @@ try {
       source: (() => {
         const witness =
           "    (goal bt-standing-army-demand-goal 1)\n" +
-          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (or\n" +
+          "        (goal bt-castle-commitment-goal 0)\n" +
+          "        (goal strategy-goal bt-strategy-flush)\n" +
+          "    )\n" +
           "    (strategic-number sn-resource-control == 0)\n" +
           "    (building-type-count archery-range >= 1)\n" +
           "    (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)";
@@ -2874,7 +2880,10 @@ try {
       source: (() => {
         const witness =
           "    (goal bt-standing-army-demand-goal 1)\n" +
-          "    (goal bt-castle-commitment-goal 0)\n" +
+          "    (or\n" +
+          "        (goal bt-castle-commitment-goal 0)\n" +
+          "        (goal strategy-goal bt-strategy-flush)\n" +
+          "    )\n" +
           "    (strategic-number sn-resource-control == 0)\n" +
           "    (building-type-count archery-range >= 1)\n" +
           "    (unit-type-count-total archer-line < bt-standing-archer-target-goal)";
