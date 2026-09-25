@@ -879,6 +879,9 @@
 (defconst bt-feudal-boom-army-floor 2)
 (defconst bt-feudal-boom-spear-target 1)
 (defconst bt-feudal-boom-skirm-target 1)
+(defconst bt-castle-boom-army-floor-tc1 4)
+(defconst bt-castle-boom-army-floor-tc2 6)
+(defconst bt-castle-boom-army-floor-tc3 8)
 
 (defconst bt-camel-target-1 4)
 (defconst bt-camel-target-2 8)
@@ -6018,6 +6021,7 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= castle-age)
     (not (town-under-attack))
     (not (goal bt-any-threat-goal 1))
+    (building-type-count town-center >= 2)
     (unit-type-count-total archer-line < 4)
     (food-amount >= 350)
     (gold-amount >= 150)
@@ -6592,6 +6596,27 @@ town-center >= 2)))))
     (stone-amount < 650)
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-stone)
+)
+
+; CASTLE STONE COMPLETION / RELEASE
+; Stone allocation is a temporary economic execution mode. The live Castle
+; project owns it only until the resource witness is satisfied, the Castle
+; exists, or the project demand disappears. Do not leave the economy trapped
+; on stone after the 650-stone prerequisite has already been secured.
+(defrule
+    (or
+        (goal bt-resource-mode-goal bt-resource-mode-castle-stone)
+        (goal bt-resource-mode-goal bt-resource-mode-castle-stone-premium)
+    )
+    (or
+        (stone-amount >= 650)
+        (or
+            (building-type-count-total castle >= 1)
+            (goal bt-castle-cataphract-demand-goal 0)
+        )
+    )
+=>
+    (set-goal bt-resource-mode-goal 0)
 )
 
 ; P2 TC STONE. Consume persistent TC project state; never recreate demand here.
@@ -8310,6 +8335,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (goal bt-standing-army-demand-goal 1)
     (current-age == feudal-age)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 1)
     (can-build barracks)
@@ -8322,6 +8351,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal strategy-goal bt-strategy-flush)
     (current-age == feudal-age)
     (up-compare-goal bt-standing-army-floor-goal >= bt-flush-army-floor-feudal)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 2)
     (can-build barracks)
@@ -8333,6 +8366,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-standing-army-demand-goal 1)
     (current-age == castle-age)
     (up-compare-goal bt-standing-army-floor-goal >= 16)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 2)
     (can-build barracks)
@@ -8344,6 +8381,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-standing-army-demand-goal 1)
     (current-age == castle-age)
     (up-compare-goal bt-standing-army-floor-goal >= 20)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 3)
     (can-build barracks)
@@ -8355,6 +8396,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-standing-army-demand-goal 1)
     (current-age >= imperial-age)
     (up-compare-goal bt-standing-army-floor-goal >= 26)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 4)
     (can-build barracks)
@@ -8366,6 +8411,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-standing-army-demand-goal 1)
     (current-age >= imperial-age)
     (up-compare-goal bt-standing-army-floor-goal >= 34)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 6)
     (can-build barracks)
@@ -8377,6 +8426,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (goal bt-standing-army-demand-goal 1)
     (current-age >= imperial-age)
     (up-compare-goal bt-standing-army-floor-goal >= 42)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 8)
     (can-build barracks)
@@ -8392,6 +8445,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal > 0)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 1)
     (can-build barracks)
@@ -8401,6 +8458,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 7)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 2)
     (can-build barracks)
@@ -8410,6 +8471,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 13)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 3)
     (can-build barracks)
@@ -8419,6 +8484,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (goal bt-standing-army-demand-goal 1)
     (up-compare-goal bt-standing-spear-target-goal >= 21)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks < 4)
     (can-build barracks)
@@ -8440,6 +8509,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         )
     )
     (or (up-compare-goal bt-standing-skirm-target-goal > 0) (or (up-compare-goal bt-standing-archer-target-goal > 0) (up-compare-goal bt-standing-crossbow-target-goal > 0)))
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 1)
     (can-build archery-range)
@@ -8455,6 +8528,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         )
     )
     (or (up-compare-goal bt-standing-skirm-target-goal >= 7) (or (up-compare-goal bt-standing-archer-target-goal >= 7) (up-compare-goal bt-standing-crossbow-target-goal >= 8)))
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 2)
     (can-build archery-range)
@@ -8470,6 +8547,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         )
     )
     (or (up-compare-goal bt-standing-skirm-target-goal >= 13) (or (up-compare-goal bt-standing-archer-target-goal >= 13) (up-compare-goal bt-standing-crossbow-target-goal >= 12)))
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 3)
     (can-build archery-range)
@@ -8487,6 +8568,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (or
         (up-compare-goal bt-standing-skirm-target-goal >= 21)
         (up-compare-goal bt-standing-archer-target-goal >= 21)
+    )
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
     )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total archery-range < 4)
@@ -8535,6 +8620,20 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         (up-compare-goal bt-standing-camel-target-goal > 0)
         (up-compare-goal bt-standing-knight-target-goal > 0)
     )
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (not
+        (and
+            (goal strategy-goal bt-strategy-boom)
+            (or
+                (goal bt-tc-project-goal 2)
+                (goal bt-tc-project-goal 3)
+            )
+            (not (goal strategy-goal bt-strategy-flush))
+        )
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total stable < 1)
     (can-build stable)
@@ -8547,6 +8646,20 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         (up-compare-goal bt-standing-camel-target-goal >= 5)
         (up-compare-goal bt-standing-knight-target-goal >= 8)
     )
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (not
+        (and
+            (goal strategy-goal bt-strategy-boom)
+            (or
+                (goal bt-tc-project-goal 2)
+                (goal bt-tc-project-goal 3)
+            )
+            (not (goal strategy-goal bt-strategy-flush))
+        )
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total stable < 2)
     (can-build stable)
@@ -8557,6 +8670,20 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 (defrule
     (current-age >= castle-age)
     (up-compare-goal bt-standing-knight-target-goal >= 12)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (not
+        (and
+            (goal strategy-goal bt-strategy-boom)
+            (or
+                (goal bt-tc-project-goal 2)
+                (goal bt-tc-project-goal 3)
+            )
+            (not (goal strategy-goal bt-strategy-flush))
+        )
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total stable < 3)
     (can-build stable)
@@ -9185,9 +9312,37 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (set-goal bt-standing-army-floor-goal 4)
 )
 
+; Castle BOOM uses Town Center maturity, not military infrastructure,
+; as the standing-floor witness. Castle-Power retains the larger pressure floor.
 (defrule
     (current-age == castle-age)
-    (not (goal strategy-goal bt-strategy-flush))
+    (goal strategy-goal bt-strategy-boom)
+    (building-type-count town-center < 2)
+=>
+    (set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (building-type-count town-center >= 2)
+    (building-type-count town-center < 3)
+=>
+    (set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc2)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-boom)
+    (building-type-count town-center >= 3)
+=>
+    (set-goal bt-standing-army-floor-goal bt-castle-boom-army-floor-tc3)
+)
+
+; Castle-Power keeps its existing Castle military-floor progression.
+(defrule
+    (current-age == castle-age)
+    (goal strategy-goal bt-strategy-castle-power)
     (or
         (unit-type-count villager < 45)
         (and
@@ -9201,7 +9356,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 
 (defrule
     (current-age == castle-age)
-    (not (goal strategy-goal bt-strategy-flush))
+    (goal strategy-goal bt-strategy-castle-power)
     (unit-type-count villager >= 45)
     (up-compare-goal bt-standing-army-infra-goal >= 2)
     (or
@@ -9214,7 +9369,7 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 
 (defrule
     (current-age == castle-age)
-    (not (goal strategy-goal bt-strategy-flush))
+    (goal strategy-goal bt-strategy-castle-power)
     (unit-type-count villager >= 60)
     (up-compare-goal bt-standing-army-infra-goal >= 3)
 =>
@@ -9506,13 +9661,45 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
     (unit-type-count-total knight-line < bt-standing-knight-target-goal)
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-any-threat-goal 1))
+    (not
+        (or
+            (goal bt-tc-project-goal 2)
+            (goal bt-tc-project-goal 3)
+        )
+    )
 =>
     (set-goal bt-knight-demand-goal 1)
 )
 (defrule
     (goal bt-knight-demand-goal 1)
-    (or (goal strategy-goal bt-strategy-flush) (or (goal strategy-goal bt-strategy-rush) (or (current-age < castle-age) (or (goal bt-any-threat-goal 1) (or (up-compare-goal bt-standing-knight-target-goal == 0) (or (unit-type-count-total
-knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line))))))))
+    (or
+        (goal strategy-goal bt-strategy-flush)
+        (or
+            (goal strategy-goal bt-strategy-rush)
+            (or
+                (current-age < castle-age)
+                (or
+                    (goal bt-any-threat-goal 1)
+                    (or
+                        (up-compare-goal bt-standing-knight-target-goal == 0)
+                        (or
+                            (unit-type-count-total knight-line >= bt-standing-knight-target-goal)
+                            (or
+                                (not (goal unit-goal knight-line))
+                                (and
+                                    (goal strategy-goal bt-strategy-boom)
+                                    (or
+                                        (goal bt-tc-project-goal 2)
+                                        (goal bt-tc-project-goal 3)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 =>
     (set-goal bt-knight-demand-goal 0)
 )
@@ -9535,18 +9722,52 @@ knight-line >= bt-standing-knight-target-goal) (not (goal unit-goal knight-line)
         (goal strategy-goal bt-strategy-castle-power)
     )
     (not (goal bt-any-threat-goal 1))
+    (or
+        (goal strategy-goal bt-strategy-castle-power)
+        (goal bt-tc-project-goal 0)
+    )
 =>
     (set-goal bt-crossbow-demand-goal 1)
 )
 (defrule
     (goal bt-crossbow-demand-goal 1)
-    (or (goal strategy-goal bt-strategy-flush) (or (goal strategy-goal bt-strategy-rush) (or (current-age < castle-age) (or (goal bt-any-threat-goal 1) (or (up-compare-goal bt-standing-crossbow-target-goal == 0) (or (and
-            (up-research-status c: ri-arbalest != research-complete)
-            (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
-        ) (or (and
-            (up-research-status c: ri-arbalest == research-complete)
-            (unit-type-count-total arbalest >= bt-standing-crossbow-target-goal)
-        ) (not (goal unit-goal crossbowman)))))))))
+    (or
+        (goal strategy-goal bt-strategy-flush)
+        (or
+            (goal strategy-goal bt-strategy-rush)
+            (or
+                (current-age < castle-age)
+                (or
+                    (goal bt-any-threat-goal 1)
+                    (or
+                        (up-compare-goal bt-standing-crossbow-target-goal == 0)
+                        (or
+                            (and
+                                (up-research-status c: ri-arbalest != research-complete)
+                                (unit-type-count-total crossbowman >= bt-standing-crossbow-target-goal)
+                            )
+                            (or
+                                (and
+                                    (up-research-status c: ri-arbalest == research-complete)
+                                    (unit-type-count-total arbalest >= bt-standing-crossbow-target-goal)
+                                )
+                                (or
+                                    (not (goal unit-goal crossbowman))
+                                    (and
+                                        (goal strategy-goal bt-strategy-boom)
+                                        (or
+                                            (goal bt-tc-project-goal 2)
+                                            (goal bt-tc-project-goal 3)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
 =>
     (set-goal bt-crossbow-demand-goal 0)
 )
@@ -9728,6 +9949,44 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
                     (unit-type-count-total arbalest >= bt-standing-crossbow-target-goal)
                 )
             ))))))))
+=>
+    (set-goal bt-standing-army-demand-goal 0)
+)
+
+; BOOM TC2/TC3 MILITARY OWNERSHIP POLICY.
+; The TC capital project owns discretionary BOOM investment until foundation
+; placement. The policy is deliberately narrower than "stop the army":
+;
+;   MAY CONTINUE DURING PRE-FOUNDATION TC2/TC3:
+;     * reactive counter packages: Monk, Mangonel, Scorpion, Camel;
+;     * their required capability may be built when the reactive demand is live;
+;     * production already queued before TC arbitration is not retroactively canceled.
+;
+;   MUST YIELD NEW PRODUCTION AUTHORIZATION:
+;     * primary Castle BOOM packages: Knight, Crossbow;
+;     * offensive building-assault packages: Ram, Siege Tower;
+;     * ordinary standing-floor production and discretionary standing infrastructure.
+;
+; Imperial-only packages are outside the simultaneous Castle-TC2/TC3 state and
+; therefore do not receive a special TC exception. A package's strategic demand
+; may remain latched, but its protected executor must enforce the capital boundary.
+; FLUSH remains the emergency override for standing/capital conflicts.
+
+; BOOM capital-project arbitration.
+; Once TC2/TC3 has become a persistent project, discretionary BOOM standing
+; demand yields until the project reaches foundation/completion.
+(defrule
+    (goal strategy-goal bt-strategy-boom)
+    (goal bt-standing-army-demand-goal 1)
+    (or
+        (goal bt-tc-project-goal 2)
+        (goal bt-tc-project-goal 3)
+    )
+    (or
+        (goal bt-tc-stage-goal bt-tc-stage-demanded)
+        (goal bt-tc-stage-goal bt-tc-stage-resource-claimed)
+        (goal bt-tc-stage-goal bt-tc-stage-placement-pending)
+    )
 =>
     (set-goal bt-standing-army-demand-goal 0)
 )
@@ -9948,6 +10207,10 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (goal bt-ram-demand-goal 1)
     (current-age >= castle-age)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count siege-workshop >= 1)
     (or
@@ -9969,6 +10232,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (goal bt-siege-tower-demand-goal 1)
     (goal bt-siege-tower-stage-goal bt-siege-tower-stage-tower-pending)
     (current-age >= castle-age)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count siege-workshop >= 1)
     (unit-type-count-total siege-tower < 1)
@@ -10026,7 +10293,10 @@ cataphract-line < bt-cataphract-target-1)))))
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
-    (goal bt-castle-commitment-goal 0)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
     (unit-type-count-total spearman-line < bt-standing-spear-target-goal)
@@ -10044,7 +10314,10 @@ cataphract-line < bt-cataphract-target-1)))))
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
-    (goal bt-castle-commitment-goal 0)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count archery-range >= 1)
     (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal)
@@ -10062,7 +10335,10 @@ cataphract-line < bt-cataphract-target-1)))))
     )
     (current-age >= feudal-age)
     (goal bt-standing-army-demand-goal 1)
-    (goal bt-castle-commitment-goal 0)
+    (or
+        (goal bt-castle-commitment-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (strategic-number sn-resource-control == 0)
     (building-type-count archery-range >= 1)
     (unit-type-count-total archer-line < bt-standing-archer-target-goal)
@@ -10122,6 +10398,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (current-age >= castle-age)
     (building-type-count stable >= 1)
     (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
+    (or
+        (goal strategy-goal bt-strategy-castle-power)
+        (goal bt-tc-project-goal 0)
+    )
     (strategic-number sn-resource-control == 0)
     (unit-type-count-total knight-line < bt-standing-knight-target-goal)
     (can-train knight-line)
@@ -10139,6 +10419,10 @@ cataphract-line < bt-cataphract-target-1)))))
     (or
         (goal bt-resource-mode-goal bt-resource-mode-castle-boom)
         (goal bt-resource-mode-goal bt-resource-mode-premium-gold)
+    )
+    (or
+        (goal strategy-goal bt-strategy-castle-power)
+        (goal bt-tc-project-goal 0)
     )
     (strategic-number sn-resource-control == 0)
     (up-research-status c: ri-arbalest != research-complete)
@@ -11905,6 +12189,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-onager-demand-goal 0)
     (goal bt-bombard-cannon-demand-goal 0)
     (goal bt-ram-demand-goal 0)
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (goal bt-scorpion-demand-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
@@ -12980,6 +13268,10 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (goal bt-counter-veto-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
+    (or
+        (goal bt-tc-project-goal 0)
+        (goal strategy-goal bt-strategy-flush)
+    )
     (unit-type-count battering-ram-line < bt-ram-response-target)
 =>
     (set-goal bt-ram-demand-goal 1)
