@@ -1304,11 +1304,36 @@ try {
       expectedPrereqBlockReasonOrder[0],
       ...expectedPrereqBlockReasonOrder.slice(2),
     ].join(" -> ");
+  const prereqFacts = ruleSection(castlePrereqBlacksmith, "facts");
+  const prereqBackoffIndex = prereqFacts.findIndex(
+    (expr) =>
+      expr?.kind === "expression" &&
+      expr.head === "goal" &&
+      expr.args[0]?.value === "bt-castle-prereq-backoff-goal" &&
+      expr.args[1]?.value === "0",
+  );
+  const prereqCastleFeasibilityIndex = prereqFacts.findIndex(
+    (expr) =>
+      expr?.kind === "expression" &&
+      expr.head === "not" &&
+      expr.args[0]?.kind === "expression" &&
+      expr.args[0].head === "can-research-with-escrow" &&
+      expr.args[0].args[0]?.value === "castle-age",
+  );
+  assert.ok(
+    prereqBackoffIndex >= 0 && prereqCastleFeasibilityIndex >= 0,
+    "[Semantic self-test] could not locate Castle-prerequisite Blacksmith order anchors",
+  );
+
   assert.throws(
     () =>
       assertExactRuleBlockOrder(
         orderedPrereqBlockReasonsFromRule(
-          swapRuleFacts(castlePrereqBlacksmith, 0, 1),
+          swapRuleFacts(
+            castlePrereqBlacksmith,
+            prereqBackoffIndex,
+            prereqCastleFeasibilityIndex,
+          ),
         ),
         expectedPrereqBlockReasonOrder,
         "Castle-prerequisite Blacksmith",
