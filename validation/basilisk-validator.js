@@ -4010,6 +4010,41 @@ function validateImperialSiegeExit(rules, sourceText) {
   }
 }
 
+function validateDarkAgeEmergencyFarmFallback(rules, sourceText) {
+  assert.ok(
+    sourceText.includes("(defconst bt-farm-dark-emergency-cap 3)"),
+    "[Dark farm fallback] canonical emergency farm cap must be exactly 3",
+  );
+
+  const executors = rules.filter(
+    (rule) =>
+      rule.includes("(current-age == dark-age)") &&
+      rule.includes("(goal bt-natural-food-state-goal bt-natural-food-depleted)") &&
+      rule.includes("(food-amount < 350)") &&
+      rule.includes("(strategic-number sn-resource-control == 0)") &&
+      rule.includes("(up-pending-objects c: farm == 0)") &&
+      rule.includes("(building-type-count-total farm < bt-farm-dark-emergency-cap)") &&
+      rule.includes("(can-build-with-escrow farm)") &&
+      rule.includes("(build farm)"),
+  );
+
+  assert.equal(
+    executors.length,
+    1,
+    "[Dark farm fallback] exactly one bounded Dark-age emergency farm executor is required",
+  );
+
+  const executor = executors[0];
+  assert.ok(
+    !executor.includes("(current-age >= feudal-age)"),
+    "[Dark farm fallback] emergency executor must remain Dark-age specific",
+  );
+  assert.ok(
+    !executor.includes("(building-type-count-total mill >= 1)"),
+    "[Dark farm fallback] emergency executor must not require a Mill before constructing a farm",
+  );
+}
+
 function validateTcScaledFarms(rules) {
   const twoTc = rules.filter(
     (rule) =>
@@ -7065,6 +7100,7 @@ validateFeudalCastleEconomyContract(rules, source);
 validateFeudalFarmTransitionBudget(rules, source);
 validateImperialSiegeExit(rules, source);
 validateImperialSiegeAttackOrdering(rules);
+validateDarkAgeEmergencyFarmFallback(rules, source);
 validateTcScaledFarms(rules);
 validateNoDuplicateRules(rules);
 validateBackoffTimerUniqueness(rules);
