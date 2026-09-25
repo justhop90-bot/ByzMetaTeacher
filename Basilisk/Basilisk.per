@@ -919,6 +919,11 @@
     (set-goal bt-debug-last-tc-stage-goal 0)
     (set-goal bt-debug-last-tc-complete-goal 1)
     (set-goal bt-debug-last-age-event-goal 0)
+    (disable-self)
+)
+(defrule
+    (true)
+=>
     (set-goal bt-debug-age-feudal-bank-goal 0)
     (set-goal bt-debug-age-feudal-start-goal 0)
     (set-goal bt-debug-age-feudal-complete-goal 0)
