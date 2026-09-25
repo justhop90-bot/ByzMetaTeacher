@@ -2409,7 +2409,6 @@ try {
         "DBA provider claim guard",
       ),
     },
-,
     ...[
       ["ri-heavy-plow", "heavy-plow"],
       ["ri-gold-mining", "gold-mining"],
