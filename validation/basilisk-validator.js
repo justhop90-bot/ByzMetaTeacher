@@ -7,6 +7,34 @@ import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const contractOnly = process.argv.includes("--contract-only");
+
+const PROFILE_PREFIX = "--profile=";
+const requestedProfileArg = process.argv.find((arg) =>
+  arg.startsWith(PROFILE_PREFIX),
+);
+const requestedProfile = requestedProfileArg
+  ? requestedProfileArg.slice(PROFILE_PREFIX.length)
+  : "current";
+
+const VALIDATOR_PROFILES = Object.freeze({
+  current: Object.freeze({
+    id: "current",
+    requiredGoalIds: [730, 734, 769, 770, 771, 772, 775],
+    requireRushStallLifecycle: true,
+  }),
+  "8596a45": Object.freeze({
+    id: "8596a45",
+    requiredGoalIds: [730, 734, 769, 770, 771, 772],
+    requireRushStallLifecycle: false,
+  }),
+});
+
+const validatorProfile = VALIDATOR_PROFILES[requestedProfile];
+assert.ok(
+  validatorProfile,
+  "[Profile] unknown validator profile: " + requestedProfile,
+);
+
 const controllerPath = path.resolve(
   process.argv[2] ?? path.join(repoRoot, "Basilisk", "Basilisk.per"),
 );
@@ -4204,7 +4232,7 @@ function validateBackoffTimerUniqueness(rules) {
   }
 }
 
-function validateBasiliskGoalNamespace(forms) {
+function validateBasiliskGoalNamespace(forms, profile) {
   const numericGoals = new Map();
   for (const form of forms) {
     if (form.head !== "defconst") continue;
@@ -4224,7 +4252,7 @@ function validateBasiliskGoalNamespace(forms) {
     );
   }
 
-  for (const id of [730, 734, 769, 770, 771, 772, 775]) {
+  for (const id of profile.requiredGoalIds) {
     assert.ok(
       numericGoals.has(id),
       "[Goal namespace] reserved high-range GoalId " + id + " is missing",
@@ -6181,7 +6209,7 @@ function validateOnagerLifecycle(rules) {
   );
 }
 
-function validateLifecycleAnchors(sourceText, rules) {
+function validateLifecycleAnchors(sourceText, rules, profile) {
   for (const symbol of [
     "bt-strategy-boom",
     "bt-strategy-rush",
@@ -7104,7 +7132,7 @@ if (semanticDumpIndex !== -1) {
 
 validatePreprocessorStructure(source);
 const parsedForms = parseStrictTopLevelForms(source);
-validateBasiliskGoalNamespace(parsedForms);
+validateBasiliskGoalNamespace(parsedForms, validatorProfile);
 validateParserGradeRuleStructure(source);
 validateRuleStructure(source);
 validateBalancedParens(source);
@@ -7125,7 +7153,7 @@ validateLineHygiene(source);
 validateRetryDoctrine(source);
 validateAgeNarrationLatches(source, rules);
   validateStrategicNarration(source, rules);
-validateLifecycleAnchors(source, rules);
+validateLifecycleAnchors(source, rules, validatorProfile);
 validateOnagerLifecycle(rules);
 validatePikemanLifecycle(rules);
 validateRangedCounterLifecycle(rules);
@@ -7153,7 +7181,9 @@ validateDerivedThreatStateOrdering(rules);
 validateResourceModeArbiter(rules);
 validateAttackContracts(rules);
 validateAttackResultLifecycle(rules, source);
-validateRushStallFailurePolicy(rules, source);
+if (validatorProfile.requireRushStallLifecycle) {
+  validateRushStallFailurePolicy(rules, source);
+}
 validateBoomEconomicLifecycle(rules, source);
 validateBoomPaperReplay(rules, source);
 validateAttackAllocationPolicy(rules);
@@ -7194,6 +7224,7 @@ const controllerRelative = path.relative(repoRoot, controllerPath) || controller
 console.log(JSON.stringify({
   status: "PASS",
   entrypoint: "validation/basilisk-validator.js",
+  profile: validatorProfile.id,
   controller: controllerRelative,
   rules: rules.length,
   checks: [
