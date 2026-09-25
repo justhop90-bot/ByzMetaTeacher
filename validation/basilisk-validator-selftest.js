@@ -2690,6 +2690,55 @@ try {
       ),
     },
     {
+      name: "villager-hygiene-first-lumber-resource-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (resource-found wood)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-first-lumber-distance-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (dropsite-min-distance wood > bt-opening-dropsite-distance)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-first-mill-food-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (resource-found food)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-first-mill-distance-regression",
+      expected: "[Villager hygiene]",
+      source: baseline.replace(
+        "    (dropsite-min-distance food > bt-opening-dropsite-distance)\n",
+        "",
+      ),
+    },
+    {
+      name: "villager-hygiene-first-mill-castle-veto-regression",
+      expected: "[Villager hygiene]",
+      source: (() => {
+        const marker = "; First Mill: keep the existing generic engine placement.\n";
+        const start = baseline.indexOf(marker);
+        if (start < 0) throw new Error("first Mill marker missing");
+        const needle = "    (strategic-number sn-resource-control == 0)\n";
+        const at = baseline.indexOf(needle, start);
+        if (at < 0) throw new Error("first Mill mutex missing");
+        const insert = at + needle.length;
+        return baseline.slice(0, insert) +
+          "    (goal bt-castle-commitment-goal 1)\n" +
+          baseline.slice(insert);
+      })(),
+    },
+    {
+    {
       name: "villager-hygiene-first-lumber-pending-regression",
       expected: "[Villager hygiene]",
       source: mutateRuleContaining(
