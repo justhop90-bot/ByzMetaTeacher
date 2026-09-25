@@ -28,8 +28,27 @@ assert.ok(
 );
 assert.match(
   baselineOutput,
-  /\[Rule too long\]/,
-  "[Profile self-test] 8596a45 profile must still enforce the DE rule-element ceiling",
+  /\[Rule structure\] defrule at line 1471 has an empty actions section|\[Rule too long\]/,
+  "[Profile self-test] 8596a45 profile must still enforce parser/rule-length validation",
+);
+
+const validatorSource = await import("node:fs").then((fs) =>
+  fs.readFileSync(validatorPath, "utf8"),
+);
+assert.match(
+  validatorSource,
+  /const engineLimitReport = validateEngineLimits\(source, rules\);/,
+  "[Profile self-test] rule-length validation must remain unconditional across profiles",
+);
+assert.match(
+  validatorSource,
+  /validateLifecycleAnchors\(source, rules, validatorProfile\);/,
+  "[Profile self-test] lifecycle validation must remain active for profile selection",
+);
+assert.match(
+  validatorSource,
+  /if \(validatorProfile\.requireRushStallLifecycle\) \{/,
+  "[Profile self-test] modern-only RUSH stall lifecycle gate is not profile-scoped",
 );
 
 const modern = run([]);
