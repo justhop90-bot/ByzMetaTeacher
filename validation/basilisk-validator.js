@@ -2959,6 +2959,7 @@ function validateVillagerHygiene(rules) {
     "(set-strategic-number sn-camp-max-distance bt-dropsite-radius-start)",
     "(set-strategic-number sn-lumber-camp-max-distance bt-dropsite-radius-start)",
     "(set-strategic-number sn-mining-camp-max-distance bt-dropsite-radius-start)",
+    "(set-strategic-number sn-preferred-mill-placement 0)",
   ]) {
     assert.ok(
       dropsiteSafety.includes(witness),
@@ -2980,6 +2981,26 @@ function validateVillagerHygiene(rules) {
       first,
       "[Villager hygiene] first " + campType + " executor is missing",
     );
+    if (campType === "lumber-camp") {
+      for (const witness of [
+        "(resource-found wood)",
+        "(dropsite-min-distance wood > bt-opening-dropsite-distance)",
+      ]) {
+        assert.ok(
+          first.includes(witness),
+          "[Villager hygiene] first " + campType + " is missing witness: " + witness,
+        );
+      }
+    } else {
+      assert.ok(
+        first.includes("(or") &&
+          first.includes("(resource-found gold)") &&
+          first.includes("(dropsite-min-distance gold > bt-opening-dropsite-distance)") &&
+          first.includes("(resource-found stone)") &&
+          first.includes("(dropsite-min-distance stone > bt-opening-dropsite-distance)"),
+        "[Villager hygiene] first mining-camp must be resource-driven for gold or stone",
+      );
+    }
     for (const witness of [
       "(up-pending-objects c: " + campType + " == 0)",
       "(goal bt-dropsite-placement-claim-goal 0)",
@@ -2995,6 +3016,46 @@ function validateVillagerHygiene(rules) {
       "[Villager hygiene] first " + campType + " is missing a build-feasibility witness",
     );
   }
+
+  const firstMillDemandCandidates = rules.filter(
+    (rule) =>
+      rule.includes("(goal bt-mill-project-goal 0)") &&
+      rule.includes("(set-goal bt-mill-project-goal 1)"),
+  );
+  assert.equal(
+    firstMillDemandCandidates.length,
+    1,
+    "[Villager hygiene] expected exactly one first Mill demand rule",
+  );
+  const firstMillDemand = normalize(firstMillDemandCandidates[0]);
+  for (const witness of [
+    "(resource-found food)",
+    "(dropsite-min-distance food > bt-opening-dropsite-distance)",
+    "(building-type-count-total mill == 0)",
+    "(up-pending-objects c: mill == 0)",
+  ]) {
+    assert.ok(
+      firstMillDemand.includes(witness),
+      "[Villager hygiene] first Mill demand is missing witness: " + witness,
+    );
+  }
+
+  const firstMillExecutor = rules.find(
+    (rule) =>
+      rule.includes("(goal bt-mill-project-goal 1)") &&
+      rule.includes("(build mill)") &&
+      (rule.includes("(can-build mill)") ||
+        rule.includes("(can-build-with-escrow mill)")),
+  );
+  assert.ok(
+    firstMillExecutor,
+    "[Villager hygiene] first Mill executor is missing",
+  );
+  assert.ok(
+    !firstMillExecutor.includes("(can-research-with-escrow castle-age)") &&
+      !firstMillExecutor.includes("(goal bt-castle-commitment-goal 1)"),
+    "[Villager hygiene] first Mill executor must not be vetoed by the Castle bank",
+  );
 
   const dropsiteRelease = requireRule(
     "(set-goal bt-dropsite-placement-claim-goal 0)",
