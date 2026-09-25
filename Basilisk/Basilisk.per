@@ -2803,6 +2803,17 @@
 =>
     (set-goal bt-research-cataphract-package-goal 0)
 )
+
+; Completed Logistica is not persistent state. If the Elite-Cataphract
+; tier is not currently live, release the completed package cursor; the
+; research status itself is the durable witness.
+(defrule
+    (goal bt-research-cataphract-package-goal ri-logistica)
+    (up-research-status c: ri-logistica == research-complete)
+    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-3)
+=>
+    (set-goal bt-research-cataphract-package-goal 0)
+)
 (defrule
     (goal bt-research-cataphract-package-goal ri-logistica)
     (goal bt-research-castle-claim-goal 0)
@@ -15497,6 +15508,28 @@ camel-line < bt-camel-target-1)))))
     (building-type-count university == 0)
 =>
     (set-goal bt-research-university-claim-goal 0)
+)
+
+; Cataphract Castle-research failure must record backoff before the
+; generic capability-loss reset can erase the shared Castle claim.
+(defrule
+    (goal bt-research-castle-claim-goal ri-logistica)
+    (building-type-count castle == 0)
+    (up-research-status c: ri-logistica <= research-available)
+=>
+    (set-goal bt-research-castle-failure-backoff-goal ri-logistica)
+    (enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-castle-claim-goal 0)
+)
+
+(defrule
+    (goal bt-research-castle-claim-goal ri-elite-cataphract)
+    (building-type-count castle == 0)
+    (up-research-status c: ri-elite-cataphract <= research-available)
+=>
+    (set-goal bt-research-castle-failure-backoff-goal ri-elite-cataphract)
+    (enable-timer bt-research-castle-failure-backoff-timer bt-research-failure-backoff-seconds)
+    (set-goal bt-research-castle-claim-goal 0)
 )
 
 (defrule
