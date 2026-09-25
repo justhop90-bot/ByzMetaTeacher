@@ -3099,9 +3099,14 @@ function validateScoutingLifecycle(sourceText, rules) {
   const source = sourceText.replace(/\s+/g, " ");
   const ruleSource = rules.map(normalize).join("\n");
 
+  // Native engine exploration is the default Scout actuator.
+  assert.ok(
+    ruleSource.includes("(set-strategic-number sn-number-explore-groups 1)"),
+    "[Scouting lifecycle] native land exploration group is missing",
+  );
   assert.ok(
     ruleSource.includes("(set-strategic-number sn-total-number-explorers 10)"),
-    "[Scouting lifecycle] native explorer cap is not opened for early home scouting",
+    "[Scouting lifecycle] native explorer cap is not opened for Scout exploration",
   );
   assert.ok(
     ruleSource.includes("(set-strategic-number sn-cap-civilian-explorers 0)"),
@@ -3112,63 +3117,156 @@ function validateScoutingLifecycle(sourceText, rules) {
     "[Scouting lifecycle] explicit first scouting pulse must be 30 seconds",
   );
   assert.ok(
-    source.includes("(defconst bt-scout-home-pulse 60)"),
-    "[Scouting lifecycle] home-search pulse must remain 60 seconds or less",
+    source.includes("(defconst bt-scout-home-grace 180)"),
+    "[Scouting lifecycle] home exploration boundary must remain 180 seconds",
   );
   assert.ok(
-    source.includes("(defconst bt-scout-home-grace 300)"),
-    "[Scouting lifecycle] protected home-search window must remain 300 seconds",
-  );
-  assert.ok(
-    ruleSource.includes("(enable-timer bt-scouting-timer bt-scout-first-pulse)"),
-    "[Scouting lifecycle] initial scouting timer must use the explicit first pulse",
+    source.includes("(defconst bt-scout-enemy-pulse 60)"),
+    "[Scouting lifecycle] targeted enemy acquisition pulse must remain 60 seconds",
   );
   assert.ok(
     ruleSource.includes("(set-strategic-number sn-home-exploration-time bt-scout-home-grace)"),
-    "[Scouting lifecycle] home exploration window is missing",
+    "[Scouting lifecycle] native home exploration window is missing",
+  );
+  assert.ok(
+    !ruleSource.includes("(up-send-scout bt-land-explore-group scout-flank)"),
+    "[Scouting lifecycle] periodic scout-flank dispatch must not override native exploration",
   );
 
-  const homeRule = rules.find(
-    (rule) =>
-      rule.includes("(up-send-scout bt-land-explore-group scout-flank)") &&
-      rule.includes("(enable-timer bt-scouting-timer bt-scout-home-pulse)"),
+  // The normal Scout baseline has three explicit states.
+  for (const state of [
+    "bt-scout-baseline-home",
+    "bt-scout-baseline-enemy",
+    "bt-scout-baseline-explore",
+  ]) {
+    assert.ok(
+      source.includes("(defconst " + state),
+      "[Scouting lifecycle] baseline state is missing: " + state,
+    );
+  }
+  assert.ok(
+    source.includes("(set-goal bt-scout-baseline-state-goal bt-scout-baseline-home)"),
+    "[Scouting lifecycle] baseline state must initialize to home exploration",
+  );
+
+  // Target player must be selected before a visible enemy building exists.
+  const targetRule = rules.find((rule) =>
+    rule.includes("(up-find-player enemy find-closest bt-scout-target-player-goal)"),
+  );
+  assert.ok(
+    targetRule,
+    "[Scouting lifecycle] target-player acquisition rule is missing",
+  );
+  assert.ok(
+    !targetRule.includes("(players-building-count any-enemy > 0)"),
+    "[Scouting lifecycle] enemy target selection must not wait for a visible enemy building",
+  );
+
+  // Home completion is a bounded information contract, not a Scout movement command.
+  const homeRule = rules.find((rule) =>
+    rule.includes("(goal bt-scout-baseline-state-goal bt-scout-baseline-home)") &&
+    rule.includes("(set-goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)"),
   );
   assert.ok(
     homeRule,
-    "[Scouting lifecycle] home-search pulse rule is missing",
+    "[Scouting lifecycle] home-contract transition rule is missing",
   );
-  const homeText = normalize(homeRule);
   for (const witness of [
-    "(game-time < bt-scout-home-grace)",
-    "(sheep-and-forage-too-far)",
-    "(players-building-count target-player <= 0)",
+    "(resource-found food)",
+    "(resource-found wood)",
+    "(resource-found gold)",
+    "(dropsite-min-distance live-boar >= 0)",
+    "(dropsite-min-distance deer-hunting >= 0)",
+    "(set-goal bt-scout-home-contract-goal 1)",
+    "(up-reset-scouts)",
+    "(enable-timer bt-scouting-timer bt-scout-first-pulse)",
   ]) {
     assert.ok(
-      homeText.includes(witness),
-      "[Scouting lifecycle] home-search rule is missing witness: " + witness,
+      homeRule.includes(witness),
+      "[Scouting lifecycle] home-contract rule is missing witness: " + witness,
     );
   }
 
-  const enemyRule = rules.find(
-    (rule) =>
-      rule.includes("(up-send-scout bt-land-explore-group scout-enemy)") &&
-      rule.includes("(enable-timer bt-scouting-timer bt-scout-enemy-pulse)"),
+  // Enemy acquisition must prove both an actual target TC and physical Scout proximity.
+  const tcProbe = rules.find((rule) =>
+    rule.includes("(goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)") &&
+    rule.includes("(up-find-remote c: town-center c: 1)") &&
+    rule.includes("(up-get-search-state bt-scout-enemy-tc-local-total-goal)"),
   );
   assert.ok(
-    enemyRule,
-    "[Scouting lifecycle] targeted enemy-search rule is missing",
+    tcProbe,
+    "[Scouting lifecycle] enemy TC search witness is missing",
   );
-  const enemyText = normalize(enemyRule);
-  for (const witness of [
-    "(game-time >= bt-scout-home-grace)",
-    "(not (sheep-and-forage-too-far))",
-    "(players-building-count target-player > 0)",
-  ]) {
+
+  const scoutProbe = rules.find((rule) =>
+    rule.includes("(goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)") &&
+    rule.includes("(up-filter-distance c: -1 c: 8)") &&
+    rule.includes("(up-find-local c: scout-cavalry-line c: 40)") &&
+    rule.includes("(up-get-search-state bt-scout-enemy-scout-local-total-goal)"),
+  );
+  assert.ok(
+    scoutProbe,
+    "[Scouting lifecycle] enemy Scout proximity witness is missing",
+  );
+
+  const enemySendRules = rules.filter((rule) =>
+    rule.includes("(up-send-scout bt-land-explore-group scout-enemy)"),
+  );
+  assert.ok(
+    enemySendRules.length >= 2,
+    "[Scouting lifecycle] baseline and Castle-rescan enemy Scout dispatches are missing",
+  );
+  for (const rule of enemySendRules) {
     assert.ok(
-      enemyText.includes(witness),
-      "[Scouting lifecycle] enemy-search rule is missing witness: " + witness,
+      rule.includes("(unit-type-count scout-cavalry-line >= 1)"),
+      "[Scouting lifecycle] enemy Scout dispatch lacks a fielded Scout witness",
+    );
+    assert.ok(
+      rule.includes("(up-reset-scouts)"),
+      "[Scouting lifecycle] enemy Scout dispatch must hand off through up-reset-scouts",
+    );
+    assert.ok(
+      rule.includes("(enable-timer bt-scouting-timer bt-scout-enemy-pulse)"),
+      "[Scouting lifecycle] enemy Scout dispatch must arm its bounded retry pulse",
     );
   }
+
+  const enemyComplete = rules.find((rule) =>
+    rule.includes("(goal bt-scout-baseline-state-goal bt-scout-baseline-enemy)") &&
+    rule.includes("(up-compare-goal bt-scout-enemy-tc-remote-total-goal >= 1)") &&
+    rule.includes("(up-compare-goal bt-scout-enemy-scout-local-total-goal >= 1)") &&
+    rule.includes("(set-goal bt-scout-baseline-state-goal bt-scout-baseline-explore)"),
+  );
+  assert.ok(
+    enemyComplete,
+    "[Scouting lifecycle] enemy-base completion witness is missing",
+  );
+  for (const witness of [
+    "(disable-timer bt-scouting-timer)",
+    "(up-reset-scouts)",
+    "(set-goal bt-scout-objective-goal bt-scout-objective-none)",
+  ]) {
+    assert.ok(
+      enemyComplete.includes(witness),
+      "[Scouting lifecycle] enemy-base completion handoff is missing: " + witness,
+    );
+  }
+
+  // Castle rescan must use the same observe -> complete -> fallback order.
+  const w34Complete = rules.find((rule) =>
+    rule.includes("(goal bt-scout-phase-goal bt-scout-phase-3)") &&
+    rule.includes("(up-compare-goal bt-scout-w34-tc-remote-total-goal >= 1)") &&
+    rule.includes("(up-compare-goal bt-scout-w34-scout-local-total-goal >= 1)") &&
+    rule.includes("(set-goal bt-scout-phase-goal bt-scout-phase-4)"),
+  );
+  assert.ok(
+    w34Complete,
+    "[Scouting lifecycle] W34 completion witness is missing",
+  );
+  assert.ok(
+    w34Complete.includes("(up-reset-scouts)"),
+    "[Scouting lifecycle] W34 must return Scout control to native exploration",
+  );
 }
 
 function validateDerivedThreatStateOrdering(rules) {
