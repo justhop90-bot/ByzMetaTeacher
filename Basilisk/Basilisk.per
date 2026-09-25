@@ -583,6 +583,8 @@
 ; Persistent Castle transition commitment. 1 means the Castle bank has been
 ; intentionally committed; it is cleared only by the Castle-age world-state witness.
 (defconst bt-castle-commitment-goal 693)
+; One-pass scratch latch used only to split the Feudal Castle-bank rule under the engine rule-length limit.
+(defconst bt-castle-bank-eligibility-goal 805)
 ; Persistent Imperial transition commitment. 1 means the Imperial bank has been
 ; intentionally committed; it is cleared only by the Imperial-age world-state witness.
 (defconst bt-imperial-commitment-goal 710)
@@ -6017,6 +6019,11 @@ town-center >= 2)))))
 ; P1 OPENING FAST-CASTLE BANK. This consumes opening intent but
 ; does not issue the age-up action.
 (defrule
+    (true)
+=>
+    (set-goal bt-castle-bank-eligibility-goal 0)
+)
+(defrule
     (goal bt-resource-mode-goal 0)
     (current-age == feudal-age)
     (or
@@ -6043,6 +6050,12 @@ town-center >= 2)))))
             )
         )
     )
+    (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
+=>
+    (set-goal bt-castle-bank-eligibility-goal 1)
+)
+(defrule
+    (goal bt-castle-bank-eligibility-goal 1)
     (not
         (and
             (up-research-status c: ri-double-bit-axe == research-available)
@@ -6067,7 +6080,6 @@ town-center >= 2)))))
             )
         )
     )
-    (not (goal bt-opening-plan-goal bt-opening-plan-anti-rush))
 =>
     (set-goal bt-resource-mode-goal bt-resource-mode-castle-bank)
     (set-goal bt-castle-commitment-goal 1)
