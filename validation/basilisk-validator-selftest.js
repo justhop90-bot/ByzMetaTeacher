@@ -198,6 +198,34 @@ try {
     );
   }
 
+  const constructionPlacementPolicy = findSemanticRule(
+    "explicit construction placement policy",
+    (rule) =>
+      hasAction(rule, "set-strategic-number", [
+        "sn-mill-max-distance",
+        "bt-mill-max-distance",
+      ]) &&
+      hasAction(rule, "set-strategic-number", [
+        "sn-maximum-town-size",
+        "bt-maximum-town-size",
+      ]) &&
+      hasAction(rule, "disable-self"),
+  );
+  assert.ok(
+    hasAction(constructionPlacementPolicy, "set-strategic-number", [
+      "sn-mill-max-distance",
+      "bt-mill-max-distance",
+    ]),
+    "[Construction placement policy] missing explicit Mill distance policy",
+  );
+  assert.ok(
+    hasAction(constructionPlacementPolicy, "set-strategic-number", [
+      "sn-maximum-town-size",
+      "bt-maximum-town-size",
+    ]),
+    "[Construction placement policy] missing explicit town-size policy",
+  );
+
   const assertOpeningBuilderHandoff = (label, building, predicate) => {
     const rule = findSemanticRule(label, predicate);
     const buildIndex = actionIndex(rule, "build", [building]);
