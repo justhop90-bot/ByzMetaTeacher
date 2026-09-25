@@ -6210,7 +6210,7 @@ function validateOnagerLifecycle(rules) {
 }
 
 function validateLifecycleAnchors(sourceText, rules, profile) {
-  for (const symbol of [
+  const symbols = [
     "bt-strategy-boom",
     "bt-strategy-rush",
     "bt-strategy-flush",
@@ -6219,9 +6219,15 @@ function validateLifecycleAnchors(sourceText, rules, profile) {
     "bt-standing-army-demand-goal",
     "bt-attack-timer",
     "bt-rush-attack-archer-witness",
-    "bt-rush-stall-latch-goal",
-  ]) {
-    assert.ok(sourceText.includes(symbol), `[Lifecycle] missing canonical state symbol: ${symbol}`);
+  ];
+  if (profile.requireRushStallLifecycle) {
+    symbols.push("bt-rush-stall-latch-goal");
+  }
+  for (const symbol of symbols) {
+    assert.ok(
+      sourceText.includes(symbol),
+      `[Lifecycle] missing canonical state symbol: ${symbol}`,
+    );
   }
 
   requireRule(
