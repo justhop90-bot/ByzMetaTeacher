@@ -818,6 +818,12 @@
 (defconst bt-dropsite-radius-start 25)
 (defconst bt-dropsite-radius-step 3)
 (defconst bt-dropsite-radius-cap 40)
+; Explicit construction-placement policy.
+; AIRef: Group 2 Mills use sn-mill-max-distance; Group 5 ordinary buildings
+; use sn-maximum-town-size. Keep both limits explicit instead of inheriting
+; engine defaults.
+(defconst bt-mill-max-distance 25)
+(defconst bt-maximum-town-size 30)
 
 ; Military composition targets.
 (defconst bt-spear-target-1 6)
@@ -980,6 +986,10 @@
     (set-strategic-number sn-camp-max-distance bt-dropsite-radius-start)
     (set-strategic-number sn-lumber-camp-max-distance bt-dropsite-radius-start)
     (set-strategic-number sn-mining-camp-max-distance bt-dropsite-radius-start)
+    ; Group 2: normal Mill placement uses this maximum distance.
+    (set-strategic-number sn-mill-max-distance bt-mill-max-distance)
+    ; Group 5: ordinary non-camp/non-Mill construction uses this town-size cap.
+    (set-strategic-number sn-maximum-town-size bt-maximum-town-size)
     (set-escrow-percentage food 30)
     (set-escrow-percentage wood 30)
     (set-escrow-percentage gold 30)
