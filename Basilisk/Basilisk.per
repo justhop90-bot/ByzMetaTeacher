@@ -935,17 +935,45 @@
 ; pending-object guards in the resource refresh rules below.
 ; Runtime initialization. Keep engine-policy state separate from diagnostic memory
 ; so the initialization rule stays comfortably inside the DE element limit.
+; Request the new construction system before any runtime construction policy.
+; Keep the request isolated because AIRef documents it as a one-time mode switch.
+(defrule
+    (true)
+=>
+    (set-strategic-number sn-enable-new-building-system 1)
+    (set-strategic-number sn-cap-civilian-builders 200)
+    (disable-self)
+)
+
+; Establish the explicit builder map after the construction system has had a pass
+; to enter its new mode. Runtime build rules may still override specific types
+; immediately before a build when a package needs a different count.
+(defrule
+    (game-time > 0)
+=>
+    (up-assign-builders c: farm c: 1)
+    (up-assign-builders c: house c: 1)
+    (up-assign-builders c: town-center-foundation c: 1)
+    (up-assign-builders c: mill c: 1)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-assign-builders c: barracks c: 1)
+    (up-assign-builders c: archery-range c: 1)
+    (up-assign-builders c: stable c: 1)
+    (up-assign-builders c: blacksmith c: 1)
+    (up-assign-builders c: market c: 1)
+    (up-assign-builders c: monastery c: 1)
+    (up-assign-builders c: university c: 1)
+    (up-assign-builders c: siege-workshop c: 1)
+    (up-assign-builders c: castle c: 1)
+    (disable-self)
+)
+
+; General runtime initialization.
 (defrule
     (true)
 =>
     (set-strategic-number sn-resource-control 0)
-    (set-strategic-number sn-enable-new-building-system 1)
-    (set-strategic-number sn-cap-civilian-builders 200)
-    (up-assign-builders c: house c: 1)
-    (up-assign-builders c: lumber-camp c: 1)
-    (up-assign-builders c: mining-camp c: 1)
-    (up-assign-builders c: mill c: 1)
-    (up-assign-builders c: barracks c: 1)
     (set-strategic-number sn-defer-dropsite-update 1)
     (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)
     (set-strategic-number sn-allow-adjacent-dropsites 0)
@@ -3503,6 +3531,7 @@
     (can-build-with-escrow lumber-camp)
 =>
     (release-escrow wood)
+    (up-assign-builders c: lumber-camp c: 1)
     (build lumber-camp)
 )
 
@@ -3515,6 +3544,7 @@
     (can-build-with-escrow mining-camp)
 =>
     (release-escrow wood)
+    (up-assign-builders c: mining-camp c: 1)
     (build mining-camp)
 )
 
@@ -3752,6 +3782,7 @@
     (set-strategic-number sn-resource-control bt-mill-claim)
     (release-escrow wood)
     (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+    (up-assign-builders c: mill c: 1)
     (build mill)
 )
 
@@ -3790,6 +3821,7 @@
     (can-build-with-escrow barracks)
 =>
     (release-escrow wood)
+    (up-assign-builders c: barracks c: 1)
     (build barracks)
 )
 
