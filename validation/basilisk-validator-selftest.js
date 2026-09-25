@@ -2692,33 +2692,65 @@ try {
     {
       name: "villager-hygiene-first-lumber-resource-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "    (resource-found wood)\n",
-        "",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count-total lumber-camp == 0)",
+          "(civilian-population >= 7)",
+          "(build lumber-camp)",
+        ],
+        (rule) =>
+          rule.replace("    (resource-found wood)\n", ""),
+        "first lumber resource demand",
       ),
     },
     {
       name: "villager-hygiene-first-lumber-distance-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "    (dropsite-min-distance wood > bt-opening-dropsite-distance)\n",
-        "",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(building-type-count-total lumber-camp == 0)",
+          "(civilian-population >= 7)",
+          "(build lumber-camp)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (dropsite-min-distance wood > bt-opening-dropsite-distance)\n",
+            "",
+          ),
+        "first lumber dropsite distance",
       ),
     },
     {
       name: "villager-hygiene-first-mill-food-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "    (resource-found food)\n",
-        "",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-mill-project-goal 0)",
+          "(set-goal bt-mill-project-goal 1)",
+        ],
+        (rule) =>
+          rule.replace("    (resource-found food)\n", ""),
+        "first mill food demand",
       ),
     },
     {
       name: "villager-hygiene-first-mill-distance-regression",
       expected: "[Villager hygiene]",
-      source: baseline.replace(
-        "    (dropsite-min-distance food > bt-opening-dropsite-distance)\n",
-        "",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(goal bt-mill-project-goal 0)",
+          "(set-goal bt-mill-project-goal 1)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (dropsite-min-distance food > bt-opening-dropsite-distance)\n",
+            "",
+          ),
+        "first mill dropsite distance",
       ),
     },
     {
