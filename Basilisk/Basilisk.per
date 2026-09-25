@@ -939,6 +939,13 @@
     (true)
 =>
     (set-strategic-number sn-resource-control 0)
+    (set-strategic-number sn-enable-new-building-system 1)
+    (set-strategic-number sn-cap-civilian-builders 200)
+    (up-assign-builders c: house c: 1)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-assign-builders c: mill c: 1)
+    (up-assign-builders c: barracks c: 1)
     (set-strategic-number sn-defer-dropsite-update 1)
     (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)
     (set-strategic-number sn-allow-adjacent-dropsites 0)
@@ -3493,8 +3500,9 @@
     (civilian-population >= 7)
     (up-pending-objects c: lumber-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
-    (can-build lumber-camp)
+    (can-build-with-escrow lumber-camp)
 =>
+    (release-escrow wood)
     (build lumber-camp)
 )
 
@@ -3504,8 +3512,9 @@
     (civilian-population >= 8)
     (up-pending-objects c: mining-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
-    (can-build mining-camp)
+    (can-build-with-escrow mining-camp)
 =>
+    (release-escrow wood)
     (build mining-camp)
 )
 
@@ -3778,8 +3787,9 @@
 (defrule
     (building-type-count-total barracks == 0)
     (civilian-population >= 12)
-    (can-build barracks)
+    (can-build-with-escrow barracks)
 =>
+    (release-escrow wood)
     (build barracks)
 )
 
