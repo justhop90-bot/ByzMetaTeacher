@@ -3323,6 +3323,7 @@
                 )
             )
         )
+        (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
     )
 =>
     (set-goal bt-castle-cataphract-demand-goal 1)
@@ -6548,7 +6549,7 @@ town-center >= 2)))))
     (can-research-with-escrow castle-age)
     (unit-type-count villager < bt-castle-villagers)
 =>
-    (chat-local-to-self "BASILISK | AGE | Castle blocked: waiting for 30 villagers.")
+    (chat-local-to-self "BASILISK | AGE | Castle blocked: waiting for 28 villagers.")
     (set-goal bt-debug-last-castle-block-goal bt-debug-castle-block-villagers)
 )
 
@@ -6905,6 +6906,23 @@ sn-stone-gatherer-percentage == 0)))))
     (set-strategic-number sn-wood-gatherer-percentage 20)
     (set-strategic-number sn-gold-gatherer-percentage 25)
     (set-strategic-number sn-stone-gatherer-percentage 0)
+)
+
+; Arena Fast Castle pre-funds the existing Castle project while the
+; Castle-bank still owns the Feudal age-up. This is not a new resource mode:
+; P0 crisis rules can still preempt the bank, and the opening plan itself is
+; the live strategic witness. Stop diverting villagers once 650 stone exists.
+(defrule
+    (goal bt-resource-mode-goal bt-resource-mode-castle-bank)
+    (goal bt-opening-plan-goal bt-opening-plan-arena-fast-castle)
+    (stone-amount < 650)
+    (or (not (strategic-number sn-food-gatherer-percentage == 50)) (or (not (strategic-number sn-wood-gatherer-percentage == 15)) (or (not (strategic-number sn-gold-gatherer-percentage == 20)) (not (strategic-number
+sn-stone-gatherer-percentage == 15)))))
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+    (set-strategic-number sn-wood-gatherer-percentage 15)
+    (set-strategic-number sn-gold-gatherer-percentage 20)
+    (set-strategic-number sn-stone-gatherer-percentage 15)
 )
 
 (defrule
