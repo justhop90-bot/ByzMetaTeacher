@@ -1489,6 +1489,16 @@
     (set-goal bt-varangian-target-goal bt-varangian-target-level-2)
 )
 (defrule
+    (current-age >= imperial-age)
+    (up-compare-goal bt-cavalry-counter-level-goal >= 2)
+    (up-compare-goal bt-ranged-counter-level-goal < 2)
+    (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-2)
+    (goal bt-cataphract-demand-goal 0)
+    (up-research-status c: ri-logistica == research-complete)
+=>
+    (set-goal bt-varangian-target-goal bt-varangian-elite-target-level)
+)
+(defrule
     (current-age >= castle-age)
     (goal bt-varangian-demand-goal 0)
     (goal bt-cataphract-demand-goal 0)
@@ -10160,6 +10170,7 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (goal bt-varangian-demand-goal 1)
     (current-age >= imperial-age)
+    (up-research-status c: ri-elite-varangian-guard == research-complete)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
     (up-compare-goal bt-varangian-fielded-goal < bt-varangian-target-goal)
@@ -10174,6 +10185,7 @@ cataphract-line < bt-cataphract-target-1)))))
 (defrule
     (goal bt-varangian-demand-goal 1)
     (current-age >= castle-age)
+    (up-research-status c: ri-elite-varangian-guard < research-pending)
     (strategic-number sn-resource-control == 0)
     (building-type-count-total barracks >= 1)
     (up-compare-goal bt-varangian-fielded-goal < bt-varangian-target-goal)
