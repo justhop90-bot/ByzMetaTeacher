@@ -819,6 +819,9 @@
 (defconst bt-dropsite-radius-start 25)
 (defconst bt-dropsite-radius-step 3)
 (defconst bt-dropsite-radius-cap 40)
+; Opening dropsites use the long-established community distance trigger.
+; Higher-level maintenance can widen placement later.
+(defconst bt-opening-dropsite-distance 3)
 ; Explicit construction-placement policy.
 ; AIRef: Group 2 Mills use sn-mill-max-distance; Group 5 ordinary buildings
 ; use sn-maximum-town-size. Keep both limits explicit instead of inheriting
@@ -989,6 +992,8 @@
     (set-strategic-number sn-mining-camp-max-distance bt-dropsite-radius-start)
     ; Group 2: normal Mill placement uses this maximum distance.
     (set-strategic-number sn-mill-max-distance bt-mill-max-distance)
+    ; Preserve the engine/community default: Mills prefer forage/berries.
+    (set-strategic-number sn-preferred-mill-placement 0)
     ; Group 5: ordinary non-camp/non-Mill construction uses this town-size cap.
     (set-strategic-number sn-maximum-town-size bt-maximum-town-size)
     (set-escrow-percentage food 30)
@@ -3537,6 +3542,8 @@
 (defrule
     (building-type-count-total lumber-camp == 0)
     (civilian-population >= 7)
+    (resource-found wood)
+    (dropsite-min-distance wood > bt-opening-dropsite-distance)
     (up-pending-objects c: lumber-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
     (can-build-with-escrow lumber-camp)
@@ -3550,6 +3557,16 @@
 (defrule
     (building-type-count-total mining-camp == 0)
     (civilian-population >= 8)
+    (or
+        (and
+            (resource-found gold)
+            (dropsite-min-distance gold > bt-opening-dropsite-distance)
+        )
+        (and
+            (resource-found stone)
+            (dropsite-min-distance stone > bt-opening-dropsite-distance)
+        )
+    )
     (up-pending-objects c: mining-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
     (can-build-with-escrow mining-camp)
@@ -3723,6 +3740,8 @@
 (defrule
     (goal bt-mill-project-goal 0)
     (building-type-count-total mill == 0)
+    (resource-found food)
+    (dropsite-min-distance food > bt-opening-dropsite-distance)
     (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
 =>
@@ -3779,13 +3798,6 @@
     (goal bt-mill-project-goal 1)
     (goal bt-mill-backoff-goal 0)
     (strategic-number sn-resource-control == 0)
-    (not (and
-        (current-age == feudal-age)
-        (or
-            (can-research-with-escrow castle-age)
-            (goal bt-castle-commitment-goal 1)
-        )
-    ))
     (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
     (can-build-with-escrow mill)
