@@ -2580,6 +2580,7 @@ try {
       source: mutateRuleContaining(
         baseline,
         [
+          "(goal bt-dropsite-placement-claim-goal 1)",
           "(set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)",
           "(set-strategic-number sn-allow-adjacent-dropsites 0)",
         ],
