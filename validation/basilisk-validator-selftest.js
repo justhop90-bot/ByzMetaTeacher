@@ -249,7 +249,11 @@ try {
     "first mill builder handoff",
     "mill",
     (rule) =>
-      hasFact(rule, "goal", ["bt-mill-project-goal", "1"]) &&
+      hasFact(rule, "goal", ["bt-mill-backoff-goal", "0"]) &&
+      hasAction(rule, "set-strategic-number", [
+        "sn-resource-control",
+        "bt-mill-claim",
+      ]) &&
       hasAction(rule, "up-assign-builders", ["c:", "mill", "c:", "1"]) &&
       hasAction(rule, "build", ["mill"]),
   );
