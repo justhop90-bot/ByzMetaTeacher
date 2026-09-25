@@ -17,7 +17,9 @@ jobs:
           node-version: 24
       - name: Run Basilisk validator profile self-test
         run: node validation/basilisk-validator-profile-selftest.js
-      - name: Run Basilisk validator
-        run: node validation/basilisk-validator.js
+      - name: Run Basilisk validator profile self-test
+        run: node validation/basilisk-validator-profile-selftest.js
+      - name: Run Basilisk validator for 8596a45 baseline
+        run: node validation/basilisk-validator.js --profile=8596a45
       - name: Run Basilisk validator self-test
         run: node validation/basilisk-validator-selftest.js
