@@ -180,6 +180,9 @@
 (defconst bt-strategy-rush 201)
 (defconst bt-strategy-boom 202)
 (defconst bt-strategy-castle-power 203)
+; RUSH attack authorization requires the same completed four-Archer core
+; already used by the RUSH -> CASTLE-POWER transition.
+(defconst bt-rush-attack-archer-witness 4)
 
 ; TC resource-claim values use currently unused high strategic-number IDs.
 ; They are state values stored in the existing sn-resource-control mutex.
@@ -632,6 +635,10 @@
 (defconst bt-attack-result-damaged 1)
 (defconst bt-attack-result-stalled 2)
 (defconst bt-attack-result-reassess 3)
+; Persistent one-bit memory for consecutive Feudal RUSH stalls.
+; 1 means the previous measured RUSH attack stalled with no structural damage
+; while Basilisk was materially behind. A second such result releases RUSH.
+(defconst bt-rush-stall-latch-goal 775)
 (defconst bt-debug-last-tc-project-goal 712)
 (defconst bt-debug-castle-block-none 0)
 (defconst bt-debug-castle-block-backoff 1)
@@ -1040,6 +1047,7 @@
     (set-goal bt-attack-target-buildings-now-goal 0)
     (set-goal bt-attack-buildings-destroyed-goal 0)
     (set-goal bt-attack-result-goal bt-attack-result-none)
+    (set-goal bt-rush-stall-latch-goal 0)
     (set-goal bt-cavalry-threat-goal 0)
     (set-goal bt-ranged-threat-goal 0)
     (set-goal bt-spear-threat-goal 0)
@@ -5668,6 +5676,19 @@
     (set-goal strategy-goal bt-strategy-castle-power)
 )
 
+; Castle-Power releases when its strategic infrastructure objective disappears.
+; Target selection is repaired earlier in source order, so this remains a
+; target-objective witness rather than a target-identity failure latch.
+(defrule
+    (goal strategy-goal bt-strategy-castle-power)
+    (current-age == castle-age)
+    (players-building-count target-player == 0)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
 ; Failed Castle-Power promotion is an explicit RUSH -> BOOM recovery.
 ; This is mutually exclusive with the promotion rule above because that rule
 ; changes strategy-goal away from RUSH before this rule can match in the same pass.
@@ -5774,6 +5795,37 @@
     (not (goal strategy-goal bt-strategy-castle-power))
 =>
     (set-goal strategy-goal bt-strategy-boom)
+)
+
+;----------------------------------------------------------------
+; 13F-2. FEUDAL RUSH OBJECTIVE LOSS -> BOOM
+;----------------------------------------------------------------
+; RUSH is a pressure posture, not a permanent Feudal mode.  Once the
+; current target has no remaining buildings, the attack objective has
+; disappeared.  Threat response still has priority because those writers
+; ran earlier in this pass.  This rule is deliberately after every
+; opening-plan RUSH writer so the pressure plan cannot resurrect RUSH
+; later in the same pass.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (players-building-count target-player <= 0)
+    (not (town-under-attack))
+    (not (goal bt-any-threat-goal 1))
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+)
+
+;----------------------------------------------------------------
+; Consecutive RUSH-failure memory is only meaningful while RUSH survives.
+; Any explicit strategy exit clears the latch before downstream consumers
+; see the new posture. This keeps target-loss, FLUSH, and Castle-Power exits
+; from contaminating a future Feudal RUSH.
+(defrule
+    (not (goal strategy-goal bt-strategy-rush))
+    (up-compare-goal bt-rush-stall-latch-goal != 0)
+=>
+    (set-goal bt-rush-stall-latch-goal 0)
 )
 
 ;================================================================
@@ -9954,7 +10006,10 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (or (up-compare-goal bt-standing-army-deficit-goal < 0) (or (unit-type-count-total spearman-line < bt-standing-spear-target-goal) (or (unit-type-count-total skirmisher-line < bt-standing-skirm-target-goal) (or (unit-type-count-total
@@ -9975,7 +10030,10 @@ archer-line < bt-standing-archer-target-goal) (or (unit-type-count-total knight-
                 (goal strategy-goal bt-strategy-boom)
                 (or
                     (goal strategy-goal bt-strategy-flush)
-                    (goal strategy-goal bt-strategy-castle-power)
+                    (or
+                        (goal strategy-goal bt-strategy-rush)
+                        (goal strategy-goal bt-strategy-castle-power)
+                    )
                 )
             )
         ) (and (up-compare-goal bt-standing-army-deficit-goal >= 0) (and (unit-type-count-total spearman-line >= bt-standing-spear-target-goal) (and (unit-type-count-total skirmisher-line >= bt-standing-skirm-target-goal) (and
@@ -10328,7 +10386,10 @@ cataphract-line < bt-cataphract-target-1)))))
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (current-age >= feudal-age)
@@ -10349,7 +10410,10 @@ cataphract-line < bt-cataphract-target-1)))))
         (goal strategy-goal bt-strategy-boom)
         (or
             (goal strategy-goal bt-strategy-flush)
-            (goal strategy-goal bt-strategy-castle-power)
+            (or
+                (goal strategy-goal bt-strategy-rush)
+                (goal strategy-goal bt-strategy-castle-power)
+            )
         )
     )
     (current-age >= feudal-age)
@@ -13131,6 +13195,13 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
             (unit-type-count crossbowman >= bt-standing-crossbow-target-goal)
         )
     )
+    ; RUSH has its own Archer production path, outside the generic
+    ; standing-role targets.  Attack therefore needs a completed Archer
+    ; witness before the pressure posture can authorize attack-now.
+    (or
+        (not (goal strategy-goal bt-strategy-rush))
+        (unit-type-count archer-line >= bt-rush-attack-archer-witness)
+    )
     (goal bt-counter-veto-goal 0)
     (goal bt-standing-army-demand-goal 0)
     (goal attack-goal 0)
@@ -13443,8 +13514,48 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (up-compare-goal bt-attack-buildings-destroyed-goal >= 1)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-damaged)
+    ; Structural damage breaks any consecutive stalled-RUSH sequence.
+    (set-goal bt-rush-stall-latch-goal 0)
     ; Damage was achieved; reopen normal attack cadence quickly.
     (enable-timer bt-attack-timer 120)
+)
+
+; Second consecutive measured Feudal RUSH stall: release the pressure posture.
+; This is deliberately before the generic stalled-result consumer. The result
+; remains STALLED and gets the normal 300s regroup cooldown, but the strategy
+; switches to BOOM for the next strategy pass.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (goal bt-rush-stall-latch-goal 1)
+    (goal attack-goal 0)
+    (goal bt-attack-result-goal bt-attack-result-none)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
+    (up-compare-goal bt-relative-force-goal < 0)
+=>
+    (set-goal strategy-goal bt-strategy-boom)
+    (set-goal bt-rush-stall-latch-goal 0)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
+    (enable-timer bt-attack-timer 300)
+)
+
+; First consecutive measured Feudal RUSH stall: keep RUSH, remember one fail.
+; Emergency retreat/gather failures do not enter here because they write the
+; STALLED result directly instead of passing through the measured classifier.
+(defrule
+    (goal strategy-goal bt-strategy-rush)
+    (current-age == feudal-age)
+    (goal bt-rush-stall-latch-goal 0)
+    (goal attack-goal 0)
+    (goal bt-attack-result-goal bt-attack-result-none)
+    (up-compare-goal bt-attack-buildings-destroyed-goal <= 0)
+    (up-compare-goal bt-relative-force-goal < 0)
+=>
+    (set-goal bt-rush-stall-latch-goal 1)
+    (set-goal bt-attack-result-goal bt-attack-result-stalled)
+    (set-goal bt-standing-army-demand-goal 1)
+    (enable-timer bt-attack-timer 300)
 )
 
 (defrule
@@ -13467,6 +13578,8 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (or (goal bt-resource
     (up-compare-goal bt-relative-force-goal >= 0)
 =>
     (set-goal bt-attack-result-goal bt-attack-result-reassess)
+    ; Reassessment is not a consecutive inferior-force stall.
+    (set-goal bt-rush-stall-latch-goal 0)
     ; No damage but no immediate defeat either: use the normal cooldown
     ; while scouting/composition state decides whether the next push changes.
     (enable-timer bt-attack-timer 180)
