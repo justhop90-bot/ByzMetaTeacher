@@ -841,6 +841,7 @@
 ; Farm-tech lifecycle tuning.
 ; Eight Feudal farms allow extended Feudal pressure/boom without making
 ; the farm layer wait for Castle; 14 remains the mature Castle ceiling.
+(defconst bt-farm-dark-emergency-cap 3)
 (defconst bt-farm-feudal-cap 8)
 (defconst bt-farm-castle-cap 14)
 (defconst bt-farm-imperial-cap 24)
@@ -4679,6 +4680,26 @@
     )
 =>
     (set-goal bt-feudal-farm-wood-hold-goal 0)
+)
+
+;----------------------------------------------------------------
+; 11A. DARK-AGE EMERGENCY FARM FALLBACK
+;----------------------------------------------------------------
+; Dark Age farms are an emergency bridge, not normal food infrastructure.
+; Require the derived DEPLETED natural-food state and a sub-350 food bank,
+; allow at most three completed/queued farms, and preserve the shared
+; resource mutex so age-up and other capital commitments retain priority.
+(defrule
+    (current-age == dark-age)
+    (goal bt-natural-food-state-goal bt-natural-food-depleted)
+    (food-amount < 350)
+    (strategic-number sn-resource-control == 0)
+    (up-pending-objects c: farm == 0)
+    (building-type-count-total farm < bt-farm-dark-emergency-cap)
+    (can-build-with-escrow farm)
+=>
+    (release-escrow wood)
+    (build farm)
 )
 
 ;----------------------------------------------------------------
