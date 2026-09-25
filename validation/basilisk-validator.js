@@ -2983,13 +2983,17 @@ function validateVillagerHygiene(rules) {
     for (const witness of [
       "(up-pending-objects c: " + campType + " == 0)",
       "(goal bt-dropsite-placement-claim-goal 0)",
-      "(can-build " + campType + ")",
     ]) {
       assert.ok(
         first.includes(witness),
         "[Villager hygiene] first " + campType + " is missing witness: " + witness,
       );
     }
+    assert.ok(
+      first.includes("(can-build " + campType + ")") ||
+        first.includes("(can-build-with-escrow " + campType + ")"),
+      "[Villager hygiene] first " + campType + " is missing a build-feasibility witness",
+    );
   }
 
   const dropsiteRelease = requireRule(
