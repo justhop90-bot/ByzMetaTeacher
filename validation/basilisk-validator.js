@@ -35,8 +35,11 @@ assert.ok(
   "[Profile] unknown validator profile: " + requestedProfile,
 );
 
+const controllerArg = process.argv
+  .slice(2)
+  .find((arg) => !arg.startsWith("--"));
 const controllerPath = path.resolve(
-  process.argv[2] ?? path.join(repoRoot, "Basilisk", "Basilisk.per"),
+  controllerArg ?? path.join(repoRoot, "Basilisk", "Basilisk.per"),
 );
 const legacyValidatorPath = path.join(
   repoRoot,
