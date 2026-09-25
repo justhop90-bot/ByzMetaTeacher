@@ -707,6 +707,39 @@
 (defconst bt-scout-stable-wood 150)
 (defconst bt-scout-pressure-window 600)
 
+; Reconnaissance phase ledger. These goals were verified unused in the current
+; Basilisk controller and are owned exclusively by the scouting lifecycle.
+(defconst bt-scout-phase-goal 805)
+(defconst bt-scout-objective-goal 806)
+(defconst bt-scout-objective-state-goal 807)
+(defconst bt-scout-home-contract-goal 808)
+(defconst bt-scout-preempt-goal 809)
+(defconst bt-scout-stuck-goal 810)
+(defconst bt-scout-phase-0 0)
+(defconst bt-scout-phase-1 1)
+(defconst bt-scout-phase-2 2)
+(defconst bt-scout-phase-3 3)
+(defconst bt-scout-phase-4 4)
+(defconst bt-scout-phase-5 5)
+(defconst bt-scout-objective-none 0)
+(defconst bt-scout-objective-home 1)
+(defconst bt-scout-objective-find-enemy 2)
+(defconst bt-scout-objective-confirm-tc 3)
+(defconst bt-scout-objective-read-opening 4)
+(defconst bt-scout-objective-surveil-military 5)
+(defconst bt-scout-objective-resurvey-change 6)
+(defconst bt-scout-objective-castle-rescan 7)
+(defconst bt-scout-objective-find-expansion 8)
+(defconst bt-scout-objective-find-forward-production 9)
+(defconst bt-scout-objective-find-siege 10)
+(defconst bt-scout-objective-find-army 11)
+(defconst bt-scout-objective-find-resource 12)
+(defconst bt-scout-objective-find-neutral-resource 13)
+(defconst bt-scout-objective-tactical-threat 14)
+(defconst bt-scout-objective-idle 0)
+(defconst bt-scout-objective-active 1)
+(defconst bt-scout-objective-suspended 2)
+
 ; Map-aware Byzantine opening policy state. These goals carry intent only;
 ; strategy, resource allocation, and production remain downstream owners.
 (defconst bt-opening-plan-goal 689)
@@ -1076,6 +1109,12 @@
     (true)
 =>
     (set-strategic-number sn-number-explore-groups 1)
+    ; Naga/Stock-AI baseline: no mandatory full-map opening exploration;
+    ; require one enemy object and keep the normal land group bounded.
+    (set-strategic-number sn-initial-exploration-required 0)
+    (set-strategic-number sn-number-enemy-objects-required 1)
+    (set-strategic-number sn-minimum-explore-group-size 1)
+    (set-strategic-number sn-maximum-explore-group-size 1)
     ; Let the engine's normal explorer policy own the opening search.
     ; One military scout explores; civilian exploration remains disabled.
     (set-strategic-number sn-total-number-explorers 10)
@@ -4436,6 +4475,90 @@
 ;================================================================
 ; 12. SCOUTING
 ;================================================================
+; 12A. RECONNAISSANCE PHASE LEDGER
+;
+; The phase is monotonic. Capability boundaries may jump directly to a later
+; phase. Tactical regressions are objective preemptions, never phase writes.
+(defrule
+    (true)
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-0)
+    (set-goal bt-scout-objective-goal bt-scout-objective-none)
+    (set-goal bt-scout-objective-state-goal bt-scout-objective-idle)
+    (set-goal bt-scout-home-contract-goal 0)
+    (set-goal bt-scout-preempt-goal 0)
+    (set-goal bt-scout-stuck-goal 0)
+    (disable-self)
+)
+
+; W45. IMPERIAL TRANSITION
+(defrule
+    (up-compare-goal bt-scout-phase-goal < bt-scout-phase-5)
+    (or
+        (current-age >= imperial-age)
+        (or
+            (players-current-age target-player >= imperial-age)
+            (goal bt-imperial-commitment-goal 1)
+        )
+    )
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-5)
+)
+
+; W23. CASTLE TRANSITION
+(defrule
+    (up-compare-goal bt-scout-phase-goal < bt-scout-phase-3)
+    (or
+        (current-age >= castle-age)
+        (or
+            (players-current-age target-player >= castle-age)
+            (goal bt-castle-commitment-goal 1)
+        )
+    )
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-3)
+)
+
+; W34. CASTLE-TRANSITION RESCAN COMPLETION
+; Intentionally no fabricated completion predicate is added here. The next
+; objective patch must supply a concrete Castle-rescan information witness.
+; W45 above always bypasses this edge when Imperial is eligible.
+
+; W12. FEUDAL SURVEILLANCE
+(defrule
+    (up-compare-goal bt-scout-phase-goal == bt-scout-phase-1)
+    (current-age == feudal-age)
+    (goal bt-scout-home-contract-goal 1)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-opening-plan-goal != 0)
+    (or
+        (goal strategy-goal bt-strategy-boom)
+        (or
+            (goal strategy-goal bt-strategy-flush)
+            (goal strategy-goal bt-strategy-rush)
+        )
+    )
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-2)
+)
+
+; W01. NORMAL HOME-CONTRACT EXIT
+(defrule
+    (up-compare-goal bt-scout-phase-goal == bt-scout-phase-0)
+    (goal bt-scout-home-contract-goal 1)
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-1)
+)
+
+; W01-ESCAPE. FEUDAL IS THE HARD MINIMUM PHASE FLOOR.
+(defrule
+    (up-compare-goal bt-scout-phase-goal == bt-scout-phase-0)
+    (goal bt-scout-home-contract-goal 0)
+    (current-age >= feudal-age)
+=>
+    (set-goal bt-scout-phase-goal bt-scout-phase-1)
+)
+
 ; Q: "How does the AI deliberately search for the enemy?"
 ;
 ; up-send-scout directs a land/water scout to a strategic location.
