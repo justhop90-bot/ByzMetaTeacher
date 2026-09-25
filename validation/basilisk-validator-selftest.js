@@ -485,6 +485,16 @@ try {
           "bt-castle-commitment-goal",
           "0",
         ])
+      ) &&
+      !(
+        hasFact(rule, "goal", [
+          "strategy-goal",
+          "bt-strategy-boom",
+        ]) &&
+        ruleSection(rule, "actions").some(
+          (expr) => expr.head === "build" && expr.args[0]?.value === "barracks",
+        ) &&
+        !JSON.stringify(rule).includes("bt-standing-army-floor-goal")
       ),
   );
   assert.equal(
