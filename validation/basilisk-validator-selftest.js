@@ -2391,21 +2391,25 @@ try {
 
 
     {
-      name: "double-bit-axe-demand-cannot-be-cleared-by-castle-feasibility",
-      expected: "[DBA lifecycle]",
-      source: (() => {
-        const pendingWitness =
-          "(up-research-status c: ri-double-bit-axe >=\nresearch-pending)";
-        assert.ok(
-          baseline.includes(pendingWitness),
-          "[Self-test] DBA pending-state witness missing from baseline",
-        );
-        return baseline.replace(
-          pendingWitness,
-          "(or (can-research-with-escrow castle-age) " + pendingWitness + ")",
-        );
-      })(),
+      name: "double-bit-axe-provider-claim-guard-regression-rejected",
+      expected: "[Feudal eco]",
+      source: mutateRuleContaining(
+        baseline,
+        [
+          "(current-age == feudal-age)",
+          "(research ri-double-bit-axe)",
+          "(can-research-with-escrow ri-double-bit-axe)",
+          "(goal bt-research-lumber-camp-claim-goal 0)",
+        ],
+        (rule) =>
+          rule.replace(
+            "    (goal bt-research-lumber-camp-claim-goal 0)\n",
+            "",
+          ),
+        "DBA provider claim guard",
+      ),
     },
+,
     ...[
       ["ri-heavy-plow", "heavy-plow"],
       ["ri-gold-mining", "gold-mining"],
