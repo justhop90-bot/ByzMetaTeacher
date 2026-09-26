@@ -462,7 +462,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             observation.provenance,
         )
         self.assertEqual(
-            binding.observations[0].expression,
+            binding.observations[0].expression.source,
             observation.expression,
         )
 
