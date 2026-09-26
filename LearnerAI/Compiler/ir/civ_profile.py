@@ -645,6 +645,7 @@ def _byzantine_game_data(
             ResourceCost(stone=650),
             trainable_lines=(
                 UnitLineId("cataphract-line"),
+                UnitLineId("petard-line"),
                 UnitLineId("trebuchet-line"),
             ),
             researchable_technologies=(TechId(61), TechId(464)),
@@ -714,6 +715,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("cavalry-archer-line"), "Cavalry Archer line", (UnitId(39), UnitId(474)), (evidence,)),
         UnitLineDef(UnitLineId("hand-cannoneer-line"), "Hand Cannoneer line", (UnitId(5),), (evidence,)),
         UnitLineDef(UnitLineId("cataphract-line"), "Cataphract line", (UnitId(40), UnitId(553)), (evidence,)),
+        UnitLineDef(UnitLineId("petard-line"), "Petard line", (UnitId(440),), (evidence,)),
         UnitLineDef(UnitLineId("varangian-guard-line"), "Varangian Guard line", (UnitId(2703), UnitId(2704)), (controller,)),
         UnitLineDef(UnitLineId("monk-line"), "Monk line", (UnitId(125),), (evidence,)),
         UnitLineDef(UnitLineId("ram-line"), "Ram line", (UnitId(1258), UnitId(422), UnitId(548)), (evidence,)),
