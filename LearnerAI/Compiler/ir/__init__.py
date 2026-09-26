@@ -129,6 +129,7 @@ from .strategy import (
     ResolvedStrategyProfile,
     StrategicBinding,
     StrategicCapabilityObservation,
+    StrategicCapabilityObservationKind,
     StrategicDemandSpec,
     StrategicObservationSpec,
     StrategicEvidence,
