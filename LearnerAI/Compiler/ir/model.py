@@ -110,6 +110,21 @@ class SemanticAction:
     arbitration_request: GoalSlotRequest | None = None
 
 
+class WitnessEvidenceKind(str, Enum):
+    WORLD_STATE = "WORLD_STATE"
+
+
+@dataclass(frozen=True)
+class CompletionWitnessContract:
+    identity: SemanticId
+    evidence_kind: WitnessEvidenceKind
+    primitive: str
+    expression: Expression
+    establishes: SemanticId
+    source_order: int
+    issuance_source_order: int
+
+
 @dataclass(frozen=True)
 class ActionIssuance:
     demand: SemanticId
@@ -151,6 +166,7 @@ class SemanticDemand:
     requirements: tuple[SemanticRequirement, ...]
     action: SemanticAction
     witness: Expression
+    completion_witness: CompletionWitnessContract | None = None
     release: Expression
     action_issuance: ActionIssuance | None = None
     ownership: DemandOwnership | None = None
