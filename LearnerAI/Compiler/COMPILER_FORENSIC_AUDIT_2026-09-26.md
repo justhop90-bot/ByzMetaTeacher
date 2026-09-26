@@ -52,7 +52,7 @@ Do not move Basilisk StrategyProfile or Byzantine GameData into the generic core
 | Lifecycle Goal range | Previous allocator could assign Goal 16000 even though encoded lifecycle values need four higher values | native Goal range + lifecycle encoding | REPAIRED | P0 | Enforce Goal <= 15996 for lifecycle storage |
 | Strategic Number binding | Typed inventory-aware binding, WHY_NOT_GOAL justification, deterministic allocation, collision checks, manifest provenance | AIRef SN limits/inventory | CONNECTED / VERIFIED | P0 | Add broader semantic SN usage contracts |
 | Timer binding | Added typed TimerSlot allocation, explicit initialization policy, deterministic range/collision checks | AIRef timer range + timer initialization guidance | IMPLEMENTED, pending final CI | P0 | Connect timer allocation to actual lowering when timer semantics are introduced |
-| Package binding | Goal package occupancy exists; SN/timer namespace separation now represented | runtime binding | INCOMPLETE | P0 | Expand package inventory to all native storage namespaces |
+| Package binding | Typed package inventory covers Goal/GoalSpan/SN/Timer occupancy with provenance, deterministic fingerprint, binder consumption, and manifest propagation | runtime_binding.py, binding/compiler tests | CONNECTED / explicit-input | P0 | Keep automatic external .per occupancy discovery as a separate integration boundary |
 | Source-order analysis | Lifecycle-specific source order exists; generic state-order analysis does not | emitter order + lifecycle contracts | UNFINISHED | P1 | Model cross-rule read/write visibility and same-pass assumptions |
 | Same-pass action sequencing | Multiple actions inside one emitted rule are sequential; current emitter preserves this | emitter output + native rule semantics | CONNECTED | P0 | Never insert a false pass boundary between actions in the same rule |
 | DUC | Native schema knows DUC commands, but semantic adapter layer has no real DUC model | AIRef DUC docs + 28-adapter registry | BLOCKED | P1 | Build search/list/group/target lifetime contracts |
@@ -133,7 +133,7 @@ Do not remove useful generic contracts. Do not let Byzantine policy define their
 
 ### P1 — major `.per` capability
 
-5. Non-lifecycle source-order analysis.
+5. Non-lifecycle source-order analysis. NEXT REPAIR.
    Model same-rule sequential action flow separately from cross-rule pass boundaries.
 
 6. Capability-loss/recovery contract.
@@ -244,3 +244,21 @@ The support model is deterministic and monotonic:
 with `UNSUPPORTED` as the terminal rejection state whenever a command is absent, malformed, lacks a semantic adapter, or has an adapter contract that cannot be proven executable-safe.
 
 Focused tests cover each state, deterministic diagnostic chains, unknown commands, malformed metadata, adapter-contract mismatch, the real checked-in AIRef `current-age` operator placeholder, and compiler rejection of known-but-unadapted native commands.
+
+## Package-storage inventory repair verification
+
+Current verified code head: a4589b8f2f4bda13f53ea1496ba725456dbcf1bc.
+
+Implemented and tested:
+
+- PackageStorageReservation for typed GoalSlot, GoalSpan, Strategic Number, and Timer occupancy;
+- deterministic canonical inventory SHA-256 fingerprinting;
+- exact inventory serialization and fingerprint verification on load;
+- provenance and namespace collision rejection;
+- BindingContext.from_package_inventory(...) integration;
+- binder collision avoidance across Goal, GoalSpan, SN, and Timer namespaces;
+- stale package-inventory fingerprint rejection;
+- binding-manifest propagation of the package inventory fingerprint;
+- malformed inventory field rejection.
+
+GitHub Actions compiler verification: 287 tests, OK; all four native zero-findings acceptance fixtures remained clean. The next generic compiler repair is non-lifecycle source-order analysis.
