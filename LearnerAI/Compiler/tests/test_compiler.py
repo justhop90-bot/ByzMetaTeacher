@@ -139,6 +139,33 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(goal demand-wheelbarrow 1007)", pending_block)
         self.assertNotIn("(research ri-wheelbarrow)", pending_block)
 
+    def test_pending_diagnostics_are_emitted_for_each_demand(self):
+        output = compile_source(EXAMPLES)
+        self.assertIn("; Pending diagnostics: castle", output)
+        self.assertIn(
+            "; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: "
+            "action is gated by active goal 1000 and cannot reissue from pending goal 1001",
+            output,
+        )
+        self.assertIn(
+            "; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: "
+            "completion witness is evaluated only while pending goal 1001 is active",
+            output,
+        )
+        self.assertIn(
+            "; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: "
+            "release is evaluated only after completion goal 1002 is reached",
+            output,
+        )
+
+    def test_pending_diagnostics_are_deterministic(self):
+        first = compile_source(EXAMPLES)
+        second = compile_source(EXAMPLES)
+        first_diags = [line for line in first.splitlines() if "PENDING-DIAGNOSTIC" in line]
+        second_diags = [line for line in second.splitlines() if "PENDING-DIAGNOSTIC" in line]
+        self.assertEqual(first_diags, second_diags)
+        self.assertEqual(len(first_diags), 15)
+
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
         castle_release = output[output.find("; Release: castle"):output.find("; Demand: defensive-spearmen")]
