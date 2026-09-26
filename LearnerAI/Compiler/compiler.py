@@ -485,7 +485,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Compile Basilisk demand DSL to .per")
     ap.add_argument("source", type=Path)
     ap.add_argument("output", type=Path)
-    ap.add_argument("--base-goal", type=int, default=1000)
+    ap.add_argument("--base-goal", type=int, default=41)
     ap.add_argument(
         "--binding-manifest",
         type=Path,
