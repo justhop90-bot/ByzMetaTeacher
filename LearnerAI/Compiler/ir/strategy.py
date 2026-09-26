@@ -358,7 +358,7 @@ def _validate_enemy_composition_observations(
 
         if observation.source is StrategicEvidenceSource.COMMUNITY_META:
             raise ValueError(
-                f"community meta cannot define factual enemy observation '{observation.identity}'"
+                f"community meta cannot define native enemy observation '{observation.identity}'"
             )
         unit_id = int(observation.unit_id)
         status = effective.factual_status("unit", unit_id)
