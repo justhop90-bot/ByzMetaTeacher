@@ -293,7 +293,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.READ,
                 phase=LifecycleAccessPhase.RELEASE,
-                source_order=len(demands) + (len(result) * 3),
+                source_order=len(demands) + (len(result) * 6),
                 operation="release",
             ),
             StateAccess(
@@ -302,7 +302,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.WRITE,
                 phase=LifecycleAccessPhase.RELEASE,
-                source_order=len(demands) + (len(result) * 3) + 3,
+                source_order=len(demands) + (len(result) * 6) + 1,
                 operation="release",
             ),
             StateAccess(
@@ -311,7 +311,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.READ,
                 phase=LifecycleAccessPhase.COMPLETION_WITNESS,
-                source_order=len(demands) + (len(result) * 3) + 1,
+                source_order=len(demands) + (len(result) * 6) + 2,
                 operation="completion-witness",
             ),
             StateAccess(
@@ -320,7 +320,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.WRITE,
                 phase=LifecycleAccessPhase.COMPLETION_WITNESS,
-                source_order=len(demands) + (len(result) * 3) + 4,
+                source_order=len(demands) + (len(result) * 6) + 3,
                 operation="completion-witness",
             ),
             StateAccess(
@@ -329,7 +329,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.READ,
                 phase=LifecycleAccessPhase.ACTION,
-                source_order=len(demands) + (len(result) * 3) + 2,
+                source_order=len(demands) + (len(result) * 6) + 4,
                 operation="action",
             ),
             StateAccess(
@@ -338,7 +338,7 @@ def analyze(
                 demand=semantic_id,
                 kind=AccessKind.WRITE,
                 phase=LifecycleAccessPhase.ACTION,
-                source_order=len(demands) + (len(result) * 3) + 5,
+                source_order=len(demands) + (len(result) * 6) + 5,
                 operation="action",
             ),
         )
