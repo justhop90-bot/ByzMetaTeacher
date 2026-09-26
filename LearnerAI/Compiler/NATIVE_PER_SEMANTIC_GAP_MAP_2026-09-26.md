@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document maps the gap between the native AoE2 .per engine and the current Basilisk generic compiler substrate.
+This document maps the gap between the native AoE2 .per engine and the current generic compiler substrate.
 
 It is an authority map, not a wish list. Each row answers four questions:
 
@@ -126,3 +126,7 @@ native syntax
 -> native parser zero-findings.
 
 The companion Philosopher's Stone architecture defines the components and gates that implement this chain.
+
+## Phase 0 implementation status — semantic support promotion
+
+Implemented: native primitive support now has an explicit `ENGINE_SEMANTICS_MAPPED` stage between `SEMANTICALLY_ADAPTED` and `EXECUTABLE_SAFE`. Every default DE primitive resolves its deterministic mapping identity through a checked semantic-contract catalog, including state effects, lifetime, ordering, admission, completion, recovery, and evidence provenance. Unknown, open/unknown, and evidence-only identities fail closed and cannot promote a primitive to executable support. The community-engine registry remains the evidence/practice layer, with lifecycle mappings cross-referenced to known engine practices. DUC and attack practices remain evidence-only and are not promoted into executable native support.

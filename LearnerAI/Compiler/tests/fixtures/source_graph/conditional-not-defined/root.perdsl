@@ -1,0 +1,5 @@
+#load-if-not-defined TEST
+(load "selected.perdsl")
+#else
+(load "rejected.perdsl")
+#end-if

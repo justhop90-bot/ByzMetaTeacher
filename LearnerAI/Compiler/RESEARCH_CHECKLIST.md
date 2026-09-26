@@ -118,12 +118,12 @@ native/community .per examples, and the CI test runner.
 
 ### GitHub prior-art cross-check (2026-09-26)
 
-The public prior art was compared directly against the current Basilisk compiler:
+The public prior art was compared directly against the current generic compiler:
 
 - `01010100b/AgeScript`: adopt the typed Compilation -> Assembly -> Script separation, explicit intermediate instructions, Goal-backed memory discipline, deterministic lowering, and hard rule-budget enforcement. Do not copy its general-purpose programming language model.
 - `JOTworks/AgeOfPython`: adopt AIRef-derived native metadata, explicit parameter typing, compiler-owned Goal memory allocation, and strong separation between source variables and native storage. Do not copy its Python-like frontend or opaque memory conventions.
 - `lewisc64/aoe2ai`: adopt named Goal allocation, explicit volatile Goal/Point lifetimes, staged persistent state as a semantic concept, and rule-budget-aware lowering. Do not add its generalized strategy DSL constructs until Basilisk semantics require them.
-- `mboop127/AlphaScripter`: retain structured .per representation and game-facing validation ideas as reference only; its genetic optimization model is outside the Basilisk compiler boundary.
+- `mboop127/AlphaScripter`: retain structured .per representation and game-facing validation ideas as reference only; its genetic optimization model is outside the generic compiler boundary.
 - `teshiba/LibAoe2AISharp`: treat programmatic command construction as precedent for typed native wrappers, but keep AIRef as the command authority.
 
 Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do not steal architecture that turns Basilisk into a generic programming language or universal strategy scheduler.
@@ -346,7 +346,7 @@ The remaining compiler work is semantic, not storage plumbing: explicit demand o
 
 Compiler CI run 207 (36234240102) verified the authoritative demand-ownership tree through the repository workflow:
 
-- native generated Basilisk fixture: finding_count=0, failed=false;
+- native generated generic compiler fixture: finding_count=0, failed=false;
 - full compiler unittest suite: 132 tests, OK;
 - ownership regression fixtures and compile-gate integration executed in the same suite.
 

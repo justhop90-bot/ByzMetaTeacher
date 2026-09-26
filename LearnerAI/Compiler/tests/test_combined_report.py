@@ -349,6 +349,89 @@ demand second {
             self.assertIn("SEMANTIC_REJECTED", run.stdout)
             self.assertIn("LearnerAI", run.stderr)
 
+    def test_rule_diagnostics_are_exposed_separately_from_validation_diagnostics(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / 'Basilisk.per'
+            backend = FakeBackend(native_result(artifact, ValidationStatus.VALIDATED))
+            source = '''
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            '''
+            report = compile_source_with_report(
+                source,
+                native_backend=backend,
+                output=artifact,
+                source_unit="fixtures/rule-diagnostics.perdsl",
+            )
+
+            self.assertEqual(report.status, ReportStatus.VALIDATED)
+            self.assertEqual(report.diagnostics, ())
+            self.assertTrue(report.rule_diagnostics)
+            self.assertTrue(
+                all(
+                    item.category == "FIRING_ELIGIBILITY"
+                    and item.state_kind is None
+                    and item.state_identifier is None
+                    for item in report.rule_diagnostics
+                )
+            )
+            self.assertEqual(
+                [item.rule_order for item in report.rule_diagnostics],
+                sorted(item.rule_order for item in report.rule_diagnostics),
+            )
+            self.assertTrue(all(item.rule_order > 0 for item in report.rule_diagnostics))
+            self.assertTrue(
+                all(item.eligibility in {
+                    "RUNTIME_DEPENDENT",
+                    "FIRST_PASS_ELIGIBLE",
+                    "RECURRENTLY_ELIGIBLE",
+                } for item in report.rule_diagnostics)
+            )
+
+    def test_rule_diagnostics_are_serialized_deterministically_in_public_report(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / 'Basilisk.per'
+            backend = FakeBackend(native_result(artifact, ValidationStatus.VALIDATED))
+            source = '''
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            '''
+            first = compile_source_with_report(
+                source,
+                native_backend=backend,
+                output=artifact,
+                source_unit="fixtures/rule-diagnostics.perdsl",
+            )
+            second = compile_source_with_report(
+                source,
+                native_backend=backend,
+                output=artifact,
+                source_unit="fixtures/rule-diagnostics.perdsl",
+            )
+
+            first_payload = first.to_dict()
+            second_payload = second.to_dict()
+            self.assertIn("rule_diagnostics", first_payload)
+            self.assertEqual(first.to_json(), second.to_json())
+            self.assertEqual(
+                first_payload["rule_diagnostics"],
+                second_payload["rule_diagnostics"],
+            )
+            self.assertEqual(
+                [item["rule_order"] for item in first_payload["rule_diagnostics"]],
+                sorted(item["rule_order"] for item in first_payload["rule_diagnostics"]),
+            )
+
     def test_report_json_is_deterministic(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)

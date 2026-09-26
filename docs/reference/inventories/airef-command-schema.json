@@ -1,7 +1,7 @@
 {
   "metadata": {
     "schema": "airef-command-schema-v1",
-    "generated_for": "ByzMetaTeacher/Basilisk",
+    "generated_for": "ByzMetaTeacher/AoE2-per-compiler",
     "source": "https://airef.github.io/commands/commands-index.html",
     "source_commands_js_blob_sha": "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
     "ai_ref_command_count": 385,

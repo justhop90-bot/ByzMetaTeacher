@@ -1,0 +1,7 @@
+demand root {
+    require (current-age >= dark-age)
+    action (build house)
+    witness (building-type-count house > 0)
+    release (building-type-count house > 0)
+}
+(load "child-a.perdsl")

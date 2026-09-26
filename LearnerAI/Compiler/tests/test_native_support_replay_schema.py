@@ -14,12 +14,12 @@ def valid_snapshot():
     diagnostic = {
         "id": "a" * 64,
         "source": "LearnerAI",
-        "code": "NATIVE-SUPPORT-005",
+        "code": "NATIVE-SUPPORT-006",
         "severity": "error",
         "confidence": None,
         "message": "unsupported native command",
         "suggestion": None,
-        "path": "native-support/test.basilisk",
+        "path": "native-support/test.perdsl",
         "line": 1,
         "column": 1,
         "end_line": 1,
@@ -29,14 +29,18 @@ def valid_snapshot():
     support = {
         "command": "fixture-command",
         "state": "unsupported",
-        "code": "NATIVE-SUPPORT-005",
+        "code": "NATIVE-SUPPORT-006",
         "severity": "error",
         "message": "native command is not present in the checked-in native schema",
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "python": "3.12.7",
         "platform": "linux",
+        "persistent_artifacts": {
+            "file": "c" * 64,
+            "package": "d" * 64,
+        },
         "fixtures": {
             name: {
                 "diagnostics": [copy.deepcopy(diagnostic)],

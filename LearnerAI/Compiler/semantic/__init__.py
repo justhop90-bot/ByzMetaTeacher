@@ -90,3 +90,56 @@ from .community_engine import (
     classify_capability_transition,
     default_community_engine_registry,
 )
+
+from .rule_execution import (
+    EffectiveRule,
+    RuleAction,
+    RuleExecutionReport,
+    RulePassBehavior,
+    analyze_effective_rules,
+)
+
+from .persistent_state import (
+    PersistentStateAccess,
+    PersistentStateAccessKind,
+    PersistentStateBoundary,
+    PersistentStateDiagnostic,
+    PersistentStateDiagnosticCode,
+    PersistentStateKind,
+    PersistentStateRef,
+    PersistentStateReport,
+    PersistentStateVisibility,
+    analyze_persistent_state,
+)
+
+from .fact_evaluation import evaluate_static_truth
+from .fact_registry import FactSemanticAdapter, NativeFactRegistry
+from .guard_satisfiability import GuardSatisfiability, analyze_guard
+from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
+from .rule_diagnostics import (
+    RuleDiagnostic,
+    RuleDiagnosticCategory,
+    RuleDiagnosticCode,
+    RuleDiagnosticReport,
+    analyze_rule_diagnostics,
+)
+
+from .fact_values import (
+    CanonicalEnum,
+    CanonicalIdentifier,
+    CanonicalInteger,
+    CanonicalKind,
+    CanonicalSymbol,
+    CanonicalValue,
+    CanonicalizationContext,
+    FactDomain,
+    FactDomainKind,
+    NormalizedFact,
+    EnumNormalization,
+    IdentifierForm,
+    IdentifierNormalization,
+    ParameterSemanticKind,
+    StaticTruth,
+    SymbolNormalization,
+    canonicalize_value,
+)

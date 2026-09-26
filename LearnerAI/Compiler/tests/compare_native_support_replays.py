@@ -32,7 +32,13 @@ def main() -> None:
         raise AssertionError(f"expected 9 cross-platform snapshots, found {len(snapshots)}")
     reference_path, reference = snapshots[0]
     reference_fixtures = reference["fixtures"]
+    reference_artifact_hashes = reference["persistent_artifacts"]
     for path, snapshot in snapshots[1:]:
+        if snapshot["persistent_artifacts"] != reference_artifact_hashes:
+            raise AssertionError(
+                f"persistent file/package artifact hash mismatch: "
+                f"{reference_path} != {path}"
+            )
         if snapshot["fixtures"] != reference_fixtures:
             for name in sorted(reference_fixtures):
                 if snapshot["fixtures"].get(name) != reference_fixtures.get(name):
@@ -43,7 +49,7 @@ def main() -> None:
             raise AssertionError(f"cross-platform determinism mismatch: {reference_path} != {path}")
     print(
         f"verified {len(snapshots)} Python/OS snapshots with identical "
-        "diagnostics, support-state sequences, and artifact hashes"
+        "persistent-state artifact annotation, diagnostics, support-state sequences, and artifact hashes"
     )
 
 if __name__ == "__main__":

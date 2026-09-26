@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Basilisk compiler entry point.
+"""AoE2 .per compiler entry point.
 
 Pipeline: source -> AST -> semantic IR -> deterministic .per.
 Artifact promotion requires the pinned aoe2-ai-parser validation gate:
@@ -20,6 +20,7 @@ if __package__ in (None, ""):
     from dataclasses import replace
     from Compiler.backends.errors import NativeBackendError
     from Compiler.backends.models import NativeValidationResult, ValidationStatus
+    from Compiler.artifact_diagnostics import append_persistent_rule_diagnostics
     from Compiler.diagnostics import (
         CombinedValidationReport,
         ReportStatus,
@@ -45,12 +46,17 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
+    from Compiler.semantic.persistent_state import analyze_persistent_state
+    from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
+    from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
+    from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
 else:
     from dataclasses import replace
     from .backends.errors import NativeBackendError
     from .backends.models import NativeValidationResult, ValidationStatus
+    from .artifact_diagnostics import append_persistent_rule_diagnostics
     from .diagnostics import (
         CombinedValidationReport,
         ReportStatus,
@@ -76,13 +82,41 @@ else:
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
+    from .semantic.persistent_state import analyze_persistent_state
+    from .semantic.rule_diagnostics import analyze_rule_diagnostics
+    from .semantic.rule_execution import analyze_effective_rules
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
+    from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
 
 
 _DEFAULT_NATIVE_BACKEND_ROOT = (
     Path(__file__).resolve().parents[2] / "tools" / "native-backends" / "aoe2-ai-parser"
 )
+
+
+def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
+    ignored: set[str] = set()
+    for line in generated_source.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("(defconst "):
+            continue
+        fields = stripped.rstrip(")").split()
+        if len(fields) < 2:
+            continue
+        identifier = fields[1]
+        if identifier.startswith(
+            (
+                "demand-",
+                "issued-",
+                "pending-",
+                "complete-",
+                "cancelled-",
+                "action-claim-",
+            )
+        ):
+            ignored.add(identifier)
+    return frozenset(ignored)
 
 
 def _storage_requests(ir):
@@ -129,7 +163,7 @@ def _semantic_compile_failure(
 def _compile_ir_parts(
     ir,
     registry,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
 ):
@@ -200,18 +234,37 @@ def _compile_ir_parts(
         _storage_requests(ir),
         context,
     )
-    return emit(ir, bindings), bindings, context
+    try:
+        for demand in ir:
+            registry.validate_demand_lowering(demand, bindings)
+    except (KeyError, ValueError) as exc:
+        raise CompileError(f"NATIVE-CONTRACT-LOWERING: {exc}") from exc
+    return emit(ir, bindings, registry=registry), bindings, context
+
+
+def _parse_source_slices(slices) -> list:
+    ast = []
+    for slice_ in slices:
+        ast.extend(
+            parse(
+                slice_.text,
+                source_unit=str(slice_.path),
+                line_offset=slice_.start_line - 1,
+                first_line_column_offset=slice_.start_column - 1,
+            )
+        )
+    return ast
 
 
 def _compile_source_parts(
     source: str,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
 ):
-    ast = parse(source)
+    ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=source_unit)
     return _compile_ir_parts(
@@ -222,49 +275,39 @@ def _compile_source_parts(
     )
 
 
-def compile_strategy_profile(
-    profile,
-    effective,
-    base_goal: int = 1000,
+def _compile_package_parts(
+    request: SourceGraphRequest,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
-) -> str:
-    from .ir.strategy import lower_strategy_profile
-
-    compilation = lower_strategy_profile(profile, effective)
-    registry = default_de_registry()
-    result, _bindings, _context = _compile_ir_parts(
-        compilation.demands,
+    registry: PrimitiveRegistry | None = None,
+):
+    graph = SourceGraphResolver().resolve(request)
+    ast = _parse_source_slices(graph.slices)
+    registry = registry or default_de_registry()
+    ir = analyze(ast, registry, source_unit=None)
+    result, bindings, context = _compile_ir_parts(
+        ir,
         registry,
         base_goal,
         binding_context=binding_context,
     )
-    return result
+    return result, bindings, context, graph
 
 
-def compile_strategy_runtime_profile(
-    profile,
-    effective,
-    runtime_profile,
-    base_goal: int = 1000,
+
+
+def compile_semantic_demands(
+    demands,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
 ) -> str:
-    from .ir.strategy import lower_strategy_profile
-    from .ir.strategy_runtime import evaluate_strategy_runtime
-
-    runtime_state = evaluate_strategy_runtime(profile, effective, runtime_profile)
-    compilation = lower_strategy_profile(profile, effective)
-    active_ids = set(runtime_state.active_or_blocked_demands)
-    selected = tuple(
-        demand
-        for demand in compilation.demands
-        if demand.strategic_binding is not None
-        and demand.strategic_binding.strategic_id in active_ids
-    )
-    registry = default_de_registry()
+    """Compile generic semantic demands without importing downstream strategy policy."""
+    registry = registry or default_de_registry()
     result, _bindings, _context = _compile_ir_parts(
-        selected,
+        demands,
         registry,
         base_goal,
         binding_context=binding_context,
@@ -299,9 +342,25 @@ def _binding_manifest_text(bindings, context: BindingContext) -> str:
     ).to_json()
 
 
+def compile_package(
+    request: SourceGraphRequest,
+    base_goal: int = 41,
+    *,
+    binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
+) -> str:
+    result, _bindings, _context, _graph = _compile_package_parts(
+        request,
+        base_goal,
+        binding_context=binding_context,
+        registry=registry,
+    )
+    return result
+
+
 def compile_source(
     source: str,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -317,11 +376,101 @@ def compile_source(
     return result
 
 
+def compile_package_with_report(
+    request: SourceGraphRequest,
+    output: Path,
+    *,
+    base_goal: int = 41,
+    native_backend: Aoe2NativeBackend | None = None,
+    binding_context: BindingContext | None = None,
+    binding_manifest: Path | None = None,
+    registry: PrimitiveRegistry | None = None,
+) -> CombinedValidationReport:
+    if native_backend is None:
+        return backend_failure_report(
+            "native validation backend is required before artifact promotion",
+            output,
+        )
+    try:
+        result, bindings, context, _graph = _compile_package_parts(
+            request,
+            base_goal,
+            binding_context=binding_context,
+            registry=registry,
+        )
+        manifest_text = _binding_manifest_text(bindings, context)
+    except (CompileError, OSError, ValueError) as exc:
+        return semantic_failure_report(exc, output)
+
+    output = output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if binding_manifest is not None:
+        binding_manifest = binding_manifest.resolve()
+        binding_manifest.parent.mkdir(parents=True, exist_ok=True)
+        if binding_manifest == output:
+            raise ValueError("binding manifest path must differ from .per output path")
+
+    fd, staged_name = tempfile.mkstemp(
+        prefix=f".{output.stem}.",
+        suffix=".per.stage",
+        dir=output.parent,
+    )
+    os.close(fd)
+    staged = Path(staged_name)
+    staged_manifest = None
+    if binding_manifest is not None:
+        fd, staged_manifest_name = tempfile.mkstemp(
+            prefix=f".{binding_manifest.stem}.",
+            suffix=".json.stage",
+            dir=binding_manifest.parent,
+        )
+        os.close(fd)
+        staged_manifest = Path(staged_manifest_name)
+
+    try:
+        staged.write_bytes(result.encode("utf-8"))
+        if staged_manifest is not None:
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
+        rule_report = analyze_rule_diagnostics(
+            effective_rules,
+            registry,
+            persistent_state_report=persistent_state_report,
+        )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_bytes(artifact_result.encode("utf-8"))
+        native_result = _normalize_native_validation(native_backend.validate(staged))
+        report = report_from_native_result(
+            native_result,
+            output,
+            rule_diagnostics=rule_report.diagnostics,
+        )
+        if report.status is ReportStatus.VALIDATED:
+            os.replace(staged, output)
+            if staged_manifest is not None:
+                os.replace(staged_manifest, binding_manifest)
+        return report
+    finally:
+        staged.unlink(missing_ok=True)
+        if staged_manifest is not None:
+            staged_manifest.unlink(missing_ok=True)
+
+
 def compile_source_with_report(
     source: str,
     output: Path,
     *,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     native_backend: Aoe2NativeBackend | None = None,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -372,11 +521,33 @@ def compile_source_with_report(
         staged_manifest = Path(staged_manifest_name)
 
     try:
-        staged.write_text(result, encoding="utf-8")
+        staged.write_bytes(result.encode("utf-8"))
         if staged_manifest is not None:
-            staged_manifest.write_text(manifest_text, encoding="utf-8")
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
+        rule_report = analyze_rule_diagnostics(
+            effective_rules,
+            registry,
+            persistent_state_report=persistent_state_report,
+        )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_bytes(artifact_result.encode("utf-8"))
         native_result = _normalize_native_validation(native_backend.validate(staged))
-        report = report_from_native_result(native_result, output)
+        report = report_from_native_result(
+            native_result,
+            output,
+            rule_diagnostics=rule_report.diagnostics,
+        )
         if report.status is ReportStatus.VALIDATED:
             os.replace(staged, output)
             if staged_manifest is not None:
@@ -392,7 +563,7 @@ def compile_to_file(
     source: str,
     output: Path,
     *,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     native_backend: Aoe2NativeBackend | None = None,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -439,9 +610,27 @@ def compile_to_file(
         staged_manifest = Path(staged_manifest_name)
 
     try:
-        staged.write_text(result, encoding="utf-8")
+        staged.write_bytes(result.encode("utf-8"))
         if staged_manifest is not None:
-            staged_manifest.write_text(manifest_text, encoding="utf-8")
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
+        rule_report = analyze_rule_diagnostics(
+            effective_rules,
+            registry,
+            persistent_state_report=persistent_state_report,
+        )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_bytes(artifact_result.encode("utf-8"))
         validation = _normalize_native_validation(native_backend.validate(staged))
         if validation.status is ValidationStatus.VALIDATED:
             os.replace(staged, output)
@@ -477,10 +666,10 @@ def _build_native_backend(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Compile Basilisk demand DSL to .per")
+    ap = argparse.ArgumentParser(description="Compile AoE2 AI semantic source to native .per")
     ap.add_argument("source", type=Path)
     ap.add_argument("output", type=Path)
-    ap.add_argument("--base-goal", type=int, default=1000)
+    ap.add_argument("--base-goal", type=int, default=41)
     ap.add_argument(
         "--binding-manifest",
         type=Path,

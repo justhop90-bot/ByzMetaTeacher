@@ -1,4 +1,4 @@
-"""Typed strategic semantics above EffectiveCivData and below execution IR."""
+"""Downstream client strategy semantics above generic execution IR."""
 from __future__ import annotations
 
 from dataclasses import dataclass, replace

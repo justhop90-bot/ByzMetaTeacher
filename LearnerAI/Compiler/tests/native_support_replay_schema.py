@@ -4,7 +4,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 FIXTURE_NAMES = frozenset(
     {"native-known", "native-typed", "semantically-adapted", "unsupported"}
 )
@@ -14,6 +14,7 @@ SUPPORT_STATES = frozenset(
         "native-known",
         "native-typed",
         "semantically-adapted",
+        "engine-semantics-mapped",
         "executable-safe",
         "unsupported",
     }
@@ -27,10 +28,11 @@ SUPPORT_CODES = frozenset(
         "NATIVE-SUPPORT-003",
         "NATIVE-SUPPORT-004",
         "NATIVE-SUPPORT-005",
+        "NATIVE-SUPPORT-006",
     }
 )
 
-TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "fixtures"})
+TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "persistent_artifacts", "fixtures"})
 FIXTURE_FIELDS = frozenset(
     {
         "diagnostics",
@@ -183,8 +185,9 @@ def _validate_support_diagnostic(value: Any, path: str) -> None:
         "native-known": "NATIVE-SUPPORT-001",
         "native-typed": "NATIVE-SUPPORT-002",
         "semantically-adapted": "NATIVE-SUPPORT-003",
-        "executable-safe": "NATIVE-SUPPORT-004",
-        "unsupported": "NATIVE-SUPPORT-005",
+        "engine-semantics-mapped": "NATIVE-SUPPORT-004",
+        "executable-safe": "NATIVE-SUPPORT-005",
+        "unsupported": "NATIVE-SUPPORT-006",
     }[state]
     if code != expected_code:
         _fail(
@@ -221,6 +224,26 @@ def validate_snapshot(
     platform = _string(root["platform"], f"{source}.platform")
     if platform not in PLATFORMS:
         _fail(f"{source}.platform", f"unsupported platform {platform!r}")
+
+    persistent_artifacts = _mapping(
+        root["persistent_artifacts"],
+        f"{source}.persistent_artifacts",
+    )
+    _exact_keys(
+        persistent_artifacts,
+        frozenset({"file", "package"}),
+        f"{source}.persistent_artifacts",
+    )
+    for kind in ("file", "package"):
+        artifact_hash = _string(
+            persistent_artifacts[kind],
+            f"{source}.persistent_artifacts.{kind}",
+        )
+        if not _HEX64.fullmatch(artifact_hash):
+            _fail(
+                f"{source}.persistent_artifacts.{kind}",
+                "must be a 64-character lowercase SHA-256 digest",
+            )
 
     fixtures = _mapping(root["fixtures"], f"{source}.fixtures")
     actual_fixtures = set(fixtures)

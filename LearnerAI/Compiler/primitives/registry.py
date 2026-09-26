@@ -1,37 +1,43 @@
 """Semantic adapters backed by the checked-in AIRef native command schema."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from ..semantic.fact_registry import NativeFactRegistry
+from .native_binder import (
+    NativeSemanticBinder,
+    NativeSupportAssessment,
+    NativeSupportDiagnostic,
+    NativeSupportState,
+)
+from .engine_semantics import (
+    EngineSemanticMappingRegistry,
+    default_engine_semantic_mapping_registry,
+)
+from .native_hygiene import (
+    AIRefProvenance,
+    ConfidenceBasis,
+    ConfidenceLevel,
+    EvidenceKind,
+    NativeContractCatalog,
+    NativeStorageClass,
+    NativeStorageKind,
+    NativeStorageUse,
+    NativeWitness,
+    default_native_goal_parameter_ranges,
+    default_native_goal_span_contracts,
+    default_native_goal_storage_contracts,
+    NativeWitnessKind,
+    PassConstraintScope,
+    PassExecutionConstraint,
+    PassFailureMode,
+)
 
-
-class NativeSupportState(str, Enum):
-    NATIVE_KNOWN = "native-known"
-    NATIVE_TYPED = "native-typed"
-    SEMANTICALLY_ADAPTED = "semantically-adapted"
-    EXECUTABLE_SAFE = "executable-safe"
-    UNSUPPORTED = "unsupported"
-
-
-@dataclass(frozen=True)
-class NativeSupportDiagnostic:
-    command: str
-    state: NativeSupportState
-    code: str
-    severity: str
-    message: str
-
-
-@dataclass(frozen=True)
-class NativeSupportAssessment:
-    command: str
-    state: NativeSupportState
-    message: str
-    diagnostics: tuple[NativeSupportDiagnostic, ...]
 
 
 @dataclass(frozen=True)
@@ -44,18 +50,141 @@ class Primitive:
     version: str = "DE"
     completion_witness: bool = True
     conflict_class: str | None = None
+    engine_semantics_id: str | None = None
+    native_witness_ids: tuple[str, ...] = ()
+    native_storage_use_ids: tuple[str, ...] = ()
+    native_pass_constraint_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "native_witness_ids",
+            "native_storage_use_ids",
+            "native_pass_constraint_ids",
+        ):
+            values = getattr(self, field_name)
+            if len(values) != len(set(values)):
+                raise ValueError(
+                    f"{field_name} for primitive '{self.name}' must not contain duplicates"
+                )
 
 class PrimitiveRegistry:
     def __init__(
         self,
         primitives: tuple[Primitive, ...],
         native_registry: NativeCommandRegistry | None = None,
+        semantic_mappings: EngineSemanticMappingRegistry | None = None,
+        native_contracts: NativeContractCatalog | None = None,
+        fact_registry: NativeFactRegistry | None = None,
     ):
         self._items = {p.name: p for p in primitives}
         self._native = native_registry
+        self._semantic_mappings = semantic_mappings or default_engine_semantic_mapping_registry()
+        self._native_contracts = native_contracts or default_native_contract_catalog()
+        self._fact_registry = fact_registry
 
 
 
+    @property
+    def native_contracts(self) -> NativeContractCatalog:
+        return self._native_contracts
+
+    @property
+    def fact_registry(self) -> NativeFactRegistry:
+        if self._fact_registry is None:
+            raise ValueError("native fact registry is not configured")
+        return self._fact_registry
+
+    def validate_primitive_promotion(self, primitive: Primitive, native) -> None:
+        if primitive.kind != "ACTION":
+            return
+        if not primitive.native_witness_ids:
+            raise ValueError(f"action primitive '{primitive.name}' has no native witness contract")
+        if not primitive.native_storage_use_ids:
+            raise ValueError(f"action primitive '{primitive.name}' has no native storage contract")
+        for identity in primitive.native_witness_ids:
+            try:
+                witness = self._native_contracts.witness(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native witness contract '{identity}'"
+                ) from exc
+            if self.native(witness.primitive) is None:
+                raise ValueError(f"native witness '{identity}' references unknown primitive '{witness.primitive}'")
+            witness_adapter = self.get(witness.primitive)
+            if witness_adapter is None or not witness_adapter.completion_witness:
+                raise ValueError(f"native witness '{identity}' is not completion-capable")
+            if witness.primitive == primitive.name:
+                raise ValueError(f"native witness '{identity}' reuses action primitive '{primitive.name}'")
+            if witness.kind is NativeWitnessKind.TIMER_STATE:
+                raise ValueError(f"native witness '{identity}' cannot be timer state")
+        for identity in primitive.native_storage_use_ids:
+            try:
+                use = self._native_contracts.storage(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native storage contract '{identity}'"
+                ) from exc
+            if use.request_purpose is None:
+                raise ValueError(f"native storage use '{identity}' has no request purpose")
+        for identity in primitive.native_pass_constraint_ids:
+            try:
+                constraint = self._native_contracts.pass_constraint(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native pass constraint '{identity}'"
+                ) from exc
+            if constraint.command != primitive.name:
+                raise ValueError(
+                    f"native pass constraint '{identity}' targets '{constraint.command}', not '{primitive.name}'"
+                )
+        declared_pass_constraints = set(primitive.native_pass_constraint_ids)
+        for constraint in self._native_contracts.pass_constraints_for(primitive.name):
+            if constraint.identity not in declared_pass_constraints:
+                raise ValueError(
+                    f"native pass constraint '{constraint.identity}' is not declared by '{primitive.name}'"
+                )
+            if constraint.requires_next_pass:
+                raise ValueError(
+                    f"native pass constraint '{constraint.identity}' requires next-pass lowering, which is not implemented"
+                )
+            if constraint.maximum_successes is not None and constraint.failure_mode is not None:
+                if constraint.failure_mode is not PassFailureMode.NO_EFFECT:
+                    raise ValueError(
+                        f"native pass constraint '{constraint.identity}' uses unsupported failure mode "
+                        f"'{constraint.failure_mode.value}'"
+                    )
+
+    def validate_demand_lowering(self, demand, bindings) -> None:
+        primitive = self.require(demand.action.expression.head)
+        self.validate_primitive_promotion(primitive, self.require_native(primitive.name))
+        requests = {demand.lifecycle.slot.request_id: demand.lifecycle.slot}
+        if demand.action.arbitration_request is not None:
+            requests[demand.action.arbitration_request.request_id] = demand.action.arbitration_request
+        for identity in primitive.native_storage_use_ids:
+            use = self._native_contracts.storage(identity)
+            request = next((candidate for request_id, candidate in requests.items() if request_id.purpose == use.request_purpose), None)
+            if request is None:
+                raise ValueError(f"native storage use '{identity}' requires request purpose '{use.request_purpose}'")
+            binding = bindings.binding_for(request.request_id)
+            if binding.__class__.__name__ == "GoalSlot":
+                start = end = binding.id.value
+                kind = "GOAL_SLOT"
+            elif binding.__class__.__name__ == "GoalSpan":
+                start = binding.start.value
+                end = start + binding.width - 1
+                kind = "GOAL_SPAN"
+            elif binding.__class__.__name__ == "StrategicNumberSlot":
+                start = end = binding.id
+                kind = "STRATEGIC_NUMBER"
+            elif binding.__class__.__name__ == "TimerSlot":
+                start = end = binding.id
+                kind = "TIMER"
+            else:
+                raise ValueError(f"unsupported binding type '{type(binding).__name__}'")
+            use.validate_binding_shape(binding_kind=kind, start=start, end=end)
+
+    def pass_constraints_for(self, command: str) -> tuple[PassExecutionConstraint, ...]:
+        return self._native_contracts.pass_constraints_for(command)
     @staticmethod
     def _native_typed(native) -> bool:
         if not native.version or native.command_type not in {"Fact", "Action"}:
@@ -91,119 +220,13 @@ class PrimitiveRegistry:
         )
 
     def assess_support(self, name: str) -> NativeSupportAssessment:
-        diagnostics: list[NativeSupportDiagnostic] = []
-        native = self.native(name)
-        if native is None:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
-                "error",
-                "command is not present in the checked-in native schema",
-            )
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=(diagnostic,),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.NATIVE_KNOWN,
-                "NATIVE-SUPPORT-001",
-                "info",
-                "command is present in the checked-in native schema",
-            )
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
         )
-
-        if not self._native_typed(native):
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
-                "error",
-                "native metadata is not typed",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.NATIVE_TYPED,
-                "NATIVE-SUPPORT-002",
-                "info",
-                "native command signature and parameter metadata are structurally typed",
-            )
-        )
-
-        primitive = self.get(name)
-        if primitive is None:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
-                "error",
-                "native command is known and typed but has no semantic adapter",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.SEMANTICALLY_ADAPTED,
-                "NATIVE-SUPPORT-003",
-                "info",
-                "a semantic adapter is registered for the native command",
-            )
-        )
-
-        try:
-            self.validate_adapter_contract(primitive)
-        except ValueError as exc:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
-                "error",
-                f"semantic adapter is not executable-safe: {exc}",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.EXECUTABLE_SAFE,
-                "NATIVE-SUPPORT-004",
-                "info",
-                "native signature and semantic adapter contract are executable-safe",
-            )
-        )
-        return NativeSupportAssessment(
-            command=name,
-            state=NativeSupportState.EXECUTABLE_SAFE,
-            message="command is executable-safe",
-            diagnostics=tuple(diagnostics),
-        )
+        return binder.assess(name)
 
     def support_state(self, name: str) -> NativeSupportState:
         return self.assess_support(name).state
@@ -258,6 +281,19 @@ class PrimitiveRegistry:
                 f"semantic={primitive.min_args}..{primitive.max_args}"
             )
 
+    def normalize_fact(
+        self,
+        name: str,
+        args,
+        *,
+        provenance: tuple[AIRefProvenance, ...] | None = None,
+    ):
+        return self.fact_registry.normalize(
+            name,
+            args,
+            provenance=provenance,
+        )
+
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self._items))
 
@@ -298,16 +334,133 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             1,
             completion_witness=False,
             conflict_class="BUILD_PASS_SINGLETON",
+            native_witness_ids=("build-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage", "build-action-claim-storage"),
+            native_pass_constraint_ids=("build-pass-singleton",),
         ),
-        Primitive("train", "ACTION", "ACTION", 1, 1, completion_witness=False),
-        Primitive("research", "ACTION", "ACTION", 1, 1, completion_witness=False),
+        Primitive(
+            "train", "ACTION", "ACTION", 1, 1,
+            completion_witness=False,
+            native_witness_ids=("train-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage",),
+        ),
+        Primitive(
+            "research", "ACTION", "ACTION", 1, 1,
+            completion_witness=False,
+            native_witness_ids=("research-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage",),
+        ),
     ]
     native_registry = (
         load_default_native_schema()
         if schema_path is None
         else NativeCommandRegistry.from_path(schema_path)
     )
-    registry = PrimitiveRegistry(tuple(facts + actions), native_registry)
-    for primitive in facts + actions:
+    semantic_registry = default_engine_semantic_mapping_registry()
+    native_contracts = default_native_contract_catalog()
+    primitive_items = tuple(facts + actions)
+    semantic_registry.validate_exact_executable_commands(
+        tuple(item.name for item in primitive_items)
+    )
+    mapped_items = tuple(
+        replace(
+            item,
+            engine_semantics_id=semantic_registry.for_command(item.name).identity,
+        )
+        for item in primitive_items
+    )
+    from ..semantic.fact_registry import NativeFactRegistry
+
+    fact_registry = NativeFactRegistry.from_primitives(
+        mapped_items,
+        native_registry,
+        semantic_registry,
+    )
+    registry = PrimitiveRegistry(
+        mapped_items,
+        native_registry,
+        semantic_mappings=semantic_registry,
+        native_contracts=native_contracts,
+        fact_registry=fact_registry,
+    )
+    for primitive in mapped_items:
         registry.validate_adapter_contract(primitive)
     return registry
+
+def _engine_provenance(citation_id: str) -> tuple[AIRefProvenance, ...]:
+    return (
+        AIRefProvenance(
+            evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+            confidence=ConfidenceLevel.HIGH,
+            confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+            citation_id=citation_id,
+        ),
+    )
+
+
+def default_native_contract_catalog() -> NativeContractCatalog:
+    return NativeContractCatalog(
+        goal_storage_contracts=default_native_goal_storage_contracts(),
+        goal_span_contracts=default_native_goal_span_contracts(),
+        parameter_ranges=default_native_goal_parameter_ranges(),
+        witnesses=(
+            NativeWitness(
+                identity="build-completion-witness",
+                kind=NativeWitnessKind.OBJECT_COUNT,
+                primitive="building-type-count",
+                subject="ARG0",
+                comparator=">=",
+                value=1,
+                provenance=_engine_provenance("airef:building-type-count"),
+            ),
+            NativeWitness(
+                identity="train-completion-witness",
+                kind=NativeWitnessKind.UNIT_COUNT,
+                primitive="unit-type-count",
+                subject="ARG0",
+                comparator=">=",
+                value=1,
+                provenance=_engine_provenance("airef:unit-type-count"),
+            ),
+            NativeWitness(
+                identity="research-completion-witness",
+                kind=NativeWitnessKind.RESEARCH_STATUS,
+                primitive="research-completed",
+                subject="ARG0",
+                state="completed",
+                provenance=_engine_provenance("airef:research-completed"),
+            ),
+        ),
+        storage_uses=(
+            NativeStorageUse(
+                identity="lifecycle-goal-storage",
+                storage_class=NativeStorageClass.PERSISTENT_SCALAR,
+                kind=NativeStorageKind.GOAL,
+                request_purpose="lifecycle",
+                symbolic=True,
+                access="READ_WRITE",
+                contract_id="ordinary-persistent-goal-storage",
+                provenance=_engine_provenance("airef:goal-storage"),
+            ),
+            NativeStorageUse(
+                identity="build-action-claim-storage",
+                storage_class=NativeStorageClass.PERSISTENT_SCALAR,
+                kind=NativeStorageKind.GOAL,
+                request_purpose="action-claim:BUILD_PASS_SINGLETON",
+                symbolic=True,
+                access="READ_WRITE",
+                contract_id="ordinary-persistent-goal-storage",
+                provenance=_engine_provenance("airef:goal-storage"),
+            ),
+        ),
+        pass_constraints=(
+            PassExecutionConstraint(
+                identity="build-pass-singleton",
+                command="build",
+                scope=PassConstraintScope.RULE_PASS,
+                maximum_successes=1,
+                failure_mode=PassFailureMode.NO_EFFECT,
+                provenance=_engine_provenance("airef:build-pass-limit"),
+            ),
+        ),
+    )

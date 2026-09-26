@@ -2,6 +2,8 @@ name: Compiler tests
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
@@ -29,13 +31,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate native support determinism snapshot
         run: python LearnerAI/Compiler/tests/assert_native_support_determinism.py --output native-support-replay.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: native-support-replay-${{ matrix.os }}-${{ matrix.python-version }}
           path: native-support-replay.json
@@ -48,11 +50,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: native-support-replay-*
           path: snapshots
@@ -65,8 +67,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Initialize compiler verification log
@@ -77,17 +79,17 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
-      - name: Verify generated Basilisk fixture reproducibility
-        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/Basilisk.per
-      - name: Native zero-findings acceptance - freshly compiled Basilisk fixture
-        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per --report /tmp/native-reports/basilisk.json
+      - name: Verify generic compiler fixture reproducibility
+        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
+      - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
           from pathlib import Path
-          from LearnerAI.Compiler.compiler import compile_strategy_profile
-          from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-          from LearnerAI.Compiler.ir.strategy import build_byzantine_castle_strategy
+          from LearnerAI.Compiler.clients.basilisk import compile_strategy_profile
+          from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_castle_strategy
 
           effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
           profile = build_byzantine_castle_strategy(effective)
@@ -101,10 +103,10 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          from LearnerAI.Compiler.compiler import compile_strategy_runtime_profile
+          from LearnerAI.Compiler.clients.basilisk import compile_strategy_runtime_profile
           from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-          from LearnerAI.Compiler.ir.strategy import build_byzantine_castle_strategy, StrategyPosture
-          from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
+          from LearnerAI.Compiler.clients.basilisk import build_byzantine_castle_strategy, StrategyPosture
+          from LearnerAI.Compiler.clients.basilisk import RuntimeObservationSnapshot
 
           effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
           profile = build_byzantine_castle_strategy(effective)
@@ -147,12 +149,12 @@ jobs:
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
       - name: Upload native validation evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-validation-evidence
           path: |
             /tmp/native-reports
-            /tmp/Basilisk.per
+            /tmp/CompilerFixture.per
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/basilisk-invalidation.per
@@ -166,7 +168,7 @@ jobs:
           python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" 2>&1 | tee compiler-tests.log
       - name: Upload compiler verification log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compiler-verification-log
           path: compiler-tests.log

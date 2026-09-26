@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from ..ast import Expression, SourceLocation
-from .strategy import StrategicBinding
+
+if TYPE_CHECKING:
+    from .strategy import StrategicBinding
 
 
 class LifecycleState(str, Enum):

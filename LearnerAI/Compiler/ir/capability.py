@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     from .resource import ResourceClaim
+    from .strategy import StrategicBinding
 
 from ..ast import Expression, SourceLocation
 from .model import LifecycleStorage, SemanticId
-from .strategy import StrategicBinding
 
 
 class CapabilityKind(str, Enum):

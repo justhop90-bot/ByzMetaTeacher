@@ -290,7 +290,7 @@ Add deterministic runtime-state fingerprints.
 
 Add an entry point such as:
 
-    compile_strategy_runtime_profile(profile, effective, runtime_profile)
+    clients.basilisk.compile_strategy_runtime_profile(profile, effective, runtime_profile)
 
 Required lowering chain:
 

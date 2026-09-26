@@ -78,7 +78,7 @@ class InvalidationTests(unittest.TestCase):
         self.assertLess(invalidation, action)
         block = output[invalidation:release]
         self.assertIn("CANCELLED", block)
-        self.assertIn("(set-goal demand-castle 1004)", block)
+        self.assertIn("(set-goal demand-castle 45)", block)
 
     def test_timing_invalidation_is_rejected_deterministically(self):
         with self.assertRaisesRegex(

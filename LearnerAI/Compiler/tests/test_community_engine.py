@@ -1,6 +1,6 @@
 import unittest
 
-from community_engine import (
+from Compiler.semantic.community_engine import (
     CapabilityTransition,
     PracticeStatus,
     classify_capability_transition,
@@ -41,6 +41,12 @@ class EngineSemanticsTests(unittest.TestCase):
         self.assertEqual(registry.practice("state.sn.engine-control").status, PracticeStatus.PARTIAL)
         self.assertEqual(registry.lifecycle("build").feasibility_fact, "can-build")
         self.assertFalse(registry.lifecycle("build").pending_is_completion)
+
+    def test_lifecycle_completion_witness_is_distinct_from_admission_and_pending(self):
+        registry = default_community_engine_registry()
+        for contract in registry.lifecycle_contracts:
+            self.assertNotEqual(contract.completion_witness, contract.feasibility_fact)
+            self.assertNotEqual(contract.completion_witness, contract.pending_fact)
 
     def test_registry_rejects_duplicate_or_uncontradicted_contracts(self):
         registry = default_community_engine_registry()

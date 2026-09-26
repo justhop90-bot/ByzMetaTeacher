@@ -1,12 +1,16 @@
-"""Syntax-level AST for the Basilisk compiler."""
+"""Syntax-level AST for the AoE2 .per compiler."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
+
 
 @dataclass(frozen=True)
 class SourceLocation:
     line: int
     column: int = 1
+    source_unit: str = "<source>"
+
 
 @dataclass(frozen=True)
 class DemandNode:
@@ -22,6 +26,7 @@ class DemandNode:
     witness_location: SourceLocation | None = None
     release_location: SourceLocation | None = None
     invalidate_location: SourceLocation | None = None
+
 
 @dataclass(frozen=True)
 class Expression:

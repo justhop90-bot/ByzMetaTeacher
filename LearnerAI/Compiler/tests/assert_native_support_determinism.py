@@ -4,21 +4,88 @@ import argparse
 import hashlib
 import json
 import sys
+from types import SimpleNamespace
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 
-from Compiler.compiler import compile_source_with_report
+from Compiler.compiler import compile_package_with_report, compile_source_with_report
 from Compiler.diagnostics import ReportStatus
+from Compiler.source_graph import SourceGraphRequest
 from native_support_replay_schema import validate_snapshot
 from test_compiler_native_integration import (
     CompilerNativeIntegrationTests,
     FakeBackend,
     ValidationStatus,
     fake_result,
+    persistent_rule_diagnostic,
 )
+
+
+def persistent_artifact_hashes() -> dict[str, str]:
+    source = '''
+    demand castle {
+        require (can-build castle)
+        action (build castle)
+        witness (building-type-count castle > 0)
+        release (building-type-count castle > 0)
+    }
+    '''
+    rule_report = SimpleNamespace(diagnostics=(persistent_rule_diagnostic(),))
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        file_output = tmp / 'file.per'
+        file_backend = FakeBackend(
+            fake_result(file_output, ValidationStatus.VALIDATED)
+        )
+        with patch(
+            'Compiler.compiler.analyze_rule_diagnostics',
+            return_value=rule_report,
+        ):
+            file_report = compile_source_with_report(
+                source,
+                file_output,
+                native_backend=file_backend,
+                source_unit='persistent-artifact.perdsl',
+            )
+        if file_report.status is not ReportStatus.VALIDATED:
+            raise AssertionError(
+                f'persistent file artifact promotion failed: {file_report.status.value}'
+            )
+
+        package_root = tmp / 'package-root.perdsl'
+        package_child = tmp / 'package-child.perdsl'
+        package_output = tmp / 'package.per'
+        package_child.write_text(source, encoding='utf-8')
+        package_root.write_text(
+            '(load "package-child.perdsl")\n',
+            encoding='utf-8',
+        )
+        package_backend = FakeBackend(
+            fake_result(package_output, ValidationStatus.VALIDATED)
+        )
+        with patch(
+            'Compiler.compiler.analyze_rule_diagnostics',
+            return_value=rule_report,
+        ):
+            package_report = compile_package_with_report(
+                SourceGraphRequest(entrypoint=package_root),
+                package_output,
+                native_backend=package_backend,
+            )
+        if package_report.status is not ReportStatus.VALIDATED:
+            raise AssertionError(
+                f'persistent package artifact promotion failed: {package_report.status.value}'
+            )
+
+        return {
+            'file': hashlib.sha256(file_output.read_bytes()).hexdigest(),
+            'package': hashlib.sha256(package_output.read_bytes()).hexdigest(),
+        }
+
 
 UNSUPPORTED_STATES = (
     "native-known",
@@ -34,7 +101,7 @@ def build_snapshot() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
         for name in UNSUPPORTED_STATES:
-            source = (fixture_root / f"{name}.basilisk").read_text(encoding="utf-8")
+            source = (fixture_root / f"{name}.perdsl").read_text(encoding="utf-8")
             registry = CompilerNativeIntegrationTests._native_support_fixture_registry(name)
             output = tmp / f"{name}.per"
             output.write_bytes(b"KEEP UNSUPPORTED ARTIFACT\n")
@@ -44,7 +111,7 @@ def build_snapshot() -> dict[str, object]:
                 output,
                 native_backend=backend,
                 registry=registry,
-                source_unit=f"native-support/{name}.basilisk",
+                source_unit=f"native-support/{name}.perdsl",
             )
             assessment = registry.assess_support("fixture-command")
             if report.status is not ReportStatus.SEMANTIC_REJECTED:
@@ -74,9 +141,10 @@ def build_snapshot() -> dict[str, object]:
             }
 
     snapshot = {
-        "schema_version": 1,
+        "schema_version": 2,
         "python": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
+        "persistent_artifacts": persistent_artifact_hashes(),
         "fixtures": fixtures,
     }
     return validate_snapshot(snapshot, source="generated snapshot")

@@ -231,10 +231,11 @@ def _pending_diagnostics(demand: DemandNode):
 def analyze(
     demands: list[DemandNode],
     registry: PrimitiveRegistry,
-    source_unit: str = "<source>",
+    source_unit: str | None = None,
 ) -> list[SemanticDemand]:
     result = []
     for demand in demands:
+        demand_source_unit = source_unit or demand.location.source_unit
         requirements = []
         for requirement_index, raw in enumerate(demand.requirements):
             location = (
@@ -267,7 +268,7 @@ def analyze(
         )
         arbitration_request = None
         if action_primitive.conflict_class:
-            owner = SemanticId(source_unit=source_unit, local_name="__execution_memory__")
+            owner = SemanticId(source_unit=demand_source_unit, local_name="__execution_memory__")
             arbitration_request = GoalSlotRequest(
                 request_id=StorageRequestId(
                     owner=owner,
@@ -309,7 +310,7 @@ def analyze(
                 {"OBSERVATION", "ADMISSIBILITY", "WITNESS", "TIMING", "ACTION"},
                 f"demand '{demand.name}' invalidation",
             )
-        semantic_id = SemanticId(source_unit=source_unit, local_name=demand.name)
+        semantic_id = SemanticId(source_unit=demand_source_unit, local_name=demand.name)
         request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
         lifecycle = LifecycleStorage(
             slot=GoalSlotRequest(request_id=request_id, role=GoalRole.LIFECYCLE_STATE),
@@ -318,7 +319,7 @@ def analyze(
         lifecycle_base = len(demands) + (len(result) * 8)
         completion_witness = CompletionWitnessContract(
             identity=SemanticId(
-                source_unit=source_unit,
+                source_unit=demand_source_unit,
                 local_name=f"{demand.name}-witness",
             ),
             evidence_kind=WitnessEvidenceKind.WORLD_STATE,
@@ -336,7 +337,7 @@ def analyze(
         )
         release_state = ReleaseStateContract(
             identity=SemanticId(
-                source_unit=source_unit,
+                source_unit=demand_source_unit,
                 local_name=f"{demand.name}-release",
             ),
             evidence_kind=ReleaseEvidenceKind.WORLD_STATE,
@@ -353,7 +354,7 @@ def analyze(
         if invalidation is not None:
             invalidation_contract = InvalidationContract(
                 identity=SemanticId(
-                    source_unit=source_unit,
+                    source_unit=demand_source_unit,
                     local_name=f"{demand.name}-invalidation",
                 ),
                 evidence_kind=InvalidationEvidenceKind.WORLD_STATE,
@@ -366,7 +367,7 @@ def analyze(
             )
             cancellation = CancellationStateContract(
                 identity=SemanticId(
-                    source_unit=source_unit,
+                    source_unit=demand_source_unit,
                     local_name=f"{demand.name}-cancellation",
                 ),
                 trigger=invalidation_contract.identity,

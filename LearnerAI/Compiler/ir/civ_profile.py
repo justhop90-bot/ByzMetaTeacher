@@ -1,4 +1,4 @@
-"""Civilization-specific factual overlays and effective snapshot resolution."""
+"""Client-specific civilization overlays; current repository use includes the downstream Byzantine client."""
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
