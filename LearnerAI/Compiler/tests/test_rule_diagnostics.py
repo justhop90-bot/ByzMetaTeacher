@@ -9,9 +9,9 @@ from Compiler.ir import (
     SemanticId,
     WitnessEvidenceKind,
 )
+from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.semantic.rule_diagnostics import (
     RuleDiagnosticCode,
-    RuleDiagnosticSeverity,
     analyze_rule_diagnostics,
 )
 from Compiler.semantic.rule_execution import analyze_effective_rules
@@ -60,7 +60,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
             diagnostic.code,
             RuleDiagnosticCode.NEVER_ELIGIBLE,
         )
-        self.assertEqual(diagnostic.severity, RuleDiagnosticSeverity.ERROR)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.ERROR)
         self.assertEqual(diagnostic.eligibility.value, "NEVER_ELIGIBLE")
 
     def test_unknown_guard_gets_runtime_dependent_diagnostic(self):
@@ -81,7 +81,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
             diagnostic.eligibility.value,
             "RUNTIME_DEPENDENT",
         )
-        self.assertEqual(diagnostic.severity, RuleDiagnosticSeverity.INFO)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.INFO)
 
     def test_recurrent_eligible_rule_gets_info_diagnostic(self):
         report = analyze_effective_rules(
