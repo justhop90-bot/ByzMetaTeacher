@@ -20,7 +20,7 @@
 ; Demand: castle
 (defrule
     (goal demand-castle 1)
-    (players-current-age >= castle)
+    (current-age >= castle)
     (building-available castle)
     (can-afford-building castle)
     (can-build castle)
@@ -32,6 +32,7 @@
 (defrule
     (goal demand-castle 1)
     (building-type-count castle > 0)
+    (building-type-count castle > 0)
 =>
     (set-goal demand-castle 0)
 )
@@ -39,7 +40,7 @@
 ; Demand: defensive-spearmen
 (defrule
     (goal demand-defensive-spearmen 1)
-    (players-current-age >= feudal)
+    (current-age >= feudal)
     (unit-type-count-total spearman < 2)
     (can-train spearman)
 =>
@@ -49,6 +50,7 @@
 ; Witness/release: defensive-spearmen
 (defrule
     (goal demand-defensive-spearmen 1)
+    (unit-type-count spearman >= 2)
     (unit-type-count spearman >= 2)
 =>
     (set-goal demand-defensive-spearmen 0)
@@ -67,6 +69,7 @@
 ; Witness/release: wheelbarrow
 (defrule
     (goal demand-wheelbarrow 1)
+    (research-completed ri-wheelbarrow)
     (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 0)
