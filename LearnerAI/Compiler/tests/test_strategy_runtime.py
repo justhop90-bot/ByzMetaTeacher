@@ -199,7 +199,12 @@ class StrategyRuntimeTests(unittest.TestCase):
 
     def test_shared_capability_identity_keeps_distinct_strategic_demands(self):
         first = self.profile.demand("castle-commitment")
-        second = replace(first, identity="castle-secondary", owner="secondary-owner")
+        second = replace(
+            first,
+            identity="castle-secondary",
+            owner="secondary-owner",
+            opportunity_cost=None,
+        )
         profile = replace(
             self.profile,
             demands=(first, second, *(item for item in self.profile.demands if item.identity not in {"castle-commitment"})),

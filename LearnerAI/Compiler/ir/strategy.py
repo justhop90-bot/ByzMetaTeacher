@@ -298,7 +298,7 @@ def resolve_strategy_profile(
             for evidence in transition.evidence
         ):
             raise ValueError(
-                f"posture transition '{transition.label}' cannot be timer-driven"
+                f"posture transition '{transition.label}' is timer-only and cannot be strategic"
             )
 
     return ResolvedStrategyProfile(
