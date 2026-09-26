@@ -99,6 +99,7 @@ from .rule_execution import (
     analyze_effective_rules,
 )
 from .fact_evaluation import evaluate_static_truth
+from .fact_registry import FactSemanticAdapter, NativeFactRegistry
 
 from .fact_values import (
     CanonicalEnum,
