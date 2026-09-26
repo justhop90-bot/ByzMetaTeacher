@@ -1090,7 +1090,8 @@ class CitationRecordCatalog:
         weak: list[str] = []
         for record in self.records:
             if record.locator_type is LocatorType.COMMAND:
-                expected_suffix = f"#{record.locator}"
+                command_name = record.locator.split()[0]
+                expected_suffix = f"#{command_name}"
                 if not record.final_url.endswith(expected_suffix):
                     weak.append(record.citation_id)
             elif record.locator_type is LocatorType.HEADING:
