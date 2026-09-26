@@ -89,12 +89,13 @@ def build_provider(
     action=True,
     provider_kind=ProviderKind.CONSTRUCTION,
     arbitration=True,
+    action_primitive="build",
 ):
     provider_id = ProviderId("test", name)
     action_spec = None
     if action:
         action_spec = ActionSpec(
-            primitive="build",
+            primitive=action_primitive,
             arguments=("castle",),
             conflict_class="BUILD_PASS_SINGLETON",
             arbitration=(SemanticId("test", "build"),) if arbitration else (),
@@ -402,6 +403,48 @@ class CapabilityValidationTests(unittest.TestCase):
         self.assertNotIn(
             CapabilityDiagnosticCode.CYCLE,
             {d.code for d in report.diagnostics},
+        )
+
+    def test_invalid_provider_does_not_root_dependency_cycle(self):
+        a = CapabilityId("test", "a")
+        b = CapabilityId("test", "b")
+        wa = witness_for(a, name="a-witness")
+        wb = witness_for(b, name="b-witness")
+
+        builder = CapabilityGraphBuilder()
+        builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
+        builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
+        builder.add_witness(wa)
+        builder.add_witness(wb)
+
+        builder.add_provider(build_provider(
+            a,
+            name="invalid-a-root",
+            prerequisites=(),
+            witness=wa,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+            action_primitive="building-type-count",
+        ))
+        builder.add_provider(build_provider(
+            a,
+            name="build-a-from-b",
+            prerequisites=(b,),
+            witness=wa,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        ))
+        builder.add_provider(build_provider(
+            b,
+            name="build-b-from-a",
+            prerequisites=(a,),
+            witness=wb,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        ))
+        builder.add_demand(demand("a-demand", a))
+
+        report = self._validate(builder)
+        self.assertIn(
+            CapabilityDiagnosticCode.CYCLE,
+            {item.code for item in report.diagnostics},
         )
 
     def test_unrooted_two_node_scc_reports_cycle_and_dead_end(self):
