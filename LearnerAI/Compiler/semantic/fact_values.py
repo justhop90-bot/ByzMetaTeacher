@@ -126,7 +126,7 @@ class NormalizedFact:
 
     semantic_id: str
     canonical_args: tuple[CanonicalValue, ...]
-    provenance: tuple[AIRefProvenance, ...] = ()
+    provenance: tuple[AIRefProvenance, ...]
 
     def __post_init__(self) -> None:
         if not self.semantic_id:
@@ -135,6 +135,8 @@ class NormalizedFact:
             raise TypeError("normalized fact canonical_args must be a tuple")
         if not isinstance(self.provenance, tuple):
             raise TypeError("normalized fact provenance must be a tuple")
+        if not self.provenance:
+            raise ValueError("normalized fact provenance is required")
         for value in self.canonical_args:
             if not isinstance(
                 value,
