@@ -5,6 +5,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from enum import Enum
+from math import gcd
 from typing import NewType
 
 from .versioning import EvidenceRef, PatchChange, PatchId, Validity
@@ -42,6 +43,47 @@ class RoundingMode(str, Enum):
     ENGINE_NEAREST = "ENGINE_NEAREST"
 
 
+class CoverageStatus(str, Enum):
+    COMPLETE = "COMPLETE"
+    FACTUAL_SUBSET = "FACTUAL_SUBSET"
+    UNKNOWN = "UNKNOWN"
+
+
+class PrerequisiteKind(str, Enum):
+    AGE = "AGE"
+    BUILDING = "BUILDING"
+    BUILDING_COUNT = "BUILDING_COUNT"
+    TECHNOLOGY_RESEARCHED = "TECHNOLOGY_RESEARCHED"
+    UNIT = "UNIT"
+    UNIT_COUNT = "UNIT_COUNT"
+    ENTITY_COUNT = "ENTITY_COUNT"
+    ALL = "ALL"
+    ANY = "ANY"
+
+
+class TechEffectKind(str, Enum):
+    STAT_MODIFIER = "STAT_MODIFIER"
+    ENABLE = "ENABLE"
+    DISABLE = "DISABLE"
+    INTERACTION = "INTERACTION"
+
+
+class UnitEffectKind(str, Enum):
+    PASSIVE_RESOURCE_GENERATION = "PASSIVE_RESOURCE_GENERATION"
+    ENGINE_CLASS = "ENGINE_CLASS"
+    TECHNOLOGY_INTERACTION = "TECHNOLOGY_INTERACTION"
+
+
+class EngineUnitClass(str, Enum):
+    INFANTRY = "INFANTRY"
+    SHOCK_INFANTRY = "SHOCK_INFANTRY"
+    CAVALRY = "CAVALRY"
+    RANGED = "RANGED"
+    SIEGE = "SIEGE"
+    NAVAL = "NAVAL"
+    MONK = "MONK"
+
+
 @dataclass(frozen=True, order=True)
 class Rational:
     numerator: int
@@ -50,6 +92,9 @@ class Rational:
     def __post_init__(self) -> None:
         if self.denominator <= 0:
             raise ValueError("Rational denominator must be positive")
+        divisor = gcd(abs(self.numerator), self.denominator)
+        object.__setattr__(self, "numerator", self.numerator // divisor)
+        object.__setattr__(self, "denominator", self.denominator // divisor)
 
 
 @dataclass(frozen=True)
@@ -150,13 +195,16 @@ class EntitySelector:
 
 @dataclass(frozen=True)
 class Prerequisite:
-    kind: str
+    kind: PrerequisiteKind
     age: Age | None = None
     building: BuildingId | None = None
     technology: TechId | None = None
     entity: str | None = None
     count: int | None = None
     children: tuple["Prerequisite", ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "kind", PrerequisiteKind(self.kind))
 
 
 @dataclass(frozen=True)
@@ -171,11 +219,61 @@ class ResearchProvider:
 
 @dataclass(frozen=True)
 class TechEffect:
-    kind: str
+    kind: TechEffectKind
     target: EntitySelector
     attribute: str | None = None
     modifier: NumericModifier | None = None
     interaction_id: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "kind", TechEffectKind(self.kind))
+
+
+@dataclass(frozen=True)
+class UnitEffect:
+    kind: UnitEffectKind
+    attribute: str
+    value: Rational | int | str | None = None
+    target: EntitySelector | None = None
+    resource: Resource | None = None
+    provenance: tuple[EvidenceRef, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "kind", UnitEffectKind(self.kind))
+
+
+@dataclass(frozen=True)
+class UpgradeRelation:
+    previous: UnitId
+    current: UnitId
+    research: TechId
+    provenance: tuple[EvidenceRef, ...] = ()
+
+
+@dataclass(frozen=True)
+class FactualCoverage:
+    status: CoverageStatus
+    verified_buildings: frozenset[BuildingId] = frozenset()
+    verified_units: frozenset[UnitId] = frozenset()
+    verified_unit_lines: frozenset[UnitLineId] = frozenset()
+    verified_technologies: frozenset[TechId] = frozenset()
+    verified_age_advances: frozenset[AgeAdvanceId] = frozenset()
+    verified_upgrade_relations: frozenset[tuple[UnitId, UnitId, TechId]] = frozenset()
+
+    def verifies(self, entity_type: str, entity_id: int | str) -> bool:
+        if self.status is CoverageStatus.UNKNOWN:
+            return False
+        if entity_type == "building":
+            return BuildingId(int(entity_id)) in self.verified_buildings
+        if entity_type == "unit":
+            return UnitId(int(entity_id)) in self.verified_units
+        if entity_type == "unit-line":
+            return UnitLineId(str(entity_id)) in self.verified_unit_lines
+        if entity_type == "technology":
+            return TechId(int(entity_id)) in self.verified_technologies
+        if entity_type == "age-advance":
+            return AgeAdvanceId(str(entity_id)) in self.verified_age_advances
+        raise ValueError(f"unknown coverage entity type {entity_type}")
 
 
 @dataclass(frozen=True)
