@@ -43,7 +43,7 @@ For the first examples this means:
 - Spearmen: train spearman fires once, then the demand waits for unit-type-count spearman >= 2.
 - Wheelbarrow: research ri-wheelbarrow fires once, then the demand waits for research-completed ri-wheelbarrow.
 
-Pending is a lifecycle state, not a retry counter. Temporary failure to satisfy the action requirements leaves the demand active. Successful action issuance moves it to pending. A pending demand does not become active again until its witness advances it to completion.
+Pending is a lifecycle state, not a retry counter. Temporary failure to satisfy the action requirements leaves the demand active. Successful action issuance moves it to pending. A pending demand does not become active again until its witness advances it to completion. Each demand also carries structured pending-state diagnostics into the generated output. These diagnostics explicitly identify the active-goal action guard, pending-goal witness guard, complete-goal release guard, and the separation between action, witness, and release. They are compile-time explanations of the generated lifecycle, not runtime state.
 
 This is deliberately stricter than the original prototype, which placed witness and release beside one another in the same rule and therefore did not model either pending execution or the separation between completion and release.
 
@@ -94,7 +94,7 @@ The compiler currently permits nested logical expressions but keeps ordinary pri
 
 Pending construction/training/research state, escrow policy, ownership, goal-range manifests, source-order analysis, generated rule-size accounting, compiler-wide dependency graphs, cancellation/obsolescence syntax, and higher-level economy/production/military declarations remain later stages.
 
-The compiler also does not claim that an emitted action succeeded. AoE2 world state remains the runtime authority and the witness remains the completion authority.
+The compiler also does not claim that an emitted action succeeded. AoE2 world state remains the runtime authority and the witness remains the completion authority. The pending diagnostics deliberately reinforce this distinction: action issuance moves the lifecycle to pending; only the world-state witness advances it to complete.
 
 ## Compile
 
