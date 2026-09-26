@@ -8,6 +8,7 @@ Optional native validation adds:
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import os
 import sys
 import tempfile
@@ -22,6 +23,7 @@ if __package__ in (None, ""):
     from Compiler.diagnostics import (
         CombinedValidationReport,
         ReportStatus,
+        backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
         semantic_failure_report,
@@ -47,6 +49,7 @@ else:
     from .diagnostics import (
         CombinedValidationReport,
         ReportStatus,
+        backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
         semantic_failure_report,
@@ -203,6 +206,26 @@ def compile_strategy_runtime_profile(
     return result
 
 
+def _normalize_native_validation(native_result: NativeValidationResult) -> NativeValidationResult:
+    clean = (
+        native_result.status is ValidationStatus.VALIDATED
+        and not native_result.failed
+        and native_result.summary.finding_count == 0
+        and not native_result.diagnostics
+    )
+    if clean or native_result.status is not ValidationStatus.VALIDATED:
+        return native_result
+    return replace(
+        native_result,
+        status=ValidationStatus.BACKEND_PROTOCOL_ERROR,
+        failed=False,
+        stderr=(
+            native_result.stderr
+            or "native backend reported VALIDATED with non-zero findings"
+        ),
+    )
+
+
 def _binding_manifest_text(bindings, context: BindingContext) -> str:
     return bindings.to_manifest(
         package_inventory_sha=context.package_inventory_sha,
@@ -237,6 +260,11 @@ def compile_source_with_report(
     binding_manifest: Path | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
+    if native_backend is None:
+        return backend_failure_report(
+            "native validation backend is required before artifact promotion",
+            output,
+        )
     try:
         result, bindings, context = _compile_source_parts(
             source,
@@ -255,17 +283,6 @@ def compile_source_with_report(
         binding_manifest.parent.mkdir(parents=True, exist_ok=True)
         if binding_manifest == output:
             raise ValueError("binding manifest path must differ from .per output path")
-
-    if native_backend is None:
-        output.write_text(result, encoding="utf-8")
-        if binding_manifest is not None:
-            binding_manifest.write_text(manifest_text, encoding="utf-8")
-        return CombinedValidationReport(
-            status=ReportStatus.SEMANTIC_VALIDATED,
-            diagnostics=(),
-            native_result=None,
-            output_path=output,
-        )
 
     fd, staged_name = tempfile.mkstemp(
         prefix=f".{output.stem}.",
@@ -288,7 +305,7 @@ def compile_source_with_report(
         staged.write_text(result, encoding="utf-8")
         if staged_manifest is not None:
             staged_manifest.write_text(manifest_text, encoding="utf-8")
-        native_result = native_backend.validate(staged)
+        native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(native_result, output)
         if report.status is ReportStatus.VALIDATED:
             os.replace(staged, output)
@@ -311,7 +328,11 @@ def compile_to_file(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
 ) -> NativeValidationResult | None:
-    """Backward-compatible compile API; semantic errors still raise."""
+    """Compile an artifact; native validation is mandatory for promotion."""
+    if native_backend is None:
+        raise NativeBackendError(
+            "native validation backend is required before artifact promotion"
+        )
     result, bindings, context = _compile_source_parts(
         source,
         base_goal,
@@ -327,12 +348,6 @@ def compile_to_file(
         binding_manifest.parent.mkdir(parents=True, exist_ok=True)
         if binding_manifest == output:
             raise ValueError("binding manifest path must differ from .per output path")
-
-    if native_backend is None:
-        output.write_text(result, encoding="utf-8")
-        if binding_manifest is not None:
-            binding_manifest.write_text(manifest_text, encoding="utf-8")
-        return None
 
     fd, staged_name = tempfile.mkstemp(
         prefix=f".{output.stem}.",
@@ -355,7 +370,7 @@ def compile_to_file(
         staged.write_text(result, encoding="utf-8")
         if staged_manifest is not None:
             staged_manifest.write_text(manifest_text, encoding="utf-8")
-        validation = native_backend.validate(staged)
+        validation = _normalize_native_validation(native_backend.validate(staged))
         if validation.status is ValidationStatus.VALIDATED:
             os.replace(staged, output)
             if staged_manifest is not None:
@@ -400,11 +415,6 @@ def main() -> int:
         help="optional deterministic JSON artifact containing resolved runtime bindings",
     )
     ap.add_argument(
-        "--validate-native",
-        action="store_true",
-        help="validate the staged .per with the pinned aoe2-ai-parser backend before promotion",
-    )
-    ap.add_argument(
         "--native-backend-root",
         type=Path,
         default=_DEFAULT_NATIVE_BACKEND_ROOT,
@@ -435,14 +445,12 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        native_backend = None
-        if args.validate_native:
-            native_backend = _build_native_backend(
-                args.native_backend_root,
-                args.native_backend_python,
-                args.native_timeout,
-                args.native_profile,
-            )
+        native_backend = _build_native_backend(
+            args.native_backend_root,
+            args.native_backend_python,
+            args.native_timeout,
+            args.native_profile,
+        )
         report = compile_source_with_report(
             args.source.read_text(encoding="utf-8"),
             args.output,
