@@ -100,9 +100,9 @@
 
 ## Next semantic tranche after this implementation
 
-- [ ] Capability-provider graph and provider admissibility diagnostics.
+- [x] Capability-provider graph and provider admissibility diagnostics.
 - [ ] Demand ownership and first-writer/first-consumer contracts.
-- [ ] Prerequisite dependency graph with cycle/dead-end/unfed diagnostics.
+- [x] Prerequisite dependency graph with SCC cycle/dead-end/unfed diagnostics.
 - [ ] Resource/conflict relations beyond the existing build-pass singleton.
 - [ ] Action-issuance failure versus pending-state distinction.
 - [ ] Castle vertical slice using actual Basilisk capability and resource semantics.
