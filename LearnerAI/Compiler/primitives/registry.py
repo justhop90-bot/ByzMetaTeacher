@@ -6,6 +6,10 @@ from enum import Enum
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
+from .engine_semantics import (
+    EngineSemanticMappingRegistry,
+    default_engine_semantic_mapping_registry,
+)
 
 
 
@@ -52,9 +56,11 @@ class PrimitiveRegistry:
         self,
         primitives: tuple[Primitive, ...],
         native_registry: NativeCommandRegistry | None = None,
+        semantic_mappings: EngineSemanticMappingRegistry | None = None,
     ):
         self._items = {p.name: p for p in primitives}
         self._native = native_registry
+        self._semantic_mappings = semantic_mappings or default_engine_semantic_mapping_registry()
 
 
 
@@ -207,6 +213,27 @@ class PrimitiveRegistry:
                 diagnostics=tuple(diagnostics),
             )
 
+        mapping_ok, mapping_message = self._semantic_mappings.validate_primitive(
+            command=name,
+            native_kind=native.command_type,
+            identity=primitive.engine_semantics_id,
+        )
+        if not mapping_ok:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-006",
+                "error",
+                mapping_message,
+            )
+            diagnostics.append(diagnostic)
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
         diagnostics.append(
             self._diagnostic(
                 name,
@@ -334,44 +361,23 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         if schema_path is None
         else NativeCommandRegistry.from_path(schema_path)
     )
-    semantic_mappings = {
-        "current-age": "observation.age.current",
-        "food-amount": "observation.resource.food",
-        "wood-amount": "observation.resource.wood",
-        "gold-amount": "observation.resource.gold",
-        "stone-amount": "observation.resource.stone",
-        "players-unit-type-count": "observation.threat.unit-count",
-        "players-building-type-count": "observation.world.building-count",
-        "game-time": "observation.timing.game-time",
-        "dropsite-min-distance": "observation.placement.dropsite-distance",
-        "building-available": "admissibility.building.available",
-        "can-afford-building": "arbitration.building.affordability",
-        "can-build": "execution.build.feasibility",
-        "can-build-with-escrow": "execution.build.feasibility.escrow",
-        "building-type-count": "witness.building.present",
-        "building-type-count-total": "witness.building.present.total",
-        "unit-type-count": "observation.unit.count",
-        "unit-type-count-total": "witness.unit.present.total",
-        "can-train": "execution.train.feasibility",
-        "can-train-with-escrow": "execution.train.feasibility.escrow",
-        "up-pending-objects": "execution.pending-objects",
-        "research-available": "admissibility.research.available",
-        "can-afford-research": "arbitration.research.affordability",
-        "can-research": "execution.research.feasibility",
-        "can-research-with-escrow": "execution.research.feasibility.escrow",
-        "research-completed": "witness.research.completed",
-        "build": "execution.build.request",
-        "train": "execution.train.request",
-        "research": "execution.research.request",
-    }
+    semantic_registry = default_engine_semantic_mapping_registry()
     primitive_items = tuple(facts + actions)
-    if set(semantic_mappings) != {item.name for item in primitive_items}:
-        raise ValueError("default native semantic mapping inventory is incomplete")
+    semantic_registry.validate_exact_executable_commands(
+        tuple(item.name for item in primitive_items)
+    )
     mapped_items = tuple(
-        replace(item, engine_semantics_id=semantic_mappings[item.name])
+        replace(
+            item,
+            engine_semantics_id=semantic_registry.for_command(item.name).identity,
+        )
         for item in primitive_items
     )
-    registry = PrimitiveRegistry(mapped_items, native_registry)
+    registry = PrimitiveRegistry(
+        mapped_items,
+        native_registry,
+        semantic_mappings=semantic_registry,
+    )
     for primitive in mapped_items:
         registry.validate_adapter_contract(primitive)
     return registry
