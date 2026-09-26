@@ -3,7 +3,7 @@
 
 ## Status
 
-This document defines the runtime-binding contract for the LearnerAI compiler. The lifecycle GoalSlot portion is implemented; the broader storage families remain explicitly scoped extension points.
+This document defines the runtime-binding contract for the generic AoE2 .per compiler. Lifecycle GoalSlot, GoalSpan, StrategicNumberSlot, and TimerSlot binding are implemented; whole-package occupancy discovery remains an explicit integration boundary.
 
 Evidence is classified explicitly:
 
@@ -42,12 +42,16 @@ These are lifecycle values associated with one Goal storage location, not separa
 - GoalId bounds are checked.
 - Native parameter/storage contract types exist without being confused with semantic primitive roles.
 
+### IMPLEMENTED
+
+GoalSpan allocation uses explicit native storage contracts and interval collision checks.
+StrategicNumberSlot allocation requires an explicit AIRef inventory snapshot and WHY_NOT_GOAL justification.
+TimerSlot allocation is deterministic, range-checked, collision-aware, and records an explicit initialization policy.
+Binding manifests are versioned and preserve Goal, SN, and Timer binding kinds.
+
 ### OPEN
 
-Full GoalSpan/SN/Timer allocation and package-wide occupancy discovery remain unimplemented.
-The checked-in AIRef command schema is now the native signature source, and the binding layer
-now provides a deterministic JSON manifest model with stable reservation of existing assignments.
-Automatic end-to-end manifest write-back remains open.
+Package-wide occupancy discovery for arbitrary externally-authored .per remains an integration boundary.
 
 ## 2. Engine resource model
 
@@ -362,9 +366,17 @@ SN 511 is excluded from automatic allocation.
 
 The binder must record the active/inactive status from the exact inventory snapshot used during allocation.
 
-### OPEN
+### IMPLEMENTED
 
-The repository currently does not have a general compiler SN-allocation implementation. This design does not claim that one exists.
+The generic binder now provides:
+
+- StrategicNumberInventory with an immutable inventory fingerprint;
+- documented versus candidate ID sets derived from an explicit inventory snapshot;
+- deterministic descending allocation from approved candidate IDs;
+- occupied-ID collision checks;
+- WHY_NOT_GOAL enforcement;
+- existing-binding reuse with inventory provenance verification;
+- manifest round-trip support for StrategicNumberSlot.
 
 ## 10. TimerSlot policy
 
@@ -388,9 +400,17 @@ A timer is not semantic truth and cannot be used as a completion witness.
 
 Timers are initialized explicitly before first semantic use.
 
-### OPEN
+### IMPLEMENTED
 
-Compiler lifetime analysis is not currently strong enough to prove safe timer reuse. Therefore reuse should not be implemented in the first allocator.
+The generic binder now provides:
+
+- deterministic lowest-free TimerId allocation in 1..50;
+- occupied TimerId collision checks;
+- explicit initialization-policy metadata;
+- existing-binding reuse with initialization-policy verification;
+- manifest round-trip support for TimerSlot.
+
+Timer reuse remains deliberately disabled unless an explicit lifetime model is added.
 
 ## 11. Provenance contract
 
