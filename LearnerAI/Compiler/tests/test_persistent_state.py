@@ -37,7 +37,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         report = analyze_persistent_state(analyze_effective_rules(graph))
 
         self.assertEqual(
-            [(item.kind, item.effect, item.rule_order, item.within_rule_order)
+            [(item.state.kind, item.effect, item.rule_order, item.within_rule_order)
              for item in report.accesses],
             [
                 (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 1, 0),
@@ -162,7 +162,8 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             if item.code is PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER
         )
         self.assertEqual(diagnostic.rule_order, 3)
-        self.assertEqual(diagnostic.access.rule_order, 2)
+        self.assertEqual(diagnostic.access.rule_order, 3)
+        self.assertEqual(diagnostic.related_access.rule_order, 2)
 
     def test_disable_self_writer_retains_one_shot_lifetime_for_state_analysis(self):
         graph = self._graph(
