@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class PatchId:
     product: str
     update: str
@@ -15,6 +15,24 @@ class PatchId:
     @property
     def key(self) -> str:
         return f"{self.product}:{self.update}:{self.build or '-'}"
+
+    @staticmethod
+    def _component_key(value: str) -> tuple[int, object]:
+        return (0, int(value)) if value.isdigit() else (1, value)
+
+    @property
+    def sort_key(self) -> tuple[object, object, object, object]:
+        return (
+            self.product,
+            self._component_key(self.update),
+            self._component_key(self.build or ""),
+            self.release_date,
+        )
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, PatchId):
+            return NotImplemented
+        return self.sort_key < other.sort_key
 
 
 @dataclass(frozen=True)
@@ -79,3 +97,16 @@ class PatchChange:
     replacement_fingerprint: str | None
     changes: tuple[tuple[str, str], ...]
     provenance: tuple[EvidenceRef, ...]
+    target_patch: PatchId | None = None
+
+    def verify_previous(self, actual_fingerprint: str) -> None:
+        if self.previous_fingerprint is None:
+            return
+        if actual_fingerprint != self.previous_fingerprint:
+            raise ValueError(
+                f"patch change {self.entity_kind}:{self.entity_key} expected "
+                f"previous fingerprint {self.previous_fingerprint}, got {actual_fingerprint}"
+            )
+
+    def applies_to(self, patch: PatchId) -> bool:
+        return self.target_patch is None or self.target_patch == patch
