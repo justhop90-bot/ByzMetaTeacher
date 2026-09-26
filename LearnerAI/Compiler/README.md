@@ -63,13 +63,15 @@ The game owns actual execution.
 
 ## Current lifecycle guarantee
 
-An action moves a demand from active to pending.
+An action first moves a demand from active to issued.
 
-The pending witness moves it to complete.
+A separate pending-admission rule moves issued to pending on the following script pass.
 
-Release moves it from complete to released.
+The pending witness moves pending to complete.
 
-The action itself is never the witness.
+Release moves complete to released.
+
+The action itself is never the witness, and issuance is not completion.
 
 The emitter deliberately writes these three lifecycle rules in reverse transition order:
 
@@ -79,13 +81,14 @@ The emitter deliberately writes these three lifecycle rules in reverse transitio
 
 AoE2 goal values update immediately, so this source order prevents an already-true witness and release predicate from collapsing the entire lifecycle in one script pass. The intended execution is:
 
-    pass N   : ACTIVE -> PENDING
-    pass N+1 : PENDING -> COMPLETE
-    pass N+2 : COMPLETE -> RELEASED
+    pass N   : ACTIVE -> ISSUED
+    pass N+1 : ISSUED -> PENDING
+    pass N+2 : PENDING -> COMPLETE
+    pass N+3 : COMPLETE -> RELEASED
 
 The compiler has regression coverage for the rule ordering and the three-pass state sequence.
 
-The action rule also requires both the completion witness and release predicate to be false before entering pending. This stale-fact barrier prevents a predicate that was already true before the action from being reused as post-action completion or release evidence. It does not claim engine timestamps or universal observation freshness; it establishes the strongest causal guard available at the compiler layer.
+The action issuance rule requires both the completion witness and release predicate to be false before issuing. This stale-fact barrier prevents a predicate that was already true before the action from being reused as post-action completion or release evidence. An unsatisfied issuance guard leaves the demand ACTIVE and therefore represents issuance failure, not PENDING. The native .per action primitive provides no Boolean return value, so the compiler cannot claim to observe an engine-side rejection after the rule fires; the ISSUED state records that the native action rule fired, while PENDING is a separate lifecycle admission.
 
 Examples already implemented:
 
@@ -229,6 +232,9 @@ small lifecycle fixtures only. They are not the full Basilisk controller.
 
 Implemented now:
 - explicit typed demand ownership contracts;
+- explicit typed action-issuance contract with separate ISSUED and PENDING lifecycle states;
+- deterministic issuance diagnostics and issuance-first compile-gate validation;
+
 - typed lifecycle read/write accesses with deterministic emitter-aligned source order;
 - typed transient resource claims and conflict contracts;
 - deterministic resource/arbitration diagnostics before capability validation;
@@ -250,7 +256,7 @@ Still open:
 - StrategicNumberSlot and TimerSlot allocators;
 - richer owner boundaries once strategy/domain owner declarations exist;
 - resource/conflict semantics beyond the build-pass singleton;
-- action-issuance failure versus pending-state distinction;
+- action-issuance versus pending-state distinction;
 - broader source-order and same-pass visibility analysis across non-lifecycle state;
 - Castle vertical slice compiled against actual Basilisk strategy/economy semantics.
 
