@@ -98,6 +98,8 @@ from .rule_execution import (
     RulePassBehavior,
     analyze_effective_rules,
 )
+from .fact_evaluation import evaluate_static_truth
+
 from .fact_values import (
     CanonicalEnum,
     CanonicalIdentifier,
@@ -112,7 +114,6 @@ from .fact_values import (
     EnumNormalization,
     IdentifierForm,
     IdentifierNormalization,
-    NormalizedFact,
     ParameterSemanticKind,
     StaticTruth,
     SymbolNormalization,
