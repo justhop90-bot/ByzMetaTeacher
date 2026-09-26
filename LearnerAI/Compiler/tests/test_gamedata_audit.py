@@ -5,6 +5,7 @@ from LearnerAI.Compiler.ir.game_data import (
     Age,
     BuildingId,
     EntitySelector,
+    FactStatus,
     PrerequisiteKind,
     Rational,
     ResourceCost,
@@ -154,6 +155,46 @@ class GameDataAuditTests(unittest.TestCase):
         self.assertTrue(
             any(effect.attribute == "affected-by-gambesons" for effect in varangian.effects)
         )
+
+    def test_bounded_strategic_fact_status_is_tristate(self):
+        self.assertEqual(self.data.factual_status("unit", 93), FactStatus.VERIFIED)
+        self.assertEqual(self.data.factual_status("unit-line", "spearman-line"), FactStatus.VERIFIED)
+        self.assertEqual(self.data.factual_status("age-advance", "castle-age"), FactStatus.VERIFIED)
+        self.assertEqual(
+            self.data.factual_status("technology", 435),
+            FactStatus.VERIFIED_UNAVAILABLE,
+        )
+        self.assertEqual(
+            self.data.factual_status("unit", 588),
+            FactStatus.VERIFIED_UNAVAILABLE,
+        )
+        self.assertEqual(
+            self.data.factual_status("unit", 999999),
+            FactStatus.UNKNOWN,
+        )
+
+    def test_bounded_strategic_facts_carry_provenance(self):
+        objects = (
+            self.data.building(12),
+            self.data.building(82),
+            self.data.building(103),
+            self.data.building(109),
+            self.data.unit_line("spearman-line"),
+            self.data.unit_line("skirmisher-line"),
+            self.data.unit_line("camel-rider-line"),
+            self.data.unit(40),
+            self.data.unit(553),
+            self.data.unit(2703),
+            self.data.unit(2704),
+            self.data.tech(197),
+            self.data.tech(429),
+            self.data.tech(98),
+            self.data.tech(236),
+            self.data.age_advance(Age.FEUDAL),
+            self.data.age_advance(Age.CASTLE),
+        )
+        for item in objects:
+            self.assertTrue(item.provenance, type(item).__name__)
 
     def test_current_snapshot_marks_itself_as_a_factual_subset(self):
         self.assertEqual(self.data.coverage.status.value, "FACTUAL_SUBSET")
