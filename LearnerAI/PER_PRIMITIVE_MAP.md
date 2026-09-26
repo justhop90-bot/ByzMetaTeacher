@@ -3484,6 +3484,214 @@ Static validity does not prove engine behavior. Runtime verification remains emp
 
 ---
 
+## 27. Real community production and economy patterns
+
+The learner should now see how ordinary community scripts connect persistent targets, engine feasibility, production, construction, and economic control without inventing a second scripting language.
+
+The recurring community pattern is:
+
+    WORLD STATE → TARGET / DEMAND → ENGINE PREREQUISITES → can-* FEASIBILITY → ACTION → WORLD-STATE WITNESS → RELEASE / REASSESS
+
+The important lesson is not that every rule must contain every stage. Simple behaviors can legitimately be simple. The engineering requirement is that the omitted stages are either irrelevant or represented elsewhere and still traceable.
+
+### 27.1 Villager production
+
+#### Community pattern
+
+A basic villager-production rule is intentionally small:
+
+    (defrule
+        (unit-type-count-total villager < target)
+        (can-train villager)
+    =>
+        (train villager)
+    )
+
+This is a normal community pattern because the production building, age, and other engine prerequisites are largely represented by the engine's can-train predicate.
+
+The count expresses the strategic production target. can-train expresses current engine feasibility. train villager is the action.
+
+#### Why it works
+
+The target prevents unlimited production. can-train prevents the rule from blindly requesting an impossible transaction. The resulting loop is current villager count → target still unmet → can-train → train → villager count changes → reassess.
+
+A learner should not add a custom villager-production manager merely to wrap those predicates.
+
+#### Common failure
+
+The dangerous version is simply can-train villager → train villager. That converts engine capability into an unlimited production policy.
+
+The opposite mistake is building a large state machine for a simple fixed target when the engine already exposes the required production feasibility.
+
+### 27.2 Military production
+
+#### Community pattern
+
+Military production follows the same shape: desired unit composition + current unit count + can-train / can-train-with-escrow → train.
+
+A minimal example is:
+
+    (defrule
+        (unit-type-count-total skirmisher-line < target)
+        (can-train skirmisher-line)
+    =>
+        (train skirmisher-line)
+    )
+
+For more contested economies, can-train-with-escrow may be appropriate when the script deliberately reserves or arbitrates resources for the transaction.
+
+The strategic layer determines the target. Production owns the production request. The engine owns the feasibility predicate.
+
+#### Pending and queue state
+
+A production rule must distinguish not enough units exist from nothing is currently queued. A target of 10 does not necessarily mean the script should issue ten commands in rapid succession. If the production system or engine exposes queue/pending state appropriate to the transaction, that state must participate in repeat protection.
+
+The conceptual distinction is: TARGET 10 ≠ TRAIN 10 NOW. It means keep production moving until the observed target is satisfied while respecting queue capacity and current resource arbitration.
+
+#### Common failure
+
+Do not use the action count as the completion count. train skirmisher-line is not evidence that the target population increased. The world state must eventually show the resulting unit population.
+
+### 27.3 Infrastructure production and construction
+
+#### Community pattern
+
+Community economy scripts frequently construct required infrastructure using a small combination of count, pending-state, and feasibility predicates:
+
+    building absent / below target
+    + no appropriate pending construction
+    + can-build
+    → build
+
+A representative pattern is:
+
+    (defrule
+        (building-type-count-total lumber-camp < target)
+        (up-pending-objects c: lumber-camp < pending-limit)
+        (can-build lumber-camp)
+    =>
+        (build lumber-camp)
+    )
+
+The exact pending-object filter and arguments must be verified against the target DE/AIRef reference before executable use. The teaching point is ownership of each predicate, not memorizing one filter spelling.
+
+#### Why it works
+
+building-type-count-total answers the world-state question. up-pending-objects answers the execution-state question. can-build answers the engine-feasibility question. build requests the construction.
+
+This is why a completed count alone can be insufficient for a persistent rule. A construction foundation may exist before the completed-building count changes.
+
+#### Common failure
+
+The classic construction spam loop is count < target + can-build → build with no pending protection. If the rule remains eligible while the first building is under construction, it may issue another request before the completion witness changes.
+
+The fix is not a generic scheduler. The fix is to model the actual construction state that matters.
+
+### 27.4 Economy balancing
+
+#### Community pattern
+
+Community economy scripts often separate resource observation from engine gatherer controls. The recurring pattern is resource state → interpreted economic state → goal / threshold → strategic-number control → engine changes gatherer behavior → resource state changes → reassess.
+
+A simplified teaching example is:
+
+    (defrule
+        (food-amount < food-threshold)
+    =>
+        (set-goal economy-food-critical 1)
+    )
+
+followed by a control rule that changes an engine-defined gatherer setting:
+
+    (defrule
+        (goal economy-food-critical 1)
+    =>
+        (set-strategic-number sn-food-gatherer-percentage food-priority)
+    )
+
+The exact strategic-number and value must be selected from the target engine's documented semantics. Do not treat arbitrary strategic numbers as a general-purpose variable store.
+
+#### Why it works
+
+The resource amount is observation. The goal is interpreted/persistent economic state. The strategic number is the engine-facing control. The engine changes gatherer behavior. Later resource observations provide feedback.
+
+#### Common failure
+
+Do not write resource shortage → set-strategic-number → assume the crisis is solved. The command only requests a control change. The learner must still observe the resulting economic state.
+
+Do not make every economic decision a timer-driven retry loop. A persistent economic condition should remain represented while it is true; a timer can control when reassessment occurs.
+
+### 27.5 Production and economy are coupled, but not the same module
+
+Real community scripts naturally couple economy and production:
+
+    economy determines resource pressure
+        ↓
+    production demand competes for resources
+        ↓
+    resource arbitration affects feasibility
+        ↓
+    production action
+        ↓
+    world state changes
+        ↓
+    economy reassesses
+
+That does not mean Economy owns military production or Production owns resource policy.
+
+A useful ownership boundary is:
+
+    Economy: what resource posture is required?
+    Strategy: what production target matters?
+    Production: what transaction should be requested?
+    Engine: can the transaction happen now?
+    World state: did the transaction actually produce the expected result?
+
+### 27.6 Basilisk-scale production loop
+
+At Basilisk scale, the simple community pattern becomes:
+
+    STRATEGY → persistent production demand
+        ↓
+    PRODUCTION → target / composition / infrastructure requirement
+        ↓
+    ECONOMY → resource posture and arbitration
+        ↓
+    CAPABILITY → building / age / technology / queue state
+        ↓
+    FEASIBILITY → can-train / can-build / can-research
+        ↓
+    ACTION → train / build / research
+        ↓
+    WORLD-STATE WITNESS → actual unit / building / technology state
+        ↓
+    RELEASE OR REASSESS
+
+The production target should survive temporary resource blockage unless Strategy has made the demand obsolete. A blocked can-train condition is therefore not automatically a reason to clear the demand.
+
+Likewise, a successful action is not automatically a reason to clear the demand if the target remains unmet.
+
+The practical distinction is:
+
+    DEMAND = what remains wanted
+    PENDING = what is already in execution
+    COMPLETION = what the world proves
+    RELEASE = why we stop pursuing it
+
+Those are different facts.
+
+### 27.7 Hard invariants
+
+- A production target is not an action count.
+- can-train and can-build are feasibility predicates, not strategic demands.
+- A queued or pending action is not the same as a completed world-state result.
+- A completed count is not the same as a pending count.
+- Resource availability alone does not establish full engine feasibility.
+- Persistent production demand should survive temporary resource blockage when the strategic objective remains valid.
+- Queue/pending protection must prevent repeated requests when the same demand is already represented in execution state.
+- Economy controls resource posture; Production controls production transactions.
+- Strategy determines why a target matters; domain modules determine how to pursue it.
+- The simplest community pattern that correctly represents the required state is preferable to an abstraction that hides ordinary .per behavior.
 ## 28. Research and technology: community patterns
 
 Research rules should stay close to the engine primitives that already represent research availability, feasibility, pending state, and completion. Community scripts commonly use `can-research` or `can-research-with-escrow` followed by `research`, while larger upgrade systems add goals, technology categories, escrow release, and research-status checks. The strategic complexity belongs around the transaction, not inside a replacement research engine.
@@ -3658,7 +3866,7 @@ The hard invariant is:
 
 ---
 
-## 28. Anti-pattern catalogue
+## 29. Anti-pattern catalogue
 
 ### Action-as-witness
 
@@ -3724,7 +3932,7 @@ A universal manager that hides goals, predicates, actions, and witnesses makes t
 
 ---
 
-## 29. Community-standard trace template
+## 30. Community-standard trace template
 
 Every important learner behavior should be traceable with this worksheet:
 
@@ -3744,7 +3952,7 @@ If any row has no clear answer, the behavior is not fully specified.
 
 ---
 
-## 30. Verification checklist for future executable lessons
+## 31. Verification checklist for future executable lessons
 
 Before accepting a learner implementation:
 
@@ -3773,7 +3981,7 @@ Before accepting a learner implementation:
 
 ---
 
-## 31. The learner's one-line mental model
+## 32. The learner's one-line mental model
 
 When reading any serious .per behavior, translate it mentally as:
 
