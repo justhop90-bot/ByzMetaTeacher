@@ -224,6 +224,19 @@ class StrategyCompilation:
     bindings: dict[str, StrategicBinding]
 
 
+def _validate_factual_coverage(
+    demand: StrategicDemandSpec,
+    effective: EffectiveCivData,
+) -> None:
+    intents = (demand.capability_intent,) + tuple(
+        execution.capability_intent
+        for execution in demand.execution_demands
+        if execution.capability_intent is not None
+    )
+    for intent in intents:
+        effective.require_coverage(intent.entity_type, intent.entity_id)
+
+
 def resolve_strategy_profile(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -262,6 +275,7 @@ def resolve_strategy_profile(
                         f"strategic demand '{demand.identity}' cannot use timing as strategic truth"
                     )
 
+        _validate_factual_coverage(demand, effective)
         _validate_capability_intent(demand, effective)
         for execution in demand.execution_demands:
             if execution.capability_intent is not None:
