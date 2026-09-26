@@ -273,8 +273,7 @@ class CapabilityGraphBuilder:
                     demand.location,
                 )
             )
-            for predicate in demand.release:
-                _ = predicate
+            if demand.release:
                 edges.append(
                     GraphEdge(
                         demand.identity,
@@ -333,6 +332,29 @@ class CapabilityGraphBuilder:
         return (identity.source_unit, identity.local_name)
 
     def build(self) -> CapabilityGraph:
+        provider_ids_by_capability: dict[CapabilityId, tuple[ProviderId, ...]] = {}
+        for capability in self._capabilities:
+            provider_ids_by_capability[capability.identity] = ()
+        for provider in self._providers:
+            provider_ids_by_capability[provider.capability] = tuple(sorted(
+                (*provider_ids_by_capability.get(provider.capability, ()), provider.identity)
+            ))
+
+        capabilities = tuple(
+            sorted(
+                (
+                    Capability(
+                        identity=capability.identity,
+                        kind=capability.kind,
+                        providers=provider_ids_by_capability.get(capability.identity, ()),
+                        location=capability.location,
+                    )
+                    for capability in self._capabilities
+                ),
+                key=self._sort_key,
+            )
+        )
+
         derived = self._derived_edges()
         edges = tuple(
             sorted(
@@ -350,7 +372,7 @@ class CapabilityGraphBuilder:
         )
         return CapabilityGraph(
             demands=tuple(sorted(self._demands, key=self._sort_key)),
-            capabilities=tuple(sorted(self._capabilities, key=self._sort_key)),
+            capabilities=capabilities,
             providers=tuple(sorted(self._providers, key=self._sort_key)),
             witnesses=tuple(sorted(self._witnesses, key=self._sort_key)),
             edges=edges,
