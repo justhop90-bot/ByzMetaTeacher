@@ -2577,7 +2577,9 @@ REASSESS
 ---
 ## 25. Pending versus completed
 
-The learner must be able to draw this state ladder:
+Pending state is one of the most important distinctions in practical `.per` scripting because an engine action can succeed as a request without the requested world-state object existing yet.
+
+Use the following as a semantic teaching ladder, not as a claim that `.per` contains one universal state machine:
 
 ```
 ABSENT
@@ -2590,27 +2592,322 @@ PENDING / FOUNDATION / QUEUED
   ↓
 COMPLETED
   ↓
-WITNESSED
+WORLD-STATE WITNESS
   ↓
-RELEASED
+RELEASE / REASSESS
 ```
 
-The exact available predicates differ by action type.
+Different action classes expose different engine facts for these states. Construction, training, and research must therefore be taught with their actual primitives rather than a fabricated universal `pending` or `completed` predicate.
 
-### Hard rule
+### 25.1 Demand is not pending state
 
-Do not collapse:
+A persistent demand means Strategy or a domain still wants something.
 
-- requested;
-- queued;
-- pending;
-- foundation;
-- completed.
+```
+Castle target remains wanted
+    ≠
+Castle foundation exists
 
-Those states are not interchangeable.
+Knight target remains wanted
+    ≠
+Knight is queued
+
+Wheelbarrow remains wanted
+    ≠
+Wheelbarrow research is pending
+```
+
+Demand can survive a temporary inability to act. Pending state means the engine has already accepted some form of execution and the world is now in an intermediate state.
+
+Do not store a demand merely because an action is pending. The demand is strategic intent; pending state is execution state.
+
+### 25.2 Action requested is not pending
+
+An action command is a request to the engine.
+
+Examples:
+
+```
+(train knight)
+(build castle)
+(research ri-wheelbarrow)
+```
+
+The action firing does not itself prove that the requested object is queued, under construction, researching, or complete.
+
+This is the critical rule:
+
+```
+ACTION
+  ≠
+EXECUTION STATE
+  ≠
+COMPLETION
+```
+
+The script must use an actual engine/world-state fact when the distinction matters.
+
+### 25.3 Construction: foundation versus completed building
+
+Construction is the clearest example.
+
+A build request can lead to a foundation or under-construction object before the building is complete.
+
+For repeat prevention, the script may need a total-count or pending-object witness so that another identical build request is not issued while the first one is already underway.
+
+For completion, use a completed-building witness appropriate to the primitive being taught. Do not treat a total object count as equivalent to a completed building.
+
+Conceptually:
+
+```
+(build castle)
+    ↓
+foundation / construction pending
+    ↓
+castle completed
+    ↓
+completed Castle witness
+```
+
+The important distinction is:
+
+```
+building-type-count-total
+    ≠
+completed building count
+```
+
+The total form is useful for accounting for an object that is already underway. A completion witness must prove the state the strategy actually cares about.
+
+### 25.4 Training: queued versus trained
+
+Military production has the same problem in a different form.
+
+```
+(train knight)
+    ↓
+queued / training
+    ↓
+trained Knight
+```
+
+`unit-type-count-total` can be used for target accounting because queued units count toward the production target. `unit-type-count` represents trained units.
+
+Therefore:
+
+```
+unit-type-count-total
+    ≠
+unit-type-count
+```
+
+Use the total form when preventing over-queueing. Use the trained count when the strategy requires actual fielded strength.
+
+A queue is not an army. Humanity has somehow managed to need this sentence written down.
+
+### 25.5 Research: pending versus completed
+
+Research has the same lifecycle.
+
+```
+(research ri-wheelbarrow)
+    ↓
+research pending / researching
+    ↓
+research completed
+```
+
+AIRef exposes explicit research-state information through `up-research-status`, with distinct states for unavailable, available, pending, and complete. AIRef also exposes `research-completed` as a completion fact.
+
+That makes research an especially useful teaching example because it demonstrates that:
+
+```
+research available
+    ≠
+research can start
+    ≠
+research pending
+    ≠
+research completed
+```
+
+The exact comparison syntax should follow the target engine/reference set. Do not invent a generic research-state abstraction when the engine already provides the state information.
+
+### 25.6 Pending state is primarily repeat protection and execution awareness
+
+Pending state has two practical jobs.
+
+First, it prevents duplicate requests:
+
+```
+target not satisfied
++
+already pending
+→
+do not request another copy
+```
+
+Second, it lets the script distinguish "the engine is already working on this" from "nothing has happened yet."
+
+This is why pending state is usually more useful than a retry counter. A retry counter remembers that the script tried something. Pending state observes whether the engine is actually carrying out the requested work.
+
+Do not create permanent counters merely to represent state that the engine already exposes.
+
+### 25.7 Pending does not guarantee completion
+
+A pending object can remain pending because of construction time, production time, queue position, or other engine behavior. A script must not clear a strategic demand merely because an action entered an intermediate state.
+
+The safe sequence is:
+
+```
+DEMAND
+→ ACTION
+→ PENDING
+→ COMPLETION WITNESS
+→ RELEASE / REASSESS
+```
+
+If the demand remains strategically valid while the object is pending, the demand remains alive.
+
+### 25.8 Completion witness must match the claim
+
+A witness proves a particular world-state claim.
+
+Examples:
+
+```
+"Knight is queued"
+    → unit-type-count-total
+
+"Knight is actually trained"
+    → unit-type-count
+
+"Castle exists as a completed building"
+    → completed-building witness
+
+"Wheelbarrow is researched"
+    → research-completed
+```
+
+Do not substitute a weaker state for a stronger claim.
+
+```
+action fired
+    ≠
+pending
+    ≠
+completed
+```
+
+Likewise, do not use "available" as proof of completion. A technology can be available before it is researched. A unit can be available before it is trained. A building type can be available before one exists.
+
+### 25.9 Release conditions
+
+Completion and release are related but not identical.
+
+A demand may release because:
+
+- its actual completion condition is satisfied;
+- Strategy cancelled it;
+- Strategy replaced it with another target;
+- the strategic reason became obsolete.
+
+A pending state is not a release condition by itself.
+
+Likewise, completion of one object does not necessarily release an entire strategic posture.
+
+```
+current target complete
+    ≠
+strategic posture obsolete
+```
+
+For example, four Knights can satisfy the current production target while the cavalry posture remains active and later raises the target to eight.
+
+### 25.10 Blocked versus pending
+
+These states must also remain separate.
+
+```
+PENDING:
+engine has accepted work and it is underway
+
+BLOCKED:
+demand remains valid but the action cannot currently proceed
+```
+
+A blocked demand should normally persist until the strategic reason disappears or the blocker is resolved.
+
+Do not convert blockage into fake pending state merely because the script attempted the action.
+
+### 25.11 Canonical state traces
+
+Construction:
+
+```
+DEMAND
+→ can-build / placement / resource feasibility
+→ build
+→ FOUNDATION / CONSTRUCTION
+→ COMPLETED BUILDING WITNESS
+→ RELEASE / REASSESS
+```
+
+Training:
+
+```
+DEMAND
+→ can-train
+→ train
+→ QUEUED / TRAINING
+→ TRAINED UNIT WITNESS
+→ RELEASE / REASSESS
+```
+
+Research:
+
+```
+DEMAND
+→ can-research
+→ research
+→ PENDING / RESEARCHING
+→ research-completed
+→ RELEASE / REASSESS
+```
+
+The common teaching pattern is therefore:
+
+```
+persistent intent
+→ engine feasibility
+→ action
+→ engine/world execution state
+→ actual completion witness
+→ semantic release
+→ reassessment
+```
+
+The implementation does **not** require a universal state registry, scheduler, retry manager, or object-oriented state machine.
+
+### 25.12 Hard invariants
+
+- Demand is not pending state.
+- Action request is not proof of execution.
+- Pending is not completion.
+- Foundation is not completed construction.
+- Queued is not trained.
+- Available is not completed.
+- A pending witness is not a completion witness.
+- A completion witness must prove the specific world-state claim being made.
+- Pending state is useful for repeat prevention and execution awareness.
+- Prefer engine-provided pending/queue/state facts over homemade retry counters.
+- Blocked is not pending.
+- Completion of a current target is not automatically release of the strategic posture.
+- Cancellation/obsolescence is not successful completion.
+- Different action classes require different engine-native state/completion predicates.
+- The lifecycle is a teaching model for reasoning about `.per`; it is not a literal universal runtime object model.
 
 ---
-
 ## 26. Goals, strategic numbers, and timers are not interchangeable
 
 | Primitive | Best teaching role | Common misuse |
