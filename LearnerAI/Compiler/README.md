@@ -112,6 +112,30 @@ The design deliberately distinguishes a GoalId from the integer value stored in 
 
 The lifecycle GoalSlot boundary is implemented. SemanticDemand carries a symbolic storage request; RuntimeBinder resolves it to one native GoalId; the emitter alone converts the resolved slot into the current native lifecycle-value encoding.
 
+## Prior-art-derived storage layer
+
+The compiler now adopts the useful lower-level mechanisms identified in public AoE2 compiler projects without importing their general-purpose language architectures:
+
+- AgeScript's explicit symbolic-memory-to-native lowering discipline;
+- AgeOfPython's typed native metadata boundary;
+- aoe2ai's explicit volatile Goal lifetime model and reusable Goal/Point storage.
+
+The implemented binding layer distinguishes:
+
+- `GoalSlot`: one scalar GoalId used for semantic lifecycle/state;
+- `GoalSpan`: an explicitly contiguous native Goal range with a declared shape;
+- `GoalInterval`: the collision unit for package occupancy;
+- `VolatileGoalPool`: temporary compiler scratch storage with explicit checkout/release;
+- `BindingManifest`: deterministic persisted mapping from symbolic storage requests to native storage.
+
+Goal spans are not inferred from “multiple Goal parameters.” They are admitted only from native contracts derived from the checked-in AIRef command schema. In particular, `up-get-point` and `up-get-search-state` are contiguous spans, while `up-get-threat-data` exposes four independent Goal outputs and is deliberately not collapsed into one span.
+
+Compiler output can optionally carry a binding manifest:
+
+`--binding-manifest <path>`
+
+When native validation is enabled, the .per artifact and manifest are staged together and promoted together only after the pinned native backend accepts the generated .per. This keeps semantic storage assignment reproducible without making the native parser responsible for Basilisk semantics.
+
 ## What the compiler must grow into
 
 The next semantic work is driven by the player:
