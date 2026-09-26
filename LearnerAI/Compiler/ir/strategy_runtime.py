@@ -14,6 +14,7 @@ from .strategy import (
     StrategicDemandSpec,
     StrategicEvidence,
     StrategicEvidenceKind,
+    StrategicEvidenceSource,
     StrategyPosture,
     StrategyProfile,
 )
@@ -128,6 +129,10 @@ class StrategyRuntimeState:
     runtime_storage_requests: tuple[object, ...]
     fingerprint: str
     _owners: tuple[tuple[str, str], ...] = ()
+    evaluated_meta_evidence: tuple[
+        tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]],
+        ...
+    ] = ()
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -370,7 +375,9 @@ def bind_strategic_evidence(
     registry: PrimitiveRegistry | None = None,
 ) -> StrategicEvidenceBinding:
     from ..semantic.analyzer import parse_expression
+    from .strategy import _validate_evidence_attribution
 
+    _validate_evidence_attribution(evidence, effective)
     registry = registry or default_de_registry()
     expression = parse_expression(evidence.expression)
     observations: list[StrategicObservation] = []
@@ -396,6 +403,8 @@ def bind_strategic_evidence(
             {
                 "label": evidence.label,
                 "kind": evidence.kind,
+                "source": evidence.source,
+                "provenance": evidence.provenance,
                 "expression": evidence.expression,
                 "observations": observations,
             }
@@ -591,6 +600,19 @@ def evaluate_strategy_runtime(
 
     demand_states: list[tuple[str, StrategicDemandRuntimeState]] = []
     evaluated: list[tuple[str, EvidenceTruth]] = []
+    evaluated_meta_evidence: list[
+        tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]]
+    ] = []
+    for evidence in profile.community_meta_evidence:
+        binding = bind_strategic_evidence(evidence, effective, registry)
+        evaluated_meta_evidence.append(
+            (
+                evidence.label,
+                evaluate_binding(binding, snapshot),
+                evidence.provenance,
+            )
+        )
+
     owners: list[tuple[str, str]] = []
     active: list[str] = []
     blocked: list[str] = []
@@ -651,6 +673,7 @@ def evaluate_strategy_runtime(
             "invalidated": invalidated,
             "complete": complete,
             "reassessment": sorted(reason.value for reason in reasons),
+            "evaluated_meta_evidence": evaluated_meta_evidence,
         }
     )
 
@@ -668,4 +691,10 @@ def evaluate_strategy_runtime(
         runtime_storage_requests=(),
         fingerprint=fingerprint,
         _owners=tuple(sorted(owners)),
+        evaluated_meta_evidence=tuple(
+            sorted(
+                evaluated_meta_evidence,
+                key=lambda item: (item[0], item[2][0].stable_key() if item[2] else ""),
+            )
+        ),
     )
