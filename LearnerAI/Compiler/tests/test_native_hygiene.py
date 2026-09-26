@@ -24,6 +24,7 @@ from Compiler.primitives.native_hygiene import (
     PromotionState,
     RevalidationResult,
     SourceContentHash,
+    SourceRetrieval,
     SourceExcerpt,
     VersionScope,
     classify_revalidation,
@@ -232,6 +233,12 @@ class NativeHygieneTests(unittest.TestCase):
             "up-find-local",
             excerpt=SourceExcerpt.capture("text", ExcerptKind.FACT),
             source_hash=SourceContentHash("sha256", "0" * 64, "RAW_BYTES"),
+            retrieval=SourceRetrieval(
+                retrieved_at_utc="2026-09-26T17:30:00Z",
+                canonical_url="https://airef.github.io/",
+                final_url="https://airef.github.io/",
+                http_status=200,
+            ),
             state=CitationState.UNAVAILABLE,
         )
         self.assertEqual(
@@ -242,6 +249,45 @@ class NativeHygieneTests(unittest.TestCase):
             promotion_state(citation, already_promoted=False),
             PromotionState.NOT_ELIGIBLE,
         )
+
+
+    def test_pinned_citation_requires_retrieval_metadata(self):
+        with self.assertRaises(ValueError):
+            CitationRecord(
+                "pinned-missing-retrieval",
+                "https://airef.github.io/",
+                "https://airef.github.io/",
+                LocatorType.COMMAND,
+                "up-find-local",
+                excerpt=SourceExcerpt.capture("text", ExcerptKind.FACT),
+                source_hash=SourceContentHash("sha256", "0" * 64, "RAW_BYTES"),
+                state=CitationState.PINNED,
+            )
+
+    def test_revalidation_event_retains_locations(self):
+        from Compiler.primitives.native_hygiene import CitationRevalidationEvent, RevalidationTrigger
+
+        event = CitationRevalidationEvent(
+            event_id="evt-1",
+            evidence_id="evidence-1",
+            trigger=RevalidationTrigger.SCHEDULED,
+            previous_citation_id="c1",
+            current_citation_id="c2",
+            previous_url="https://airef.github.io/old",
+            current_url="https://airef.github.io/new",
+            previous_locator="old-heading",
+            current_locator="new-heading",
+            changes=(),
+            previous_source_hash="0" * 64,
+            current_source_hash="1" * 64,
+            previous_excerpt_hash="0" * 64,
+            current_excerpt_hash="0" * 64,
+            excerpt_match=ExcerptMatchKind.EXACT,
+            result=RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED,
+            source_available=True,
+        )
+        self.assertEqual(event.previous_locator, "old-heading")
+        self.assertEqual(event.current_locator, "new-heading")
 
 
 if __name__ == "__main__":
