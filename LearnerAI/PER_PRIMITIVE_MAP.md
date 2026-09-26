@@ -2908,21 +2908,521 @@ The implementation does **not** require a universal state registry, scheduler, r
 - The lifecycle is a teaching model for reasoning about `.per`; it is not a literal universal runtime object model.
 
 ---
-## 26. Goals, strategic numbers, and timers are not interchangeable
+## 26. Goals, strategic numbers, and timers: real community patterns
 
-| Primitive | Best teaching role | Common misuse |
-|---|---|---|
-| Goal | Persistent semantic state, thresholds, modes | Universal database |
-| Strategic number | Engine/control parameter | Universal state database |
-| Timer | Temporal gating/cooldown | Persistent demand manager |
-| World-state fact | Observation/witness | Strategic intent |
-| `can-*` | Engine feasibility | Strategic decision |
-| Action command | Request | Completion witness |
+The learner should not treat every mutable `.per` value as the same kind of state. Community scripts use goals, strategic numbers, and timers for different jobs. The useful lesson is not to invent a cleaner software architecture around them. It is to recognize the engine primitive being used, understand what it controls, and keep its ownership narrow.
 
-This distinction should remain visible throughout the learner curriculum.
+The practical teaching sequence is:
+
+```
+COMMUNITY PATTERN
+→ ENGINE PRIMITIVES
+→ MINIMAL VALID PATTERN
+→ WHY IT WORKS
+→ COMMON FAILURE
+→ BASILISK-SCALE VARIANT
+```
+
+This section teaches the primitives through recognizable scripting jobs rather than through a generic state-management abstraction.
+
+### 26.1 Goal: persistent semantic state or threshold
+
+#### Community pattern
+
+Community scripts commonly use goals as mutable state or thresholds that other rules consume. A typical economy pattern classifies the current resource situation, stores that interpretation in a goal, and then uses the goal to select engine behavior. Goals are also used for strategy modes, desired quantities, and other persistent choices.
+
+The important point is that the goal is not the entire subsystem. It stores the piece of semantic state that needs to persist between rule evaluations.
+
+#### Engine primitives
+
+The basic forms are:
+
+```
+(set-goal goal-id value)
+(goal goal-id value)
+```
+
+Related goal comparison or modification primitives may also be available depending on the target DE/AIRef reference set.
+
+A goal answers:
+
+**“What persistent integer state or threshold should other rules currently see?”**
+
+It does not answer:
+
+- whether an action is feasible;
+- whether a requested object exists;
+- whether an action succeeded;
+- whether the strategic reason for the goal still exists.
+
+#### Minimal valid pattern
+
+```
+(defrule
+    (food-amount < 300)
+=>
+    (set-goal food-state 1)
+)
+
+(defrule
+    (goal food-state 1)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+)
+```
+
+The first rule observes current state and stores an interpretation. The second rule consumes that persistent state.
+
+The goal survives after the first rule fires. That is what makes it different from a one-shot action or a timer trigger.
+
+#### Why it works
+
+The goal separates repeated interpretation from repeated consumption.
+
+Without a goal, several consumers may each duplicate the same threshold logic:
+
+```
+food-amount < 300
+→ rule A
+
+food-amount < 300
+→ rule B
+
+food-amount < 300
+→ rule C
+```
+
+With a goal:
+
+```
+food-amount < 300
+→ food-state = low
+→ consumers react to food-state
+```
+
+That is useful when the interpreted state genuinely has multiple consumers or must persist independently of the rule that first derived it.
+
+A goal is therefore a reasonable representation of persistent semantic intent or a mutable target. It is not automatically necessary just because a value needs to exist.
+
+#### Common failure
+
+The classic failure is turning goals into a universal database:
+
+```
+goal 1 = strategy
+goal 2 = target
+goal 3 = pending
+goal 4 = timer
+goal 5 = resource reservation
+goal 6 = whether the last action succeeded
+...
+```
+
+That creates a fake object model out of integers.
+
+Another failure is treating a goal as a completion witness:
+
+```
+(set-goal castle-done 1)
+```
+
+does not prove that a Castle exists.
+
+Likewise:
+
+```
+(goal knight-target 4)
+```
+
+does not prove that four Knights exist.
+
+Goals represent stored or derived semantic state. World-state facts prove world state.
+
+#### Basilisk-scale variant
+
+Basilisk should use a goal when persistent semantic state genuinely needs to be shared or retained.
+
+For example:
+
+```
+Strategy:
+    desired Knight target = 4
+
+Military:
+    owns why Knights are currently wanted
+
+Production:
+    consumes the target
+
+Production:
+    unit-type-count-total knight-line < target
+    can-train knight-line
+    → train knight-line
+
+Witness:
+    actual Knight count
+```
+
+The goal can bridge strategic intent and execution. It does not replace `can-train`, pending state, resource arbitration, or the trained-unit witness.
+
+### 26.2 Strategic number: engine-defined control
+
+#### Community pattern
+
+Community scripts commonly use strategic numbers to configure behavior already owned by the AI engine. Economy scripts use them for gatherer percentages, drop distances, camp distances, and similar controls. Other scripts use engine-defined strategic numbers for military or exploration behavior.
+
+The critical distinction is that the strategic number already has an engine-defined meaning.
+
+#### Engine primitives
+
+The basic forms are:
+
+```
+(set-strategic-number sn-example value)
+(strategic-number sn-example > value)
+(strategic-number sn-example == value)
+```
+
+The exact valid strategic numbers and their effects come from the target engine/reference documentation.
+
+A strategic number answers:
+
+**“What engine control parameter should have this value?”**
+
+It is not a general-purpose semantic database.
+
+#### Minimal valid pattern
+
+```
+(defrule
+    (goal food-state 1)
+=>
+    (set-strategic-number sn-food-gatherer-percentage 50)
+)
+```
+
+The goal represents interpreted state.
+
+The strategic number configures engine behavior.
+
+That separation is the useful pattern.
+
+#### Why it works
+
+The script is using an existing engine control rather than attempting to recreate that control with custom state.
+
+The flow is:
+
+```
+interpret state
+→ configure engine
+→ engine applies behavior
+```
+
+The script remains small because it lets the engine own the behavior it already knows how to perform.
+
+This is one of the strongest community-native lessons for a learner: do not replace an engine parameter with a homemade manager merely because a manager feels more architectural.
+
+#### Common failure
+
+The failure is using strategic numbers as arbitrary storage:
+
+```
+sn-my-castle-demand = 1
+sn-knight-target = 4
+sn-last-build-result = 1
+```
+
+If a strategic number does not represent an engine-defined control, it is probably the wrong primitive for the job.
+
+Another failure is assuming that setting a strategic number proves the resulting behavior occurred:
+
+```
+(set-strategic-number ...)
+≠
+world-state change
+```
+
+The script still needs to observe the actual resulting state.
+
+#### Basilisk-scale variant
+
+Basilisk should use strategic numbers only when the engine itself exposes the desired behavior through that control.
+
+For example:
+
+```
+Strategy / Economy:
+    determine that wood priority should increase
+
+Economy:
+    set the appropriate engine gatherer control
+
+Engine:
+    applies the control
+
+State / Information:
+    observe resulting resource state
+
+Strategy:
+    reassess
+```
+
+Strategy remains semantic. The strategic number remains an engine control.
+
+### 26.3 Timer: temporal trigger or cooldown
+
+#### Community pattern
+
+Community scripts use timers to make periodic work happen without requiring the same action rule to fire continuously. Attack checks, scouting, economic rebalance, delayed transitions, and cooldowns are common uses.
+
+The basic pattern is:
+
+```
+time passes
+→ timer triggers
+→ current state is evaluated
+→ action or control change
+→ timer is reset or scheduled again
+```
+
+The timer determines when a check occurs. It does not supply the strategic reason for the check.
+
+#### Engine primitives
+
+Typical timer primitives include:
+
+```
+(enable-timer timer-id duration)
+(disable-timer timer-id)
+(timer-triggered timer-id)
+```
+
+Exact argument conventions and behavior must be checked against the target DE/AIRef reference set before executable use.
+
+#### Minimal valid pattern
+
+A minimal temporal pattern is conceptually:
+
+```
+(defrule
+    (timer-triggered military-check)
+    (military-population >= 10)
+=>
+    (attack-now)
+)
+```
+
+A separate initialization or reset rule enables the timer according to the desired interval.
+
+The important point is that the timer is only one condition. Current military state still determines whether the action rule can fire.
+
+#### Why it works
+
+A timer prevents periodic work from becoming an every-evaluation action loop.
+
+It is useful when the correct behavior is:
+
+```
+check periodically
+→ evaluate current facts
+→ act only if current conditions justify action
+```
+
+It is especially appropriate for scouting intervals, attack-group checks, economic rebalance, cooldowns, and delayed reassessment.
+
+The important distinction is:
+
+```
+TIMER + CURRENT STATE
+→ DECISION
+```
+
+not:
+
+```
+TIMER
+→ PERMANENT DEMAND
+```
+
+#### Common failure
+
+The classic failure is treating a timer as the demand itself:
+
+```
+timer expires
+→ build Castle
+```
+
+Elapsed time does not prove that the Castle is still strategically wanted, that the economy is ready, or that the engine can build it.
+
+Another failure is using timers as retry counters:
+
+```
+try
+→ wait
+→ try
+→ wait
+→ try
+```
+
+when the actual issue is a blocked feasibility condition or an obsolete demand.
+
+The timer answers **when to look again**. It does not answer **why the action remains valid**.
+
+#### Basilisk-scale variant
+
+Basilisk should use timers for transient temporal control:
+
+```
+persistent strategic demand
+        +
+transient timer / cooldown
+        ↓
+current feasibility check
+        ↓
+engine action
+        ↓
+world-state witness
+        ↓
+release or reassessment
+```
+
+A military posture can persist because Strategy still wants pressure while a timer prevents attack-group reassessment from firing continuously.
+
+If the timer expires after the strategic demand has disappeared, the action should not occur merely because the timer fired.
+
+The ownership boundary is:
+
+```
+Strategy owns WHY.
+Timer owns WHEN TO RECHECK.
+Engine facts own WHAT IS POSSIBLE.
+Action commands request WHAT TO DO.
+World state proves WHAT HAPPENED.
+```
+
+### 26.4 Combined community pattern
+
+The strongest lesson comes from combining the three primitives without pretending that they are interchangeable.
+
+A representative community economy pattern can be understood as:
+
+```
+world resource state
+        ↓
+set-goal interpreted state
+        ↓
+timer-triggered reassessment
+        ↓
+set-strategic-number engine control
+        ↓
+engine changes behavior
+        ↓
+world state changes
+        ↓
+next reassessment
+```
+
+The three primitives have separate jobs:
+
+| Primitive | Practical job |
+|---|---|
+| Goal | Preserve interpreted state or a mutable target |
+| Strategic number | Configure an engine-defined behavior |
+| Timer | Trigger evaluation after time has passed |
+| World-state fact | Observe actual game state |
+| `can-*` | Ask the engine whether an action is feasible |
+| Action command | Request a state change |
+| Completion witness | Prove that the requested result exists |
+
+This is the important community standard: **small primitives with narrow jobs connected by ordinary rules**.
+
+### 26.5 Basilisk-scale combined variant
+
+At Basilisk scale, the same pattern maps onto the larger lifecycle:
+
+```
+OBSERVE
+    current resource / threat / production state
+        ↓
+INTERPRET
+    derive the strategic or domain meaning
+        ↓
+PERSISTENT DEMAND / TARGET
+    retain intent when it genuinely needs persistence
+        ↓
+TRANSIENT CONTROL
+    use timers for time
+    use strategic numbers for engine controls
+        ↓
+CAPABILITY / FEASIBILITY
+    evaluate current engine facts and can-* predicates
+        ↓
+ACTION
+    build / train / research / other engine action
+        ↓
+WORLD-STATE WITNESS
+    observe actual building / unit / technology / resource state
+        ↓
+RELEASE / REASSESS
+```
+
+This is not a requirement to create nine managers.
+
+It is a set of ownership rules for ordinary `.per` primitives.
+
+A simple community pattern should remain simple when the problem is simple:
+
+```
+(defrule
+    (unit-type-count-total knight-line < target)
+    (can-train knight-line)
+=>
+    (train knight-line)
+)
+```
+
+If a persistent target is shared across several rules, a goal may be appropriate. If the engine exposes the desired behavior through a strategic number, use that strategic number. If evaluation genuinely needs to happen periodically, use a timer.
+
+Do not add an abstraction merely because the semantic model contains a word for it.
+
+### 26.6 Common architecture-theater failures
+
+The learner should recognize these warning signs:
+
+- A goal exists solely to remember something the world state already exposes.
+- A strategic number is being used as arbitrary storage rather than an engine control.
+- A timer is being used to preserve strategic intent.
+- A timer is being used as a retry counter for a condition that should instead remain persistent.
+- A custom state variable duplicates a `can-*` feasibility predicate.
+- A completion flag duplicates an observable world-state witness.
+- Every action receives a bespoke manager even though the engine already provides the required primitive.
+- Several layers of indirection are required to express what could be a two- or three-condition community-standard rule.
+
+The test is simple:
+
+**What concrete engine behavior or scripting problem does this extra state solve?**
+
+If there is no concrete answer, it is probably decoration.
+
+### 26.7 Hard invariants
+
+- A goal is persistent mutable semantic state or a threshold, not a universal database.
+- A goal does not prove world-state completion.
+- A strategic number is an engine/control parameter, not arbitrary storage.
+- Changing a strategic number does not prove that the resulting behavior occurred.
+- A timer is a temporal trigger or cooldown, not persistent strategic intent.
+- Timer expiration does not make a demand valid.
+- World-state facts observe reality; goals represent interpreted or stored semantic state.
+- `can-*` predicates provide engine feasibility; they do not decide strategy.
+- Action commands request changes; they are not completion witnesses.
+- Multiple primitives may participate in one lifecycle while retaining separate jobs.
+- The smallest valid community pattern is preferred when it already solves the problem.
+- Basilisk-scale complexity should come from real strategic interactions, resource arbitration, pending state, and reassessment, not from wrapping simple `.per` operations in unnecessary abstractions.
+- The semantic lifecycle remains a teaching model mapped onto ordinary engine primitives, not a literal runtime object architecture.
 
 ---
-
 ## 27. Parser and engine caveats
 
 The following are mandatory Engineering checks whenever these primitives become executable code:
