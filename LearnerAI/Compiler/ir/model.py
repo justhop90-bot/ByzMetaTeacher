@@ -13,6 +13,7 @@ class LifecycleState(str, Enum):
     ISSUED = "ISSUED"
     PENDING = "PENDING"
     COMPLETE = "COMPLETE"
+    CANCELLED = "CANCELLED"
 
 
 class GoalSpanKind(str, Enum):
@@ -142,6 +143,32 @@ class ReleaseStateContract:
     witness_source_order: int
 
 
+class InvalidationEvidenceKind(str, Enum):
+    WORLD_STATE = "WORLD_STATE"
+
+
+@dataclass(frozen=True)
+class InvalidationContract:
+    identity: SemanticId
+    evidence_kind: InvalidationEvidenceKind
+    primitive: str
+    expression: Expression
+    invalidates: SemanticId
+    source_order: int
+    action_source_order: int
+
+
+@dataclass(frozen=True)
+class CancellationStateContract:
+    identity: SemanticId
+    trigger: SemanticId
+    from_states: tuple[LifecycleState, ...]
+    to_state: LifecycleState
+    source_order: int
+    invalidation_source_order: int
+    release_source_order: int
+
+
 @dataclass(frozen=True)
 class ActionIssuance:
     demand: SemanticId
@@ -186,6 +213,8 @@ class SemanticDemand:
     release: Expression
     completion_witness: CompletionWitnessContract | None = None
     release_state: ReleaseStateContract | None = None
+    invalidation: InvalidationContract | None = None
+    cancellation: CancellationStateContract | None = None
     action_issuance: ActionIssuance | None = None
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
