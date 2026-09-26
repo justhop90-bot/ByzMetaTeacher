@@ -143,6 +143,42 @@ class NativeContractIntegrationTests(unittest.TestCase):
         ):
             compile_source(SOURCE, registry=registry)
 
+    def test_unsupported_pass_failure_mode_is_not_promoted(self):
+        base = default_native_contract_catalog()
+        constraint = replace(
+            base.pass_constraint("build-pass-singleton"),
+            failure_mode=PassFailureMode.REJECTED,
+        )
+        catalog = NativeContractCatalog(
+            witnesses=base.witnesses,
+            storage_uses=base.storage_uses,
+            pass_constraints=(constraint,),
+        )
+        registry = build_registry(catalog)
+
+        assessment = registry.assess_support("build")
+
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertIn("failure mode", assessment.message)
+
+    def test_next_pass_constraint_is_not_lowered_silently(self):
+        base = default_native_contract_catalog()
+        constraint = replace(
+            base.pass_constraint("build-pass-singleton"),
+            requires_next_pass=True,
+        )
+        catalog = NativeContractCatalog(
+            witnesses=base.witnesses,
+            storage_uses=base.storage_uses,
+            pass_constraints=(constraint,),
+        )
+        registry = build_registry(catalog)
+
+        assessment = registry.assess_support("build")
+
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertIn("next-pass", assessment.message)
+
     def test_default_build_lowering_records_and_enforces_pass_constraint(self):
         output = compile_source(SOURCE)
 
