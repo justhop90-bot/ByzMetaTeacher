@@ -69,7 +69,7 @@ A separate pending-admission rule moves issued to pending on the following scrip
 
 The typed completion-witness contract proves that completion evidence is an explicit world-state observation tied to the demand it establishes. The pending witness moves pending to complete.
 
-Release moves complete to released.
+The typed release-state contract requires release to be guarded by COMPLETE and transition only to RELEASED. Release is validated independently from completion witnessing.
 
 The action itself is never the witness, and issuance is not completion.
 
@@ -279,3 +279,8 @@ It is not successful merely because the compiler grows larger.
 ### Completion witness boundary
 
 Completion is admitted only through a typed `CompletionWitnessContract`. The contract records witness identity, evidence kind, native witness primitive, the demand/capability it establishes, and emitter-aligned source order relative to action issuance. The witness validator rejects timing evidence, non-completion-capable observations, action/witness coupling, identity mismatch, invalid evidence kind, and witness ordering violations before resource/capability validation. This layer validates causal evidence; it does not duplicate the runtime's world-state authority.
+
+
+### Release-state boundary
+
+A `ReleaseStateContract` explicitly records release identity, world-state evidence, the demand it establishes, `COMPLETE -> RELEASED`, and emitter-aligned source order relative to the completion witness. Release validation rejects timing-only release, action coupling, wrong-demand release, invalid lifecycle transitions, invalid evidence kinds, unknown native primitives, and release rules emitted after their completion-witness rule. The source-language release remains intentionally small; strategic invalidation/cancellation is a separate future contract.
