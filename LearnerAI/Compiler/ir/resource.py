@@ -6,7 +6,6 @@ from enum import Enum
 
 from ..ast import SourceLocation
 from .model import SemanticId
-from .capability import ProviderId
 
 
 class ResourceScope(str, Enum):
@@ -28,7 +27,7 @@ class ResourceClaim:
     identity: ResourceClaimId
     kind: ResourceKind
     scope: ResourceScope
-    claimant: ProviderId
+    claimant: SemanticId
     conflict_class: str
     arbitration_owner: SemanticId
     location: SourceLocation | None = None
@@ -40,7 +39,7 @@ class ConflictContract:
     kind: ResourceKind
     scope: ResourceScope
     arbitration_owner: SemanticId
-    providers: tuple[ProviderId, ...]
+    providers: tuple[SemanticId, ...]
 
 
 @dataclass(frozen=True)
