@@ -285,18 +285,6 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
             f"{location.source_unit}:{location.line}:{location.column}"
         )
 
-    while index < len(source) and source[index].isspace():
-        index += 1
-    name_start = index
-    while index < len(source) and not source[index].isspace() and source[index] not in "()":
-        index += 1
-    rule_name = source[name_start:index]
-    if not rule_name or rule_name == "=>":
-        raise CompileError(
-            f"RULE-PARSE-009: defrule is missing its rule name at "
-            f"{location.source_unit}:{location.line}:{location.column}"
-        )
-
     body_start = index
     facts, actions = _split_rule_body(
         source,
