@@ -163,7 +163,7 @@ Implemented and connected to the compile gate:
 Still required for a full player compiler:
 
 1. richer owner boundaries once strategy/domain owner declarations exist;
-2. resource/conflict relations beyond the existing build-pass singleton;
+2. resource/conflict semantics beyond the current transient action-exclusion layer;
 3. explicit action-issuance failure versus pending-state semantics;
 4. cancellation/obsolescence and capability-loss closure;
 5. broader source-order and same-pass visibility analysis across non-lifecycle state;
@@ -171,6 +171,8 @@ Still required for a full player compiler:
 7. Castle vertical-slice compilation against actual Basilisk strategy/economy semantics.
 
 The compiler should grow by semantic need, not by accumulating a second programming language.
+
+Resource arbitration is deliberately narrow. The current compiler models only transient action exclusion, such as the existing build-pass singleton. It does not invent persistent global resource reservations or a fairness scheduler.
 
 Do not add syntax first. Add semantic capability when a real player behavior requires it.
 
@@ -228,6 +230,8 @@ small lifecycle fixtures only. They are not the full Basilisk controller.
 Implemented now:
 - explicit typed demand ownership contracts;
 - typed lifecycle read/write accesses with deterministic emitter-aligned source order;
+- typed transient resource claims and conflict contracts;
+- deterministic resource/arbitration diagnostics before capability validation;
 - deterministic first-writer/first-consumer analysis;
 - ownership mismatch, missing-owner, conflicting-writer, duplicate-writer, consumer-before-writer, and unconsumed-state diagnostics;
 - compiler-gate integration before capability validation, runtime binding, and emission;
