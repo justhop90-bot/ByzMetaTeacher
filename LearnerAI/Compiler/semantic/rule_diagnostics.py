@@ -10,7 +10,7 @@ from ..ast import Expression, SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..primitives import PrimitiveRegistry, default_de_registry
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
-from .guard_satisfiability import analyze_guard
+from .guard_satisfiability import GuardSatisfiability, analyze_guard
 from .rule_execution import EffectiveRule, RuleExecutionReport
 
 
@@ -120,21 +120,30 @@ def analyze_rule_diagnostics(
         raise TypeError("report must be a RuleExecutionReport")
 
     registry = registry or default_de_registry()
-    fact_registry = registry.fact_registry
+    try:
+        fact_registry = registry.fact_registry
+    except ValueError:
+        # Some compiler fixtures deliberately exercise native support without
+        # a semantic fact bridge. Public rule diagnostics fail closed.
+        fact_registry = None
     runtime_demand_states = runtime_demand_states or {}
     completion_witnesses = completion_witnesses or {}
 
     diagnostics: list[RuleDiagnostic] = []
     for rule in report.rules:
-        try:
-            guard = analyze_guard(
-                _guard_expression(rule),
-                fact_registry,
-            )
-        except ValueError:
-            # Rule diagnostics are advisory. A guard shape outside the current
-            # static-proof domain is runtime-dependent, not a compiler crash.
+        if fact_registry is None:
             guard = GuardSatisfiability.UNKNOWN
+        else:
+            try:
+                guard = analyze_guard(
+                    _guard_expression(rule),
+                    fact_registry,
+                )
+            except ValueError:
+                # Rule diagnostics are advisory. A guard shape outside the
+                # current static-proof domain is runtime-dependent, not a
+                # compiler crash.
+                guard = GuardSatisfiability.UNKNOWN
         eligibility = analyze_firing_eligibility(
             rule,
             guard,
