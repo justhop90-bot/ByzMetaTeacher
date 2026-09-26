@@ -84,8 +84,20 @@ class GameDataHardeningTests(unittest.TestCase):
         self.assertNotIn(UnitId(588), self.data.available_units)
         self.assertNotIn(UnitId(542), self.data.available_units)
 
+    def test_explicit_upgrade_relations_cover_all_bidirectional_upgrade_edges(self):
+        edges = {
+            (int(relation.previous), int(relation.current))
+            for relation in self.data.upgrade_relations
+        }
+        self.assertIn((93, 358), edges)
+        self.assertIn((358, 359), edges)
+        self.assertIn((40, 553), edges)
+        self.assertIn((2703, 2704), edges)
+
     def test_factual_costs_for_current_land_additions(self):
         self.assertEqual(self.data.cost_of("unit:5"), ResourceCost(food=45, gold=50))
+        self.assertEqual(self.data.cost_of("unit:7"), ResourceCost(food=19, wood=26))
+        self.assertEqual(self.data.cost_of("unit:6"), ResourceCost(food=19, wood=26))
         self.assertEqual(self.data.cost_of("unit:39"), ResourceCost(wood=40, gold=60))
         self.assertEqual(self.data.cost_of("unit:2703"), ResourceCost(food=65, gold=45))
         self.assertEqual(self.data.cost_of("unit:2704"), ResourceCost(food=65, gold=45))
