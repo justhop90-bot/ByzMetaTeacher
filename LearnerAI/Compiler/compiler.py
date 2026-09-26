@@ -47,6 +47,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
+    from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
 else:
     from dataclasses import replace
     from .backends.errors import NativeBackendError
@@ -78,6 +79,7 @@ else:
     from .semantic.resource_conflicts import validate_resource_conflicts
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
+    from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
 
 
 _DEFAULT_NATIVE_BACKEND_ROOT = (
@@ -208,6 +210,20 @@ def _compile_ir_parts(
     return emit(ir, bindings, registry=registry), bindings, context
 
 
+def _parse_source_slices(slices) -> list:
+    ast = []
+    for slice_ in slices:
+        ast.extend(
+            parse(
+                slice_.text,
+                source_unit=str(slice_.path),
+                line_offset=slice_.start_line - 1,
+                first_line_column_offset=slice_.start_column - 1,
+            )
+        )
+    return ast
+
+
 def _compile_source_parts(
     source: str,
     base_goal: int = 41,
@@ -216,7 +232,7 @@ def _compile_source_parts(
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
 ):
-    ast = parse(source)
+    ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=source_unit)
     return _compile_ir_parts(
@@ -225,6 +241,28 @@ def _compile_source_parts(
         base_goal,
         binding_context=binding_context,
     )
+
+
+def _compile_package_parts(
+    request: SourceGraphRequest,
+    base_goal: int = 41,
+    *,
+    binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
+):
+    graph = SourceGraphResolver().resolve(request)
+    ast = _parse_source_slices(graph.slices)
+    registry = registry or default_de_registry()
+    ir = analyze(ast, registry, source_unit=None)
+    result, bindings, context = _compile_ir_parts(
+        ir,
+        registry,
+        base_goal,
+        binding_context=binding_context,
+    )
+    return result, bindings, context, graph
+
+
 
 
 def compile_semantic_demands(
@@ -272,6 +310,22 @@ def _binding_manifest_text(bindings, context: BindingContext) -> str:
     ).to_json()
 
 
+def compile_package(
+    request: SourceGraphRequest,
+    base_goal: int = 41,
+    *,
+    binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
+) -> str:
+    result, _bindings, _context, _graph = _compile_package_parts(
+        request,
+        base_goal,
+        binding_context=binding_context,
+        registry=registry,
+    )
+    return result
+
+
 def compile_source(
     source: str,
     base_goal: int = 41,
@@ -288,6 +342,74 @@ def compile_source(
         registry=registry,
     )
     return result
+
+
+def compile_package_with_report(
+    request: SourceGraphRequest,
+    output: Path,
+    *,
+    base_goal: int = 41,
+    native_backend: Aoe2NativeBackend | None = None,
+    binding_context: BindingContext | None = None,
+    binding_manifest: Path | None = None,
+    registry: PrimitiveRegistry | None = None,
+) -> CombinedValidationReport:
+    if native_backend is None:
+        return backend_failure_report(
+            "native validation backend is required before artifact promotion",
+            output,
+        )
+    try:
+        result, bindings, context, _graph = _compile_package_parts(
+            request,
+            base_goal,
+            binding_context=binding_context,
+            registry=registry,
+        )
+        manifest_text = _binding_manifest_text(bindings, context)
+    except (CompileError, OSError, ValueError) as exc:
+        return semantic_failure_report(exc, output)
+
+    output = output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if binding_manifest is not None:
+        binding_manifest = binding_manifest.resolve()
+        binding_manifest.parent.mkdir(parents=True, exist_ok=True)
+        if binding_manifest == output:
+            raise ValueError("binding manifest path must differ from .per output path")
+
+    fd, staged_name = tempfile.mkstemp(
+        prefix=f".{output.stem}.",
+        suffix=".per.stage",
+        dir=output.parent,
+    )
+    os.close(fd)
+    staged = Path(staged_name)
+    staged_manifest = None
+    if binding_manifest is not None:
+        fd, staged_manifest_name = tempfile.mkstemp(
+            prefix=f".{binding_manifest.stem}.",
+            suffix=".json.stage",
+            dir=binding_manifest.parent,
+        )
+        os.close(fd)
+        staged_manifest = Path(staged_manifest_name)
+
+    try:
+        staged.write_text(result, encoding="utf-8")
+        if staged_manifest is not None:
+            staged_manifest.write_text(manifest_text, encoding="utf-8")
+        native_result = _normalize_native_validation(native_backend.validate(staged))
+        report = report_from_native_result(native_result, output)
+        if report.status is ReportStatus.VALIDATED:
+            os.replace(staged, output)
+            if staged_manifest is not None:
+                os.replace(staged_manifest, binding_manifest)
+        return report
+    finally:
+        staged.unlink(missing_ok=True)
+        if staged_manifest is not None:
+            staged_manifest.unlink(missing_ok=True)
 
 
 def compile_source_with_report(

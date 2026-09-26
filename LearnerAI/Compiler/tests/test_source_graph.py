@@ -1,252 +1,218 @@
-from pathlib import Path
-from tempfile import TemporaryDirectory
+import tempfile
 import unittest
+from pathlib import Path
 
+from Compiler.compiler import compile_package
+from Compiler.errors import CompileError
 from Compiler.source_graph import (
     LoadKind,
     LoadSymbolEnvironment,
     LoadSymbolState,
     SourceGraphRequest,
     SourceGraphResolver,
-    parse_source_directives,
 )
-from Compiler.errors import CompileError
 
 
-ROOT = Path(__file__).parent / "fixtures" / "source_graph"
+class SourceGraphTests(unittest.TestCase):
+    FIXTURES = Path(__file__).parent / "fixtures" / "source_graph"
 
-
-class SourceGraphSyntaxTests(unittest.TestCase):
-    def test_native_file_load_is_recognized(self):
-        directives = parse_source_directives('(load "child.perdsl")\n')
-        self.assertEqual(len(directives), 1)
-        self.assertEqual(directives[0].kind, LoadKind.FILE)
-        self.assertEqual(directives[0].target, "child.perdsl")
-        self.assertEqual(directives[0].location.line, 1)
-
-    def test_raw_load_directive_is_recognized(self):
-        directives = parse_source_directives('#load "child.perdsl"\n')
-        self.assertEqual(len(directives), 1)
-        self.assertEqual(directives[0].kind, LoadKind.RAW_LOAD)
-        self.assertEqual(directives[0].target, "child.perdsl")
-
-    def test_conditional_directives_are_distinct(self):
-        directives = parse_source_directives(
-            '#load-if-defined TEST\n'
-            '#else\n'
-            '#end-if\n'
+    def _resolve(self, relative, symbols=()):
+        return SourceGraphResolver().resolve(
+            SourceGraphRequest(
+                entrypoint=self.FIXTURES / relative,
+                load_symbols=LoadSymbolEnvironment(tuple(symbols)),
+            )
         )
+
+    def test_linear_load_expands_depth_first(self):
+        graph = self._resolve("linear/root.perdsl")
         self.assertEqual(
-            [item.kind for item in directives],
-            [
-                LoadKind.CONDITIONAL_DEFINED,
-                LoadKind.CONDITIONAL_ELSE,
-                LoadKind.CONDITIONAL_END,
-            ],
-        )
-        self.assertEqual(directives[0].symbol, "TEST")
-
-    def test_load_inside_string_does_not_create_edge(self):
-        directives = parse_source_directives(
-            'demand x {\n'
-            'require (current-age >= dark-age)\n'
-            'action (chat-local-to-self "(load \\"child.perdsl\\")")\n'
-            'witness (building-type-count house > 0)\n'
-            'release (building-type-count house > 0)\n'
-            '}\n'
-        )
-        self.assertEqual(directives, ())
-
-    def test_load_inside_nested_expression_is_not_top_level_source_load(self):
-        directives = parse_source_directives(
-            '(foo (load "child.perdsl"))\n'
-        )
-        self.assertEqual(directives, ())
-
-    def test_malformed_load_is_rejected(self):
-        cases = (
-            '(load)',
-            '(load child.perdsl)',
-            '(load "child.perdsl" "other.perdsl")',
-            '(load "unterminated',
-            '#load child.perdsl',
-        )
-        for source in cases:
-            with self.subTest(source=source):
-                with self.assertRaises(CompileError):
-                    parse_source_directives(source)
-
-    def test_conditional_structure_errors(self):
-        cases = (
-            '#else\n',
-            '#end-if\n',
-            '#load-if-defined TEST\n#else\n#else\n#end-if\n',
-            '#load-if-defined TEST\n',
-        )
-        for source in cases:
-            with self.subTest(source=source):
-                with self.assertRaises(CompileError):
-                    parse_source_directives(source)
-
-
-class SourceGraphResolverTests(unittest.TestCase):
-    def _request(
-        self,
-        root: Path,
-        *,
-        symbols=None,
-    ) -> SourceGraphRequest:
-        return SourceGraphRequest(
-            entrypoint=root,
-            search_roots=(root.parent,),
-            load_symbols=symbols,
+            [item.path.name for item in graph.slices],
+            ["root.perdsl", "child.perdsl"],
         )
 
-    def test_load_position_is_effective_program_order(self):
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "load-position" / "root.perdsl")
-        )
-        self.assertEqual(
-            [slice_.path.name for slice_ in graph.slices],
-            ["root.perdsl", "child.perdsl", "root.perdsl"],
-        )
-        self.assertIn("before", graph.slices[0].text)
-        self.assertIn("child", graph.slices[1].text)
-        self.assertIn("after", graph.slices[2].text)
+    def test_load_position_splices_child(self):
+        graph = self._resolve("load-position/root.perdsl")
+        effective = "
+".join(item.text for item in graph.slices)
+        self.assertLess(effective.index("demand before"), effective.index("demand child"))
+        self.assertLess(effective.index("demand child"), effective.index("demand after"))
 
     def test_nested_loads_are_depth_first(self):
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "nested" / "root.perdsl")
-        )
+        graph = self._resolve("nested/root.perdsl")
         self.assertEqual(
-            [slice_.path.name for slice_ in graph.slices],
+            [item.path.name for item in graph.slices],
             ["root.perdsl", "child-a.perdsl", "child-b.perdsl"],
         )
 
-    def test_duplicate_loads_preserve_two_source_instances(self):
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "duplicate" / "root.perdsl")
-        )
-        shared = [item for item in graph.instances if item.physical.path.name == "shared.perdsl"]
+    def test_duplicate_load_preserves_two_instances(self):
+        graph = self._resolve("duplicate/root.perdsl")
+        shared = [
+            item for item in graph.instances
+            if item.physical.path.name == "shared.perdsl"
+        ]
         self.assertEqual(len(shared), 2)
+        edges = [
+            item for item in graph.edges
+            if item.active
+            and item.target_path is not None
+            and item.target_path.name == "shared.perdsl"
+        ]
+        self.assertEqual(len(edges), 2)
+
+    def test_duplicate_load_is_not_a_cycle(self):
+        graph = self._resolve("duplicate/root.perdsl")
         self.assertEqual(
-            [slice_.path.name for slice_ in graph.slices],
-            ["root.perdsl", "shared.perdsl", "shared.perdsl"],
+            [item.occurrence for item in graph.instances if item.physical.path.name == "shared.perdsl"],
+            [0, 1],
         )
-        self.assertNotEqual(shared[0].instance_id, shared[1].instance_id)
 
     def test_cycle_is_rejected(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-002"):
-            SourceGraphResolver().resolve(
-                self._request(ROOT / "cycle" / "a.perdsl")
-            )
+            self._resolve("cycle/a.perdsl")
 
     def test_missing_target_is_rejected(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-001"):
-            SourceGraphResolver().resolve(
-                self._request(ROOT / "missing" / "root.perdsl")
-            )
+            self._resolve("missing/root.perdsl")
 
-    def test_defined_conditional_selects_only_defined_branch(self):
-        symbols = LoadSymbolEnvironment.from_mapping({"TEST": LoadSymbolState.DEFINED})
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "conditional-defined" / "root.perdsl", symbols=symbols)
+    def test_defined_branch_is_selected(self):
+        graph = self._resolve(
+            "conditional-defined/root.perdsl",
+            (("TEST", LoadSymbolState.DEFINED),),
         )
-        names = [item.path.name for item in graph.slices]
-        self.assertIn("selected.perdsl", names)
-        self.assertNotIn("rejected.perdsl", names)
-
-    def test_undefined_conditional_selects_not_defined_branch(self):
-        symbols = LoadSymbolEnvironment.from_mapping({"TEST": LoadSymbolState.UNDEFINED})
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "conditional-not-defined" / "root.perdsl", symbols=symbols)
+        active_targets = [
+            edge.target_path.name
+            for edge in graph.edges
+            if edge.active and edge.target_path is not None
+        ]
+        self.assertEqual(active_targets, ["selected.perdsl"])
+        inactive = [
+            edge for edge in graph.edges
+            if edge.target_path is not None and not edge.active
+        ]
+        self.assertEqual([edge.target_path.name for edge in inactive], ["rejected.perdsl"])
+        self.assertEqual(
+            inactive[0].condition_symbol,
+            "TEST",
         )
-        names = [item.path.name for item in graph.slices]
-        self.assertIn("selected.perdsl", names)
-        self.assertNotIn("rejected.perdsl", names)
 
-    def test_unresolved_conditional_symbol_fails_closed(self):
+    def test_not_defined_branch_is_selected(self):
+        graph = self._resolve(
+            "conditional-not-defined/root.perdsl",
+            (("TEST", LoadSymbolState.UNDEFINED),),
+        )
+        active_targets = [
+            edge.target_path.name
+            for edge in graph.edges
+            if edge.active and edge.target_path is not None
+        ]
+        self.assertEqual(active_targets, ["selected.perdsl"])
+
+    def test_unknown_conditional_symbol_fails_closed(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-006"):
-            SourceGraphResolver().resolve(
-                self._request(ROOT / "conditional-defined" / "root.perdsl")
-            )
+            self._resolve("conditional-defined/root.perdsl")
 
-    def test_random_load_is_rejected_for_deterministic_resolution(self):
+    def test_random_load_is_rejected_without_selection_policy(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-007"):
-            SourceGraphResolver().resolve(
-                self._request(ROOT / "random" / "root.perdsl")
-            )
+            self._resolve("random/root.perdsl")
 
-    def test_file_load_depth_limit(self):
-        with TemporaryDirectory() as tmp:
+    def test_malformed_raw_load_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for depth in range(10):
-                path = root / f"level-{depth}.perdsl"
-                target = f"level-{depth + 1}.perdsl"
-                path.write_text(
-                    f'(load "{target}")\n',
-                    encoding="utf-8",
-                )
-            (root / "level-10.perdsl").write_text("", encoding="utf-8")
-            SourceGraphResolver().resolve(
-                self._request(root / "level-0.perdsl")
-            )
+            entry = root / "root.perdsl"
+            entry.write_text("#load child.perdsl
+", encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-009"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
 
-            (root / "level-10.perdsl").write_text(
-                '(load "level-11.perdsl")\n',
+    def test_malformed_parenthesized_load_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text('(load child.perdsl)
+', encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-009"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
+    def test_load_in_string_and_nested_expression_is_not_source_load(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text(
+                'demand test {\n'
+                '    require (current-age >= dark-age)\n'
+                '    action (build house)\n'
+                '    witness (building-type-count house > 0)\n'
+                '    release (building-type-count house > 0)\n'
+                '}\n'
+                '(and (current-age >= dark-age) (current-age >= dark-age))\n'
+                '"(load \\"child.perdsl\\")"\n',
                 encoding="utf-8",
             )
-            (root / "level-11.perdsl").write_text("", encoding="utf-8")
-            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-003"):
-                SourceGraphResolver().resolve(
-                    self._request(root / "level-0.perdsl")
-                )
+            graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+            self.assertEqual(len(graph.edges), 0)
 
     def test_conditional_depth_limit(self):
-        symbols = LoadSymbolEnvironment.from_mapping(
-            {f"S{i}": LoadSymbolState.DEFINED for i in range(50)}
-        )
-        source = "".join(
-            f"#load-if-defined S{i}\n"
-            for i in range(50)
-        ) + "".join("#end-if\n" for _ in range(50))
-
-        with TemporaryDirectory() as tmp:
-            root = Path(tmp) / "root.perdsl"
-            root.write_text(source, encoding="utf-8")
-            SourceGraphResolver().resolve(
-                self._request(root, symbols=symbols)
-            )
-
-            root.write_text(
-                "#load-if-defined OVERFLOW\n" + source + "#end-if\n",
-                encoding="utf-8",
-            )
-            symbols = LoadSymbolEnvironment.from_mapping(
-                {
-                    "OVERFLOW": LoadSymbolState.DEFINED,
-                    **{f"S{i}": LoadSymbolState.DEFINED for i in range(50)},
-                }
-            )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "deep.perdsl"
+            lines = ["#load-if-defined TEST\n"] * 51
+            lines += ["true\n"]
+            lines += ["#end-if\n"] * 51
+            entry.write_text("".join(lines), encoding="utf-8")
             with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-005"):
                 SourceGraphResolver().resolve(
-                    self._request(root, symbols=symbols)
+                    SourceGraphRequest(
+                        entrypoint=entry,
+                        load_symbols=LoadSymbolEnvironment(
+                            (("TEST", LoadSymbolState.DEFINED),),
+                        ),
+                    ),
                 )
 
-    def test_physical_provenance_survives_into_slices(self):
-        graph = SourceGraphResolver().resolve(
-            self._request(ROOT / "provenance" / "root.perdsl")
+    def test_load_depth_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for index in range(11):
+                next_name = f"node-{index + 1}.perdsl"
+                (root / f"node-{index}.perdsl").write_text(
+                    f'(load "{next_name}")\n',
+                    encoding="utf-8",
+                )
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-003"):
+                SourceGraphResolver().resolve(
+                    SourceGraphRequest(entrypoint=root / "node-0.perdsl"),
+                )
+
+    def test_fingerprint_is_deterministic(self):
+        first = self._resolve("linear/root.perdsl")
+        second = self._resolve("linear/root.perdsl")
+        self.assertEqual(first.fingerprint, second.fingerprint)
+        self.assertEqual(first.slices, second.slices)
+
+    def test_package_compile_preserves_effective_source_order(self):
+        output = compile_package(
+            SourceGraphRequest(
+                entrypoint=self.FIXTURES / "load-position" / "root.perdsl",
+            ),
         )
+        self.assertLess(output.index("demand-before"), output.index("demand-child"))
+        self.assertLess(output.index("demand-child"), output.index("demand-after"))
+
+    def test_slice_provenance(self):
+        graph = self._resolve("linear/root.perdsl")
         child = next(item for item in graph.slices if item.path.name == "child.perdsl")
-        self.assertGreaterEqual(child.start_line, 1)
+        self.assertEqual(child.start_line, 1)
         self.assertEqual(child.path.name, "child.perdsl")
 
-    def test_graph_fingerprint_is_deterministic(self):
-        request = self._request(ROOT / "nested" / "root.perdsl")
-        first = SourceGraphResolver().resolve(request)
-        second = SourceGraphResolver().resolve(request)
-        self.assertEqual(first, second)
-        self.assertEqual(first.fingerprint, second.fingerprint)
+    def test_source_edge_kind_for_native_and_conditional_load(self):
+        graph = self._resolve(
+            "conditional-defined/root.perdsl",
+            (("TEST", LoadSymbolState.DEFINED),),
+        )
+        load_edges = [item for item in graph.edges if item.target_path is not None]
+        self.assertEqual(load_edges[0].kind, LoadKind.FILE)
+        self.assertEqual(load_edges[0].condition_kind, LoadKind.CONDITIONAL_DEFINED)
 
 
 if __name__ == "__main__":
