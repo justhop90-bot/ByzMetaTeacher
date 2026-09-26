@@ -1232,6 +1232,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 excerpt=SourceExcerpt.capture(
                     "AI scripts has 512 different goals they can use to store different values, which are numbered from 1 to 512.",
                     ExcerptKind.FACT,
+                    locator_text="Goals: 1 to 512",
                 ),
                 semantic_scope=CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE,
                 state=CitationState.VERIFIED,
