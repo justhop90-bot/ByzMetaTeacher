@@ -32,6 +32,11 @@ class StrategicEvidenceSource(str, Enum):
     COMMUNITY_META = "COMMUNITY_META"
 
 
+class StrategicCapabilityObservationKind(str, Enum):
+    EXECUTION_FEASIBILITY = "EXECUTION_FEASIBILITY"
+    PROVIDER_WORLD_STATE = "PROVIDER_WORLD_STATE"
+
+
 class StrategicTargetKind(str, Enum):
     EXACT = "EXACT"
     STANDING_FLOOR = "STANDING_FLOOR"
@@ -198,6 +203,9 @@ class StrategicCapabilityObservation:
     expression: str
     source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
     provenance: tuple[EvidenceRef, ...] = ()
+    observation_kind: StrategicCapabilityObservationKind = (
+        StrategicCapabilityObservationKind.EXECUTION_FEASIBILITY
+    )
 
 
 @dataclass(frozen=True)
@@ -339,14 +347,39 @@ def _validate_capability_observations(
             str(unit_id),
             unit.name.lower().replace(" ", "-"),
         }
-        from_expression = observation.expression.strip()
-        if not from_expression.startswith("(can-train"):
+        from_expression = observation.expression.strip().lower()
+        if observation.observation_kind is StrategicCapabilityObservationKind.EXECUTION_FEASIBILITY:
+            if not from_expression.startswith("(can-train"):
+                raise ValueError(
+                    f"strategic capability observation '{observation.identity}' must use a can-train native primitive"
+                )
+            if not any(alias in from_expression for alias in aliases):
+                raise ValueError(
+                    f"strategic capability observation '{observation.identity}' does not bind its declared unit"
+                )
+        elif observation.observation_kind is StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE:
+            provider = observation.capability.provider_building
+            if provider is None:
+                raise ValueError(
+                    f"provider-state capability observation '{observation.identity}' requires a provider building"
+                )
+            provider_item = effective.building(provider)
+            provider_aliases = {
+                str(int(provider_item.id)),
+                provider_item.name.lower().replace(" ", "-"),
+            }
+            if not from_expression.startswith("(building-type-count"):
+                raise ValueError(
+                    f"provider-state capability observation '{observation.identity}' must use building-type-count"
+                )
+            if not any(alias in from_expression for alias in provider_aliases):
+                raise ValueError(
+                    f"provider-state capability observation '{observation.identity}' does not bind its provider building"
+                )
+        else:
             raise ValueError(
-                f"strategic capability observation '{observation.identity}' must use a can-train native primitive"
-            )
-        if not any(alias in from_expression.lower() for alias in aliases):
-            raise ValueError(
-                f"strategic capability observation '{observation.identity}' does not bind its declared unit"
+                f"strategic capability observation '{observation.identity}' has unsupported observation kind "
+                f"'{observation.observation_kind.value}'"
             )
 
 
