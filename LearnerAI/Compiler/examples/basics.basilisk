@@ -1,0 +1,29 @@
+# Minimal Basilisk compiler examples.
+
+demand castle {
+    require (players-current-age >= castle)
+    require (building-available castle)
+    require (can-afford-building castle)
+    require (can-build castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
+
+demand defensive-spearmen {
+    require (players-current-age >= feudal)
+    require (unit-type-count-total spearman < 2)
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 2)
+    release (unit-type-count spearman >= 2)
+}
+
+demand wheelbarrow {
+    require (research-available ri-wheelbarrow)
+    require (can-afford-research ri-wheelbarrow)
+    require (can-research ri-wheelbarrow)
+    action (research ri-wheelbarrow)
+    witness (research-completed ri-wheelbarrow)
+    release (research-completed ri-wheelbarrow)
+}
