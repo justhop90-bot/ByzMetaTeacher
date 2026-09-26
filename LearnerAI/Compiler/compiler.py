@@ -35,6 +35,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.action_issuance import validate_action_issuance
     from Compiler.semantic.completion_witness import validate_completion_witnesses
     from Compiler.semantic.release_state import validate_release_states
+    from Compiler.semantic.invalidation import validate_invalidation_contracts
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
@@ -59,6 +60,7 @@ else:
     from .semantic.action_issuance import validate_action_issuance
     from .semantic.completion_witness import validate_completion_witnesses
     from .semantic.release_state import validate_release_states
+    from .semantic.invalidation import validate_invalidation_contracts
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
@@ -103,6 +105,10 @@ def _compile_source_parts(
     release_report = validate_release_states(ir, registry)
     if release_report.errors:
         diagnostic = release_report.errors[0]
+        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    invalidation_report = validate_invalidation_contracts(ir, registry)
+    if invalidation_report.errors:
+        diagnostic = invalidation_report.errors[0]
         raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
     issuance_report = validate_action_issuance(ir, registry)
     if issuance_report.errors:
