@@ -140,6 +140,8 @@ class EffectiveCivData:
     patch_changes: tuple[PatchChange, ...]
     fingerprint: str
     coverage: FactualCoverage
+    scope: GameDataScope
+    scope_civ_id: CivId | None
 
     def building(self, building_id: int) -> BuildingDef:
         return next(item for item in self.buildings if item.id == BuildingId(building_id))
@@ -517,6 +519,8 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         patch_changes=profile.patch_changes,
         fingerprint=fingerprint,
         coverage=profile.base_data.coverage,
+        scope=profile.base_data.scope,
+        scope_civ_id=profile.base_data.scope_civ_id,
     )
 
 
