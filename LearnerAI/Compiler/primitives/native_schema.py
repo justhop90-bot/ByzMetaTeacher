@@ -39,6 +39,9 @@ class NativeCommandRegistry:
         source_blob_sha: str,
         command_count: int,
     ):
+        names = [command.name for command in commands]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate native command name")
         self._items = {command.name: command for command in commands}
         self.source_blob_sha = source_blob_sha
         self.command_count = command_count
