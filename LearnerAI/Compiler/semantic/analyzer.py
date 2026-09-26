@@ -355,6 +355,24 @@ def analyze(
                 source_order=lifecycle_base + 5,
                 operation="pending-admission",
             ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.READ,
+                phase=LifecycleAccessPhase.ISSUANCE,
+                source_order=lifecycle_base + 6,
+                operation="action-issuance",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.WRITE,
+                phase=LifecycleAccessPhase.ISSUANCE,
+                source_order=lifecycle_base + 7,
+                operation="action-issuance",
+            ),
         )
         result.append(
             SemanticDemand(
