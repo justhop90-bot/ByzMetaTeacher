@@ -8,6 +8,8 @@ from ..ir import (
     ActionIssuance,
     ActionIssuanceFailure,
     ActionIssuancePhase,
+    CompletionWitnessContract,
+    WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
     GoalSlotRequest,
@@ -257,10 +259,12 @@ def analyze(
         if not demand.witness.strip() or demand.witness.strip() == "()":
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
-        if "TIMING" in _context_roles(witness, registry):
-            raise CompileError("TIMING-CANNOT-WITNESS: demand " + demand.name + " cannot use timing as completion witness")
-        _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
-        _validate_completion_witness(witness, registry)
+        _validate_context(
+            witness,
+            registry,
+            {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
+            f"demand '{demand.name}' witness",
+        )
         release = parse_expression(demand.release)
         if "TIMING" in _context_roles(release, registry):
             raise CompileError("TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " release cannot depend on timing")
@@ -275,12 +279,24 @@ def analyze(
             slot=GoalSlotRequest(request_id=request_id, role=GoalRole.LIFECYCLE_STATE),
             initial_state=LifecycleState.ACTIVE,
         )
+        lifecycle_base = len(demands) + (len(result) * 8)
+        completion_witness = CompletionWitnessContract(
+            identity=SemanticId(
+                source_unit=source_unit,
+                local_name=f"{demand.name}-witness",
+            ),
+            evidence_kind=WitnessEvidenceKind.WORLD_STATE,
+            primitive=witness.head,
+            expression=witness,
+            establishes=semantic_id,
+            source_order=lifecycle_base + 2,
+            issuance_source_order=lifecycle_base + 6,
+        )
         ownership = DemandOwnership(
             demand=semantic_id,
             owner=semantic_id,
             state=request_id,
         )
-        lifecycle_base = len(demands) + (len(result) * 8)
         action_issuance = ActionIssuance(
             demand=semantic_id,
             primitive=action.head,
@@ -382,6 +398,7 @@ def analyze(
                 action=SemanticAction(action, "ACTION", arbitration_request),
                 action_issuance=action_issuance,
                 witness=witness,
+                completion_witness=completion_witness,
                 release=release,
                 ownership=ownership,
                 state_accesses=state_accesses,
