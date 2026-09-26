@@ -94,6 +94,15 @@ def _contains_timing(expr, registry: PrimitiveRegistry) -> bool:
     )
 
 
+def _contains_primitive(expr, name: str) -> bool:
+    if expr.head == name:
+        return True
+    return any(
+        hasattr(argument, "head") and _contains_primitive(argument, name)
+        for argument in expr.args
+    )
+
+
 def _completion_primitive(expr, registry: PrimitiveRegistry) -> tuple[bool, str | None]:
     primitive = registry.get(expr.head)
     if primitive is not None:
@@ -157,29 +166,43 @@ def validate_completion_witnesses(
                 )
             )
 
-        primitive = registry.get(contract.primitive)
-        if primitive is None:
-            diagnostics.append(
-                _diag(
-                    WitnessDiagnosticCode.NATIVE_PRIMITIVE_INVALID,
-                    WitnessStatus.BLOCKED,
-                    f"completion witness for demand '{demand.name}' references unknown "
-                    f"primitive '{contract.primitive}'",
-                    demand.identity,
+        if not _contains_primitive(
+            contract.expression,
+            demand.action.expression.head,
+        ):
+            primitive = registry.get(contract.primitive)
+            if primitive is None and contract.expression.head not in {"and", "or", "nand", "nor", "xor", "xnor", "not"}:
+                diagnostics.append(
+                    _diag(
+                        WitnessDiagnosticCode.NATIVE_PRIMITIVE_INVALID,
+                        WitnessStatus.BLOCKED,
+                        f"completion witness for demand '{demand.name}' references unknown "
+                        f"primitive '{contract.primitive}'",
+                        demand.identity,
+                    )
                 )
-            )
-        elif not primitive.completion_witness:
+            elif primitive is not None and not primitive.completion_witness:
+                diagnostics.append(
+                    _diag(
+                        WitnessDiagnosticCode.NO_COMPLETION_CAPABLE_OBSERVATION,
+                        WitnessStatus.OPEN_LOOP,
+                        f"completion witness for demand '{demand.name}' contains no "
+                        "completion-capable native observation",
+                        demand.identity,
+                    )
+                )
+        else:
             diagnostics.append(
                 _diag(
-                    WitnessDiagnosticCode.NO_COMPLETION_CAPABLE_OBSERVATION,
-                    WitnessStatus.OPEN_LOOP,
-                    f"completion witness for demand '{demand.name}' contains no "
-                    "completion-capable native observation",
+                    WitnessDiagnosticCode.ACTION_COUPLING,
+                    WitnessStatus.CONFLICTING,
+                    f"completion witness for demand '{demand.name}' reuses action primitive "
+                    f"'{demand.action.expression.head}'",
                     demand.identity,
                 )
             )
 
-        completion_capable, observed_primitive = _completion_primitive(
+        completion_capable, _ = _completion_primitive(
             contract.expression,
             registry,
         )
@@ -190,16 +213,6 @@ def validate_completion_witnesses(
                     WitnessStatus.OPEN_LOOP,
                     f"completion witness for demand '{demand.name}' contains no "
                     "completion-capable native observation",
-                    demand.identity,
-                )
-            )
-        elif observed_primitive == demand.action.expression.head:
-            diagnostics.append(
-                _diag(
-                    WitnessDiagnosticCode.ACTION_COUPLING,
-                    WitnessStatus.CONFLICTING,
-                    f"completion witness for demand '{demand.name}' reuses action primitive "
-                    f"'{demand.action.expression.head}'",
                     demand.identity,
                 )
             )
