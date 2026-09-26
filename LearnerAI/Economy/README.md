@@ -31,6 +31,8 @@ Dark -> Feudal -> Castle economy.
 
 The Feudal economy must preserve enough military defense without destroying the Castle trajectory.
 
+For Arabia timing-window worker packets, resource modes, crisis arbitration, and release rules, read `LearnerAI/ARABIA_ECONOMIC_REACTIONS.md`.
+
 Castle economy must immediately support farm expansion, production capacity, and economically admissible Town Center growth.
 
 ## Recovery responsibility
