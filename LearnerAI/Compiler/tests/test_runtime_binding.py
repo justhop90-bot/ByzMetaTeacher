@@ -94,17 +94,17 @@ class RuntimeBindingTests(unittest.TestCase):
         )
 
     def test_binder_rejects_goal_zero(self):
-        with self.assertRaisesRegex(ValueError, "GoalId base must be in range 1..16000"):
+        with self.assertRaisesRegex(ValueError, "ordinary Goal storage base must be in range 41..512"):
             RuntimeBinder(base_goal=0).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
-    def test_binder_rejects_lifecycle_goal_without_encoding_headroom(self):
+    def test_binder_rejects_ordinary_goal_base_above_storage_pool(self):
         request = self._ir()[0].lifecycle.slot
-        with self.assertRaisesRegex(ValueError, "lifecycle GoalId must leave room"):
-            RuntimeBinder(base_goal=16000).bind((request,))
+        with self.assertRaisesRegex(ValueError, "ordinary Goal storage base must be in range 41..512"):
+            RuntimeBinder(base_goal=513).bind((request,))
 
     def test_binder_rejects_goal_overflow(self):
         with self.assertRaisesRegex(ValueError, "unable to allocate lifecycle GoalId"):
-            RuntimeBinder(base_goal=16000).bind(tuple(d.lifecycle.slot for d in self._ir()))
+            RuntimeBinder(base_goal=512).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_respects_occupied_goal_ids(self):
         result = RuntimeBinder(base_goal=41).bind(
@@ -282,7 +282,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 40, 40, "goal"),
                 self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
                 self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
                 self._reservation(StorageKind.TIMER, 7, 7, "timer"),
@@ -356,8 +356,8 @@ class PackageStorageInventoryTests(unittest.TestCase):
         )
         result = RuntimeBinder(base_goal=41).bind(requests, context)
 
-        self.assertEqual(result.binding_for(requests[0].request_id).id.value, 42)
-        self.assertEqual(result.binding_for(requests[1].request_id).start.value, 43)
+        self.assertEqual(result.binding_for(requests[0].request_id).id.value, 43)
+        self.assertEqual(result.binding_for(requests[1].request_id).start.value, 44)
         self.assertEqual(result.binding_for(requests[2].request_id).id, 509)
         self.assertEqual(result.binding_for(requests[3].request_id).id, 2)
 
