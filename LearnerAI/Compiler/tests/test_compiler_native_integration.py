@@ -196,8 +196,8 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             reservations=(
                 PackageStorageReservation(
                     kind=StorageKind.GOAL_SLOT,
-                    start=1000,
-                    end=1000,
+                    start=500,
+                    end=500,
                     provenance_id="external-goal",
                 ),
             ),
