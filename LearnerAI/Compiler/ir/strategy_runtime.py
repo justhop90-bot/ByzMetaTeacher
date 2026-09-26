@@ -14,6 +14,7 @@ from .strategy import (
     CapabilityIntentKind,
     StrategicCapabilityObservation,
     StrategicDemandSpec,
+    StrategicEnemyCompositionObservation,
     StrategicEvidence,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
@@ -138,6 +139,7 @@ class StrategyRuntimeState:
         ...
     ] = ()
     evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
+    evaluated_enemy_composition_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -210,6 +212,55 @@ def bind_strategic_capability_observation(
     ):
         raise ValueError(
             f"strategic capability observation '{observation.identity}' did not bind to UNIT_CAPABILITY"
+        )
+    return binding
+
+
+def bind_strategic_enemy_composition_observation(
+    observation: StrategicEnemyCompositionObservation,
+    effective: EffectiveCivData,
+    registry: PrimitiveRegistry | None = None,
+) -> StrategicEvidenceBinding:
+    if observation.source is StrategicEvidenceSource.COMMUNITY_META:
+        raise ValueError(
+            f"community meta cannot define factual enemy observation '{observation.identity}'"
+        )
+    status = effective.factual_status("unit", observation.unit_id)
+    if status.value != "VERIFIED":
+        raise ValueError(
+            f"strategic enemy composition observation '{observation.identity}' requires "
+            f"factual status VERIFIED for unit {observation.unit_id}; status is {status.value}"
+        )
+    if not observation.provenance:
+        raise ValueError(
+            f"strategic enemy composition observation '{observation.identity}' requires factual provenance"
+        )
+    evidence = StrategicEvidence(
+        StrategicEvidenceKind.PERSISTENT,
+        observation.expression,
+        observation.identity,
+        source=observation.source,
+        provenance=observation.provenance,
+    )
+    binding = bind_strategic_evidence(evidence, effective, registry)
+    if not any(
+        item.semantic_type is StrategicObservationType.ENEMY_UNIT_COUNT
+        for item in binding.observations
+    ):
+        raise ValueError(
+            f"strategic enemy composition observation '{observation.identity}' "
+            "did not bind to ENEMY_UNIT_COUNT"
+        )
+    unit = effective.unit(observation.unit_id)
+    aliases = {
+        str(observation.unit_id),
+        unit.name.lower().replace(" ", "-"),
+    }
+    observation_expression = binding.observations[0].expression
+    if len(observation_expression.args) < 2 or str(observation_expression.args[1]).lower() not in aliases:
+        raise ValueError(
+            f"strategic enemy composition observation '{observation.identity}' "
+            "does not bind its declared unit"
         )
     return binding
 
@@ -686,6 +737,20 @@ def evaluate_strategy_runtime(
             )
         )
 
+    evaluated_enemy_composition_observations: list[tuple[str, EvidenceTruth]] = []
+    for composition_observation in profile.enemy_composition_observations:
+        binding = bind_strategic_enemy_composition_observation(
+            composition_observation,
+            effective,
+            registry,
+        )
+        evaluated_enemy_composition_observations.append(
+            (
+                composition_observation.identity,
+                evaluate_binding(binding, snapshot),
+            )
+        )
+
     owners: list[tuple[str, str]] = []
     active: list[str] = []
     blocked: list[str] = []
@@ -748,6 +813,7 @@ def evaluate_strategy_runtime(
             "reassessment": sorted(reason.value for reason in reasons),
             "evaluated_meta_evidence": evaluated_meta_evidence,
             "evaluated_capability_observations": evaluated_capability_observations,
+            "evaluated_enemy_composition_observations": evaluated_enemy_composition_observations,
         }
     )
 
@@ -773,5 +839,8 @@ def evaluate_strategy_runtime(
         ),
         evaluated_capability_observations=tuple(
             sorted(evaluated_capability_observations)
+        ),
+        evaluated_enemy_composition_observations=tuple(
+            sorted(evaluated_enemy_composition_observations)
         ),
     )
