@@ -613,7 +613,7 @@ if __name__ == "__main__":
 class GoalSpanAndVolatileStorageTests(unittest.TestCase):
     def _span_request(self):
         return GoalSpanRequest(
-            StorageRequestId(SemanticId("native.basilisk", "search"), "search-state"),
+            StorageRequestId(SemanticId("native.compiler", "search"), "search-state"),
             role=GoalRole.NATIVE_OUTPUT,
             width=4,
             shape=GoalSpanKind.EXTENDED_4,
@@ -645,7 +645,7 @@ class GoalSpanAndVolatileStorageTests(unittest.TestCase):
 
     def test_goal_span_rejects_invalid_width_for_shape(self):
         request = GoalSpanRequest(
-            StorageRequestId(SemanticId("native.basilisk", "point"), "point"),
+            StorageRequestId(SemanticId("native.compiler", "point"), "point"),
             role=GoalRole.NATIVE_OUTPUT,
             width=3,
             shape=GoalSpanKind.POINT_PAIR,
