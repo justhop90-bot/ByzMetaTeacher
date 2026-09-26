@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from ..ast import Expression
+from ..ast import Expression, SourceLocation
 from .strategy import StrategicBinding
 
 
@@ -103,6 +103,7 @@ class GoalSpanRequest:
 class SemanticRequirement:
     expression: Expression
     role: str
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +111,7 @@ class SemanticAction:
     expression: Expression
     role: str
     arbitration_request: GoalSlotRequest | None = None
+    location: SourceLocation | None = None
 
 
 class WitnessEvidenceKind(str, Enum):
@@ -125,6 +127,7 @@ class CompletionWitnessContract:
     establishes: SemanticId
     source_order: int
     issuance_source_order: int
+    location: SourceLocation | None = None
 
 
 class ReleaseEvidenceKind(str, Enum):
@@ -142,6 +145,7 @@ class ReleaseStateContract:
     to_state: LifecycleState
     source_order: int
     witness_source_order: int
+    location: SourceLocation | None = None
 
 
 class InvalidationEvidenceKind(str, Enum):
@@ -157,6 +161,7 @@ class InvalidationContract:
     invalidates: SemanticId
     source_order: int
     action_source_order: int
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -180,6 +185,7 @@ class ActionIssuance:
     failure: "ActionIssuanceFailure"
     retryable: bool = True
     source_order: int = 0
+    location: SourceLocation | None = None
 
 
 class ActionIssuancePhase(str, Enum):
@@ -221,6 +227,7 @@ class SemanticDemand:
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
     strategic_binding: StrategicBinding | None = None
+    location: SourceLocation | None = None
 
     @property
     def name(self) -> str:
