@@ -166,8 +166,8 @@ class SemanticDemand:
     requirements: tuple[SemanticRequirement, ...]
     action: SemanticAction
     witness: Expression
-    completion_witness: CompletionWitnessContract | None = None
     release: Expression
+    completion_witness: CompletionWitnessContract | None = None
     action_issuance: ActionIssuance | None = None
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
