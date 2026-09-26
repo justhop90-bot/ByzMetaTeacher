@@ -4,47 +4,86 @@ import argparse
 import hashlib
 import json
 import sys
+from types import SimpleNamespace
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 
-from Compiler.compiler import compile_source_with_report
-from Compiler.artifact_diagnostics import append_persistent_rule_diagnostics
+from Compiler.compiler import compile_package_with_report, compile_source_with_report
 from Compiler.diagnostics import ReportStatus
+from Compiler.source_graph import SourceGraphRequest
 from native_support_replay_schema import validate_snapshot
 from test_compiler_native_integration import (
     CompilerNativeIntegrationTests,
     FakeBackend,
     ValidationStatus,
     fake_result,
+    persistent_rule_diagnostic,
 )
 
 
-def persistent_artifact_sha256() -> str:
-    artifact = "(defrule (true) => (set-goal 7 1))\n"
-    category = type("Category", (), {"value": "PERSISTENT_STATE"})()
-    code = type("Code", (), {"value": "PSTATE-002"})()
-    severity = type("Severity", (), {"value": "warning"})()
-    diagnostic = type(
-        "Diagnostic",
-        (),
-        {
-            "category": category,
-            "rule_order": 2,
-            "code": code,
-            "severity": severity,
-            "state_kind": "GOAL",
-            "state_identifier": "7",
-            "related_rule_order": 1,
-            "related_operation": "set-goal",
-            "message": "goal state '7' has a later writer in rule 2 after writer in rule 1",
-        },
-    )()
-    rendered = append_persistent_rule_diagnostics(artifact, (diagnostic,))
-    return hashlib.sha256(rendered.encode("utf-8")).hexdigest()
+def persistent_artifact_hashes() -> dict[str, str]:
+    source = '''
+    demand castle {
+        require (can-build castle)
+        action (build castle)
+        witness (building-type-count castle > 0)
+        release (building-type-count castle > 0)
+    }
+    '''
+    rule_report = SimpleNamespace(diagnostics=(persistent_rule_diagnostic(),))
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        file_output = tmp / 'file.per'
+        file_backend = FakeBackend(
+            fake_result(file_output, ValidationStatus.VALIDATED)
+        )
+        with patch(
+            'Compiler.compiler.analyze_rule_diagnostics',
+            return_value=rule_report,
+        ):
+            file_report = compile_source_with_report(
+                source,
+                file_output,
+                native_backend=file_backend,
+                source_unit='persistent-artifact.perdsl',
+            )
+        if file_report.status is not ReportStatus.VALIDATED:
+            raise AssertionError(
+                f'persistent file artifact promotion failed: {file_report.status.value}'
+            )
 
+        package_root = tmp / 'package-root.perdsl'
+        package_child = tmp / 'package-child.perdsl'
+        package_output = tmp / 'package.per'
+        package_child.write_text(source, encoding='utf-8')
+        package_root.write_text(
+            '(load "package-child.perdsl")\n',
+            encoding='utf-8',
+        )
+        package_backend = FakeBackend(
+            fake_result(package_output, ValidationStatus.VALIDATED)
+        )
+        with patch(
+            'Compiler.compiler.analyze_rule_diagnostics',
+            return_value=rule_report,
+        ):
+            package_report = compile_package_with_report(
+                SourceGraphRequest(entrypoint=package_root),
+                package_output,
+                native_backend=package_backend,
+            )
+        if package_report.status is not ReportStatus.VALIDATED:
+            raise AssertionError(
+                f'persistent package artifact promotion failed: {package_report.status.value}'
+            )
+
+        return {
+            'file': hashlib.sha256(file_output.read_bytes()).hexdigest(),
+            'package': hashlib.sha256(package_output.read_bytes()).hexdigest(),
+        }
 UNSUPPORTED_STATES = (
     "native-known",
     "native-typed",
@@ -102,7 +141,7 @@ def build_snapshot() -> dict[str, object]:
         "schema_version": 2,
         "python": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
-        "persistent_artifact_sha256": persistent_artifact_sha256(),
+        "persistent_artifacts": persistent_artifact_hashes(),
         "fixtures": fixtures,
     }
     return validate_snapshot(snapshot, source="generated snapshot")
