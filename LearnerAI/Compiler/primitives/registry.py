@@ -149,6 +149,16 @@ class PrimitiveRegistry:
                 raise ValueError(
                     f"native pass constraint '{constraint.identity}' is not declared by '{primitive.name}'"
                 )
+            if constraint.requires_next_pass:
+                raise ValueError(
+                    f"native pass constraint '{constraint.identity}' requires next-pass lowering, which is not implemented"
+                )
+            if constraint.maximum_successes is not None and constraint.failure_mode is not None:
+                if constraint.failure_mode is not PassFailureMode.NO_EFFECT:
+                    raise ValueError(
+                        f"native pass constraint '{constraint.identity}' uses unsupported failure mode "
+                        f"'{constraint.failure_mode.value}'"
+                    )
 
     def validate_demand_lowering(self, demand, bindings) -> None:
         primitive = self.require(demand.action.expression.head)
