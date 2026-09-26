@@ -124,7 +124,7 @@ class PrimitiveRegistry:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
+                "NATIVE-SUPPORT-006",
                 "error",
                 "native metadata is not typed",
             )
@@ -151,7 +151,7 @@ class PrimitiveRegistry:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
+                "NATIVE-SUPPORT-006",
                 "error",
                 "native command is known and typed but has no semantic adapter",
             )
