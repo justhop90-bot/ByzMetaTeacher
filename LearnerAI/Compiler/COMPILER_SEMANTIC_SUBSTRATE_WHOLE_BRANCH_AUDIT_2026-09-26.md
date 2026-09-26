@@ -86,9 +86,11 @@ Repair:
 ## Deliberately partial surfaces
 The branch does not claim full executable support for DUC search/list/group state, arbitrary Strategic Numbers, or timer lifecycle lowering. Those structures remain evidence/catalog material until their native state lifetime and binding contracts are wired through promotion and emission. They must not silently become executable merely because the schema contains them.
 
-The citation model still stores an opaque `citation_id` in `AIRefProvenance`; native-contract promotion currently checks evidence class but does not resolve every citation ID through a repository-wide CitationRecord catalog. That is an evidence-governance gap, not an executable semantic pass-through, and remains a separate hardening item before treating provenance as fully self-auditing.
+Repository-wide citation resolution is now contracted for the executable native substrate. `CitationRecordCatalog` resolves every `AIRefProvenance.citation_id` attached to native witnesses, storage uses, and pass constraints. Missing citations fail closed; BROKEN, REVIEW_REQUIRED, UNAVAILABLE, CANDIDATE, and SUPERSEDED citation states are not promotable. The default catalog contains the five currently executable AIRef citations, with source locators and evidence excerpts. `NativeContractCatalog.validate_all_provenance()` is part of catalog construction, so an invalid citation cannot reach primitive promotion or lowering.
 
 ## Verification state
-The repository-native Compiler Tests workflow is the verification authority. The last completed compiler run before this audit recorded 333 tests with the initial two integration-fixture failures; those failures were traced to incorrect fixture construction and were repaired. Subsequent workflow runs were repeatedly cancelled by newer commits while the branch was being repaired. The current head `bee6066109775c3002c4f5234f6ebd8472538a68` has a fresh Compiler Tests run queued/pending and a Basilisk Validator run in progress.
+The fresh Compiler Tests workflow for the CitationRecord implementation completed successfully with **351 tests**, including native zero-findings acceptance and cross-platform native-support determinism. The generated Basilisk fixture remained reproducible.
+
+The current Basilisk Validator workflow still fails at the established baseline assertion `[Pikeman] action boundary must re-check the package capability witness` in `validation/basilisk-validator.js`; the validator failure is on the pre-existing validator baseline and is independent of the compiler CitationRecord resolution work.
 
 No runtime gameplay result is used as proof of compiler correctness. Runtime remains a strategy-quality grading layer only.
