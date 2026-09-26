@@ -105,6 +105,59 @@ class DemandOwnershipTests(unittest.TestCase):
         self.assertEqual(boundary.first_consumer.source_order, 1)
         self.assertEqual(boundary.first_consumer.owner, SemanticId("test", "castle"))
 
+    def test_missing_owner_has_exact_diagnostic(self):
+        demand = self._demand()
+        broken = replace(demand, ownership=None)
+
+        report = analyze_demand_ownership((broken,))
+
+        self.assertEqual(
+            tuple(signature(item) for item in report.diagnostics),
+            (
+                (
+                    "OWN-001",
+                    "error",
+                    "BLOCKED",
+                    ("test", "lifecycle"),
+                    None,
+                    "demand 'castle' has no semantic owner",
+                ),
+            ),
+        )
+
+    def test_conflicting_writer_owners_have_exact_diagnostic(self):
+        demand = self._demand()
+        foreign_writer = StateAccess(
+            state=demand.lifecycle.slot.request_id,
+            owner=SemanticId("other", "strategy"),
+            demand=demand.identity,
+            kind=AccessKind.WRITE,
+            phase=LifecycleAccessPhase.ACTION,
+            source_order=99,
+            operation="foreign-action",
+        )
+        broken = replace(
+            demand,
+            state_accesses=demand.state_accesses + (foreign_writer,),
+        )
+
+        report = analyze_demand_ownership((broken,))
+
+        self.assertEqual(
+            tuple(signature(item) for item in report.diagnostics),
+            (
+                (
+                    "OWN-004",
+                    "error",
+                    "CONFLICTING",
+                    ("test", "lifecycle"),
+                    None,
+                    "lifecycle state 'test:lifecycle' has conflicting writers: "
+                    "other:strategy, test:castle",
+                ),
+            ),
+        )
+
     def test_owner_state_mismatch_has_exact_diagnostic(self):
         demand = self._demand()
         ownership = replace(
@@ -224,4 +277,4 @@ class DemandOwnershipTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# TDD GREEN verification marker
+# CI ownership-layer verification marker
