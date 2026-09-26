@@ -88,6 +88,7 @@ def emit(
             arbitration_requests[request.request_id] = request
 
         out.append(f"(defconst demand-{demand.name} {slot.id.value})")
+        out.append(f"(defconst issued-{demand.name} {lifecycle.issued.value})")
         out.append(f"(defconst pending-{demand.name} {lifecycle.pending.value})")
         out.append(f"(defconst complete-{demand.name} {lifecycle.complete.value})")
 
@@ -147,6 +148,8 @@ def emit(
             )
 
         out += [
+            f"; Issuance failure: {demand.name} | RETAIN-ACTIVE",
+            f"; An unsatisfied issuance guard leaves demand-{demand.name} in ACTIVE; it is not PENDING.",
             f"; Release: {demand.name} | COMPLETE -> RELEASED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.complete.value})",
@@ -163,7 +166,14 @@ def emit(
             f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
             ")",
             "",
-            f"; Demand: {demand.name} | ACTIVE -> PENDING",
+            f"; Pending admission: {demand.name} | ISSUED -> PENDING",
+            "(defrule",
+            f"    (goal demand-{demand.name} {lifecycle.issued.value})",
+            "=>",
+            f"    (set-goal demand-{demand.name} {lifecycle.issued.value})",
+            ")",
+            "",
+            f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.active.value})",
             f"    (not {demand.witness.source})",
