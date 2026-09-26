@@ -408,7 +408,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             self.profile,
             capability_observations=(unknown,),
         )
-        with self.assertRaisesRegex(ValueError, "factual status UNKNOWN"):
+        with self.assertRaisesRegex(ValueError, "status is UNKNOWN"):
             evaluate_strategy_runtime(profile, self.effective, self.snapshot())
 
     def test_community_meta_cannot_define_factual_capability(self):
