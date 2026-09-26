@@ -48,15 +48,19 @@ class GameDataAuditTests(unittest.TestCase):
 
     def test_building_hp_bonus_does_not_match_units_or_technologies(self):
         castle_building = self.data.building(82)
+        bonus = next(
+            item for item in self.profile.bonuses
+            if item.id == "byz-building-hp-castle"
+        )
         self.assertTrue(
             self.data.matches_bonus_selector(
-                self.profile.bonuses[6].selector,
+                bonus.selector,
                 castle_building,
             )
         )
         self.assertFalse(
             self.data.matches_bonus_selector(
-                self.profile.bonuses[6].selector,
+                bonus.selector,
                 self.data.unit(40),
             )
         )
@@ -83,6 +87,14 @@ class GameDataAuditTests(unittest.TestCase):
             ResourceCost(food=800, gold=600),
         )
 
+
+    def test_current_patch_attack_and_healing_modifiers_are_encoded(self):
+        fire = next(item for item in self.profile.bonuses if item.id == "byz-fire-ship-speed")
+        monk = next(item for item in self.profile.bonuses if item.id == "byz-team-monk-heal")
+        self.assertEqual(fire.modifier.value.numerator, 4)
+        self.assertEqual(fire.modifier.value.denominator, 5)
+        self.assertEqual(monk.modifier.value.numerator, 2)
+        self.assertEqual(monk.modifier.value.denominator, 1)
 
 if __name__ == "__main__":
     unittest.main()

@@ -42,19 +42,19 @@ class GameDataTests(unittest.TestCase):
     def test_patch_identity_is_part_of_the_effective_snapshot_fingerprint(self):
         profile = ByzantineProfile.for_update_185872()
         first = resolve_effective_civ(profile)
-        second = resolve_effective_civ(
-            replace(
-                profile,
-                patch=PatchId(
-                    product="AOE2DE",
-                    update="185873",
-                    build=None,
-                    release_date="2026-09-23",
-                ),
+        self.assertEqual(first.fingerprint, resolve_effective_civ(profile).fingerprint)
+        with self.assertRaisesRegex(ValueError, "GameData snapshot patch"):
+            resolve_effective_civ(
+                replace(
+                    profile,
+                    patch=PatchId(
+                        product="AOE2DE",
+                        update="185873",
+                        build=None,
+                        release_date="2026-09-23",
+                    ),
+                )
             )
-        )
-
-        self.assertNotEqual(first.fingerprint, second.fingerprint)
 
     def test_strategy_semantics_are_not_available_in_game_data(self):
         unit = UnitDef(

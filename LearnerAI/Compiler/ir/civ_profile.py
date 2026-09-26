@@ -55,6 +55,7 @@ class CivAvailabilityRule:
 
 class CivBonusKind(str, Enum):
     COST = "COST"
+    COST_OVERRIDE = "COST_OVERRIDE"
     FREE = "FREE"
     BUILDING_HP = "BUILDING_HP"
     STAT = "STAT"
@@ -77,6 +78,7 @@ class CivBonus:
     kind: CivBonusKind
     selector: EntitySelector
     modifier: NumericModifier | None = None
+    fixed_cost: ResourceCost | None = None
     attribute: str | None = None
     scope: str = "SELF"
     provenance: tuple[EvidenceRef, ...] = ()
@@ -171,12 +173,18 @@ class EffectiveCivData:
             raise ValueError(f"base cost is unresolved for {key}")
         if self.is_free_for_civ(key):
             return ResourceCost()
+        override = _cost_override(entity, self.bonuses)
+        if override is not None:
+            return override
         return _apply_cost_modifiers(base_cost, entity, self.bonuses)
 
     def cost_of_age_advance(self, age: Age) -> ResourceCost:
         advance = self.age_advance(age)
         if advance.base_cost is None:
             raise ValueError(f"base cost is unresolved for age advance {age.value}")
+        override = _cost_override(advance, self.bonuses)
+        if override is not None:
+            return override
         return _apply_cost_modifiers(advance.base_cost, advance, self.bonuses)
 
 
@@ -242,14 +250,10 @@ class ByzantineProfile:
                     provenance=(community, official),
                 ),
                 CivBonus(
-                    "byz-imperial-age-discount",
-                    CivBonusKind.COST,
+                    "byz-imperial-age-cost-override",
+                    CivBonusKind.COST_OVERRIDE,
                     EntitySelector.age_advance(Age.IMPERIAL),
-                    NumericModifier(
-                        ModifierOperation.MULTIPLY,
-                        Rational(67, 100),
-                        RoundingMode.ENGINE_NEAREST,
-                    ),
+                    fixed_cost=ResourceCost(food=667, gold=536),
                     attribute="cost",
                     provenance=(community, official),
                 ),
@@ -303,7 +307,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("fire-ship-line")),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
-                        Rational(5, 6),
+                        Rational(4, 5),
                     ),
                     attribute="attack-interval",
                     provenance=(community, official),
@@ -326,7 +330,7 @@ class ByzantineProfile:
                     EntitySelector.unit_class("MONK"),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
-                        Rational(3, 2),
+                        Rational(2, 1),
                     ),
                     attribute="heal-rate",
                     scope="TEAM",
@@ -444,6 +448,22 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         patch_changes=profile.patch_changes,
         fingerprint=fingerprint,
     )
+
+
+def _cost_override(
+    entity: object,
+    bonuses: tuple[CivBonus, ...],
+) -> ResourceCost | None:
+    matches = [
+        bonus.fixed_cost
+        for bonus in bonuses
+        if bonus.kind is CivBonusKind.COST_OVERRIDE
+        and bonus.fixed_cost is not None
+        and _selector_matches(bonus.selector, entity)
+    ]
+    if len(matches) > 1:
+        raise ValueError("multiple civilization cost overrides match one entity")
+    return matches[0] if matches else None
 
 
 def _apply_cost_modifiers(
