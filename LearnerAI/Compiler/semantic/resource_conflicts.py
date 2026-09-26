@@ -32,6 +32,7 @@ class ResourceDiagnosticCode(str, Enum):
     DUPLICATE_CLAIM = "RES-005"
     CONFLICT_INCOMPATIBLE_ARBITRATORS = "RES-006"
     INVALID_RESOURCE_CLASS = "RES-007"
+    CLAIM_MISMATCH = "RES-001"
 
 
 @dataclass(frozen=True)
@@ -216,10 +217,33 @@ def validate_resource_conflicts(
             )
             continue
 
-        claim = _claim_for(provider)
-        if claim is not None:
-            claims.append(claim)
-            by_conflict.setdefault(conflict_class, []).append(provider)
+        claim = provider.resource_claim or _claim_for(provider)
+        provider_id = SemanticId(
+            provider.identity.source_unit,
+            provider.identity.local_name,
+        )
+        if claim is None:
+            continue
+        if (
+            claim.claimant != provider_id
+            or claim.conflict_class != conflict_class
+            or claim.kind is not ResourceKind.ACTION_EXCLUSION
+            or claim.scope is not ResourceScope.TRANSIENT
+            or claim.arbitration_owner != arbitration[0]
+        ):
+            diagnostics.append(
+                _diag(
+                    ResourceDiagnosticCode.CLAIM_MISMATCH,
+                    f"provider '{provider.identity.local_name}' resource claim "
+                    "does not match its action conflict contract",
+                    status=ResourceStatus.CONFLICTING,
+                    provider=provider_id,
+                    conflict_class=conflict_class,
+                )
+            )
+            continue
+        claims.append(claim)
+        by_conflict.setdefault(conflict_class, []).append(provider)
 
     claims.sort(
         key=lambda claim: (
