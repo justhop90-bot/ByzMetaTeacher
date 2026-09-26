@@ -963,7 +963,7 @@ def _byzantine_game_data(
                 UnitEffect(
                     UnitEffectKind.TECHNOLOGY_INTERACTION,
                     "affected-by-gambesons",
-                    target=EntitySelector.technology(TechId(875)),
+                    target=EntitySelector.tech(TechId(875)),
                     provenance=(controller,),
                 ),
             ),
