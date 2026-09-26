@@ -290,10 +290,23 @@ def _diagnostic_key(item: PersistentStateDiagnostic) -> tuple[object, ...]:
 
 def analyze_persistent_state(
     report: RuleExecutionReport,
+    *,
+    ignored_state_identifiers: set[str] | frozenset[str] = frozenset(),
 ) -> PersistentStateReport:
     """Analyze native persistent Goal/SN/Timer state across effective rules."""
     if not isinstance(report, RuleExecutionReport):
         raise TypeError("report must be a RuleExecutionReport")
+    if not isinstance(ignored_state_identifiers, (set, frozenset)):
+        raise TypeError(
+            "ignored_state_identifiers must be a set or frozenset of strings"
+        )
+    if any(
+        not isinstance(identifier, str) or not identifier
+        for identifier in ignored_state_identifiers
+    ):
+        raise TypeError(
+            "ignored_state_identifiers must contain only non-empty strings"
+        )
 
     accesses: list[PersistentStateAccess] = []
     rules_by_order = {rule.rule_order: rule for rule in report.rules}
@@ -304,6 +317,8 @@ def analyze_persistent_state(
     ordered_accesses = tuple(sorted(accesses, key=lambda item: item.sort_key))
     grouped: dict[PersistentStateRef, list[PersistentStateAccess]] = {}
     for access in ordered_accesses:
+        if access.state.identifier in ignored_state_identifiers:
+            continue
         grouped.setdefault(access.state, []).append(access)
 
     boundaries: list[PersistentStateBoundary] = []
