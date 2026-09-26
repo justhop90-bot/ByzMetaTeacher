@@ -36,7 +36,7 @@ def main() -> int:
         args.output.write_bytes(generated)
 
     print(
-        "verified generated/Basilisk.per is reproducible "
+        "verified generated/CompilerFixture.per is reproducible "
         f"(sha256={hashlib.sha256(checked_in).hexdigest()})"
     )
     return 0
