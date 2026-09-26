@@ -38,7 +38,7 @@ def emit(
         ]
         for diagnostic in demand.pending_diagnostics:
             message = diagnostic.message.format(
-                active_goal=encoded[demand.name].active.value,
+                active_goal=slot.id.value,
                 pending_goal=lifecycle.pending.value,
                 completed_goal=lifecycle.complete.value,
             )

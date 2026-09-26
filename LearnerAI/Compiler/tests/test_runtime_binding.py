@@ -80,7 +80,7 @@ class RuntimeBindingTests(unittest.TestCase):
         )
 
     def test_binder_rejects_goal_zero(self):
-        with self.assertRaisesRegex(ValueError, "GoalId.*1..16000"):
+        with self.assertRaisesRegex(ValueError, "unable to allocate lifecycle GoalId"):
             RuntimeBinder(base_goal=0).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_rejects_goal_overflow(self):

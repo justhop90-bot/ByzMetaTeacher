@@ -216,9 +216,9 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: wheelbarrow")
         action_block = output[action_start:action_end]
         self.assertIn("(train spearman)", action_block)
-        self.assertIn("(set-goal demand-defensive-spearmen 1004)", action_block)
+        self.assertIn("(set-goal demand-defensive-spearmen 1002)", action_block)
         witness_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Demand: defensive-spearmen | ACTIVE -> PENDING")]
-        self.assertIn("(goal demand-defensive-spearmen 1004)", witness_block)
+        self.assertIn("(goal demand-defensive-spearmen 1002)", witness_block)
         self.assertNotIn("(train spearman)", witness_block)
 
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
@@ -227,9 +227,9 @@ class CompilerTests(unittest.TestCase):
         action_end = len(output)
         action_block = output[action_start:action_end]
         self.assertIn("(research ri-wheelbarrow)", action_block)
-        self.assertIn("(set-goal demand-wheelbarrow 1007)", action_block)
+        self.assertIn("(set-goal demand-wheelbarrow 1003)", action_block)
         witness_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Demand: wheelbarrow | ACTIVE -> PENDING")]
-        self.assertIn("(goal demand-wheelbarrow 1007)", witness_block)
+        self.assertIn("(goal demand-wheelbarrow 1003)", witness_block)
         self.assertNotIn("(research ri-wheelbarrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
