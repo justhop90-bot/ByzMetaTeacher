@@ -76,7 +76,10 @@ class PrimitiveRegistry:
         native_contracts: NativeContractCatalog | None = None,
         fact_registry: NativeFactRegistry | None = None,
     ):
-        self._items = {p.name: p for p in primitives}
+        names = [primitive.name for primitive in primitives]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate primitive name")
+        self._items = {primitive.name: primitive for primitive in primitives}
         self._native = native_registry
         self._semantic_mappings = semantic_mappings or default_engine_semantic_mapping_registry()
         self._native_contracts = native_contracts or default_native_contract_catalog()
