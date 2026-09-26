@@ -1002,7 +1002,7 @@ def _byzantine_game_data(
         TechnologyDef(TechId(34), "Warships", Age.CASTLE, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
         TechnologyDef(TechId(361), "Elite Cataphract", Age.IMPERIAL, (ResearchProvider(BuildingId(82)),), None, None, upgrades=(UnitId(553),), provenance=(evidence,)),
         TechnologyDef(TechId(35), "Heavy Warships", Age.IMPERIAL, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
-        TechnologyDef(TechId(246), "Fast Fire Ship", Age.IMPERIAL, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(246), "Fast Fire Ship", Age.IMPERIAL, (ResearchProvider(BuildingId(45)),), None, None, upgrades=(UnitId(532),), provenance=(evidence,)),
         TechnologyDef(
             TechId(8), "Town Watch", Age.FEUDAL, (ResearchProvider(BuildingId(109)),),
             ResourceCost(food=75), 25,
