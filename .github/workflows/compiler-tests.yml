@@ -80,7 +80,7 @@ jobs:
       - name: Verify generated Basilisk fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/Basilisk.per
       - name: Native zero-findings acceptance - freshly compiled Basilisk fixture
-        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per --report /tmp/native-reports/basilisk.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
@@ -96,7 +96,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per --report /tmp/native-reports/strategy.json
       - name: Native zero-findings acceptance - strategy-runtime fixture
         run: |
           python - <<'PY'
@@ -124,7 +124,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy-runtime.per
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy-runtime.per --report /tmp/native-reports/strategy-runtime.json
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -144,7 +144,16 @@ jobs:
               encoding="utf-8",
           )
           PY
-          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
+      - name: Upload native validation reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-validation-reports
+          path: /tmp/native-reports
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Run compiler regression suite
         shell: bash
         run: |
