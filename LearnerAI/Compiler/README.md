@@ -1,10 +1,12 @@
-# LearnerAI Compiler
+# AoE2 .per Compiler
 
-The compiler is the semantic backplane for the Byzantine player.
+The compiler is the reusable semantic and lowering platform for expert Age of Empires II AI scripting.
 
-It is not the player itself.
+It is not Basilisk, not a Byzantine strategy engine, and not a replacement native parser.
 
-Its job is to turn explicit player semantics into auditable .per while rejecting lifecycle defects that native parsing cannot know about.
+Its job is to turn explicit .per-oriented semantics into deterministic, auditable native .per while rejecting defects that native parsing cannot know about.
+
+The current generic compiler frontier is documented in COMPILER_FORENSIC_AUDIT_2026-09-26.md. COMMUNITY_PER_PRACTICE_SPEC.md defines the evidence model for engine facts, community practice, compiler policy, and open research.
 
 ## Pipeline
 
