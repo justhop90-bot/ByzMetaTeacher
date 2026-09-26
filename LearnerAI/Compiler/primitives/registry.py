@@ -100,10 +100,11 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             "ACTION",
             1,
             1,
+            completion_witness=False,
             conflict_class="BUILD_PASS_SINGLETON",
         ),
-        Primitive("train", "ACTION", "ACTION", 1, 1),
-        Primitive("research", "ACTION", "ACTION", 1, 1),
+        Primitive("train", "ACTION", "ACTION", 1, 1, completion_witness=False),
+        Primitive("research", "ACTION", "ACTION", 1, 1, completion_witness=False),
     ]
     native_registry = (
         load_default_native_schema()
