@@ -110,6 +110,13 @@ def main() -> int:
         )
         return 2
 
+    if not isinstance(payload, dict):
+        print(
+            "native validator JSON root must be an object",
+            file=sys.stderr,
+        )
+        return 2
+
     finding_count = payload.get("finding_count")
     findings = payload.get("findings")
 
