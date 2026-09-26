@@ -127,6 +127,17 @@ The next semantic work is driven by the player:
 
 Do not add syntax first. Add semantic capability when a real player behavior requires it.
 
+## Native schema authority
+
+The checked-in AIRef command schema supplies native command signatures and parameter metadata.
+The semantic registry remains deliberately smaller and assigns Basilisk meanings such as
+OBSERVATION, FEASIBILITY, ACTION, and WITNESS. A native command without a semantic adapter is
+rejected rather than silently treated as understood.
+
+The emitter also enforces the current DE artifact budgets: 10,000 rules, 32 elements per rule,
+and 255 characters per line. Build actions are guarded by a shared per-pass claim because the
+native engine permits only one successful build/up-build action per AI rule pass.
+
 ## Native validation
 
 Generated .per is staged and validated by the pinned aoe2-ai-parser backend before promotion when native validation is enabled.
@@ -176,11 +187,13 @@ Implemented now:
 - regression tests proving pending/complete values are not separate GoalIds.
 
 Still open:
-- checked-in authoritative native command-contract inventory;
 - GoalSpan allocator and command-specific span allocation;
-- SN and Timer allocators;
-- package-wide occupancy discovery and persistent binding manifests;
-- artifact-budget accounting.
+- StrategicNumberSlot and TimerSlot allocators;
+- package-wide occupancy discovery from an explicit package inventory;
+- automatic end-to-end binding-manifest write-back;
+- capability-provider/dependency graph semantics;
+- source-order/first-writer/first-consumer analysis;
+- action-issuance failure versus pending-state distinction.
 
 ## Verification
 
