@@ -22,4 +22,24 @@ jobs:
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
       - name: Native-validate generated Basilisk fixture
         run: python -m aoe2_ai_lab lint LearnerAI/Compiler/generated/Basilisk.per --profile default --json
+      - name: Native-validate explicit invalidation fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.compiler import compile_source
+          source = """
+          demand castle {
+              require (can-build castle)
+              action (build castle)
+              witness (building-type-count castle > 0)
+              release (building-type-count castle > 0)
+              invalidate (not (building-available castle))
+          }
+          """
+          Path("/tmp/basilisk-invalidation.per").write_text(
+              compile_source(source),
+              encoding="utf-8",
+          )
+          PY
+          python -m aoe2_ai_lab lint /tmp/basilisk-invalidation.per --profile default --json
       - run: python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
