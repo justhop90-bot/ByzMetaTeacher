@@ -2,6 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).parents[2]
+sys.path.insert(0, str(ROOT))
 
 from Compiler.backends.models import (
     ArtifactIdentity,
