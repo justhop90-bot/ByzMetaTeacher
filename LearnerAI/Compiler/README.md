@@ -183,6 +183,8 @@ Still required for a full player compiler:
 
 The compiler should grow by semantic need, not by accumulating a second programming language.
 
+Downstream strategy and civilization policy is exposed only through explicit client adapters under `clients/`. The generic compiler core does not export or import a strategy client.
+
 Resource arbitration is deliberately narrow. The current compiler models only transient action exclusion, such as the existing build-pass singleton. It does not invent persistent global resource reservations or a fairness scheduler.
 
 Do not add syntax first. Add semantic capability when a real player behavior requires it.
@@ -190,9 +192,9 @@ Do not add syntax first. Add semantic capability when a real player behavior req
 ## Native schema authority
 
 The checked-in AIRef command schema supplies native command signatures and parameter metadata.
-The semantic registry remains deliberately smaller and assigns Basilisk meanings such as
-OBSERVATION, FEASIBILITY, ACTION, and WITNESS. A native command without a semantic adapter is
-rejected rather than silently treated as understood.
+The semantic registry remains deliberately smaller and assigns engine-semantic roles such as
+OBSERVATION, FEASIBILITY, ACTION, and WITNESS. Client-specific strategy policy is outside this
+registry. A native command without a semantic adapter is rejected rather than silently treated as understood.
 
 The emitter also enforces the current DE artifact budgets: 10,000 rules, 32 elements per rule,
 and 255 characters per line. Build actions are guarded by a shared per-pass claim because the
