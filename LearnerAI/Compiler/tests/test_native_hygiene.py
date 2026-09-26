@@ -3,6 +3,7 @@ import unittest
 from Compiler.primitives.native_hygiene import (
     AIRefProvenance,
     AIRefVersionFamily,
+    CitationChangeKind,
     CitationRecord,
     CitationState,
     ConfidenceBasis,
