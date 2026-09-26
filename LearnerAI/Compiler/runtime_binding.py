@@ -78,6 +78,7 @@ class GoalSpan:
     width: int
     shape: GoalStorageShape
     provenance_id: str
+    role: GoalRole = GoalRole.NATIVE_OUTPUT
 
     def __post_init__(self) -> None:
         expected_width = {
@@ -304,6 +305,7 @@ class BindingManifest:
                     width=int(raw["width"]),
                     shape=GoalStorageShape(str(raw["shape"])),
                     provenance_id=str(raw["provenance_id"]),
+                    role=role,
                 )
             else:
                 raise ValueError(f"unknown binding kind {binding_kind}")
@@ -435,7 +437,7 @@ class RuntimeBinder:
             raise ValueError("duplicate storage request identity")
 
         records: list[BindingRecord] = []
-        allocated_intervals = list(existing_intervals)
+        allocated_intervals = list(occupied_intervals) + list(existing_intervals)
 
         for request in ordered:
             binding = existing.get(request.request_id)
@@ -464,6 +466,7 @@ class RuntimeBinder:
                             request.request_id,
                             start,
                         ),
+                        role=request.role,
                     )
             else:
                 self._validate_existing_binding(request, binding)
@@ -485,10 +488,15 @@ class RuntimeBinder:
         request: StorageRequest,
         binding: Binding,
     ) -> None:
-        if binding.role is not request.role:
-            raise ValueError(f"existing binding role mismatch for {request.request_id}")
-
         if isinstance(request, GoalSlotRequest):
+            if not isinstance(binding, GoalSlot):
+                raise ValueError(
+                    f"existing binding storage kind mismatch for {request.request_id}"
+                )
+            if binding.role is not request.role:
+                raise ValueError(f"existing binding role mismatch for {request.request_id}")
+            return
+
             if not isinstance(binding, GoalSlot):
                 raise ValueError(
                     f"existing binding storage kind mismatch for {request.request_id}"
@@ -500,6 +508,8 @@ class RuntimeBinder:
                 f"existing binding storage kind mismatch for {request.request_id}"
             )
         _validate_span_request(request)
+        if binding.role is not request.role:
+            raise ValueError(f"existing binding role mismatch for {request.request_id}")
         if binding.width != request.width or binding.shape is not request.shape:
             raise ValueError(
                 f"existing binding shape mismatch for {request.request_id}"
