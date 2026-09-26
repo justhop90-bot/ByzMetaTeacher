@@ -152,16 +152,21 @@ class CapabilityValidationTests(unittest.TestCase):
                 CapabilityKind.OBSERVED,
             )
         )
+        market_witness = witness_for(
+            CapabilityId("test", "market-exists"),
+            name="market-existing-witness",
+        )
         builder.add_provider(
             CapabilityProvider(
                 identity=ProviderId("test", "market-existing"),
                 capability=CapabilityId("test", "market-exists"),
                 kind=ProviderKind.OBSERVATION,
                 admissibility=None,
-                witness=witness.identity,
+                witness=market_witness.identity,
             )
         )
         builder.add_witness(witness)
+        builder.add_witness(market_witness)
         builder.add_provider(provider)
         builder.add_demand(demand("castle", capability))
 
