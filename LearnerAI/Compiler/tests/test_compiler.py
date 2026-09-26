@@ -284,6 +284,62 @@ class CompilerTests(unittest.TestCase):
             """
             compile_source(source)
 
+
+    def test_game_time_is_a_timing_primitive(self):
+        expr = parse_expression("(game-time >= 600)")
+        self.assertEqual(expr.head, "game-time")
+        self.assertEqual(expr.args, (">=", "600"))
+
+    def test_timing_only_action_is_rejected(self):
+        source = """
+        demand timed-spears {
+            require (game-time >= 600)
+            action (train spearman)
+            witness (unit-type-count spearman >= 2)
+            release (unit-type-count spearman >= 2)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "TIMING-WITHOUT-WORLD-EVIDENCE"):
+            compile_source(source)
+
+    def test_timing_plus_world_observation_is_valid(self):
+        source = """
+        demand timed-spears {
+            require (game-time >= 600)
+            require (unit-type-count scout-unit >= 2)
+            action (train spearman)
+            witness (unit-type-count spearman >= 2)
+            release (unit-type-count scout-unit == 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(game-time >= 600)", output)
+        self.assertIn("(unit-type-count scout-unit >= 2)", output)
+
+    def test_timing_cannot_be_completion_witness(self):
+        source = """
+        demand timed-spears {
+            require (unit-type-count scout-unit >= 2)
+            action (train spearman)
+            witness (game-time >= 600)
+            release (unit-type-count scout-unit == 0)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "completion witness"):
+            compile_source(source)
+
+    def test_timing_only_release_is_rejected(self):
+        source = """
+        demand timed-spears {
+            require (unit-type-count scout-unit >= 2)
+            action (train spearman)
+            witness (unit-type-count spearman >= 2)
+            release (game-time >= 900)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE"):
+            compile_source(source)
+
     def test_cli_entrypoint_compiles_from_repository_root(self):
         repo = Path(__file__).resolve().parents[3]
         source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
