@@ -17,8 +17,8 @@ from Compiler.backends.models import (
     ValidationSummary,
 )
 from Compiler.compiler import compile_source_with_report, compile_to_file
-from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec
-from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry
+from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec, load_default_native_schema
+from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry, default_de_registry
 from Compiler.diagnostics import ReportStatus
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.basilisk").read_text(encoding="utf-8")
@@ -247,6 +247,17 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             "fixture",
             "fixture parameter",
         )
+        base_registry = default_de_registry()
+        base_primitives = tuple(
+            base_registry.get(command)
+            for command in base_registry.names()
+        )
+        base_native = load_default_native_schema()
+        base_native_commands = tuple(
+            base_native.get(command)
+            for command in base_native.names()
+        )
+
         if name == "native-known":
             native = NativeCommandSpec(
                 "fixture-command",
@@ -255,7 +266,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 (NativeParameterSpec("", "", "", "", ""),),
             )
             primitive = None
-        elif name in {"native-typed", "unsupported"}:
+        elif name == "native-typed":
             native = NativeCommandSpec(
                 "fixture-command",
                 "DE",
@@ -271,16 +282,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 (parameter,),
             )
             primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 2, 2)
-        elif name == "unsupported":
-            return PrimitiveRegistry(
-                (),
-                NativeCommandRegistry(
-                    (),
-                    source_blob_sha="native-support-unsupported",
-                    command_count=0,
-                ),
-            )
-        else:
+        elif name == "executable-safe":
             native = NativeCommandSpec(
                 "fixture-command",
                 "DE",
@@ -288,16 +290,16 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 (parameter,),
             )
             primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 1, 1)
+        else:
+            return base_registry
 
-        primitives = () if primitive is None else (primitive,)
-        return PrimitiveRegistry(
-            primitives,
-            NativeCommandRegistry(
-                (native,),
-                source_blob_sha=f"native-support-{name}",
-                command_count=1,
-            ),
+        primitives = base_primitives if primitive is None else base_primitives + (primitive,)
+        native_registry = NativeCommandRegistry(
+            base_native_commands + (native,),
+            source_blob_sha=f"native-support-{name}",
+            command_count=len(base_native_commands) + 1,
         )
+        return PrimitiveRegistry(primitives, native_registry)
 
 
 if __name__ == "__main__":
