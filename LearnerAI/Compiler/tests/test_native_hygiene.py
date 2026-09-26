@@ -5,6 +5,7 @@ from Compiler.primitives.native_hygiene import (
     AIRefVersionFamily,
     CitationChangeKind,
     CitationRecord,
+    CitationRevalidationEvent,
     CitationRecordCatalog,
     CitationSemanticScope,
     CitationState,
