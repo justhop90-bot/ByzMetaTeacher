@@ -115,6 +115,13 @@ class StaticFactEvaluationTests(unittest.TestCase):
             semantic_id="observation.resource.food",
             canonical_args=(),
             provenance=self._provenance("mismatch-fact"),
+            domain=FactDomain(
+                identity="RESOURCE",
+                kind=FactDomainKind.RESOURCE_AMOUNT,
+                value_type="int",
+                non_negative=True,
+                provenance=self._provenance("fact-domain"),
+            ),
         )
 
         with self.assertRaisesRegex(ValueError, "does not describe fact"):
