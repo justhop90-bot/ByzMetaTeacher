@@ -196,6 +196,10 @@ class LifecycleEncoding:
     @staticmethod
     def for_goal_slot(slot: GoalSlot) -> "LifecycleEncoding":
         goal = slot.id.value
+        if goal > LIFECYCLE_GOAL_MAX:
+            raise ValueError(
+                f"lifecycle GoalId must leave room through GoalValue {GOAL_ID_MAX}; got {goal}"
+            )
         return LifecycleEncoding(
             released=GoalValue(0),
             active=GoalValue(1),
@@ -265,6 +269,9 @@ class NativeStorageContract:
 class BindingContext:
     occupied_goal_ids: frozenset[int] = frozenset()
     occupied_goal_intervals: tuple[tuple[int, int], ...] = ()
+    occupied_sn_ids: frozenset[int] = frozenset()
+    occupied_timer_ids: frozenset[int] = frozenset()
+    strategic_number_inventory: StrategicNumberInventory | None = None
     existing_bindings: tuple[tuple[StorageRequestId, Binding], ...] = ()
     package_inventory_sha: str = ""
     allocator_version: str = ALLOCATOR_VERSION
@@ -324,13 +331,28 @@ class BindingManifest:
                         "goal_id": record.binding.id.value,
                     }
                 )
-            else:
+            elif isinstance(record.binding, GoalSpan):
                 payload.update(
                     {
                         "binding_kind": StorageKind.GOAL_SPAN.value,
                         "start_goal_id": record.binding.start.value,
                         "width": record.binding.width,
                         "shape": record.binding.shape.value,
+                    }
+                )
+            elif isinstance(record.binding, StrategicNumberSlot):
+                payload.update(
+                    {
+                        "binding_kind": StorageKind.STRATEGIC_NUMBER.value,
+                        "strategic_number_id": record.binding.id,
+                    }
+                )
+            else:
+                payload.update(
+                    {
+                        "binding_kind": StorageKind.TIMER.value,
+                        "timer_id": record.binding.id,
+                        "initialization_policy": record.binding.initialization_policy,
                     }
                 )
             serialized_records.append(payload)
@@ -352,7 +374,7 @@ class BindingManifest:
     @classmethod
     def from_json(cls, text: str) -> "BindingManifest":
         payload = json.loads(text)
-        if payload.get("format_version") not in {1, BINDING_MANIFEST_VERSION}:
+        if payload.get("format_version") not in {1, 2, BINDING_MANIFEST_VERSION}:
             raise ValueError(
                 f"unsupported binding manifest version {payload.get('format_version')}"
             )
@@ -389,15 +411,29 @@ class BindingManifest:
                     provenance_id=str(raw["provenance_id"]),
                     role=role,
                 )
+            elif binding_kind == StorageKind.STRATEGIC_NUMBER.value:
+                binding = StrategicNumberSlot(
+                    id=int(raw["strategic_number_id"]),
+                    role=role,
+                    provenance_id=str(raw["provenance_id"]),
+                )
+            elif binding_kind == StorageKind.TIMER.value:
+                binding = TimerSlot(
+                    id=int(raw["timer_id"]),
+                    role=role,
+                    provenance_id=str(raw["provenance_id"]),
+                    initialization_policy=str(raw["initialization_policy"]),
+                )
             else:
                 raise ValueError(f"unknown binding kind {binding_kind}")
 
-            interval = _binding_interval(binding)
-            if any(interval.overlaps(existing) for existing in occupied):
-                raise ValueError(
-                    f"overlapping binding manifest storage at {interval.start}..{interval.end}"
-                )
-            occupied.append(interval)
+            if isinstance(binding, (GoalSlot, GoalSpan)):
+                interval = _binding_interval(binding)
+                if any(interval.overlaps(existing) for existing in occupied):
+                    raise ValueError(
+                        f"overlapping binding manifest storage at {interval.start}..{interval.end}"
+                    )
+                occupied.append(interval)
             seen_requests.add(request_id)
             records.append(BindingRecord(request_id, binding))
 
@@ -413,6 +449,9 @@ class BindingManifest:
         *,
         occupied_goal_ids: frozenset[int] = frozenset(),
         occupied_goal_intervals: tuple[tuple[int, int], ...] = (),
+        occupied_sn_ids: frozenset[int] = frozenset(),
+        occupied_timer_ids: frozenset[int] = frozenset(),
+        strategic_number_inventory: StrategicNumberInventory | None = None,
     ) -> BindingContext:
         return BindingContext(
             occupied_goal_ids=occupied_goal_ids,
@@ -443,6 +482,18 @@ class RuntimeBinder:
         occupied_ids = set(context.occupied_goal_ids)
         for value in occupied_ids:
             GoalId(value)
+        occupied_sn_ids = set(context.occupied_sn_ids)
+        for value in occupied_sn_ids:
+            if not SN_ID_MIN <= value <= SN_ID_MAX:
+                raise ValueError(
+                    f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}"
+                )
+        occupied_timer_ids = set(context.occupied_timer_ids)
+        for value in occupied_timer_ids:
+            if not TIMER_ID_MIN <= value <= TIMER_ID_MAX:
+                raise ValueError(
+                    f"Timer id must be in range {TIMER_ID_MIN}..{TIMER_ID_MAX}"
+                )
 
         occupied_intervals = [
             _coerce_interval(interval) for interval in context.occupied_goal_intervals
@@ -500,6 +551,8 @@ class RuntimeBinder:
         storage_order = {
             GoalSlotRequest: 0,
             GoalSpanRequest: 1,
+            StrategicNumberRequest: 2,
+            TimerRequest: 3,
         }
         ordered = tuple(
             sorted(
@@ -525,16 +578,22 @@ class RuntimeBinder:
             binding = existing.get(request.request_id)
             if binding is None:
                 if isinstance(request, GoalSlotRequest):
+                    max_goal = (
+                        LIFECYCLE_GOAL_MAX
+                        if request.role is GoalRole.LIFECYCLE_STATE
+                        else GOAL_ID_MAX
+                    )
                     goal_id = self._next_free_goal(
                         occupied_ids,
                         allocated_intervals,
+                        max_goal=max_goal,
                     )
                     binding = GoalSlot(
                         id=GoalId(goal_id),
                         role=request.role,
                         provenance_id=_provenance_id(request.request_id, goal_id),
                     )
-                else:
+                elif isinstance(request, GoalSpanRequest):
                     start = self._next_free_span(
                         request,
                         occupied_ids,
@@ -550,17 +609,43 @@ class RuntimeBinder:
                         ),
                         role=request.role,
                     )
-            else:
-                self._validate_existing_binding(request, binding)
-
-            interval = _binding_interval(binding)
-            if any(interval.overlaps(other) for other in allocated_intervals):
-                if request.request_id not in existing:
-                    raise ValueError(
-                        f"binding collision for {request.request_id} at "
-                        f"{interval.start}..{interval.end}"
+                elif isinstance(request, StrategicNumberRequest):
+                    sn_id = self._next_free_strategic_number(
+                        request,
+                        occupied_sn_ids,
+                        context.strategic_number_inventory,
                     )
-            allocated_intervals.append(interval)
+                    binding = StrategicNumberSlot(
+                        id=sn_id,
+                        role=request.role,
+                        provenance_id=_provenance_id(request.request_id, sn_id),
+                    )
+                    occupied_sn_ids.add(sn_id)
+                else:
+                    timer_id = self._next_free_timer(occupied_timer_ids)
+                    binding = TimerSlot(
+                        id=timer_id,
+                        role=request.role,
+                        provenance_id=_provenance_id(request.request_id, timer_id),
+                        initialization_policy=request.initialization_policy,
+                    )
+                    occupied_timer_ids.add(timer_id)
+            else:
+                self._validate_existing_binding(
+                    request,
+                    binding,
+                    strategic_number_inventory=context.strategic_number_inventory,
+                )
+
+            if isinstance(binding, (GoalSlot, GoalSpan)):
+                interval = _binding_interval(binding)
+                if any(interval.overlaps(other) for other in allocated_intervals):
+                    if request.request_id not in existing:
+                        raise ValueError(
+                            f"binding collision for {request.request_id} at "
+                            f"{interval.start}..{interval.end}"
+                        )
+                allocated_intervals.append(interval)
             records.append(BindingRecord(request.request_id, binding))
 
         return BindingResult(tuple(records))
@@ -569,6 +654,8 @@ class RuntimeBinder:
         self,
         request: StorageRequest,
         binding: Binding,
+        *,
+        strategic_number_inventory: StrategicNumberInventory | None = None,
     ) -> None:
         if isinstance(request, GoalSlotRequest):
             if not isinstance(binding, GoalSlot):
@@ -577,32 +664,69 @@ class RuntimeBinder:
                 )
             if binding.role is not request.role:
                 raise ValueError(f"existing binding role mismatch for {request.request_id}")
+            if request.role is GoalRole.LIFECYCLE_STATE and binding.id.value > LIFECYCLE_GOAL_MAX:
+                raise ValueError(
+                    f"existing lifecycle GoalId {binding.id.value} leaves no room for lifecycle values"
+                )
             return
 
-        if not isinstance(binding, GoalSpan):
+        if isinstance(request, GoalSpanRequest):
+            if not isinstance(binding, GoalSpan):
+                raise ValueError(
+                    f"existing binding storage kind mismatch for {request.request_id}"
+                )
+            _validate_span_request(request)
+            if binding.role is not request.role:
+                raise ValueError(f"existing binding role mismatch for {request.request_id}")
+            if binding.width != request.width or binding.shape is not request.shape:
+                raise ValueError(
+                    f"existing binding shape mismatch for {request.request_id}"
+                )
+            if not request.start_min <= binding.start.value <= request.start_max:
+                raise ValueError(
+                    f"existing binding start {binding.start.value} is outside contract "
+                    f"range {request.start_min}..{request.start_max}"
+                )
+            return
+
+        if isinstance(request, StrategicNumberRequest):
+            if not isinstance(binding, StrategicNumberSlot):
+                raise ValueError(
+                    f"existing binding storage kind mismatch for {request.request_id}"
+                )
+            if binding.role is not request.role:
+                raise ValueError(f"existing binding role mismatch for {request.request_id}")
+            if not request.why_not_goal.strip():
+                raise ValueError(
+                    f"Strategic Number request {request.request_id} requires WHY_NOT_GOAL justification"
+                )
+            if strategic_number_inventory is not None and binding.id not in strategic_number_inventory.candidate_ids:
+                raise ValueError(
+                    f"existing Strategic Number {binding.id} is not approved by inventory "
+                    f"{strategic_number_inventory.inventory_sha}"
+                )
+            return
+
+        if not isinstance(binding, TimerSlot):
             raise ValueError(
                 f"existing binding storage kind mismatch for {request.request_id}"
             )
-        _validate_span_request(request)
         if binding.role is not request.role:
             raise ValueError(f"existing binding role mismatch for {request.request_id}")
-        if binding.width != request.width or binding.shape is not request.shape:
+        if binding.initialization_policy != request.initialization_policy:
             raise ValueError(
-                f"existing binding shape mismatch for {request.request_id}"
-            )
-        if not request.start_min <= binding.start.value <= request.start_max:
-            raise ValueError(
-                f"existing binding start {binding.start.value} is outside contract "
-                f"range {request.start_min}..{request.start_max}"
+                f"existing binding initialization policy mismatch for {request.request_id}"
             )
 
     def _next_free_goal(
         self,
         occupied_ids: set[int],
         allocated_intervals: list[GoalInterval],
+        *,
+        max_goal: int = GOAL_ID_MAX,
     ) -> int:
         candidate = self._base_goal
-        while candidate <= GOAL_ID_MAX:
+        while candidate <= max_goal:
             interval = GoalInterval(candidate, candidate)
             if (
                 candidate not in occupied_ids
@@ -611,8 +735,8 @@ class RuntimeBinder:
                 return candidate
             candidate += 1
         raise ValueError(
-            f"unable to allocate lifecycle GoalId in range "
-            f"{self._base_goal}..{GOAL_ID_MAX}"
+            f"unable to allocate GoalId in range "
+            f"{self._base_goal}..{max_goal}"
         )
 
     def _next_free_span(
@@ -640,6 +764,32 @@ class RuntimeBinder:
             f"unable to allocate GoalSpan '{request.request_id.purpose}' "
             f"in range {request.start_min}..{request.start_max}"
         )
+
+
+    def _next_free_strategic_number(
+        self,
+        request: StrategicNumberRequest,
+        occupied_sn_ids: set[int],
+        inventory: StrategicNumberInventory | None,
+    ) -> int:
+        if not request.why_not_goal.strip():
+            raise ValueError(
+                f"Strategic Number request {request.request_id} requires WHY_NOT_GOAL justification"
+            )
+        if inventory is None:
+            raise ValueError(
+                "Strategic Number allocation requires an explicit AIRef inventory"
+            )
+        for candidate in sorted(inventory.candidate_ids, reverse=True):
+            if candidate not in occupied_sn_ids:
+                return candidate
+        raise ValueError("unable to allocate a Strategic Number from the supplied inventory")
+
+    def _next_free_timer(self, occupied_timer_ids: set[int]) -> int:
+        for candidate in range(TIMER_ID_MIN, TIMER_ID_MAX + 1):
+            if candidate not in occupied_timer_ids:
+                return candidate
+        raise ValueError("unable to allocate TimerId in range 1..50")
 
 
 class VolatileGoalPool:
