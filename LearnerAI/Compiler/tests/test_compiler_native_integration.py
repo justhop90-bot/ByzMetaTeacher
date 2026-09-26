@@ -229,7 +229,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertIn("PSTATE-002", artifact)
             self.assertIn("(build castle)", artifact)
             self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
-            self.assertNotIn(b"\r\n", fake.seen_artifact.read_bytes())
+            self.assertNotIn(b"\r\n", fake.seen_artifact_bytes)
 
     def test_rejected_source_promotion_preserves_old_artifact_and_validates_annotated_stage(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
