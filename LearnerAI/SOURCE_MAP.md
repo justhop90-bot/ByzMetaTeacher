@@ -62,6 +62,21 @@ External community evidence should be used by behavior family:
 
 Naga's current community-recorded coverage includes general open/closed/hybrid/water map families and transport-over-water behavior. Community testing also reports that water competence is a distinct area of performance for custom AIs. The community database and testing reports are evidence of scope and precedent, not absolute correctness.
 
+### Canonical capability contract
+
+Read `LearnerAI/CAPABILITY_MATRIX.md` before adding or reviewing any player capability.
+
+The matrix is the coverage contract for stock-style Byzantine competence. It defines:
+
+- capability families;
+- map-conditioned admissibility;
+- priority bands;
+- prerequisite/provider expectations;
+- release and invalidation expectations;
+- required world-state evidence.
+
+It is intentionally not a build order. Strategy decides whether a capability is worth opening; the relevant domain executes it.
+
 ### Module-specific sources
 
 Engine needs AIRef, native inventories, engine reference, and current Byzantine data.
