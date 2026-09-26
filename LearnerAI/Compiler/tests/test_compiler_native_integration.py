@@ -226,11 +226,11 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
     def test_native_support_state_fixtures_traverse_full_compiler_pipeline(self):
         fixture_root = Path(__file__).parent / "fixtures" / "native_support_states"
         cases = (
-            ("native-known", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
-            ("native-typed", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
-            ("semantically-adapted", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("native-known", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
+            ("native-typed", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
+            ("semantically-adapted", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
             ("executable-safe", NativeSupportState.EXECUTABLE_SAFE, None),
-            ("unsupported", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("unsupported", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
         )
 
         for name, expected_state, expected_code in cases:
@@ -274,6 +274,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                         NativeSupportState.NATIVE_KNOWN,
                         NativeSupportState.NATIVE_TYPED,
                         NativeSupportState.SEMANTICALLY_ADAPTED,
+                        NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                         NativeSupportState.EXECUTABLE_SAFE,
                     ],
                     "unsupported": [
@@ -281,25 +282,26 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     ],
                 }
                 expected_codes = {
-                    "native-known": ["NATIVE-SUPPORT-001", "NATIVE-SUPPORT-005"],
+                    "native-known": ["NATIVE-SUPPORT-001", "NATIVE-SUPPORT-006"],
                     "native-typed": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
-                        "NATIVE-SUPPORT-005",
+                        "NATIVE-SUPPORT-006",
                     ],
                     "semantically-adapted": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
                         "NATIVE-SUPPORT-003",
-                        "NATIVE-SUPPORT-005",
+                        "NATIVE-SUPPORT-006",
                     ],
                     "executable-safe": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
                         "NATIVE-SUPPORT-003",
                         "NATIVE-SUPPORT-004",
+                        "NATIVE-SUPPORT-005",
                     ],
-                    "unsupported": ["NATIVE-SUPPORT-005"],
+                    "unsupported": ["NATIVE-SUPPORT-006"],
                 }
 
                 assessment = registry.assess_support("fixture-command")
@@ -326,7 +328,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
                     self.assertEqual(
                         [diagnostic.code for diagnostic in report.diagnostics],
-                        ["NATIVE-SUPPORT-005"],
+                        ["NATIVE-SUPPORT-006"],
                     )
                     self.assertIsNone(backend.seen_artifact)
                     self.assertTrue(output.exists())
@@ -352,7 +354,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
                     self.assertEqual(
                         [item["code"] for item in baseline_payload],
-                        ["NATIVE-SUPPORT-005"],
+                        ["NATIVE-SUPPORT-006"],
                     )
                     self.assertEqual(
                         baseline_state_sequence,
@@ -554,7 +556,7 @@ print(json.dumps(payload, sort_keys=True))
                 "Fact",
                 (parameter,),
             )
-            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 1, 1)
+            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 1, 1, engine_semantics_id="fixture.execution.safe")
         else:
             return base_registry
 
