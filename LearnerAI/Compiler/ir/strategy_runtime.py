@@ -213,16 +213,30 @@ def bind_strategic_capability_observation(
         unit.name.lower().replace(" ", "-"),
     }
     observation_expression = binding.observations[0].expression
-    if not observation_expression.args or str(observation_expression.args[0]).lower() not in aliases:
+    if observation.observation_kind is StrategicCapabilityObservationKind.EXECUTION_FEASIBILITY:
+        if not observation_expression.args or str(observation_expression.args[0]).lower() not in aliases:
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' does not bind its declared unit"
+            )
+        if not any(
+            item.semantic_type is StrategicObservationType.UNIT_CAPABILITY
+            for item in binding.observations
+        ):
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' did not bind to UNIT_CAPABILITY"
+            )
+    elif observation.observation_kind is StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE:
+        if not any(
+            item.semantic_type is StrategicObservationType.BUILDING_COUNT
+            for item in binding.observations
+        ):
+            raise ValueError(
+                f"provider-state capability observation '{observation.identity}' did not bind to BUILDING_COUNT"
+            )
+    else:
         raise ValueError(
-            f"strategic capability observation '{observation.identity}' does not bind its declared unit"
-        )
-    if not any(
-        item.semantic_type is StrategicObservationType.UNIT_CAPABILITY
-        for item in binding.observations
-    ):
-        raise ValueError(
-            f"strategic capability observation '{observation.identity}' did not bind to UNIT_CAPABILITY"
+            f"strategic capability observation '{observation.identity}' has unsupported observation kind "
+            f"'{observation.observation_kind.value}'"
         )
     return binding
 
