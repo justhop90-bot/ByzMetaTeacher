@@ -839,10 +839,10 @@ def evaluate_strategy_runtime(
             for capability_identity, transition in capability_transitions:
                 if capability_identity not in matched_capabilities:
                     continue
-            if transition is CapabilityTransition.LOST:
-                reasons.add(ReassessmentReason.CAPABILITY_LOSS)
-            elif transition is CapabilityTransition.RECOVERED:
-                reasons.add(ReassessmentReason.CAPABILITY_RECOVERY)
+                if transition is CapabilityTransition.LOST:
+                    reasons.add(ReassessmentReason.CAPABILITY_LOSS)
+                elif transition is CapabilityTransition.RECOVERED:
+                    reasons.add(ReassessmentReason.CAPABILITY_RECOVERY)
 
         if demand.opportunity_cost is not None:
             if state is StrategicDemandRuntimeState.STRATEGIC_COMPLETE and demand.opportunity_cost.release_on_completion:
