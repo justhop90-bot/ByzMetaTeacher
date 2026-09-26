@@ -86,14 +86,12 @@ class SourceGraphTests(unittest.TestCase):
         ]
         self.assertEqual(active_targets, ["selected.perdsl"])
         inactive = [
-            edge for edge in graph.edges
+            edge
+            for edge in graph.edges
             if edge.target_path is not None and not edge.active
         ]
         self.assertEqual([edge.target_path.name for edge in inactive], ["rejected.perdsl"])
-        self.assertEqual(
-            inactive[0].condition_symbol,
-            "TEST",
-        )
+        self.assertEqual(inactive[0].condition_symbol, "TEST")
 
     def test_not_defined_branch_is_selected(self):
         graph = self._resolve(
@@ -118,6 +116,54 @@ class SourceGraphTests(unittest.TestCase):
             with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-012"):
                 SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
 
+    def test_unexpected_else_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "root.perdsl"
+            entry.write_text("#else\n", encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-013"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
+    def test_duplicate_else_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "root.perdsl"
+            entry.write_text(
+                "#load-if-defined TEST\n"
+                "#else\n"
+                "#else\n"
+                "#end-if\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-014"):
+                SourceGraphResolver().resolve(
+                    SourceGraphRequest(
+                        entrypoint=entry,
+                        load_symbols=LoadSymbolEnvironment(
+                            (("TEST", LoadSymbolState.DEFINED),),
+                        ),
+                    )
+                )
+
+    def test_unexpected_end_if_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "root.perdsl"
+            entry.write_text("#end-if\n", encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-015"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
+    def test_unterminated_conditional_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "root.perdsl"
+            entry.write_text("#load-if-defined TEST\n", encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-016"):
+                SourceGraphResolver().resolve(
+                    SourceGraphRequest(
+                        entrypoint=entry,
+                        load_symbols=LoadSymbolEnvironment(
+                            (("TEST", LoadSymbolState.DEFINED),),
+                        ),
+                    )
+                )
+
     def test_random_load_is_rejected_without_selection_policy(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-007"):
             self._resolve("random/root.perdsl")
@@ -126,8 +172,7 @@ class SourceGraphTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             entry = root / "root.perdsl"
-            entry.write_text("#load child.perdsl
-", encoding="utf-8")
+            entry.write_text("#load child.perdsl\n", encoding="utf-8")
             with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-009"):
                 SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
 
@@ -135,24 +180,35 @@ class SourceGraphTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             entry = root / "root.perdsl"
-            entry.write_text('(load child.perdsl)
-', encoding="utf-8")
+            entry.write_text("(load child.perdsl)\n", encoding="utf-8")
             with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-009"):
                 SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
 
-    def test_load_in_string_and_nested_expression_is_not_source_load(self):
+    def test_wrong_load_arity_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text('(load "child.perdsl" "extra.perdsl")\n', encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-009"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
+    def test_load_in_string_is_not_source_load(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             entry = root / "root.perdsl"
             entry.write_text(
-                'demand test {\n'
-                '    require (current-age >= dark-age)\n'
-                '    action (build house)\n'
-                '    witness (building-type-count house > 0)\n'
-                '    release (building-type-count house > 0)\n'
-                '}\n'
-                '(and (current-age >= dark-age) (current-age >= dark-age))\n'
                 '"(load \\"child.perdsl\\")"\n',
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+            self.assertEqual(len(graph.edges), 0)
+
+    def test_nested_load_expression_is_not_source_load(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '(and (load "child.perdsl") (current-age >= dark-age))\n',
                 encoding="utf-8",
             )
             graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
@@ -173,7 +229,7 @@ class SourceGraphTests(unittest.TestCase):
                         load_symbols=LoadSymbolEnvironment(
                             (("TEST", LoadSymbolState.DEFINED),),
                         ),
-                    ),
+                    )
                 )
 
     def test_load_depth_limit(self):
@@ -217,8 +273,11 @@ class SourceGraphTests(unittest.TestCase):
             (("TEST", LoadSymbolState.DEFINED),),
         )
         load_edges = [item for item in graph.edges if item.target_path is not None]
-        self.assertEqual(load_edges[0].kind, LoadKind.FILE)
-        self.assertEqual(load_edges[0].condition_kind, LoadKind.CONDITIONAL_DEFINED)
+        self.assertEqual(load_edges[0].kind, LoadKind.RAW_LOAD)
+        self.assertEqual(
+            load_edges[0].condition_kind,
+            LoadKind.CONDITIONAL_DEFINED,
+        )
 
 
 if __name__ == "__main__":
