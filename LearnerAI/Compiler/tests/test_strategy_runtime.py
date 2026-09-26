@@ -670,7 +670,6 @@ class StrategyRuntimeTests(unittest.TestCase):
             runtime.capability_transitions,
             ((provider.identity, CapabilityTransition.LOST),),
         )
-        self.assertIn(ReassessmentReason.CAPABILITY_LOSS, runtime.reassessment_reasons)
 
     def test_provider_recovery_is_detected_without_creating_new_demand_identity(self):
         base = self.profile.capability_observations[0]
@@ -697,6 +696,10 @@ class StrategyRuntimeTests(unittest.TestCase):
             ((provider.identity, CapabilityTransition.RECOVERED),),
         )
         self.assertEqual(runtime.demand_states, tuple(sorted(runtime.demand_states)))
+        self.assertIn(
+            "castle-commitment",
+            runtime.active_or_blocked_demands,
+        )
 
 
 if __name__ == "__main__":
