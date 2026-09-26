@@ -18,6 +18,7 @@ LearnerAI is organized around one stock-style Byzantine player loop. The directo
       LEARNING_PATH.md
       ENGINEERING.md
       EXAMPLES.md
+      CAPABILITY_MATRIX.md
       PER_PRIMITIVE_MAP.md
       Compiler/
       Engine/
@@ -29,6 +30,10 @@ LearnerAI is organized around one stock-style Byzantine player loop. The directo
       Production/
       Military/
       Engineering/
+
+## Capability coverage
+
+CAPABILITY_MATRIX.md is the complete stock-style Byzantine coverage contract. It is consulted before deciding that a capability is missing, optional, or incorrectly scoped.
 
 ## Player loop
 
