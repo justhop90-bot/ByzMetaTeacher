@@ -95,11 +95,11 @@ class BindingHardeningTests(unittest.TestCase):
                     existing_bindings=(
                         (
                             request_a.request_id,
-                            GoalSlot(GoalId(1200), GoalRole.LIFECYCLE_STATE, "a"),
+                            GoalSlot(GoalId(200), GoalRole.LIFECYCLE_STATE, "a"),
                         ),
                         (
                             request_b.request_id,
-                            GoalSlot(GoalId(1200), GoalRole.LIFECYCLE_STATE, "b"),
+                            GoalSlot(GoalId(200), GoalRole.LIFECYCLE_STATE, "b"),
                         ),
                     )
                 ),
@@ -108,14 +108,14 @@ class BindingHardeningTests(unittest.TestCase):
     def test_new_binding_never_collides_with_existing_manifest(self):
         existing_request = self._request("z.basilisk", "late")
         new_request = self._request("a.basilisk", "early")
-        result = RuntimeBinder(base_goal=1000).bind(
+        result = RuntimeBinder(base_goal=41).bind(
             (existing_request, new_request),
             BindingContext(
                 existing_bindings=(
                     (
                         existing_request.request_id,
                         GoalSlot(
-                            GoalId(1000),
+                            GoalId(41),
                             GoalRole.LIFECYCLE_STATE,
                             "existing",
                         ),
@@ -125,23 +125,23 @@ class BindingHardeningTests(unittest.TestCase):
         )
         self.assertEqual(
             result.binding_for(existing_request.request_id).id.value,
-            1000,
+            41,
         )
         self.assertEqual(
             result.binding_for(new_request.request_id).id.value,
-            1001,
+            42,
         )
 
     def test_binding_manifest_round_trip_is_deterministic(self):
         request = self._request("main.basilisk", "castle")
-        result = RuntimeBinder(base_goal=1000).bind((request,))
+        result = RuntimeBinder(base_goal=41).bind((request,))
         manifest = result.to_manifest(package_inventory_sha="abc123")
         text = manifest.to_json()
         restored = BindingManifest.from_json(text)
         self.assertEqual(restored.to_json(), text)
         self.assertEqual(
             restored.to_context().existing_bindings[0][1].id.value,
-            1000,
+            41,
         )
 
 
@@ -163,7 +163,7 @@ class EmitterBudgetAndArbitrationTests(unittest.TestCase):
         """
         output = compile_source(source)
         self.assertIn(
-            "(defconst action-claim-build-pass-singleton 1002)",
+            "(defconst action-claim-build-pass-singleton 43)",
             output,
         )
         self.assertEqual(
