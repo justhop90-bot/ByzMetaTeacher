@@ -768,25 +768,28 @@ def build_byzantine_castle_strategy(
     )
     community_meta = EvidenceRef(
         EvidenceKind.COMMUNITY_REFERENCE,
-        "https://www.reddit.com/r/aoe2/comments/1tr849c/byz_vs_chinese/",
-        "2026-05-29",
-        "community discussion of Byzantine defensive/counter-unit and Castle/Imperial transitions",
+        "https://www.reddit.com/r/aoe2/comments/1trs47f/",
+        "2026-05-30",
+        "current community discussion of Byzantine defensive posture, Spear/Skirmisher pressure, and transition choices",
         effective.patch,
         verification="contextual-strategy",
     )
     supporting_meta = EvidenceRef(
         EvidenceKind.COMMUNITY_REFERENCE,
-        "https://www.reddit.com/r/aoe2/comments/1ajkopd",
-        "2024-02-05",
-        "community discussion of defensive Feudal play, counter-unit transitions, and reaching Castle",
+        "https://www.reddit.com/r/aoe2/comments/1va13b/",
+        "2026-07-29",
+        "current community discussion of Byzantine defensive counter-unit use",
         effective.patch,
         verification="contextual-strategy",
     )
     meta_provenance = (community_meta, supporting_meta)
     meta_labels = {
         "Castle-capability trajectory remains strategically intended",
+        "Maintain a minimum cheap defensive military floor",
         "Sustained mounted pressure changes the active defensive posture",
         "Mounted pressure has cleared enough to resume the economic trajectory",
+        "Castle commitment is obsolete once Imperial Age is reached without the strategic Castle path",
+        "Castle completion materially changes the strategic posture",
     }
 
     demands = tuple(
