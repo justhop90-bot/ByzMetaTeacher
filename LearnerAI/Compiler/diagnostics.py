@@ -66,11 +66,17 @@ class ReportRuleDiagnostic:
     rule_order: int
     code: str
     severity: DiagnosticSeverity
-    eligibility: str
+    category: str
+    eligibility: str | None
+    source_code: str
     message: str
     path: Path | None
     line: int | None
     column: int | None
+    state_kind: str | None
+    state_identifier: str | None
+    related_rule_order: int | None
+    related_operation: str | None
 
 
 @dataclass(frozen=True)
@@ -135,6 +141,10 @@ class CombinedValidationReport:
                     "path": str(item.path) if item.path is not None else None,
                     "line": item.line,
                     "column": item.column,
+                    "state_kind": item.state_kind,
+                    "state_identifier": item.state_identifier,
+                    "related_rule_order": item.related_rule_order,
+                    "related_operation": item.related_operation,
                     "end_line": item.end_line,
                     "end_column": item.end_column,
                     "references": list(item.references),
@@ -147,7 +157,9 @@ class CombinedValidationReport:
                     "rule_order": item.rule_order,
                     "code": item.code,
                     "severity": item.severity.value,
+                    "category": item.category,
                     "eligibility": item.eligibility,
+                    "source_code": item.source_code,
                     "message": item.message,
                     "path": str(item.path) if item.path is not None else None,
                     "line": item.line,
@@ -289,8 +301,15 @@ def report_rule_diagnostic(
         if isinstance(severity_value, DiagnosticSeverity)
         else DiagnosticSeverity(str(severity_value))
     )
-    eligibility_value = getattr(item, "eligibility", "")
-    eligibility = getattr(eligibility_value, "value", str(eligibility_value))
+    category_value = getattr(item, "category", "FIRING_ELIGIBILITY")
+    category = getattr(category_value, "value", str(category_value))
+    eligibility_value = getattr(item, "eligibility", None)
+    eligibility = (
+        getattr(eligibility_value, "value", str(eligibility_value))
+        if eligibility_value is not None
+        else None
+    )
+    source_code = str(getattr(item, "source_code", code))
     message = str(getattr(item, "message", item))
     rule_order = int(getattr(item, "rule_order", 0))
     location = getattr(item, "location", None)
@@ -312,11 +331,17 @@ def report_rule_diagnostic(
         rule_order=rule_order,
         code=code,
         severity=severity,
+        category=category,
         eligibility=eligibility,
+        source_code=source_code,
         message=message,
         path=resolved_path,
         line=line,
         column=column,
+        state_kind=getattr(item, "state_kind", None),
+        state_identifier=getattr(item, "state_identifier", None),
+        related_rule_order=getattr(item, "related_rule_order", None),
+        related_operation=getattr(item, "related_operation", None),
     )
 
 
@@ -391,7 +416,20 @@ def report_from_native_result(
             rule_diagnostics,
             key=lambda item: (
                 getattr(item, "rule_order", 0),
+                0
+                if getattr(
+                    getattr(item, "category", ""),
+                    "value",
+                    getattr(item, "category", ""),
+                ) == "FIRING_ELIGIBILITY"
+                else 1,
                 getattr(getattr(item, "code", ""), "value", getattr(item, "code", "")),
+                getattr(item, "state_kind", "") or "",
+                getattr(item, "state_identifier", "") or "",
+                getattr(item, "related_rule_order", -1)
+                if getattr(item, "related_rule_order", None) is not None
+                else -1,
+                getattr(item, "related_operation", "") or "",
                 str(getattr(item, "message", "")),
             ),
         )
