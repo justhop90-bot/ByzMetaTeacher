@@ -4,12 +4,16 @@ import re
 from ..ast import DemandNode, Expression
 from ..errors import CompileError
 from ..ir import (
+    AccessKind,
+    DemandOwnership,
     GoalRole,
     GoalSlotRequest,
     LifecycleState,
     LifecycleStorage,
     PendingDiagnostic,
     SemanticAction,
+    LifecycleAccessPhase,
+    StateAccess,
     SemanticDemand,
     SemanticId,
     SemanticRequirement,
@@ -268,15 +272,87 @@ def analyze(
             slot=GoalSlotRequest(request_id=request_id, role=GoalRole.LIFECYCLE_STATE),
             initial_state=LifecycleState.ACTIVE,
         )
+        ownership = DemandOwnership(
+            demand=semantic_id,
+            owner=semantic_id,
+            state=request_id,
+        )
+        state_accesses = (
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.WRITE,
+                phase=LifecycleAccessPhase.INITIALIZATION,
+                source_order=len(result),
+                operation="initialize",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.READ,
+                phase=LifecycleAccessPhase.RELEASE,
+                source_order=len(demands) + (len(result) * 3),
+                operation="release",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.WRITE,
+                phase=LifecycleAccessPhase.RELEASE,
+                source_order=len(demands) + (len(result) * 3) + 3,
+                operation="release",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.READ,
+                phase=LifecycleAccessPhase.COMPLETION_WITNESS,
+                source_order=len(demands) + (len(result) * 3) + 1,
+                operation="completion-witness",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.WRITE,
+                phase=LifecycleAccessPhase.COMPLETION_WITNESS,
+                source_order=len(demands) + (len(result) * 3) + 4,
+                operation="completion-witness",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.READ,
+                phase=LifecycleAccessPhase.ACTION,
+                source_order=len(demands) + (len(result) * 3) + 2,
+                operation="action",
+            ),
+            StateAccess(
+                state=request_id,
+                owner=semantic_id,
+                demand=semantic_id,
+                kind=AccessKind.WRITE,
+                phase=LifecycleAccessPhase.ACTION,
+                source_order=len(demands) + (len(result) * 3) + 5,
+                operation="action",
+            ),
+        )
         result.append(
             SemanticDemand(
-                semantic_id,
-                lifecycle,
-                tuple(requirements),
-                SemanticAction(action, "ACTION", arbitration_request),
-                witness,
-                release,
-                _pending_diagnostics(demand),
+                identity=semantic_id,
+                lifecycle=lifecycle,
+                requirements=tuple(requirements),
+                action=SemanticAction(action, "ACTION", arbitration_request),
+                witness=witness,
+                release=release,
+                ownership=ownership,
+                state_accesses=state_accesses,
+                pending_diagnostics=_pending_diagnostics(demand),
             )
         )
     return result
