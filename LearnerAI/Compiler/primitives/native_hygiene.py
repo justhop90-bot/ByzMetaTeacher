@@ -431,6 +431,10 @@ class NativeStorageUse:
             raise ValueError("storage identity and provenance are required")
         if self.span_length < 1 or self.access not in {"READ", "WRITE", "READ_WRITE"}:
             raise ValueError("invalid storage shape/access")
+        if self.symbolic and self.request_purpose is None:
+            raise ValueError("symbolic storage uses require request purpose")
+        if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
+            raise ValueError("native storage semantics require documented native facts")
         if self.storage_class is NativeStorageClass.PERSISTENT_SCALAR:
             if self.span_length != 1:
                 raise ValueError("persistent scalar requires one slot")
@@ -468,6 +472,14 @@ class NativeStorageUse:
         elif self.storage_class is NativeStorageClass.ENGINE_MANAGED_GROUP:
             if self.base is not None or self.span_length != 1 or self.kind is not NativeStorageKind.DUC_GROUP:
                 raise ValueError("invalid DUC group storage")
+        elif self.storage_class is NativeStorageClass.ENGINE_MANAGED_STATE:
+            if self.base is not None or self.span_length != 1 or self.kind not in {
+                NativeStorageKind.FLAG,
+                NativeStorageKind.ESCROW,
+            }:
+                raise ValueError("invalid engine-managed state storage")
+        else:
+            raise ValueError("unsupported native storage class")
 
 
 @dataclass(frozen=True)
