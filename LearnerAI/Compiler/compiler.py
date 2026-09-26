@@ -36,6 +36,7 @@ if __package__ in (None, ""):
     from Compiler.primitives import PrimitiveRegistry, default_de_registry
     from Compiler.semantic import analyze
     from Compiler.semantic.demand_ownership import validate_demand_ownership
+    from Compiler.semantic.source_order import validate_non_lifecycle_source_order
     from Compiler.semantic.action_issuance import validate_action_issuance
     from Compiler.semantic.completion_witness import validate_completion_witnesses
     from Compiler.semantic.release_state import validate_release_states
@@ -65,6 +66,7 @@ else:
     from .primitives import PrimitiveRegistry, default_de_registry
     from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
+    from .semantic.source_order import validate_non_lifecycle_source_order
     from .semantic.action_issuance import validate_action_issuance
     from .semantic.completion_witness import validate_completion_witnesses
     from .semantic.release_state import validate_release_states
@@ -133,6 +135,9 @@ def _compile_ir_parts(
 
     ownership_report = validate_demand_ownership(ir)
     reports.append(ownership_report)
+
+    source_order_report = validate_non_lifecycle_source_order(ir)
+    reports.append(source_order_report)
 
     witness_report = validate_completion_witnesses(ir, registry)
     reports.append(witness_report)
