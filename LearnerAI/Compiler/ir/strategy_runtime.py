@@ -78,6 +78,7 @@ class StrategicObservation:
     native_parameter_contracts: tuple[NativeParameterSpec, ...]
     expression: Expression
     evidence_class: StrategicEvidenceKind
+    evidence_source: StrategicEvidenceSource
     provenance: tuple[EvidenceRef, ...] = ()
 
 
@@ -363,6 +364,8 @@ def _validate_expression(
             native_parameter_contracts=native.parameters,
             expression=expression,
             evidence_class=evidence.kind,
+            evidence_source=evidence.source,
+            provenance=evidence.provenance,
         )
     )
     if semantic_type is StrategicObservationType.TIMING:
