@@ -40,7 +40,7 @@ class NativeSemanticBinding:
     adapter_role: str
     adapter_name: str
     semantic_mapping_id: str
-    mapping_status: str
+    mapping_status: object
     evidence_class: str
     evidence_sources: tuple[str, ...]
     native_witness_ids: tuple[str, ...]
@@ -210,7 +210,7 @@ class NativeSemanticBinder:
             adapter_role=primitive.role,
             adapter_name=primitive.name,
             semantic_mapping_id=mapping.identity,
-            mapping_status=mapping.status.value,
+            mapping_status=mapping.status,
             evidence_class=mapping.evidence_class,
             evidence_sources=tuple(mapping.evidence_sources),
             native_witness_ids=tuple(primitive.native_witness_ids),
