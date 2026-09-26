@@ -275,3 +275,12 @@ The remaining compiler work is semantic, not storage plumbing: explicit demand o
 - [x] Multiple writers by one owner are legal only across distinct lifecycle phases; duplicate writers in the same phase are rejected.
 - [x] Writers from different owners are rejected as conflicting persistent writers.
 - [x] The compiler gate executes ownership validation before capability validation, runtime binding, and emission.
+
+
+### Final demand ownership verification (2026-09-26)
+
+Compiler CI run 207 (36234240102) verified the authoritative demand-ownership tree through the repository workflow:
+
+- native generated Basilisk fixture: finding_count=0, failed=false;
+- full compiler unittest suite: 132 tests, OK;
+- ownership regression fixtures and compile-gate integration executed in the same suite.
