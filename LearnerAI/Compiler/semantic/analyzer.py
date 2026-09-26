@@ -69,7 +69,7 @@ def _parse(tokens: list[str], index: int = 0):
     return Expression(source="", head=head, args=tuple(args)), index + 1
 
 
-def parse_expression(source: str) -> Expression:
+def parse_expression(source: str, location=None) -> Expression:
     tokens = _tokens(source)
     expr, end = _parse(tokens)
     if end != len(tokens):
@@ -78,7 +78,7 @@ def parse_expression(source: str) -> Expression:
         raise CompileError(
             f"logical operator '{expr.head}' requires {_LOGICAL_ARITY[expr.head]} operands"
         )
-    return Expression(source=source, head=expr.head, args=expr.args)
+    return Expression(source=source, head=expr.head, args=expr.args, location=location)
 
 
 def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
@@ -233,19 +233,30 @@ def analyze(
     result = []
     for demand in demands:
         requirements = []
-        for raw in demand.requirements:
-            expr = parse_expression(raw)
+        for requirement_index, raw in enumerate(demand.requirements):
+            location = (
+                demand.requirement_locations[requirement_index]
+                if requirement_index < len(demand.requirement_locations)
+                else demand.location
+            )
+            expr = parse_expression(raw, location)
             _validate_context(
                 expr,
                 registry,
                 {"OBSERVATION", "TIMING", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
                 f"demand '{demand.name}' requirement",
             )
-            requirements.append(SemanticRequirement(expr, _stored_role(expr, registry)))
+            requirements.append(
+                SemanticRequirement(
+                    expr,
+                    _stored_role(expr, registry),
+                    location=location,
+                )
+            )
         if any(_context_roles(req.expression, registry) == {"TIMING"} for req in requirements):
             if not any(_has_non_timing_evidence(req.expression, registry) for req in requirements):
                 raise CompileError("TIMING-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " uses timing as its only evidence")
-        action = parse_expression(demand.action)
+        action = parse_expression(demand.action, demand.action_location or demand.location)
         action_primitive = _validate_action(
             action,
             registry,
@@ -263,14 +274,20 @@ def analyze(
             )
         if not demand.witness.strip() or demand.witness.strip() == "()":
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
-        witness = parse_expression(demand.witness)
+        witness = parse_expression(
+            demand.witness,
+            demand.witness_location or demand.location,
+        )
         _validate_context(
             witness,
             registry,
             {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
             f"demand '{demand.name}' witness",
         )
-        release = parse_expression(demand.release)
+        release = parse_expression(
+            demand.release,
+            demand.release_location or demand.location,
+        )
         _validate_context(
             release,
             registry,
@@ -279,7 +296,10 @@ def analyze(
         )
         invalidation = None
         if demand.invalidate and demand.invalidate.strip():
-            invalidation = parse_expression(demand.invalidate)
+            invalidation = parse_expression(
+                demand.invalidate,
+                demand.invalidate_location or demand.location,
+            )
             _validate_context(
                 invalidation,
                 registry,
@@ -304,6 +324,7 @@ def analyze(
             establishes=semantic_id,
             source_order=lifecycle_base + 2,
             issuance_source_order=lifecycle_base + 6,
+            location=witness.location,
         )
         ownership = DemandOwnership(
             demand=semantic_id,
@@ -323,6 +344,7 @@ def analyze(
             to_state=LifecycleState.RELEASED,
             source_order=lifecycle_base,
             witness_source_order=lifecycle_base + 2,
+            location=release.location,
         )
         cancellation = None
         if invalidation is not None:
@@ -337,6 +359,7 @@ def analyze(
                 invalidates=semantic_id,
                 source_order=max(0, lifecycle_base - 1),
                 action_source_order=lifecycle_base + 6,
+                location=invalidation.location,
             )
             cancellation = CancellationStateContract(
                 identity=SemanticId(
@@ -365,6 +388,7 @@ def analyze(
             failure=ActionIssuanceFailure.RETAIN_ACTIVE,
             retryable=True,
             source_order=lifecycle_base + 6,
+            location=action.location,
         )
         state_accesses = (
             StateAccess(
@@ -454,7 +478,12 @@ def analyze(
                 identity=semantic_id,
                 lifecycle=lifecycle,
                 requirements=tuple(requirements),
-                action=SemanticAction(action, "ACTION", arbitration_request),
+                action=SemanticAction(
+                    action,
+                    "ACTION",
+                    arbitration_request,
+                    location=action.location,
+                ),
                 action_issuance=action_issuance,
                 witness=witness,
                 completion_witness=completion_witness,
@@ -465,6 +494,7 @@ def analyze(
                 ownership=ownership,
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
+                location=demand.location,
             )
         )
     return result
