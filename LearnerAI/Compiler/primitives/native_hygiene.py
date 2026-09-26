@@ -456,8 +456,8 @@ class NativeStorageUse:
                 NativeStorageKind.GUARD_STATE_GOAL_SPAN,
             } or self.base is None or self.span_length < 2:
                 raise ValueError("invalid documented Goal span")
-            if self.base < 1 or self.base + self.span_length - 1 > 16000:
-                raise ValueError("documented multi-Goal span is outside the Goal namespace")
+            if self.base < 41 or self.base + self.span_length - 1 > 16000:
+                raise ValueError("documented multi-Goal span is outside the native multi-Goal namespace")
         elif self.storage_class is NativeStorageClass.ENGINE_MANAGED_LIST:
             if self.base is not None or self.span_length != 1:
                 raise ValueError("engine-managed lists do not use Goal slots")
