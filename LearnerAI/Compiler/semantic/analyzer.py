@@ -9,6 +9,8 @@ from ..ir import (
     ActionIssuanceFailure,
     ActionIssuancePhase,
     CompletionWitnessContract,
+    ReleaseStateContract,
+    ReleaseEvidenceKind,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -266,13 +268,12 @@ def analyze(
             f"demand '{demand.name}' witness",
         )
         release = parse_expression(demand.release)
-        if "TIMING" in _context_roles(release, registry):
-            raise CompileError("TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " release cannot depend on timing")
-        if release.head == action.head:
-            raise CompileError(
-                f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
-            )
-        _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
+        _validate_context(
+            release,
+            registry,
+            {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
+            f"demand '{demand.name}' release",
+        )
         semantic_id = SemanticId(source_unit=source_unit, local_name=demand.name)
         request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
         lifecycle = LifecycleStorage(
@@ -296,6 +297,20 @@ def analyze(
             demand=semantic_id,
             owner=semantic_id,
             state=request_id,
+        )
+        release_state = ReleaseStateContract(
+            identity=SemanticId(
+                source_unit=source_unit,
+                local_name=f"{demand.name}-release",
+            ),
+            evidence_kind=ReleaseEvidenceKind.WORLD_STATE,
+            primitive=release.head,
+            expression=release,
+            establishes=semantic_id,
+            from_state=LifecycleState.COMPLETE,
+            to_state=LifecycleState.RELEASED,
+            source_order=lifecycle_base,
+            witness_source_order=lifecycle_base + 2,
         )
         action_issuance = ActionIssuance(
             demand=semantic_id,
