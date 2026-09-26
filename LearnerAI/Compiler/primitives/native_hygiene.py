@@ -1339,44 +1339,135 @@ def promotion_state(citation: CitationRecord, *, already_promoted: bool) -> Prom
 
 
 def default_native_citation_catalog() -> CitationRecordCatalog:
-    airef_commands = "https://airef.github.io/commands/commands-details.html"
+    airef_revision = "49f687b5a3fc3e09fc9308372f0bcd4187610071"
+    retrieval_at = "2026-09-26T18:25:41Z"
+    commands_source = (
+        "https://raw.githubusercontent.com/airef/airef.github.io/"
+        f"{airef_revision}/js/commands.js"
+    )
+    data_limits_source = (
+        "https://raw.githubusercontent.com/airef/airef.github.io/"
+        f"{airef_revision}/resources/articles/data-limits.html"
+    )
+    patch_notes_source = (
+        "https://raw.githubusercontent.com/airef/airef.github.io/"
+        f"{airef_revision}/tables/up-patch-notes.html"
+    )
+
+    commands_hash = SourceContentHash(
+        "git-sha1",
+        "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+        "GIT_BLOB",
+    )
+    data_limits_hash = SourceContentHash(
+        "git-sha1",
+        "804dd1b59821f8778133fd8ee4e475304adf8702",
+        "GIT_BLOB",
+    )
+    patch_notes_hash = SourceContentHash(
+        "git-sha1",
+        "10369e24ac76941d575b82f4ca3bfc1e2eb65382",
+        "GIT_BLOB",
+    )
+
+    commands_retrieval = SourceRetrieval(
+        retrieved_at_utc=retrieval_at,
+        canonical_url=commands_source,
+        final_url=commands_source,
+        provider="github",
+        source_revision=airef_revision,
+        http_status=200,
+        content_type="text/plain",
+    )
+    data_limits_retrieval = SourceRetrieval(
+        retrieved_at_utc=retrieval_at,
+        canonical_url=data_limits_source,
+        final_url=data_limits_source,
+        provider="github",
+        source_revision=airef_revision,
+        http_status=200,
+        content_type="text/plain",
+    )
+    patch_notes_retrieval = SourceRetrieval(
+        retrieved_at_utc=retrieval_at,
+        canonical_url=patch_notes_source,
+        final_url=patch_notes_source,
+        provider="github",
+        source_revision=airef_revision,
+        http_status=200,
+        content_type="text/plain",
+    )
+
+    aoe2_command_scope = EngineVersionScope(
+        source_families=(AIRefVersionFamily.TC,),
+        engine_targets=(AIRefVersionFamily.DE,),
+        introduced_family=AIRefVersionFamily.TC,
+        release="AoC",
+    )
+    de_up_storage_scope = EngineVersionScope(
+        source_families=(AIRefVersionFamily.DE, AIRefVersionFamily.UP),
+        engine_targets=(AIRefVersionFamily.DE,),
+        release="AIRef data-limits for DE/UP",
+    )
+    up_goal_span_scope = EngineVersionScope(
+        source_families=(AIRefVersionFamily.UP,),
+        engine_targets=(AIRefVersionFamily.DE,),
+        introduced_family=AIRefVersionFamily.UP,
+        release="UserPatch",
+    )
+    up_build_scope = EngineVersionScope(
+        source_families=(AIRefVersionFamily.UP,),
+        engine_targets=(AIRefVersionFamily.DE,),
+        introduced_family=AIRefVersionFamily.UP,
+        release="UserPatch 1.1 / 20120416-093415",
+    )
+
     return CitationRecordCatalog(
         records=(
             CitationRecord(
                 "airef:building-type-count",
-                f"{airef_commands}#building-type-count",
-                f"{airef_commands}#building-type-count",
+                "https://airef.github.io/commands/commands-details.html#building-type-count",
+                "https://airef.github.io/commands/commands-details.html#building-type-count",
                 LocatorType.COMMAND,
                 "building-type-count",
                 excerpt=SourceExcerpt.capture(
                     "(building-type-count <BuildingId> <compareOp> <Value>)",
                     ExcerptKind.FACT,
                 ),
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=aoe2_command_scope,
             ),
             CitationRecord(
                 "airef:unit-type-count",
-                f"{airef_commands}#unit-type-count",
-                f"{airef_commands}#unit-type-count",
+                "https://airef.github.io/commands/commands-details.html#unit-type-count",
+                "https://airef.github.io/commands/commands-details.html#unit-type-count",
                 LocatorType.COMMAND,
                 "unit-type-count",
                 excerpt=SourceExcerpt.capture(
                     "(unit-type-count <UnitId> <compareOp> <Value>)",
                     ExcerptKind.FACT,
                 ),
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=aoe2_command_scope,
             ),
             CitationRecord(
                 "airef:research-completed",
-                f"{airef_commands}#research-completed",
-                f"{airef_commands}#research-completed",
+                "https://airef.github.io/commands/commands-details.html#research-completed",
+                "https://airef.github.io/commands/commands-details.html#research-completed",
                 LocatorType.COMMAND,
                 "research-completed",
                 excerpt=SourceExcerpt.capture(
                     "(research-completed <TechId>)",
                     ExcerptKind.FACT,
                 ),
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=aoe2_command_scope,
             ),
             CitationRecord(
                 "airef:goal-storage",
@@ -1390,12 +1481,15 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     locator_text="Goals: 1 to 512",
                 ),
                 semantic_scope=CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE,
-                state=CitationState.VERIFIED,
+                source_hash=data_limits_hash,
+                retrieval=data_limits_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=de_up_storage_scope,
             ),
             CitationRecord(
                 "airef:extended-goal-span-point",
-                f"{airef_commands}#up-get-point",
-                f"{airef_commands}#up-get-point",
+                "https://airef.github.io/commands/commands-details.html#up-get-point",
+                "https://airef.github.io/commands/commands-details.html#up-get-point",
                 LocatorType.COMMAND,
                 "up-get-point Point: 41 to 15998, 2 consecutive goals",
                 excerpt=SourceExcerpt.capture(
@@ -1403,12 +1497,15 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     ExcerptKind.PARAMETER,
                 ),
                 semantic_scope=CitationSemanticScope.EXTENDED_GOAL_SPAN,
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_goal_span_scope,
             ),
             CitationRecord(
                 "airef:extended-goal-span-4",
-                f"{airef_commands}#up-get-search-state",
-                f"{airef_commands}#up-get-search-state",
+                "https://airef.github.io/commands/commands-details.html#up-get-search-state",
+                "https://airef.github.io/commands/commands-details.html#up-get-search-state",
                 LocatorType.COMMAND,
                 "up-get-search-state OutputGoalId: 41 to 15996, 4 consecutive goals",
                 excerpt=SourceExcerpt.capture(
@@ -1416,12 +1513,15 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     ExcerptKind.PARAMETER,
                 ),
                 semantic_scope=CitationSemanticScope.EXTENDED_GOAL_SPAN,
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_goal_span_scope,
             ),
             CitationRecord(
                 "airef:goal-id-parameter-range",
-                f"{airef_commands}#goal",
-                f"{airef_commands}#goal",
+                "https://airef.github.io/commands/commands-details.html#goal",
+                "https://airef.github.io/commands/commands-details.html#goal",
                 LocatorType.COMMAND,
                 "goal GoalId: 1 to 16000",
                 excerpt=SourceExcerpt.capture(
@@ -1429,7 +1529,10 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     ExcerptKind.PARAMETER,
                 ),
                 semantic_scope=CitationSemanticScope.GOAL_ID_PARAMETER_RANGE,
-                state=CitationState.VERIFIED,
+                source_hash=commands_hash,
+                retrieval=commands_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=aoe2_command_scope,
             ),
             CitationRecord(
                 "airef:build-pass-limit",
@@ -1441,7 +1544,10 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     "only 1 build/up-build command is allowed to succeed per AI rule pass.",
                     ExcerptKind.PATCH_NOTE,
                 ),
-                state=CitationState.VERIFIED,
+                source_hash=patch_notes_hash,
+                retrieval=patch_notes_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_build_scope,
             ),
         )
     )
