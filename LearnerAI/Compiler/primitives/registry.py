@@ -83,6 +83,75 @@ class PrimitiveRegistry:
 
 
 
+    @property
+    def native_contracts(self) -> NativeContractCatalog:
+        return self._native_contracts
+
+    def validate_primitive_promotion(self, primitive: Primitive, native) -> None:
+        if primitive.kind != "ACTION":
+            return
+        if not primitive.native_witness_ids:
+            raise ValueError(f"action primitive '{primitive.name}' has no native witness contract")
+        if not primitive.native_storage_use_ids:
+            raise ValueError(f"action primitive '{primitive.name}' has no native storage contract")
+        for identity in primitive.native_witness_ids:
+            witness = self._native_contracts.witness(identity)
+            if self.native(witness.primitive) is None:
+                raise ValueError(f"native witness '{identity}' references unknown primitive '{witness.primitive}'")
+            witness_adapter = self.get(witness.primitive)
+            if witness_adapter is None or not witness_adapter.completion_witness:
+                raise ValueError(f"native witness '{identity}' is not completion-capable")
+            if witness.primitive == primitive.name:
+                raise ValueError(f"native witness '{identity}' reuses action primitive '{primitive.name}'")
+            if witness.kind is NativeWitnessKind.TIMER_STATE:
+                raise ValueError(f"native witness '{identity}' cannot be timer state")
+        for identity in primitive.native_storage_use_ids:
+            use = self._native_contracts.storage(identity)
+            if use.request_purpose is None:
+                raise ValueError(f"native storage use '{identity}' has no request purpose")
+        for identity in primitive.native_pass_constraint_ids:
+            constraint = self._native_contracts.pass_constraint(identity)
+            if constraint.command != primitive.name:
+                raise ValueError(
+                    f"native pass constraint '{identity}' targets '{constraint.command}', not '{primitive.name}'"
+                )
+        for constraint in self._native_contracts.pass_constraints_for(primitive.name):
+            if constraint.maximum_successes == 1 and constraint.identity not in primitive.native_pass_constraint_ids:
+                raise ValueError(
+                    f"native pass constraint '{constraint.identity}' is not declared by '{primitive.name}'"
+                )
+
+    def validate_demand_lowering(self, demand, bindings) -> None:
+        primitive = self.require(demand.action.expression.head)
+        self.validate_primitive_promotion(primitive, self.require_native(primitive.name))
+        requests = {demand.lifecycle.slot.request_id: demand.lifecycle.slot}
+        if demand.action.arbitration_request is not None:
+            requests[demand.action.arbitration_request.request_id] = demand.action.arbitration_request
+        for identity in primitive.native_storage_use_ids:
+            use = self._native_contracts.storage(identity)
+            request = next((candidate for request_id, candidate in requests.items() if request_id.purpose == use.request_purpose), None)
+            if request is None:
+                raise ValueError(f"native storage use '{identity}' requires request purpose '{use.request_purpose}'")
+            binding = bindings.binding_for(request.request_id)
+            if binding.__class__.__name__ == "GoalSlot":
+                start = end = binding.id.value
+                kind = "GOAL_SLOT"
+            elif binding.__class__.__name__ == "GoalSpan":
+                start = binding.start.value
+                end = start + binding.width - 1
+                kind = "GOAL_SPAN"
+            elif binding.__class__.__name__ == "StrategicNumberSlot":
+                start = end = binding.id
+                kind = "STRATEGIC_NUMBER"
+            elif binding.__class__.__name__ == "TimerSlot":
+                start = end = binding.id
+                kind = "TIMER"
+            else:
+                raise ValueError(f"unsupported binding type '{type(binding).__name__}'")
+            use.validate_binding_shape(binding_kind=kind, start=start, end=end)
+
+    def pass_constraints_for(self, command: str) -> tuple[PassExecutionConstraint, ...]:
+        return self._native_contracts.pass_constraints_for(command)
     @staticmethod
     def _native_typed(native) -> bool:
         if not native.version or native.command_type not in {"Fact", "Action"}:
@@ -244,6 +313,24 @@ class PrimitiveRegistry:
                 "NATIVE-SUPPORT-006",
                 "error",
                 mapping_message,
+            )
+            diagnostics.append(diagnostic)
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
+        try:
+            self.validate_primitive_promotion(primitive, native)
+        except (KeyError, ValueError) as exc:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-006",
+                "error",
+                f"native primitive contract is not executable-safe: {exc}",
             )
             diagnostics.append(diagnostic)
             return NativeSupportAssessment(
