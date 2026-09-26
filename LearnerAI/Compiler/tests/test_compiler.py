@@ -24,7 +24,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 1001)", a)
         self.assertIn("(set-goal demand-castle 1002)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
-        self.assertEqual(a.count("(defrule"), 10)
+        self.assertEqual(a.count("(defrule"), 11)
 
     def test_unknown_primitive_rejected(self):
         source = """
