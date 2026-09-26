@@ -161,6 +161,48 @@ class StrategyRuntimeState:
         return None
 
 
+def bind_strategic_capability_observation(
+    observation: StrategicCapabilityObservation,
+    effective: EffectiveCivData,
+    registry: PrimitiveRegistry | None = None,
+) -> StrategicEvidenceBinding:
+    if observation.source is StrategicEvidenceSource.COMMUNITY_META:
+        raise ValueError(
+            f"community meta cannot define factual capability '{observation.identity}'"
+        )
+    if observation.capability.kind.name != "TRAIN":
+        raise ValueError(
+            f"strategic capability observation '{observation.identity}' must use TRAIN intent"
+        )
+    if observation.capability.entity_type != "unit":
+        raise ValueError(
+            f"strategic capability observation '{observation.identity}' must target a unit"
+        )
+    unit_id = int(observation.capability.entity_id)
+    status = effective.factual_status("unit", unit_id)
+    if status.value != "VERIFIED":
+        raise ValueError(
+            f"strategic capability observation '{observation.identity}' requires "
+            f"factual status VERIFIED for unit {unit_id}; status is {status.value}"
+        )
+    evidence = StrategicEvidence(
+        StrategicEvidenceKind.EXECUTION,
+        observation.expression,
+        observation.identity,
+        source=observation.source,
+        provenance=observation.provenance,
+    )
+    binding = bind_strategic_evidence(evidence, effective, registry)
+    if not any(
+        item.semantic_type is StrategicObservationType.UNIT_CAPABILITY
+        for item in binding.observations
+    ):
+        raise ValueError(
+            f"strategic capability observation '{observation.identity}' did not bind to UNIT_CAPABILITY"
+        )
+    return binding
+
+
 _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "current-age": StrategicObservationType.CURRENT_AGE,
     "food-amount": StrategicObservationType.RESOURCE_AMOUNT,
