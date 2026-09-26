@@ -189,6 +189,7 @@ def _split_rule_body(
     slice_: EffectiveSourceSlice,
     body_start: int,
     body_end: int,
+    source_offset: int,
 ) -> tuple[tuple[Expression, ...], tuple[RuleAction, ...]]:
     facts: list[Expression] = []
     actions: list[RuleAction] = []
@@ -206,7 +207,7 @@ def _split_rule_body(
             continue
         if text.startswith("=>", index):
             if arrow_start is not None:
-                location = _line_column(slice_, index)
+                location = _line_column(slice_, source_offset + index)
                 raise CompileError(
                     f"RULE-PARSE-001: multiple '=>' separators at "
                     f"{location.source_unit}:{location.line}:{location.column}"
@@ -235,7 +236,7 @@ def _split_rule_body(
         index = end
 
     if arrow_start is None:
-        location = _line_column(slice_, body_start)
+        location = _line_column(slice_, source_offset + body_start)
         raise CompileError(
             f"RULE-PARSE-001: defrule is missing '=>' at "
             f"{location.source_unit}:{location.line}:{location.column}"
@@ -247,7 +248,7 @@ def _split_rule_body(
             f"{location.source_unit}:{location.line}:{location.column}"
         )
     if not actions:
-        location = _line_column(slice_, arrow_start + 2)
+        location = _line_column(slice_, source_offset + arrow_start + 2)
         raise CompileError(
             f"RULE-PARSE-007: defrule has no actions at "
             f"{location.source_unit}:{location.line}:{location.column}"
@@ -283,7 +284,8 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
     name_start = index
     while index < len(source) and not source[index].isspace() and source[index] not in "()":
         index += 1
-    if name_start == index:
+    rule_name = source[name_start:index]
+    if not rule_name or rule_name == "=>":
         raise CompileError(
             f"RULE-PARSE-009: defrule is missing its rule name at "
             f"{location.source_unit}:{location.line}:{location.column}"
@@ -293,8 +295,9 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
     facts, actions = _split_rule_body(
         source,
         slice_,
-        start + body_start,
+        body_start,
         outer_end - 1,
+        start,
     )
     disable_self_indices = [
         index
