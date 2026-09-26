@@ -15,7 +15,10 @@ from Compiler.semantic.fact_values import (
     CanonicalKind,
     CanonicalSymbol,
     CanonicalizationContext,
+    FactDomain,
+    FactDomainKind,
     NormalizedFact,
+    StaticTruth,
     IdentifierForm,
     canonicalize_value,
 )
@@ -202,6 +205,127 @@ class CanonicalFactValueTests(unittest.TestCase):
         self.assertEqual(first.identity_key, loaded.identity_key)
         self.assertEqual(hash(first.identity_key), hash(loaded.identity_key))
         self.assertEqual(first.canonical_args, loaded.canonical_args)
+
+
+
+    def test_fact_domain_is_an_invariant_value_space_not_runtime_truth(self):
+        domain = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://domain/age",
+                ),
+            ),
+        )
+
+        self.assertTrue(
+            domain.contains(CanonicalEnum("AGE", "CASTLE"))
+        )
+        self.assertFalse(
+            domain.contains(CanonicalEnum("AGE", "MYTHIC"))
+        )
+        self.assertEqual(StaticTruth.UNKNOWN, StaticTruth.UNKNOWN)
+        self.assertNotEqual(StaticTruth.UNKNOWN, True)
+        self.assertNotEqual(StaticTruth.UNKNOWN, False)
+
+    def test_integer_fact_domain_enforces_invariant_bounds_only(self):
+        domain = FactDomain(
+            identity="RESOURCE_AMOUNT",
+            kind=FactDomainKind.RESOURCE_AMOUNT,
+            value_type="int",
+            ordered=True,
+            non_negative=True,
+            minimum=0,
+            maximum=20000,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://domain/resource",
+                ),
+            ),
+        )
+
+        self.assertTrue(domain.contains(CanonicalInteger(0)))
+        self.assertTrue(domain.contains(CanonicalInteger(20000)))
+        self.assertFalse(domain.contains(CanonicalInteger(-1)))
+        self.assertFalse(domain.contains(CanonicalInteger(20001)))
+        self.assertFalse(
+            domain.contains(CanonicalIdentifier("UNIT", IdentifierForm.NUMERIC_ID, 7))
+        )
+
+    def test_normalized_fact_domain_does_not_change_identity_or_claim_static_truth(self):
+        args = (CanonicalEnum("AGE", "CASTLE"),)
+        domain_a = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://domain/age/a",
+                ),
+            ),
+        )
+        domain_b = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.MEDIUM,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TABLE,
+                    citation_id="test://domain/age/b",
+                ),
+            ),
+        )
+
+        first = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://fact/age/a",
+                ),
+            ),
+            domain=domain_a,
+        )
+        second = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.MEDIUM,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TABLE,
+                    citation_id="test://fact/age/b",
+                ),
+            ),
+            domain=domain_b,
+        )
+
+        self.assertEqual(first.identity_key, second.identity_key)
+        self.assertEqual(first.domain.identity, "AGE")
+        self.assertEqual(second.domain.identity, "AGE")
+        self.assertEqual(StaticTruth.UNKNOWN, StaticTruth.UNKNOWN)
 
 
     def test_canonical_kind_is_explicit_for_union_members(self):
