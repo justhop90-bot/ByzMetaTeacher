@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 import sys
 
@@ -21,9 +22,15 @@ from Compiler.ir.capability import (
     WitnessKind,
 )
 from Compiler.ir.model import SemanticId
+from Compiler.compiler import compile_source
+from Compiler.diagnostics import DiagnosticSeverity
+from Compiler.errors import CompileError
 from Compiler.primitives import default_de_registry
 from Compiler.semantic.resource_conflicts import (
+    ResourceDiagnostic,
     ResourceDiagnosticCode,
+    ResourceStatus,
+    ResourceValidationReport,
     validate_resource_conflicts,
 )
 
@@ -90,6 +97,43 @@ class ResourceConflictTests(unittest.TestCase):
             graph,
             default_de_registry(),
         )
+
+    def test_compile_pipeline_uses_resource_validation_gate(self):
+        diagnostic = ResourceDiagnostic(
+            code=ResourceDiagnosticCode.CONFLICT_WITHOUT_OWNER,
+            severity=DiagnosticSeverity.ERROR,
+            message="provider 'castle-provider' conflict class "
+                    "'BUILD_PASS_SINGLETON' has no arbitration owner",
+            status=ResourceStatus.BLOCKED,
+            provider=SemanticId("test", "castle-provider"),
+            conflict_class="BUILD_PASS_SINGLETON",
+        )
+        report = ResourceValidationReport(
+            diagnostics=(diagnostic,),
+            claims=(),
+            conflicts=(),
+        )
+
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with patch(
+            "Compiler.compiler.validate_resource_conflicts",
+            return_value=report,
+        ) as validator:
+            with self.assertRaisesRegex(
+                CompileError,
+                r"RES-003: provider 'castle-provider' conflict class "
+                r"'BUILD_PASS_SINGLETON' has no arbitration owner",
+            ):
+                compile_source(source)
+            validator.assert_called_once()
+
 
     def test_existing_build_claim_projects_to_typed_transient_resource(self):
         report = self._validate(
