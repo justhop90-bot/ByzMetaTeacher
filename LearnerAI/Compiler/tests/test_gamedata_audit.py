@@ -5,6 +5,8 @@ from LearnerAI.Compiler.ir.game_data import (
     Age,
     BuildingId,
     EntitySelector,
+    PrerequisiteKind,
+    Rational,
     ResourceCost,
     UnitId,
     UnitLineId,
@@ -28,6 +30,17 @@ class GameDataAuditTests(unittest.TestCase):
         )
         self.assertEqual(self.data.cost_of("unit:38"), ResourceCost(food=60, gold=75))
         self.assertEqual(self.data.cost_of("building:82"), self.data.building(82).base_cost)
+
+    def test_rational_values_are_canonical(self):
+        self.assertEqual(Rational(2, 4), Rational(1, 2))
+
+    def test_skirmisher_discount_is_a_separate_byzantine_unit_line_modifier(self):
+        self.assertEqual(
+            self.data.unit_line("skirmisher-line").members,
+            (UnitId(7), UnitId(6)),
+        )
+        self.assertEqual(self.data.cost_of("unit:7"), ResourceCost(food=19, wood=26))
+        self.assertEqual(self.data.cost_of("unit:6"), ResourceCost(food=19, wood=26))
 
     def test_spearman_line_discount_covers_all_three_units(self):
         self.assertEqual(
@@ -90,9 +103,63 @@ class GameDataAuditTests(unittest.TestCase):
         self.assertIn(UnitLineId("dromon-line"), self.data.building(45).trainable_lines)
         self.assertIn(UnitLineId("varangian-guard-line"), self.data.building(12).trainable_lines)
 
-    def test_age_advances_do_not_claim_unverified_static_building_prerequisites(self):
-        for age in (Age.FEUDAL, Age.CASTLE, Age.IMPERIAL):
-            self.assertEqual(self.data.age_advance(age).prerequisites, ())
+    def test_age_advances_encode_verified_building_prerequisites(self):
+        feudal = self.data.age_advance(Age.FEUDAL)
+        castle = self.data.age_advance(Age.CASTLE)
+        imperial = self.data.age_advance(Age.IMPERIAL)
+
+        self.assertEqual(feudal.from_age, Age.DARK)
+        self.assertEqual(castle.from_age, Age.FEUDAL)
+        self.assertEqual(imperial.from_age, Age.CASTLE)
+        self.assertEqual(feudal.native_tech_id, 101)
+        self.assertEqual(castle.native_tech_id, 102)
+        self.assertEqual(imperial.native_tech_id, 103)
+
+        self.assertEqual(feudal.prerequisites[0].kind, PrerequisiteKind.N_OF)
+        self.assertEqual(feudal.prerequisites[0].count, 2)
+        self.assertEqual(castle.prerequisites[0].kind, PrerequisiteKind.N_OF)
+        self.assertEqual(castle.prerequisites[0].count, 2)
+        self.assertEqual(imperial.prerequisites[0].kind, PrerequisiteKind.ANY)
+        self.assertEqual(imperial.prerequisites[0].children[0].building, BuildingId(82))
+        self.assertEqual(imperial.prerequisites[0].children[1].kind, PrerequisiteKind.N_OF)
+
+    def test_upgrade_relations_carry_native_research_triggers(self):
+        expected = {
+            (93, 358): 197,
+            (358, 359): 429,
+            (4, 24): 100,
+            (24, 492): 237,
+            (329, 330): 236,
+            (40, 553): 361,
+            (2703, 2704): 1454,
+            (529, 532): 246,
+        }
+        actual = {
+            (int(relation.previous), int(relation.current)): int(relation.research)
+            for relation in self.data.upgrade_relations
+        }
+        for edge, research in expected.items():
+            self.assertEqual(actual[edge], research)
+
+    def test_varangian_effects_are_typed_engine_facts(self):
+        varangian = self.data.unit(2703)
+        self.assertIn("SHOCK_INFANTRY", {item.value for item in varangian.engine_classes})
+        self.assertTrue(
+            any(effect.attribute == "gold-when-fighting-other-units" for effect in varangian.effects)
+        )
+        self.assertTrue(
+            any(effect.attribute == "affected-by-gambesons" for effect in varangian.effects)
+        )
+
+    def test_current_snapshot_marks_itself_as_a_factual_subset(self):
+        self.assertEqual(self.data.coverage.status.value, "FACTUAL_SUBSET")
+        self.data.require_coverage("unit", 2703)
+        with self.assertRaisesRegex(ValueError, "factual coverage"):
+            self.data.require_coverage("unit", 550)
+
+    def test_unavailable_byzantine_techs_are_not_promoted_from_generic_ai_reference(self):
+        for tech_id in (435, 436, 239):
+            self.assertNotIn(tech_id, [int(item) for item in self.data.available_technologies])
 
     def test_varangian_ids_are_repository_anchored_and_patch_valid(self):
         self.assertEqual(self.data.unit(2703).name, "Varangian Guard")
