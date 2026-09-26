@@ -20,6 +20,32 @@ from Compiler.primitives.registry import (
 
 
 class SemanticSupportStateTests(unittest.TestCase):
+
+    def test_action_semantics_use_world_entity_counts_not_total_counts_for_completion(self):
+        mapping_registry = default_engine_semantic_mapping_registry()
+        build = mapping_registry.require("execution.build.request")
+        train = mapping_registry.require("execution.train.request")
+        self.assertIn("building-type-count", build.completion)
+        self.assertNotIn("building-type-count-total", build.completion)
+        self.assertIn("unit-type-count", train.completion)
+        self.assertNotIn("unit-type-count-total", train.completion)
+
+    def test_community_lifecycle_contracts_do_not_use_total_counts_as_completion(self):
+        from Compiler.semantic.community_engine import default_community_engine_registry
+
+        lifecycle = {
+            contract.action: contract
+            for contract in default_community_engine_registry().lifecycle_contracts
+        }
+        self.assertEqual(
+            lifecycle["build"].completion_witness,
+            "building-type-count",
+        )
+        self.assertEqual(
+            lifecycle["train"].completion_witness,
+            "unit-type-count",
+        )
+
     def test_default_registry_maps_every_semantic_adapter(self):
         registry = default_de_registry()
         mappings = [
