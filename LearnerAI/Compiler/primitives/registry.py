@@ -5,7 +5,10 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
-from ..semantic.fact_registry import NativeFactRegistry
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..semantic.fact_registry import NativeFactRegistry
 from .native_binder import (
     NativeSemanticBinder,
     NativeSupportAssessment,
@@ -366,6 +369,8 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         )
         for item in primitive_items
     )
+    from ..semantic.fact_registry import NativeFactRegistry
+
     fact_registry = NativeFactRegistry.from_primitives(
         mapped_items,
         native_registry,
