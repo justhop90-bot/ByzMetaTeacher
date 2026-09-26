@@ -46,7 +46,7 @@ def persistent_rule_diagnostic():
     return SimpleNamespace(
         rule_order=2,
         code=SimpleNamespace(value="PSTATE-002"),
-        severity=SimpleNamespace(value="warning"),
+        severity=DiagnosticSeverity.WARNING,
         eligibility=None,
         message="goal state '7' has a later writer in rule 2 after writer in rule 1",
         location=SimpleNamespace(line=1, column=1, source_unit="<generated>"),
