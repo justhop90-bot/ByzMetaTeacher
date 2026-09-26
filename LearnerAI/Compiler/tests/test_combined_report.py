@@ -234,7 +234,7 @@ demand second {
                 [(item.path, item.line, item.column) for item in witness],
                 [
                     (Path("fixtures/location-test.basilisk"), 4, 13),
-                    (Path("fixtures/location-test.basilisk"), 12, 13),
+                    (Path("fixtures/location-test.basilisk"), 11, 13),
                 ],
             )
 
@@ -248,8 +248,8 @@ demand second {
                 [
                     (4, 13, "WIT-002"),
                     (4, 13, "WIT-003"),
-                    (12, 13, "WIT-002"),
-                    (12, 13, "WIT-003"),
+                    (11, 13, "WIT-002"),
+                    (11, 13, "WIT-003"),
                 ],
             )
 
