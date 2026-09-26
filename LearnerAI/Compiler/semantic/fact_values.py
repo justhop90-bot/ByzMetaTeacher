@@ -143,9 +143,8 @@ class FactDomain:
     """
     Invariant value space exposed by a semantic fact adapter.
 
-    The domain describes what values can legally inhabit a semantic field and
-    may carry an explicit invariant proof. It never contains a current runtime
-    value; the evaluator is responsible for exposing that proof as StaticTruth.
+    The domain describes what values can legally inhabit a semantic field.
+    It contains no proposition truth claim and no runtime value.
     """
 
     identity: str
@@ -156,7 +155,6 @@ class FactDomain:
     minimum: int | None = None
     maximum: int | None = None
     values: tuple[str, ...] = ()
-    invariant_truth: StaticTruth = StaticTruth.UNKNOWN
     provenance: tuple[AIRefProvenance, ...] = ()
 
     def __post_init__(self) -> None:
@@ -168,8 +166,6 @@ class FactDomain:
             raise TypeError("fact domain provenance must be a tuple")
         if not self.provenance:
             raise ValueError("fact domain provenance is required")
-        if not isinstance(self.invariant_truth, StaticTruth):
-            raise TypeError("fact domain invariant_truth must be StaticTruth")
 
         if len(self.values) != len(set(self.values)):
             raise ValueError(
