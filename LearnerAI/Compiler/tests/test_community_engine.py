@@ -1,6 +1,6 @@
 import unittest
 
-from community_engine import (
+from Compiler.semantic.community_engine import (
     CapabilityTransition,
     PracticeStatus,
     classify_capability_transition,
