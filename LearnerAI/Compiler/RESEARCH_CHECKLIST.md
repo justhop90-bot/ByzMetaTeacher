@@ -84,11 +84,12 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [x] automatic binding-manifest write-back as an end-to-end compiler artifact;
 - [x] typed capability-provider graph plus provider-contract and admissibility validation passes;
 - [x] compiler pipeline projects current SemanticDemand IR into the capability graph before binding/emission;
+- [x] demand ownership and lifecycle first-writer/first-consumer analysis is integrated before capability projection;
 - [x] actionable projected providers require a native FEASIBILITY predicate while preserving observation/timing semantics;
-- [ ] demand ownership and writer/consumer contracts;
+- [x] demand ownership and writer/consumer contracts;
 - [x] prerequisite dependency graph, deterministic SCC cycle detection, and dead-end diagnostics;
 - [ ] resource/conflict semantics matching Basilisk's transient arbitration;
-- [ ] first-writer/first-consumer and source-order analysis;
+- [x] first-writer/first-consumer analysis for lifecycle state with emitter-aligned source order;
 - [ ] action-issuance failure versus pending-state distinction;
 - [ ] Castle vertical slice compiled against actual Basilisk semantics.
 
@@ -119,13 +120,20 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 
 ### 2. Demand ownership
 
-The compiler should reject or diagnose:
+Implemented for the current lifecycle demand layer:
 
-- missing owner;
-- conflicting persistent writers;
-- demands with no consumer;
-- demand that has no viable capability provider;
-- demand that can never release or invalidate.
+- [x] typed DemandOwnership contract attached to SemanticDemand;
+- [x] typed StateAccess records for lifecycle reads and writes;
+- [x] deterministic first-writer/first-consumer boundaries aligned with emitter rule order;
+- [x] missing owner diagnostics;
+- [x] lifecycle ownership/state mismatch diagnostics;
+- [x] conflicting writer-owner diagnostics;
+- [x] duplicate writer-phase diagnostics;
+- [x] consumer-before-writer diagnostics;
+- [x] unconsumed lifecycle-state diagnostics;
+- [x] compiler-gate integration before capability validation and emission.
+
+Current source semantics intentionally derive the owner from the demand identity. A separate Strategy/Construction/Economy owner declaration remains future semantic work and does not justify new source syntax yet.
 
 ### 3. Capability providers
 
@@ -256,3 +264,14 @@ The first reuse tranche is now implemented and CI-verified:
 - [x] native backend validation and full compiler unittest suite pass on the implementation head.
 
 The remaining compiler work is semantic, not storage plumbing: explicit demand ownership and writer/consumer contracts, richer resource/conflict relations, issuance-failure semantics, source-order analysis, and the Castle vertical slice. The typed capability/provider graph is now integrated as a compile-time validation projection of the current demand language.
+
+
+### Demand ownership implementation record (2026-09-26)
+
+- [x] SemanticDemand carries explicit DemandOwnership.
+- [x] Lifecycle access provenance is typed as StateAccess with read/write kind, lifecycle phase, owner, demand, and deterministic source order.
+- [x] analyze_demand_ownership() reports deterministic OWN-* diagnostics.
+- [x] The first writer is the initialization rule for the current lifecycle state; the first consumer is the first lifecycle reader in emitter order, currently the RELEASE rule.
+- [x] Multiple writers by one owner are legal only across distinct lifecycle phases; duplicate writers in the same phase are rejected.
+- [x] Writers from different owners are rejected as conflicting persistent writers.
+- [x] The compiler gate executes ownership validation before capability validation, runtime binding, and emission.
