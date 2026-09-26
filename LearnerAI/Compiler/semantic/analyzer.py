@@ -93,13 +93,16 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
                 raise CompileError(f"logical operator '{expr.head}' requires nested expressions")
             _validate_expression(child, registry)
         return None
-    native = registry.native(expr.head)
-    if native is None:
-        raise CompileError(f"unknown AoE2 primitive '{expr.head}'")
+    assessment = registry.assess_support(expr.head)
+    if assessment.state.value != "executable-safe":
+        raise CompileError(
+            f"{assessment.diagnostics[-1].code}: native command '{expr.head}' "
+            f"is {assessment.state.value}: {assessment.message}"
+        )
     primitive = registry.get(expr.head)
     if primitive is None:
         raise CompileError(
-            f"no Basilisk semantic adapter for native AoE2 command '{expr.head}'"
+            f"NATIVE-SUPPORT-005: native command '{expr.head}' has no semantic adapter"
         )
     try:
         registry.validate_native_signature(expr.head, len(expr.args))
