@@ -130,6 +130,7 @@ class EffectiveCivData:
     unit_lines: tuple[UnitLineDef, ...]
     technologies: tuple[TechnologyDef, ...]
     age_advances: tuple[AgeAdvanceDef, ...]
+    upgrade_relations: tuple[UpgradeRelation, ...]
     available_buildings: frozenset[BuildingId]
     available_units: frozenset[UnitId]
     available_technologies: frozenset[TechId]
@@ -495,6 +496,7 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         unit_lines=profile.base_data.unit_lines,
         technologies=profile.base_data.technologies,
         age_advances=profile.base_data.age_advances,
+        upgrade_relations=profile.base_data.upgrade_relations,
         available_buildings=frozenset(buildings),
         available_units=frozenset(units),
         available_technologies=frozenset(techs),
@@ -502,6 +504,7 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         interactions=profile.interactions,
         patch_changes=profile.patch_changes,
         fingerprint=fingerprint,
+        coverage=profile.base_data.coverage,
     )
 
 
