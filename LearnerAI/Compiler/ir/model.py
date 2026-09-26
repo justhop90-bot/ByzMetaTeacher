@@ -14,6 +14,11 @@ class LifecycleState(str, Enum):
     COMPLETE = "COMPLETE"
 
 
+class GoalSpanKind(str, Enum):
+    POINT_PAIR = "POINT_PAIR"
+    EXTENDED_4 = "EXTENDED_4"
+
+
 class GoalRole(str, Enum):
     LIFECYCLE_STATE = "LIFECYCLE_STATE"
     PERSISTENT_STATE = "PERSISTENT_STATE"
@@ -38,6 +43,21 @@ class StorageRequestId:
 class GoalSlotRequest:
     request_id: StorageRequestId
     role: GoalRole = GoalRole.LIFECYCLE_STATE
+
+    @property
+    def owner_id(self) -> SemanticId:
+        return self.request_id.owner
+
+
+@dataclass(frozen=True)
+class GoalSpanRequest:
+    request_id: StorageRequestId
+    width: int
+    shape: GoalSpanKind
+    contract_id: str
+    start_min: int
+    start_max: int
+    role: GoalRole = GoalRole.NATIVE_OUTPUT
 
     @property
     def owner_id(self) -> SemanticId:
