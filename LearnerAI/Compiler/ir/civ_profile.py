@@ -6,18 +6,23 @@ from enum import Enum
 
 from .game_data import (
     Age,
+    AgeAdvanceDef,
+    AgeAdvanceId,
     BuildingDef,
     BuildingId,
+    CivId,
     EntitySelector,
     GameData,
     ModifierOperation,
     NumericModifier,
+    Prerequisite,
     ProductionProvider,
     Rational,
     ResearchProvider,
     ResourceCost,
     RoundingMode,
     SelectorKind,
+    TechEffect,
     TechId,
     TechnologyDef,
     UnitDef,
@@ -27,7 +32,13 @@ from .game_data import (
     canonical_fingerprint,
     validate_game_data,
 )
-from .versioning import EvidenceKind, EvidenceRef, PatchChange, PatchId, PatchOperationKind
+from .versioning import (
+    EvidenceKind,
+    EvidenceRef,
+    PatchChange,
+    PatchId,
+    PatchOperationKind,
+)
 
 
 class AvailabilityOperation(str, Enum):
@@ -44,6 +55,7 @@ class CivAvailabilityRule:
 
 class CivBonusKind(str, Enum):
     COST = "COST"
+    FREE = "FREE"
     BUILDING_HP = "BUILDING_HP"
     STAT = "STAT"
     TRAIN_TIME = "TRAIN_TIME"
@@ -51,6 +63,12 @@ class CivBonusKind(str, Enum):
     ENABLE = "ENABLE"
     DISABLE = "DISABLE"
     INTERACTION = "INTERACTION"
+
+
+class CivInteractionKind(str, Enum):
+    TRAMPLE_DAMAGE = "TRAMPLE_DAMAGE"
+    BONUS_DAMAGE = "BONUS_DAMAGE"
+    TARGET_SCOPE = "TARGET_SCOPE"
 
 
 @dataclass(frozen=True)
@@ -69,14 +87,16 @@ class CivInteraction:
     id: str
     source: EntitySelector
     target: EntitySelector
-    effect: str
+    kind: CivInteractionKind
+    attribute: str | None = None
+    value: int | None = None
     scope: str = "SELF"
     provenance: tuple[EvidenceRef, ...] = ()
 
 
 @dataclass(frozen=True)
 class CivProfile:
-    civ_id: int
+    civ_id: CivId
     name: str
     tech_tree_id: int
     patch: PatchId
@@ -91,11 +111,13 @@ class CivProfile:
 @dataclass(frozen=True)
 class EffectiveCivData:
     patch: PatchId
-    civ_id: int
+    civ_id: CivId
     civ_name: str
     buildings: tuple[BuildingDef, ...]
     units: tuple[UnitDef, ...]
+    unit_lines: tuple[UnitLineDef, ...]
     technologies: tuple[TechnologyDef, ...]
+    age_advances: tuple[AgeAdvanceDef, ...]
     available_buildings: frozenset[BuildingId]
     available_units: frozenset[UnitId]
     available_technologies: frozenset[TechId]
@@ -110,8 +132,29 @@ class EffectiveCivData:
     def unit(self, unit_id: int) -> UnitDef:
         return next(item for item in self.units if item.id == UnitId(unit_id))
 
+    def unit_line(self, line_id: UnitLineId | str) -> UnitLineDef:
+        return next(item for item in self.unit_lines if item.id == UnitLineId(line_id))
+
     def tech(self, tech_id: int) -> TechnologyDef:
         return next(item for item in self.technologies if item.id == TechId(tech_id))
+
+    def age_advance(self, age: Age) -> AgeAdvanceDef:
+        return next(item for item in self.age_advances if item.age is age)
+
+    def matches_bonus_selector(self, selector: EntitySelector, entity: object) -> bool:
+        return _selector_matches(selector, entity)
+
+    def is_free_for_civ(self, key: str) -> bool:
+        kind, raw_id = key.split(":", 1)
+        if kind == "tech":
+            entity = self.tech(int(raw_id))
+        else:
+            raise KeyError(f"FREE modifiers are only supported for technologies, got {kind}")
+        return any(
+            bonus.kind is CivBonusKind.FREE
+            and _selector_matches(bonus.selector, entity)
+            for bonus in self.bonuses
+        )
 
     def cost_of(self, key: str) -> ResourceCost:
         kind, raw_id = key.split(":", 1)
@@ -123,14 +166,22 @@ class EffectiveCivData:
             entity = self.tech(int(raw_id))
         else:
             raise KeyError(f"unknown cost key kind: {kind}")
-        cost = entity.base_cost
-        if cost is None:
+        base_cost = entity.base_cost
+        if base_cost is None:
             raise ValueError(f"base cost is unresolved for {key}")
-        return _apply_cost_modifiers(cost, entity, self.bonuses)
+        if self.is_free_for_civ(key):
+            return ResourceCost()
+        return _apply_cost_modifiers(base_cost, entity, self.bonuses)
+
+    def cost_of_age_advance(self, age: Age) -> ResourceCost:
+        advance = self.age_advance(age)
+        if advance.base_cost is None:
+            raise ValueError(f"base cost is unresolved for age advance {age.value}")
+        return _apply_cost_modifiers(advance.base_cost, advance, self.bonuses)
 
 
 class ByzantineProfile:
-    CIV_ID = 7
+    CIV_ID = CivId(7)
     TECH_TREE_ID = 256
 
     @classmethod
@@ -142,7 +193,7 @@ class ByzantineProfile:
             "main",
             "CivTechTrees=BYZANTINES;tech_tree_id=256",
             patch,
-            extraction_version="compiler-game-data-v1",
+            extraction_version="compiler-game-data-v2",
         )
         official = EvidenceRef(
             EvidenceKind.OFFICIAL_PATCH,
@@ -155,7 +206,7 @@ class ByzantineProfile:
             EvidenceKind.COMMUNITY_REFERENCE,
             "https://liquipedia.net/ageofempires/Byzantines/Age_of_Empires_II",
             "current",
-            "Byzantine civilization bonuses",
+            "Byzantine civilization bonuses and technology costs",
             patch,
         )
         return CivProfile(
@@ -163,97 +214,123 @@ class ByzantineProfile:
             name="Byzantines",
             tech_tree_id=cls.TECH_TREE_ID,
             patch=patch,
-            base_data=_byzantine_game_data(patch, manifest),
+            base_data=_byzantine_game_data(patch, manifest, community),
             availability=(),
             bonuses=(
                 CivBonus(
-                    "byz-counter-unit-discount-skirmisher",
+                    "byz-counter-unit-discount",
                     CivBonusKind.COST,
-                    EntitySelector.unit_line(UnitLineId("skirmisher-line")),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
+                    EntitySelector.unit_line(UnitLineId("spearman-line")),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(3, 4),
+                        RoundingMode.ENGINE_NEAREST,
+                    ),
                     attribute="cost",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
-                    "byz-counter-unit-discount-pike",
-                    CivBonusKind.COST,
-                    EntitySelector.unit_line(UnitLineId("pikeman-line")),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
-                    attribute="cost",
-                    provenance=(community, official,),
-                ),
-                CivBonus(
-                    "byz-counter-unit-discount-halberdier",
-                    CivBonusKind.COST,
-                    EntitySelector.unit_line(UnitLineId("halberdier-line")),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
-                    attribute="cost",
-                    provenance=(community, official,),
-                ),
-                CivBonus(
-                    "byz-counter-unit-discount-camel",
+                    "byz-counter-camel-discount",
                     CivBonusKind.COST,
                     EntitySelector.unit_line(UnitLineId("camel-rider-line")),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(3, 4),
+                        RoundingMode.ENGINE_NEAREST,
+                    ),
                     attribute="cost",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
-                    "byz-imperial-discount",
+                    "byz-imperial-age-discount",
                     CivBonusKind.COST,
-                    EntitySelector.age(Age.IMPERIAL),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(67, 100), RoundingMode.ENGINE_NEAREST),
+                    EntitySelector.age_advance(Age.IMPERIAL),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(67, 100),
+                        RoundingMode.ENGINE_NEAREST,
+                    ),
                     attribute="cost",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-dark",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.age(Age.DARK),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(110, 100)),
+                    EntitySelector.buildings_at_age(Age.DARK),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(110, 100),
+                    ),
                     attribute="hp",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-feudal",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.age(Age.FEUDAL),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(120, 100)),
+                    EntitySelector.buildings_at_age(Age.FEUDAL),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(120, 100),
+                    ),
                     attribute="hp",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-castle",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.age(Age.CASTLE),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(130, 100)),
+                    EntitySelector.buildings_at_age(Age.CASTLE),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(130, 100),
+                    ),
                     attribute="hp",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-imperial",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.age(Age.IMPERIAL),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(140, 100)),
+                    EntitySelector.buildings_at_age(Age.IMPERIAL),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(140, 100),
+                    ),
                     attribute="hp",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-fire-ship-speed",
                     CivBonusKind.STAT,
                     EntitySelector.unit_line(UnitLineId("fire-ship-line")),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(5, 6)),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(5, 6),
+                    ),
                     attribute="attack-interval",
-                    provenance=(community, official,),
+                    provenance=(community, official),
+                ),
+                CivBonus(
+                    "byz-free-town-watch",
+                    CivBonusKind.FREE,
+                    EntitySelector.tech(TechId(8)),
+                    provenance=(community, official),
+                ),
+                CivBonus(
+                    "byz-free-town-patrol",
+                    CivBonusKind.FREE,
+                    EntitySelector.tech(TechId(280)),
+                    provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-team-monk-heal",
                     CivBonusKind.STAT,
                     EntitySelector.unit_class("MONK"),
-                    NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 2)),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(3, 2),
+                    ),
                     attribute="heal-rate",
                     scope="TEAM",
-                    provenance=(community, official,),
+                    provenance=(community, official),
                 ),
             ),
             interactions=(
@@ -261,7 +338,25 @@ class ByzantineProfile:
                     "logistica-trample-expansion",
                     EntitySelector.tech(TechId(61)),
                     EntitySelector.unit_class("VARANGIAN_OR_CATAPHRACT"),
-                    "TRAMPLE_DAMAGE",
+                    CivInteractionKind.TRAMPLE_DAMAGE,
+                    provenance=(official,),
+                ),
+                CivInteraction(
+                    "cataphract-anti-infantry-185872",
+                    EntitySelector.unit(UnitId(40)),
+                    EntitySelector.unit_class("INFANTRY"),
+                    CivInteractionKind.BONUS_DAMAGE,
+                    attribute="bonus-damage",
+                    value=13,
+                    provenance=(official,),
+                ),
+                CivInteraction(
+                    "elite-cataphract-anti-infantry-185872",
+                    EntitySelector.unit(UnitId(553)),
+                    EntitySelector.unit_class("INFANTRY"),
+                    CivInteractionKind.BONUS_DAMAGE,
+                    attribute="bonus-damage",
+                    value=18,
                     provenance=(official,),
                 ),
             ),
@@ -273,8 +368,8 @@ class ByzantineProfile:
                     None,
                     None,
                     (
-                        ("varangian-guard", "enabled"),
-                        ("elite-varangian-guard", "enabled"),
+                        ("varangian-guard", "enabled;numeric-id-unverified"),
+                        ("elite-varangian-guard", "enabled;numeric-id-unverified"),
                         ("cataphract-infantry-bonus", "13"),
                         ("elite-cataphract-infantry-bonus", "18"),
                         ("logistica-target", "cataphract,varangian-guard"),
@@ -287,10 +382,28 @@ class ByzantineProfile:
 
 
 def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
+    if profile.patch != profile.base_data.patch:
+        raise ValueError(
+            "CivProfile patch must match the GameData snapshot patch; "
+            "patch overlays are not silently inferred"
+        )
     validate_game_data(profile.base_data)
-    buildings = set(item.id for item in profile.base_data.buildings)
-    units = set(item.id for item in profile.base_data.units)
-    techs = set(item.id for item in profile.base_data.technologies)
+
+    buildings = {
+        item.id
+        for item in profile.base_data.buildings
+        if item.validity is None or item.validity.contains(profile.patch)
+    }
+    units = {
+        item.id
+        for item in profile.base_data.units
+        if item.validity is None or item.validity.contains(profile.patch)
+    }
+    techs = {
+        item.id
+        for item in profile.base_data.technologies
+        if item.validity is None or item.validity.contains(profile.patch)
+    }
 
     for rule in profile.availability:
         _apply_availability(rule, buildings, units, techs)
@@ -302,7 +415,9 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
             "name": profile.name,
             "buildings": profile.base_data.buildings,
             "units": profile.base_data.units,
+            "unit_lines": profile.base_data.unit_lines,
             "technologies": profile.base_data.technologies,
+            "age_advances": profile.base_data.age_advances,
             "available_buildings": sorted(int(item) for item in buildings),
             "available_units": sorted(int(item) for item in units),
             "available_technologies": sorted(int(item) for item in techs),
@@ -318,7 +433,9 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         civ_name=profile.name,
         buildings=profile.base_data.buildings,
         units=profile.base_data.units,
+        unit_lines=profile.base_data.unit_lines,
         technologies=profile.base_data.technologies,
+        age_advances=profile.base_data.age_advances,
         available_buildings=frozenset(buildings),
         available_units=frozenset(units),
         available_technologies=frozenset(techs),
@@ -341,30 +458,39 @@ def _apply_cost_modifiers(
         if not _selector_matches(bonus.selector, entity):
             continue
         modifier = bonus.modifier
-        if modifier.operation is ModifierOperation.MULTIPLY:
-            if not isinstance(modifier.value, Rational):
-                raise TypeError("MULTIPLY modifiers require Rational values")
-            result = result.scaled(modifier.value, modifier.rounding)
-        elif modifier.operation is ModifierOperation.ADD:
-            raise NotImplementedError("additive cost modifiers are not implemented yet")
-        else:
-            raise NotImplementedError("subtractive cost modifiers are not implemented yet")
+        if modifier.operation is not ModifierOperation.MULTIPLY:
+            raise NotImplementedError(
+                f"unsupported civilization cost modifier: {modifier.operation.value}"
+            )
+        if not isinstance(modifier.value, Rational):
+            raise TypeError("MULTIPLY modifiers require Rational values")
+        result = result.scaled(modifier.value, modifier.rounding)
     return result
 
 
 def _selector_matches(selector: EntitySelector, entity: object) -> bool:
     if selector.kind is SelectorKind.UNIT_LINE:
-        return getattr(entity, "line", None) in {UnitLineId(value) for value in selector.ids}
+        return getattr(entity, "line", None) in {
+            UnitLineId(value) for value in selector.ids
+        }
+    if selector.kind is SelectorKind.UNIT_CLASS:
+        return isinstance(entity, UnitDef) and any(
+            tag in getattr(entity, "classes", ()) for tag in selector.tags
+        )
+    if selector.kind is SelectorKind.BUILDING_CLASS:
+        return isinstance(entity, BuildingDef) and (
+            not selector.ages or getattr(entity, "available_age", None) in selector.ages
+        )
+    if selector.kind is SelectorKind.UNIT:
+        return isinstance(entity, UnitDef) and str(getattr(entity, "id", "")) in selector.ids
+    if selector.kind is SelectorKind.BUILDING:
+        return isinstance(entity, BuildingDef) and str(getattr(entity, "id", "")) in selector.ids
+    if selector.kind is SelectorKind.TECHNOLOGY:
+        return isinstance(entity, TechnologyDef) and str(getattr(entity, "id", "")) in selector.ids
+    if selector.kind is SelectorKind.AGE_ADVANCE:
+        return isinstance(entity, AgeAdvanceDef) and entity.age.value in selector.ids
     if selector.kind is SelectorKind.AGE:
         return getattr(entity, "available_age", None) in selector.ages
-    if selector.kind is SelectorKind.UNIT_CLASS:
-        return any(tag in getattr(entity, "classes", ()) for tag in selector.tags)
-    if selector.kind is SelectorKind.UNIT:
-        return str(getattr(entity, "id", "")) in selector.ids
-    if selector.kind is SelectorKind.BUILDING:
-        return str(getattr(entity, "id", "")) in selector.ids
-    if selector.kind is SelectorKind.TECHNOLOGY:
-        return str(getattr(entity, "id", "")) in selector.ids
     return False
 
 
@@ -415,49 +541,52 @@ def _unit(
     )
 
 
-def _byzantine_game_data(patch: PatchId, evidence: EvidenceRef) -> GameData:
+def _byzantine_game_data(
+    patch: PatchId,
+    evidence: EvidenceRef,
+    community: EvidenceRef,
+) -> GameData:
     buildings = (
-        BuildingDef(BuildingId(12), "Barracks", Age.DARK, ResourceCost(wood=175), trainable_lines=(UnitLineId("militia-line"), UnitLineId("spearman-line"), UnitLineId("pikeman-line"), UnitLineId("halberdier-line"))),
+        BuildingDef(BuildingId(12), "Barracks", Age.DARK, ResourceCost(wood=175),
+                    trainable_lines=(UnitLineId("militia-line"), UnitLineId("spearman-line"))),
         BuildingDef(BuildingId(49), "Siege Workshop", Age.CASTLE, ResourceCost(wood=200)),
+        BuildingDef(BuildingId(45), "Dock", Age.DARK, ResourceCost(wood=150)),
+        BuildingDef(BuildingId(50), "Farm", Age.DARK, ResourceCost(wood=60)),
         BuildingDef(BuildingId(68), "Mill", Age.DARK, ResourceCost(wood=50)),
         BuildingDef(BuildingId(70), "House", Age.DARK, ResourceCost(wood=25)),
-        BuildingDef(BuildingId(82), "Castle", Age.CASTLE, ResourceCost(stone=650), researchable_technologies=(TechId(61),)),
+        BuildingDef(BuildingId(72), "Palisade Wall", Age.DARK, None),
+        BuildingDef(BuildingId(79), "Watch Tower", Age.FEUDAL, None),
+        BuildingDef(BuildingId(82), "Castle", Age.CASTLE, ResourceCost(stone=650),
+                    researchable_technologies=(TechId(61), TechId(464))),
         BuildingDef(BuildingId(84), "Market", Age.FEUDAL, ResourceCost(wood=175)),
-        BuildingDef(BuildingId(87), "Archery Range", Age.FEUDAL, ResourceCost(wood=175), trainable_lines=(UnitLineId("archer-line"), UnitLineId("crossbow-line"), UnitLineId("arbalester-line"), UnitLineId("skirmisher-line"))),
-        BuildingDef(BuildingId(101), "Stable", Age.FEUDAL, ResourceCost(wood=175), trainable_lines=(UnitLineId("camel-rider-line"), UnitLineId("knight-line"), UnitLineId("scout-cavalry-line"))),
+        BuildingDef(BuildingId(87), "Archery Range", Age.FEUDAL, ResourceCost(wood=175)),
+        BuildingDef(BuildingId(101), "Stable", Age.FEUDAL, ResourceCost(wood=175)),
         BuildingDef(BuildingId(103), "Blacksmith", Age.FEUDAL, ResourceCost(wood=150)),
-        BuildingDef(BuildingId(104), "Monastery", Age.CASTLE, ResourceCost(wood=175), trainable_lines=(UnitLineId("monk-line"),)),
+        BuildingDef(BuildingId(104), "Monastery", Age.CASTLE, ResourceCost(wood=175)),
         BuildingDef(BuildingId(109), "Town Center", Age.DARK, ResourceCost(wood=275, stone=100)),
-        BuildingDef(BuildingId(209), "University", Age.CASTLE, ResourceCost(wood=200)),
-        BuildingDef(BuildingId(276), "Wonder", Age.IMPERIAL, None),
-        BuildingDef(BuildingId(562), "Lumber Camp", Age.DARK, ResourceCost(wood=50)),
-        BuildingDef(BuildingId(584), "Mining Camp", Age.DARK, ResourceCost(wood=50)),
-        BuildingDef(BuildingId(598), "Outpost", Age.DARK, None),
-        BuildingDef(BuildingId(487), "Gate", Age.FEUDAL, None),
         BuildingDef(BuildingId(117), "Stone Wall", Age.FEUDAL, None),
         BuildingDef(BuildingId(155), "Fortified Wall", Age.CASTLE, None),
+        BuildingDef(BuildingId(209), "University", Age.CASTLE, ResourceCost(wood=200)),
         BuildingDef(BuildingId(234), "Guard Tower", Age.CASTLE, None),
         BuildingDef(BuildingId(235), "Keep", Age.IMPERIAL, None),
         BuildingDef(BuildingId(236), "Bombard Tower", Age.IMPERIAL, None),
-        BuildingDef(BuildingId(45), "Dock", Age.DARK, None),
-        BuildingDef(BuildingId(50), "Farm", Age.DARK, ResourceCost(wood=60)),
-        BuildingDef(BuildingId(72), "Palisade Wall", Age.DARK, None),
-        BuildingDef(BuildingId(79), "Watch Tower", Age.FEUDAL, None),
-        BuildingDef(BuildingId(621), "Town Center", Age.CASTLE, None),
+        BuildingDef(BuildingId(276), "Wonder", Age.IMPERIAL, None),
+        BuildingDef(BuildingId(487), "Gate", Age.FEUDAL, None),
+        BuildingDef(BuildingId(562), "Lumber Camp", Age.DARK, ResourceCost(wood=50)),
+        BuildingDef(BuildingId(584), "Mining Camp", Age.DARK, ResourceCost(wood=50)),
+        BuildingDef(BuildingId(598), "Outpost", Age.DARK, ResourceCost(wood=25, stone=5)),
+        BuildingDef(BuildingId(621), "Town Center", Age.CASTLE, ResourceCost(wood=275, stone=100)),
         BuildingDef(BuildingId(792), "Palisade Gate", Age.DARK, None),
     )
     lines = (
         UnitLineDef(UnitLineId("militia-line"), "Militia line", (UnitId(74),), (evidence,)),
-        UnitLineDef(UnitLineId("spearman-line"), "Spearman line", (UnitId(93),), (evidence,)),
-        UnitLineDef(UnitLineId("pikeman-line"), "Pikeman line", (UnitId(358),), (evidence,)),
-        UnitLineDef(UnitLineId("halberdier-line"), "Halberdier line", (UnitId(359),), (evidence,)),
+        UnitLineDef(UnitLineId("spearman-line"), "Spearman line", (UnitId(93), UnitId(358), UnitId(359)), (evidence,)),
         UnitLineDef(UnitLineId("skirmisher-line"), "Skirmisher line", (UnitId(7), UnitId(6)), (evidence,)),
         UnitLineDef(UnitLineId("camel-rider-line"), "Camel Rider line", (UnitId(329), UnitId(330)), (evidence,)),
         UnitLineDef(UnitLineId("knight-line"), "Knight line", (UnitId(38),), (evidence,)),
         UnitLineDef(UnitLineId("scout-cavalry-line"), "Scout Cavalry line", (UnitId(448),), (evidence,)),
         UnitLineDef(UnitLineId("archer-line"), "Archer line", (UnitId(4),), (evidence,)),
-        UnitLineDef(UnitLineId("crossbow-line"), "Crossbow line", (UnitId(24),), (evidence,)),
-        UnitLineDef(UnitLineId("arbalester-line"), "Arbalester line", (UnitId(492),), (evidence,)),
+        UnitLineDef(UnitLineId("crossbow-line"), "Crossbow line", (UnitId(24), UnitId(492)), (evidence,)),
         UnitLineDef(UnitLineId("cataphract-line"), "Cataphract line", (UnitId(40), UnitId(553)), (evidence,)),
         UnitLineDef(UnitLineId("monk-line"), "Monk line", (UnitId(125),), (evidence,)),
         UnitLineDef(UnitLineId("ram-line"), "Ram line", (UnitId(1258),), (evidence,)),
@@ -466,6 +595,8 @@ def _byzantine_game_data(patch: PatchId, evidence: EvidenceRef) -> GameData:
         UnitLineDef(UnitLineId("trebuchet-line"), "Trebuchet line", (UnitId(331),), (evidence,)),
         UnitLineDef(UnitLineId("bombard-cannon-line"), "Bombard Cannon line", (UnitId(36),), (evidence,)),
         UnitLineDef(UnitLineId("cavalry-archer-line"), "Cavalry Archer line", (UnitId(474),), (evidence,)),
+        UnitLineDef(UnitLineId("fire-galley-line"), "Fire Galley line", (UnitId(1103),), (evidence,)),
+        UnitLineDef(UnitLineId("fire-ship-line"), "Fire Ship line", (UnitId(529), UnitId(532)), (evidence,)),
     )
     units = (
         _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",)),
@@ -474,7 +605,7 @@ def _byzantine_game_data(patch: PatchId, evidence: EvidenceRef) -> GameData:
         _unit(24, "Crossbowman", "crossbow-line", Age.CASTLE, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=4),
         _unit(36, "Bombard Cannon", "bombard-cannon-line", Age.IMPERIAL, 209, ResourceCost(wood=225, gold=225), classes=("SIEGE",)),
         _unit(38, "Knight", "knight-line", Age.CASTLE, 101, ResourceCost(food=60, gold=75), classes=("CAVALRY",)),
-        _unit(40, "Cataphract", "cataphract-line", Age.CASTLE, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE")),
+        _unit(40, "Cataphract", "cataphract-line", Age.CASTLE, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"),),
         _unit(74, "Militia", "militia-line", Age.DARK, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",)),
         _unit(93, "Spearman", "spearman-line", Age.FEUDAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",)),
         _unit(125, "Monk", "monk-line", Age.CASTLE, 104, ResourceCost(gold=100), classes=("MONK",)),
@@ -483,22 +614,86 @@ def _byzantine_game_data(patch: PatchId, evidence: EvidenceRef) -> GameData:
         _unit(329, "Camel Rider", "camel-rider-line", Age.CASTLE, 101, ResourceCost(food=55, gold=60), classes=("CAVALRY",)),
         _unit(330, "Heavy Camel Rider", "camel-rider-line", Age.IMPERIAL, 101, ResourceCost(food=55, gold=60), classes=("CAVALRY",), upgrades_from=329),
         _unit(331, "Trebuchet", "trebuchet-line", Age.IMPERIAL, 82, ResourceCost(wood=200, gold=200), classes=("SIEGE",)),
-        _unit(358, "Pikeman", "pikeman-line", Age.CASTLE, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=93),
-        _unit(359, "Halberdier", "halberdier-line", Age.IMPERIAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=358),
+        _unit(358, "Pikeman", "spearman-line", Age.CASTLE, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=93),
+        _unit(359, "Halberdier", "spearman-line", Age.IMPERIAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=358),
         _unit(448, "Scout Cavalry", "scout-cavalry-line", Age.FEUDAL, 101, ResourceCost(food=80), classes=("CAVALRY",)),
         _unit(474, "Heavy Cavalry Archer", "cavalry-archer-line", Age.IMPERIAL, 87, ResourceCost(wood=40, gold=60), classes=("CAVALRY", "RANGED")),
-        _unit(492, "Arbalester", "arbalester-line", Age.IMPERIAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=24),
+        _unit(492, "Arbalester", "crossbow-line", Age.IMPERIAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=24),
+        _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
+        _unit(532, "Fast Fire Ship", "fire-ship-line", Age.IMPERIAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",), upgrades_from=529),
         _unit(553, "Elite Cataphract", "cataphract-line", Age.IMPERIAL, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"), upgrades_from=40),
+        _unit(1103, "Fire Galley", "fire-galley-line", Age.FEUDAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
         _unit(1258, "Battering Ram", "ram-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",)),
     )
     techs = (
         TechnologyDef(
-            id=TechId(61),
-            name="Logistica",
-            available_age=Age.IMPERIAL,
-            providers=(ResearchProvider(BuildingId(82)),),
-            base_cost=None,
-            research_time_seconds=None,
+            TechId(8), "Town Watch", Age.FEUDAL, (ResearchProvider(BuildingId(109)),),
+            ResourceCost(food=75), 25,
+        ),
+        TechnologyDef(
+            TechId(61), "Logistica", Age.IMPERIAL, (ResearchProvider(BuildingId(82)),),
+            ResourceCost(food=800, gold=600), 50,
+        ),
+        TechnologyDef(
+            TechId(65), "Gillnets", Age.CASTLE, (ResearchProvider(BuildingId(45)),),
+            None, None,
+        ),
+        TechnologyDef(
+            TechId(280), "Town Patrol", Age.CASTLE, (ResearchProvider(BuildingId(109)),),
+            ResourceCost(food=300, gold=100), 40,
+            prerequisites=(Prerequisite("TECHNOLOGY_RESEARCHED", technology=TechId(8)),),
+        ),
+        TechnologyDef(
+            TechId(464), "Greek Fire", Age.CASTLE, (ResearchProvider(BuildingId(82)),),
+            ResourceCost(food=250, gold=300), 40,
+            effects=(
+                TechEffect(
+                    kind="STAT_MODIFIER",
+                    target=EntitySelector.unit_line(UnitLineId("fire-ship-line")),
+                    attribute="fire-ship-technology",
+                ),
+            ),
+        ),
+        TechnologyDef(
+            TechId(906), "Fishing Lines", Age.FEUDAL, (ResearchProvider(BuildingId(45)),),
+            None, None,
+        ),
+    )
+    advances = (
+        AgeAdvanceDef(
+            AgeAdvanceId("feudal-age"),
+            Age.FEUDAL,
+            BuildingId(109),
+            ResourceCost(food=500),
+            130,
+            prerequisites=(
+                Prerequisite("BUILDING_COUNT", building=BuildingId(12), count=1),
+                Prerequisite("AGE_ADVANCE_BUILDING_COUNT", count=2),
+            ),
+            provenance=(evidence,),
+        ),
+        AgeAdvanceDef(
+            AgeAdvanceId("castle-age"),
+            Age.CASTLE,
+            BuildingId(109),
+            ResourceCost(food=800, gold=200),
+            160,
+            prerequisites=(
+                Prerequisite("BUILDING_COUNT", building=BuildingId(87), count=1),
+                Prerequisite("BUILDING_COUNT", building=BuildingId(103), count=1),
+            ),
+            provenance=(evidence,),
+        ),
+        AgeAdvanceDef(
+            AgeAdvanceId("imperial-age"),
+            Age.IMPERIAL,
+            BuildingId(109),
+            ResourceCost(food=1000, gold=800),
+            190,
+            prerequisites=(
+                Prerequisite("CASTLE_OR_ALTERNATE", building=BuildingId(82), count=1),
+            ),
+            provenance=(evidence,),
         ),
     )
     return GameData(
@@ -506,6 +701,7 @@ def _byzantine_game_data(patch: PatchId, evidence: EvidenceRef) -> GameData:
         buildings=tuple(sorted(buildings, key=lambda item: int(item.id))),
         units=tuple(sorted(units, key=lambda item: int(item.id))),
         unit_lines=tuple(sorted(lines, key=lambda item: str(item.id))),
-        technologies=techs,
-        provenance=(evidence,),
+        technologies=tuple(sorted(techs, key=lambda item: int(item.id))),
+        age_advances=tuple(sorted(advances, key=lambda item: item.age.value)),
+        provenance=(evidence, community),
     )

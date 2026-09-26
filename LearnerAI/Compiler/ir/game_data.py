@@ -13,6 +13,7 @@ BuildingId = NewType("BuildingId", int)
 UnitId = NewType("UnitId", int)
 TechId = NewType("TechId", int)
 CivId = NewType("CivId", int)
+AgeAdvanceId = NewType("AgeAdvanceId", str)
 UnitLineId = NewType("UnitLineId", str)
 
 
@@ -94,6 +95,7 @@ class SelectorKind(str, Enum):
     UNIT = "UNIT"
     UNIT_LINE = "UNIT_LINE"
     TECHNOLOGY = "TECHNOLOGY"
+    AGE_ADVANCE = "AGE_ADVANCE"
     BUILDING_CLASS = "BUILDING_CLASS"
     UNIT_CLASS = "UNIT_CLASS"
     AGE = "AGE"
@@ -129,6 +131,14 @@ class EntitySelector:
     @staticmethod
     def age(age: Age) -> "EntitySelector":
         return EntitySelector(SelectorKind.AGE, ages=(age,))
+
+    @staticmethod
+    def buildings_at_age(age: Age) -> "EntitySelector":
+        return EntitySelector(SelectorKind.BUILDING_CLASS, ages=(age,))
+
+    @staticmethod
+    def age_advance(age: Age) -> "EntitySelector":
+        return EntitySelector(SelectorKind.AGE_ADVANCE, ids=(age.value,))
 
 
 @dataclass(frozen=True)
@@ -201,6 +211,18 @@ class UnitDef:
 
 
 @dataclass(frozen=True)
+class AgeAdvanceDef:
+    id: AgeAdvanceId
+    age: Age
+    provider_building: BuildingId
+    base_cost: ResourceCost | None
+    research_time_seconds: int | None
+    prerequisites: tuple[Prerequisite, ...] = ()
+    validity: Validity | None = None
+    provenance: tuple[EvidenceRef, ...] = ()
+
+
+@dataclass(frozen=True)
 class TechnologyDef:
     id: TechId
     name: str
@@ -224,6 +246,7 @@ class GameData:
     units: tuple[UnitDef, ...]
     unit_lines: tuple[UnitLineDef, ...]
     technologies: tuple[TechnologyDef, ...]
+    age_advances: tuple[AgeAdvanceDef, ...]
     patch_changes: tuple[PatchChange, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
 
@@ -236,17 +259,28 @@ class GameData:
     def tech(self, tech_id: int) -> TechnologyDef:
         return _lookup(self.technologies, TechId(tech_id), "technology")
 
+    def age_advance(self, age: Age) -> AgeAdvanceDef:
+        for item in self.age_advances:
+            if item.age is age:
+                return item
+        raise KeyError(f"unknown age advance {age.value}")
+
+    def unit_line(self, line_id: UnitLineId | str) -> UnitLineDef:
+        return _lookup(self.unit_lines, UnitLineId(line_id), "unit line")
+
 
 def validate_game_data(data: GameData) -> None:
     _unique(data.buildings, "building")
     _unique(data.units, "unit")
     _unique(data.technologies, "technology")
+    _unique(data.age_advances, "age-advance")
     _unique(data.unit_lines, "unit-line")
 
     building_ids = {item.id for item in data.buildings}
     unit_ids = {item.id for item in data.units}
     tech_ids = {item.id for item in data.technologies}
     line_ids = {item.id for item in data.unit_lines}
+    age_advance_ids = {item.id for item in data.age_advances}
 
     for building in data.buildings:
         for line in building.trainable_lines:
@@ -268,6 +302,17 @@ def validate_game_data(data: GameData) -> None:
             raise ValueError(f"unit {unit.id} references unknown upgrade predecessor")
         if unit.upgrades_to is not None and unit.upgrades_to not in unit_ids:
             raise ValueError(f"unit {unit.id} references unknown upgrade successor")
+
+    for age_advance in data.age_advances:
+        if age_advance.provider_building not in building_ids:
+            raise ValueError(
+                f"age advance {age_advance.id} references unknown provider building {age_advance.provider_building}"
+            )
+        for prereq in age_advance.prerequisites:
+            if prereq.technology is not None and prereq.technology not in tech_ids:
+                raise ValueError(
+                    f"age advance {age_advance.id} references unknown prerequisite technology {prereq.technology}"
+                )
 
     for tech in data.technologies:
         for provider in tech.providers:

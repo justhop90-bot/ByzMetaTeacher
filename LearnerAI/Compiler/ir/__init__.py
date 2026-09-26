@@ -56,6 +56,8 @@ from .resource import (
 )
 from .game_data import (
     Age,
+    AgeAdvanceDef,
+    AgeAdvanceId,
     BuildingDef,
     BuildingId,
     CivId,
