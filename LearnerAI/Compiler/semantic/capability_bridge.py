@@ -171,6 +171,7 @@ def project_capability_graph(
             Capability(
                 identity=capability_id,
                 kind=action_kind,
+                location=demand.location,
             )
         )
         builder.add_witness(
@@ -179,6 +180,7 @@ def project_capability_graph(
                 kind=WitnessKind.WORLD_STATE,
                 predicate=witness_predicate,
                 establishes=capability_id,
+                location=witness_expression.location or demand.location,
             )
         )
         resource_claim = None
@@ -196,6 +198,7 @@ def project_capability_graph(
                 ),
                 conflict_class=conflict_class,
                 arbitration_owner=arbitration[0],
+                location=demand.action.location or demand.location,
             )
         builder.add_provider(
             CapabilityProvider(
@@ -209,9 +212,11 @@ def project_capability_graph(
                     issue_guards=requirements,
                     conflict_class=conflict_class,
                     arbitration=arbitration,
+                    location=demand.action.location or demand.location,
                 ),
                 witness=witness_id,
                 resource_claim=resource_claim,
+                location=demand.location,
             )
         )
         builder.add_demand(
@@ -226,6 +231,7 @@ def project_capability_graph(
                 release=(release_predicate,),
                 owner=demand.identity,
                 strategic_binding=demand.strategic_binding,
+                location=demand.location,
             )
         )
 
