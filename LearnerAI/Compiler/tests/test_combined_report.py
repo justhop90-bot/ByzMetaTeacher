@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source_with_report, exit_code_for_report
-from Compiler.diagnostics import DiagnosticSeverity, ReportStatus
+from Compiler.diagnostics import DiagnosticSeverity, DiagnosticSource, ReportStatus, SemanticDiagnostic, order_diagnostics
 from Compiler.backends.models import (
     ArtifactIdentity,
     BackendIdentity,
@@ -58,6 +58,27 @@ class FakeBackend:
         return self.result
 
 class CombinedReportTests(unittest.TestCase):
+    def test_mixed_semantic_and_native_order_is_source_then_location(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / "Basilisk.per"
+            semantic = SemanticDiagnostic(
+                id="semantic",
+                source=DiagnosticSource.LEARNERAI,
+                code="SEMANTIC-A",
+                severity=DiagnosticSeverity.ERROR,
+                message="semantic first",
+            )
+            native = native_finding(
+                artifact, line=2, column=1, code="NATIVE-A", message="native second"
+            )
+            ordered = order_diagnostics((semantic,), (native,))
+            self.assertEqual([item.source for item in ordered], [
+                DiagnosticSource.LEARNERAI,
+                DiagnosticSource.NATIVE,
+            ])
+            self.assertEqual([item.code for item in ordered], ["SEMANTIC-A", "NATIVE-A"])
+
     def test_native_diagnostics_are_stably_ordered_by_origin_location_code(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
