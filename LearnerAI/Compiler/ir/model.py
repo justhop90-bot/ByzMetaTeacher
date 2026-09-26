@@ -31,6 +31,7 @@ class LifecycleAccessPhase(str, Enum):
     COMPLETION_WITNESS = "COMPLETION_WITNESS"
     PENDING_ADMISSION = "PENDING_ADMISSION"
     ISSUANCE = "ISSUANCE"
+    ACTION = "ISSUANCE"
 
 
 class GoalRole(str, Enum):
