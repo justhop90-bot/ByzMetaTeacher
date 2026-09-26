@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from dataclasses import replace
 from pathlib import Path
 import sys
@@ -13,11 +14,16 @@ from Compiler.ir import (
     SemanticId,
     StateAccess,
 )
+from Compiler.compiler import compile_source
+from Compiler.errors import CompileError
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
 from Compiler.semantic import analyze
 from Compiler.semantic.demand_ownership import (
+    OwnershipDiagnostic,
     OwnershipDiagnosticCode,
+    OwnershipReport,
+    OwnershipStatus,
     analyze_demand_ownership,
 )
 
@@ -104,6 +110,32 @@ class DemandOwnershipTests(unittest.TestCase):
         )
         self.assertEqual(boundary.first_consumer.source_order, 1)
         self.assertEqual(boundary.first_consumer.owner, SemanticId("test", "castle"))
+
+    def test_compile_pipeline_uses_ownership_validation_gate(self):
+        diagnostic = OwnershipDiagnostic(
+            code=OwnershipDiagnosticCode.DEMAND_MISSING_OWNERSHIP,
+            severity=OwnershipStatus.BLOCKED and __import__(
+                "Compiler.diagnostics", fromlist=["DiagnosticSeverity"]
+            ).DiagnosticSeverity.ERROR,
+            message="demand 'castle' has no semantic owner",
+            status=OwnershipStatus.BLOCKED,
+        )
+        report = OwnershipReport(
+            diagnostics=(diagnostic,),
+            boundaries=(),
+        )
+
+        with patch(
+            "Compiler.compiler.validate_demand_ownership",
+            return_value=report,
+        ) as validator:
+            with self.assertRaisesRegex(
+                CompileError,
+                r"OWN-001: demand 'castle' has no semantic owner",
+            ):
+                compile_source(SOURCE)
+
+            validator.assert_called_once()
 
     def test_missing_owner_has_exact_diagnostic(self):
         demand = self._demand()
