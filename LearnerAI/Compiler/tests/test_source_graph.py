@@ -235,10 +235,15 @@ class SourceGraphTests(unittest.TestCase):
     def test_load_depth_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for index in range(11):
+            for index in range(12):
                 next_name = f"node-{index + 1}.perdsl"
+                content = (
+                    f'(load "{next_name}")\n'
+                    if index < 11
+                    else "; terminal node\n"
+                )
                 (root / f"node-{index}.perdsl").write_text(
-                    f'(load "{next_name}")\n',
+                    content,
                     encoding="utf-8",
                 )
             with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-003"):
