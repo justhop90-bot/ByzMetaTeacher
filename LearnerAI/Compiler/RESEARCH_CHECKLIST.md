@@ -84,6 +84,7 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [x] automatic binding-manifest write-back as an end-to-end compiler artifact;
 - [x] typed capability-provider graph plus provider-contract and admissibility validation passes;
 - [x] compiler pipeline projects current SemanticDemand IR into the capability graph before binding/emission;
+- [x] actionable projected providers require a native FEASIBILITY predicate while preserving observation/timing semantics;
 - [ ] demand ownership and writer/consumer contracts;
 - [x] prerequisite dependency graph, deterministic SCC cycle detection, and dead-end diagnostics;
 - [ ] resource/conflict semantics matching Basilisk's transient arbitration;
