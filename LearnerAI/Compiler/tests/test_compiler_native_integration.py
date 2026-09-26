@@ -7,6 +7,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from pathlib import Path
 import sys
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
@@ -20,7 +22,12 @@ from Compiler.backends.models import (
     ValidationStatus,
     ValidationSummary,
 )
-from Compiler.compiler import compile_source_with_report, compile_to_file
+from Compiler.compiler import (
+    compile_package_with_report,
+    compile_source_with_report,
+    compile_to_file,
+)
+from Compiler.source_graph import SourceGraphRequest
 from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec, load_default_native_schema
 from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry, default_de_registry
 from Compiler.primitives.engine_semantics import (
@@ -34,6 +41,22 @@ from Compiler.ast import SourceLocation
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.perdsl").read_text(encoding="utf-8")
 
+
+def persistent_rule_diagnostic():
+    return SimpleNamespace(
+        rule_order=2,
+        code=SimpleNamespace(value="PSTATE-002"),
+        severity=SimpleNamespace(value="warning"),
+        eligibility=None,
+        message="goal state '7' has a later writer in rule 2 after writer in rule 1",
+        location=SimpleNamespace(line=1, column=1, source_unit="<generated>"),
+        category=SimpleNamespace(value="PERSISTENT_STATE"),
+        source_code="PSTATE-002",
+        state_kind="GOAL",
+        state_identifier="7",
+        related_rule_order=1,
+        related_operation="set-goal",
+    )
 
 def fake_result(output: Path, status: ValidationStatus) -> NativeValidationResult:
     backend = BackendIdentity("aoe2-ai-parser", "0.1.0", "3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba", "3.12.7")
@@ -54,9 +77,11 @@ class FakeBackend:
     def __init__(self, result):
         self.result = result
         self.seen_artifact = None
+        self.seen_artifact_text = None
 
     def validate(self, artifact: Path):
         self.seen_artifact = artifact
+        self.seen_artifact_text = artifact.read_text(encoding="utf-8")
         return self.result
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
@@ -165,6 +190,145 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             )
             self.assertIsNotNone(fake.seen_artifact)
 
+    def test_package_promotion_embeds_persistent_state_annotation(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            root = tmp / "root.perdsl"
+            child = tmp / "child.perdsl"
+            output = tmp / "Basilisk.per"
+            child.write_text(
+                """
+                demand castle {
+                    require (can-build castle)
+                    action (build castle)
+                    witness (building-type-count castle > 0)
+                    release (building-type-count castle > 0)
+                }
+                """,
+                encoding="utf-8",
+            )
+            root.write_text('(load "child.perdsl")\n', encoding="utf-8")
+            fake = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            with patch(
+                "Compiler.compiler.analyze_rule_diagnostics",
+                return_value=SimpleNamespace(
+                    diagnostics=(persistent_rule_diagnostic(),)
+                ),
+            ):
+                report = compile_package_with_report(
+                    SourceGraphRequest(entrypoint=root),
+                    output,
+                    native_backend=fake,
+                )
+
+            self.assertEqual(report.status, ReportStatus.VALIDATED)
+            artifact = output.read_text(encoding="utf-8")
+            self.assertIn("; COMPILER RULE DIAGNOSTICS", artifact)
+            self.assertIn("PSTATE-002", artifact)
+            self.assertIn("(build castle)", artifact)
+            self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
+
+    def test_rejected_source_promotion_preserves_old_artifact_and_validates_annotated_stage(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            output = tmp / "Basilisk.per"
+            output.write_text("KEEP OLD ARTIFACT\n", encoding="utf-8")
+            fake = FakeBackend(fake_result(output, ValidationStatus.REJECTED))
+
+            with patch(
+                "Compiler.compiler.analyze_rule_diagnostics",
+                return_value=SimpleNamespace(
+                    diagnostics=(persistent_rule_diagnostic(),)
+                ),
+            ):
+                report = compile_source_with_report(
+                    EXAMPLES,
+                    output,
+                    native_backend=fake,
+                )
+
+            self.assertEqual(report.status, ReportStatus.REJECTED)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP OLD ARTIFACT\n")
+            self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
+            self.assertIn("PSTATE-002", fake.seen_artifact_text)
+
+    def test_rejected_package_promotion_preserves_old_artifact_and_validates_annotated_stage(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            root = tmp / "root.perdsl"
+            child = tmp / "child.perdsl"
+            output = tmp / "Basilisk.per"
+            child.write_text(EXAMPLES, encoding="utf-8")
+            root.write_text('(load "child.perdsl")\n', encoding="utf-8")
+            output.write_text("KEEP OLD PACKAGE ARTIFACT\n", encoding="utf-8")
+            fake = FakeBackend(fake_result(output, ValidationStatus.REJECTED))
+
+            with patch(
+                "Compiler.compiler.analyze_rule_diagnostics",
+                return_value=SimpleNamespace(
+                    diagnostics=(persistent_rule_diagnostic(),)
+                ),
+            ):
+                report = compile_package_with_report(
+                    SourceGraphRequest(entrypoint=root),
+                    output,
+                    native_backend=fake,
+                )
+
+            self.assertEqual(report.status, ReportStatus.REJECTED)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP OLD PACKAGE ARTIFACT\n")
+            self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
+
+    def test_repeated_file_promotion_is_byte_identical(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            first = tmp / "first.per"
+            second = tmp / "second.per"
+
+            for output in (first, second):
+                fake = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+                with patch(
+                    "Compiler.compiler.analyze_rule_diagnostics",
+                    return_value=SimpleNamespace(
+                        diagnostics=(persistent_rule_diagnostic(),)
+                    ),
+                ):
+                    report = compile_to_file(
+                        EXAMPLES,
+                        output,
+                        native_backend=fake,
+                    )
+                self.assertEqual(report.status, ValidationStatus.VALIDATED)
+
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+
+    def test_repeated_package_promotion_is_byte_identical(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            root = tmp / "root.perdsl"
+            child = tmp / "child.perdsl"
+            first = tmp / "first.per"
+            second = tmp / "second.per"
+            child.write_text(EXAMPLES, encoding="utf-8")
+            root.write_text('(load "child.perdsl")\n', encoding="utf-8")
+
+            for output in (first, second):
+                fake = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+                with patch(
+                    "Compiler.compiler.analyze_rule_diagnostics",
+                    return_value=SimpleNamespace(
+                        diagnostics=(persistent_rule_diagnostic(),)
+                    ),
+                ):
+                    report = compile_package_with_report(
+                        SourceGraphRequest(entrypoint=root),
+                        output,
+                        native_backend=fake,
+                    )
+                self.assertEqual(report.status, ReportStatus.VALIDATED)
+
+            self.assertEqual(first.read_bytes(), second.read_bytes())
     def test_rejected_backend_does_not_overwrite_existing_output(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
