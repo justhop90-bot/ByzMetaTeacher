@@ -188,8 +188,8 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         _validate_completion_witness(witness, registry)
         release = parse_expression(demand.release)
-        if _is_timing_only(release, registry):
-            raise CompileError("TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " cannot release from timing alone")
+        if "TIMING" in _context_roles(release, registry):
+            raise CompileError("TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " release cannot depend on timing")
         if release.head == action.head:
             raise CompileError(
                 f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
