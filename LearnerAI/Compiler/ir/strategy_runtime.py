@@ -1,7 +1,7 @@
 """Runtime-facing strategic evidence binding and posture evaluation."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Iterable
 
@@ -14,8 +14,8 @@ from .strategy import (
     CapabilityIntentKind,
     StrategicCapabilityObservation,
     StrategicDemandSpec,
-    StrategicEnemyCompositionObservation,
     StrategicEvidence,
+    StrategicObservationSpec,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
     StrategyPosture,
@@ -94,10 +94,17 @@ class StrategicPredicate:
 
 
 @dataclass(frozen=True)
+class ObservationReferenceBinding:
+    reference: str
+    observation: StrategicObservationSpec
+
+
+@dataclass(frozen=True)
 class StrategicEvidenceBinding:
     evidence: StrategicEvidence
     predicate: StrategicPredicate
     fingerprint: str
+    observation_reference: ObservationReferenceBinding | None = None
 
     @property
     def observations(self) -> tuple[StrategicObservation, ...]:
@@ -139,7 +146,6 @@ class StrategyRuntimeState:
         ...
     ] = ()
     evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
-    evaluated_enemy_composition_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -263,6 +269,62 @@ def bind_strategic_enemy_composition_observation(
             "does not bind its declared unit"
         )
     return binding
+
+
+def bind_observation_reference(
+    evidence: StrategicEvidence,
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+    registry: PrimitiveRegistry | None = None,
+) -> StrategicEvidenceBinding:
+    reference = evidence.observation_ref
+    if not reference:
+        raise ValueError(
+            f"strategic evidence '{evidence.label}' requires an observation reference"
+        )
+    try:
+        observation = profile.observation(reference)
+    except KeyError as exc:
+        raise ValueError(
+            f"unknown strategic observation reference '{reference}'"
+        ) from exc
+    if observation.source is StrategicEvidenceSource.COMMUNITY_META:
+        raise ValueError(
+            f"community meta cannot define native observation '{observation.identity}'"
+        )
+    if not observation.expression:
+        raise ValueError(
+            f"strategic observation '{observation.identity}' requires a native expression"
+        )
+    if not observation.provenance:
+        raise ValueError(
+            f"strategic observation '{observation.identity}' requires native provenance"
+        )
+    if any(ref.patch != effective.patch for ref in observation.provenance):
+        raise ValueError(
+            f"strategic observation '{observation.identity}' has provenance for a different patch"
+        )
+    if evidence.expression is not None:
+        raise ValueError(
+            f"strategic evidence '{evidence.label}' must not override its native observation expression"
+        )
+    resolved = replace(
+        evidence,
+        expression=observation.expression,
+        observation_ref=None,
+    )
+    binding = bind_strategic_evidence(resolved, effective, registry)
+    reference_binding = ObservationReferenceBinding(reference, observation)
+    return replace(
+        binding,
+        observation_reference=reference_binding,
+        fingerprint=canonical_fingerprint(
+            {
+                "binding": binding.fingerprint,
+                "observation_reference": reference_binding,
+            }
+        ),
+    )
 
 
 _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
@@ -487,6 +549,15 @@ def bind_strategic_evidence(
     from ..semantic.analyzer import parse_expression
     from .strategy import _validate_evidence_attribution
 
+    if evidence.observation_ref is not None:
+        raise ValueError(
+            f"strategic evidence '{evidence.label}' must use bind_observation_reference"
+        )
+    if evidence.expression is None:
+        raise ValueError(
+            f"strategic evidence '{evidence.label}' requires a native expression"
+        )
+
     _validate_evidence_attribution(evidence, effective)
     registry = registry or default_de_registry()
     expression = parse_expression(evidence.expression)
@@ -578,10 +649,16 @@ def evaluate_binding(
 
 def _all_bindings(
     evidences: tuple[StrategicEvidence, ...],
+    profile: StrategyProfile,
     effective: EffectiveCivData,
     registry: PrimitiveRegistry,
 ) -> tuple[StrategicEvidenceBinding, ...]:
-    return tuple(bind_strategic_evidence(evidence, effective, registry) for evidence in evidences)
+    return tuple(
+        bind_observation_reference(evidence, profile, effective, registry)
+        if evidence.observation_ref is not None
+        else bind_strategic_evidence(evidence, effective, registry)
+        for evidence in evidences
+    )
 
 
 def _all_true(values: tuple[EvidenceTruth, ...]) -> bool:
@@ -603,7 +680,7 @@ def _transition_candidates(
             continue
         if _all_true(tuple(
             evaluate_binding(binding, snapshot)
-            for binding in _all_bindings(transition.evidence, effective, registry)
+            for binding in _all_bindings(transition.evidence, profile, effective, registry)
         )):
             applicable.append((transition.priority, transition.label, transition.to_posture))
     return tuple(applicable)
@@ -631,12 +708,13 @@ def _validate_transition_conflicts(profile: StrategyProfile) -> None:
 
 def _evaluate_demand(
     demand: StrategicDemandSpec,
+    profile: StrategyProfile,
     effective: EffectiveCivData,
     snapshot: RuntimeObservationSnapshot,
     registry: PrimitiveRegistry,
 ) -> tuple[StrategicDemandRuntimeState, tuple[tuple[str, EvidenceTruth], ...]]:
     evaluated: list[tuple[str, EvidenceTruth]] = []
-    reason_bindings = _all_bindings(demand.reason, effective, registry)
+    reason_bindings = _all_bindings(demand.reason, profile, effective, registry)
     reason_truths = tuple(evaluate_binding(binding, snapshot) for binding in reason_bindings)
     evaluated.extend(
         (f"{demand.identity}:reason:{binding.evidence.label}", truth)
@@ -646,7 +724,7 @@ def _evaluate_demand(
     if demand.identity in snapshot.completed_demands:
         return StrategicDemandRuntimeState.STRATEGIC_COMPLETE, tuple(evaluated)
 
-    invalidation_bindings = _all_bindings(demand.invalidation, effective, registry)
+    invalidation_bindings = _all_bindings(demand.invalidation, profile, effective, registry)
     invalidation_truths = tuple(evaluate_binding(binding, snapshot) for binding in invalidation_bindings)
     evaluated.extend(
         (f"{demand.identity}:invalidation:{binding.evidence.label}", truth)
@@ -658,7 +736,7 @@ def _evaluate_demand(
     if not _all_true(reason_truths):
         return StrategicDemandRuntimeState.STRATEGIC_INACTIVE, tuple(evaluated)
 
-    admissibility_bindings = _all_bindings(demand.admissibility, effective, registry)
+    admissibility_bindings = _all_bindings(demand.admissibility, profile, effective, registry)
     admissibility_truths = tuple(evaluate_binding(binding, snapshot) for binding in admissibility_bindings)
     evaluated.extend(
         (f"{demand.identity}:admissibility:{binding.evidence.label}", truth)
@@ -714,7 +792,11 @@ def evaluate_strategy_runtime(
         tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]]
     ] = []
     for evidence in profile.community_meta_evidence:
-        binding = bind_strategic_evidence(evidence, effective, registry)
+        binding = (
+            bind_observation_reference(evidence, profile, effective, registry)
+            if evidence.observation_ref is not None
+            else bind_strategic_evidence(evidence, effective, registry)
+        )
         evaluated_meta_evidence.append(
             (
                 evidence.label,
@@ -737,19 +819,6 @@ def evaluate_strategy_runtime(
             )
         )
 
-    evaluated_enemy_composition_observations: list[tuple[str, EvidenceTruth]] = []
-    for composition_observation in profile.enemy_composition_observations:
-        binding = bind_strategic_enemy_composition_observation(
-            composition_observation,
-            effective,
-            registry,
-        )
-        evaluated_enemy_composition_observations.append(
-            (
-                composition_observation.identity,
-                evaluate_binding(binding, snapshot),
-            )
-        )
 
     owners: list[tuple[str, str]] = []
     active: list[str] = []
@@ -765,7 +834,7 @@ def evaluate_strategy_runtime(
     previous_states = dict(snapshot.previous_demand_states)
     for demand in profile.demands:
         owners.append((demand.identity, demand.owner))
-        state, evidence = _evaluate_demand(demand, effective, snapshot, registry)
+        state, evidence = _evaluate_demand(demand, profile, effective, snapshot, registry)
         demand_states.append((demand.identity, state))
         evaluated.extend(evidence)
 
@@ -813,7 +882,6 @@ def evaluate_strategy_runtime(
             "reassessment": sorted(reason.value for reason in reasons),
             "evaluated_meta_evidence": evaluated_meta_evidence,
             "evaluated_capability_observations": evaluated_capability_observations,
-            "evaluated_enemy_composition_observations": evaluated_enemy_composition_observations,
         }
     )
 
@@ -839,8 +907,5 @@ def evaluate_strategy_runtime(
         ),
         evaluated_capability_observations=tuple(
             sorted(evaluated_capability_observations)
-        ),
-        evaluated_enemy_composition_observations=tuple(
-            sorted(evaluated_enemy_composition_observations)
         ),
     )
