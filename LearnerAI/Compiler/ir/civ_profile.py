@@ -24,6 +24,7 @@ from .game_data import (
     ProductionProvider,
     Rational,
     ResearchProvider,
+    Resource,
     ResourceCost,
     RoundingMode,
     SelectorKind,
