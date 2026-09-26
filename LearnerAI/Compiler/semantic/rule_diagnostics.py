@@ -126,10 +126,15 @@ def analyze_rule_diagnostics(
 
     diagnostics: list[RuleDiagnostic] = []
     for rule in report.rules:
-        guard = analyze_guard(
-            _guard_expression(rule),
-            fact_registry,
-        )
+        try:
+            guard = analyze_guard(
+                _guard_expression(rule),
+                fact_registry,
+            )
+        except ValueError:
+            # Rule diagnostics are advisory. A guard shape outside the current
+            # static-proof domain is runtime-dependent, not a compiler crash.
+            guard = GuardSatisfiability.UNKNOWN
         eligibility = analyze_firing_eligibility(
             rule,
             guard,
