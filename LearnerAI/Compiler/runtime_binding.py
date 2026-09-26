@@ -15,9 +15,6 @@ GOAL_ID_MIN = 1
 GOAL_ID_MAX = 16_000
 ALLOCATOR_VERSION = "goal-storage-v3"
 BINDING_MANIFEST_VERSION = 2
-SPAN_POOL_MIN = 41
-SPAN_POOL_MAX = 508
-
 GoalStorageShape = GoalSpanKind
 
 
@@ -533,8 +530,8 @@ class RuntimeBinder:
         allocated_intervals: list[GoalInterval],
     ) -> int:
         _validate_span_request(request)
-        start = max(request.start_min, SPAN_POOL_MIN)
-        end = min(request.start_max, SPAN_POOL_MAX)
+        start = request.start_min
+        end = request.start_max
         while start <= end:
             interval = GoalInterval(start, start + request.width - 1)
             if (
