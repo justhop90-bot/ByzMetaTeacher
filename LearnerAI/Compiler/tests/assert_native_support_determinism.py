@@ -34,7 +34,7 @@ def build_snapshot() -> dict[str, object]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
         for name in UNSUPPORTED_STATES:
-            source = (fixture_root / f"{name}.basilisk").read_text(encoding="utf-8")
+            source = (fixture_root / f"{name}.perdsl").read_text(encoding="utf-8")
             registry = CompilerNativeIntegrationTests._native_support_fixture_registry(name)
             output = tmp / f"{name}.per"
             output.write_bytes(b"KEEP UNSUPPORTED ARTIFACT\n")
@@ -44,7 +44,7 @@ def build_snapshot() -> dict[str, object]:
                 output,
                 native_backend=backend,
                 registry=registry,
-                source_unit=f"native-support/{name}.basilisk",
+                source_unit=f"native-support/{name}.perdsl",
             )
             assessment = registry.assess_support("fixture-command")
             if report.status is not ReportStatus.SEMANTIC_REJECTED:
