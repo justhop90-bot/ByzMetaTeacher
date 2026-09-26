@@ -92,7 +92,7 @@ def build_provider(
             primitive="build",
             arguments=("castle",),
             conflict_class="BUILD_PASS_SINGLETON",
-            arbitration=("test:build",) if arbitration else (),
+            arbitration=(SemanticId("test", "build"),) if arbitration else (),
         )
     witness_id = None
     if witness is not None:
@@ -348,39 +348,51 @@ class CapabilityValidationTests(unittest.TestCase):
         )
 
     def test_rooted_scc_is_not_reported_as_cycle(self):
-        capability = CapabilityId("test", "castle-exists")
-        market = CapabilityId("test", "market-exists")
-        witness = witness_for(capability)
+        a = CapabilityId("test", "a")
+        b = CapabilityId("test", "b")
+        seed_witness = witness_for(a, name="a-seed")
+        b_witness = witness_for(b, name="b-witness")
 
         builder = CapabilityGraphBuilder()
-        builder.add_capability(Capability(capability, CapabilityKind.CONSTRUCTION))
-        builder.add_capability(Capability(market, CapabilityKind.OBSERVED))
+        builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
+        builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
+        builder.add_witness(seed_witness)
+        builder.add_witness(b_witness)
 
-        market_witness = witness_for(market, name="market-observed")
-        builder.add_witness(witness)
-        builder.add_witness(market_witness)
         builder.add_provider(
             build_provider(
-                market,
-                name="market-observed",
-                provider_kind=ProviderKind.OBSERVATION,
-                action=False,
-                witness=market_witness,
-                admissibility=None,
-            )
-        )
-        builder.add_provider(
-            build_provider(
-                capability,
-                witness=witness,
-                prerequisites=(market,),
+                a,
+                name="a-seed",
+                prerequisites=(),
+                witness=seed_witness,
                 admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
             )
         )
-        builder.add_demand(demand("castle", capability))
+        builder.add_provider(
+            build_provider(
+                a,
+                name="a-from-b",
+                prerequisites=(b,),
+                witness=seed_witness,
+                admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+            )
+        )
+        builder.add_provider(
+            build_provider(
+                b,
+                name="b-from-a",
+                prerequisites=(a,),
+                witness=b_witness,
+                admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+            )
+        )
+        builder.add_demand(demand("a-demand", a))
 
         report = self._validate(builder)
-        self.assertNotIn(CapabilityDiagnosticCode.CYCLE, {d.code for d in report.diagnostics})
+        self.assertNotIn(
+            CapabilityDiagnosticCode.CYCLE,
+            {d.code for d in report.diagnostics},
+        )
 
     def test_unrooted_two_node_scc_reports_cycle_and_dead_end(self):
         a = CapabilityId("test", "a")
