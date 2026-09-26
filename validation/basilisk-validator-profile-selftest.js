@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const validatorPath = path.join(repoRoot, "validation", "basilisk-validator.js");
+const controllerPath = path.join(repoRoot, "Basilisk", "Basilisk.per");
 
 function run(args) {
   return spawnSync(process.execPath, [validatorPath, ...args, "--contract-only"], {
@@ -14,27 +17,20 @@ function run(args) {
   });
 }
 
-const baseline = run(["--profile=8596a45"]);
-const baselineOutput = String(baseline.stdout ?? "") + "\n" + String(baseline.stderr ?? "");
+function output(result) {
+  return String(result.stdout ?? "") + "\n" + String(result.stderr ?? "");
+}
 
-assert.notEqual(
-  baseline.status,
-  0,
-  "[Profile self-test] 8596a45 baseline should currently stop on a real engine-limit violation",
-);
-assert.ok(
-  !baselineOutput.includes("[Goal namespace] reserved high-range GoalId 775 is missing"),
-  "[Profile self-test] 8596a45 profile must bypass the post-baseline GoalId 775 requirement",
-);
-assert.match(
-  baselineOutput,
-  /\[Rule structure\] defrule at line 1471 has an empty actions section|\[Rule too long\]/,
-  "[Profile self-test] 8596a45 profile must still enforce parser/rule-length validation",
-);
+function writeFixture(sourceText, suffix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "basilisk-profile-selftest-"));
+  const file = path.join(dir, "Basilisk-" + suffix + ".per");
+  fs.writeFileSync(file, sourceText, "utf8");
+  return { dir, file };
+}
 
-const validatorSource = await import("node:fs").then((fs) =>
-  fs.readFileSync(validatorPath, "utf8"),
-);
+const validatorSource = fs.readFileSync(validatorPath, "utf8");
+const controllerSource = fs.readFileSync(controllerPath, "utf8");
+
 assert.match(
   validatorSource,
   /const engineLimitReport = validateEngineLimits\(source, rules\);/,
@@ -51,21 +47,65 @@ assert.match(
   "[Profile self-test] modern-only RUSH stall lifecycle gate is not profile-scoped",
 );
 
-const modern = run([]);
-const modernOutput = String(modern.stdout ?? "") + "\n" + String(modern.stderr ?? "");
-assert.notEqual(
-  modern.status,
-  0,
-  "[Profile self-test] default profile should reject the restored 8596a45 controller",
+const legacyProfile = run(["--profile=8596a45"]);
+const legacyOutput = output(legacyProfile);
+assert.ok(
+  !legacyOutput.includes("[Goal namespace] reserved high-range GoalId 775 is missing"),
+  "[Profile self-test] 8596a45 profile must bypass the post-baseline GoalId 775 requirement",
 );
+
+const modernProfile = run([]);
+const modernOutput = output(modernProfile);
 assert.match(
   modernOutput,
   /\[Goal namespace\] reserved high-range GoalId 775 is missing/,
   "[Profile self-test] default profile must retain the modern GoalId requirement",
 );
 
+const parserFixture = writeFixture(
+  controllerSource +
+    "\n(defrule\n    (true)\n=>\n)\n",
+  "parser",
+);
+try {
+  const result = run(["--profile=8596a45", parserFixture.file]);
+  assert.notEqual(
+    result.status,
+    0,
+    "[Profile self-test] malformed parser fixture must be rejected",
+  );
+  assert.match(
+    output(result),
+    /\[Rule structure\].*empty actions section|\[Rule too long\]/,
+    "[Profile self-test] 8596a45 profile must still enforce parser/rule-length validation",
+  );
+} finally {
+  fs.rmSync(parserFixture.dir, { recursive: true, force: true });
+}
+
+const duplicateFixture = writeFixture(
+  controllerSource +
+    "\n(defconst bt-profile-selftest-duplicate 1)\n(defconst bt-profile-selftest-duplicate 1)\n",
+  "duplicate",
+);
+try {
+  const result = run(["--profile=8596a45", duplicateFixture.file]);
+  assert.notEqual(
+    result.status,
+    0,
+    "[Profile self-test] duplicate defconst fixture must be rejected",
+  );
+  assert.match(
+    output(result),
+    /\[Defconst\] duplicate definition\(s\): bt-profile-selftest-duplicate/,
+    "[Profile self-test] duplicate defconst diagnostics are missing",
+  );
+} finally {
+  fs.rmSync(duplicateFixture.dir, { recursive: true, force: true });
+}
+
 const unknown = run(["--profile=not-a-profile"]);
-const unknownOutput = String(unknown.stdout ?? "") + "\n" + String(unknown.stderr ?? "");
+const unknownOutput = output(unknown);
 assert.notEqual(
   unknown.status,
   0,
@@ -79,11 +119,11 @@ assert.match(
 
 console.log(JSON.stringify({
   status: "PASS",
-  profile: "8596a45",
   assertions: [
     "post-baseline GoalId requirements are profile-scoped",
-    "DE rule-element limit remains enforced",
+    "DE parser/rule validation remains enforced by the legacy profile",
     "default profile remains strict",
+    "duplicate defconst ownership diagnostics remain enforced",
     "unknown profiles are rejected",
   ],
 }, null, 2));
