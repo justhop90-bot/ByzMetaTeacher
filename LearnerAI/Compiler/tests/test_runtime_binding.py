@@ -24,7 +24,7 @@ from Compiler.runtime_binding import (
     GoalStorageShape,
     VolatileGoalPool,
 )
-from Compiler.ir import GoalSpanRequest, GoalSpanKind
+from Compiler.ir import GoalSpanRequest, GoalSpanKind, SemanticId
 from Compiler.semantic import analyze
 
 
