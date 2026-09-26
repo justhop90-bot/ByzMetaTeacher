@@ -125,7 +125,18 @@ Where Basilisk-style rule order is deliberate, the compiler should eventually id
 - later overwrites;
 - unreachable or preempted rules.
 
-### 8. Domain-aware teaching diagnostics
+### 8. Timing and map-conditioned evidence
+
+The player now has concrete Arabia timing windows and reactions. Compiler responsibility is deliberately limited to semantic guardrails:
+
+- timing primitives are typed as interpretation evidence;
+- timing-only action demands are rejected;
+- timing cannot prove completion;
+- timing-only release is rejected.
+
+Numeric Arabia thresholds remain Strategy tuning data. Do not hard-code the map profile into the compiler.
+
+### 9. Domain-aware teaching diagnostics
 
 Diagnostics should use the player vocabulary:
 
@@ -150,7 +161,7 @@ REASSESSMENT.
 
 ## Current verification
 
-The checked-in compiler verification record contains 48 tests.
+The checked-in compiler verification record contains the lifecycle suite plus timing-semantics regression tests.
 
 No GitHub Actions result is being treated as proof for the latest adapter work. Local test results remain local evidence.
 
