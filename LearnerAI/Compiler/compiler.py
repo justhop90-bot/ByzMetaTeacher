@@ -33,7 +33,7 @@ if __package__ in (None, ""):
     from Compiler.backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
     from Compiler.errors import CompileError
     from Compiler.parser import parse
-    from Compiler.primitives import default_de_registry
+    from Compiler.primitives import PrimitiveRegistry, default_de_registry
     from Compiler.semantic import analyze
     from Compiler.semantic.demand_ownership import validate_demand_ownership
     from Compiler.semantic.action_issuance import validate_action_issuance
@@ -62,7 +62,7 @@ else:
     from .backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
     from .errors import CompileError
     from .parser import parse
-    from .primitives import default_de_registry
+    from .primitives import PrimitiveRegistry, default_de_registry
     from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
     from .semantic.action_issuance import validate_action_issuance
@@ -196,9 +196,10 @@ def _compile_source_parts(
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
 ):
     ast = parse(source)
-    registry = default_de_registry()
+    registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=source_unit)
     return _compile_ir_parts(
         ir,
@@ -291,12 +292,14 @@ def compile_source(
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
+    registry: PrimitiveRegistry | None = None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
         base_goal,
         source_unit=source_unit,
         binding_context=binding_context,
+        registry=registry,
     )
     return result
 
@@ -310,6 +313,7 @@ def compile_source_with_report(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
+    registry: PrimitiveRegistry | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -323,6 +327,7 @@ def compile_source_with_report(
             base_goal,
             source_unit=source_unit,
             binding_context=binding_context,
+            registry=registry,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -379,6 +384,7 @@ def compile_to_file(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
+    registry: PrimitiveRegistry | None = None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
@@ -390,6 +396,7 @@ def compile_to_file(
         base_goal,
         source_unit=source_unit,
         binding_context=binding_context,
+        registry=registry,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
