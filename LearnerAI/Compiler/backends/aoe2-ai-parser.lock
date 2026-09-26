@@ -1,0 +1,5 @@
+[backend]
+name = "aoe2-ai-parser"
+project_version = "0.1.0"
+commit_sha = "3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+python_major_minor = "3.12"
