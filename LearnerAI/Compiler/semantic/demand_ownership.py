@@ -34,6 +34,7 @@ class OwnershipDiagnosticCode(str, Enum):
     STATE_UNCONSUMED = "OWN-007"
     CONSUMER_BEFORE_WRITER = "OWN-008"
     STATE_ACCESS_MISMATCH = "OWN-009"
+    STATE_ACCESS_MISSING_RULE_SCOPE = "OWN-010"
 
 
 @dataclass(frozen=True)
