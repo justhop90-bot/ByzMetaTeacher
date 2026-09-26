@@ -129,6 +129,7 @@ from .strategy import (
     StrategicDemandSpec,
     StrategicEvidence,
     StrategicEvidenceKind,
+    StrategicEvidenceSource,
     StrategicPriority,
     StrategicTarget,
     StrategicTargetKind,
