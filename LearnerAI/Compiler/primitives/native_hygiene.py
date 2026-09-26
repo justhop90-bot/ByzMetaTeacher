@@ -675,12 +675,16 @@ class NativeContractCatalog:
         goal_storage_ids = {contract.identity for contract in self.goal_storage_contracts}
         goal_span_ids = {contract.identity for contract in self.goal_span_contracts}
         parameter_range_ids = {contract.identity for contract in self.parameter_ranges}
-        if not goal_storage_ids:
-            raise ValueError("native catalog requires an ordinary Goal storage contract")
-        if not goal_span_ids:
-            raise ValueError("native catalog requires at least one extended Goal span contract")
-        if not parameter_range_ids:
-            raise ValueError("native catalog requires a GoalId parameter-range contract")
+        if any(
+            storage.kind is NativeStorageKind.GOAL
+            for storage in self.storage_uses
+        ) and not goal_storage_ids:
+            raise ValueError("Goal storage uses require an ordinary Goal storage contract")
+        if any(
+            storage.storage_class is NativeStorageClass.GOAL_SPAN
+            for storage in self.storage_uses
+        ) and not goal_span_ids:
+            raise ValueError("Goal span uses require an extended Goal span contract")
 
         for storage in self.storage_uses:
             if storage.kind is NativeStorageKind.GOAL and storage.contract_id not in goal_storage_ids:
