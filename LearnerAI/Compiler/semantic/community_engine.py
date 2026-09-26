@@ -335,13 +335,13 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
             action="build",
             feasibility_fact="can-build",
             pending_fact="up-pending-objects",
-            completion_witness="building-type-count-total",
+            completion_witness="building-type-count",
         ),
         EngineLifecycleContract(
             action="train",
             feasibility_fact="can-train",
             pending_fact="up-pending-objects",
-            completion_witness="unit-type-count-total",
+            completion_witness="unit-type-count",
         ),
         EngineLifecycleContract(
             action="research",
