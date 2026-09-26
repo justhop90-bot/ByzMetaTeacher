@@ -3,6 +3,7 @@ from dataclasses import replace
 
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.clients.basilisk import (
+    ByzantineProfile,
     ExecutionDemandTemplate,
     StrategyPosture,
     StrategicEvidenceKind,
