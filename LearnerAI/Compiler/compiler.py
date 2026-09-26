@@ -31,6 +31,7 @@ if __package__ in (None, ""):
     from Compiler.parser import parse
     from Compiler.primitives import default_de_registry
     from Compiler.semantic import analyze
+    from Compiler.semantic.capability_bridge import validate_projected_capabilities
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
 else:
@@ -48,6 +49,7 @@ else:
     from .parser import parse
     from .primitives import default_de_registry
     from .semantic import analyze
+    from .semantic.capability_bridge import validate_projected_capabilities
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
 
@@ -76,7 +78,12 @@ def _compile_source_parts(
     binding_context: BindingContext | None = None,
 ):
     ast = parse(source)
-    ir = analyze(ast, default_de_registry(), source_unit=source_unit)
+    registry = default_de_registry()
+    ir = analyze(ast, registry, source_unit=source_unit)
+    capability_report = validate_projected_capabilities(ir, registry)
+    if capability_report.errors:
+        diagnostic = capability_report.errors[0]
+        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
     context = binding_context or BindingContext()
     bindings = RuntimeBinder(base_goal=base_goal).bind(
         _storage_requests(ir),
