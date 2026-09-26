@@ -67,6 +67,8 @@ class NativeSemanticBinderTests(unittest.TestCase):
         mapping = self.mappings.require("observation.age.current")
         evidence_only = replace(
             mapping,
+            native_command=None,
+            native_kind=None,
             status=EngineSemanticMappingStatus.EVIDENCE_ONLY,
         )
         registry = EngineSemanticMappingRegistry(

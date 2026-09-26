@@ -588,7 +588,7 @@ class CompilerTests(unittest.TestCase):
 
     def test_cli_entrypoint_compiles_from_repository_root(self):
         repo = Path(__file__).resolve().parents[3]
-        source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
+        source = Path(__file__).resolve().parents[1] / "examples" / "basics.perdsl"
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "CompilerFixture.per"
             backend_root = Path(tmp) / "native-backend"

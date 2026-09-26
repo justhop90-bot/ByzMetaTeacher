@@ -19,7 +19,7 @@ def valid_snapshot():
         "confidence": None,
         "message": "unsupported native command",
         "suggestion": None,
-        "path": "native-support/test.basilisk",
+        "path": "native-support/test.perdsl",
         "line": 1,
         "column": 1,
         "end_line": 1,
