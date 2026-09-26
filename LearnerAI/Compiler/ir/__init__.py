@@ -6,7 +6,6 @@ from .capability import (
     CapabilityGraphBuilder,
     CapabilityId,
     CapabilityKind,
-    CapabilityProvider,
     CompletionWitness,
     DemandId,
     EdgeKind,
@@ -47,7 +46,6 @@ from .model import (
     SemanticRequirement,
     StorageRequestId,
 )
-
 from .resource import (
     ConflictContract,
     ResourceClaim,
@@ -55,4 +53,48 @@ from .resource import (
     ResourceConflictGraph,
     ResourceKind,
     ResourceScope,
+)
+from .game_data import (
+    Age,
+    BuildingDef,
+    BuildingId,
+    CivId,
+    EntitySelector,
+    GameData,
+    ModifierOperation,
+    NumericModifier,
+    Prerequisite,
+    Rational,
+    Resource,
+    ResourceCost,
+    RoundingMode,
+    SelectorKind,
+    TechEffect,
+    TechId,
+    TechnologyDef,
+    UnitDef,
+    UnitId,
+    UnitLineDef,
+    UnitLineId,
+    canonical_fingerprint,
+    validate_game_data,
+)
+from .civ_profile import (
+    AvailabilityOperation,
+    ByzantineProfile,
+    CivAvailabilityRule,
+    CivBonus,
+    CivBonusKind,
+    CivInteraction,
+    CivProfile,
+    EffectiveCivData,
+    resolve_effective_civ,
+)
+from .versioning import (
+    EvidenceKind,
+    EvidenceRef,
+    PatchChange,
+    PatchId,
+    PatchOperationKind,
+    Validity,
 )
