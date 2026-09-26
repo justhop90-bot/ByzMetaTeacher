@@ -224,18 +224,35 @@ class PackageStorageInventory:
         if not isinstance(raw_reservations, list):
             raise ValueError("package storage inventory reservations must be an array")
 
-        inventory = cls(
-            package_id=str(payload["package_id"]),
-            package_revision=str(payload["package_revision"]),
-            reservations=tuple(
+        reservations = []
+        expected_reservation_fields = {
+            "kind",
+            "start",
+            "end",
+            "provenance_id",
+        }
+        for index, raw in enumerate(raw_reservations):
+            if not isinstance(raw, dict):
+                raise ValueError(
+                    f"package storage inventory reservation {index} must be an object"
+                )
+            if set(raw) != expected_reservation_fields:
+                raise ValueError(
+                    "package storage inventory reservation has missing or extra fields"
+                )
+            reservations.append(
                 PackageStorageReservation(
                     kind=StorageKind(str(raw["kind"])),
                     start=int(raw["start"]),
                     end=int(raw["end"]),
                     provenance_id=str(raw["provenance_id"]),
                 )
-                for raw in raw_reservations
-            ),
+            )
+
+        inventory = cls(
+            package_id=str(payload["package_id"]),
+            package_revision=str(payload["package_revision"]),
+            reservations=tuple(reservations),
         )
         if str(payload["inventory_sha"]) != inventory.inventory_sha:
             raise ValueError("package storage inventory fingerprint mismatch")
