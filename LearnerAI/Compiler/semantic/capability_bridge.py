@@ -176,7 +176,10 @@ def project_capability_graph(
                 ),
                 kind=ResourceKind.ACTION_EXCLUSION,
                 scope=ResourceScope.TRANSIENT,
-                claimant=demand.identity,
+                claimant=SemanticId(
+                    demand.identity.source_unit,
+                    f"{demand.identity.local_name}-provider",
+                ),
                 conflict_class=conflict_class,
                 arbitration_owner=arbitration[0],
             )
