@@ -197,7 +197,7 @@ class EmitterBudgetAndArbitrationTests(unittest.TestCase):
             output.index("; Pending diagnostics: demand-0")
         ]
         self.assertEqual(init_section.count("(defrule"), 2)
-        self.assertEqual(init_section.count("(disable-self)"), 1)
+        self.assertEqual(init_section.count("(disable-self)"), 2)
 
     def test_emitter_rejects_rule_that_exceeds_engine_element_budget(self):
         requirements = "\n".join(
