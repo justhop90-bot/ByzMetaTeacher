@@ -54,6 +54,12 @@ class CoverageStatus(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class FactStatus(str, Enum):
+    VERIFIED = "VERIFIED"
+    VERIFIED_UNAVAILABLE = "VERIFIED_UNAVAILABLE"
+    UNKNOWN = "UNKNOWN"
+
+
 class PrerequisiteKind(str, Enum):
     AGE = "AGE"
     BUILDING = "BUILDING"
