@@ -16,7 +16,7 @@ Evidence classes are intentionally separate:
 ## Gate 0 — preserve the architectural boundary
 
 - [x] Keep native syntax/parameter legality owned by AIRef/native backend.
-- [x] Keep Basilisk strategy policy out of generic compiler semantics.
+- [x] Keep downstream strategy policy out of generic compiler semantics.
 - [x] Do not introduce a scheduler, universal manager, runtime simulator, or second .per language.
 - [x] Preserve DEMAND -> CAPABILITY -> FEASIBILITY -> ACTION -> PENDING -> WITNESS -> RELEASE/INVALIDATION -> REASSESSMENT.
 - [x] Preserve can-* as admission/feasibility, never completion.
