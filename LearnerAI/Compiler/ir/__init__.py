@@ -41,6 +41,7 @@ from .model import (
     SemanticAction,
     LifecycleAccessPhase,
     StateAccess,
+    StateStorageKind,
     SemanticDemand,
     SemanticId,
     SemanticRequirement,
