@@ -110,6 +110,7 @@ def validate_action_issuance(
                     IssuanceStatus.BLOCKED,
                     f"demand '{demand.name}' has no action issuance contract",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
             continue
@@ -121,6 +122,7 @@ def validate_action_issuance(
                     IssuanceStatus.BLOCKED,
                     f"action issuance for demand '{demand.name}' has no native feasibility guard",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
 
@@ -132,6 +134,7 @@ def validate_action_issuance(
                     f"action issuance for demand '{demand.name}' has invalid phase "
                     f"'{issuance.phase.value}'",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
 
@@ -142,6 +145,7 @@ def validate_action_issuance(
                     IssuanceStatus.CONFLICTING,
                     f"action issuance for demand '{demand.name}' does not enter ISSUED state",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
 
@@ -152,6 +156,7 @@ def validate_action_issuance(
                     IssuanceStatus.CONFLICTING,
                     f"action issuance for demand '{demand.name}' collapses ISSUED and PENDING",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
 
@@ -164,6 +169,7 @@ def validate_action_issuance(
                     IssuanceStatus.CONFLICTING,
                     f"action issuance for demand '{demand.name}' uses ACTIVE as pending state",
                     demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
                 )
             )
 
