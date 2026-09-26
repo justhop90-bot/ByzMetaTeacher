@@ -38,6 +38,8 @@ class SemanticSupportStateTests(unittest.TestCase):
 
 
     def test_default_semantic_mapping_catalog_is_exact_and_contracted(self):
+        from Compiler.semantic.community_engine import default_community_engine_registry
+
         mapping_registry = default_engine_semantic_mapping_registry()
         self.assertEqual(
             tuple(
@@ -56,6 +58,12 @@ class SemanticSupportStateTests(unittest.TestCase):
                 if item.native_command is not None
             )
         )
+        practice_ids = {
+            item.identity
+            for item in default_community_engine_registry().practices
+        }
+        for item in mapping_registry.mappings:
+            self.assertTrue(set(item.practice_references).issubset(practice_ids))
 
     def test_open_engine_semantic_mapping_is_unsupported(self):
         mapping_registry = EngineSemanticMappingRegistry(
