@@ -1,7 +1,7 @@
 """Civilization-specific factual overlays and effective snapshot resolution."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 from .game_data import (
@@ -9,6 +9,9 @@ from .game_data import (
     AgeAdvanceDef,
     AgeAdvanceId,
     BuildingDef,
+    CoverageStatus,
+    EngineUnitClass,
+    FactualCoverage,
     BuildingId,
     CivId,
     EntitySelector,
@@ -16,6 +19,7 @@ from .game_data import (
     ModifierOperation,
     NumericModifier,
     Prerequisite,
+    PrerequisiteKind,
     ProductionProvider,
     Rational,
     ResearchProvider,
@@ -23,12 +27,16 @@ from .game_data import (
     RoundingMode,
     SelectorKind,
     TechEffect,
+    TechEffectKind,
     TechId,
     TechnologyDef,
     UnitDef,
+    UnitEffect,
+    UnitEffectKind,
     UnitId,
     UnitLineDef,
     UnitLineId,
+    UpgradeRelation,
     canonical_fingerprint,
     validate_game_data,
 )
@@ -129,6 +137,7 @@ class EffectiveCivData:
     interactions: tuple[CivInteraction, ...]
     patch_changes: tuple[PatchChange, ...]
     fingerprint: str
+    coverage: FactualCoverage
 
     def building(self, building_id: int) -> BuildingDef:
         return next(item for item in self.buildings if item.id == BuildingId(building_id))
@@ -147,6 +156,13 @@ class EffectiveCivData:
 
     def matches_bonus_selector(self, selector: EntitySelector, entity: object) -> bool:
         return _selector_matches(selector, entity)
+
+    def require_coverage(self, entity_type: str, entity_id: int | str) -> None:
+        if not self.coverage.verifies(entity_type, entity_id):
+            raise ValueError(
+                f"factual coverage is not sufficient for {entity_type}:{entity_id}; "
+                f"snapshot status is {self.coverage.status.value}"
+            )
 
     def building_hp_bonus_for_age(self, age: Age) -> tuple[CivBonus, ...]:
         return tuple(
@@ -232,6 +248,7 @@ class ByzantineProfile:
             "main",
             "defconst varangian-guard 2703; defconst elite-varangian-guard 2704; defconst ri-elite-varangian-guard 1454",
             patch,
+            verification="cross-check",
         )
         return CivProfile(
             civ_id=cls.CIV_ID,
@@ -245,6 +262,18 @@ class ByzantineProfile:
                     "byz-counter-unit-discount",
                     CivBonusKind.COST,
                     EntitySelector.unit_line(UnitLineId("spearman-line")),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(3, 4),
+                        RoundingMode.ENGINE_NEAREST,
+                    ),
+                    attribute="cost",
+                    provenance=(community, official),
+                ),
+                CivBonus(
+                    "byz-counter-skirmisher-discount",
+                    CivBonusKind.COST,
+                    EntitySelector.unit_line(UnitLineId("skirmisher-line")),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(3, 4),
