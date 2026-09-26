@@ -81,9 +81,9 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [ ] StrategicNumberSlot and TimerSlot allocation;
 - [x] explicit Goal occupancy ranges/intervals consumed by the binder when supplied as package inventory;
 - [x] automatic binding-manifest write-back as an end-to-end compiler artifact;
-- [ ] capability-provider graph;
+- [x] typed capability-provider graph plus provider-contract and admissibility validation passes;
 - [ ] demand ownership and writer/consumer contracts;
-- [ ] prerequisite dependency graph and cycle/dead-end diagnostics;
+- [x] prerequisite dependency graph, deterministic SCC cycle detection, and dead-end diagnostics;
 - [ ] resource/conflict semantics matching Basilisk's transient arbitration;
 - [ ] first-writer/first-consumer and source-order analysis;
 - [ ] action-issuance failure versus pending-state distinction;
