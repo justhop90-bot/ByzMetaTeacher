@@ -95,7 +95,23 @@ class NativeContractIntegrationTests(unittest.TestCase):
             storage_uses=(wrong_storage, base.storage("build-action-claim-storage")),
             pass_constraints=base.pass_constraints,
         )
-        registry = build_registry(catalog)
+        default_registry = default_de_registry()
+        build = replace(
+            default_registry.require("build"),
+            native_storage_use_ids=(
+                "wrong-lifecycle-storage",
+                "build-action-claim-storage",
+            ),
+        )
+        registry = PrimitiveRegistry(
+            tuple(
+                build if name == "build" else default_registry.require(name)
+                for name in default_registry.names()
+            ),
+            native_registry=load_default_native_schema(),
+            semantic_mappings=default_engine_semantic_mapping_registry(),
+            native_contracts=catalog,
+        )
 
         with self.assertRaisesRegex(
             CompileError,
@@ -112,7 +128,10 @@ class NativeContractIntegrationTests(unittest.TestCase):
             native_storage_use_ids=("lifecycle-goal-storage",),
         )
         registry = PrimitiveRegistry(
-            (primitive,),
+            tuple(
+                primitive if name == "build" else base.require(name)
+                for name in base.names()
+            ),
             native_registry=load_default_native_schema(),
             semantic_mappings=default_engine_semantic_mapping_registry(),
             native_contracts=default_native_contract_catalog(),
