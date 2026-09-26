@@ -4768,3 +4768,520 @@ If multiple opponents matter, player selection should be explicit in the trace: 
 - Strategy interprets information; Information does not silently create military actions.
 - Focus changes and advanced player searches must be traceable when they affect later facts.
 - The smallest player-selection mechanism that preserves information scope and strategic ownership is preferable to hidden global targeting state.
+
+
+## 37. Diplomacy and player stance
+
+Diplomacy is a player-relationship primitive. It must be taught as observation of a relationship, strategic interpretation of that relationship, and only then a stance-changing action. AIRef defines stance-toward and players-stance as facts and set-stance as an action. Community scenario/AI work also uses stance changes as part of coordinated behavior.
+
+### 37.1 Community pattern
+
+    OBSERVE RELATIONSHIP
+        ↓
+    STRATEGIC DIPLOMACY POLICY
+        ↓
+    SET / MAINTAIN STANCE
+        ↓
+    WORLD RELATIONSHIP
+        ↓
+    REASSESS
+
+A stance fact is not a strategy. It tells the script what relationship currently exists.
+
+### 37.2 Core primitives
+
+- stance-toward checks the computer player's stance toward a player.
+- players-stance checks the specified player's stance toward the computer player.
+- set-stance changes the computer player's stance toward a specified player.
+- player-in-game and player-valid can establish whether a player target is currently valid.
+
+The direction matters. “My stance toward player X” and “player X's stance toward me” are not interchangeable facts.
+
+### 37.3 Minimal valid pattern
+
+    (stance-toward 3 enemy)
+    =>
+    ...
+
+or, when a policy intentionally changes the relationship:
+
+    (player-in-game 3)
+    (stance-toward 3 neutral)
+    =>
+    (set-stance 3 enemy)
+
+The action changes diplomacy. It does not prove that a larger strategic objective has been achieved.
+
+### 37.4 Common failure
+
+#### Reversing stance direction
+
+Reading another player's stance as though it were the AI's own stance is a scope error.
+
+#### Treating stance as intent
+
+Enemy stance does not prove an attack is coming. It is one information input.
+
+#### Changing stance every pass
+
+A persistent rule without a guard can repeatedly issue the same diplomatic action. Use the current stance as the state witness.
+
+#### Hiding diplomacy inside military execution
+
+Military rules should not silently mutate diplomacy. Diplomacy owns the relationship decision.
+
+### 37.5 Basilisk-scale variant
+
+    INFORMATION
+        observe player relationship
+            ↓
+    STRATEGY
+        decide diplomatic posture
+            ↓
+    DIPLOMACY
+        set / maintain stance
+            ↓
+    WORLD STATE
+        relationship changes
+            ↓
+    WITNESS
+        stance fact confirms current relationship
+            ↓
+    RELEASE / REASSESS
+
+Basilisk should not infer diplomatic policy from a raw military count, and it should not use set-stance as a substitute for selecting a military target.
+
+### 37.6 Hard invariants
+
+- Stance observation and stance mutation are separate.
+- Stance direction must be explicit.
+- A stance fact proves relationship state, not enemy intention.
+- set-stance is an action, not a completion witness.
+- Player validity must be considered before dynamic player operations.
+- Diplomacy owns relationship policy; military owns military execution.
+- Repeated stance commands require a state guard.
+- Cross-reference: AIRef Commands Index; community scenario/AI discussions on dynamic stance and coordinated diplomacy.
+
+## 38. Randomness as a bounded control primitive
+
+Randomness is a control primitive, not a strategy generator. Community scripts use generated numbers to vary attack timing and other choices, then store or compare the result through ordinary script state. The useful lesson is controlled variation around a persistent policy.
+
+### 38.1 Core primitives
+
+- generate-random-number creates a player-specific integer in the requested range.
+- random-number exposes the generated value for comparison.
+- up-get-fact can copy random-number into a goal for later rules.
+- goal or another appropriate state primitive can preserve the chosen value.
+
+### 38.2 Community pattern
+
+A documented community attack example generates a random interval, stores it in a goal, modifies an attack interval, and uses a timer to schedule the next attack. This is a strong pattern because randomness selects timing while the surrounding strategy remains deterministic.
+
+    STRATEGIC POLICY
+        ↓
+    GENERATE RANDOM VALUE
+        ↓
+    STORE / INTERPRET VALUE
+        ↓
+    TEMPORAL CONTROL
+        ↓
+    ACTION
+        ↓
+    REASSESS
+
+### 38.3 Minimal valid pattern
+
+    (true)
+    =>
+    (generate-random-number 20)
+
+followed by a guarded consumer:
+
+    (random-number > 10)
+    =>
+    ...
+
+For reusable state, copy the generated value into an explicitly owned goal before later rules depend on it.
+
+### 38.4 Common failure
+
+#### Randomizing the objective
+
+“Randomly build something” is not strategy. Randomness should vary a policy parameter, target choice, or timing inside an already valid strategic demand.
+
+#### Regenerating every pass
+
+A rule that calls generate-random-number continuously can destroy the stability of every downstream consumer.
+
+#### Treating randomness as a witness
+
+The generated value proves only that a value was generated.
+
+#### Using randomness to hide bad targeting
+
+Random target selection does not repair weak information or invalid feasibility.
+
+### 38.5 Basilisk-scale variant
+
+Basilisk should use randomness as bounded variation:
+
+    STRATEGY
+        establishes objective
+            ↓
+    RANDOM CONTROL
+        chooses bounded timing / variation
+            ↓
+    TIMER / STRATEGIC NUMBER / GOAL
+        carries the chosen parameter
+            ↓
+    DOMAIN ACTION
+        executes normally
+            ↓
+    WORLD WITNESS
+        verifies effect
+            ↓
+    REASSESS
+
+The random value should not become a hidden second strategy layer.
+
+### 38.6 Hard invariants
+
+- Randomness changes selection or timing, not semantic ownership.
+- Generated values are observations/state, not actions.
+- Random generation must be bounded and deliberately consumed.
+- Do not regenerate a persistent control value every pass.
+- A random choice never substitutes for feasibility or a world-state witness.
+- Cross-reference: AIRef Commands Index; Age of Empires Forum scripting tutorial and attack-timing examples.
+
+## 39. Direct Unit Control and retained search state
+
+Direct Unit Control is the major UserPatch execution system for selecting local units, selecting remote targets, and issuing actions such as move, attack, gather, garrison, or similar supported commands. Community scripts use it extensively, but it is stateful and therefore demands stricter engineering than ordinary can-X/action pairs.
+
+### 39.1 Community pattern
+
+A common DUC pipeline is:
+
+    RESET SEARCH STATE
+        ↓
+    FIND LOCAL UNITS
+        ↓
+    CONFIGURE FILTERS
+        ↓
+    FIND REMOTE TARGETS / POINT
+        ↓
+    CHECK SEARCH RESULT
+        ↓
+    SELECT TARGET
+        ↓
+    ISSUE TARGET ACTION
+        ↓
+    RESET / REBUILD SEARCH STATE
+
+Community examples such as lewisc64/aoe2ai demonstrate this pattern with up-full-reset-search, up-find-local, up-find-remote, filters, up-set-target-object, up-set-target-point, and up-target-objects. AIRef and UserPatch documentation explicitly describe filters as state information consumed by later searches.
+
+### 39.2 Core primitives
+
+Important families include:
+
+- up-full-reset-search and up-reset-search
+- up-find-local and up-find-remote
+- up-find-resource and up-find-status-*
+- up-filter-distance, up-filter-include, up-filter-exclude, up-filter-status
+- up-can-search
+- up-get-search-state
+- up-set-target-object and up-set-target-point
+- up-target-objects and up-target-point
+- up-reset-filters / related search reset operations
+
+These commands form a stateful targeting pipeline, not a single atomic command.
+
+### 39.3 Minimal valid pattern
+
+Conceptually:
+
+    (true)
+    =>
+    (up-full-reset-search)
+    (up-find-local c: scout-cavalry-line c: 1)
+    (up-filter-distance c: -1 c: 20)
+    (up-find-remote c: livestock-class c: 1)
+    (up-target-objects 0 action-move -1 -1)
+
+The exact action, filters, object classes, and target semantics must be verified for the target DE build.
+
+### 39.4 Search state is not world state
+
+A search list is script control state. It does not mean the selected objects have moved, attacked, gathered, or completed another task.
+
+Search result existence is a capability/input to targeting, not proof of execution.
+
+### 39.5 Retained-state hazards
+
+#### Stale filters
+
+Filters persist for later searches until reset. A previous distance or status filter can silently constrain a later search.
+
+#### Stale search lists
+
+A later target command can operate on an old list if the search pipeline was not rebuilt.
+
+#### Wrong focus player
+
+Remote search uses the current focus context. A stale focus-player value can target the wrong player.
+
+#### Unchecked empty search
+
+A target action without evidence that the required search result exists is an open-loop execution path.
+
+#### Search and action conflation
+
+up-find-* finds objects. up-target-* issues actions against selected objects. These are separate stages.
+
+### 39.6 Basilisk-scale variant
+
+Basilisk should isolate DUC as an Engineering/Military execution mechanism:
+
+    MILITARY DEMAND
+        ↓
+    TARGET SELECTION POLICY
+        ↓
+    INFORMATION / PLAYER CONTEXT
+        ↓
+    DUC SEARCH
+        reset → filter → find → verify
+        ↓
+    TARGET ACTION
+        ↓
+    WORLD-STATE WITNESS
+        ↓
+    RELEASE / REASSESS
+
+A DUC search should be rebuilt deliberately when its inputs change. Do not build a hidden permanent targeting manager.
+
+### 39.7 Hard invariants
+
+- Search state is not world state.
+- Filters are retained state and must be reset or deliberately reused.
+- Remote searches depend on player context.
+- Empty search results must block target execution.
+- Finding a target is not proof that the action succeeded.
+- DUC commands must have explicit search ownership and reset boundaries.
+- The smallest search pipeline that satisfies the demand is preferred.
+- Cross-reference: AIRef Commands Index and UserPatch patch notes; lewisc64/aoe2ai; community DUC tutorial material.
+
+## 40. Events, signals, chat, and diagnostics
+
+Events, signals, chat, and logging are control and observability channels. They can connect an AI script to scenario triggers or expose execution state to humans, but they should not be mistaken for persistent strategic state.
+
+### 40.1 Core primitives
+
+Relevant DE/AoC primitives include:
+
+- event-detected and acknowledge-event
+- set-signal
+- chat-local, chat-local-to-self, chat-to-all, chat-to-allies, chat-to-player
+- chat-trace
+- log in DE
+- taunt, taunt-detected, acknowledge-taunt
+- DE signal support such as fe-set-signal where the multiplayer scenario mechanism requires it
+
+UP also exposes signal/event storage and formatted chat helpers.
+
+### 40.2 Community pattern
+
+Community scenario scripting uses AI signals to synchronize AI rules with scenario triggers. Community AI tutorials also use chat-local-to-self and formatted chat messages to show when attack timers and other rules fire.
+
+The semantic pattern is:
+
+    ENGINE / SCENARIO EVENT
+        ↓
+    AI DETECTION
+        ↓
+    ACKNOWLEDGE / TRANSLATE
+        ↓
+    STRATEGIC OR DOMAIN RESPONSE
+        ↓
+    OBSERVABLE EFFECT
+
+Diagnostics follow a different path:
+
+    RULE / STATE
+        ↓
+    CHAT / LOG
+        ↓
+    HUMAN OBSERVATION
+
+The second path is telemetry, not strategy.
+
+### 40.3 Minimal event pattern
+
+    (event-detected trigger 3)
+    =>
+    (acknowledge-event trigger 3)
+    ...
+
+The exact event type and scenario configuration must match the scenario/editor mechanism being used.
+
+### 40.4 Minimal diagnostic pattern
+
+    (goal SOME-GOAL 1)
+    =>
+    (chat-local-to-self "goal active")
+
+A diagnostic rule should be bounded with a timer, state transition, disable-self, or another explicit guard when repetition would create noise.
+
+### 40.5 Common failure
+
+#### Treating chat as state
+
+A chat message says something. It does not store that fact for later logic.
+
+#### Repeating diagnostics
+
+An unguarded chat rule can fire every pass. This is why repeat-chat is a meaningful engineering warning.
+
+#### Forgetting acknowledgement
+
+Event/taunt flags can remain active until acknowledged according to the relevant mechanism.
+
+#### Mixing external synchronization with strategy
+
+A scenario signal can trigger a strategic demand, but the signal itself is not the demand.
+
+### 40.6 Basilisk-scale variant
+
+Basilisk should use these channels as edges around the normal lifecycle:
+
+    EXTERNAL EVENT
+        ↓
+    INFORMATION / CONTROL INPUT
+        ↓
+    STRATEGY
+        ↓
+    NORMAL DEMAND → FEASIBILITY → ACTION → WITNESS
+
+and:
+
+    ANY IMPORTANT STATE
+        ↓
+    OPTIONAL DIAGNOSTIC OUTPUT
+        ↓
+    HUMAN / ENGINEERING OBSERVATION
+
+Do not create a hidden signal-driven scheduler when an ordinary goal and rule condition express the persistent intent more clearly.
+
+### 40.7 Hard invariants
+
+- Events and signals are control inputs, not automatic strategy.
+- Acknowledgement is distinct from response.
+- Chat and logging are observability channels.
+- Diagnostic output must be bounded.
+- External synchronization must eventually enter the normal demand/feasibility/action/witness lifecycle.
+- Cross-reference: AIRef Commands Index; Age of Empires Forum scripting tutorial; community attack/event examples.
+
+## 41. Spatial construction and wall placement
+
+Wall construction introduces a spatial state machine on top of ordinary construction. The learner must distinguish a wall perimeter, its placement feasibility, its construction progress, and completion. AIRef provides wall/gate-specific feasibility and completion predicates, while community scripts use wall-targeting strategic numbers and wall-building policies.
+
+### 41.1 Core primitives
+
+Relevant primitives include:
+
+- enable-wall-placement
+- can-build-wall and can-build-wall-with-escrow
+- build-wall
+- can-build-gate and can-build-gate-with-escrow
+- build-gate
+- gate-count
+- wall-completed-percentage
+- wall-invisible-percentage
+
+These are specialized construction primitives. They should not be taught as ordinary building-type counts.
+
+### 41.2 Community pattern
+
+Community AI frequently combines a wall policy with strategic wall-targeting controls rather than issuing arbitrary wall segments from every economic rule. Public community AI examples set sn-wall-targeting-mode as part of initialization and construction strategy.
+
+The learner pattern is:
+
+    DEFENSIVE / SPATIAL DEMAND
+        ↓
+    PERIMETER / PLACEMENT CONTEXT
+        ↓
+    WALL FEASIBILITY
+        ↓
+    WALL ACTION
+        ↓
+    COMPLETION PERCENTAGE / GATE STATE
+        ↓
+    RELEASE / REASSESS
+
+### 41.3 Minimal valid pattern
+
+Conceptually:
+
+    (goal NEED-WALL 1)
+    (can-build-wall palisade-wall perimeter-id)
+    =>
+    (build-wall palisade-wall perimeter-id)
+
+Exact perimeter and wall parameters must be verified against the target engine syntax before executable use.
+
+### 41.4 Spatial witnesses
+
+A wall completion percentage is a progress witness, not necessarily a binary completion state. Gate count is a world-state observation for gates in the specified perimeter.
+
+This differs from:
+
+    building-type-count-total wall
+
+because a wall is represented through a perimeter placement system rather than as one ordinary building object.
+
+### 41.5 Common failure
+
+#### Treating wall placement as ordinary building production
+
+A wall line has spatial prerequisites and placement state that ordinary building counts do not capture.
+
+#### Rebuilding completed segments
+
+A persistent wall demand must use completion/progress state to avoid issuing redundant placement requests.
+
+#### Ignoring fog/unknown placement
+
+Wall-invisible-percentage is information about what portion of the potential perimeter is hidden. It is not itself proof that a wall is absent.
+
+#### Treating build-wall as completion
+
+The action requests construction. Completion requires a later spatial witness.
+
+### 41.6 Basilisk-scale variant
+
+    STRATEGY
+        defensive / territorial demand
+            ↓
+    CONSTRUCTION
+        perimeter and placement policy
+            ↓
+    FEASIBILITY
+        can-build-wall / can-build-gate
+            ↓
+    ACTION
+        build-wall / build-gate
+            ↓
+    WORLD STATE
+        wall completion / gate count
+            ↓
+    RELEASE / REASSESS
+
+Wall construction belongs to Construction. Military may create the defensive demand, but it should not bypass construction feasibility.
+
+### 41.7 Hard invariants
+
+- Wall placement is spatial construction, not ordinary building-count construction.
+- Feasibility and completion remain separate.
+- Perimeter identity must be explicit.
+- Completion percentage is a progress witness, not automatically a binary “wall complete” state.
+- Gate state must be witnessed separately when a gate is part of the requirement.
+- Strategic wall-targeting controls are engine configuration, not persistent demand.
+- Cross-reference: AIRef Commands Index; lewisc64/aoe2ai strategic wall-targeting initialization; established community wall/AI scripting examples.
