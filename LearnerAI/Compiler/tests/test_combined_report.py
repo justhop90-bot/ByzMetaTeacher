@@ -136,6 +136,38 @@ class CombinedReportTests(unittest.TestCase):
             self.assertEqual(report.status, ReportStatus.BACKEND_FAILURE)
             self.assertEqual(exit_code_for_report(report), 2)
 
+    def test_validated_status_with_findings_is_not_validation_success(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / 'Basilisk.per'
+            finding = native_finding(
+                artifact,
+                line=4,
+                column=1,
+                code='NATIVE-FINDING',
+                message='non-zero finding',
+                severity=DiagnosticSeverity.WARNING,
+            )
+            backend = FakeBackend(
+                native_result(
+                    artifact,
+                    ValidationStatus.VALIDATED,
+                    (finding,),
+                )
+            )
+            source = '''
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            '''
+            report = compile_source_with_report(source, native_backend=backend, output=artifact)
+            self.assertEqual(report.status, ReportStatus.BACKEND_FAILURE)
+            self.assertNotEqual(exit_code_for_report(report), 0)
+            self.assertEqual(report.native_diagnostics[0].code, 'NATIVE-FINDING')
+
     def test_validated_report_has_zero_exit_and_no_diagnostics(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
