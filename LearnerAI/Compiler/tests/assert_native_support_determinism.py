@@ -7,6 +7,7 @@ import sys
 from types import SimpleNamespace
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
@@ -84,6 +85,8 @@ def persistent_artifact_hashes() -> dict[str, str]:
             'file': hashlib.sha256(file_output.read_bytes()).hexdigest(),
             'package': hashlib.sha256(package_output.read_bytes()).hexdigest(),
         }
+
+
 UNSUPPORTED_STATES = (
     "native-known",
     "native-typed",
