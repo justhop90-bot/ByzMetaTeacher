@@ -370,7 +370,7 @@ Runtime limitation remains explicit: the native action command does not provide 
 
 - [ ] Ingest the full Byzantine 145-node manifest into typed GameData.
 - [ ] Populate every verified research cost/research time and effect instead of leaving unresolved values where the source does not establish them.
-- [ ] Independently verify and then promote current-patch Varangian Guard unit numeric IDs.
+- [x] Verify and promote current-patch Varangian Guard unit numeric IDs from the authoritative Basilisk/Basilisk.per controller definitions.
 - [ ] Expand NativeEngineProfile from the two known site-specific aliases to the complete checked-in AIRef command/parameter inventory.
 - [ ] Add historical snapshot fixtures proving patch overlay replay across multiple DE revisions.
 - [ ] Add cross-civilization data fixtures before strategy semantics begin consuming the data layer broadly.
@@ -419,7 +419,7 @@ It is StrategyProfile -> StrategicDemand -> CapabilityIntent:
 - [x] Imperial Age discount modeled as an age-advance cost override.
 - [x] Byzantine building HP modeled as an age-scoped building modifier.
 - [x] Spearman/Pikeman/Halberdier and Camel Rider discounts remain civilization modifiers over unit-line facts.
-- [x] Fire Ship and Dromon current attack-speed bonuses separated from generic unit facts.
+- [x] Fire Ship current attack-speed bonus is separated from generic unit facts; Dromon remains represented as a factual unit/provider entry and is not assigned an unverified extra civilization modifier.
 - [x] Current team Monk healing modifier represented as a team-scoped civ bonus.
 - [x] Town Watch and Town Patrol free facts represented separately from ordinary technology costs.
 - [x] Logistica cost and Greek Fire effects represented in the current verified subset.
@@ -429,13 +429,54 @@ It is StrategyProfile -> StrategicDemand -> CapabilityIntent:
 
 ### Current compiler boundary
 
-The compiler now describes static strategy intent and lowers it into execution semantics. It still lacks live StrategicEvidenceBinding / StrategyRuntimeState: typed native observations, deterministic posture selection, strategic demand activation/invalidation, opportunity-cost override/release, and strategic reassessment.
+The compiler now describes static strategy intent, evaluates typed runtime strategic evidence, and lowers selected strategic demands into the existing execution semantics. The remaining gap is broader whole-player Basilisk strategy ingestion and complete factual coverage; another execution lifecycle is not required.
 
 ### Data-layer open work
 
 - [ ] Complete 145-node Byzantine manifest ingestion.
 - [ ] Complete verified research cost/time/effect ingestion.
-- [ ] Independently verify/promote current-patch Varangian Guard numeric IDs.
+- [x] Promote current-patch Varangian Guard numeric IDs from the authoritative controller evidence.
 - [ ] Expand NativeEngineProfile to the complete checked-in AIRef command/parameter inventory.
 - [ ] Implement replayable historical patch overlays rather than explicit snapshot matching.
 - [ ] Add broader factual cross-civilization datasets.
+### StrategyRuntimeState / StrategicEvidenceBinding implementation record (2026-09-26)
+
+- [x] Add StrategicObservationType and native observation contracts without creating a second expression parser.
+- [x] Bind StrategicEvidence expressions through the existing parser and checked-in AIRef command schema.
+- [x] Reject action, timing-only, and unsupported native evidence from persistent strategic truth.
+- [x] Fail closed on unresolved native identifiers and wrong native parameter families.
+- [x] Add immutable RuntimeObservationSnapshot and deterministic StrategyRuntimeState.
+- [x] Separate strategic runtime classifications from the execution lifecycle.
+- [x] Deterministically select posture from typed evidence and transition priority.
+- [x] Reject incompatible equal-priority posture transitions.
+- [x] Keep persistent strategic intent when execution feasibility is false.
+- [x] Distinguish strategic invalidation from execution failure.
+- [x] Apply protected/overridden/released opportunity-cost runtime state using existing OpportunityCostPolicy.
+- [x] Record explicit reassessment causes and deterministic fingerprints.
+- [x] Avoid allocating runtime Goals for reconstructible strategic state.
+- [x] Lower runtime-selected strategic demands through the existing lifecycle/capability/resource/runtime-binding compiler pipeline.
+- [x] Add native CI fixture for strategy runtime evaluation/lowering.
+- [x] Final CI run 382 (36239760165) verified four native fixtures with finding_count=0 and the full compiler suite with 218 tests, OK.
+
+### Hard-audit findings repaired before runtime sign-off
+
+- [x] Fixed incomplete Byzantine unit-line membership.
+- [x] Fixed missing Fire Ship and Archer upgrade links required by bidirectional upgrade validation.
+- [x] Fixed missing Castle Petard provider line.
+- [x] Fixed fake Logistica interaction target by replacing the unresolved class token with the exact Cataphract/Varangian unit set.
+- [x] Anchored current Varangian unit/tech IDs to authoritative controller evidence.
+- [x] Fixed a circular import introduced by the runtime evidence layer.
+- [x] Fixed the runtime domain import to reference EffectiveCivData from civ_profile.
+- [x] Fixed stale/incorrect GameData audit tests that were unreachable after unittest.main().
+- [x] Added affordability facts to strategic observation binding.
+- [x] Added direct observation access on StrategicEvidenceBinding.
+- [x] Promoted Castle strategic invalidation into StrategicDemandSpec.invalidation while retaining execution invalidation at the existing lifecycle boundary.
+
+### Remaining compiler work after StrategyRuntimeState
+
+- [ ] Complete Byzantine 145-node factual ingestion.
+- [ ] Complete verified research costs/times/effects.
+- [ ] Expand native metadata to the complete checked-in AIRef command/parameter inventory where strategy semantics require it.
+- [ ] Add replayable historical patch overlays.
+- [ ] Add broader cross-civilization factual fixtures.
+- [ ] Replace the toy strategy fixture with compilation of actual Basilisk strategic modules without moving gameplay policy into GameData.

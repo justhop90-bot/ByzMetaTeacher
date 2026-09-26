@@ -312,7 +312,7 @@ The compiler now has a typed factual layer beneath strategy:
 
 The current Byzantine fixture is anchored to the repository manifest and Update 185872. It intentionally does not invent unverified current-patch Varangian numeric unit IDs or missing research-cost data. This is a verified factual subset, not yet the complete 145-node Byzantine database.
 
-The StrategyProfile layer is implemented. It consumes EffectiveCivData, preserves strategic owner/intent separately from execution state, supports one-to-many execution mappings, carries opportunity-cost policy and strategic evidence, lowers through the existing demand/capability pipeline, and is native-validated in CI. The next missing layer is live strategic evidence/posture binding.
+The StrategyProfile and StrategyRuntimeState layers are implemented. StrategyProfile consumes EffectiveCivData and preserves strategic owner/intent separately from execution state. StrategyRuntimeState binds its evidence to the checked-in native command schema, evaluates a typed runtime snapshot, selects posture deterministically, classifies strategic demands as inactive/active-executable/active-blocked/invalidated/complete, applies opportunity-cost override/release policy, records reassessment causes, and lowers only the selected strategic demands through the existing lifecycle/capability pipeline. Native CI validates both static and runtime strategy fixtures. The remaining compiler gap is whole-player Basilisk strategy ingestion and broader factual coverage, not another lifecycle state machine.
 ## StrategyProfile / StrategicDemand layer
 
 Implemented:
@@ -335,3 +335,28 @@ Verification: CI run 368 (`36238612808`) reported `finding_count=0` for the gene
 ### Current strategy boundary
 
 StrategyProfile describes strategic intent and static admissibility, but it does not yet evaluate live strategic observations into changing posture, demand activation, strategic invalidation, opportunity-cost override/release, and reassessment. That is the next compiler layer.
+
+## StrategyRuntimeState / StrategicEvidenceBinding layer
+
+The runtime strategy boundary is now explicit:
+
+    StrategyProfile
+      -> StrategicEvidenceBinding
+      -> StrategyRuntimeState
+      -> selected StrategicDemandSpec
+      -> existing SemanticDemand / Capability pipeline
+      -> .per
+
+LearnerAI/Compiler/ir/strategy_runtime.py uses the existing expression parser and checked-in AIRef schema. It does not introduce a second AoE2 parser or a second execution lifecycle.
+
+Implemented strategic runtime states are STRATEGIC_INACTIVE, STRATEGIC_ACTIVE_EXECUTABLE, STRATEGIC_ACTIVE_BLOCKED, STRATEGIC_INVALIDATED, and STRATEGIC_COMPLETE.
+
+These are strategic classifications only. ACTIVE/ISSUED/PENDING/COMPLETE/RELEASED/CANCELLED remain the execution lifecycle.
+
+Strategic evidence is bound to typed native observations including current age, resource amounts, building/unit counts, enemy counts, research/capability state, and timing. Persistent strategic evidence rejects action, feasibility-only, and timing-only truth. Unknown native evidence fails closed.
+
+Opportunity-cost runtime state is restricted to protected, overridden, and released. Emergency override requires explicit posture metadata. It is not a scheduler or optimizer.
+
+Runtime evaluation records deterministic reassessment causes and a fingerprint. Native storage is not requested merely because a strategic state exists; the current evaluator requests no runtime Goal storage.
+
+The CI runtime fixture exercises posture-dependent strategy activation, blocked Castle execution, opportunity-cost policy, and the existing lifecycle lowering. The exact final verification is recorded in RESEARCH_CHECKLIST.md.
