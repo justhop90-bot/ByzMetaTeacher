@@ -14,6 +14,10 @@ from Compiler.semantic.rule_diagnostics import (
     RuleDiagnosticCode,
     analyze_rule_diagnostics,
 )
+from Compiler.semantic.persistent_state import (
+    PersistentStateDiagnosticCode,
+    analyze_persistent_state,
+)
 from Compiler.semantic.rule_execution import analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
@@ -160,6 +164,89 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertEqual(
             diagnostics.diagnostics[0].code,
             RuleDiagnosticCode.NEVER_ELIGIBLE,
+        )
+
+    def test_persistent_state_findings_compile_into_rule_diagnostics(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal 7 1))\\n"
+                "(defrule (true) => (set-goal 7 2))\\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent,
+        )
+
+        persistent_diagnostics = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_LATER_OVERWRITE
+        )
+        self.assertEqual(len(persistent_diagnostics), 1)
+        diagnostic = persistent_diagnostics[0]
+        self.assertEqual(diagnostic.rule_order, 2)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.WARNING)
+        self.assertIsNone(diagnostic.eligibility)
+        self.assertEqual(diagnostic.state_kind, "GOAL")
+        self.assertEqual(diagnostic.state_identifier, "7")
+        self.assertEqual(diagnostic.related_rule_order, 1)
+        self.assertEqual(diagnostic.related_operation, "set-goal")
+        self.assertEqual(diagnostic.category.value, "PERSISTENT_STATE")
+        self.assertEqual(
+            diagnostic.source_code,
+            PersistentStateDiagnosticCode.LATER_OVERWRITE.value,
+        )
+
+    def test_persistent_state_error_retains_primary_and_related_rule_order(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (goal 7 1) => (set-goal 7 2))\\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent,
+        )
+
+        diagnostic = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_CONSUMER_BEFORE_WRITER
+        )
+        self.assertEqual(diagnostic.rule_order, 1)
+        self.assertEqual(diagnostic.related_rule_order, 1)
+        self.assertEqual(diagnostic.related_operation, "set-goal")
+        self.assertEqual(diagnostic.state_identifier, "7")
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.ERROR)
+
+    def test_mixed_firing_and_persistent_diagnostics_are_deterministically_ordered(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal 7 1))\\n"
+                "(defrule (true) => (set-goal 7 2))\\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        first = analyze_rule_diagnostics(report, persistent_state_report=persistent)
+        second = analyze_rule_diagnostics(report, persistent_state_report=persistent)
+
+        self.assertEqual(first, second)
+        self.assertEqual(
+            [
+                (item.rule_order, item.category.value, item.code.value)
+                for item in first.diagnostics
+            ],
+            [
+                (1, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
+                (2, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
+                (2, "PERSISTENT_STATE", "PSTATE-002"),
+            ],
         )
 
     def test_diagnostic_order_matches_effective_rule_order(self):
