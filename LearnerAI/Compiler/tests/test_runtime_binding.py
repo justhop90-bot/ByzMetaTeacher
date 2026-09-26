@@ -377,6 +377,81 @@ class PackageStorageInventoryTests(unittest.TestCase):
                 package_inventory_sha="stale",
             )
 
+    def test_inventory_rejects_missing_reservation_fields(self):
+        from Compiler.runtime_binding import StorageKind
+
+        with self.assertRaisesRegex(ValueError, "missing or extra fields"):
+            PackageStorageInventory.from_dict(
+                {
+                    "format_version": 1,
+                    "package_id": "test-package",
+                    "package_revision": "r1",
+                    "inventory_sha": "0" * 64,
+                    "reservations": [
+                        {
+                            "kind": StorageKind.GOAL_SLOT.value,
+                            "start": 1000,
+                            "end": 1000,
+                        }
+                    ],
+                }
+            )
+
+    def test_inventory_rejects_extra_reservation_fields(self):
+        from Compiler.runtime_binding import StorageKind
+
+        inventory = PackageStorageInventory.empty("test-package", "r1")
+        payload = inventory.to_dict()
+        payload["reservations"] = [
+            {
+                "kind": StorageKind.GOAL_SLOT.value,
+                "start": 1000,
+                "end": 1000,
+                "provenance_id": "goal",
+                "unexpected": True,
+            }
+        ]
+        payload["inventory_sha"] = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                PackageStorageReservation(
+                    kind=StorageKind.GOAL_SLOT,
+                    start=1000,
+                    end=1000,
+                    provenance_id="goal",
+                ),
+            ),
+        ).inventory_sha
+        with self.assertRaisesRegex(ValueError, "missing or extra fields"):
+            PackageStorageInventory.from_dict(payload)
+
+    def test_existing_binding_cannot_reuse_package_occupied_goal(self):
+        from Compiler.runtime_binding import StorageKind
+
+        request = GoalSlotRequest(
+            StorageRequestId(SemanticId("test-package", "inventory"), "goal"),
+            role=GoalRole.LIFECYCLE_STATE,
+        )
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1200, 1200, "external-goal"),
+            ),
+        )
+        existing = GoalSlot(
+            id=GoalId(1200),
+            role=GoalRole.LIFECYCLE_STATE,
+            provenance_id="existing",
+        )
+        context = BindingContext.from_package_inventory(
+            inventory,
+            existing_bindings=((request.request_id, existing),),
+        )
+        with self.assertRaisesRegex(ValueError, "conflicts with occupied GoalId"):
+            RuntimeBinder().bind((request,), context)
+
     def test_binding_manifest_records_package_inventory_fingerprint(self):
         from Compiler.runtime_binding import StorageKind
 
