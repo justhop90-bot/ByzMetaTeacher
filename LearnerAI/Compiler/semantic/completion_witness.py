@@ -135,7 +135,7 @@ def validate_completion_witnesses(
                     WitnessStatus.BLOCKED,
                     f"demand '{demand.name}' has no completion witness contract",
                     demand.identity,
-                    location=contract.location or demand.location,
+                    location=demand.location,
                 )
             )
             continue
