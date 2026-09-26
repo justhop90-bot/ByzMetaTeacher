@@ -62,8 +62,8 @@ class SemanticSupportStateTests(unittest.TestCase):
             (
                 EngineSemanticMapping(
                     identity="open.synthetic",
-                    native_command="current-age",
-                    native_kind="Fact",
+                    native_command=None,
+                    native_kind=None,
                     status=EngineSemanticMappingStatus.OPEN,
                     evidence_class="OPEN / UNKNOWN",
                     evidence_sources=("test://open",),
