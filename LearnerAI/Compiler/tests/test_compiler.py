@@ -340,6 +340,45 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaisesRegex(CompileError, "TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE"):
             compile_source(source)
 
+
+    def test_timing_inside_composite_requirement_still_requires_non_timing_evidence(self):
+        source = """
+        demand maa-archers {
+            require (and (game-time >= 510) (current-age >= feudal-age))
+            action (train archer)
+            witness (unit-type-count archer >= 3)
+            release (unit-type-count archer < 3)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(and (game-time >= 510) (current-age >= feudal-age))", output)
+
+    def test_timing_plus_specific_maa_observation_is_valid(self):
+        source = """
+        demand maa-response {
+            require (game-time >= 510)
+            require (unit-type-count man-at-arms >= 2)
+            action (train archer)
+            witness (unit-type-count archer >= 3)
+            release (unit-type-count man-at-arms == 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(game-time >= 510)", output)
+        self.assertIn("(unit-type-count man-at-arms >= 2)", output)
+
+    def test_timing_cannot_release_an_active_maa_response_by_clock(self):
+        source = """
+        demand maa-response {
+            require (unit-type-count man-at-arms >= 2)
+            action (train archer)
+            witness (unit-type-count archer >= 3)
+            release (and (game-time >= 750) (unit-type-count man-at-arms >= 2))
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "TIMING.*release"):
+            compile_source(source)
+
     def test_cli_entrypoint_compiles_from_repository_root(self):
         repo = Path(__file__).resolve().parents[3]
         source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
