@@ -36,6 +36,8 @@ The first source language remains deliberately small:
 
 Native expressions stay visible. The compiler does not try to invent a second AoE2 engine.
 
+Current action-provider contract: an actionable demand must expose at least one native FEASIBILITY predicate in its requirements. The capability validator enforces this before runtime binding or emission. Timing and world observations can remain part of the demand, but they do not replace the engine-native feasibility boundary.
+
 ## Semantic responsibilities
 
 The compiler owns:
