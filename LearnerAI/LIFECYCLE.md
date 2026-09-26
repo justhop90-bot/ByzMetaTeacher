@@ -103,3 +103,12 @@ That is the core resilience requirement of the Byzantine player.
 Information and current world state feed Strategy and domains again.
 
 The controller is a feedback loop, not a build-order replay.
+
+
+## Release / invalidation
+
+Completion releases the finished demand or advances it.
+
+Strategic invalidation cancels an obsolete demand only while the demand is still ACTIVE, ISSUED, or PENDING. It transitions the lifecycle to terminal CANCELLED. A completed demand follows the completion-release path and is not cancelled by this layer.
+
+Capability loss may release local execution state while preserving the strategic demand if the capability can return. That recovery contract remains distinct from strategic cancellation.
