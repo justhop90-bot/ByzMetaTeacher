@@ -22,6 +22,7 @@ from Compiler.primitives.native_hygiene import (
     ConfidenceBasis,
     ConfidenceLevel,
     EvidenceKind,
+    PassFailureMode,
 )
 from Compiler.primitives.native_schema import load_default_native_schema
 from Compiler.primitives.registry import NativeSupportState, PrimitiveRegistry
