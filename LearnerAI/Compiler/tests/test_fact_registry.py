@@ -85,7 +85,7 @@ class NativeFactRegistryTests(unittest.TestCase):
         )
 
     def test_unresolved_identifier_names_fail_closed(self):
-        with self.assertRaisesRegex(ValueError, "numeric identifier form"):
+        with self.assertRaisesRegex(ValueError, "not a declared identifier"):
             default_de_registry().normalize_fact(
                 "building-available",
                 ("castle",),
