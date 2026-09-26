@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..ir.model import (
     AccessKind,
@@ -44,6 +45,7 @@ class OwnershipDiagnostic:
     demand: SemanticId | None = None
     state: object | None = None
     access: StateAccess | None = None
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -113,6 +115,7 @@ def _diag(
     demand: SemanticId | None = None,
     state: StorageRequestId | None = None,
     access: StateAccess | None = None,
+    location: SourceLocation | None = None,
 ) -> OwnershipDiagnostic:
     return OwnershipDiagnostic(
         code=code,
@@ -122,6 +125,7 @@ def _diag(
         demand=demand,
         state=state,
         access=access,
+        location=location,
     )
 
 
