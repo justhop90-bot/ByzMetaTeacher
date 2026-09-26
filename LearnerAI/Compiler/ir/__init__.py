@@ -21,6 +21,8 @@ from .capability import (
 )
 from .model import (
     AccessKind,
+    ActionIssuance,
+    ActionIssuanceFailure,
     DemandOwnership,
     GoalRole,
     GoalSpanKind,
