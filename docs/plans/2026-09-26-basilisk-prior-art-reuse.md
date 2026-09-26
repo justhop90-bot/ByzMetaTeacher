@@ -161,4 +161,4 @@ The implementation intentionally does not create persistent resource reservation
 - [x] Lifecycle now uses `ACTIVE -> ISSUED -> PENDING -> COMPLETE -> RELEASED`.
 - [x] `RETAIN_ACTIVE` models unsatisfied issuance guards as failure without falsely entering pending.
 - [x] Compiler gate validates issuance before resource/conflict and capability validation.
-- [x] Focused regressions and generated fixture updated; Compiler CI run 270 passed with 144 tests and native finding_count=0.
+- [x] Focused regressions and generated fixture updated; Compiler CI run 275 passed with 145 tests and native finding_count=0.
