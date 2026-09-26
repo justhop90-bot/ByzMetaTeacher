@@ -166,7 +166,7 @@ def _parse_expression(source: str, location: SourceLocation) -> Expression:
 def _top_level_forms(text: str) -> tuple[tuple[int, int], ...]:
     forms: list[tuple[int, int]] = []
     index = 0
-    while index < len(text):
+    while index < body_end:
         char = text[index]
         if char.isspace():
             index += 1
@@ -188,6 +188,7 @@ def _split_rule_body(
     text: str,
     slice_: EffectiveSourceSlice,
     body_start: int,
+    body_end: int,
 ) -> tuple[tuple[Expression, ...], tuple[RuleAction, ...]]:
     facts: list[Expression] = []
     actions: list[RuleAction] = []
@@ -257,16 +258,44 @@ def _split_rule_body(
 def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> EffectiveRule:
     source = slice_.text[start:end]
     location = _line_column(slice_, start)
-    tokens = _lex_expression(source)
-    if len(tokens) < 2 or tokens[0] != "(" or tokens[1] != "defrule":
+
+    outer_end = _scan_balanced(source, 0)
+    if outer_end != len(source):
+        raise CompileError(
+            f"RULE-PARSE-008: defrule form boundary is malformed at "
+            f"{location.source_unit}:{location.line}:{location.column}"
+        )
+
+    index = 1
+    while index < len(source) and source[index].isspace():
+        index += 1
+    command_start = index
+    while index < len(source) and not source[index].isspace() and source[index] not in "()":
+        index += 1
+    if source[command_start:index] != "defrule":
         raise CompileError(
             f"RULE-PARSE-008: top-level form is not defrule at "
             f"{location.source_unit}:{location.line}:{location.column}"
         )
 
-    defrule_name_end = source.find("defrule") + len("defrule")
-    body_start = defrule_name_end
-    facts, actions = _split_rule_body(source, slice_, start + body_start)
+    while index < len(source) and source[index].isspace():
+        index += 1
+    name_start = index
+    while index < len(source) and not source[index].isspace() and source[index] not in "()":
+        index += 1
+    if name_start == index:
+        raise CompileError(
+            f"RULE-PARSE-009: defrule is missing its rule name at "
+            f"{location.source_unit}:{location.line}:{location.column}"
+        )
+
+    body_start = index
+    facts, actions = _split_rule_body(
+        source,
+        slice_,
+        start + body_start,
+        outer_end - 1,
+    )
     disable_self_indices = [
         index
         for index, action in enumerate(actions)
