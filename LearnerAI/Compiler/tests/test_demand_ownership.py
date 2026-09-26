@@ -158,6 +158,35 @@ class DemandOwnershipTests(unittest.TestCase):
             ),
         )
 
+    def test_first_writer_consumer_order_tracks_multiple_emission_rules(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        demand monastery {
+            require (can-build monastery)
+            action (build monastery)
+            witness (building-type-count monastery > 0)
+            release (building-type-count monastery > 0)
+        }
+        """
+        demands = analyze(
+            parse(source),
+            default_de_registry(),
+            source_unit="test",
+        )
+        report = analyze_demand_ownership(demands)
+
+        self.assertTrue(report.valid)
+        first, second = report.boundaries
+        self.assertEqual(first.first_writer.source_order, 0)
+        self.assertEqual(first.first_consumer.source_order, 2)
+        self.assertEqual(second.first_writer.source_order, 1)
+        self.assertEqual(second.first_consumer.source_order, 8)
+
     def test_owner_state_mismatch_has_exact_diagnostic(self):
         demand = self._demand()
         ownership = replace(
