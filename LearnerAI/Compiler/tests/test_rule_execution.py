@@ -34,11 +34,11 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
 
         self.assertEqual([rule.rule_order for rule in report.rules], [1, 2, 3])
         self.assertEqual(
-            [rule.actions[0].head for rule in report.rules],
+            [rule.actions[0].expression.head for rule in report.rules],
             ["set-goal", "set-goal", "set-goal"],
         )
         self.assertEqual(
-            [rule.actions[0].args[0] for rule in report.rules],
+            [rule.actions[0].expression.args[0] for rule in report.rules],
             ["root-before", "child", "root-after"],
         )
 
@@ -137,7 +137,7 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
 
         self.assertEqual(report.rules[0].pass_behavior, RulePassBehavior.RECURRENT)
         self.assertEqual(report.rules[0].facts[0].head, "current-age")
-        self.assertEqual(report.rules[0].actions[0].head, "set-goal")
+        self.assertEqual(report.rules[0].actions[0].expression.head, "set-goal")
         self.assertFalse(report.rules[0].fires_guaranteed)
 
     def test_malformed_rule_is_rejected_before_semantic_analysis(self):
