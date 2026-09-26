@@ -12,6 +12,7 @@ Its job is to turn explicit player semantics into auditable .per while rejecting
       -> source parser / AST
       -> semantic lifecycle analysis
       -> validated IR
+      -> runtime binding
       -> deterministic .per
       -> native aoe2-ai-parser validation
       -> AoE2DE runtime
@@ -88,6 +89,30 @@ Examples already implemented:
 The timing layer now recognizes native `game-time` as interpretation evidence only. A timing-only demand cannot write an action, timing cannot prove completion, and timing alone cannot release a demand.
 
 These are compiler lifecycle examples, not the complete Byzantine player.
+
+## Runtime binding
+
+`RUNTIME_BINDING_CONTRACT.md` defines the typed binding boundary between semantic IR and native storage. It explicitly separates:
+
+- confirmed engine/repository facts;
+- Basilisk compiler policy;
+- assumptions and unresolved implementation work.
+
+It defines the contracts for:
+
+- scalar GoalSlot;
+- native consecutive GoalSpan;
+- StrategicNumberSlot;
+- TimerSlot;
+- native storage contracts;
+- package occupancy;
+- provenance;
+- deterministic binding;
+- collision diagnostics.
+
+The design deliberately distinguishes a GoalId from the integer value stored in that Goal. In the current lifecycle compiler, active/pending/complete are values of one lifecycle Goal, not three GoalIds.
+
+Do not implement runtime allocation directly from raw semantic integers. The binding contract requires typed storage requests first.
 
 ## What the compiler must grow into
 
