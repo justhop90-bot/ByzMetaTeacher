@@ -98,3 +98,18 @@ from .rule_execution import (
     RulePassBehavior,
     analyze_effective_rules,
 )
+from .fact_values import (
+    CanonicalEnum,
+    CanonicalIdentifier,
+    CanonicalInteger,
+    CanonicalKind,
+    CanonicalSymbol,
+    CanonicalValue,
+    CanonicalizationContext,
+    EnumNormalization,
+    IdentifierForm,
+    IdentifierNormalization,
+    ParameterSemanticKind,
+    SymbolNormalization,
+    canonicalize_value,
+)
