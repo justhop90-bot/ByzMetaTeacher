@@ -29,13 +29,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate native support determinism snapshot
         run: python LearnerAI/Compiler/tests/assert_native_support_determinism.py --output native-support-replay.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: native-support-replay-${{ matrix.os }}-${{ matrix.python-version }}
           path: native-support-replay.json
@@ -48,11 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: native-support-replay-*
           path: snapshots
@@ -65,8 +65,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Initialize compiler verification log
@@ -147,7 +147,7 @@ jobs:
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
       - name: Upload native validation evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-validation-evidence
           path: |
@@ -166,7 +166,7 @@ jobs:
           python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" 2>&1 | tee compiler-tests.log
       - name: Upload compiler verification log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compiler-verification-log
           path: compiler-tests.log
