@@ -44,7 +44,7 @@ Do not move Basilisk StrategyProfile or Byzantine GameData into the generic core
 | AST/parser | Small demand DSL; exact source locations now propagate through IR | compiler tests; parser/AST implementation | CONNECTED | P0 | Keep native expressions visible; expand only where semantic need requires |
 | Native schema | 385 native commands, 121 parameter families in checked-in inventories | AIRef command/parameter inventories | CONNECTED but narrow semantically | P0 | Add explicit native support-status model; do not pretend 28 semantic adapters equal full compiler coverage |
 | Semantic adapters | 28 primitive adapters; analyzer rejects known commands with no adapter | `primitives/registry.py`, `semantic/analyzer.py` | BLOCKED for general `.per` coverage | P0/P1 | Separate native-known/native-typed/semantic-adapted/executable-safe/unsupported states |
-| Lifecycle ownership | Typed ownership, writer/consumer analysis, deterministic diagnostics | semantic ownership pass + tests | CONNECTED | P0 | Generalize later to ordinary persistent state |
+| Lifecycle ownership | Typed ownership, writer/consumer analysis, deterministic diagnostics; lifecycle pass isolated from ordinary storage accesses | semantic ownership + source-order passes + tests | CONNECTED | P0/P1 | Preserve lifecycle ownership while ordinary Goal/SN/Timer order uses the shared writer/consumer diagnostic codes |
 | Completion/release/invalidation | Typed causal contracts and source-order validation | semantic passes + tests | CONNECTED | P0 | Preserve as generic compiler primitives |
 | Action issuance | ISSUED/PENDING distinction implemented; native action return remains unavailable | emitter/analyzer + tests | CONNECTED | P0 | Add generic capability-loss recovery above issuance |
 | Resource arbitration | Transient ACTION_EXCLUSION modeled; no scheduler | resource conflict pass | CONNECTED / deliberately narrow | P1 | Generalize only into evidence-backed conflict relations |
@@ -53,7 +53,7 @@ Do not move Basilisk StrategyProfile or Byzantine GameData into the generic core
 | Strategic Number binding | Typed inventory-aware binding, WHY_NOT_GOAL justification, deterministic allocation, collision checks, manifest provenance | AIRef SN limits/inventory | CONNECTED / VERIFIED | P0 | Add broader semantic SN usage contracts |
 | Timer binding | Added typed TimerSlot allocation, explicit initialization policy, deterministic range/collision checks | AIRef timer range + timer initialization guidance | IMPLEMENTED, pending final CI | P0 | Connect timer allocation to actual lowering when timer semantics are introduced |
 | Package binding | Typed package inventory covers Goal/GoalSpan/SN/Timer occupancy with provenance, deterministic fingerprint, binder consumption, and manifest propagation | runtime_binding.py, binding/compiler tests | CONNECTED / explicit-input | P0 | Keep automatic external .per occupancy discovery as a separate integration boundary |
-| Source-order analysis | Lifecycle-specific source order exists; generic state-order analysis does not | emitter order + lifecycle contracts | UNFINISHED | P1 | Model cross-rule read/write visibility and same-pass assumptions |
+| Source-order analysis | Non-lifecycle Goal/SN/Timer accesses now carry emitted rule order and within-rule order; same-rule sequential visibility and cross-rule persistence are classified deterministically | semantic/source_order.py, IR, tests, compiler gate | CONNECTED / IMPLEMENTED | P1 | Next: capability-loss/recovery contract |
 | Same-pass action sequencing | Multiple actions inside one emitted rule are sequential; current emitter preserves this | emitter output + native rule semantics | CONNECTED | P0 | Never insert a false pass boundary between actions in the same rule |
 | DUC | Native schema knows DUC commands, but semantic adapter layer has no real DUC model | AIRef DUC docs + 28-adapter registry | BLOCKED | P1 | Build search/list/group/target lifetime contracts |
 | Flare | Engine supports up-find-flare/up-find-player-flare and point Goal spans; live Skirmish probe succeeded | AIRef + user runtime test | COMMUNITY-OBSERVED / ENGINE-SUPPORTED | P1/P2 | Make a minimal compiler fixture, not a Basilisk feature |
@@ -133,10 +133,10 @@ Do not remove useful generic contracts. Do not let Byzantine policy define their
 
 ### P1 — major `.per` capability
 
-5. Non-lifecycle source-order analysis. NEXT REPAIR.
-   Model same-rule sequential action flow separately from cross-rule pass boundaries.
+5. Non-lifecycle source-order analysis. IMPLEMENTED and CI-verified.
+   Ordinary Goal/SN/Timer accesses now carry explicit emitted rule scope; same-rule write-to-read is visible immediately, later-rule reads are treated as persisted dependencies, and reader-before-writer reuses OWN-008.
 
-6. Capability-loss/recovery contract.
+6. Capability-loss/recovery contract. NEXT REPAIR.
    Preserve persistent demand through temporary capability loss without inventing a scheduler.
 
 7. DUC semantic model.
@@ -262,3 +262,20 @@ Implemented and tested:
 - malformed inventory field rejection.
 
 GitHub Actions compiler verification: 287 tests, OK; all four native zero-findings acceptance fixtures remained clean. The next generic compiler repair is non-lifecycle source-order analysis.
+
+## Non-lifecycle source-order repair verification
+
+Current verified code head: cba3bf033f47364a4531405e9ba002ca06f5ec94.
+
+Implemented:
+
+- StateStorageKind distinguishes lifecycle, Goal, Strategic Number, and Timer state.
+- StateAccess carries emitted rule_order and within_rule_order plus source location.
+- Same-rule write-to-read is classified as sequentially visible.
+- Cross-rule write-to-read is classified as a persisted pass-boundary dependency.
+- Same-rule read-before-write and cross-rule reader-before-writer reuse OWN-008 / ORDER-VIOLATION.
+- Non-lifecycle accesses without an emitted rule scope fail closed with OWN-010.
+- Lifecycle ownership ignores non-lifecycle accesses and remains responsible only for lifecycle state.
+- Compiler gate executes the new pass before capability projection and emission.
+
+GitHub Actions verification: 296 compiler tests passed; all four native zero-findings acceptance fixtures passed; all nine cross-platform native-support replay jobs and the aggregate comparison passed.
