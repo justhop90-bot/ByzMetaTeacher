@@ -200,6 +200,15 @@ class StrategicCapabilityObservation:
 
 
 @dataclass(frozen=True)
+class StrategicEnemyCompositionObservation:
+    identity: str
+    unit_id: int
+    expression: str
+    source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
+    provenance: tuple[EvidenceRef, ...] = ()
+
+
+@dataclass(frozen=True)
 class StrategyProfile:
     profile_id: str
     civ_id: CivId
@@ -211,6 +220,7 @@ class StrategyProfile:
     transitions: tuple[PostureTransition, ...]
     provenance: tuple[EvidenceRef, ...]
     capability_observations: tuple[StrategicCapabilityObservation, ...] = ()
+    enemy_composition_observations: tuple[StrategicEnemyCompositionObservation, ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -334,6 +344,58 @@ def _validate_capability_observations(
             )
 
 
+def _validate_enemy_composition_observations(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+) -> None:
+    identities: set[str] = set()
+    for observation in profile.enemy_composition_observations:
+        if observation.identity in identities:
+            raise ValueError(
+                f"duplicate strategic enemy composition observation '{observation.identity}'"
+            )
+        identities.add(observation.identity)
+
+        if observation.source is StrategicEvidenceSource.COMMUNITY_META:
+            raise ValueError(
+                f"community meta cannot define factual enemy observation '{observation.identity}'"
+            )
+        unit_id = int(observation.unit_id)
+        status = effective.factual_status("unit", unit_id)
+        if status is not FactStatus.VERIFIED:
+            raise ValueError(
+                f"strategic enemy composition observation '{observation.identity}' requires "
+                f"factual status VERIFIED for unit {unit_id}; status is {status.value}"
+            )
+        if not observation.provenance:
+            raise ValueError(
+                f"strategic enemy composition observation '{observation.identity}' requires factual provenance"
+            )
+
+        unit = effective.unit(unit_id)
+        aliases = {
+            str(unit_id).lower(),
+            unit.name.lower().replace(" ", "-"),
+        }
+        tokens = (
+            observation.expression
+            .lower()
+            .replace("(", " ")
+            .replace(")", " ")
+            .split()
+        )
+        if len(tokens) < 2 or tokens[0] != "players-unit-type-count":
+            raise ValueError(
+                f"strategic enemy composition observation '{observation.identity}' "
+                "must use players-unit-type-count"
+            )
+        if tokens[1] not in aliases:
+            raise ValueError(
+                f"strategic enemy composition observation '{observation.identity}' "
+                "does not bind its declared unit"
+            )
+
+
 def _validate_factual_coverage(
     demand: StrategicDemandSpec,
     effective: EffectiveCivData,
@@ -360,6 +422,7 @@ def resolve_strategy_profile(
 
     seen: set[str] = set()
     _validate_capability_observations(profile, effective)
+    _validate_enemy_composition_observations(profile, effective)
 
     for demand in profile.demands:
         if demand.identity in seen:
@@ -851,6 +914,20 @@ def _byzantine_capability_observations(
     )
 
 
+def _byzantine_enemy_composition_observations(
+    effective: EffectiveCivData,
+) -> tuple[StrategicEnemyCompositionObservation, ...]:
+    knight = effective.unit(38)
+    return (
+        StrategicEnemyCompositionObservation(
+            identity="enemy-knight-pressure",
+            unit_id=38,
+            expression="(players-unit-type-count any-enemy knight >= 3)",
+            provenance=knight.provenance,
+        ),
+    )
+
+
 def build_byzantine_castle_strategy(
     effective: EffectiveCivData,
 ) -> StrategyProfile:
@@ -924,6 +1001,7 @@ def build_byzantine_castle_strategy(
         transitions=transitions,
         provenance=(*profile.provenance, *meta_provenance),
         capability_observations=_byzantine_capability_observations(effective),
+        enemy_composition_observations=_byzantine_enemy_composition_observations(effective),
     )
 
 def _validate_capability_intent(
