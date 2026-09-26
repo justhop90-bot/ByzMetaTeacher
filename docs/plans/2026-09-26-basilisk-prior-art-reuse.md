@@ -178,3 +178,14 @@ The implementation intentionally does not create persistent resource reservation
 - [x] Deterministic release diagnostics and focused regressions.
 - [x] Compile-gate integration before issuance/resource/capability layers.
 - [x] Compiler CI run 319: 158 tests, native finding_count=0.
+
+
+### Explicit invalidation and cancellation implementation record (2026-09-26)
+
+- [x] Introduce optional `invalidate` source semantics.
+- [x] Add typed invalidation evidence and cancellation transition IR.
+- [x] Validate strategic invalidation independently from completion witness and completion release.
+- [x] Restrict terminal cancellation to ACTIVE, ISSUED, and PENDING; never cancel COMPLETE.
+- [x] Emit invalidation before release and action issuance so stale strategic intent is stopped before execution.
+- [x] Add deterministic diagnostics and focused regressions.
+- [x] Native CI validates both the existing Basilisk fixture and the generated invalidation fixture.
