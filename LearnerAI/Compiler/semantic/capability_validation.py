@@ -820,16 +820,6 @@ class DependencyValidationPass:
                 continue
             providers = providers_by_capability.get(demand.target, ())
             if not providers:
-                diagnostics.append(
-                    _diag(
-                        CapabilityDiagnosticCode.PROVIDERLESS_CAPABILITY,
-                        f"demand '{demand.identity.local_name}' targets capability "
-                        f"'{demand.target.local_name}' with no providers",
-                        node=demand.identity,
-                        status=GraphStatus.UNFED,
-                        location=demand.location,
-                    )
-                )
                 continue
 
             if demand.target not in satisfiable:
@@ -856,6 +846,7 @@ class DependencyValidationPass:
                         f"capability '{capability.local_name}' is not reachable from any demand",
                         node=capability,
                         status=GraphStatus.FUNCTIONALLY_DISCONNECTED,
+                        severity=DiagnosticSeverity.WARNING,
                     )
                 )
 
