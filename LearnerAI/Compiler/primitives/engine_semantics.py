@@ -92,6 +92,23 @@ class EngineSemanticMappingRegistry:
             )
         return matches[0] if matches else None
 
+    def validate_exact_executable_commands(self, commands: tuple[str, ...]) -> None:
+        expected = tuple(sorted(commands))
+        actual = tuple(
+            sorted(
+                item.native_command
+                for item in self.mappings
+                if item.status is EngineSemanticMappingStatus.CONTRACTED
+            )
+        )
+        if expected != actual:
+            missing = sorted(set(expected) - set(actual))
+            extra = sorted(set(actual) - set(expected))
+            raise ValueError(
+                "executable engine semantic mapping inventory mismatch: "
+                f"missing={missing}, extra={extra}"
+            )
+
     def validate_primitive(
         self,
         *,
@@ -283,22 +300,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings: list[EngineSemanticMapping] = []
     for command, identity in _OBSERVATION_SPECS:
         mappings.append(_fact_mapping(command, identity, "OBSERVATION"))
-    mappings.append(
-        EngineSemanticMapping(
-            identity="observation.unit.count",
-            native_command="unit-type-count",
-            native_kind="Fact",
-            status=EngineSemanticMappingStatus.CONTRACTED,
-            evidence_class="ENGINE FACT",
-            evidence_sources=(_AOERF, _AOERF_PER),
-            state_effects="reads native unit world-state count",
-            lifetime="world-state observation at evaluation time",
-            ordering="evaluated against current native unit state",
-            admission="native observation fact",
-            completion="count is evidence of existing units, not an issuance request",
-            recovery="re-evaluate current unit state",
-        )
-    )
     for command, identity in _ADMISSIBILITY_SPECS:
         mappings.append(_fact_mapping(command, identity, "ADMISSIBILITY"))
     for command, identity in _ARBITRATION_SPECS:
@@ -307,22 +308,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         mappings.append(_fact_mapping(command, identity, "FEASIBILITY"))
     for command, identity in _WITNESS_SPECS:
         mappings.append(_fact_mapping(command, identity, "WITNESS"))
-    mappings.append(
-        EngineSemanticMapping(
-            identity="execution.pending-objects",
-            native_command="up-pending-objects",
-            native_kind="Fact",
-            status=EngineSemanticMappingStatus.CONTRACTED,
-            evidence_class="ENGINE FACT",
-            evidence_sources=(_AOERF, _AOERF_LIMITS, _AOE2AI),
-            state_effects="reads outstanding native build/train work without proving target birth",
-            lifetime="pending engine work persists until admitted work progresses, completes, or disappears",
-            ordering="pending state is observed after native admission/issuance and before world-state completion",
-            admission="native pending-work fact",
-            completion="pending state is never a completion witness",
-            recovery="use pending evidence to suppress duplicate issuance, then re-evaluate feasibility and world-state witnesses",
-        )
-    )
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
         (
