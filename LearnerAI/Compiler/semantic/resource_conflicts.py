@@ -166,6 +166,7 @@ def validate_resource_conflicts(
                             provider.identity.source_unit,
                             provider.identity.local_name,
                         ),
+                        location=provider.location,
                     )
                 )
             continue
