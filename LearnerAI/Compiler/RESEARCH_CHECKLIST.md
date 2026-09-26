@@ -21,7 +21,8 @@ The package-storage P0 repair and P1 non-lifecycle source-order repair are now i
 - [x] Keep lifecycle ownership analysis isolated from ordinary Goal/SN/Timer accesses.
 - [x] Preserve source locations on state accesses.
 - [x] Integrate the pass before capability validation and emission.
-- [x] CI verification: 296 tests, four native acceptance fixtures clean, 3×3 native-support replay matrix clean.
+- [x] Reuse OWN-009 for ordinary state-owner mismatches and OWN-004 for conflicting writer owners.
+- [x] CI verification: 298 tests, four native acceptance fixtures clean, 3×3 native-support replay matrix clean.
 
 ### Cross-reference outcome
 
