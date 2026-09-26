@@ -261,11 +261,11 @@ Implemented and tested:
 - binding-manifest propagation of the package inventory fingerprint;
 - malformed inventory field rejection.
 
-GitHub Actions compiler verification: 287 tests, OK; all four native zero-findings acceptance fixtures remained clean. The next generic compiler repair is non-lifecycle source-order analysis.
+GitHub Actions compiler verification: 287 tests, OK; all four native zero-findings acceptance fixtures remained clean. The next generic compiler repair after this storage tranche was non-lifecycle source-order analysis.
 
 ## Non-lifecycle source-order repair verification
 
-Current verified code head: cba3bf033f47364a4531405e9ba002ca06f5ec94.
+Current verified code head: 4f0d7d298bfb71bebdbd581eb19339624a979dc8.
 
 Implemented:
 
@@ -276,6 +276,7 @@ Implemented:
 - Same-rule read-before-write and cross-rule reader-before-writer reuse OWN-008 / ORDER-VIOLATION.
 - Non-lifecycle accesses without an emitted rule scope fail closed with OWN-010.
 - Lifecycle ownership ignores non-lifecycle accesses and remains responsible only for lifecycle state.
+- Ordinary access owner mismatches reuse OWN-009, and conflicting ordinary writer owners reuse OWN-004.
 - Compiler gate executes the new pass before capability projection and emission.
 
-GitHub Actions verification: 296 compiler tests passed; all four native zero-findings acceptance fixtures passed; all nine cross-platform native-support replay jobs and the aggregate comparison passed.
+GitHub Actions verification: 298 compiler tests passed; all four native zero-findings acceptance fixtures passed; all nine cross-platform native-support replay jobs and the aggregate comparison passed.
