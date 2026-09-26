@@ -113,12 +113,17 @@ class SemanticAction:
 class ActionIssuance:
     demand: SemanticId
     primitive: str
-    phase: str
+    phase: ActionIssuancePhase
     issued_state: LifecycleState
     pending_state: LifecycleState
     failure: "ActionIssuanceFailure"
     retryable: bool = True
     source_order: int = 0
+
+
+class ActionIssuancePhase(str, Enum):
+    ATTEMPT = "ATTEMPT"
+    PENDING_ADMISSION = "PENDING_ADMISSION"
 
 
 class ActionIssuanceFailure(str, Enum):
