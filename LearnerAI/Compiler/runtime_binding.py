@@ -765,6 +765,10 @@ class RuntimeBinder:
             )
         for value in occupied_ids:
             GoalId(value)
+            if not 1 <= value <= ORDINARY_GOAL_MAX:
+                raise ValueError(
+                    f"occupied ordinary GoalId must be in range 1..{ORDINARY_GOAL_MAX}"
+                )
         occupied_sn_ids = set(context.occupied_sn_ids)
         if context.package_inventory is not None:
             occupied_sn_ids.update(context.package_inventory.occupied_sn_ids)
@@ -799,6 +803,11 @@ class RuntimeBinder:
         existing_intervals: list[GoalInterval] = []
         existing: dict[StorageRequestId, Binding] = {}
         for request_id, binding in existing_pairs:
+            if isinstance(binding, GoalSlot):
+                if not 1 <= binding.id.value <= ORDINARY_GOAL_MAX:
+                    raise ValueError(
+                        f"existing GoalSlot id must be in range 1..{ORDINARY_GOAL_MAX}"
+                    )
             if isinstance(binding, (GoalSlot, GoalSpan)):
                 interval = _binding_interval(binding)
                 if any(interval.overlaps(other) for other in existing_intervals):
