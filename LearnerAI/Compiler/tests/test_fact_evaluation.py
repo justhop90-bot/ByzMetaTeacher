@@ -7,8 +7,10 @@ from Compiler.primitives.native_hygiene import (
     EvidenceKind,
 )
 from Compiler.semantic.fact_evaluation import evaluate_static_truth
+from Compiler.semantic.fact_registry import FactSemanticAdapter
 from Compiler.semantic.fact_values import (
     CanonicalEnum,
+    CanonicalizationContext,
     FactDomain,
     FactDomainKind,
     NormalizedFact,
@@ -27,176 +29,144 @@ class StaticFactEvaluationTests(unittest.TestCase):
             ),
         )
 
-    def _fact(self):
+    def _fact(self, age="CASTLE", domain=None):
         return NormalizedFact(
             semantic_id="observation.age.current",
-            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
+            canonical_args=(CanonicalEnum("AGE", age),),
             provenance=self._provenance("fact"),
+            domain=domain,
         )
 
-    def test_explicit_invariant_true_evaluates_true(self):
-        domain = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            invariant_truth=StaticTruth.TRUE,
-            provenance=self._provenance(),
+    def _adapter(self, result):
+        return FactSemanticAdapter(
+            native_command="current-age",
+            semantic_id="observation.age.current",
+            role="OBSERVATION",
+            parameter_contexts=(
+                CanonicalizationContext.enum(
+                    parameter_name="Age",
+                    domain="AGE",
+                    members=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+                ),
+            ),
+            provenance=self._provenance("adapter"),
+            static_truth_evaluator=lambda fact: result,
         )
+
+    def test_static_truth_is_supplied_by_fact_adapter(self):
+        fact = self._fact()
+        adapter = self._adapter(StaticTruth.TRUE)
 
         self.assertIs(
-            evaluate_static_truth(self._fact(), domain),
+            evaluate_static_truth(fact, adapter),
             StaticTruth.TRUE,
         )
 
-    def test_explicit_invariant_false_evaluates_false(self):
-        domain = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            invariant_truth=StaticTruth.FALSE,
-            provenance=self._provenance("false"),
-        )
+    def test_adapter_can_prove_false_without_domain_claiming_truth(self):
+        fact = self._fact()
+        adapter = self._adapter(StaticTruth.FALSE)
 
         self.assertIs(
-            evaluate_static_truth(self._fact(), domain),
+            evaluate_static_truth(fact, adapter),
             StaticTruth.FALSE,
         )
 
-    def test_unproven_domain_evaluates_unknown(self):
-        domain = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            provenance=self._provenance("unknown"),
-        )
-
-        self.assertIs(
-            evaluate_static_truth(self._fact(), domain),
-            StaticTruth.UNKNOWN,
-        )
-
-    def test_evaluation_does_not_use_canonical_argument_as_runtime_truth(self):
-        domain = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            provenance=self._provenance("argument-boundary"),
-        )
-        fact = NormalizedFact(
+    def test_missing_static_truth_proof_is_unknown(self):
+        adapter = FactSemanticAdapter(
+            native_command="current-age",
             semantic_id="observation.age.current",
-            canonical_args=(CanonicalEnum("AGE", "IMPERIAL"),),
-            provenance=self._provenance("argument-fact"),
+            role="OBSERVATION",
+            parameter_contexts=(
+                CanonicalizationContext.enum(
+                    parameter_name="Age",
+                    domain="AGE",
+                    members=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+                ),
+            ),
+            provenance=self._provenance("unknown-adapter"),
         )
 
         self.assertIs(
-            evaluate_static_truth(fact, domain),
+            evaluate_static_truth(self._fact(), adapter),
             StaticTruth.UNKNOWN,
         )
 
+    def test_static_evaluator_receives_the_normalized_fact(self):
+        seen = []
 
-    def test_fact_domain_identity_mismatch_is_rejected_even_when_shape_is_valid(self):
-        fact_domain = FactDomain(
+        def evaluator(fact):
+            seen.append(fact)
+            self.assertEqual(fact.identity_key[0], "observation.age.current")
+            self.assertEqual(fact.canonical_args[0], CanonicalEnum("AGE", "CASTLE"))
+            return StaticTruth.TRUE
+
+        adapter = self._adapter(StaticTruth.TRUE)
+        adapter = type(adapter)(
+            native_command=adapter.native_command,
+            semantic_id=adapter.semantic_id,
+            role=adapter.role,
+            parameter_contexts=adapter.parameter_contexts,
+            provenance=adapter.provenance,
+            static_truth_evaluator=evaluator,
+        )
+
+        fact = self._fact()
+        self.assertIs(evaluate_static_truth(fact, adapter), StaticTruth.TRUE)
+        self.assertEqual(seen, [fact])
+
+    def test_fact_adapter_identity_mismatch_is_rejected(self):
+        fact = self._fact()
+        adapter = FactSemanticAdapter(
+            native_command="current-age",
+            semantic_id="observation.age.other",
+            role="OBSERVATION",
+            parameter_contexts=(
+                CanonicalizationContext.enum(
+                    parameter_name="Age",
+                    domain="AGE",
+                    members=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+                ),
+            ),
+            provenance=self._provenance("mismatch"),
+            static_truth_evaluator=lambda fact: StaticTruth.TRUE,
+        )
+
+        with self.assertRaisesRegex(ValueError, "semantic adapter 'observation.age.other'.*fact 'observation.age.current'"):
+            evaluate_static_truth(fact, adapter)
+
+    def test_fact_domain_legality_is_not_proposition_truth(self):
+        domain = FactDomain(
             identity="AGE",
             kind=FactDomainKind.ORDERED_ENUM,
             value_type="Age",
             ordered=True,
             values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            invariant_truth=StaticTruth.TRUE,
-            provenance=self._provenance("fact-domain-identity"),
+            provenance=self._provenance("domain-legality"),
         )
-        supplied_domain = FactDomain(
+        fact = self._fact(domain=domain)
+        adapter = self._adapter(StaticTruth.UNKNOWN)
+
+        self.assertTrue(domain.contains(fact.canonical_args[0]))
+        self.assertIs(
+            evaluate_static_truth(fact, adapter),
+            StaticTruth.UNKNOWN,
+        )
+
+    def test_domain_identity_does_not_select_static_truth_adapter(self):
+        domain = FactDomain(
             identity="RESOURCE",
             kind=FactDomainKind.RESOURCE_AMOUNT,
             value_type="int",
             non_negative=True,
-            invariant_truth=StaticTruth.TRUE,
-            provenance=self._provenance("supplied-domain-identity"),
+            provenance=self._provenance("different-domain"),
         )
-        fact = NormalizedFact(
-            semantic_id="observation.age.current",
-            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
-            provenance=self._provenance("identity-mismatch-fact"),
-            domain=fact_domain,
-        )
+        fact = self._fact(domain=domain)
+        adapter = self._adapter(StaticTruth.TRUE)
 
-        with self.assertRaisesRegex(
-            ValueError,
-            "fact domain 'AGE'.*supplied domain 'RESOURCE'",
-        ):
-            evaluate_static_truth(fact, supplied_domain)
-
-    def test_evaluator_result_is_independent_of_fact_and_domain_provenance(self):
-        fact_domain_a = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            invariant_truth=StaticTruth.UNKNOWN,
-            provenance=self._provenance("domain-a"),
+        self.assertIs(
+            evaluate_static_truth(fact, adapter),
+            StaticTruth.TRUE,
         )
-        fact_domain_b = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            invariant_truth=StaticTruth.UNKNOWN,
-            provenance=self._provenance("domain-b"),
-        )
-        fact_a = NormalizedFact(
-            semantic_id="observation.age.current",
-            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
-            provenance=self._provenance("fact-a"),
-            domain=fact_domain_a,
-        )
-        fact_b = NormalizedFact(
-            semantic_id="observation.age.current",
-            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
-            provenance=self._provenance("fact-b"),
-            domain=fact_domain_b,
-        )
-
-        result_a = evaluate_static_truth(fact_a, fact_domain_a)
-        result_b = evaluate_static_truth(fact_b, fact_domain_b)
-
-        self.assertIs(result_a, StaticTruth.UNKNOWN)
-        self.assertIs(result_b, StaticTruth.UNKNOWN)
-        self.assertIs(result_a, result_b)
-
-    def test_fact_domain_mismatch_is_rejected(self):
-        domain = FactDomain(
-            identity="AGE",
-            kind=FactDomainKind.ORDERED_ENUM,
-            value_type="Age",
-            ordered=True,
-            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
-            provenance=self._provenance("mismatch"),
-        )
-
-        fact = NormalizedFact(
-            semantic_id="observation.resource.food",
-            canonical_args=(),
-            provenance=self._provenance("mismatch-fact"),
-            domain=FactDomain(
-                identity="RESOURCE",
-                kind=FactDomainKind.RESOURCE_AMOUNT,
-                value_type="int",
-                non_negative=True,
-                provenance=self._provenance("fact-domain"),
-            ),
-        )
-
-        with self.assertRaisesRegex(ValueError, "does not describe fact"):
-            evaluate_static_truth(fact, domain)
 
 
 if __name__ == "__main__":
