@@ -136,6 +136,8 @@ The player now has concrete Arabia timing windows and reactions. Compiler respon
 
 Numeric Arabia thresholds remain Strategy tuning data. Do not hard-code the map profile into the compiler.
 
+For positional tower/wall semantics, only engine-native observations should be admitted. Builder count is currently an execution/runtime concern; do not fabricate a compiler primitive for it until a sourced native fact exists.
+
 ### 9. Domain-aware teaching diagnostics
 
 Diagnostics should use the player vocabulary:
@@ -161,7 +163,7 @@ REASSESSMENT.
 
 ## Current verification
 
-The checked-in compiler verification record contains the lifecycle suite plus timing-semantics regression tests.
+The checked-in compiler verification record contains the lifecycle suite plus timing and positional-semantics regression tests.
 
 No GitHub Actions result is being treated as proof for the latest adapter work. Local test results remain local evidence.
 
