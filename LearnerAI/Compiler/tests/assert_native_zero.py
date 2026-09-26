@@ -9,6 +9,31 @@ import sys
 from pathlib import Path
 
 
+def _write_report(
+    path: Path | None,
+    *,
+    artifact: Path,
+    result: subprocess.CompletedProcess[str],
+    payload: object | None,
+    parse_error: str | None = None,
+) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    report = {
+        "artifact": str(artifact),
+        "validator_exit_code": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "json": payload,
+        "json_parse_error": parse_error,
+    }
+    path.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("artifact")
@@ -18,6 +43,24 @@ def main() -> int:
     artifact = Path(args.artifact).resolve()
     if not artifact.is_file():
         print(f"artifact does not exist: {artifact}", file=sys.stderr)
+        if args.report is not None:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(
+                json.dumps(
+                    {
+                        "artifact": str(artifact),
+                        "validator_exit_code": None,
+                        "stdout": "",
+                        "stderr": f"artifact does not exist: {artifact}",
+                        "json": None,
+                        "json_parse_error": None,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
         return 2
 
     result = subprocess.run(
@@ -38,6 +81,21 @@ def main() -> int:
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
 
+    payload = None
+    parse_error = None
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        parse_error = str(exc)
+
+    _write_report(
+        args.report,
+        artifact=artifact,
+        result=result,
+        payload=payload,
+        parse_error=parse_error,
+    )
+
     if result.returncode != 0:
         print(
             f"native validator exited {result.returncode}: {artifact}",
@@ -45,18 +103,12 @@ def main() -> int:
         )
         return result.returncode or 1
 
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        print(f"native validator did not return JSON: {exc}", file=sys.stderr)
-        return 2
-
-    if args.report is not None:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(
-            json.dumps(payload, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
+    if parse_error is not None:
+        print(
+            f"native validator did not return JSON: {parse_error}",
+            file=sys.stderr,
         )
+        return 2
 
     finding_count = payload.get("finding_count")
     findings = payload.get("findings")
