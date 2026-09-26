@@ -133,8 +133,8 @@ class EntitySelector:
         return EntitySelector(SelectorKind.AGE, ages=(age,))
 
     @staticmethod
-    def buildings_at_age(age: Age) -> "EntitySelector":
-        return EntitySelector(SelectorKind.BUILDING_CLASS, ages=(age,))
+    def all_buildings() -> "EntitySelector":
+        return EntitySelector(SelectorKind.BUILDING_CLASS)
 
     @staticmethod
     def age_advance(age: Age) -> "EntitySelector":

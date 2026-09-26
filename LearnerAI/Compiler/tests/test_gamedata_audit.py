@@ -52,10 +52,11 @@ class GameDataAuditTests(unittest.TestCase):
             item for item in self.profile.bonuses
             if item.id == "byz-building-hp-castle"
         )
+        self.assertTrue(self.data.matches_bonus_selector(bonus.selector, castle_building))
         self.assertTrue(
             self.data.matches_bonus_selector(
                 bonus.selector,
-                castle_building,
+                self.data.building(12),
             )
         )
         self.assertFalse(
@@ -64,6 +65,7 @@ class GameDataAuditTests(unittest.TestCase):
                 self.data.unit(40),
             )
         )
+        self.assertEqual(bonus.age_scope, Age.CASTLE)
 
     def test_fire_ship_is_present_in_effective_data(self):
         self.assertEqual(
@@ -98,3 +100,14 @@ class GameDataAuditTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_dromon_and_greek_fire_effects_are_present(self):
+        self.assertEqual(self.data.unit(1795).name, "Dromon")
+        dromon_bonus = next(
+            item for item in self.profile.bonuses
+            if item.id == "byz-dromon-speed"
+        )
+        self.assertEqual(dromon_bonus.modifier.value.numerator, 4)
+        greek_fire = self.data.tech(464)
+        self.assertEqual(len(greek_fire.effects), 3)
+

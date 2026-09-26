@@ -81,6 +81,7 @@ class CivBonus:
     fixed_cost: ResourceCost | None = None
     attribute: str | None = None
     scope: str = "SELF"
+    age_scope: Age | None = None
     provenance: tuple[EvidenceRef, ...] = ()
 
 
@@ -145,6 +146,14 @@ class EffectiveCivData:
 
     def matches_bonus_selector(self, selector: EntitySelector, entity: object) -> bool:
         return _selector_matches(selector, entity)
+
+    def building_hp_bonus_for_age(self, age: Age) -> tuple[CivBonus, ...]:
+        return tuple(
+            bonus
+            for bonus in self.bonuses
+            if bonus.kind is CivBonusKind.BUILDING_HP
+            and bonus.age_scope is age
+        )
 
     def is_free_for_civ(self, key: str) -> bool:
         kind, raw_id = key.split(":", 1)
@@ -259,45 +268,49 @@ class ByzantineProfile:
                 CivBonus(
                     "byz-building-hp-dark",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.buildings_at_age(Age.DARK),
+                    EntitySelector.all_buildings(),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(110, 100),
                     ),
                     attribute="hp",
+                    age_scope=Age.DARK,
                     provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-feudal",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.buildings_at_age(Age.FEUDAL),
+                    EntitySelector.all_buildings(),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(120, 100),
                     ),
                     attribute="hp",
+                    age_scope=Age.FEUDAL,
                     provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-castle",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.buildings_at_age(Age.CASTLE),
+                    EntitySelector.all_buildings(),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(130, 100),
                     ),
                     attribute="hp",
+                    age_scope=Age.CASTLE,
                     provenance=(community, official),
                 ),
                 CivBonus(
                     "byz-building-hp-imperial",
                     CivBonusKind.BUILDING_HP,
-                    EntitySelector.buildings_at_age(Age.IMPERIAL),
+                    EntitySelector.all_buildings(),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(140, 100),
                     ),
                     attribute="hp",
+                    age_scope=Age.IMPERIAL,
                     provenance=(community, official),
                 ),
                 CivBonus(
@@ -616,6 +629,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("cavalry-archer-line"), "Cavalry Archer line", (UnitId(474),), (evidence,)),
         UnitLineDef(UnitLineId("fire-galley-line"), "Fire Galley line", (UnitId(1103),), (evidence,)),
         UnitLineDef(UnitLineId("fire-ship-line"), "Fire Ship line", (UnitId(529), UnitId(532)), (evidence,)),
+        UnitLineDef(UnitLineId("dromon-line"), "Dromon line", (UnitId(1795),), (evidence,)),
     )
     units = (
         _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",)),
@@ -640,6 +654,7 @@ def _byzantine_game_data(
         _unit(492, "Arbalester", "crossbow-line", Age.IMPERIAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=24),
         _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
         _unit(532, "Fast Fire Ship", "fire-ship-line", Age.IMPERIAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",), upgrades_from=529),
+        _unit(1795, "Dromon", "dromon-line", Age.IMPERIAL, 45, ResourceCost(wood=175, gold=150), classes=("NAVAL",)),
         _unit(553, "Elite Cataphract", "cataphract-line", Age.IMPERIAL, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"), upgrades_from=40),
         _unit(1103, "Fire Galley", "fire-galley-line", Age.FEUDAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
         _unit(1258, "Battering Ram", "ram-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",)),
@@ -669,7 +684,20 @@ def _byzantine_game_data(
                 TechEffect(
                     kind="STAT_MODIFIER",
                     target=EntitySelector.unit_line(UnitLineId("fire-ship-line")),
-                    attribute="fire-ship-technology",
+                    attribute="range",
+                    modifier=NumericModifier(ModifierOperation.ADD, 1),
+                ),
+                TechEffect(
+                    kind="STAT_MODIFIER",
+                    target=EntitySelector.unit_line(UnitLineId("dromon-line")),
+                    attribute="blast-radius",
+                    modifier=NumericModifier(ModifierOperation.ADD, Rational(1, 5)),
+                ),
+                TechEffect(
+                    kind="STAT_MODIFIER",
+                    target=EntitySelector.building(BuildingId(236)),
+                    attribute="blast-radius",
+                    modifier=NumericModifier(ModifierOperation.ADD, Rational(1, 2)),
                 ),
             ),
         ),
