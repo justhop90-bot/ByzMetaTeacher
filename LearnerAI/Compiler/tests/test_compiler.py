@@ -33,8 +33,8 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(a, compile_source(EXAMPLES))
         self.assertIn("(set-goal demand-castle 1)", a)
         self.assertIn("(build castle)", a)
-        self.assertIn("(set-goal demand-castle 1003)", a)
-        self.assertIn("(set-goal demand-castle 1002)", a)
+        self.assertIn("(set-goal demand-castle 44)", a)
+        self.assertIn("(set-goal demand-castle 43)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 14)
 
@@ -176,14 +176,14 @@ class CompilerTests(unittest.TestCase):
 
         def run_pass(goal: int, rule_order: tuple[str, ...]) -> int:
             for stage in rule_order:
-                if stage == "release" and goal == 1002:
+                if stage == "release" and goal == 43:
                     goal = 0
-                elif stage == "witness" and goal == 1001:
-                    goal = 1002
-                elif stage == "pending" and goal == 1003:
-                    goal = 1001
+                elif stage == "witness" and goal == 42:
+                    goal = 43
+                elif stage == "pending" and goal == 44:
+                    goal = 42
                 elif stage == "action" and goal == 1:
-                    goal = 1003
+                    goal = 44
             return goal
 
         markers = {
@@ -200,7 +200,7 @@ class CompilerTests(unittest.TestCase):
             goal = run_pass(goal, rule_order)
             states.append(goal)
 
-        self.assertEqual(states, [1003, 1001, 1002, 0])
+        self.assertEqual(states, [44, 42, 43, 0])
         self.assertNotEqual(states[0], 0)
         self.assertNotEqual(states[1], 0)
         self.assertNotEqual(states[2], 0)
@@ -298,17 +298,17 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("; Pending diagnostics: castle", output)
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: "
-            "action is gated by active ordinary Goal slot and cannot reissue from pending ordinary Goal slot",
+            "action is gated by active goal 41 and cannot reissue from pending goal 42",
             output,
         )
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: "
-            "completion witness is evaluated only while pending goal 1001 is active",
+            "completion witness is evaluated only while pending goal 42 is active",
             output,
         )
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: "
-            "release is evaluated only after completion ordinary Goal slot is reached",
+            "release is evaluated only after completion goal 43 is reached",
             output,
         )
 
@@ -379,20 +379,20 @@ class CompilerTests(unittest.TestCase):
         release_block = output[release_start:witness_start]
         witness_block = output[witness_start:action_start]
         action_block = output[action_start:output.find("; Pending diagnostics: defensive-spearmen")]
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
-        self.assertIn("(goal demand-castle 1001)", witness_block)
-        self.assertIn("(set-goal demand-castle 1002)", witness_block)
+        self.assertIn("(set-goal demand-castle 44)", action_block)
+        self.assertIn("(goal demand-castle 42)", witness_block)
+        self.assertIn("(set-goal demand-castle 43)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
-        self.assertNotIn("(set-goal demand-castle 1002)", action_block)
-        self.assertIn("(goal demand-castle 1002)", release_block)
+        self.assertNotIn("(set-goal demand-castle 43)", action_block)
+        self.assertIn("(goal demand-castle 43)", release_block)
         self.assertIn("(set-goal demand-castle 0)", release_block)
 
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
         castle_release = output[output.find("; Release: castle"):output.find("; Completion witness: castle")]
-        self.assertIn("(goal demand-castle 1002)", castle_release)
+        self.assertIn("(goal demand-castle 43)", castle_release)
         self.assertIn("(set-goal demand-castle 0)", castle_release)
-        self.assertNotIn("(goal demand-castle 1001)", castle_release)
+        self.assertNotIn("(goal demand-castle 42)", castle_release)
 
     def test_pending_engine_fact_is_available_as_requirement(self):
         source = """
