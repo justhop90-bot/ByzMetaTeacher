@@ -149,3 +149,5 @@ class CompletionWitnessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# final witness verifier marker 2
