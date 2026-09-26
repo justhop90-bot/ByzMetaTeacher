@@ -167,6 +167,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.BLOCKED,
                     demand=demand.identity,
                     state=state,
+                    location=demand.location,
                     location=state_locations.get(state),
                 )
             )
@@ -181,6 +182,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.BLOCKED,
                     demand=demand.identity,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
 
@@ -194,6 +196,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.CONFLICTING,
                     demand=demand.identity,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
 
@@ -234,6 +237,7 @@ def analyze_demand_ownership(
                         demand=demand.identity,
                         state=state,
                         access=access,
+                        location=demand.location,
                     )
                 )
 
@@ -285,6 +289,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.ORDER_VIOLATION,
                     state=state,
                     access=first_consumer,
+                    location=state_locations.get(state),
                 )
             )
 
