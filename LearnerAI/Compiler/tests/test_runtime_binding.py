@@ -248,7 +248,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
                     self._reservation(
                         StorageKind.GOAL_SPAN,
                         41,
-                        1003,
+                        44,
                         "span",
                     ),
                 ),
