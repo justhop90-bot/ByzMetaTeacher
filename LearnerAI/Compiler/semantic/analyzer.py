@@ -3,10 +3,14 @@ from __future__ import annotations
 import re
 from ..ast import DemandNode, Expression
 from ..errors import CompileError
-from ..ir import SemanticAction, SemanticDemand, SemanticRequirement
+from ..ir import PendingDiagnostic, SemanticAction, SemanticDemand, SemanticRequirement
 from ..primitives import PrimitiveRegistry
 
-_LOGICAL_ARITY = {"and": 2, "or": 2, "nand": 2, "nor": 2, "xor": 2, "xnor": 2, "not": 1}
+_LOGICAL_ARITY = {
+    "and": 2, "or": 2, "nand": 2, "nor": 2,
+    "xor": 2, "xnor": 2, "not": 1,
+}
+
 
 def _tokens(expr: str) -> list[str]:
     if not expr.startswith("(") or not expr.endswith(")"):
@@ -17,6 +21,7 @@ def _tokens(expr: str) -> list[str]:
     if not tokens or tokens[0] != "(":
         raise CompileError("expression must start with '('")
     return tokens
+
 
 def _parse(tokens: list[str], index: int = 0):
     if index >= len(tokens) or tokens[index] != "(":
@@ -38,14 +43,18 @@ def _parse(tokens: list[str], index: int = 0):
         raise CompileError("unbalanced .per expression")
     return head, tuple(args), index + 1
 
+
 def parse_expression(source: str) -> Expression:
     tokens = _tokens(source)
     head, args, end = _parse(tokens)
     if end != len(tokens):
         raise CompileError("trailing tokens after .per expression")
     if head in _LOGICAL_ARITY and len(args) != _LOGICAL_ARITY[head]:
-        raise CompileError(f"logical operator '{head}' requires {_LOGICAL_ARITY[head]} operands")
+        raise CompileError(
+            f"logical operator '{head}' requires {_LOGICAL_ARITY[head]} operands"
+        )
     return Expression(source=source, head=head, args=args)
+
 
 def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
     if expr.head in _LOGICAL_ARITY:
@@ -66,6 +75,7 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
         raise CompileError(f"nested expression is not supported in primitive '{expr.head}'")
     return primitive
 
+
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     if expr.head in _LOGICAL_ARITY:
         roles = set()
@@ -75,11 +85,13 @@ def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     primitive = _validate_expression(expr, registry)
     return {primitive.role}
 
+
 def _context_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     roles = _root_roles(expr, registry)
     if not roles:
         raise CompileError("expression has no semantic role")
     return roles
+
 
 def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
     roles = _context_roles(expr, registry)
@@ -88,9 +100,44 @@ def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: se
         expected = ", ".join(sorted(allowed))
         raise CompileError(f"{context}: expression has role {actual}; expected only {expected}")
 
+
 def _stored_role(expr: Expression, registry: PrimitiveRegistry) -> str:
     roles = _context_roles(expr, registry)
     return next(iter(roles)) if len(roles) == 1 else "COMPOSITE"
+
+
+def _pending_diagnostics(demand: DemandNode, goal: int, pending_goal: int, completed_goal: int):
+    action = parse_expression(demand.action)
+    witness = parse_expression(demand.witness)
+    release = parse_expression(demand.release)
+    return (
+        PendingDiagnostic(
+            "PENDING-ACTION-GUARD",
+            "INFO",
+            f"action is gated by active goal {goal} and cannot reissue from pending goal {pending_goal}",
+        ),
+        PendingDiagnostic(
+            "PENDING-WITNESS-GUARD",
+            "INFO",
+            f"completion witness is evaluated only while pending goal {pending_goal} is active",
+        ),
+        PendingDiagnostic(
+            "PENDING-RELEASE-GUARD",
+            "INFO",
+            f"release is evaluated only after completion goal {completed_goal} is reached",
+        ),
+        PendingDiagnostic(
+            "PENDING-ACTION-WITNESS-SEPARATE",
+            "INFO",
+            f"action '{action.head}' is not treated as completion evidence; witness '{witness.head}' owns completion",
+        ),
+        PendingDiagnostic(
+            "PENDING-RELEASE-SEPARATE",
+            "INFO",
+            f"release remains separate from witness '{witness.head}' and may clear the demand only from complete state",
+        ),
+    )
+
 
 def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: int = 1000) -> list[SemanticDemand]:
     if base_goal < 0:
@@ -101,7 +148,8 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         for raw in demand.requirements:
             expr = parse_expression(raw)
             _validate_context(
-                expr, registry,
+                expr,
+                registry,
                 {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
                 f"demand '{demand.name}' requirement",
             )
@@ -112,14 +160,20 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         release = parse_expression(demand.release)
         _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
-        result.append(SemanticDemand(
-            demand.name,
-            base_goal + (offset * 3),
-            tuple(requirements),
-            SemanticAction(action, "ACTION"),
-            witness,
-            release,
-            base_goal + (offset * 3) + 1,
-            base_goal + (offset * 3) + 2,
-        ))
+        goal = base_goal + (offset * 3)
+        pending_goal = goal + 1
+        completed_goal = goal + 2
+        result.append(
+            SemanticDemand(
+                demand.name,
+                goal,
+                tuple(requirements),
+                SemanticAction(action, "ACTION"),
+                witness,
+                release,
+                pending_goal,
+                completed_goal,
+                _pending_diagnostics(demand, goal, pending_goal, completed_goal),
+            )
+        )
     return result
