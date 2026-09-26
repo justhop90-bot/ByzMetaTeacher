@@ -8,7 +8,6 @@ from typing import Iterable
 from ..ast import Expression
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
-from ..semantic.analyzer import parse_expression
 from .game_data import EffectiveCivData, canonical_fingerprint
 from .strategy import (
     StrategicDemandSpec,
@@ -355,6 +354,8 @@ def bind_strategic_evidence(
     effective: EffectiveCivData,
     registry: PrimitiveRegistry | None = None,
 ) -> StrategicEvidenceBinding:
+    from ..semantic.analyzer import parse_expression
+
     registry = registry or default_de_registry()
     expression = parse_expression(evidence.expression)
     observations: list[StrategicObservation] = []
