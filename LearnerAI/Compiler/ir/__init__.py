@@ -18,10 +18,12 @@ from .capability import (
     ProviderKind,
     WitnessId,
     WitnessKind,
+    WitnessEvidenceKind,
 )
 from .model import (
     AccessKind,
     ActionIssuance,
+    CompletionWitnessContract,
     ActionIssuanceFailure,
     ActionIssuancePhase,
     DemandOwnership,
