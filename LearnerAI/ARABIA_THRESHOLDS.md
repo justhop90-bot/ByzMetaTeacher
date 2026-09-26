@@ -227,11 +227,17 @@ Open a Dock demand on Arabia when at least one of these is true:
 
 ### Fishing admission
 
-- **5 or more usable fish** are available in the local water area;
+Use **5 or more usable fish as the default tuning trigger**, but do not treat the number as a compiler invariant.
+
+The Dock/fishing demand opens when:
+
+- the local water provides enough usable fishing value to justify its wood/worker opportunity cost;
 - the fishing area is sufficiently safe to sustain boats;
 - the land economy is not in an active P0 crisis.
 
-Fewer than 5 usable fish is normally not enough to justify a dedicated Arabia fishing investment.
+The default strategy tuning point is 5 usable fish. The threshold may be raised or lowered by map-generation data and water safety without changing the semantic capability contract.
+
+Community .per practice also uses `sn-minimum-water-body-size-for-dock` as a map-conditioned Dock gate.
 
 ### Transport admission
 
