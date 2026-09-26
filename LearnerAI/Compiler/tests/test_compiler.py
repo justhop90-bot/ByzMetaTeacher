@@ -155,6 +155,50 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(states, [1001, 1002, 0])
         self.assertNotEqual(states[0], 0)
         self.assertNotEqual(states[1], 0)
+
+    def test_stale_completion_witness_is_guarded_before_action(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        action_end = output.find("; Pending diagnostics:", action_start)
+        action_block = output[action_start:action_end]
+        self.assertIn("(not (building-type-count castle > 0))", action_block)
+
+    def test_stale_release_fact_is_guarded_before_action(self):
+        source = """
+        demand defensive {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count scout-unit == 0)
+        }
+        """
+        output = compile_source(source)
+        action_start = output.find("; Demand: defensive | ACTIVE -> PENDING")
+        action_end = output.find("; Pending diagnostics:", action_start)
+        action_block = output[action_start:action_end]
+        self.assertIn("(not (unit-type-count scout-unit == 0))", action_block)
+
+    def test_preexisting_witness_cannot_reach_complete_in_lifecycle_simulation(self):
+        output = compile_source("""
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """)
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        action_end = output.find("; Pending diagnostics:", action_start)
+        action_block = output[action_start:action_end]
+        self.assertIn("(not (building-type-count castle > 0))", action_block)
     def test_castle_enters_pending_and_cannot_reissue_while_pending(self):
         output = compile_source(EXAMPLES)
         action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
