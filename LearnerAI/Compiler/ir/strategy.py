@@ -143,6 +143,10 @@ class StrategicDemandSpec:
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
 
+    @property
+    def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
+        return (self.execution, *self.additional_execution_demands)
+
     def with_overrides(
         self,
         *,
