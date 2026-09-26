@@ -1,5 +1,7 @@
 from .model import (
     GoalRole,
+    GoalSpanKind,
+    GoalSpanRequest,
     GoalSlotRequest,
     LifecycleState,
     LifecycleStorage,
