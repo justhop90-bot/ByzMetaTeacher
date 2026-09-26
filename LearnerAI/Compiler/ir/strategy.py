@@ -65,10 +65,11 @@ class StrategyEnvelope:
 @dataclass(frozen=True)
 class StrategicEvidence:
     kind: StrategicEvidenceKind
-    expression: str
+    expression: str | None
     label: str
     source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
     provenance: tuple[EvidenceRef, ...] = ()
+    observation_ref: str | None = None
 
 
 @dataclass(frozen=True)
@@ -200,9 +201,8 @@ class StrategicCapabilityObservation:
 
 
 @dataclass(frozen=True)
-class StrategicEnemyCompositionObservation:
+class StrategicObservationSpec:
     identity: str
-    unit_id: int
     expression: str
     source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
     provenance: tuple[EvidenceRef, ...] = ()
@@ -220,13 +220,19 @@ class StrategyProfile:
     transitions: tuple[PostureTransition, ...]
     provenance: tuple[EvidenceRef, ...]
     capability_observations: tuple[StrategicCapabilityObservation, ...] = ()
-    enemy_composition_observations: tuple[StrategicEnemyCompositionObservation, ...] = ()
+    observations: tuple[StrategicObservationSpec, ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
             if item.identity == identity:
                 return item
         raise KeyError(f"unknown strategic demand '{identity}'")
+
+    def observation(self, identity: str) -> StrategicObservationSpec:
+        for item in self.observations:
+            if item.identity == identity:
+                return item
+        raise KeyError(f"unknown strategic observation '{identity}'")
 
     @property
     def community_meta_evidence(self) -> tuple[StrategicEvidence, ...]:
@@ -344,56 +350,34 @@ def _validate_capability_observations(
             )
 
 
-def _validate_enemy_composition_observations(
+def _validate_observation_specs(
     profile: StrategyProfile,
     effective: EffectiveCivData,
 ) -> None:
     identities: set[str] = set()
-    for observation in profile.enemy_composition_observations:
+    for observation in profile.observations:
         if observation.identity in identities:
             raise ValueError(
-                f"duplicate strategic enemy composition observation '{observation.identity}'"
+                f"duplicate strategic observation '{observation.identity}'"
             )
         identities.add(observation.identity)
-
         if observation.source is StrategicEvidenceSource.COMMUNITY_META:
             raise ValueError(
-                f"community meta cannot define native enemy observation '{observation.identity}'"
+                f"community meta cannot define native observation '{observation.identity}'"
             )
-        unit_id = int(observation.unit_id)
-        status = effective.factual_status("unit", unit_id)
-        if status is not FactStatus.VERIFIED:
+        if not observation.expression:
             raise ValueError(
-                f"strategic enemy composition observation '{observation.identity}' requires "
-                f"factual status VERIFIED for unit {unit_id}; status is {status.value}"
+                f"strategic observation '{observation.identity}' requires a native expression"
             )
         if not observation.provenance:
             raise ValueError(
-                f"strategic enemy composition observation '{observation.identity}' requires factual provenance"
+                f"strategic observation '{observation.identity}' requires native provenance"
+            )
+        if any(ref.patch != effective.patch for ref in observation.provenance):
+            raise ValueError(
+                f"strategic observation '{observation.identity}' has provenance for a different patch"
             )
 
-        unit = effective.unit(unit_id)
-        aliases = {
-            str(unit_id).lower(),
-            unit.name.lower().replace(" ", "-"),
-        }
-        tokens = (
-            observation.expression
-            .lower()
-            .replace("(", " ")
-            .replace(")", " ")
-            .split()
-        )
-        if len(tokens) < 2 or tokens[0] != "players-unit-type-count":
-            raise ValueError(
-                f"strategic enemy composition observation '{observation.identity}' "
-                "must use players-unit-type-count"
-            )
-        if tokens[1] not in aliases:
-            raise ValueError(
-                f"strategic enemy composition observation '{observation.identity}' "
-                "does not bind its declared unit"
-            )
 
 
 def _validate_factual_coverage(
@@ -422,7 +406,7 @@ def resolve_strategy_profile(
 
     seen: set[str] = set()
     _validate_capability_observations(profile, effective)
-    _validate_enemy_composition_observations(profile, effective)
+    _validate_observation_specs(profile, effective)
 
     for demand in profile.demands:
         if demand.identity in seen:
@@ -442,6 +426,18 @@ def resolve_strategy_profile(
             )
         for evidence in (*demand.reason, *demand.admissibility, *demand.invalidation):
             _validate_evidence_attribution(evidence, effective)
+            if evidence.observation_ref is None:
+                raise ValueError(
+                    f"strategic evidence '{evidence.label}' must reference a verified native observation"
+                )
+            if evidence.expression is not None:
+                raise ValueError(
+                    f"strategic evidence '{evidence.label}' must not override its native observation expression"
+                )
+            if evidence.observation_ref not in {item.identity for item in profile.observations}:
+                raise ValueError(
+                    f"unknown strategic observation reference '{evidence.observation_ref}'"
+                )
             if evidence.kind is StrategicEvidenceKind.TIMING and evidence.expression:
                 if all(
                     other.kind is StrategicEvidenceKind.TIMING
@@ -481,6 +477,18 @@ def resolve_strategy_profile(
     for transition in profile.transitions:
         for evidence in transition.evidence:
             _validate_evidence_attribution(evidence, effective)
+            if evidence.observation_ref is None:
+                raise ValueError(
+                    f"strategic evidence '{evidence.label}' must reference a verified native observation"
+                )
+            if evidence.expression is not None:
+                raise ValueError(
+                    f"strategic evidence '{evidence.label}' must not override its native observation expression"
+                )
+            if evidence.observation_ref not in {item.identity for item in profile.observations}:
+                raise ValueError(
+                    f"unknown strategic observation reference '{evidence.observation_ref}'"
+                )
         if not transition.evidence:
             raise ValueError(
                 f"posture transition '{transition.label}' needs evidence"
@@ -598,6 +606,50 @@ def lower_strategy_profile(
         profile=profile,
         demands=tuple(bound_demands),
         bindings=bindings,
+    )
+
+
+def _land_castle_observations(
+    effective: EffectiveCivData,
+) -> tuple[StrategicObservationSpec, ...]:
+    dark = effective.age_advance(Age.DARK).provenance
+    feudal = effective.age_advance(Age.FEUDAL).provenance
+    castle = effective.age_advance(Age.CASTLE).provenance
+    imperial = effective.age_advance(Age.IMPERIAL).provenance
+    knight = effective.unit(38).provenance
+    castle_building = effective.building(82).provenance
+    castle_complete_provenance = tuple(dict.fromkeys((*castle, *castle_building)))
+    return (
+        StrategicObservationSpec(
+            "current-dark-age",
+            "(current-age == dark-age)",
+            provenance=dark,
+        ),
+        StrategicObservationSpec(
+            "current-feudal-age",
+            "(current-age >= feudal-age)",
+            provenance=feudal,
+        ),
+        StrategicObservationSpec(
+            "current-imperial-age",
+            "(current-age >= imperial-age)",
+            provenance=imperial,
+        ),
+        StrategicObservationSpec(
+            "enemy-knight-pressure",
+            "(players-unit-type-count any-enemy knight >= 3)",
+            provenance=knight,
+        ),
+        StrategicObservationSpec(
+            "enemy-knight-pressure-cleared",
+            "(players-unit-type-count any-enemy knight < 3)",
+            provenance=knight,
+        ),
+        StrategicObservationSpec(
+            "castle-complete",
+            "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
+            provenance=castle_complete_provenance,
+        ),
     )
 
 
@@ -883,6 +935,7 @@ def build_land_castle_strategy(
         demands=demands,
         transitions=transitions,
         provenance=(),
+        observations=_land_castle_observations(effective),
     )
 
 
