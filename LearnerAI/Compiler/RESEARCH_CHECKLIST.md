@@ -1,19 +1,36 @@
 # Current Compiler Frontier (2026-09-26)
 
-The compiler is a general AoE2 .per engineering platform. Basilisk and Byzantine strategy are downstream clients.
+The package-storage P0 repair is now implemented. The current generic queue is:
 
-The authoritative current roadmap is `COMPILER_FORENSIC_AUDIT_2026-09-26.md` plus `COMMUNITY_PER_PRACTICE_SPEC.md`.
+1. P0 complete: native support-state visibility, namespace-safe storage binding, explicit package-storage inventory, deterministic diagnostics/reproducibility.
+2. P1 next: non-lifecycle source-order analysis.
+3. P1: capability-loss/recovery, DUC/search safety, load/preprocessor graph.
+4. P2: community-practice registry, golden fixtures, generic reference bot, FlareMesh fixture.
+5. P3: evidence-backed performance/cost analysis.
+6. P4: experimental spatial coordination.
 
-Priority order:
-1. P0: native correctness, support-state visibility, storage/package reproducibility, diagnostics.
-2. P1: non-lifecycle state ordering, capability-loss recovery, DUC/search safety, load/preprocessor graph.
-3. P2: community-practice registry, golden fixtures, generic reference bot.
-4. P3: evidence-backed performance analysis.
-5. P4: experimental coordination/spatial patterns.
+## Package-storage repair checklist
 
-Important same-pass rule: actions inside one .per rule execute sequentially. A latch or persisted state is required when the dependency crosses rules/passes, not when actions are already in the same action list.
+- [x] Cross-reference AIRef Goal/SN/Timer limits and extended-Goal restrictions.
+- [x] Cross-reference prior-art storage/lowering patterns without importing a second language architecture.
+- [x] Typed package reservations with provenance.
+- [x] Goal scalar/scalar-span collision rejection.
+- [x] SN and Timer namespace collision rejection.
+- [x] Deterministic package inventory fingerprint.
+- [x] Exact JSON round trip and tamper detection.
+- [x] Binder consumption of explicit package inventory across all storage namespaces.
+- [x] Existing binding rejection against package occupancy.
+- [x] Package inventory fingerprint propagated into the binding manifest.
+- [x] Compiler integration regression test.
+- [x] CI verification: 287 tests, OK.
+- [ ] Automatic discovery of arbitrary external .per package occupancy. This remains an integration boundary, not a reason to guess.
 
-Historical implementation sections below are retained as records. Their old Basilisk-specific exit criteria are no longer the compiler completion definition.
+## Cross-reference outcome
+
+AIRef establishes finite Goal (1..16000), Strategic Number (0..511), and Timer (1..50) namespaces, plus special constraints for commands that consume consecutive Goals. Public AoE2 scripting prior art also demonstrates explicit state storage and named Goal usage rather than an implicit compiler-owned global memory model.
+
+The compiler therefore treats package occupancy as an explicit input fact with provenance and fingerprint, rather than inferring that generated storage is globally free.
+
 
 ---
 # LearnerAI Compiler Research Checklist
