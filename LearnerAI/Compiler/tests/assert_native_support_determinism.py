@@ -37,7 +37,7 @@ def build_snapshot() -> dict[str, object]:
             source = (fixture_root / f"{name}.basilisk").read_text(encoding="utf-8")
             registry = CompilerNativeIntegrationTests._native_support_fixture_registry(name)
             output = tmp / f"{name}.per"
-            output.write_text("KEEP UNSUPPORTED ARTIFACT\n", encoding="utf-8")
+            output.write_bytes(b"KEEP UNSUPPORTED ARTIFACT\n")
             backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
             report = compile_source_with_report(
                 source,
