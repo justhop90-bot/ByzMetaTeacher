@@ -1,10 +1,10 @@
 ;============================================================
-; BASILISK GENERATED .PER
-; Compiler: Basilisk compiler 0.4
-; Generated from validated semantic IR. Do not edit by hand.
+; GENERATED COMPILER LIFECYCLE FIXTURE
+; This file is compiler output, not the complete Basilisk controller.
+; Source: LearnerAI/Compiler/examples/basics.basilisk
+; Do not edit by hand.
 ;============================================================
 
-; Demand goal constants
 (defconst demand-castle 1000)
 (defconst pending-castle 1001)
 (defconst complete-castle 1002)
@@ -15,7 +15,6 @@
 (defconst pending-wheelbarrow 1007)
 (defconst complete-wheelbarrow 1008)
 
-; Demand initialization
 (defrule
     =>
     (set-goal demand-castle 1)
@@ -59,12 +58,6 @@
 )
 
 ; Pending diagnostics: defensive-spearmen
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1003 and cannot reissue from pending goal 1004
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1004 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1005 is reached
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
-; Demand: defensive-spearmen | ACTIVE -> PENDING
 (defrule
     (goal demand-defensive-spearmen 1)
     (current-age >= feudal)
@@ -75,7 +68,6 @@
     (set-goal demand-defensive-spearmen 1004)
 )
 
-; Completion witness: defensive-spearmen | PENDING -> COMPLETE
 (defrule
     (goal demand-defensive-spearmen 1004)
     (unit-type-count spearman >= 2)
@@ -83,7 +75,6 @@
     (set-goal demand-defensive-spearmen 1005)
 )
 
-; Release: defensive-spearmen | COMPLETE -> RELEASED
 (defrule
     (goal demand-defensive-spearmen 1005)
     (unit-type-count spearman >= 2)
@@ -92,12 +83,6 @@
 )
 
 ; Pending diagnostics: wheelbarrow
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1006 and cannot reissue from pending goal 1007
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1007 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1008 is reached
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
-; Demand: wheelbarrow | ACTIVE -> PENDING
 (defrule
     (goal demand-wheelbarrow 1)
     (research-available ri-wheelbarrow)
@@ -108,7 +93,6 @@
     (set-goal demand-wheelbarrow 1007)
 )
 
-; Completion witness: wheelbarrow | PENDING -> COMPLETE
 (defrule
     (goal demand-wheelbarrow 1007)
     (research-completed ri-wheelbarrow)
@@ -116,7 +100,6 @@
     (set-goal demand-wheelbarrow 1008)
 )
 
-; Release: wheelbarrow | COMPLETE -> RELEASED
 (defrule
     (goal demand-wheelbarrow 1008)
     (research-completed ri-wheelbarrow)

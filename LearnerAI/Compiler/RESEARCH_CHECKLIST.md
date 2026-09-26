@@ -1,192 +1,161 @@
 # LearnerAI Compiler Research Checklist
 
-Updated after the native-backend research and adapter implementation.
+This checklist keeps compiler work subordinate to the actual Byzantine player.
 
-## What the community has already provided
+## Already established
 
-### Native .per parsing and validation
+### Native .per ecosystem
 
-aoe2-ai-parser is the closest existing native tool and should be treated as the backend rather than reimplemented.
+The community already provides a capable native parser/linter. The pinned aoe2-ai-parser backend is the native authority.
 
-Current pinned project identity:
+Do not build a replacement native parser, native formatter, native command inventory, native logical-arity checker, native rule-length checker, or package graph validator unless a specific teaching need cannot be handled at the boundary.
 
-    repository: https://github.com/joerollman/aoe2-ai-parser
-    project: aoe2-ai-parser
-    version: 0.1.0
-    commit: 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba
-    Python: >= 3.12
-    license: GPL-3.0-or-later
+### LearnerAI contribution
 
-The project currently provides native .per parsing, command/fact/action validation, argument and role checks, logical operator arity, rule-length checks, load/package graph analysis, AIRef-backed reference inventories, diagnostics, formatting, and package reports.
+The semantic contribution is different:
 
-We therefore do not need to build:
+    persistent intent
+      -> demand
+      -> capability
+      -> feasibility
+      -> action
+      -> pending
+      -> world-state witness
+      -> release / invalidation
+      -> reassess
 
-- a second native .per parser;
-- a second command/parameter schema;
-- a second native logical-operator validator;
-- a second rule-length counter;
-- a second load/package graph validator;
-- a second AIRef command/object/tech/strategic-number inventory;
-- a second native formatter.
+## Implemented compiler foundation
 
-### Higher-level AoE2 script compilers
+- [x] semantic primitive profile;
+- [x] lifecycle validation;
+- [x] repeated-action prevention;
+- [x] pending-state diagnostics;
+- [x] negative lifecycle tests;
+- [x] native backend subprocess boundary;
+- [x] pinned backend identity;
+- [x] protocol validation;
+- [x] staged artifact validation;
+- [x] deterministic diagnostics;
+- [x] combined semantic/native report;
+- [x] compiler/native integration tests.
 
-Community projects also demonstrate the broader compiler space.
+## Next compiler work, ordered by player need
 
-AgeOfPython provides a Python-like language translated into AoE2 script, with functions, loops, arrays, goals, and AIRef-derived information. It is useful as evidence that a higher-level compilation approach is viable, but it does not replace LearnerAI's deliberately smaller demand/lifecycle teaching model.
+### 1. Freeze native tooling
 
-lewisc64/aoe2ai provides a higher-level AoE2 AI language which translates structured commands such as training, research, building, conditions, and repeated behavior into .per. It demonstrates that community authors have already attacked source-language ergonomics and code generation.
+- [ ] reproducible backend installation;
+- [ ] manifest verification;
+- [ ] archive/source checksum;
+- [ ] golden protocol contract;
+- [ ] no automatic backend upgrades.
 
-### Editor and tooling lineage
+### 2. Demand ownership
 
-The older Jvinniec/aoe2-aiscript and KnightThymeTools/aoe2-aiscript projects provide the established editor-tooling lineage: syntax highlighting, completion, signatures, symbols, references, and earlier diagnostics.
+The compiler should reject or diagnose:
 
-These are evidence for the ecosystem's existing editor conventions, not replacement compiler semantics.
+- missing owner;
+- conflicting persistent writers;
+- demands with no consumer;
+- demand that has no viable capability provider;
+- demand that can never release or invalidate.
 
-### Runtime/native extension work
+### 3. Capability providers
 
-FLWL/aoe2-ai-module exposes native AI functionality to external runtime code. That is useful precedent for engine integration, but it is not a static compiler backend.
+Add semantic representation for:
 
-### What this means for LearnerAI
+- construction providers;
+- production providers;
+- research providers;
+- economic capability;
+- military capability.
 
-The community has already supplied most of the raw-language machinery.
+The compiler must be able to answer:
 
-LearnerAI's differentiated work remains:
+What can satisfy this demand?
 
-    persistent demand
-        -> capability
-        -> feasibility
-        -> engine action
-        -> pending state
-        -> world-state witness
-        -> release
-        -> reassess
+### 4. Player dependency chains
 
-The compiler should therefore remain a semantic teaching compiler, not become an expensive reimplementation of the AoE2 parser ecosystem.
+Model the chain needed for the first vertical slice:
 
-## Implemented
+    Castle intent
+      -> Castle demand
+      -> prerequisite capability
+      -> resource protection
+      -> construction feasibility
+      -> action
+      -> Castle witness
+      -> Castle economy
+      -> production expansion
+      -> reassessment
 
-- [x] Native backend package boundary.
-- [x] Typed native validation result models.
-- [x] Pinned backend identity.
-- [x] Python version verification.
-- [x] Subprocess isolation with shell=False.
-- [x] Redirected stdin.
-- [x] Sanitized Python/proxy environment.
-- [x] Temporary backend working directory.
-- [x] Bounded backend timeout.
-- [x] Strict native JSON parsing.
-- [x] Native diagnostic normalization.
-- [x] Native severity/confidence validation.
-- [x] Source coordinate normalization.
-- [x] Artifact-path verification.
-- [x] Artifact SHA-256 identity.
-- [x] Deterministic native diagnostic IDs.
-- [x] Backend failure versus script rejection distinction.
-- [x] Staged .per validation before output promotion.
-- [x] Protocol fixture matrix.
-- [x] Process-failure fixture coverage.
-- [x] Compiler --validate-native integration.
-- [x] Compiler --native-json normalized result output.
-- [x] Compiler integration tests for promotion/rejection/backend failure.
+The goal is not a universal planner.
 
-## Next work, in order
+The goal is semantic visibility of the actual player chain.
 
-### 1. Freeze the backend installation
+### 5. Recovery and invalidation
 
-Goal: make the external validator reproducible on another machine.
+Add diagnostics for:
 
-- [ ] Create tools/native-backends/aoe2-ai-parser/.
-- [ ] Add an isolated Python 3.12 virtual environment.
-- [ ] Install the exact pinned backend commit.
-- [ ] Add manifest.json containing project version, source commit, and Python version.
-- [ ] Record a source distribution/archive SHA-256 in the backend lock.
-- [ ] Add a bootstrap/verification script with no automatic upgrade behavior.
-- [ ] Test that a version match plus commit mismatch is rejected.
-- [ ] Test that a valid pinned installation is accepted.
+- temporary failure that incorrectly destroys intent;
+- stale demand after strategic invalidation;
+- capability loss with unreleased execution state;
+- failed action without re-openable demand;
+- recovery that cannot return to the original strategic path.
 
-### 2. Add the golden native contract test
+### 6. Resource and conflict semantics
 
-Goal: detect backend protocol drift before compiler semantics are affected.
+Teach the compiler enough to identify when:
 
-- [ ] Store one known-valid backend JSON response.
-- [ ] Store one known-invalid backend JSON response.
-- [ ] Validate the full normalized result structure.
-- [ ] Verify diagnostic IDs remain deterministic.
-- [ ] Verify upstream human-message wording is not treated as diagnostic identity.
-- [ ] Verify backend severity and confidence survive normalization unchanged.
-- [ ] Verify malformed protocol remains a backend failure.
+- two demands legitimately compete;
+- a claim is required;
+- a global resource lock is unjustified;
+- a resource owner never releases;
+- a lower-priority execution path can starve a strategic demand.
 
-### 3. Connect semantic compilation and native diagnostics
+Do not turn this into a universal scheduler.
 
-Goal: make compiler output explain both semantic and native failures.
+### 7. Source-order analysis
 
-- [ ] Keep LearnerAI diagnostics in their own namespace.
-- [ ] Keep native backend codes unchanged.
-- [ ] Add a combined compiler validation report containing semantic diagnostics, native diagnostics, backend identity, generated artifact hash, and final validation state.
-- [ ] Ensure semantic rejection prevents native invocation.
-- [ ] Ensure native rejection does not erase the successful semantic result.
-- [ ] Ensure backend failure is reported as missing validation evidence, not .per rejection.
+Where Basilisk-style rule order is deliberate, the compiler should eventually identify:
 
-### 4. Reuse native package analysis instead of recreating it
+- first writer;
+- first consumer;
+- reset-then-recompute chains;
+- same-pass visibility assumptions;
+- later overwrites;
+- unreachable or preempted rules.
 
-Goal: leverage community package knowledge when LearnerAI grows beyond one generated .per.
+### 8. Domain-aware teaching diagnostics
 
-- [ ] Generate or stage a complete .ai + .per package when the language needs load graphs.
-- [ ] Invoke the backend package validator.
-- [ ] Consume normalized package diagnostics.
-- [ ] Reuse native load/include/reference analysis instead of implementing another graph walker.
-- [ ] Keep LearnerAI ownership/dependency analysis separate from native file/package reachability.
+Diagnostics should use the player vocabulary:
 
-### 5. Expand LearnerAI semantic analysis
-
-This is where the project should spend its original engineering effort.
-
-- [ ] Explicit demand ownership.
-- [ ] Capability ownership and admissibility.
-- [ ] Feasibility/action separation across modules.
-- [ ] Pending-state lifecycle beyond the first examples.
-- [ ] Completion witnesses that are impossible to fake from pending/total state.
-- [ ] Release and cancellation/obsolescence.
-- [ ] Dependency chains between demands.
-- [ ] Persistent intent under temporary resource failure.
-- [ ] Ownership-conflict diagnostics.
-- [ ] Dead-end/unfed/blocked/functionally-disconnected/open-loop analysis.
-- [ ] Source-order and first-writer/first-consumer analysis for generated artifacts.
-
-### 6. Build the teaching layer
-
-- [ ] Explain why an engine action is not a completion witness.
-- [ ] Explain why can-* authorizes but does not prove success.
-- [ ] Explain pending versus completed counts.
-- [ ] Explain resource arbitration without turning it into a generic manager.
-- [ ] Show demand lifecycle traces for Castle, Spearman, Wheelbarrow, and later economic/production behaviors.
-- [ ] Add exercises where the learner intentionally creates repeated actions, premature release, impossible witnesses, and ownership conflicts.
+DEMAND;
+CAPABILITY;
+FEASIBILITY;
+ACTION;
+PENDING;
+WITNESS;
+RELEASE;
+INVALIDATION;
+REASSESSMENT.
 
 ## Deliberately do not build
 
-- [ ] No replacement for aoe2-ai-parser's raw .per parser.
-- [ ] No replacement native command registry unless LearnerAI needs a teaching-specific subset.
-- [ ] No replacement package/load graph validator.
-- [ ] No replacement native formatter.
-- [ ] No general-purpose Python compiler.
-- [ ] No generic scheduler/manager abstraction.
-- [ ] No runtime simulation pretending to be AoE2DE.
+- replacement native parser;
+- generic Python-like language;
+- runtime simulator;
+- universal scheduler;
+- universal manager;
+- whole-game optimizer.
 
 ## Current verification
 
-The current compiler suite contains:
+The checked-in compiler verification record contains 48 tests.
 
-    48 tests
+No GitHub Actions result is being treated as proof for the latest adapter work. Local test results remain local evidence.
 
-The last clean-checkout run after native compiler integration passed all tests.
+## Exit condition for the compiler phase
 
-GitHub Actions currently has no recorded workflow run for the latest adapter commits, so local test results must not be described as CI verification.
+The compiler phase is not complete when every planned primitive is documented.
 
-## Research conclusion
-
-The useful discovery was not "someone already built our compiler."
-
-The useful discovery was narrower and more valuable:
-
-the community has already built much of the native language toolchain, so LearnerAI can stop spending effort on that layer and concentrate on the semantic teaching problem it actually exists to solve.
+It is complete when the compiler can safely express and diagnose the semantic chain required for the Dark -> Feudal -> Castle Byzantine vertical slice.

@@ -1,5 +1,7 @@
-# Minimal Basilisk compiler examples.
-
+# Minimal compiler lifecycle examples.
+# These examples teach demand/pending/witness/release semantics.
+# They are not the complete Byzantine player.
+ 
 demand castle {
     require (current-age >= castle)
     require (building-available castle)
