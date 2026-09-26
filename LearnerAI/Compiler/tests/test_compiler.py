@@ -411,6 +411,7 @@ class CompilerTests(unittest.TestCase):
         demand timed-spears {
             require (game-time >= 600)
             require (unit-type-count scout-unit >= 2)
+            require (can-train spearman)
             action (train spearman)
             witness (unit-type-count spearman >= 2)
             release (unit-type-count scout-unit == 0)
@@ -449,6 +450,7 @@ class CompilerTests(unittest.TestCase):
         source = """
         demand maa-archers {
             require (and (game-time >= 510) (current-age >= feudal-age))
+            require (can-train archer)
             action (train archer)
             witness (unit-type-count archer >= 3)
             release (unit-type-count archer < 3)
@@ -462,6 +464,7 @@ class CompilerTests(unittest.TestCase):
         demand maa-response {
             require (game-time >= 510)
             require (unit-type-count man-at-arms >= 2)
+            require (can-train archer)
             action (train archer)
             witness (unit-type-count archer >= 3)
             release (unit-type-count man-at-arms == 0)
