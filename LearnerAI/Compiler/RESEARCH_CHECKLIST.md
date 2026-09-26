@@ -334,3 +334,17 @@ Runtime limitation remains explicit: the native action command does not provide 
 - [x] Preserve emitter ordering: RELEASE rule precedes COMPLETION-WITNESS rule but is guarded by COMPLETE.
 - [x] Migrate legacy release diagnostics to the typed release validator and add focused release-state regression fixtures.
 - [x] Compiler CI run 319 verified the final release-state tree: native `finding_count=0`; full compiler suite `158 tests, OK`.
+
+
+### Explicit invalidation and cancellation implementation record (2026-09-26)
+
+- [x] Add optional `invalidate` source field without breaking existing lifecycle fixtures.
+- [x] Add typed `InvalidationContract` and `CancellationStateContract` to semantic IR.
+- [x] Add terminal `CANCELLED` lifecycle encoding without changing existing non-invalidating Goal values.
+- [x] Validate world-state invalidation evidence separately from completion/release evidence.
+- [x] Reject timing-only invalidation, action-coupled invalidation, missing world-state evidence, wrong demand identity, invalid native primitive, and source-order violations.
+- [x] Restrict cancellation to `ACTIVE`, `ISSUED`, and `PENDING`; reject cancellation of `COMPLETE`.
+- [x] Emit invalidation before release/witness/pending/action lifecycle rules so a true invalidation preempts same-pass execution.
+- [x] Add deterministic multi-diagnostic regression coverage.
+- [x] CI run 345: native `Basilisk.per` `finding_count=0`; generated invalidation fixture `finding_count=0`; compiler suite `165 tests, OK`.
+- [x] Temporary verification PRs were closed unmerged; implementation remains on `main`.
