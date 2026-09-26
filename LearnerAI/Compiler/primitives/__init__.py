@@ -48,4 +48,5 @@ from .registry import (
     Primitive,
     PrimitiveRegistry,
     default_de_registry,
+    default_native_contract_catalog,
 )
