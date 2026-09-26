@@ -114,6 +114,7 @@ def validate_release_states(
                     ReleaseStatus.BLOCKED,
                     f"demand '{demand.name}' has no release-state contract",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
             continue
@@ -126,6 +127,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' has invalid evidence kind "
                     f"'{contract.evidence_kind.value}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -137,6 +139,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' establishes "
                     f"'{contract.establishes.local_name}', not '{demand.name}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -148,6 +151,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' must transition from COMPLETE, "
                     f"not {contract.from_state.value}",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -159,6 +163,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' must transition to RELEASED, "
                     f"not {contract.to_state.value}",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -171,6 +176,7 @@ def validate_release_states(
                     ReleaseStatus.OPEN_LOOP,
                     f"release for demand '{demand.name}' contains timing evidence",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -182,6 +188,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' reuses action primitive "
                     f"'{demand.action.expression.head}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -192,6 +199,7 @@ def validate_release_states(
                     ReleaseStatus.OPEN_LOOP,
                     f"release for demand '{demand.name}' contains no world-state observation",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -205,6 +213,7 @@ def validate_release_states(
                         f"release for demand '{demand.name}' references unknown "
                         f"primitive '{contract.primitive}'",
                         demand.identity,
+                    location=contract.location or demand.location,
                     )
                 )
 
@@ -216,6 +225,7 @@ def validate_release_states(
                     f"release for demand '{demand.name}' must be emitted before its "
                     "completion witness rule",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
