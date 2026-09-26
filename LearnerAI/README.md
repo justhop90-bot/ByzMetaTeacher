@@ -51,6 +51,8 @@ MAP_PRIORITY_RULES.md: concrete priority contracts for Arabia, Arena, Black Fore
 
 ARABIA_THRESHOLDS.md: executable numeric cutoffs for Feudal military, walls, towers, docks, and Castle investment on open Arabia.
 
+ARABIA_OVERRIDE_THRESHOLDS.md: exception thresholds for scouts, archers, Men-at-Arms, tower rushes, and opponent fast-Castle pressure.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
