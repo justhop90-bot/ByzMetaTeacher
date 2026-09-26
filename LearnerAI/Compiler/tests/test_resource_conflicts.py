@@ -23,6 +23,9 @@ from Compiler.ir.capability import (
 )
 from Compiler.ir.model import SemanticId
 from Compiler.compiler import compile_source
+from Compiler.parser import parse
+from Compiler.semantic import analyze
+from Compiler.semantic.capability_bridge import project_capability_graph
 from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.errors import CompileError
 from Compiler.primitives import default_de_registry
@@ -96,6 +99,31 @@ class ResourceConflictTests(unittest.TestCase):
         return validate_resource_conflicts(
             graph,
             default_de_registry(),
+        )
+
+    def test_demand_bridge_materializes_typed_resource_claim(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        registry = default_de_registry()
+        ir = analyze(parse(source), registry, source_unit="test")
+        graph = project_capability_graph(ir, registry)
+        claim = graph.providers[0].resource_claim
+
+        self.assertIsNotNone(claim)
+        self.assertEqual(
+            claim.claimant,
+            SemanticId("test", "castle-provider"),
+        )
+        self.assertEqual(claim.conflict_class, "BUILD_PASS_SINGLETON")
+        self.assertEqual(
+            claim.arbitration_owner,
+            SemanticId("test", "__execution_memory__"),
         )
 
     def test_compile_pipeline_uses_resource_validation_gate(self):
