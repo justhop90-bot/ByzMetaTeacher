@@ -43,6 +43,11 @@ class RoundingMode(str, Enum):
     ENGINE_NEAREST = "ENGINE_NEAREST"
 
 
+class GameDataScope(str, Enum):
+    UNIVERSAL = "UNIVERSAL"
+    CIVILIZATION = "CIVILIZATION"
+
+
 class CoverageStatus(str, Enum):
     COMPLETE = "COMPLETE"
     FACTUAL_SUBSET = "FACTUAL_SUBSET"
@@ -368,6 +373,14 @@ class GameData:
     patch_changes: tuple[PatchChange, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
     coverage: FactualCoverage = FactualCoverage(CoverageStatus.UNKNOWN)
+    scope: GameDataScope = GameDataScope.UNIVERSAL
+    scope_civ_id: CivId | None = None
+
+    def __post_init__(self) -> None:
+        if self.scope is GameDataScope.CIVILIZATION and self.scope_civ_id is None:
+            raise ValueError("civilization-scoped GameData requires scope_civ_id")
+        if self.scope is GameDataScope.UNIVERSAL and self.scope_civ_id is not None:
+            raise ValueError("universal GameData cannot carry scope_civ_id")
 
     def building(self, building_id: int) -> BuildingDef:
         return _lookup(self.buildings, BuildingId(building_id), "building")
