@@ -8,15 +8,20 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _HEADER_RE = re.compile(r"^demand\s+([A-Za-z][A-Za-z0-9_-]*)\s*\{$")
 _FIELDS = ("action", "witness", "release")
 
-def _strip_comment(line: str) -> str:
-    return line.split("#", 1)[0].strip()
+def _clean_line(line: str) -> tuple[str, int]:
+    without_comment = line.split("#", 1)[0]
+    leading = len(without_comment) - len(without_comment.lstrip())
+    return without_comment.strip(), leading + 1
+
+def _location(line_no: int, column: int) -> SourceLocation:
+    return SourceLocation(line_no, column)
 
 def parse(source: str) -> list[DemandNode]:
     raw = source.splitlines()
     out: list[DemandNode] = []
     i = 0
     while i < len(raw):
-        text = _strip_comment(raw[i])
+        text, column = _clean_line(raw[i])
         line_no = i + 1
         if not text:
             i += 1
@@ -29,9 +34,11 @@ def parse(source: str) -> list[DemandNode]:
             raise CompileError(f"line {line_no}: invalid demand name '{name}'")
         i += 1
         reqs: list[str] = []
+        req_locations: list[SourceLocation] = []
         fields: dict[str, str] = {}
+        field_locations: dict[str, SourceLocation] = {}
         while i < len(raw):
-            text = _strip_comment(raw[i])
+            text, statement_column = _clean_line(raw[i])
             line_no = i + 1
             if not text:
                 i += 1
@@ -42,12 +49,16 @@ def parse(source: str) -> list[DemandNode]:
             if not match:
                 raise CompileError(f"line {line_no}: invalid demand statement")
             key, value = match.groups()
+            value_column = statement_column + match.start(2)
+            value_location = _location(line_no, value_column)
             if key == "require":
                 reqs.append(value)
+                req_locations.append(value_location)
             elif key in fields:
                 raise CompileError(f"line {line_no}: duplicate {key} in demand '{name}'")
             else:
                 fields[key] = value
+                field_locations[key] = value_location
             i += 1
         if i >= len(raw):
             raise CompileError(f"line {line_no}: unterminated demand '{name}'")
@@ -65,8 +76,13 @@ def parse(source: str) -> list[DemandNode]:
                 fields["action"],
                 fields["witness"],
                 fields["release"],
-                SourceLocation(line_no),
+                _location(line_no, column),
                 fields.get("invalidate"),
+                tuple(req_locations),
+                field_locations.get("action"),
+                field_locations.get("witness"),
+                field_locations.get("release"),
+                field_locations.get("invalidate"),
             )
         )
         i += 1
