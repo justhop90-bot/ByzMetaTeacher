@@ -422,19 +422,17 @@ class NativeSemanticBinder:
         assert assessment.binding is not None
         return assessment.binding
 
-    def bindings(self) -> tuple[NativeSemanticBinding, ...]:
-        names = sorted(
-            set(self.native_registry.names())
-            | set(self._adapter_names())
-        )
+    def assess_all(self) -> tuple[NativeSupportAssessment, ...]:
+        """Assess the complete native inventory without collapsing unsupported commands."""
         return tuple(
-            self.bind(name)
-            for name in names
+            self.assess(name)
+            for name in sorted(self.native_registry.names())
         )
 
-    def _adapter_names(self) -> tuple[str, ...]:
-        names = []
-        for command in self.native_registry.names():
-            if self.adapter_lookup(command) is not None:
-                names.append(command)
-        return tuple(names)
+    def executable_bindings(self) -> tuple[NativeSemanticBinding, ...]:
+        """Return only commands that clear the executable-safe semantic gate."""
+        return tuple(
+            assessment.binding
+            for assessment in self.assess_all()
+            if assessment.binding is not None
+        )
