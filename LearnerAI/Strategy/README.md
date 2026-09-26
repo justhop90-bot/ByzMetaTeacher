@@ -23,6 +23,10 @@ It does not say:
 
 Run these twelve actions in this order regardless of the board.
 
+## Map-conditioned priority contract
+
+Strategy reads `LearnerAI/MAP_PRIORITY_RULES.md` after Information produces map/context observations. The map profile changes admissibility and priority, not the identity of the player. Transport-critical status can override the normal map profile when disconnected access becomes necessary.
+
 ## First vertical-slice responsibility
 
 Choose and maintain a Dark -> Feudal -> Castle trajectory.
