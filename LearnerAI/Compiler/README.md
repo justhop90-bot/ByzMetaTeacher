@@ -55,13 +55,27 @@ The game owns actual execution.
 
 ## Current lifecycle guarantee
 
-An action may move a demand into pending state.
+An action moves a demand from active to pending.
 
-The pending witness may move it to complete.
+The pending witness moves it to complete.
 
-Release may occur only from complete state.
+Release moves it from complete to released.
 
 The action itself is never the witness.
+
+The emitter deliberately writes these three lifecycle rules in reverse transition order:
+
+    RELEASE
+    COMPLETE-WITNESS
+    ACTIVE-ACTION
+
+AoE2 goal values update immediately, so this source order prevents an already-true witness and release predicate from collapsing the entire lifecycle in one script pass. The intended execution is:
+
+    pass N   : ACTIVE -> PENDING
+    pass N+1 : PENDING -> COMPLETE
+    pass N+2 : COMPLETE -> RELEASED
+
+The compiler has regression coverage for the rule ordering and the three-pass state sequence.
 
 Examples already implemented:
 
@@ -132,7 +146,7 @@ Run:
 
     python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
 
-The latest checked-in verification record contains the compiler regression suite plus timing-semantics tests. This is compiler evidence only. It is not gameplay evidence.
+The latest checked-in verification record contains the compiler regression suite, timing-semantics tests, and cross-pass lifecycle tests. This is compiler evidence only. It is not gameplay evidence.
 
 ## Product boundary
 
