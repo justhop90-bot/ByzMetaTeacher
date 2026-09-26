@@ -33,7 +33,8 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(data.unit(358).base_cost, ResourceCost(food=35, wood=25))
         self.assertEqual(data.tech(61).name, "Logistica")
         self.assertEqual(data.coverage.status, CoverageStatus.FACTUAL_SUBSET)
-        self.assertEqual(data.base_data_scope if hasattr(data, "base_data_scope") else "CIVILIZATION", "CIVILIZATION")
+        self.assertEqual(data.scope, GameDataScope.CIVILIZATION)
+        self.assertEqual(int(data.scope_civ_id), 7)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
         profile = ByzantineProfile.for_update_185872()
