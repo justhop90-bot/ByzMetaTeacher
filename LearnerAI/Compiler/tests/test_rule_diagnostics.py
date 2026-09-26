@@ -101,7 +101,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
             diagnostic.eligibility.value,
             "RECURRENTLY_ELIGIBLE",
         )
-        self.assertEqual(diagnostic.severity, RuleDiagnosticSeverity.INFO)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.INFO)
 
     def test_one_shot_rule_gets_first_pass_diagnostic(self):
         report = analyze_effective_rules(
