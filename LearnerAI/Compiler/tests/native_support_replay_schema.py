@@ -4,7 +4,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 FIXTURE_NAMES = frozenset(
     {"native-known", "native-typed", "semantically-adapted", "unsupported"}
 )
@@ -32,7 +32,7 @@ SUPPORT_CODES = frozenset(
     }
 )
 
-TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "fixtures"})
+TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "persistent_artifact_sha256", "fixtures"})
 FIXTURE_FIELDS = frozenset(
     {
         "diagnostics",
@@ -224,6 +224,16 @@ def validate_snapshot(
     platform = _string(root["platform"], f"{source}.platform")
     if platform not in PLATFORMS:
         _fail(f"{source}.platform", f"unsupported platform {platform!r}")
+
+    persistent_artifact_sha256 = _string(
+        root["persistent_artifact_sha256"],
+        f"{source}.persistent_artifact_sha256",
+    )
+    if not _HEX64.fullmatch(persistent_artifact_sha256):
+        _fail(
+            f"{source}.persistent_artifact_sha256",
+            "must be a 64-character lowercase SHA-256 digest",
+        )
 
     fixtures = _mapping(root["fixtures"], f"{source}.fixtures")
     actual_fixtures = set(fixtures)
