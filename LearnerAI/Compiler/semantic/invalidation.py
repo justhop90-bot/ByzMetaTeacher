@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..ir import (
     CancellationStateContract,
@@ -51,6 +52,7 @@ class InvalidationDiagnostic:
     status: InvalidationStatus
     message: str
     demand: object | None = None
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -80,13 +82,14 @@ def _diag_key(item: InvalidationDiagnostic) -> tuple[object, ...]:
     )
 
 
-def _diag(code, status, message, demand):
+def _diag(code, status, message, demand, *, location=None):
     return InvalidationDiagnostic(
         code=code,
         severity=DiagnosticSeverity.ERROR,
         status=status,
         message=message,
         demand=demand,
+        location=location,
     )
 
 
