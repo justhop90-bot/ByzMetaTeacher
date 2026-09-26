@@ -156,10 +156,16 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
             requirements.append(SemanticRequirement(expr, _stored_role(expr, registry)))
         action = parse_expression(demand.action)
         _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
+        if not demand.witness.strip():
+            raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         release = parse_expression(demand.release)
         _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
+        if release.head == action.head:
+            raise CompileError(
+                f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
+            )
         goal = base_goal + (offset * 3)
         pending_goal = goal + 1
         completed_goal = goal + 2
