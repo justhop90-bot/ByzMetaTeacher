@@ -11,6 +11,7 @@ from LearnerAI.Compiler.ir.strategy import (
     StrategicCapabilityObservation,
     StrategicEnemyCompositionObservation,
     StrategicEvidence,
+    StrategicObservationSpec,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
     StrategyPosture,
@@ -24,6 +25,7 @@ from LearnerAI.Compiler.ir.strategy_runtime import (
     StrategicDemandRuntimeState,
     StrategicObservationType,
     StrategyRuntimeState,
+    bind_observation_reference,
     bind_strategic_capability_observation,
     bind_strategic_evidence,
     evaluate_strategy_runtime,
@@ -429,6 +431,75 @@ class StrategyRuntimeTests(unittest.TestCase):
         profile = replace(self.profile, capability_observations=(meta,))
         with self.assertRaisesRegex(ValueError, "community meta cannot define factual capability"):
             evaluate_strategy_runtime(profile, self.effective, self.snapshot())
+
+    def test_observation_reference_binding_preserves_native_expression_and_provenance(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            None,
+            "enemy-knights-reference",
+            observation_ref="enemy-knight-pressure",
+        )
+        binding = bind_observation_reference(
+            evidence,
+            self.profile,
+            self.effective,
+        )
+        observation = self.profile.observation("enemy-knight-pressure")
+        self.assertIsNotNone(binding.observation_reference)
+        self.assertEqual(
+            binding.observation_reference.reference,
+            "enemy-knight-pressure",
+        )
+        self.assertEqual(
+            binding.observation_reference.observation.expression,
+            observation.expression,
+        )
+        self.assertEqual(
+            binding.observation_reference.observation.provenance,
+            observation.provenance,
+        )
+        self.assertEqual(
+            binding.observations[0].expression,
+            observation.expression,
+        )
+
+    def test_unknown_observation_reference_is_rejected(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            None,
+            "unknown-reference",
+            observation_ref="does-not-exist",
+        )
+        with self.assertRaisesRegex(ValueError, "unknown strategic observation reference"):
+            bind_observation_reference(
+                evidence,
+                self.profile,
+                self.effective,
+            )
+
+    def test_community_evidence_cannot_define_observation_object(self):
+        base = self.profile.observation("enemy-knight-pressure")
+        bad = replace(
+            base,
+            source=StrategicEvidenceSource.COMMUNITY_META,
+            provenance=self.profile.demand("castle-commitment").reason[0].provenance,
+        )
+        profile = replace(self.profile, observations=(bad,))
+        with self.assertRaisesRegex(ValueError, "community meta cannot define native observation"):
+            evaluate_strategy_runtime(
+                profile,
+                self.effective,
+                self.snapshot(),
+            )
+
+    def test_posture_and_demand_evidence_use_observation_references(self):
+        castle = self.profile.demand("castle-commitment")
+        transition = next(
+            item for item in self.profile.transitions
+            if item.label == "enemy-mounted-pressure"
+        )
+        self.assertTrue(all(item.observation_ref for item in castle.reason))
+        self.assertTrue(all(item.observation_ref for item in transition.evidence))
 
     def test_byzantine_enemy_composition_observation_binds_to_enemy_unit_family(self):
         observation = self.profile.enemy_composition_observations[0]
