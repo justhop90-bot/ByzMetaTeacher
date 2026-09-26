@@ -277,7 +277,7 @@ def validate_snapshot(
                 "support_diagnostics[*].state",
             )
 
-            if states[-1] != "unsupported":
+        if states[-1] != "unsupported":
             _fail(
                 path,
                 "support_state_sequence must terminate in unsupported",
