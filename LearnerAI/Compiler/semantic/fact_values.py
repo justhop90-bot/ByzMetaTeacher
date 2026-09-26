@@ -143,9 +143,9 @@ class FactDomain:
     """
     Invariant value space exposed by a semantic fact adapter.
 
-    The domain describes what values can legally inhabit a semantic field. It
-    does not contain a current runtime value and therefore cannot establish
-    StaticTruth by itself.
+    The domain describes what values can legally inhabit a semantic field and
+    may carry an explicit invariant proof. It never contains a current runtime
+    value; the evaluator is responsible for exposing that proof as StaticTruth.
     """
 
     identity: str
