@@ -418,7 +418,7 @@ class NativeHygieneTests(unittest.TestCase):
                 provenance=(provenance(),),
             )
 
-    def test_documented_goal_spans_use_the_full_goal_namespace(self):
+    def test_documented_goal_spans_use_shape_specific_namespace(self):
         NativeStorageUse(
             "high-goal-span",
             NativeStorageClass.GOAL_SPAN,
