@@ -16,6 +16,8 @@ from enum import Enum
 import re
 from typing import TypeAlias
 
+from ..primitives.native_hygiene import AIRefProvenance
+
 
 class CanonicalKind(str, Enum):
     INTEGER = "INTEGER"
@@ -109,6 +111,58 @@ CanonicalValue: TypeAlias = (
     | CanonicalIdentifier
     | CanonicalSymbol
 )
+
+
+
+@dataclass(frozen=True)
+class NormalizedFact:
+    """
+    Canonical semantic representation of one native fact occurrence.
+
+    identity_key deliberately excludes provenance so repeated occurrences
+    of the same semantic atom compare as the same logical fact while each
+    occurrence retains its own evidence chain.
+    """
+
+    semantic_id: str
+    canonical_args: tuple[CanonicalValue, ...]
+    provenance: tuple[AIRefProvenance, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.semantic_id:
+            raise ValueError("normalized fact semantic_id is required")
+        if not isinstance(self.canonical_args, tuple):
+            raise TypeError("normalized fact canonical_args must be a tuple")
+        if not isinstance(self.provenance, tuple):
+            raise TypeError("normalized fact provenance must be a tuple")
+        for value in self.canonical_args:
+            if not isinstance(
+                value,
+                (
+                    CanonicalInteger,
+                    CanonicalEnum,
+                    CanonicalIdentifier,
+                    CanonicalSymbol,
+                ),
+            ):
+                raise TypeError(
+                    "normalized fact canonical_args contains a non-canonical value"
+                )
+        for evidence in self.provenance:
+            if not isinstance(evidence, AIRefProvenance):
+                raise TypeError(
+                    "normalized fact provenance contains invalid evidence"
+                )
+
+    @property
+    def identity_key(self) -> tuple[str, tuple[CanonicalValue, ...]]:
+        """
+        Stable logical identity.
+
+        Semantic provenance is intentionally excluded. It describes the
+        evidence supporting this occurrence, not the identity of the atom.
+        """
+        return self.semantic_id, self.canonical_args
 
 
 @dataclass(frozen=True)
@@ -610,6 +664,7 @@ __all__ = [
     "CanonicalKind",
     "CanonicalSymbol",
     "CanonicalValue",
+    "NormalizedFact",
     "CanonicalizationContext",
     "EnumNormalization",
     "IdentifierForm",
