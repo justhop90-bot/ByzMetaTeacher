@@ -378,7 +378,7 @@ demand second {
             )
             self.assertTrue(all(item.rule_order > 0 for item in report.rule_diagnostics))
             self.assertTrue(
-                all(item.eligibility.value in {
+                all(item.eligibility in {
                     "RUNTIME_DEPENDENT",
                     "FIRST_PASS_ELIGIBLE",
                     "RECURRENTLY_ELIGIBLE",
