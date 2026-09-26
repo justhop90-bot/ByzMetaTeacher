@@ -314,7 +314,7 @@ def analyze_demand_ownership(
                             f"has multiple writers in phase '{phase.value}'",
                             status=OwnershipStatus.CONFLICTING,
                             state=state,
-                            access=min(phase_writers, key=_access_key),
+                            access=max(phase_writers, key=_access_key),
                         )
                     )
 
