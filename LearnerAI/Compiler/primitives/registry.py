@@ -10,6 +10,20 @@ from .engine_semantics import (
     EngineSemanticMappingRegistry,
     default_engine_semantic_mapping_registry,
 )
+from .native_hygiene import (
+    AIRefProvenance,
+    ConfidenceBasis,
+    ConfidenceLevel,
+    EvidenceKind,
+    NativeContractCatalog,
+    NativeStorageClass,
+    NativeStorageKind,
+    NativeStorageUse,
+    NativeWitness,
+    NativeWitnessKind,
+    PassExecutionConstraint,
+    PassFailureMode,
+)
 
 
 
@@ -50,6 +64,9 @@ class Primitive:
     completion_witness: bool = True
     conflict_class: str | None = None
     engine_semantics_id: str | None = None
+    native_witness_ids: tuple[str, ...] = ()
+    native_storage_use_ids: tuple[str, ...] = ()
+    native_pass_constraint_ids: tuple[str, ...] = ()
 
 class PrimitiveRegistry:
     def __init__(
@@ -57,10 +74,12 @@ class PrimitiveRegistry:
         primitives: tuple[Primitive, ...],
         native_registry: NativeCommandRegistry | None = None,
         semantic_mappings: EngineSemanticMappingRegistry | None = None,
+        native_contracts: NativeContractCatalog | None = None,
     ):
         self._items = {p.name: p for p in primitives}
         self._native = native_registry
         self._semantic_mappings = semantic_mappings or default_engine_semantic_mapping_registry()
+        self._native_contracts = native_contracts or default_native_contract_catalog()
 
 
 
