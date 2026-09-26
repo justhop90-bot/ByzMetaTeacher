@@ -21,6 +21,12 @@ from Compiler.backends.models import (
 from Compiler.compiler import compile_source_with_report, compile_to_file
 from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec, load_default_native_schema
 from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry, default_de_registry
+from Compiler.primitives.engine_semantics import (
+    EngineSemanticMapping,
+    EngineSemanticMappingRegistry,
+    EngineSemanticMappingStatus,
+    default_engine_semantic_mapping_registry,
+)
 from Compiler.diagnostics import ReportStatus
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.basilisk").read_text(encoding="utf-8")
@@ -190,8 +196,8 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             reservations=(
                 PackageStorageReservation(
                     kind=StorageKind.GOAL_SLOT,
-                    start=1000,
-                    end=1000,
+                    start=500,
+                    end=500,
                     provenance_id="external-goal",
                 ),
             ),
@@ -226,11 +232,11 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
     def test_native_support_state_fixtures_traverse_full_compiler_pipeline(self):
         fixture_root = Path(__file__).parent / "fixtures" / "native_support_states"
         cases = (
-            ("native-known", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
-            ("native-typed", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
-            ("semantically-adapted", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("native-known", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
+            ("native-typed", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
+            ("semantically-adapted", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
             ("executable-safe", NativeSupportState.EXECUTABLE_SAFE, None),
-            ("unsupported", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("unsupported", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-006"),
         )
 
         for name, expected_state, expected_code in cases:
@@ -274,6 +280,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                         NativeSupportState.NATIVE_KNOWN,
                         NativeSupportState.NATIVE_TYPED,
                         NativeSupportState.SEMANTICALLY_ADAPTED,
+                        NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                         NativeSupportState.EXECUTABLE_SAFE,
                     ],
                     "unsupported": [
@@ -281,25 +288,26 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     ],
                 }
                 expected_codes = {
-                    "native-known": ["NATIVE-SUPPORT-001", "NATIVE-SUPPORT-005"],
+                    "native-known": ["NATIVE-SUPPORT-001", "NATIVE-SUPPORT-006"],
                     "native-typed": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
-                        "NATIVE-SUPPORT-005",
+                        "NATIVE-SUPPORT-006",
                     ],
                     "semantically-adapted": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
                         "NATIVE-SUPPORT-003",
-                        "NATIVE-SUPPORT-005",
+                        "NATIVE-SUPPORT-006",
                     ],
                     "executable-safe": [
                         "NATIVE-SUPPORT-001",
                         "NATIVE-SUPPORT-002",
                         "NATIVE-SUPPORT-003",
                         "NATIVE-SUPPORT-004",
+                        "NATIVE-SUPPORT-005",
                     ],
-                    "unsupported": ["NATIVE-SUPPORT-005"],
+                    "unsupported": ["NATIVE-SUPPORT-006"],
                 }
 
                 assessment = registry.assess_support("fixture-command")
@@ -326,7 +334,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
                     self.assertEqual(
                         [diagnostic.code for diagnostic in report.diagnostics],
-                        ["NATIVE-SUPPORT-005"],
+                        ["NATIVE-SUPPORT-006"],
                     )
                     self.assertIsNone(backend.seen_artifact)
                     self.assertTrue(output.exists())
@@ -352,7 +360,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
                     self.assertEqual(
                         [item["code"] for item in baseline_payload],
-                        ["NATIVE-SUPPORT-005"],
+                        ["NATIVE-SUPPORT-006"],
                     )
                     self.assertEqual(
                         baseline_state_sequence,
@@ -554,7 +562,7 @@ print(json.dumps(payload, sort_keys=True))
                 "Fact",
                 (parameter,),
             )
-            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 1, 1)
+            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 1, 1, engine_semantics_id="fixture.execution.safe")
         else:
             return base_registry
 
@@ -564,7 +572,28 @@ print(json.dumps(payload, sort_keys=True))
             source_blob_sha=f"native-support-{name}",
             command_count=len(base_native_commands) + 1,
         )
-        return PrimitiveRegistry(primitives, native_registry)
+        semantic_registry = default_engine_semantic_mapping_registry()
+        if name == "executable-safe":
+            semantic_registry = EngineSemanticMappingRegistry(
+                semantic_registry.mappings
+                + (
+                    EngineSemanticMapping(
+                        identity="fixture.execution.safe",
+                        native_command="fixture-command",
+                        native_kind="Fact",
+                        status=EngineSemanticMappingStatus.CONTRACTED,
+                        evidence_class="ENGINE FACT",
+                        evidence_sources=("test://compiler-native-integration",),
+                        state_effects="test fixture has no persistent state mutation",
+                        lifetime="test fixture semantic mapping exists for this test only",
+                        ordering="test fixture fact is read during rule evaluation",
+                        admission="test fixture native fact is admissible",
+                        completion="test fixture fact is the executable promotion boundary",
+                        recovery="test fixture has no recovery semantics",
+                    ),
+                )
+            )
+        return PrimitiveRegistry(primitives, native_registry, semantic_registry)
 
 
 if __name__ == "__main__":

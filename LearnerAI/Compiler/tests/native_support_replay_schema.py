@@ -14,6 +14,7 @@ SUPPORT_STATES = frozenset(
         "native-known",
         "native-typed",
         "semantically-adapted",
+        "engine-semantics-mapped",
         "executable-safe",
         "unsupported",
     }
@@ -27,6 +28,7 @@ SUPPORT_CODES = frozenset(
         "NATIVE-SUPPORT-003",
         "NATIVE-SUPPORT-004",
         "NATIVE-SUPPORT-005",
+        "NATIVE-SUPPORT-006",
     }
 )
 
@@ -183,8 +185,9 @@ def _validate_support_diagnostic(value: Any, path: str) -> None:
         "native-known": "NATIVE-SUPPORT-001",
         "native-typed": "NATIVE-SUPPORT-002",
         "semantically-adapted": "NATIVE-SUPPORT-003",
-        "executable-safe": "NATIVE-SUPPORT-004",
-        "unsupported": "NATIVE-SUPPORT-005",
+        "engine-semantics-mapped": "NATIVE-SUPPORT-004",
+        "executable-safe": "NATIVE-SUPPORT-005",
+        "unsupported": "NATIVE-SUPPORT-006",
     }[state]
     if code != expected_code:
         _fail(

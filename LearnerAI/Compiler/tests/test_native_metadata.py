@@ -56,13 +56,14 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.NATIVE_KNOWN,
                 NativeSupportState.NATIVE_TYPED,
                 NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                 NativeSupportState.EXECUTABLE_SAFE,
             ],
         )
 
     def test_current_command_reaches_executable_safe(self):
         registry = PrimitiveRegistry(
-            (Primitive('current-age', 'FACT', 'OBSERVATION', 2, 2),),
+            (Primitive('current-age', 'FACT', 'OBSERVATION', 2, 2, engine_semantics_id='observation.age.current'),),
             NativeCommandRegistry(
                 (NativeCommandSpec(
                     'current-age',
@@ -83,13 +84,81 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.NATIVE_KNOWN,
                 NativeSupportState.NATIVE_TYPED,
                 NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                 NativeSupportState.EXECUTABLE_SAFE,
             ],
         )
         self.assertEqual(
             [diagnostic.code for diagnostic in assessment.diagnostics],
-            ['NATIVE-SUPPORT-001', 'NATIVE-SUPPORT-002', 'NATIVE-SUPPORT-003', 'NATIVE-SUPPORT-004'],
+            ['NATIVE-SUPPORT-001', 'NATIVE-SUPPORT-002', 'NATIVE-SUPPORT-003', 'NATIVE-SUPPORT-004', 'NATIVE-SUPPORT-005'],
         )
+
+
+    def test_unknown_engine_semantic_mapping_is_unsupported(self):
+        registry = PrimitiveRegistry(
+            (
+                Primitive(
+                    'current-age',
+                    'FACT',
+                    'OBSERVATION',
+                    2,
+                    2,
+                    engine_semantics_id='unknown.engine.contract',
+                ),
+            ),
+            NativeCommandRegistry(
+                (
+                    NativeCommandSpec(
+                        'current-age',
+                        'DE',
+                        'Fact',
+                        (
+                            NativeParameterSpec('Age', 'Age', 'in', 'a valid age', 'check age'),
+                            NativeParameterSpec('Compare', 'compareOp', 'in', 'a comparison', 'compare'),
+                        ),
+                    ),
+                ),
+                source_blob_sha='test',
+                command_count=1,
+            ),
+        )
+        assessment = registry.assess_support('current-age')
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
+        self.assertIn('semantic mapping', assessment.message)
+
+    def test_evidence_only_engine_semantic_mapping_is_unsupported(self):
+        registry = PrimitiveRegistry(
+            (
+                Primitive(
+                    'current-age',
+                    'FACT',
+                    'OBSERVATION',
+                    2,
+                    2,
+                    engine_semantics_id='duc.search-state-retained',
+                ),
+            ),
+            NativeCommandRegistry(
+                (
+                    NativeCommandSpec(
+                        'current-age',
+                        'DE',
+                        'Fact',
+                        (
+                            NativeParameterSpec('Age', 'Age', 'in', 'a valid age', 'check age'),
+                            NativeParameterSpec('Compare', 'compareOp', 'in', 'a comparison', 'compare'),
+                        ),
+                    ),
+                ),
+                source_blob_sha='test',
+                command_count=1,
+            ),
+        )
+        assessment = registry.assess_support('current-age')
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
+        self.assertIn('evidence-only', assessment.message)
 
     def test_known_typed_command_without_adapter_is_unsupported(self):
         registry = PrimitiveRegistry(
@@ -112,7 +181,7 @@ class NativeSupportStateTests(unittest.TestCase):
             [NativeSupportState.NATIVE_KNOWN, NativeSupportState.NATIVE_TYPED, NativeSupportState.UNSUPPORTED],
         )
         self.assertEqual(assessment.message, 'native command is known and typed but has no semantic adapter')
-        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
 
     def test_malformed_native_metadata_stops_at_native_known(self):
         registry = PrimitiveRegistry(
@@ -138,7 +207,7 @@ class NativeSupportStateTests(unittest.TestCase):
 
     def test_adapted_but_contract_invalid_never_becomes_executable_safe(self):
         registry = PrimitiveRegistry(
-            (Primitive('synthetic', 'ACTION', 'ACTION', 2, 2),),
+            (Primitive('synthetic', 'ACTION', 'ACTION', 2, 2, engine_semantics_id='execution.synthetic'),),
             NativeCommandRegistry(
                 (NativeCommandSpec(
                     'synthetic',
@@ -161,14 +230,14 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.UNSUPPORTED,
             ],
         )
-        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
 
     def test_unknown_command_is_deterministically_unsupported(self):
         registry = PrimitiveRegistry((), NativeCommandRegistry((), source_blob_sha='test', command_count=0))
         assessment = registry.assess_support('not-a-command')
         self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
         self.assertEqual(assessment.diagnostics[0].state, NativeSupportState.UNSUPPORTED)
-        self.assertEqual(assessment.diagnostics[0].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[0].code, 'NATIVE-SUPPORT-006')
 
     def test_support_diagnostics_are_deterministic(self):
         registry = PrimitiveRegistry(

@@ -14,7 +14,7 @@ def valid_snapshot():
     diagnostic = {
         "id": "a" * 64,
         "source": "LearnerAI",
-        "code": "NATIVE-SUPPORT-005",
+        "code": "NATIVE-SUPPORT-006",
         "severity": "error",
         "confidence": None,
         "message": "unsupported native command",
@@ -29,7 +29,7 @@ def valid_snapshot():
     support = {
         "command": "fixture-command",
         "state": "unsupported",
-        "code": "NATIVE-SUPPORT-005",
+        "code": "NATIVE-SUPPORT-006",
         "severity": "error",
         "message": "native command is not present in the checked-in native schema",
     }

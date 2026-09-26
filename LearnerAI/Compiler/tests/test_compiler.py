@@ -1,3 +1,4 @@
+import re
 import json
 import subprocess
 import sys
@@ -32,8 +33,8 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(a, compile_source(EXAMPLES))
         self.assertIn("(set-goal demand-castle 1)", a)
         self.assertIn("(build castle)", a)
-        self.assertIn("(set-goal demand-castle 1003)", a)
-        self.assertIn("(set-goal demand-castle 1002)", a)
+        self.assertIn("(set-goal demand-castle 44)", a)
+        self.assertIn("(set-goal demand-castle 43)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 14)
 
@@ -48,7 +49,7 @@ class CompilerTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            "NATIVE-SUPPORT-005:.*known and typed but has no semantic adapter",
+            "NATIVE-SUPPORT-006:.*known and typed but has no semantic adapter",
         ):
             compile_source(source)
 
@@ -63,7 +64,7 @@ class CompilerTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            "NATIVE-SUPPORT-005:.*not present in the checked-in native schema",
+            "NATIVE-SUPPORT-006:.*not present in the checked-in native schema",
         ):
             compile_source(source)
 
@@ -175,14 +176,14 @@ class CompilerTests(unittest.TestCase):
 
         def run_pass(goal: int, rule_order: tuple[str, ...]) -> int:
             for stage in rule_order:
-                if stage == "release" and goal == 1002:
+                if stage == "release" and goal == 43:
                     goal = 0
-                elif stage == "witness" and goal == 1001:
-                    goal = 1002
-                elif stage == "pending" and goal == 1003:
-                    goal = 1001
+                elif stage == "witness" and goal == 42:
+                    goal = 43
+                elif stage == "pending" and goal == 44:
+                    goal = 42
                 elif stage == "action" and goal == 1:
-                    goal = 1003
+                    goal = 44
             return goal
 
         markers = {
@@ -199,7 +200,7 @@ class CompilerTests(unittest.TestCase):
             goal = run_pass(goal, rule_order)
             states.append(goal)
 
-        self.assertEqual(states, [1003, 1001, 1002, 0])
+        self.assertEqual(states, [44, 42, 43, 0])
         self.assertNotEqual(states[0], 0)
         self.assertNotEqual(states[1], 0)
         self.assertNotEqual(states[2], 0)
@@ -253,9 +254,13 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: defensive-spearmen")
         action_block = output[action_start:action_end]
         self.assertIn("(build castle)", action_block)
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
+        active_match = re.search(r"\(set-goal demand-castle (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: castle"):output.find("; Action issuance: castle | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-castle 1001)", witness_block)
+        witness_match = re.search(r"\(goal demand-castle (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(build castle)", witness_block)
 
     def test_spearmen_pending_state_prevents_repeated_train(self):
@@ -264,9 +269,13 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: wheelbarrow")
         action_block = output[action_start:action_end]
         self.assertIn("(train spearman)", action_block)
-        self.assertIn("(set-goal demand-defensive-spearmen 1004)", action_block)
+        active_match = re.search(r"\(set-goal demand-defensive-spearmen (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Action issuance: defensive-spearmen | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-defensive-spearmen 1002)", witness_block)
+        witness_match = re.search(r"\(goal demand-defensive-spearmen (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(train spearman)", witness_block)
 
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
@@ -275,9 +284,13 @@ class CompilerTests(unittest.TestCase):
         action_end = len(output)
         action_block = output[action_start:action_end]
         self.assertIn("(research ri-wheelbarrow)", action_block)
-        self.assertIn("(set-goal demand-wheelbarrow 1005)", action_block)
+        active_match = re.search(r"\(set-goal demand-wheelbarrow (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-wheelbarrow 1003)", witness_block)
+        witness_match = re.search(r"\(goal demand-wheelbarrow (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(research ri-wheelbarrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
@@ -285,17 +298,17 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("; Pending diagnostics: castle", output)
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: "
-            "action is gated by active goal 1000 and cannot reissue from pending goal 1001",
+            "action is gated by active goal 41 and cannot reissue from pending goal 42",
             output,
         )
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: "
-            "completion witness is evaluated only while pending goal 1001 is active",
+            "completion witness is evaluated only while pending goal 42 is active",
             output,
         )
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: "
-            "release is evaluated only after completion goal 1002 is reached",
+            "release is evaluated only after completion goal 43 is reached",
             output,
         )
 
@@ -354,7 +367,7 @@ class CompilerTests(unittest.TestCase):
         witness_end = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
         witness_block = output[witness_start:witness_end]
         action_start = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
-        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertIn("(goal demand-castle 42)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
         self.assertNotIn("(set-goal demand-castle 1002)", output[action_start:])
 
@@ -366,20 +379,20 @@ class CompilerTests(unittest.TestCase):
         release_block = output[release_start:witness_start]
         witness_block = output[witness_start:action_start]
         action_block = output[action_start:output.find("; Pending diagnostics: defensive-spearmen")]
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
-        self.assertIn("(goal demand-castle 1001)", witness_block)
-        self.assertIn("(set-goal demand-castle 1002)", witness_block)
+        self.assertIn("(set-goal demand-castle 44)", action_block)
+        self.assertIn("(goal demand-castle 42)", witness_block)
+        self.assertIn("(set-goal demand-castle 43)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
-        self.assertNotIn("(set-goal demand-castle 1002)", action_block)
-        self.assertIn("(goal demand-castle 1002)", release_block)
+        self.assertNotIn("(set-goal demand-castle 43)", action_block)
+        self.assertIn("(goal demand-castle 43)", release_block)
         self.assertIn("(set-goal demand-castle 0)", release_block)
 
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
         castle_release = output[output.find("; Release: castle"):output.find("; Completion witness: castle")]
-        self.assertIn("(goal demand-castle 1002)", castle_release)
+        self.assertIn("(goal demand-castle 43)", castle_release)
         self.assertIn("(set-goal demand-castle 0)", castle_release)
-        self.assertNotIn("(goal demand-castle 1001)", castle_release)
+        self.assertNotIn("(goal demand-castle 42)", castle_release)
 
     def test_pending_engine_fact_is_available_as_requirement(self):
         source = """

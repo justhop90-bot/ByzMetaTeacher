@@ -57,10 +57,10 @@ class ReleaseStateTests(unittest.TestCase):
         witness = output.index("; Completion witness: castle | PENDING -> COMPLETE")
         block = output[release:witness]
 
-        self.assertIn("(goal demand-castle 1002)", block)
+        self.assertIn("(goal demand-castle 43)", block)
         self.assertIn("(set-goal demand-castle 0)", block)
-        self.assertNotIn("(goal demand-castle 1001)", block)
-        self.assertNotIn("(goal demand-castle 1003)", block)
+        self.assertNotIn("(goal demand-castle 42)", block)
+        self.assertNotIn("(goal demand-castle 44)", block)
 
     def test_timing_release_is_rejected_deterministically(self):
         with self.assertRaisesRegex(

@@ -129,7 +129,7 @@ def _semantic_compile_failure(
 def _compile_ir_parts(
     ir,
     registry,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
 ):
@@ -200,12 +200,17 @@ def _compile_ir_parts(
         _storage_requests(ir),
         context,
     )
-    return emit(ir, bindings), bindings, context
+    try:
+        for demand in ir:
+            registry.validate_demand_lowering(demand, bindings)
+    except (KeyError, ValueError) as exc:
+        raise CompileError(f"NATIVE-CONTRACT-LOWERING: {exc}") from exc
+    return emit(ir, bindings, registry=registry), bindings, context
 
 
 def _compile_source_parts(
     source: str,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -225,7 +230,7 @@ def _compile_source_parts(
 def compile_strategy_profile(
     profile,
     effective,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
 ) -> str:
@@ -246,7 +251,7 @@ def compile_strategy_runtime_profile(
     profile,
     effective,
     runtime_profile,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
 ) -> str:
@@ -301,7 +306,7 @@ def _binding_manifest_text(bindings, context: BindingContext) -> str:
 
 def compile_source(
     source: str,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     *,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -321,7 +326,7 @@ def compile_source_with_report(
     source: str,
     output: Path,
     *,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     native_backend: Aoe2NativeBackend | None = None,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -392,7 +397,7 @@ def compile_to_file(
     source: str,
     output: Path,
     *,
-    base_goal: int = 1000,
+    base_goal: int = 41,
     native_backend: Aoe2NativeBackend | None = None,
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
@@ -480,7 +485,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Compile Basilisk demand DSL to .per")
     ap.add_argument("source", type=Path)
     ap.add_argument("output", type=Path)
-    ap.add_argument("--base-goal", type=int, default=1000)
+    ap.add_argument("--base-goal", type=int, default=41)
     ap.add_argument(
         "--binding-manifest",
         type=Path,

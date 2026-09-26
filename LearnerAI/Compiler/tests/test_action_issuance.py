@@ -60,8 +60,23 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertLess(witness, pending)
         self.assertLess(pending, action)
         action_block = output[action:]
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
-        self.assertIn("(set-goal demand-castle 1001)", output[pending:action])
+        self.assertIn("(set-goal demand-castle 44)", action_block)
+        self.assertIn("(set-goal demand-castle 42)", output[pending:action])
+
+    def test_emitter_records_native_pass_constraint_for_build_action(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn(
+            "; NATIVE-PASS-CONSTRAINT build maximum-successes=1",
+            output,
+        )
 
     def test_issuance_failure_does_not_enter_pending(self):
         source = """

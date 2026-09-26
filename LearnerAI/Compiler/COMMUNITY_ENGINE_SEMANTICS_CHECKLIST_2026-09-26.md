@@ -160,6 +160,14 @@ Evidence classes are intentionally separate:
 - [ ] Classify monotonic capabilities (age/research) separately from recoverable providers (buildings/infrastructure).
 - [ ] Add capability-loss fixtures for provider destruction and later recovery.
 
+## Gate 0A — semantic support promotion
+
+- [x] Distinguish native-known, native-typed, semantically-adapted, engine-semantics-mapped, and executable-safe states.
+- [x] Require every executable-safe primitive adapter to carry an explicit engine semantic mapping identity.
+- [x] Reject semantically-adapted primitives that lack an engine semantic mapping.
+- [x] Keep evidence-only DUC/attack practices outside the executable native primitive inventory.
+- [ ] Connect semantic mapping identities to the broader EnginePractice registry without collapsing evidence-only practices into executable support.
+
 ## Gate 8 — native community craft registry
 
 - [x] Create a machine-readable evidence-backed community engine semantics registry.
@@ -247,7 +255,7 @@ Implemented in this pass:
 
 ## What is deliberately not claimed
 
-The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them.
+The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them. Native primitive support now also has an explicit engine-semantics-mapped gate, so a syntactically typed adapter cannot silently jump directly to executable-safe.
 
 In particular, DUC, attack machinery, complete Strategic Number semantics, recurrent rule eligibility, disable-self, later-overwrite/preemption analysis, and the load graph remain evidence-backed frontiers until their native syntax/IR support is implemented.
 

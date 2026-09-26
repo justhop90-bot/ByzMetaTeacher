@@ -5,19 +5,20 @@
 ;============================================================
 
 ; Demand goal constants
-(defconst demand-castle 1000)
-(defconst issued-castle 1003)
-(defconst pending-castle 1001)
-(defconst complete-castle 1002)
-(defconst demand-defensive-spearmen 1001)
-(defconst issued-defensive-spearmen 1004)
-(defconst pending-defensive-spearmen 1002)
-(defconst complete-defensive-spearmen 1003)
-(defconst demand-wheelbarrow 1002)
-(defconst issued-wheelbarrow 1005)
-(defconst pending-wheelbarrow 1003)
-(defconst complete-wheelbarrow 1004)
-(defconst action-claim-build-pass-singleton 1003)
+; NATIVE-PASS-CONSTRAINT build maximum-successes=1
+(defconst demand-castle 41)
+(defconst issued-castle 44)
+(defconst pending-castle 42)
+(defconst complete-castle 43)
+(defconst demand-defensive-spearmen 42)
+(defconst issued-defensive-spearmen 45)
+(defconst pending-defensive-spearmen 43)
+(defconst complete-defensive-spearmen 44)
+(defconst demand-wheelbarrow 43)
+(defconst issued-wheelbarrow 46)
+(defconst pending-wheelbarrow 44)
+(defconst complete-wheelbarrow 45)
+(defconst action-claim-build-pass-singleton 44)
 
 ; Per-pass transient action arbitration
 (defrule
@@ -37,16 +38,16 @@
 )
 
 ; Pending diagnostics: castle
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1000 and cannot reissue from pending goal 1001
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1001 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1002 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 41 and cannot reissue from pending goal 42
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 42 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 43 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
 ; Issuance failure: castle | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-castle in ACTIVE; it is not PENDING.
 ; Release: castle | COMPLETE -> RELEASED
 (defrule
-    (goal demand-castle 1002)
+    (goal demand-castle 43)
     (building-type-count castle > 0)
 =>
     (set-goal demand-castle 0)
@@ -54,17 +55,17 @@
 
 ; Completion witness: castle | PENDING -> COMPLETE
 (defrule
-    (goal demand-castle 1001)
+    (goal demand-castle 42)
     (building-type-count castle > 0)
 =>
-    (set-goal demand-castle 1002)
+    (set-goal demand-castle 43)
 )
 
 ; Pending admission: castle | ISSUED -> PENDING
 (defrule
-    (goal demand-castle 1003)
+    (goal demand-castle 44)
 =>
-    (set-goal demand-castle 1001)
+    (set-goal demand-castle 42)
 )
 
 ; Action issuance: castle | ACTIVE -> ISSUED
@@ -80,20 +81,20 @@
 =>
     (build castle)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-castle 1003)
+    (set-goal demand-castle 44)
 )
 
 ; Pending diagnostics: defensive-spearmen
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1001 and cannot reissue from pending goal 1002
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1002 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1003 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 42 and cannot reissue from pending goal 43
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 43 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 44 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
 ; Issuance failure: defensive-spearmen | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-defensive-spearmen in ACTIVE; it is not PENDING.
 ; Release: defensive-spearmen | COMPLETE -> RELEASED
 (defrule
-    (goal demand-defensive-spearmen 1003)
+    (goal demand-defensive-spearmen 44)
     (unit-type-count spearman >= 2)
 =>
     (set-goal demand-defensive-spearmen 0)
@@ -101,17 +102,17 @@
 
 ; Completion witness: defensive-spearmen | PENDING -> COMPLETE
 (defrule
-    (goal demand-defensive-spearmen 1002)
+    (goal demand-defensive-spearmen 43)
     (unit-type-count spearman >= 2)
 =>
-    (set-goal demand-defensive-spearmen 1003)
+    (set-goal demand-defensive-spearmen 44)
 )
 
 ; Pending admission: defensive-spearmen | ISSUED -> PENDING
 (defrule
-    (goal demand-defensive-spearmen 1004)
+    (goal demand-defensive-spearmen 45)
 =>
-    (set-goal demand-defensive-spearmen 1002)
+    (set-goal demand-defensive-spearmen 43)
 )
 
 ; Action issuance: defensive-spearmen | ACTIVE -> ISSUED
@@ -124,20 +125,20 @@
     (can-train spearman)
 =>
     (train spearman)
-    (set-goal demand-defensive-spearmen 1004)
+    (set-goal demand-defensive-spearmen 45)
 )
 
 ; Pending diagnostics: wheelbarrow
-; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1002 and cannot reissue from pending goal 1003
-; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1003 is active
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1004 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 43 and cannot reissue from pending goal 44
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 44 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 45 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
 ; Issuance failure: wheelbarrow | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-wheelbarrow in ACTIVE; it is not PENDING.
 ; Release: wheelbarrow | COMPLETE -> RELEASED
 (defrule
-    (goal demand-wheelbarrow 1004)
+    (goal demand-wheelbarrow 45)
     (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 0)
@@ -145,17 +146,17 @@
 
 ; Completion witness: wheelbarrow | PENDING -> COMPLETE
 (defrule
-    (goal demand-wheelbarrow 1003)
+    (goal demand-wheelbarrow 44)
     (research-completed ri-wheelbarrow)
 =>
-    (set-goal demand-wheelbarrow 1004)
+    (set-goal demand-wheelbarrow 45)
 )
 
 ; Pending admission: wheelbarrow | ISSUED -> PENDING
 (defrule
-    (goal demand-wheelbarrow 1005)
+    (goal demand-wheelbarrow 46)
 =>
-    (set-goal demand-wheelbarrow 1003)
+    (set-goal demand-wheelbarrow 44)
 )
 
 ; Action issuance: wheelbarrow | ACTIVE -> ISSUED
@@ -168,5 +169,5 @@
     (can-research ri-wheelbarrow)
 =>
     (research ri-wheelbarrow)
-    (set-goal demand-wheelbarrow 1005)
+    (set-goal demand-wheelbarrow 46)
 )
