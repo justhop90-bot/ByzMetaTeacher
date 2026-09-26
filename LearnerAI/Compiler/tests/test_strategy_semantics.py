@@ -79,7 +79,7 @@ class StrategySemanticsTests(unittest.TestCase):
             capability_entity_id=999999,
         )
 
-        with self.assertRaisesRegex(ValueError, "unknown building"):
+        with self.assertRaisesRegex(ValueError, "factual coverage"):
             resolve_strategy_profile(bad, self.effective)
 
     def test_missing_opportunity_cost_owner_is_rejected(self):
