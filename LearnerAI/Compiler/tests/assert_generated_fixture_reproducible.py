@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 from pathlib import Path
 import sys
@@ -14,6 +15,10 @@ from Compiler.compiler import compile_source
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+
     source = SOURCE.read_text(encoding="utf-8")
     generated = compile_source(source).encode("utf-8")
     checked_in = GENERATED.read_bytes()
@@ -25,6 +30,10 @@ def main() -> int:
             "generated/Basilisk.per is stale or non-reproducible: "
             f"expected sha256={expected_sha}, actual sha256={actual_sha}"
         )
+
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_bytes(generated)
 
     print(
         "verified generated/Basilisk.per is reproducible "
