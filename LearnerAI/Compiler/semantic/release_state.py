@@ -114,7 +114,7 @@ def validate_release_states(
                     ReleaseStatus.BLOCKED,
                     f"demand '{demand.name}' has no release-state contract",
                     demand.identity,
-                    location=contract.location or demand.location,
+                    location=demand.location,
                 )
             )
             continue
