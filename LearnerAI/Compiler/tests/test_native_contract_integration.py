@@ -57,7 +57,7 @@ def fact_provenance():
             evidence_kind=EvidenceKind.DOCUMENTED_FACT,
             confidence=ConfidenceLevel.HIGH,
             confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
-            citation_id="test:native-contracts",
+            citation_id="airef:building-type-count",
         ),
     )
 
