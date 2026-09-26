@@ -526,6 +526,12 @@ class RuntimeBinder:
             if isinstance(binding, (GoalSlot, GoalSpan)):
                 interval = _binding_interval(binding)
                 if any(interval.overlaps(other) for other in existing_intervals):
+                    if isinstance(binding, GoalSlot) and any(
+                        isinstance(existing_binding, GoalSlot)
+                        and existing_binding.id.value == binding.id.value
+                        for _, existing_binding in existing_pairs
+                    ):
+                        raise ValueError("duplicate existing binding GoalId")
                     raise ValueError(
                         f"duplicate existing binding storage overlap at "
                         f"{interval.start}..{interval.end}"
