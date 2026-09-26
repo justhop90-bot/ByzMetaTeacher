@@ -21,7 +21,9 @@ from Compiler.runtime_binding import (
     RuntimeBinder,
     StorageRequestId,
     GoalStorageShape,
+    VolatileGoalPool,
 )
+from Compiler.ir import GoalSpanRequest, GoalSpanKind
 from Compiler.semantic import analyze
 
 
@@ -199,3 +201,91 @@ class RuntimeBindingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GoalSpanAndVolatileStorageTests(unittest.TestCase):
+    def _span_request(self):
+        return GoalSpanRequest(
+            StorageRequestId(SemanticId("native.basilisk", "search"), "search-state"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=4,
+            shape=GoalSpanKind.EXTENDED_4,
+            contract_id="up-get-search-state.start",
+            start_min=41,
+            start_max=508,
+        )
+
+    def test_goal_span_request_allocates_one_contiguous_interval(self):
+        request = self._span_request()
+        result = RuntimeBinder(base_goal=1000).bind((request,))
+        binding = result.binding_for(request.request_id)
+        self.assertIsInstance(binding, GoalSpan)
+        self.assertEqual(binding.start.value, 41)
+        self.assertEqual(binding.width, 4)
+        self.assertEqual(binding.shape, GoalStorageShape.EXTENDED_4)
+
+    def test_goal_span_skips_occupied_ids_and_intervals(self):
+        request = self._span_request()
+        result = RuntimeBinder(base_goal=1000).bind(
+            (request,),
+            BindingContext(
+                occupied_goal_ids=frozenset({41}),
+                occupied_goal_intervals=((42, 45),),
+            ),
+        )
+        binding = result.binding_for(request.request_id)
+        self.assertEqual(binding.start.value, 46)
+
+    def test_goal_span_rejects_invalid_width_for_shape(self):
+        request = GoalSpanRequest(
+            StorageRequestId(SemanticId("native.basilisk", "point"), "point"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=3,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.start",
+            start_min=41,
+            start_max=508,
+        )
+        with self.assertRaisesRegex(ValueError, "width 2"):
+            RuntimeBinder().bind((request,))
+
+    def test_existing_goal_span_binding_is_reused(self):
+        request = self._span_request()
+        existing = GoalSpan(
+            start=GoalId(100),
+            width=4,
+            shape=GoalStorageShape.EXTENDED_4,
+            provenance_id="existing",
+        )
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(existing_bindings=((request.request_id, existing),)),
+        )
+        self.assertEqual(result.binding_for(request.request_id), existing)
+
+    def test_binding_manifest_round_trip_preserves_goal_span(self):
+        request = self._span_request()
+        result = RuntimeBinder().bind((request,))
+        manifest = result.to_manifest(package_inventory_sha="abc123")
+        restored = BindingManifest.from_json(manifest.to_json())
+        binding = restored.to_context().existing_bindings[0][1]
+        self.assertIsInstance(binding, GoalSpan)
+        self.assertEqual(binding.start.value, 41)
+        self.assertEqual(binding.width, 4)
+
+    def test_volatile_goal_pool_is_deterministic_and_reusable_only_after_release(self):
+        pool = VolatileGoalPool(900, 902)
+        first = pool.checkout()
+        second = pool.checkout()
+        self.assertEqual((first.value, second.value), (900, 901))
+        pool.release(first)
+        self.assertEqual(pool.checkout().value, 900)
+
+    def test_volatile_goal_pool_rejects_double_and_foreign_release(self):
+        pool = VolatileGoalPool(900, 901)
+        goal = pool.checkout()
+        pool.release(goal)
+        with self.assertRaisesRegex(ValueError, "not leased"):
+            pool.release(goal)
+        with self.assertRaisesRegex(ValueError, "outside pool"):
+            pool.release(GoalId(902))
