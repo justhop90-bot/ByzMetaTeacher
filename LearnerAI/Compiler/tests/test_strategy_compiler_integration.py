@@ -19,7 +19,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         output = compile_strategy_profile(
             self.profile,
             self.effective,
-            source_unit="<strategy-fixture>",
         )
 
         self.assertIn("(build castle)", output)
