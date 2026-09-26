@@ -93,6 +93,73 @@ class NativeSupportStateTests(unittest.TestCase):
             ['NATIVE-SUPPORT-001', 'NATIVE-SUPPORT-002', 'NATIVE-SUPPORT-003', 'NATIVE-SUPPORT-004', 'NATIVE-SUPPORT-005'],
         )
 
+
+    def test_unknown_engine_semantic_mapping_is_unsupported(self):
+        registry = PrimitiveRegistry(
+            (
+                Primitive(
+                    'current-age',
+                    'FACT',
+                    'OBSERVATION',
+                    2,
+                    2,
+                    engine_semantics_id='unknown.engine.contract',
+                ),
+            ),
+            NativeCommandRegistry(
+                (
+                    NativeCommandSpec(
+                        'current-age',
+                        'DE',
+                        'Fact',
+                        (
+                            NativeParameterSpec('Age', 'Age', 'in', 'a valid age', 'check age'),
+                            NativeParameterSpec('Compare', 'compareOp', 'in', 'a comparison', 'compare'),
+                        ),
+                    ),
+                ),
+                source_blob_sha='test',
+                command_count=1,
+            ),
+        )
+        assessment = registry.assess_support('current-age')
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
+        self.assertIn('semantic mapping', assessment.message)
+
+    def test_evidence_only_engine_semantic_mapping_is_unsupported(self):
+        registry = PrimitiveRegistry(
+            (
+                Primitive(
+                    'current-age',
+                    'FACT',
+                    'OBSERVATION',
+                    2,
+                    2,
+                    engine_semantics_id='duc.search-state-retained',
+                ),
+            ),
+            NativeCommandRegistry(
+                (
+                    NativeCommandSpec(
+                        'current-age',
+                        'DE',
+                        'Fact',
+                        (
+                            NativeParameterSpec('Age', 'Age', 'in', 'a valid age', 'check age'),
+                            NativeParameterSpec('Compare', 'compareOp', 'in', 'a comparison', 'compare'),
+                        ),
+                    ),
+                ),
+                source_blob_sha='test',
+                command_count=1,
+            ),
+        )
+        assessment = registry.assess_support('current-age')
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
+        self.assertIn('evidence-only', assessment.message)
+
     def test_known_typed_command_without_adapter_is_unsupported(self):
         registry = PrimitiveRegistry(
             (),
@@ -163,7 +230,7 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.UNSUPPORTED,
             ],
         )
-        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
 
     def test_unknown_command_is_deterministically_unsupported(self):
         registry = PrimitiveRegistry((), NativeCommandRegistry((), source_blob_sha='test', command_count=0))
