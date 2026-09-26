@@ -15,6 +15,8 @@ from Compiler.primitives import default_de_registry
 from Compiler.runtime_binding import (
     BindingContext,
     BindingManifest,
+    PackageStorageInventory,
+    PackageStorageReservation,
     GoalId,
     GoalSlot,
     GoalSpan,
@@ -218,6 +220,188 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertEqual(contract.start_min, 41)
         self.assertEqual(contract.start_max, 508)
 
+
+
+class PackageStorageInventoryTests(unittest.TestCase):
+    def _reservation(self, kind, start, end, provenance):
+        return PackageStorageReservation(
+            kind=kind,
+            start=start,
+            end=end,
+            provenance_id=provenance,
+        )
+
+    def test_inventory_rejects_goal_scalar_overlapping_goal_span(self):
+        from Compiler.runtime_binding import StorageKind
+
+        with self.assertRaisesRegex(ValueError, "overlapping Goal"):
+            PackageStorageInventory(
+                package_id="test-package",
+                package_revision="r1",
+                reservations=(
+                    self._reservation(
+                        StorageKind.GOAL_SLOT,
+                        1000,
+                        1000,
+                        "scalar",
+                    ),
+                    self._reservation(
+                        StorageKind.GOAL_SPAN,
+                        1000,
+                        1003,
+                        "span",
+                    ),
+                ),
+            )
+
+    def test_inventory_hash_is_order_independent(self):
+        from Compiler.runtime_binding import StorageKind
+
+        reservations = (
+            self._reservation(StorageKind.TIMER, 7, 7, "timer"),
+            self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+            self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
+        )
+        first = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=reservations,
+        )
+        second = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=tuple(reversed(reservations)),
+        )
+        self.assertEqual(first.inventory_sha, second.inventory_sha)
+        self.assertEqual(first.to_json(), second.to_json())
+
+    def test_inventory_round_trip_preserves_fingerprint_and_reservations(self):
+        from Compiler.runtime_binding import StorageKind
+
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
+                self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
+                self._reservation(StorageKind.TIMER, 7, 7, "timer"),
+            ),
+        )
+        restored = PackageStorageInventory.from_json(inventory.to_json())
+        self.assertEqual(restored, inventory)
+        self.assertEqual(restored.inventory_sha, inventory.inventory_sha)
+
+    def test_inventory_rejects_tampered_fingerprint(self):
+        from Compiler.runtime_binding import StorageKind
+
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+            ),
+        )
+        payload = inventory.to_dict()
+        payload["inventory_sha"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "inventory fingerprint"):
+            PackageStorageInventory.from_dict(payload)
+
+    def test_binder_consumes_package_inventory_across_goal_sn_and_timer_namespaces(self):
+        from Compiler.runtime_binding import StorageKind
+
+        owner = SemanticId("test-package", "inventory")
+        requests = (
+            GoalSlotRequest(
+                StorageRequestId(owner, "goal"),
+                role=GoalRole.LIFECYCLE_STATE,
+            ),
+            GoalSpanRequest(
+                StorageRequestId(owner, "point"),
+                width=2,
+                shape=GoalSpanKind.POINT_PAIR,
+                contract_id="test.point",
+                start_min=41,
+                start_max=508,
+            ),
+            StrategicNumberRequest(
+                StorageRequestId(owner, "sn"),
+                why_not_goal="Native behavior is defined through a Strategic Number.",
+                stability_key="sn",
+            ),
+            TimerRequest(
+                StorageRequestId(owner, "timer"),
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key="timer",
+            ),
+        )
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
+                self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
+                self._reservation(StorageKind.TIMER, 1, 1, "timer"),
+            ),
+        )
+        sn_inventory = StrategicNumberInventory(
+            inventory_sha="sn-inventory",
+            documented_ids=frozenset({511}),
+            candidate_ids=frozenset({510, 509}),
+        )
+        context = BindingContext.from_package_inventory(
+            inventory,
+            strategic_number_inventory=sn_inventory,
+        )
+        result = RuntimeBinder(base_goal=1000).bind(requests, context)
+
+        self.assertEqual(result.binding_for(requests[0].request_id).id.value, 1001)
+        self.assertEqual(result.binding_for(requests[1].request_id).start.value, 43)
+        self.assertEqual(result.binding_for(requests[2].request_id).id, 509)
+        self.assertEqual(result.binding_for(requests[3].request_id).id, 2)
+
+    def test_binding_context_rejects_stale_package_inventory_sha(self):
+        from Compiler.runtime_binding import StorageKind
+
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "package inventory fingerprint mismatch"):
+            BindingContext(
+                package_inventory=inventory,
+                package_inventory_sha="stale",
+            )
+
+    def test_binding_manifest_records_package_inventory_fingerprint(self):
+        from Compiler.runtime_binding import StorageKind
+
+        inventory = PackageStorageInventory(
+            package_id="test-package",
+            package_revision="r1",
+            reservations=(
+                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+            ),
+        )
+        context = BindingContext.from_package_inventory(inventory)
+        request = GoalSlotRequest(
+            StorageRequestId(SemanticId("test-package", "inventory"), "goal"),
+            role=GoalRole.LIFECYCLE_STATE,
+        )
+        result = RuntimeBinder(base_goal=1000).bind((request,), context)
+        manifest = result.to_manifest(
+            package_inventory_sha=context.package_inventory_sha,
+            allocator_version=context.allocator_version,
+        )
+        self.assertEqual(manifest.package_inventory_sha, inventory.inventory_sha)
+        self.assertEqual(
+            BindingManifest.from_json(manifest.to_json()).package_inventory_sha,
+            inventory.inventory_sha,
+        )
 
 
 class NativeMemoryBindingTests(unittest.TestCase):
