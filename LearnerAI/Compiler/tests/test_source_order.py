@@ -84,6 +84,59 @@ class NonLifecycleSourceOrderTests(unittest.TestCase):
 
         self.assertTrue(report.valid)
 
+    def test_non_lifecycle_access_owner_mismatch_reuses_state_access_mismatch(self):
+        demand = self._demand()
+        access = StateAccess(
+            state=StorageRequestId(demand.identity, "goal"),
+            owner=SemanticId("foreign", "writer"),
+            demand=demand.identity,
+            kind=AccessKind.WRITE,
+            phase=None,
+            source_order=10,
+            operation="set-goal",
+            storage_kind=StateStorageKind.GOAL,
+            rule_order=1,
+            within_rule_order=0,
+        )
+
+        report = validate_non_lifecycle_source_order(
+            (replace(demand, state_accesses=(access,)),)
+        )
+
+        self.assertEqual(report.diagnostics[0].code, OwnershipDiagnosticCode.STATE_ACCESS_MISMATCH)
+
+    def test_non_lifecycle_conflicting_writers_reuse_conflicting_writer_diagnostic(self):
+        demand = self._demand()
+        state = StorageRequestId(demand.identity, "goal")
+        first = self._access(
+            demand,
+            purpose="goal",
+            storage_kind=StateStorageKind.GOAL,
+            kind=AccessKind.WRITE,
+            rule_order=1,
+            within_rule_order=0,
+            source_order=10,
+            operation="set-goal",
+        )
+        second = replace(
+            first,
+            owner=SemanticId("foreign", "writer"),
+            rule_order=2,
+            source_order=20,
+            operation="foreign-set-goal",
+            state=state,
+        )
+        report = validate_non_lifecycle_source_order(
+            (replace(demand, state_accesses=(first, second)),)
+        )
+
+        self.assertTrue(
+            any(
+                item.code is OwnershipDiagnosticCode.CONFLICTING_WRITERS
+                for item in report.diagnostics
+            )
+        )
+
     def test_same_rule_write_then_read_is_visible_without_persisted_latch(self):
         demand = self._demand()
         accesses = (
