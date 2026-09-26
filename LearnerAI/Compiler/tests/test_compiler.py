@@ -22,6 +22,9 @@ class CompilerTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertEqual(generated, compile_source(EXAMPLES))
         self.assertEqual(generated.count("(defrule"), 11)
+        init_start = generated.index("; Demand initialization")
+        init_end = generated.index("; Pending diagnostics: castle")
+        self.assertIn("(true)\n=>", generated[init_start:init_end])
 
     def test_output_is_deterministic_and_has_separate_lifecycle_stages(self):
         a = compile_source(EXAMPLES)
