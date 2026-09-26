@@ -64,7 +64,7 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
 
     def test_nested_rule_body_preserves_nested_parentheses(self):
         graph = self._graph(
-            '(defrule nested '
+            '(defrule '
             '(and (true) (not (false))) '
             '=> '
             '(set-goal nested 1) '
@@ -83,7 +83,7 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
 
     def test_outer_defrule_closing_parenthesis_is_consumed_by_rule_parser(self):
         graph = self._graph(
-            '(defrule closes-cleanly (true) => (set-goal closed 1))\\n',
+            '(defrule (true) => (set-goal closed 1))\\n',
         )
 
         report = analyze_effective_rules(graph)
