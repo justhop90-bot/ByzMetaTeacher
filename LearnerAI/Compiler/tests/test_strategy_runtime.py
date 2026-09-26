@@ -23,6 +23,7 @@ from LearnerAI.Compiler.ir.strategy_runtime import (
     StrategicDemandRuntimeState,
     StrategicObservationType,
     StrategyRuntimeState,
+    bind_strategic_capability_observation,
     bind_strategic_evidence,
     evaluate_strategy_runtime,
 )
@@ -380,6 +381,12 @@ class StrategyRuntimeTests(unittest.TestCase):
             },
             {40, 2703, 2704},
         )
+        for item in observations.values():
+            binding = bind_strategic_capability_observation(item, self.effective)
+            self.assertEqual(
+                binding.observations[0].semantic_type,
+                StrategicObservationType.UNIT_CAPABILITY,
+            )
         runtime = evaluate_strategy_runtime(
             self.profile,
             self.effective,
