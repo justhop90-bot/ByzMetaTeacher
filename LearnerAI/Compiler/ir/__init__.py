@@ -23,6 +23,7 @@ from .model import (
     AccessKind,
     ActionIssuance,
     ActionIssuanceFailure,
+    ActionIssuancePhase,
     DemandOwnership,
     GoalRole,
     GoalSpanKind,
