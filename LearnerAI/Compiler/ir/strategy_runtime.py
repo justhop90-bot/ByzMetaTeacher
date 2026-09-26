@@ -248,7 +248,10 @@ def _validate_native_operand(
         return
     if family == "age":
         if value not in {"dark-age", "feudal-age", "castle-age", "imperial-age"}:
-            raise ValueError(f"unresolved Age '{token}'")
+            raise ValueError(
+                f"native parameter family Age does not accept '{token}': "
+                f"unresolved Age '{token}'"
+            )
         return
     if family == "buildingid":
         if not _lookup_token(token, _building_tokens(effective)):
