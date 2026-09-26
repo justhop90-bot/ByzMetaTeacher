@@ -111,3 +111,25 @@ if __name__ == "__main__":
         greek_fire = self.data.tech(464)
         self.assertEqual(len(greek_fire.effects), 3)
 
+
+    def test_provider_graph_has_verified_production_relationships(self):
+        self.assertIn(
+            UnitLineId("skirmisher-line"),
+            self.data.building(87).trainable_lines,
+        )
+        self.assertIn(
+            UnitLineId("camel-rider-line"),
+            self.data.building(101).trainable_lines,
+        )
+        self.assertIn(
+            UnitLineId("cataphract-line"),
+            self.data.building(82).trainable_lines,
+        )
+        self.assertIn(
+            UnitLineId("dromon-line"),
+            self.data.building(45).trainable_lines,
+        )
+
+    def test_age_advances_do_not_claim_unverified_static_building_prerequisites(self):
+        for age in (Age.FEUDAL, Age.CASTLE, Age.IMPERIAL):
+            self.assertEqual(self.data.age_advance(age).prerequisites, ())

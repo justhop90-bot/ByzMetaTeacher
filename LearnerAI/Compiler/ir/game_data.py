@@ -282,6 +282,13 @@ def validate_game_data(data: GameData) -> None:
     line_ids = {item.id for item in data.unit_lines}
     age_advance_ids = {item.id for item in data.age_advances}
 
+    for line in data.unit_lines:
+        for member in line.members:
+            if member not in unit_ids:
+                raise ValueError(
+                    f"unit line {line.id} references unknown unit {member}"
+                )
+
     for building in data.buildings:
         for line in building.trainable_lines:
             if line not in line_ids:
