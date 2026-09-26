@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
+from ..semantic.fact_registry import NativeFactRegistry
 from .native_binder import (
     NativeSemanticBinder,
     NativeSupportAssessment,
@@ -70,17 +71,25 @@ class PrimitiveRegistry:
         native_registry: NativeCommandRegistry | None = None,
         semantic_mappings: EngineSemanticMappingRegistry | None = None,
         native_contracts: NativeContractCatalog | None = None,
+        fact_registry: NativeFactRegistry | None = None,
     ):
         self._items = {p.name: p for p in primitives}
         self._native = native_registry
         self._semantic_mappings = semantic_mappings or default_engine_semantic_mapping_registry()
         self._native_contracts = native_contracts or default_native_contract_catalog()
+        self._fact_registry = fact_registry
 
 
 
     @property
     def native_contracts(self) -> NativeContractCatalog:
         return self._native_contracts
+
+    @property
+    def fact_registry(self) -> NativeFactRegistry:
+        if self._fact_registry is None:
+            raise ValueError("native fact registry is not configured")
+        return self._fact_registry
 
     def validate_primitive_promotion(self, primitive: Primitive, native) -> None:
         if primitive.kind != "ACTION":
@@ -269,6 +278,19 @@ class PrimitiveRegistry:
                 f"semantic={primitive.min_args}..{primitive.max_args}"
             )
 
+    def normalize_fact(
+        self,
+        name: str,
+        args,
+        *,
+        provenance: tuple[AIRefProvenance, ...] | None = None,
+    ):
+        return self.fact_registry.normalize(
+            name,
+            args,
+            provenance=provenance,
+        )
+
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self._items))
 
@@ -344,11 +366,17 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         )
         for item in primitive_items
     )
+    fact_registry = NativeFactRegistry.from_primitives(
+        mapped_items,
+        native_registry,
+        semantic_registry,
+    )
     registry = PrimitiveRegistry(
         mapped_items,
         native_registry,
         semantic_mappings=semantic_registry,
         native_contracts=native_contracts,
+        fact_registry=fact_registry,
     )
     for primitive in mapped_items:
         registry.validate_adapter_contract(primitive)
