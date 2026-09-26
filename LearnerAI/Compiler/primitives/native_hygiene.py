@@ -638,6 +638,97 @@ class PassExecutionConstraint:
             raise ValueError("hard pass constraints require documented native facts")
 
 
+def default_native_goal_storage_contracts() -> Tuple[NativeGoalStorageContract, ...]:
+    return (
+        NativeGoalStorageContract(
+            identity="ordinary-persistent-goal-storage",
+            minimum_id=1,
+            maximum_id=512,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:goal-storage",
+                ),
+            ),
+        ),
+    )
+
+
+def default_native_goal_span_contracts() -> Tuple[NativeGoalSpanContract, ...]:
+    provenance_point = (
+        AIRefProvenance(
+            evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+            confidence=ConfidenceLevel.HIGH,
+            confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+            citation_id="airef:extended-goal-span-point",
+        ),
+    )
+    provenance_four = (
+        AIRefProvenance(
+            evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+            confidence=ConfidenceLevel.HIGH,
+            confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+            citation_id="airef:extended-goal-span-4",
+        ),
+    )
+    return (
+        NativeGoalSpanContract(
+            "point-goal-span",
+            NativeStorageKind.POINT_GOAL_SPAN,
+            2,
+            41,
+            15998,
+            provenance_point,
+        ),
+        NativeGoalSpanContract(
+            "extended-4-goal-span",
+            NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
+            4,
+            41,
+            15996,
+            provenance_four,
+        ),
+        NativeGoalSpanContract(
+            "cost-data-4-goal-span",
+            NativeStorageKind.COST_DATA_GOAL_SPAN,
+            4,
+            41,
+            15996,
+            provenance_four,
+        ),
+        NativeGoalSpanContract(
+            "guard-state-4-goal-span",
+            NativeStorageKind.GUARD_STATE_GOAL_SPAN,
+            4,
+            41,
+            15996,
+            provenance_four,
+        ),
+    )
+
+
+def default_native_goal_parameter_ranges() -> Tuple[NativeGoalParameterRangeContract, ...]:
+    return (
+        NativeGoalParameterRangeContract(
+            "goal-id-parameter-range",
+            "GoalId",
+            1,
+            16000,
+            ("goal", "set-goal"),
+            (
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:goal-id-parameter-range",
+                ),
+            ),
+        ),
+    )
+
+
 @dataclass(frozen=True)
 class NativeContractCatalog:
     witnesses: Tuple[NativeWitness, ...] = ()
@@ -649,6 +740,12 @@ class NativeContractCatalog:
     citation_catalog: Optional[CitationRecordCatalog] = None
 
     def __post_init__(self) -> None:
+        if not self.goal_storage_contracts:
+            object.__setattr__(self, "goal_storage_contracts", default_native_goal_storage_contracts())
+        if not self.goal_span_contracts:
+            object.__setattr__(self, "goal_span_contracts", default_native_goal_span_contracts())
+        if not self.parameter_ranges:
+            object.__setattr__(self, "parameter_ranges", default_native_goal_parameter_ranges())
         for values, label in (
             (self.witnesses, "native witness"),
             (self.storage_uses, "native storage use"),
