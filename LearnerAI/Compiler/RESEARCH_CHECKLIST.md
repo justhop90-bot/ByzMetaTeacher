@@ -73,7 +73,8 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [ ] optional end-to-end binding-manifest artifact;
 - [x] native GoalSpan storage contracts derived from the checked-in AIRef command schema;
 - [x] native storage contract catalog explicitly distinguishes contiguous Goal spans from multiple independent Goal outputs;
-- [ ] capability-provider/dependency semantics remain the next strategy-facing tranche.
+- [x] typed capability-provider/dependency semantics implemented and connected to the compile gate;
+- [x] current demand language projected into the capability graph without adding source syntax.
 
 ### Still required before full-player compilation
 
@@ -82,6 +83,7 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [x] explicit Goal occupancy ranges/intervals consumed by the binder when supplied as package inventory;
 - [x] automatic binding-manifest write-back as an end-to-end compiler artifact;
 - [x] typed capability-provider graph plus provider-contract and admissibility validation passes;
+- [x] compiler pipeline projects current SemanticDemand IR into the capability graph before binding/emission;
 - [ ] demand ownership and writer/consumer contracts;
 - [x] prerequisite dependency graph, deterministic SCC cycle detection, and dead-end diagnostics;
 - [ ] resource/conflict semantics matching Basilisk's transient arbitration;
@@ -252,4 +254,4 @@ The first reuse tranche is now implemented and CI-verified:
 - [x] current compiler fixture remains unchanged in semantic behavior;
 - [x] native backend validation and full compiler unittest suite pass on the implementation head.
 
-The remaining compiler work is semantic, not storage plumbing: capability providers, demand ownership, prerequisite dependency chains, resource/conflict relations, issuance-failure semantics, and source-order analysis.
+The remaining compiler work is semantic, not storage plumbing: explicit demand ownership and writer/consumer contracts, richer resource/conflict relations, issuance-failure semantics, source-order analysis, and the Castle vertical slice. The typed capability/provider graph is now integrated as a compile-time validation projection of the current demand language.
