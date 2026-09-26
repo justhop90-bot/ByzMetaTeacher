@@ -35,6 +35,7 @@ if __package__ in (None, ""):
     from Compiler.parser import parse
     from Compiler.primitives import PrimitiveRegistry, default_de_registry
     from Compiler.semantic import analyze
+    from Compiler.semantic.community_engine import default_community_engine_registry
     from Compiler.semantic.demand_ownership import validate_demand_ownership
     from Compiler.semantic.source_order import validate_non_lifecycle_source_order
     from Compiler.semantic.action_issuance import validate_action_issuance
@@ -64,8 +65,8 @@ else:
     from .errors import CompileError
     from .parser import parse
     from .primitives import PrimitiveRegistry, default_de_registry
+    from .semantic import analyze
     from .semantic.community_engine import default_community_engine_registry
-from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
     from .semantic.source_order import validate_non_lifecycle_source_order
     from .semantic.action_issuance import validate_action_issuance
