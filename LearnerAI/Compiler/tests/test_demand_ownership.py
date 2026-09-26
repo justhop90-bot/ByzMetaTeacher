@@ -216,7 +216,7 @@ class DemandOwnershipTests(unittest.TestCase):
         self.assertEqual(first.first_writer.source_order, 0)
         self.assertEqual(first.first_consumer.source_order, 2)
         self.assertEqual(second.first_writer.source_order, 1)
-        self.assertEqual(second.first_consumer.source_order, 8)
+        self.assertEqual(second.first_consumer.source_order, 10)
 
     def test_owner_state_mismatch_has_exact_diagnostic(self):
         demand = self._demand()
@@ -328,7 +328,7 @@ class DemandOwnershipTests(unittest.TestCase):
                     ("test", "lifecycle"),
                     ("duplicate-action", 99, "test", "castle"),
                     "lifecycle state 'test:lifecycle' has multiple writers "
-                    "in phase 'ACTION'",
+                    "in phase 'ISSUANCE'",
                 ),
             ),
         )
