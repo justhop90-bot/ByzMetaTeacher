@@ -83,5 +83,46 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(result.status, ValidationStatus.BACKEND_TIMEOUT)
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
 
+
+    def test_validated_backend_promotes_binding_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            output = tmp / "Basilisk.per"
+            manifest = tmp / "Basilisk.bindings.json"
+            fake = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            result = compile_to_file(
+                EXAMPLES,
+                output,
+                native_backend=fake,
+                binding_manifest=manifest,
+            )
+
+            self.assertEqual(result.status, ValidationStatus.VALIDATED)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(payload["format_version"], 2)
+            self.assertEqual(len(payload["records"]), 4)
+            self.assertTrue(all("goal_id" in record for record in payload["records"]))
+
+    def test_rejected_backend_does_not_overwrite_existing_binding_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            output = tmp / "Basilisk.per"
+            manifest = tmp / "Basilisk.bindings.json"
+            output.write_text("KEEP THIS\n", encoding="utf-8")
+            manifest.write_text("KEEP MANIFEST\n", encoding="utf-8")
+            fake = FakeBackend(fake_result(output, ValidationStatus.REJECTED))
+
+            result = compile_to_file(
+                EXAMPLES,
+                output,
+                native_backend=fake,
+                binding_manifest=manifest,
+            )
+
+            self.assertEqual(result.status, ValidationStatus.REJECTED)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
+            self.assertEqual(manifest.read_text(encoding="utf-8"), "KEEP MANIFEST\n")
+
 if __name__ == "__main__":
     unittest.main()
