@@ -1,13 +1,22 @@
 # Current Compiler Frontier (2026-09-26)
 
-The package-storage P0 repair and P1 non-lifecycle source-order repair are now implemented. The current generic queue is:
+The package-storage and non-lifecycle source-order repairs are implemented. The generic compiler frontier is now explicitly separated into native semantic mapping versus Basilisk strategy.
 
-1. P0 complete: native support-state visibility, namespace-safe storage binding, explicit package-storage inventory, deterministic diagnostics/reproducibility.
-2. P1 next: capability-loss/recovery.
-3. P1: DUC/search safety, load/preprocessor graph.
-4. P2: community-practice registry, golden fixtures, generic reference bot, FlareMesh fixture.
-5. P3: evidence-backed performance/cost analysis.
-6. P4: experimental spatial coordination.
+Current queue:
+
+1. Native semantic-gap mapping and Philosopher's Stone substrate.
+2. Effective #load/#load-if source graph.
+3. Recurrent rule eligibility, disable-self, later-overwrite, starvation, and reachability analysis.
+4. Goal/SN/Timer command-specific state effects and versioned SN semantics.
+5. Asynchronous provider/queue semantics for BUILD/TRAIN/RESEARCH.
+6. DUC SearchSession/TargetSession/Group semantics.
+7. Attack-engine state semantics.
+8. Evidence-strength/version governance and performance/cardinality metadata.
+9. Generic reference bot only after the semantic substrate is stable.
+
+Authoritative design documents:
+- LearnerAI/Compiler/NATIVE_PER_SEMANTIC_GAP_MAP_2026-09-26.md
+- LearnerAI/Compiler/PHILOSOPHERS_STONE_ARCHITECTURE_2026-09-26.md
 
 ## Non-lifecycle source-order repair checklist
 
@@ -572,3 +581,18 @@ Still open:
 - [ ] Golden native fixtures for the newly promoted contracts.
 
 Authoritative checklist: LearnerAI/Compiler/COMMUNITY_ENGINE_SEMANTICS_CHECKLIST_2026-09-26.md.
+
+
+### Native semantic-gap / Philosopher's Stone audit (2026-09-26)
+
+- [x] Map native command/signature coverage separately from engine-semantic coverage.
+- [x] Map recurrent rule semantics, source precedence, disable-self, persistent-state overwrite risk, async work, DUC state, attack state, load graph, resource arbitration, and performance as distinct semantic families.
+- [x] Define the native semantic support progression: NATIVE_KNOWN -> NATIVE_TYPED -> SEMANTICALLY_ADAPTED -> ENGINE_SEMANTICS_MAPPED -> EXECUTABLE_SAFE.
+- [x] Define the Philosopher's Stone architecture and component ownership.
+- [x] Preserve the hard boundary: compiler policy must not be mistaken for engine fact or community practice.
+- [x] Correct the recovery model so false can-* feasibility never becomes capability loss.
+- [ ] Implement ENGINE_SEMANTICS_MAPPED as an enforceable per-command support state.
+- [ ] Build the effective source graph.
+- [ ] Build recurrent rule execution semantics.
+- [ ] Build DUC/attack state models.
+- [ ] Add semantic-gap golden fixtures and native zero-findings acceptance fixtures.
