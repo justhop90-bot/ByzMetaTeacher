@@ -19,6 +19,7 @@ LearnerAI is organized around one stock-style Byzantine player loop. The directo
       ENGINEERING.md
       EXAMPLES.md
       CAPABILITY_MATRIX.md
+      MAP_PRIORITY_RULES.md
       PER_PRIMITIVE_MAP.md
       Compiler/
       Engine/
@@ -34,6 +35,8 @@ LearnerAI is organized around one stock-style Byzantine player loop. The directo
 ## Capability coverage
 
 CAPABILITY_MATRIX.md is the complete stock-style Byzantine coverage contract. It is consulted before deciding that a capability is missing, optional, or incorrectly scoped.
+
+MAP_PRIORITY_RULES.md converts that capability coverage into concrete map-conditioned priorities without creating separate map-specific build orders.
 
 ## Player loop
 
