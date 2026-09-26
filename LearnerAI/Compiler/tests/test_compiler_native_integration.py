@@ -271,6 +271,15 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 (parameter,),
             )
             primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 2, 2)
+        elif name == "unsupported":
+            return PrimitiveRegistry(
+                (),
+                NativeCommandRegistry(
+                    (),
+                    source_blob_sha="native-support-unsupported",
+                    command_count=0,
+                ),
+            )
         else:
             native = NativeCommandSpec(
                 "fixture-command",
