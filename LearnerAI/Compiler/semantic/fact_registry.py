@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from typing import Iterable, Sequence
+from typing import Callable, Iterable, Sequence, TypeAlias
 
 from ..primitives.native_hygiene import (
     AIRefProvenance,
@@ -40,6 +40,8 @@ _RESOURCE_VALUES = (
 )
 _TYPE_OP_VALUES = ("C", "G", "S")
 _NUMERIC_RANGE = re.compile(r"(-?\d+)\s+to\s+(-?\d+)")
+
+StaticTruthEvaluator: TypeAlias = Callable[[NormalizedFact], StaticTruth]
 
 
 def _documented_fact_provenance(command: str) -> tuple[AIRefProvenance, ...]:
@@ -154,6 +156,7 @@ class FactSemanticAdapter:
     role: str
     parameter_contexts: tuple[CanonicalizationContext, ...]
     provenance: tuple[AIRefProvenance, ...]
+    static_truth_evaluator: StaticTruthEvaluator | None = None
     native_version: str = "DE"
     domain: FactDomain | None = None
 
@@ -187,6 +190,29 @@ class FactSemanticAdapter:
     @property
     def arity(self) -> int:
         return len(self.parameter_contexts)
+
+    def evaluate_static_truth(self, fact: NormalizedFact) -> StaticTruth:
+        if not isinstance(fact, NormalizedFact):
+            raise TypeError("fact must be a NormalizedFact")
+        if fact.semantic_id != self.semantic_id:
+            raise ValueError(
+                f"semantic adapter '{self.semantic_id}' cannot evaluate "
+                f"fact '{fact.semantic_id}'"
+            )
+        if len(fact.canonical_args) != self.arity:
+            raise ValueError(
+                f"fact '{fact.semantic_id}' has {len(fact.canonical_args)} "
+                f"canonical arguments; adapter requires {self.arity}"
+            )
+        if self.static_truth_evaluator is None:
+            return StaticTruth.UNKNOWN
+        result = self.static_truth_evaluator(fact)
+        if not isinstance(result, StaticTruth):
+            raise TypeError(
+                f"static truth evaluator for '{self.semantic_id}' returned "
+                f"{type(result).__name__}, expected StaticTruth"
+            )
+        return result
 
     def normalize(
         self,
@@ -338,4 +364,5 @@ class NativeFactRegistry:
 __all__ = [
     "FactSemanticAdapter",
     "NativeFactRegistry",
+    "StaticTruthEvaluator",
 ]
