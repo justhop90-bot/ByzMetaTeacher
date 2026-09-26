@@ -114,6 +114,206 @@ CanonicalValue: TypeAlias = (
 
 
 
+class FactDomainKind(str, Enum):
+    INTEGER = "INTEGER"
+    COUNT = "COUNT"
+    RESOURCE_AMOUNT = "RESOURCE_AMOUNT"
+    ENUM = "ENUM"
+    ORDERED_ENUM = "ORDERED_ENUM"
+    IDENTIFIER = "IDENTIFIER"
+    SYMBOL = "SYMBOL"
+    OPAQUE = "OPAQUE"
+
+
+class StaticTruth(str, Enum):
+    """
+    Compile-time proof status.
+
+    TRUE/FALSE require an invariant proof independent of runtime game state.
+    UNKNOWN means runtime state is required and is never a synonym for false.
+    """
+
+    TRUE = "TRUE"
+    FALSE = "FALSE"
+    UNKNOWN = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class FactDomain:
+    """
+    Invariant value space exposed by a semantic fact adapter.
+
+    The domain describes what values can legally inhabit a semantic field. It
+    does not contain a current runtime value and therefore cannot establish
+    StaticTruth by itself.
+    """
+
+    identity: str
+    kind: FactDomainKind
+    value_type: str
+    ordered: bool = False
+    non_negative: bool = False
+    minimum: int | None = None
+    maximum: int | None = None
+    values: tuple[str, ...] = ()
+    provenance: tuple[AIRefProvenance, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.identity:
+            raise ValueError("fact domain identity is required")
+        if not self.value_type:
+            raise ValueError("fact domain value_type is required")
+        if not isinstance(self.provenance, tuple):
+            raise TypeError("fact domain provenance must be a tuple")
+        if not self.provenance:
+            raise ValueError("fact domain provenance is required")
+
+        if len(self.values) != len(set(self.values)):
+            raise ValueError(
+                f"fact domain '{self.identity}' contains duplicate values"
+            )
+        if any(not isinstance(value, str) or not value for value in self.values):
+            raise ValueError(
+                f"fact domain '{self.identity}' contains an invalid domain value"
+            )
+
+        numeric_kinds = {
+            FactDomainKind.INTEGER,
+            FactDomainKind.COUNT,
+            FactDomainKind.RESOURCE_AMOUNT,
+        }
+        enum_kinds = {
+            FactDomainKind.ENUM,
+            FactDomainKind.ORDERED_ENUM,
+        }
+
+        if self.minimum is not None and self.maximum is not None:
+            if self.minimum > self.maximum:
+                raise ValueError(
+                    f"fact domain '{self.identity}' has inverted bounds"
+                )
+
+        if self.non_negative and self.minimum is not None and self.minimum < 0:
+            raise ValueError(
+                f"non-negative fact domain '{self.identity}' cannot have "
+                f"minimum {self.minimum}"
+            )
+
+        if self.kind in enum_kinds:
+            if not self.values:
+                raise ValueError(
+                    f"enum fact domain '{self.identity}' requires values"
+                )
+            if self.minimum is not None or self.maximum is not None:
+                raise ValueError(
+                    f"enum fact domain '{self.identity}' cannot have numeric bounds"
+                )
+            if self.non_negative:
+                raise ValueError(
+                    f"enum fact domain '{self.identity}' cannot be non-negative"
+                )
+            if self.kind is FactDomainKind.ORDERED_ENUM and not self.ordered:
+                raise ValueError(
+                    f"ordered enum fact domain '{self.identity}' must be ordered"
+                )
+
+        elif self.kind in numeric_kinds:
+            if self.values:
+                raise ValueError(
+                    f"numeric fact domain '{self.identity}' cannot declare enum values"
+                )
+            if self.kind is FactDomainKind.COUNT and not self.non_negative:
+                raise ValueError(
+                    f"count fact domain '{self.identity}' must be non-negative"
+                )
+
+        elif self.kind in {
+            FactDomainKind.IDENTIFIER,
+            FactDomainKind.SYMBOL,
+            FactDomainKind.OPAQUE,
+        }:
+            if self.minimum is not None or self.maximum is not None:
+                raise ValueError(
+                    f"fact domain '{self.identity}' cannot have numeric bounds"
+                )
+            if self.values:
+                raise ValueError(
+                    f"fact domain '{self.identity}' cannot declare finite values"
+                )
+            if self.non_negative or self.ordered:
+                raise ValueError(
+                    f"unstructured fact domain '{self.identity}' cannot be ordered "
+                    "or non-negative"
+                )
+        else:
+            raise ValueError(f"unsupported fact domain kind '{self.kind}'")
+
+        for evidence in self.provenance:
+            if not isinstance(evidence, AIRefProvenance):
+                raise TypeError(
+                    "fact domain provenance contains invalid evidence"
+                )
+
+    def contains(self, value: CanonicalValue) -> bool:
+        """
+        Test membership in the invariant domain.
+
+        This is deliberately a type/domain check, not a runtime-state check.
+        """
+        if not isinstance(
+            value,
+            (
+                CanonicalInteger,
+                CanonicalEnum,
+                CanonicalIdentifier,
+                CanonicalSymbol,
+            ),
+        ):
+            return False
+
+        if self.kind in {
+            FactDomainKind.INTEGER,
+            FactDomainKind.COUNT,
+            FactDomainKind.RESOURCE_AMOUNT,
+        }:
+            if not isinstance(value, CanonicalInteger):
+                return False
+            if self.minimum is not None and value.value < self.minimum:
+                return False
+            if self.maximum is not None and value.value > self.maximum:
+                return False
+            if self.non_negative and value.value < 0:
+                return False
+            return True
+
+        if self.kind in {
+            FactDomainKind.ENUM,
+            FactDomainKind.ORDERED_ENUM,
+        }:
+            return (
+                isinstance(value, CanonicalEnum)
+                and value.domain == self.identity
+                and value.value in self.values
+            )
+
+        if self.kind is FactDomainKind.IDENTIFIER:
+            return (
+                isinstance(value, CanonicalIdentifier)
+                and value.namespace == self.identity
+            )
+
+        if self.kind is FactDomainKind.SYMBOL:
+            return (
+                isinstance(value, CanonicalSymbol)
+                and value.namespace == self.identity
+            )
+
+        if self.kind is FactDomainKind.OPAQUE:
+            return True
+
+        return False
+
+
 @dataclass(frozen=True)
 class NormalizedFact:
     """
@@ -127,6 +327,7 @@ class NormalizedFact:
     semantic_id: str
     canonical_args: tuple[CanonicalValue, ...]
     provenance: tuple[AIRefProvenance, ...]
+    domain: FactDomain | None = None
 
     def __post_init__(self) -> None:
         if not self.semantic_id:
@@ -155,6 +356,8 @@ class NormalizedFact:
                 raise TypeError(
                     "normalized fact provenance contains invalid evidence"
                 )
+        if self.domain is not None and not isinstance(self.domain, FactDomain):
+            raise TypeError("normalized fact domain must be a FactDomain or None")
 
     @property
     def identity_key(self) -> tuple[str, tuple[CanonicalValue, ...]]:
@@ -666,7 +869,10 @@ __all__ = [
     "CanonicalKind",
     "CanonicalSymbol",
     "CanonicalValue",
+    "FactDomain",
+    "FactDomainKind",
     "NormalizedFact",
+    "StaticTruth",
     "CanonicalizationContext",
     "EnumNormalization",
     "IdentifierForm",
