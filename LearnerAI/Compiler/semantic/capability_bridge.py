@@ -25,7 +25,7 @@ from ..ir.capability import (
     WitnessKind,
 )
 from ..primitives import PrimitiveRegistry
-from .capability_validation import ValidationContext, ValidationReport, validate_capability_graph
+from .capability_validation import ValidationReport, validate_capability_graph
 
 _LOGICAL_HEADS = {"and", "or", "nand", "nor", "xor", "xnor", "not"}
 
@@ -204,4 +204,4 @@ def validate_projected_capabilities(
     registry: PrimitiveRegistry,
 ) -> ValidationReport:
     graph = project_capability_graph(demands, registry)
-    return validate_capability_graph(ValidationContext(graph, registry))
+    return validate_capability_graph(graph, registry)
