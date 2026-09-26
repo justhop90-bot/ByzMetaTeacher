@@ -99,7 +99,7 @@ class PrimitiveRegistry:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
+                "NATIVE-SUPPORT-006",
                 "error",
                 "command is not present in the checked-in native schema",
             )
