@@ -62,8 +62,15 @@ class PrimitiveRegistry:
             return False
         if native.parameter_count > 4:
             return False
+        operator_parameters = {"compareOp", "mathOp", "typeOp"}
         for parameter in native.parameters:
-            if not parameter.name or not parameter.type or not parameter.direction:
+            if not parameter.name:
+                return False
+            if parameter.name in operator_parameters:
+                if not parameter.note:
+                    return False
+                continue
+            if not parameter.type or not parameter.direction:
                 return False
         return True
 
