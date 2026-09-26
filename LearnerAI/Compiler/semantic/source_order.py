@@ -182,6 +182,56 @@ def analyze_non_lifecycle_source_order(
 
         storage_kind = storage_kinds[0]
 
+        for access in accesses:
+            if access.owner is None:
+                diagnostics.append(
+                    _diag(
+                        OwnershipDiagnosticCode.STATE_ACCESS_MISSING_OWNER,
+                        f"non-lifecycle state access '{access.operation}' for "
+                        f"'{state.owner.source_unit}:{state.purpose}' has no owner",
+                        status=OwnershipStatus.BLOCKED,
+                        state=state,
+                        access=access,
+                        location=access.location,
+                    )
+                )
+            elif access.owner != state.owner:
+                diagnostics.append(
+                    _diag(
+                        OwnershipDiagnosticCode.STATE_ACCESS_MISMATCH,
+                        f"non-lifecycle state '{state.owner.source_unit}:{state.purpose}' "
+                        f"access '{access.operation}' owner "
+                        f"'{access.owner.source_unit}:{access.owner.local_name}' does not "
+                        f"match state owner '{state.owner.source_unit}:{state.owner.local_name}'",
+                        status=OwnershipStatus.CONFLICTING,
+                        state=state,
+                        access=access,
+                        location=access.location,
+                    )
+                )
+
+        writer_owners = {
+            access.owner
+            for access in writers
+            if access.owner is not None
+        }
+        if len(writer_owners) > 1:
+            names = ", ".join(
+                f"{owner.source_unit}:{owner.local_name}"
+                for owner in sorted(writer_owners, key=_semantic_key)
+            )
+            diagnostics.append(
+                _diag(
+                    OwnershipDiagnosticCode.CONFLICTING_WRITERS,
+                    f"non-lifecycle state '{state.owner.source_unit}:{state.purpose}' "
+                    f"has conflicting writers: {names}",
+                    status=OwnershipStatus.CONFLICTING,
+                    state=state,
+                    access=first_writer,
+                    location=first_writer.location if first_writer is not None else None,
+                )
+            )
+
         missing_scope = tuple(
             access
             for access in accesses
