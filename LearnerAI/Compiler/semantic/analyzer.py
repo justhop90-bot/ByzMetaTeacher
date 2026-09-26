@@ -11,6 +11,9 @@ from ..ir import (
     CompletionWitnessContract,
     ReleaseStateContract,
     ReleaseEvidenceKind,
+    InvalidationContract,
+    InvalidationEvidenceKind,
+    CancellationStateContract,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -274,6 +277,15 @@ def analyze(
             {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
             f"demand '{demand.name}' release",
         )
+        invalidation = None
+        if demand.invalidate and demand.invalidate.strip():
+            invalidation = parse_expression(demand.invalidate)
+            _validate_context(
+                invalidation,
+                registry,
+                {"OBSERVATION", "ADMISSIBILITY", "WITNESS", "TIMING", "ACTION"},
+                f"demand '{demand.name}' invalidation",
+            )
         semantic_id = SemanticId(source_unit=source_unit, local_name=demand.name)
         request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
         lifecycle = LifecycleStorage(
@@ -312,6 +324,38 @@ def analyze(
             source_order=lifecycle_base,
             witness_source_order=lifecycle_base + 2,
         )
+        cancellation = None
+        if invalidation is not None:
+            invalidation_contract = InvalidationContract(
+                identity=SemanticId(
+                    source_unit=source_unit,
+                    local_name=f"{demand.name}-invalidation",
+                ),
+                evidence_kind=InvalidationEvidenceKind.WORLD_STATE,
+                primitive=invalidation.head,
+                expression=invalidation,
+                invalidates=semantic_id,
+                source_order=max(0, lifecycle_base - 1),
+                action_source_order=lifecycle_base + 6,
+            )
+            cancellation = CancellationStateContract(
+                identity=SemanticId(
+                    source_unit=source_unit,
+                    local_name=f"{demand.name}-cancellation",
+                ),
+                trigger=invalidation_contract.identity,
+                from_states=(
+                    LifecycleState.ACTIVE,
+                    LifecycleState.ISSUED,
+                    LifecycleState.PENDING,
+                ),
+                to_state=LifecycleState.CANCELLED,
+                source_order=invalidation_contract.source_order,
+                invalidation_source_order=invalidation_contract.source_order,
+                release_source_order=lifecycle_base,
+            )
+        else:
+            invalidation_contract = None
         action_issuance = ActionIssuance(
             demand=semantic_id,
             primitive=action.head,
@@ -416,6 +460,8 @@ def analyze(
                 completion_witness=completion_witness,
                 release=release,
                 release_state=release_state,
+                invalidation=invalidation_contract,
+                cancellation=cancellation,
                 ownership=ownership,
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
