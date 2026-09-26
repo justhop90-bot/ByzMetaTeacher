@@ -252,13 +252,18 @@ class ResourceConflictTests(unittest.TestCase):
         graph = graph_for(
             provider(
                 CapabilityId("test", "castle"),
-                name="b-builder",
-                arbitration=("owner-b", "owner-a"),
+                name="a-builder",
+                arbitration=(),
             ),
             provider(
                 CapabilityId("test", "castle"),
-                name="a-builder",
-                arbitration=(),
+                name="b-builder",
+                arbitration=("owner-a",),
+            ),
+            provider(
+                CapabilityId("test", "castle"),
+                name="c-builder",
+                arbitration=("owner-b",),
             ),
         )
         first = self._validate(graph)
