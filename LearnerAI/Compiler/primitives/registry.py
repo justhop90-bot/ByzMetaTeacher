@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from enum import Enum
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
+from .native_binder import (
+    NativeSemanticBinder,
+    NativeSupportAssessment,
+    NativeSupportDiagnostic,
+    NativeSupportState,
+)
 from .engine_semantics import (
     EngineSemanticMappingRegistry,
     default_engine_semantic_mapping_registry,
@@ -29,32 +34,6 @@ from .native_hygiene import (
     PassFailureMode,
 )
 
-
-
-class NativeSupportState(str, Enum):
-    NATIVE_KNOWN = "native-known"
-    NATIVE_TYPED = "native-typed"
-    SEMANTICALLY_ADAPTED = "semantically-adapted"
-    ENGINE_SEMANTICS_MAPPED = "engine-semantics-mapped"
-    EXECUTABLE_SAFE = "executable-safe"
-    UNSUPPORTED = "unsupported"
-
-
-@dataclass(frozen=True)
-class NativeSupportDiagnostic:
-    command: str
-    state: NativeSupportState
-    code: str
-    severity: str
-    message: str
-
-
-@dataclass(frozen=True)
-class NativeSupportAssessment:
-    command: str
-    state: NativeSupportState
-    message: str
-    diagnostics: tuple[NativeSupportDiagnostic, ...]
 
 
 @dataclass(frozen=True)
@@ -229,183 +208,13 @@ class PrimitiveRegistry:
         )
 
     def assess_support(self, name: str) -> NativeSupportAssessment:
-        diagnostics: list[NativeSupportDiagnostic] = []
-        native = self.native(name)
-        if native is None:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                "command is not present in the checked-in native schema",
-            )
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=(diagnostic,),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.NATIVE_KNOWN,
-                "NATIVE-SUPPORT-001",
-                "info",
-                "command is present in the checked-in native schema",
-            )
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
         )
-
-        if not self._native_typed(native):
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                "native metadata is not typed",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.NATIVE_TYPED,
-                "NATIVE-SUPPORT-002",
-                "info",
-                "native command signature and parameter metadata are structurally typed",
-            )
-        )
-
-        primitive = self.get(name)
-        if primitive is None:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                "native command is known and typed but has no semantic adapter",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.SEMANTICALLY_ADAPTED,
-                "NATIVE-SUPPORT-003",
-                "info",
-                "a semantic adapter is registered for the native command",
-            )
-        )
-
-        try:
-            self.validate_adapter_contract(primitive)
-        except ValueError as exc:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                f"semantic adapter is not executable-safe: {exc}",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        if not primitive.engine_semantics_id:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                "native command is semantically adapted but has no engine semantic mapping",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        mapping_ok, mapping_message = self._semantic_mappings.validate_primitive(
-            command=name,
-            native_kind=native.command_type,
-            identity=primitive.engine_semantics_id,
-        )
-        if not mapping_ok:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                mapping_message,
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        try:
-            self.validate_primitive_promotion(primitive, native)
-        except (KeyError, ValueError) as exc:
-            diagnostic = self._diagnostic(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-006",
-                "error",
-                f"native primitive contract is not executable-safe: {exc}",
-            )
-            diagnostics.append(diagnostic)
-            return NativeSupportAssessment(
-                command=name,
-                state=NativeSupportState.UNSUPPORTED,
-                message=diagnostic.message,
-                diagnostics=tuple(diagnostics),
-            )
-
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
-                "NATIVE-SUPPORT-004",
-                "info",
-                f"engine semantic mapping registered: {primitive.engine_semantics_id}",
-            )
-        )
-        diagnostics.append(
-            self._diagnostic(
-                name,
-                NativeSupportState.EXECUTABLE_SAFE,
-                "NATIVE-SUPPORT-005",
-                "info",
-                "native signature, semantic adapter, and engine semantic mapping are executable-safe",
-            )
-        )
-        return NativeSupportAssessment(
-            command=name,
-            state=NativeSupportState.EXECUTABLE_SAFE,
-            message="command is executable-safe",
-            diagnostics=tuple(diagnostics),
-        )
+        return binder.assess(name)
 
     def support_state(self, name: str) -> NativeSupportState:
         return self.assess_support(name).state
