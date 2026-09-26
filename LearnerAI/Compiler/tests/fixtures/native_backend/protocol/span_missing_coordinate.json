@@ -1,0 +1,20 @@
+{
+  "path": "Basilisk.per",
+  "finding_count": 1,
+  "findings": [{
+    "path": "Basilisk.per",
+    "line": 1,
+    "severity": "error",
+    "confidence": "definite",
+    "code": "native-error",
+    "message": "missing span coordinate",
+    "suggestion": null,
+    "references": [],
+    "span": {
+      "start_line": 1,
+      "start_col": 0,
+      "end_line": 1
+    }
+  }],
+  "failed": true
+}
