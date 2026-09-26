@@ -253,13 +253,24 @@ class SourceContentHash:
     normalization_version: Optional[str] = None
 
     def __post_init__(self) -> None:
-        if self.algorithm.lower() != "sha256" or len(self.digest) != 64:
-            raise ValueError("source hash must be sha256")
+        algorithm = self.algorithm.lower()
+        if algorithm == "sha256":
+            expected_length = 64
+            allowed_representations = {"RAW_BYTES", "CANONICAL_TEXT"}
+        elif algorithm == "git-sha1":
+            expected_length = 40
+            allowed_representations = {"GIT_BLOB"}
+        else:
+            raise ValueError("source hash must use sha256 or git-sha1")
+        if len(self.digest) != expected_length:
+            raise ValueError(f"{algorithm} source hash has invalid digest length")
         int(self.digest, 16)
-        if self.representation not in {"RAW_BYTES", "CANONICAL_TEXT"}:
-            raise ValueError("invalid hash representation")
+        if self.representation not in allowed_representations:
+            raise ValueError(f"invalid {algorithm} source hash representation")
         if self.representation == "CANONICAL_TEXT" and not self.normalization_version:
             raise ValueError("canonical text hashes require normalization_version")
+        if self.representation == "GIT_BLOB" and self.normalization_version is not None:
+            raise ValueError("Git blob hashes do not use text normalization metadata")
 
 
 @dataclass(frozen=True)
@@ -294,6 +305,26 @@ class SourceExcerpt:
             normalized_sha256=sha256(cls.normalize(text).encode()).hexdigest(),
             **kwargs,
         )
+
+
+@dataclass(frozen=True)
+class EngineVersionScope:
+    source_families: Tuple[AIRefVersionFamily, ...]
+    engine_targets: Tuple[AIRefVersionFamily, ...] = ()
+    introduced_family: Optional[AIRefVersionFamily] = None
+    release: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if not self.source_families:
+            raise ValueError("engine-version scope requires source families")
+        if len(set(self.source_families)) != len(self.source_families):
+            raise ValueError("engine-version source families must be unique")
+        if len(set(self.engine_targets)) != len(self.engine_targets):
+            raise ValueError("engine-version target families must be unique")
+        if self.introduced_family is not None and self.introduced_family not in self.source_families:
+            raise ValueError("introduced engine family must be documented by the source scope")
+        if self.release is not None and not self.release.strip():
+            raise ValueError("engine-version release cannot be blank")
 
 
 @dataclass(frozen=True)
@@ -955,6 +986,8 @@ class SourceRetrieval:
     retrieved_at_utc: str
     canonical_url: str
     final_url: str
+    provider: str = "unknown"
+    source_revision: Optional[str] = None
     http_status: Optional[int] = None
     content_type: Optional[str] = None
     etag: Optional[str] = None
@@ -963,6 +996,13 @@ class SourceRetrieval:
     def __post_init__(self) -> None:
         if not self.retrieved_at_utc or not self.canonical_url or not self.final_url:
             raise ValueError("retrieval timestamp and URLs are required")
+        if not self.provider.strip():
+            raise ValueError("retrieval provider is required")
+        if self.source_revision is not None:
+            if len(self.source_revision) not in {40, 64} or any(
+                char not in "0123456789abcdefABCDEF" for char in self.source_revision
+            ):
+                raise ValueError("source revision must be a hexadecimal commit/hash identifier")
         if self.http_status is not None and not 100 <= self.http_status <= 599:
             raise ValueError("HTTP status must be within 100..599")
 
@@ -980,6 +1020,7 @@ class CitationRecord:
     retrieval: Optional[SourceRetrieval] = None
     state: CitationState = CitationState.CANDIDATE
     revalidation_events: Tuple[str, ...] = ()
+    engine_version_scope: Optional[EngineVersionScope] = None
 
     def __post_init__(self) -> None:
         if not self.citation_id or not self.canonical_url or not self.final_url or not self.locator.strip():
@@ -993,10 +1034,20 @@ class CitationRecord:
         }
         if self.state in verified and self.excerpt is None:
             raise ValueError("verified citations require excerpt")
-        if self.state is CitationState.PINNED and self.source_hash is None:
-            raise ValueError("pinned citations require source hash")
-        if self.state is CitationState.PINNED and self.retrieval is None:
-            raise ValueError("pinned citations require retrieval metadata")
+        if self.state is CitationState.PINNED:
+            if self.source_hash is None:
+                raise ValueError("pinned citations require immutable source hash")
+            if self.retrieval is None:
+                raise ValueError("pinned citations require retrieval metadata")
+            if self.engine_version_scope is None:
+                raise ValueError("pinned citations require explicit engine-version scope")
+            if self.source_hash.representation == "GIT_BLOB":
+                if self.source_hash.algorithm.lower() != "git-sha1":
+                    raise ValueError("Git blob source hashes must use git-sha1")
+                if self.retrieval.provider.lower() == "github" and self.retrieval.source_revision is None:
+                    raise ValueError("GitHub-pinned citations require source revision")
+            if self.retrieval.http_status is not None and self.retrieval.http_status >= 400:
+                raise ValueError("pinned citations cannot use a failed retrieval")
         if self.semantic_scope is CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE:
             if self.locator_type is not LocatorType.TABLE_ENTRY or self.locator != "Goals: 1 to 512":
                 raise ValueError("ordinary Goal storage citations must identify the 1..512 Goal table entry")
