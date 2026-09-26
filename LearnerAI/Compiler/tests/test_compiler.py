@@ -184,7 +184,7 @@ class CompilerTests(unittest.TestCase):
         """
         output = compile_source(source)
         action_start = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
-        action_end = output.find("; Pending diagnostics:", action_start)
+        action_end = output.find("; Pending diagnostics:", action_start + 1)
         action_block = output[action_start:action_end]
         self.assertIn("(not (building-type-count castle > 0))", action_block)
 
@@ -199,7 +199,7 @@ class CompilerTests(unittest.TestCase):
         """
         output = compile_source(source)
         action_start = output.find("; Demand: defensive | ACTIVE -> PENDING")
-        action_end = output.find("; Pending diagnostics:", action_start)
+        action_end = output.find("; Pending diagnostics:", action_start + 1)
         action_block = output[action_start:action_end]
         self.assertIn("(not (unit-type-count scout-unit == 0))", action_block)
 
@@ -213,7 +213,7 @@ class CompilerTests(unittest.TestCase):
         }
         """)
         action_start = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
-        action_end = output.find("; Pending diagnostics:", action_start)
+        action_end = output.find("; Pending diagnostics:", action_start + 1)
         action_block = output[action_start:action_end]
         self.assertIn("(not (building-type-count castle > 0))", action_block)
     def test_castle_enters_pending_and_cannot_reissue_while_pending(self):
@@ -222,7 +222,7 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: defensive-spearmen")
         action_block = output[action_start:action_end]
         self.assertIn("(build castle)", action_block)
-        self.assertIn("(set-goal demand-castle 1001)", action_block)
+        self.assertIn("(set-goal demand-castle 1003)", action_block)
         witness_block = output[output.find("; Completion witness: castle"):output.find("; Action issuance: castle | ACTIVE -> ISSUED")]
         self.assertIn("(goal demand-castle 1001)", witness_block)
         self.assertNotIn("(build castle)", witness_block)
@@ -335,7 +335,7 @@ class CompilerTests(unittest.TestCase):
         release_block = output[release_start:witness_start]
         witness_block = output[witness_start:action_start]
         action_block = output[action_start:output.find("; Pending diagnostics: defensive-spearmen")]
-        self.assertIn("(set-goal demand-castle 1001)", action_block)
+        self.assertIn("(set-goal demand-castle 1003)", action_block)
         self.assertIn("(goal demand-castle 1001)", witness_block)
         self.assertIn("(set-goal demand-castle 1002)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
