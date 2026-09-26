@@ -672,6 +672,43 @@ class AdmissibilityValidationPass:
         return tuple(diagnostics)
 
 
+def _provider_has_complete_contract(
+    provider: CapabilityProvider,
+    graph: CapabilityGraph,
+    registry: PrimitiveRegistry,
+) -> bool:
+    if provider.witness is None:
+        return False
+
+    witnesses = graph.witnesses_for(provider.witness)
+    if not any(
+        witness.establishes == provider.capability
+        for witness in witnesses
+    ):
+        return False
+
+    if provider.kind is ProviderKind.OBSERVATION:
+        return provider.action is None
+
+    if provider.action is None:
+        return False
+
+    primitive = registry.get(provider.action.primitive)
+    if primitive is None or primitive.kind != "ACTION":
+        return False
+
+    try:
+        registry.validate_native_signature(
+            provider.action.primitive,
+            len(provider.action.arguments),
+        )
+        registry.validate_adapter_contract(primitive)
+    except (KeyError, ValueError):
+        return False
+
+    return provider.admissibility is not None
+
+
 def _tarjan_scc(
     adjacency: dict[CapabilityId, tuple[CapabilityId, ...]],
 ) -> tuple[tuple[CapabilityId, ...], ...]:
@@ -729,6 +766,7 @@ class DependencyValidationPass:
         context: ValidationContext,
     ) -> tuple[GraphDiagnostic, ...]:
         graph = context.graph
+        registry = context.primitive_registry
         diagnostics: list[GraphDiagnostic] = []
 
         capabilities = {
@@ -760,7 +798,11 @@ class DependencyValidationPass:
         satisfiable: set[CapabilityId] = set()
         for capability, providers in providers_by_capability.items():
             for provider in providers:
-                if provider.witness is None:
+                if not _provider_has_complete_contract(
+                    provider,
+                    graph,
+                    registry,
+                ):
                     continue
                 if not provider.prerequisites:
                     satisfiable.add(capability)
@@ -773,7 +815,11 @@ class DependencyValidationPass:
                 if capability in satisfiable:
                     continue
                 for provider in providers_by_capability.get(capability, ()):
-                    if provider.witness is None:
+                    if not _provider_has_complete_contract(
+                        provider,
+                        graph,
+                        registry,
+                    ):
                         continue
                     if all(
                         prerequisite in satisfiable
