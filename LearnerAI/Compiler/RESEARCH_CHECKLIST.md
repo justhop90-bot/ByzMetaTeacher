@@ -177,7 +177,7 @@ This is where the project should spend its original engineering effort.
 
 The current compiler suite contains:
 
-    41 tests
+    48 tests
 
 The last clean-checkout run after native compiler integration passed all tests.
 
