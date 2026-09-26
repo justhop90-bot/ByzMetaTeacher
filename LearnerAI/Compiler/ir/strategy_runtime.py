@@ -223,7 +223,7 @@ def bind_strategic_enemy_composition_observation(
 ) -> StrategicEvidenceBinding:
     if observation.source is StrategicEvidenceSource.COMMUNITY_META:
         raise ValueError(
-            f"community meta cannot define factual enemy observation '{observation.identity}'"
+            f"community meta cannot define native enemy observation '{observation.identity}'"
         )
     status = effective.factual_status("unit", observation.unit_id)
     if status.value != "VERIFIED":
