@@ -96,7 +96,12 @@ class PrimitiveRegistry:
         if not primitive.native_storage_use_ids:
             raise ValueError(f"action primitive '{primitive.name}' has no native storage contract")
         for identity in primitive.native_witness_ids:
-            witness = self._native_contracts.witness(identity)
+            try:
+                witness = self._native_contracts.witness(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native witness contract '{identity}'"
+                ) from exc
             if self.native(witness.primitive) is None:
                 raise ValueError(f"native witness '{identity}' references unknown primitive '{witness.primitive}'")
             witness_adapter = self.get(witness.primitive)
@@ -107,11 +112,21 @@ class PrimitiveRegistry:
             if witness.kind is NativeWitnessKind.TIMER_STATE:
                 raise ValueError(f"native witness '{identity}' cannot be timer state")
         for identity in primitive.native_storage_use_ids:
-            use = self._native_contracts.storage(identity)
+            try:
+                use = self._native_contracts.storage(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native storage contract '{identity}'"
+                ) from exc
             if use.request_purpose is None:
                 raise ValueError(f"native storage use '{identity}' has no request purpose")
         for identity in primitive.native_pass_constraint_ids:
-            constraint = self._native_contracts.pass_constraint(identity)
+            try:
+                constraint = self._native_contracts.pass_constraint(identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"no native pass constraint '{identity}'"
+                ) from exc
             if constraint.command != primitive.name:
                 raise ValueError(
                     f"native pass constraint '{identity}' targets '{constraint.command}', not '{primitive.name}'"
