@@ -71,15 +71,16 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [ ] explicit GoalSpan request/allocation and interval occupancy;
 - [ ] deterministic volatile Goal scratch pool;
 - [ ] optional end-to-end binding-manifest artifact;
-- [ ] native storage contracts wired to actual command lowering;
+- [x] native GoalSpan storage contracts derived from the checked-in AIRef command schema;
+- [x] native storage contract catalog explicitly distinguishes contiguous Goal spans from multiple independent Goal outputs;
 - [ ] capability-provider/dependency semantics remain the next strategy-facing tranche.
 
 ### Still required before full-player compilation
 
-- [ ] command-specific GoalSpan allocation from native storage contracts;
+- [x] command-specific GoalSpan allocation from native storage contracts;
 - [ ] StrategicNumberSlot and TimerSlot allocation;
-- [ ] explicit package-wide occupancy manifest consumed by the binder;
-- [ ] automatic binding-manifest write-back as an end-to-end compiler artifact;
+- [x] explicit Goal occupancy ranges/intervals consumed by the binder when supplied as package inventory;
+- [x] automatic binding-manifest write-back as an end-to-end compiler artifact;
 - [ ] capability-provider graph;
 - [ ] demand ownership and writer/consumer contracts;
 - [ ] prerequisite dependency graph and cycle/dead-end diagnostics;
@@ -236,3 +237,19 @@ No GitHub Actions result is being treated as proof for the latest adapter work. 
 The compiler phase is not complete when every planned primitive is documented.
 
 It is complete when the compiler can safely express and diagnose the semantic chain required for the Dark -> Feudal -> Castle Byzantine vertical slice.
+
+### Prior-art reuse tranche verification (2026-09-26)
+
+The first reuse tranche is now implemented and CI-verified:
+
+- [x] typed GoalSpan requests with explicit shape, width, contract ID, and native start bounds;
+- [x] interval-based collision detection for scalar GoalIds versus contiguous Goal spans;
+- [x] deterministic volatile Goal scratch-pool checkout/release with explicit lifetime;
+- [x] versioned deterministic binding manifest output;
+- [x] staged manifest promotion tied to the native .per validation result;
+- [x] AIRef-derived span contracts for contiguous point-pair and four-goal outputs;
+- [x] explicit rejection of treating independent multi-Goal outputs such as threat-data fields as one span;
+- [x] current compiler fixture remains unchanged in semantic behavior;
+- [x] native backend validation and full compiler unittest suite pass on the implementation head.
+
+The remaining compiler work is semantic, not storage plumbing: capability providers, demand ownership, prerequisite dependency chains, resource/conflict relations, issuance-failure semantics, and source-order analysis.
