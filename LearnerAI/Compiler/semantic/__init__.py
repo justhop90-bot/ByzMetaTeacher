@@ -101,6 +101,7 @@ from .rule_execution import (
 from .fact_evaluation import evaluate_static_truth
 from .fact_registry import FactSemanticAdapter, NativeFactRegistry
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
+from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
 
 from .fact_values import (
     CanonicalEnum,
