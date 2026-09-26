@@ -20,6 +20,7 @@ if __package__ in (None, ""):
     from dataclasses import replace
     from Compiler.backends.errors import NativeBackendError
     from Compiler.backends.models import NativeValidationResult, ValidationStatus
+    from Compiler.artifact_diagnostics import append_persistent_rule_diagnostics
     from Compiler.diagnostics import (
         CombinedValidationReport,
         ReportStatus,
@@ -55,6 +56,7 @@ else:
     from dataclasses import replace
     from .backends.errors import NativeBackendError
     from .backends.models import NativeValidationResult, ValidationStatus
+    from .artifact_diagnostics import append_persistent_rule_diagnostics
     from .diagnostics import (
         CombinedValidationReport,
         ReportStatus,
@@ -442,6 +444,11 @@ def compile_package_with_report(
             registry,
             persistent_state_report=persistent_state_report,
         )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_text(artifact_result, encoding="utf-8")
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
             native_result,
@@ -530,6 +537,11 @@ def compile_source_with_report(
             registry,
             persistent_state_report=persistent_state_report,
         )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_text(artifact_result, encoding="utf-8")
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
             native_result,
@@ -601,6 +613,24 @@ def compile_to_file(
         staged.write_text(result, encoding="utf-8")
         if staged_manifest is not None:
             staged_manifest.write_text(manifest_text, encoding="utf-8")
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
+        rule_report = analyze_rule_diagnostics(
+            effective_rules,
+            registry,
+            persistent_state_report=persistent_state_report,
+        )
+        artifact_result = append_persistent_rule_diagnostics(
+            result,
+            rule_report.diagnostics,
+        )
+        staged.write_text(artifact_result, encoding="utf-8")
         validation = _normalize_native_validation(native_backend.validate(staged))
         if validation.status is ValidationStatus.VALIDATED:
             os.replace(staged, output)
