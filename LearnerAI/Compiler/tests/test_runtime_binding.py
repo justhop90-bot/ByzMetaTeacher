@@ -84,13 +84,13 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertNotIsInstance(demand.lifecycle.initial_state, GoalValue)
 
     def test_binder_allocates_one_goal_slot_per_lifecycle_request(self):
-        result = RuntimeBinder(base_goal=1000).bind(
+        result = RuntimeBinder(base_goal=41).bind(
             tuple(d.lifecycle.slot for d in self._ir())
         )
         self.assertEqual(len(result.records), 2)
         self.assertEqual(
             [record.binding.id.value for record in result.records],
-            [1000, 1001],
+            [41, 42],
         )
 
     def test_binder_rejects_goal_zero(self):
@@ -107,23 +107,23 @@ class RuntimeBindingTests(unittest.TestCase):
             RuntimeBinder(base_goal=16000).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_respects_occupied_goal_ids(self):
-        result = RuntimeBinder(base_goal=1000).bind(
+        result = RuntimeBinder(base_goal=41).bind(
             tuple(d.lifecycle.slot for d in self._ir()),
-            BindingContext(occupied_goal_ids=frozenset({1000})),
+            BindingContext(occupied_goal_ids=frozenset({41})),
         )
         self.assertEqual(
             [record.binding.id.value for record in result.records],
-            [1001, 1002],
+            [42, 43],
         )
 
     def test_existing_binding_is_reused(self):
         request = self._ir()[0].lifecycle.slot
         existing = GoalSlot(
-            id=GoalId(1200),
+            id=GoalId(200),
             role=GoalRole.LIFECYCLE_STATE,
             provenance_id="existing",
         )
-        result = RuntimeBinder(base_goal=1000).bind(
+        result = RuntimeBinder(base_goal=41).bind(
             (request,),
             BindingContext(existing_bindings=((request.request_id, existing),)),
         )
@@ -155,8 +155,8 @@ class RuntimeBindingTests(unittest.TestCase):
 
     def test_same_requests_bind_deterministically(self):
         requests = tuple(d.lifecycle.slot for d in self._ir())
-        first = RuntimeBinder(base_goal=1000).bind(requests)
-        second = RuntimeBinder(base_goal=1000).bind(requests)
+        first = RuntimeBinder(base_goal=41).bind(requests)
+        second = RuntimeBinder(base_goal=41).bind(requests)
         self.assertEqual(first, second)
 
     def test_storage_kinds_reserve_strategic_numbers_and_timers(self):
@@ -166,20 +166,20 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertIn("TIMER", values)
 
     def test_goal_id_and_goal_value_are_distinct_types(self):
-        self.assertNotEqual(GoalId(1000), GoalValue(1000))
-        self.assertNotEqual(type(GoalId(1000)), type(GoalValue(1000)))
+        self.assertNotEqual(GoalId(41), GoalValue(41))
+        self.assertNotEqual(type(GoalId(41)), type(GoalValue(41)))
 
     def test_current_lifecycle_encoding_is_lowering_only(self):
         slot = GoalSlot(
-            id=GoalId(1000),
+            id=GoalId(41),
             role=GoalRole.LIFECYCLE_STATE,
             provenance_id="test",
         )
         encoded = LifecycleEncoding.for_goal_slot(slot)
         self.assertEqual(encoded.released, GoalValue(0))
         self.assertEqual(encoded.active, GoalValue(1))
-        self.assertEqual(encoded.pending, GoalValue(1001))
-        self.assertEqual(encoded.complete, GoalValue(1002))
+        self.assertEqual(encoded.pending, GoalValue(42))
+        self.assertEqual(encoded.complete, GoalValue(43))
 
     def test_native_parameter_contract_distinguishes_storage_argument_families(self):
         goal = NativeParameterContract(
@@ -241,13 +241,13 @@ class PackageStorageInventoryTests(unittest.TestCase):
                 reservations=(
                     self._reservation(
                         StorageKind.GOAL_SLOT,
-                        1000,
-                        1000,
+                        41,
+                        41,
                         "scalar",
                     ),
                     self._reservation(
                         StorageKind.GOAL_SPAN,
-                        1000,
+                        41,
                         1003,
                         "span",
                     ),
@@ -259,7 +259,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
 
         reservations = (
             self._reservation(StorageKind.TIMER, 7, 7, "timer"),
-            self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+            self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
             self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
         )
         first = PackageStorageInventory(
@@ -282,7 +282,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
                 self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
                 self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
                 self._reservation(StorageKind.TIMER, 7, 7, "timer"),
@@ -299,7 +299,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
             ),
         )
         payload = inventory.to_dict()
@@ -339,7 +339,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
                 self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
                 self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
                 self._reservation(StorageKind.TIMER, 1, 1, "timer"),
@@ -354,9 +354,9 @@ class PackageStorageInventoryTests(unittest.TestCase):
             inventory,
             strategic_number_inventory=sn_inventory,
         )
-        result = RuntimeBinder(base_goal=1000).bind(requests, context)
+        result = RuntimeBinder(base_goal=41).bind(requests, context)
 
-        self.assertEqual(result.binding_for(requests[0].request_id).id.value, 1001)
+        self.assertEqual(result.binding_for(requests[0].request_id).id.value, 42)
         self.assertEqual(result.binding_for(requests[1].request_id).start.value, 43)
         self.assertEqual(result.binding_for(requests[2].request_id).id, 509)
         self.assertEqual(result.binding_for(requests[3].request_id).id, 2)
@@ -368,7 +368,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
             ),
         )
         with self.assertRaisesRegex(ValueError, "package inventory fingerprint mismatch"):
@@ -390,8 +390,8 @@ class PackageStorageInventoryTests(unittest.TestCase):
                     "reservations": [
                         {
                             "kind": StorageKind.GOAL_SLOT.value,
-                            "start": 1000,
-                            "end": 1000,
+                            "start": 41,
+                            "end": 41,
                         }
                     ],
                 }
@@ -405,8 +405,8 @@ class PackageStorageInventoryTests(unittest.TestCase):
         payload["reservations"] = [
             {
                 "kind": StorageKind.GOAL_SLOT.value,
-                "start": 1000,
-                "end": 1000,
+                "start": 41,
+                "end": 41,
                 "provenance_id": "goal",
                 "unexpected": True,
             }
@@ -417,8 +417,8 @@ class PackageStorageInventoryTests(unittest.TestCase):
             reservations=(
                 PackageStorageReservation(
                     kind=StorageKind.GOAL_SLOT,
-                    start=1000,
-                    end=1000,
+                    start=41,
+                    end=41,
                     provenance_id="goal",
                 ),
             ),
@@ -437,11 +437,11 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1200, 1200, "external-goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 200, 200, "external-goal"),
             ),
         )
         existing = GoalSlot(
-            id=GoalId(1200),
+            id=GoalId(200),
             role=GoalRole.LIFECYCLE_STATE,
             provenance_id="existing",
         )
@@ -459,7 +459,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 1000, 1000, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
             ),
         )
         context = BindingContext.from_package_inventory(inventory)
@@ -467,7 +467,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             StorageRequestId(SemanticId("test-package", "inventory"), "goal"),
             role=GoalRole.LIFECYCLE_STATE,
         )
-        result = RuntimeBinder(base_goal=1000).bind((request,), context)
+        result = RuntimeBinder(base_goal=41).bind((request,), context)
         manifest = result.to_manifest(
             package_inventory_sha=context.package_inventory_sha,
             allocator_version=context.allocator_version,
@@ -624,7 +624,7 @@ class GoalSpanAndVolatileStorageTests(unittest.TestCase):
 
     def test_goal_span_request_allocates_one_contiguous_interval(self):
         request = self._span_request()
-        result = RuntimeBinder(base_goal=1000).bind((request,))
+        result = RuntimeBinder(base_goal=41).bind((request,))
         binding = result.binding_for(request.request_id)
         self.assertIsInstance(binding, GoalSpan)
         self.assertEqual(binding.start.value, 41)
@@ -633,7 +633,7 @@ class GoalSpanAndVolatileStorageTests(unittest.TestCase):
 
     def test_goal_span_skips_occupied_ids_and_intervals(self):
         request = self._span_request()
-        result = RuntimeBinder(base_goal=1000).bind(
+        result = RuntimeBinder(base_goal=41).bind(
             (request,),
             BindingContext(
                 occupied_goal_ids=frozenset({41}),
