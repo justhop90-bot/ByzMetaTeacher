@@ -38,7 +38,7 @@ def parse(source: str) -> list[DemandNode]:
                 continue
             if text == "}":
                 break
-            match = re.fullmatch(r"(require|action|witness|release)\s+(.+)", text)
+            match = re.fullmatch(r"(require|action|witness|release|invalidate)\s+(.+)", text)
             if not match:
                 raise CompileError(f"line {line_no}: invalid demand statement")
             key, value = match.groups()
