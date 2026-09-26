@@ -3988,3 +3988,262 @@ When reading any serious .per behavior, translate it mentally as:
 **“What do we want, why do we still want it, what means do we have, does the engine permit it now, what command do we issue, what fact proves it happened, and what causes us to stop caring?”**
 
 That is the community-native bridge between strategic reasoning and the actual rule engine. Everything else is decoration until that chain is traceable.
+
+---
+
+## 33. Resource arbitration and escrow
+
+Resource availability and resource ownership are different questions. This is a critical community primitive because production, construction, research, age-up, and economic infrastructure can all compete for the same stockpile.
+
+The learner should distinguish:
+
+    RESOURCE EXISTS → RESOURCE IS COMMITTED / RESERVED → ACTION FEASIBILITY → ACTION → WORLD-STATE RESULT
+
+Escrow is part of resource arbitration. It is not a completion flag, demand store, or substitute for the engine's can-* predicates.
+
+### 33.1 Resource amount is observation, not ownership
+
+#### Community pattern
+
+Ordinary resource facts answer questions such as:
+
+    (food-amount)
+    (wood-amount)
+    (gold-amount)
+    (stone-amount)
+
+These facts tell the script what is currently in the player's normal stockpile. They do not tell the script which strategic demand has the strongest claim on that resource.
+
+A Castle may require 650 stone. Seeing 650 stone does not establish that Strategy should spend it on the Castle. The same resource may be needed by another active demand, and the script may deliberately protect part of the stockpile.
+
+#### Semantic role
+
+Resource amount is an Information/Economy observation. Strategy interprets the observation. Economy arbitrates access. Domain execution asks the engine whether the resulting transaction is feasible.
+
+The ownership boundary is:
+
+    Resource fact:     WHAT EXISTS?
+    Strategy:          WHAT MATTERS?
+    Economy:           WHO GETS ACCESS?
+    Engine:            CAN THE ACTION START?
+    World state:       WHAT ACTUALLY HAPPENED?
+
+### 33.2 Escrow is committed resource state
+
+#### Engine primitives
+
+AIRef exposes ordinary escrow controls and observations including:
+
+    (escrow-amount resource)
+    (set-escrow-percentage resource percentage)
+    (release-escrow resource)
+
+UP also exposes more direct escrow operations such as up-modify-escrow and up-release-escrow. Exact argument forms and supported semantics must be checked against the target DE/AIRef version before executable use. AIRef documents escrow-aware feasibility predicates separately from ordinary feasibility predicates. citeturn0search0
+
+#### Semantic role
+
+Escrow represents resources deliberately placed under the AI's reservation/arbitration mechanism. It can support a persistent demand by protecting resources for a future transaction.
+
+It does not prove:
+
+- that the demand is still strategically valid;
+- that the resource will never be needed elsewhere;
+- that the action is currently feasible;
+- that an action was issued;
+- that the intended world-state result exists.
+
+The learner must therefore keep this distinction explicit:
+
+    ESCROW = resource commitment
+    DEMAND = strategic intent
+    FEASIBILITY = engine permission
+    ACTION = execution request
+    WITNESS = world-state proof
+
+### 33.3 Escrow-aware feasibility
+
+#### Primitive family
+
+The engine exposes paired feasibility predicates for several transactions:
+
+    can-build X
+    can-build-with-escrow X
+
+    can-train X
+    can-train-with-escrow X
+
+    can-research X
+    can-research-with-escrow X
+
+AIRef describes the escrow-aware forms as checking whether the transaction can start when escrowed resources are included. The ordinary forms do not count escrow stockpiles. citeturn0search0
+
+#### Why this matters
+
+Consider a demand that has legitimately reserved resources:
+
+    Castle demand → stone protected in escrow → can-build castle
+
+If the script instead tests only the ordinary feasibility predicate, it may report that the transaction is not currently affordable even though the resource has deliberately been committed for it.
+
+Conversely, switching every rule to the escrow-aware form is also wrong. Escrow changes the resource basis of the feasibility test. It should be used because the transaction is intentionally allowed to consume the reserved resource, not because the predicate happens to be convenient.
+
+The important distinction is:
+
+    ordinary feasibility
+    = can the action start from ordinary available resources?
+
+    escrow-aware feasibility
+    = can the action start when the relevant escrowed resources are also eligible?
+
+### 33.4 Resource arbitration is not feasibility
+
+A community-standard resource-control pattern is to protect resources for important technology, age-up, military, or construction demands and then let the ordinary engine predicates determine whether the transaction can proceed.
+
+The conceptual chain is:
+
+    STRATEGIC DEMAND
+        ↓
+    RESOURCE CLAIM
+        ↓
+    ESCROW / ARBITRATION
+        ↓
+    ESCROW-AWARE OR ORDINARY FEASIBILITY
+        ↓
+    ACTION
+        ↓
+    WORLD-STATE WITNESS
+
+Do not collapse the chain into a raw resource threshold followed by an action. Resources alone ignore engine feasibility. Escrow alone mistakes resource commitment for execution.
+
+### 33.5 Minimal valid production example
+
+A simple production rule can remain ordinary:
+
+    (defrule
+        (unit-type-count-total knight-line < target)
+        (can-train knight-line)
+    =>
+        (train knight-line)
+    )
+
+If the economy deliberately reserves resources for the Knight demand, the feasibility predicate can instead be escrow-aware:
+
+    (defrule
+        (unit-type-count-total knight-line < target)
+        (can-train-with-escrow knight-line)
+    =>
+        (train knight-line)
+    )
+
+The second rule does not mean always use escrow. It means the transaction is intentionally evaluated against the escrow-inclusive resource state.
+
+The production target remains the demand. The escrow remains the resource-control mechanism. can-train-with-escrow remains the engine feasibility test. train remains the action. The resulting trained-unit count remains the witness.
+
+### 33.6 Release and cancellation of resource commitments
+
+Escrow creates a second release problem.
+
+A strategic demand can end while resources are still reserved for it. Therefore:
+
+    DEMAND RELEASE ≠ ESCROW RELEASE
+
+They may occur together, but they represent different semantic facts.
+
+If a Castle demand becomes obsolete, the script must not leave stone permanently trapped behind an abandoned commitment. Conversely, releasing escrow does not necessarily mean the strategic demand is cancelled. It may simply mean the economy no longer needs to reserve those resources because the transaction is now funded by ordinary stockpile resources or the arbitration policy changed.
+
+The learner should trace both lifecycles independently:
+
+    STRATEGIC DEMAND
+        → active
+        → completed / cancelled / obsolete
+        → release
+
+    RESOURCE COMMITMENT
+        → unreserved
+        → escrowed
+        → consumed / reallocated / released
+
+### 33.7 Common failure
+
+#### Resource-count masquerading as feasibility
+
+    (stone-amount >= castle-cost)
+    → build castle
+
+This ignores placement, builder state, prerequisites, competing commitments, and the engine's actual construction feasibility.
+
+#### Escrow-as-completion
+
+    set escrow
+    → Castle complete
+
+The escrow only changes resource commitment.
+
+#### Escrow-as-permanent-demand
+
+    escrow exists
+    → demand must still be active
+
+A reservation can outlive the reason that created it if release is not handled correctly.
+
+#### Universal escrow
+
+Using escrow-aware feasibility everywhere because it seems safer creates hidden resource coupling. Escrow should correspond to an actual arbitration policy, not become the default substitute for ordinary resource handling.
+
+#### Release mismatch
+
+Clearing a demand while leaving its resource commitment active can starve unrelated actions. Releasing resources whenever a rule merely fails for one pass can also destroy legitimate persistent commitments. The release condition must match the semantic owner and lifecycle.
+
+### 33.8 Basilisk-scale variant
+
+Basilisk should treat resource arbitration as transient execution control around persistent strategic intent:
+
+    OBSERVE
+        current stockpile and economic pressure
+            ↓
+    INTERPRET
+        active strategic/domain demands
+            ↓
+    RESOURCE ARBITRATION
+        decide which demands receive protection/access
+            ↓
+    ESCROW, when justified
+        reserve resources for the selected transaction
+            ↓
+    CAPABILITY / FEASIBILITY
+        ordinary or escrow-aware can-* predicate
+            ↓
+    ACTION
+        build / train / research
+            ↓
+    WORLD-STATE WITNESS
+        actual result appears
+            ↓
+    RELEASE
+        complete demand and release stale resource commitment
+            ↓
+    REASSESS
+
+This preserves the Basilisk distinction between strategy intent and execution state.
+
+Strategy says: “We still require this.”
+Economy says: “These resources are currently protected or available for it.”
+The engine says: “This transaction is feasible now.”
+The action requests it. World state proves whether it actually happened.
+
+The important Basilisk rule is that a temporary resource shortage should normally block execution without silently destroying the strategic demand. Conversely, a resource commitment should not make an obsolete demand immortal.
+
+### 33.9 Hard invariants
+
+- Resource amount is observation, not strategic ownership.
+- Resource availability is not the same as resource commitment.
+- Escrow is resource arbitration, not demand state.
+- Escrow is not an action-success witness.
+- Ordinary can-* and escrow-aware can-*-with-escrow predicates answer different resource-basis questions.
+- Do not use escrow-aware feasibility unless the relevant resource commitment is intentional and semantically justified.
+- Resource arbitration does not replace engine-native feasibility.
+- Persistent strategic demand can survive temporary resource blockage.
+- Demand release and escrow release are related but distinct transitions.
+- Stale escrow must not permanently starve unrelated valid demands.
+- Completion must still be proved by world state.
+- The smallest community-standard resource-control mechanism that correctly expresses the policy is preferable to a universal resource manager.
