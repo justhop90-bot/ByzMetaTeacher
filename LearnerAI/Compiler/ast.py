@@ -17,6 +17,11 @@ class DemandNode:
     release: str
     location: SourceLocation
     invalidate: str | None = None
+    requirement_locations: tuple[SourceLocation, ...] = ()
+    action_location: SourceLocation | None = None
+    witness_location: SourceLocation | None = None
+    release_location: SourceLocation | None = None
+    invalidate_location: SourceLocation | None = None
 
 @dataclass(frozen=True)
 class Expression:
