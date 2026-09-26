@@ -8,6 +8,7 @@ from LearnerAI.Compiler.ir.strategy import (
     CapabilityIntent,
     CapabilityIntentKind,
     PostureTransition,
+    StrategicCapabilityObservation,
     StrategicEvidence,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
@@ -361,6 +362,65 @@ class StrategyRuntimeTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "COMMUNITY_REFERENCE"):
             bind_strategic_evidence(evidence, self.effective)
+
+    def test_byzantine_unique_unit_capabilities_bind_through_native_unit_capability_family(self):
+        observations = {item.identity: item for item in self.profile.capability_observations}
+        self.assertEqual(
+            set(observations),
+            {
+                "cataphract-capability",
+                "varangian-guard-capability",
+                "elite-varangian-guard-capability",
+            },
+        )
+        self.assertEqual(
+            {
+                item.capability.entity_id
+                for item in observations.values()
+            },
+            {40, 2703, 2704},
+        )
+        runtime = evaluate_strategy_runtime(
+            self.profile,
+            self.effective,
+            self.snapshot(
+                facts=tuple((item.expression, True) for item in observations.values()),
+                previous=StrategyPosture.CASTLE_POWER,
+            ),
+        )
+        self.assertEqual(
+            dict(runtime.evaluated_capability_observations),
+            {identity: EvidenceTruth.TRUE for identity in observations},
+        )
+
+    def test_unknown_unique_unit_capability_fails_closed(self):
+        unknown = StrategicCapabilityObservation(
+            identity="unknown-unique-unit",
+            capability=self.profile.capability_observations[0].capability.__class__(
+                self.profile.capability_observations[0].capability.kind,
+                "unit",
+                999999,
+                self.profile.capability_observations[0].capability.provider_building,
+            ),
+            expression="(can-train-with-escrow cataphract)",
+        )
+        profile = replace(
+            self.profile,
+            capability_observations=(unknown,),
+        )
+        with self.assertRaisesRegex(ValueError, "factual status UNKNOWN"):
+            evaluate_strategy_runtime(profile, self.effective, self.snapshot())
+
+    def test_community_meta_cannot_define_factual_capability(self):
+        base = self.profile.capability_observations[0]
+        meta = replace(
+            base,
+            source=StrategicEvidenceSource.COMMUNITY_META,
+            provenance=self.profile.demand("castle-commitment").reason[0].provenance,
+        )
+        profile = replace(self.profile, capability_observations=(meta,))
+        with self.assertRaisesRegex(ValueError, "community meta cannot define factual capability"):
+            evaluate_strategy_runtime(profile, self.effective, self.snapshot())
 
     def test_byzantine_meta_scope_covers_counter_defense_and_castle_transitions(self):
         labels = {item.label for item in self.profile.community_meta_evidence}
