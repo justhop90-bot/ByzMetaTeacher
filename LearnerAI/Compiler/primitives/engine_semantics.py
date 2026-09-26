@@ -201,6 +201,21 @@ _ACTION_SPECS = (
 
 
 
+def _practice_references(command: str) -> tuple[str, ...]:
+    references = {
+        "can-build": ("build.can-pending-witness",),
+        "can-build-with-escrow": ("build.can-pending-witness", "resource-control.escrow"),
+        "can-train": ("train.can-queue-witness",),
+        "can-train-with-escrow": ("train.can-queue-witness", "resource-control.escrow"),
+        "can-research": ("research.can-complete-witness",),
+        "can-research-with-escrow": ("research.can-complete-witness", "resource-control.escrow"),
+        "building-type-count-total": ("build.can-pending-witness",),
+        "unit-type-count-total": ("train.can-queue-witness",),
+        "research-completed": ("research.can-complete-witness",),
+    }
+    return references.get(command, ())
+
+
 def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticMapping:
     if category == "OBSERVATION":
         state_effects = "reads native world state without persistent mutation"
@@ -257,6 +272,7 @@ def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticM
         admission=admission,
         completion=completion,
         recovery=recovery,
+        practice_references=_practice_references(command),
     )
 
 
@@ -279,6 +295,7 @@ def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
         admission="native action command; caller must separately guard with can-* or equivalent admission semantics where required",
         completion=f"completion requires world-state witness '{witness}'",
         recovery="preserve strategic demand and reassess through native feasibility after temporary blockage or failure",
+        practice_references=("actions.request-not-completion",),
     )
 
 
@@ -296,6 +313,7 @@ def _pending_mapping() -> EngineSemanticMapping:
         admission="native pending-work fact",
         completion="pending state is never a completion witness",
         recovery="use pending evidence to suppress duplicate issuance, then re-evaluate feasibility and world-state witnesses",
+        practice_references=("pending.work-queue-guard",),
     )
 
 
