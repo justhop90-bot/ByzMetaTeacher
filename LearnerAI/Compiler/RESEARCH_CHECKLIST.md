@@ -297,3 +297,17 @@ Compiler CI run 207 (36234240102) verified the authoritative demand-ownership tr
 - [x] Compiler CI run 230 verified the final resource-conflict tree: native finding_count=0 and 140 tests passed.
 
 The model deliberately stops at transient action exclusion. Persistent resource reservations and scheduler/fairness semantics remain outside Basilisk's compiler boundary.
+
+
+### Action-issuance implementation record (2026-09-26)
+
+- [x] Add typed `ActionIssuance`, `ActionIssuancePhase`, and `ActionIssuanceFailure` IR.
+- [x] Add explicit `ISSUED` lifecycle state between ACTIVE and PENDING.
+- [x] Emit `ACTIVE -> ISSUED` only from the native action rule and `ISSUED -> PENDING` as a separate ordered admission rule.
+- [x] Preserve issuance failure as `RETAIN_ACTIVE` when issuance guards do not fire; do not invent an engine-side failure fact.
+- [x] Validate native feasibility recursively through nested logical requirement expressions.
+- [x] Add deterministic `ISS-*` diagnostics and compile-gate precedence before resource/capability validation.
+- [x] Update lifecycle/ownership regressions and generated Basilisk fixture for the four-stage lifecycle.
+- [x] Compiler CI run 270 verified the final tree: native `finding_count=0`; full compiler suite `144 tests, OK`.
+
+Runtime limitation remains explicit: the native action command does not provide a Boolean issuance-return channel. `ISSUED` therefore means the action rule fired; it is not a claim that the game reports successful world-side execution. PENDING remains a separate compiler lifecycle state admitted on the following pass.
