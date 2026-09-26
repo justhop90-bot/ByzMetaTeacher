@@ -106,6 +106,7 @@ from .fact_values import (
     CanonicalSymbol,
     CanonicalValue,
     CanonicalizationContext,
+    NormalizedFact,
     EnumNormalization,
     IdentifierForm,
     IdentifierNormalization,
