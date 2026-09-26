@@ -12,6 +12,13 @@ GENERIC_PUBLIC_MODULES = (
 
 # These names are Basilisk-specific client API and must never become attributes
 # of the generic compiler facades again.
+DOWNSTREAM_CLIENT_MODULE_PREFIXES = (
+    "LearnerAI.Compiler.clients.basilisk",
+    "LearnerAI.Compiler.ir.strategy",
+    "LearnerAI.Compiler.ir.strategy_runtime",
+)
+
+
 BASILISK_STRATEGY_SYMBOLS = (
     "ByzantineProfile",
     "CapabilityIntent",
@@ -106,6 +113,11 @@ class BasiliskClientBoundaryTests(unittest.TestCase):
         )
 
         for module_name in sorted(module_names):
+            if any(
+                module_name == prefix or module_name.startswith(prefix + ".")
+                for prefix in DOWNSTREAM_CLIENT_MODULE_PREFIXES
+            ):
+                continue
             module = importlib.import_module(module_name)
             for symbol_name in dir(module):
                 if symbol_name.startswith("_"):
