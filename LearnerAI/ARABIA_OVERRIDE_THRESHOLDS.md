@@ -167,25 +167,37 @@ Tower pressure is a structural threat. It therefore overrides ordinary Feudal un
 
 | Observed state | Override | Response |
 |---|---|---|
-| Foundation exists but does not materially threaten a critical resource | T0 | monitor; no automatic tower |
-| Foundation is spatially close enough to threaten a critical resource | T1 | short emergency wall/funnel; mobilize available units |
-| Threatening foundation + 2+ builders or military escort | T2 | emergency defensive tower admissible + relevant counter units |
-| Completed tower controls a critical resource or route | T3 | defensive tower or safe relocation path; suspend optional Castle spending |
-| 2+ forward towers or foundations threaten the same economic zone | T4 | defensive tower + wall/gate + relevant counter units; Castle bank suspended |
-| Tower + MAA/Archers at the same forward position | T5 | treat as full Feudal pressure; protect economy first |
+| Foundation exists but cannot materially deny a critical resource or route if completed | T0 | monitor; no automatic tower |
+| Foundation can materially deny a critical resource or route if completed | T1 | short emergency wall/funnel; mobilize available units |
+| T1 denial threat + 2+ enemy builders or military escort | T2 | emergency defensive tower admissible + relevant counter units |
+| Completed tower actually controls/denies a critical resource or route | T3 | defensive tower or safe relocation path; suspend optional Castle spending |
+| 2+ forward foundations/completed towers can deny the same economic zone | T4 | defensive tower + wall/gate + relevant counter units; Castle bank suspended |
+| Tower denial + MAA/Archers at the same forward position | T5 | treat as full Feudal pressure; protect economy first |
 
-The spatial test is deliberately qualitative at the strategy layer. Do not hard-code a universal "12 tiles" rule into the compiler. Map the threat to engine-native distance/targeting facts and tune the actual distance band from runtime evidence.
+The positional test is deliberately a **denial test**, not a distance constant.
+
+A forward foundation matters because its completed position would deny a critical resource or route. Distance is only one engine fact that can contribute to that judgment.
+
+Builder count changes execution urgency:
+
+- 1 builder = threat can be emerging;
+- 2+ builders = committed construction and shorter response time;
+- military escort = protected construction.
+
+Builder count alone never upgrades a harmless foundation into a tower-rush demand.
+
+Likewise, own builder count is a construction-feasibility decision, not a strategic trigger.
 
 ### Tower builder rule
 
 A single incomplete tower with one builder is not automatically a rush emergency.
 
-Escalate immediately when:
+Escalate from T1 to T2 when:
 
-- 2+ builders are committed;
-- the construction site is close enough to deny a critical resource;
-- a second forward foundation appears;
-- or military units are protecting the construction.
+- the foundation can materially deny a critical resource or route;
+- and either 2+ enemy builders are committed or military units are protecting the construction.
+
+A second foundation is evidence of continued strategic commitment, but it still must pass the denial test before becoming an active tower threat.
 
 ### Tower completion rule
 
