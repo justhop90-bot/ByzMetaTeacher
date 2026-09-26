@@ -67,7 +67,7 @@ An action first moves a demand from active to issued.
 
 A separate pending-admission rule moves issued to pending on the following script pass.
 
-The pending witness moves pending to complete.
+The typed completion-witness contract proves that completion evidence is an explicit world-state observation tied to the demand it establishes. The pending witness moves pending to complete.
 
 Release moves complete to released.
 
@@ -232,6 +232,7 @@ small lifecycle fixtures only. They are not the full Basilisk controller.
 
 Implemented now:
 - explicit typed demand ownership contracts;
+- explicit typed completion-witness contracts with deterministic witness diagnostics;
 - explicit typed action-issuance contract with separate ISSUED and PENDING lifecycle states;
 - deterministic issuance diagnostics and issuance-first compile-gate validation;
 
@@ -273,3 +274,8 @@ The latest checked-in verification record contains the compiler regression suite
 The compiler is successful when it helps us build the player safely.
 
 It is not successful merely because the compiler grows larger.
+
+
+### Completion witness boundary
+
+Completion is admitted only through a typed `CompletionWitnessContract`. The contract records witness identity, evidence kind, native witness primitive, the demand/capability it establishes, and emitter-aligned source order relative to action issuance. The witness validator rejects timing evidence, non-completion-capable observations, action/witness coupling, identity mismatch, invalid evidence kind, and witness ordering violations before resource/capability validation. This layer validates causal evidence; it does not duplicate the runtime's world-state authority.
