@@ -53,6 +53,54 @@ def provenance(
 
 
 class NativeHygieneTests(unittest.TestCase):
+    def test_ordinary_goal_storage_stops_at_512(self):
+        NativeStorageUse(
+            "ordinary-goal-512",
+            NativeStorageClass.PERSISTENT_SCALAR,
+            NativeStorageKind.GOAL,
+            base=512,
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            NativeStorageUse(
+                "ordinary-goal-513",
+                NativeStorageClass.PERSISTENT_SCALAR,
+                NativeStorageKind.GOAL,
+                base=513,
+                provenance=(provenance(),),
+            )
+
+    def test_point_goal_span_stops_at_15998(self):
+        NativeStorageUse(
+            "point-span-last",
+            NativeStorageClass.GOAL_SPAN,
+            NativeStorageKind.POINT_GOAL_SPAN,
+            base=15998,
+            span_length=2,
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            NativeStorageUse(
+                "point-span-overrun",
+                NativeStorageClass.GOAL_SPAN,
+                NativeStorageKind.POINT_GOAL_SPAN,
+                base=15999,
+                span_length=2,
+                provenance=(provenance(),),
+            )
+
+    def test_goal_citation_domains_are_distinct(self):
+        catalog = default_native_citation_catalog()
+        storage = catalog.resolve("airef:goal-storage")
+        extended = catalog.resolve("airef:extended-goal-span-4")
+        parameter = catalog.resolve("airef:goal-id-parameter-range")
+        self.assertNotEqual(storage.citation_id, extended.citation_id)
+        self.assertNotEqual(storage.citation_id, parameter.citation_id)
+        self.assertNotEqual(extended.citation_id, parameter.citation_id)
+        self.assertEqual(storage.locator, "Goals: 1 to 512")
+        self.assertEqual(extended.locator, "up-get-search-state OutputGoalId: 41 to 15996, 4 consecutive goals")
+        self.assertEqual(parameter.locator, "goal GoalId: 1 to 16000")
+
 
     def test_citation_catalog_audit_detects_unused_record(self):
         records = (
