@@ -1,0 +1,159 @@
+import unittest
+
+from Compiler.ast import DemandNode, SourceLocation
+from Compiler.ir import LifecycleState, SemanticDemand
+from Compiler.parser import parse
+from Compiler.primitives import default_de_registry
+from Compiler.runtime_binding import (
+    GoalId,
+    GoalSlot,
+    GoalSlotRequest,
+    GoalValue,
+    LifecycleEncoding,
+    NativeParameterContract,
+    NativeParameterKind,
+    NativeStorageContract,
+    RuntimeBinder,
+    StorageRequestId,
+    GoalStorageShape,
+)
+from Compiler.semantic import analyze
+
+
+EXAMPLES = """
+demand castle {
+    require (can-build castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
+
+demand defensive-spearmen {
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 2)
+    release (unit-type-count spearman >= 2)
+}
+"""
+
+
+class RuntimeBindingTests(unittest.TestCase):
+    def _ir(self):
+        return analyze(parse(EXAMPLES), default_de_registry())
+
+    def test_semantic_demand_has_one_lifecycle_request_per_demand(self):
+        ir = self._ir()
+        self.assertEqual(len(ir), 2)
+        self.assertTrue(all(d.lifecycle.slot.request_id for d in ir))
+        self.assertEqual(
+            [d.lifecycle.slot.request_id.purpose for d in ir],
+            ["lifecycle", "lifecycle"],
+        )
+        self.assertFalse(any(isinstance(v, int) for d in ir for v in vars(d).values()))
+
+    def test_lifecycle_request_contains_no_resolved_goal_id(self):
+        demand = self._ir()[0]
+        request = demand.lifecycle.slot
+        self.assertIsInstance(request, GoalSlotRequest)
+        self.assertFalse(hasattr(request, "goal_id"))
+        self.assertFalse(hasattr(request, "value"))
+
+    def test_lifecycle_states_are_values_not_storage(self):
+        demand = self._ir()[0]
+        self.assertEqual(demand.lifecycle.initial_state, LifecycleState.ACTIVE)
+        self.assertIsInstance(demand.lifecycle.initial_state, LifecycleState)
+        self.assertNotIsInstance(demand.lifecycle.initial_state, GoalId)
+        self.assertNotIsInstance(demand.lifecycle.initial_state, GoalValue)
+
+    def test_binder_allocates_one_goal_slot_per_lifecycle_request(self):
+        result = RuntimeBinder(base_goal=1000).bind(
+            tuple(d.lifecycle.slot for d in self._ir())
+        )
+        self.assertEqual(len(result.records), 2)
+        self.assertEqual(
+            [record.binding.id.value for record in result.records],
+            [1000, 1001],
+        )
+
+    def test_binder_rejects_goal_zero(self):
+        with self.assertRaisesRegex(ValueError, "GoalId.*1..16000"):
+            RuntimeBinder(base_goal=0).bind(tuple(d.lifecycle.slot for d in self._ir()))
+
+    def test_binder_rejects_goal_overflow(self):
+        with self.assertRaisesRegex(ValueError, "GoalId.*1..16000"):
+            RuntimeBinder(base_goal=16000).bind(tuple(d.lifecycle.slot for d in self._ir()))
+
+    def test_binder_respects_occupied_goal_ids(self):
+        result = RuntimeBinder(
+            base_goal=1000,
+            occupied_goal_ids=frozenset({1000}),
+        ).bind(tuple(d.lifecycle.slot for d in self._ir()))
+        self.assertEqual(
+            [record.binding.id.value for record in result.records],
+            [1001, 1002],
+        )
+
+    def test_same_requests_bind_deterministically(self):
+        requests = tuple(d.lifecycle.slot for d in self._ir())
+        first = RuntimeBinder(base_goal=1000).bind(requests)
+        second = RuntimeBinder(base_goal=1000).bind(requests)
+        self.assertEqual(first, second)
+
+    def test_goal_id_and_goal_value_are_distinct_types(self):
+        self.assertNotEqual(GoalId(1000), GoalValue(1000))
+        self.assertNotEqual(type(GoalId(1000)), type(GoalValue(1000)))
+
+    def test_current_lifecycle_encoding_is_lowering_only(self):
+        slot = GoalSlot(
+            id=GoalId(1000),
+            role="LIFECYCLE_STATE",
+            provenance_id="test",
+        )
+        encoded = LifecycleEncoding.for_goal_slot(slot)
+        self.assertEqual(encoded.released, GoalValue(0))
+        self.assertEqual(encoded.active, GoalValue(1))
+        self.assertEqual(encoded.pending, GoalValue(1001))
+        self.assertEqual(encoded.complete, GoalValue(1002))
+
+    def test_native_parameter_contract_distinguishes_storage_argument_families(self):
+        goal = NativeParameterContract(
+            index=0,
+            kind=NativeParameterKind.GOAL_ID,
+        )
+        span = NativeParameterContract(
+            index=1,
+            kind=NativeParameterKind.GOAL_SPAN_START,
+            width=4,
+            contiguous=True,
+            writes=True,
+        )
+        self.assertNotEqual(goal.kind, span.kind)
+        self.assertEqual(span.width, 4)
+        self.assertTrue(span.contiguous)
+        self.assertTrue(span.writes)
+
+    def test_native_storage_contract_carries_command_signature(self):
+        contract = NativeStorageContract(
+            contract_id="up-get-search-state.start",
+            command="up-get-search-state",
+            parameters=(
+                NativeParameterContract(
+                    index=0,
+                    kind=NativeParameterKind.GOAL_SPAN_START,
+                    width=4,
+                    contiguous=True,
+                    writes=True,
+                ),
+            ),
+            shape=GoalStorageShape.EXTENDED_4,
+            start_min=41,
+            start_max=508,
+        )
+        self.assertEqual(contract.command, "up-get-search-state")
+        self.assertEqual(contract.shape, GoalStorageShape.EXTENDED_4)
+        self.assertEqual(contract.start_min, 41)
+        self.assertEqual(contract.start_max, 508)
+
+
+if __name__ == "__main__":
+    unittest.main()
