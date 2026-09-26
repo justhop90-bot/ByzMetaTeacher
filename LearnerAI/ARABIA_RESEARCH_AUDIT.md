@@ -302,3 +302,33 @@ References:
 - https://www.reddit.com/r/aoe2/comments/1w2ysg8/arabia_every_opening_is_maa/
 - https://www.reddit.com/r/aoe2/comments/1voyj53/what_to_do_vs_menatarms_rushes/
 - https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/
+
+
+## Wall/tower escalation audit, September 26, 2026
+
+The Arabia wall/tower path was re-audited around three separate facts:
+
+1. positional value / denial;
+2. enemy builder commitment;
+3. actual resource denial.
+
+Revisions:
+
+- A wall demand must protect a real resource or route. Enemy unit count raises urgency but does not create a wall demand by itself.
+- A tower foundation is only strategically relevant when its completed position can materially deny a critical resource or route.
+- Enemy builder count controls escalation urgency. Two or more builders shorten the response window, but builder count alone does not turn a harmless foundation into a tower-rush demand.
+- Own builder count is construction feasibility. It controls how quickly the defensive structure can complete; it does not decide whether the structure is strategically justified.
+- A completed tower is a stronger witness than a foundation because actual resource/route denial can be observed.
+- A second tower/foundation must still pass the denial test. Multiple foundations are evidence of commitment, not automatic proof of threat.
+- MAA presence does not authorize a tower by itself. MAA plus positional/resource denial can activate the combined pressure branch.
+
+The native engine reference provides `dropsite-min-distance` as a real observation, so the compiler now includes that fact in its small semantic primitive profile. The compiler still does not invent an enemy-builder-count primitive because the current native reference exposes builder assignment as an action rather than a simple builder-count fact.
+
+Current community discussion supports the same qualitative pattern: MAA pressure is commonly answered with early Archers and small resource walls, while tower reactions are positional and depend on whether the tower actually protects or denies important areas.
+
+References:
+
+- https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/
+- https://www.reddit.com/r/aoe2/comments/1w2ysg8/arabia_every_opening_is_maa/
+- https://www.reddit.com/r/aoe2/comments/1voyj53/what_to_do_vs_menatarms_rushes/
+- https://www.reddit.com/r/aoe2/comments/1t1josh/maa_rush_against_towers/
