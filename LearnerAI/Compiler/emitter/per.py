@@ -170,7 +170,7 @@ def emit(
             "(defrule",
             f"    (goal demand-{demand.name} {lifecycle.issued.value})",
             "=>",
-            f"    (set-goal demand-{demand.name} {lifecycle.issued.value})",
+            f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
             ")",
             "",
             f"; Action issuance: {demand.name} | ACTIVE -> ISSUED",
