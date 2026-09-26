@@ -118,6 +118,15 @@ def _stored_role(expr: Expression, registry: PrimitiveRegistry) -> str:
     return next(iter(roles)) if len(roles) == 1 else "COMPOSITE"
 
 
+def _has_non_timing_evidence(expr: Expression, registry: PrimitiveRegistry) -> bool:
+    roles = _context_roles(expr, registry)
+    return bool(roles & {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"})
+
+
+def _is_timing_only(expr: Expression, registry: PrimitiveRegistry) -> bool:
+    return _context_roles(expr, registry) == {"TIMING"}
+
+
 def _pending_diagnostics(demand: DemandNode, goal: int, pending_goal: int, completed_goal: int):
     action = parse_expression(demand.action)
     witness = parse_expression(demand.witness)
@@ -162,10 +171,13 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
             _validate_context(
                 expr,
                 registry,
-                {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
+                {"OBSERVATION", "TIMING", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
                 f"demand '{demand.name}' requirement",
             )
             requirements.append(SemanticRequirement(expr, _stored_role(expr, registry)))
+        if any(_context_roles(req.expression, registry) == {"TIMING"} for req in requirements):
+            if not any(_has_non_timing_evidence(req.expression, registry) for req in requirements):
+                raise CompileError("TIMING-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " uses timing as its only evidence")
         action = parse_expression(demand.action)
         _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
         if not demand.witness.strip() or demand.witness.strip() == "()":
@@ -174,6 +186,8 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         _validate_completion_witness(witness, registry)
         release = parse_expression(demand.release)
+        if _is_timing_only(release, registry):
+            raise CompileError("TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " cannot release from timing alone")
         if release.head == action.head:
             raise CompileError(
                 f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
