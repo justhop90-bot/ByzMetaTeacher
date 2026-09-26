@@ -2,8 +2,8 @@ import unittest
 
 from dataclasses import replace
 
-from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-from LearnerAI.Compiler.ir.strategy import build_byzantine_castle_strategy, lower_strategy_profile
+from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_castle_strategy, lower_strategy_profile
 from pathlib import Path
 import sys
 
