@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..ast import Expression
 from ..errors import CompileError
 from ..ir import SemanticDemand
+from ..ir.resource import ResourceClaim, ResourceClaimId, ResourceKind, ResourceScope
 from ..ir.capability import (
     ActionSpec,
     Capability,
@@ -166,6 +167,19 @@ def project_capability_graph(
                 establishes=capability_id,
             )
         )
+        resource_claim = None
+        if conflict_class is not None and len(arbitration) == 1:
+            resource_claim = ResourceClaim(
+                identity=ResourceClaimId(
+                    demand.identity.source_unit,
+                    f"{demand.identity.local_name}-resource-claim",
+                ),
+                kind=ResourceKind.ACTION_EXCLUSION,
+                scope=ResourceScope.TRANSIENT,
+                claimant=demand.identity,
+                conflict_class=conflict_class,
+                arbitration_owner=arbitration[0],
+            )
         builder.add_provider(
             CapabilityProvider(
                 identity=provider_id,
@@ -180,6 +194,7 @@ def project_capability_graph(
                     arbitration=arbitration,
                 ),
                 witness=witness_id,
+                resource_claim=resource_claim,
             )
         )
         builder.add_demand(
