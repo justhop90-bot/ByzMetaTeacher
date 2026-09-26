@@ -27,6 +27,7 @@ demand castle {
 """
 
 
+# CI verification marker: capability bridge gate under test.
 class CapabilityBridgeTests(unittest.TestCase):
     def test_projects_current_demand_ir_to_one_capability_provider_chain(self):
         registry = default_de_registry()
