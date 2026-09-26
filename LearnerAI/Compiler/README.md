@@ -15,7 +15,9 @@ Its job is to turn explicit player semantics into auditable .per while rejecting
       -> validated IR
       -> runtime binding
       -> deterministic .per
-      -> native aoe2-ai-parser validation
+      -> pinned aoe2-ai-parser validation
+      -> zero native findings
+      -> promoted artifact
       -> AoE2DE runtime
       -> runtime evidence
 
@@ -196,7 +198,7 @@ native engine permits only one successful build/up-build action per AI rule pass
 
 ## Native validation
 
-Generated .per is staged and validated by the pinned aoe2-ai-parser backend before promotion when native validation is enabled.
+Generated .per is staged and validated by the pinned aoe2-ai-parser backend before promotion. Artifact promotion requires zero native findings; native backend failure, rejection, timeout, or non-zero finding count leaves the previous artifact untouched.
 
 Use Compiler/backends/README.md for the protocol and pin.
 
