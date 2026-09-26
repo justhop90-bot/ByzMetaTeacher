@@ -79,10 +79,10 @@ class GameDataHardeningTests(unittest.TestCase):
             self.assertEqual(current.upgrades_from, UnitId(previous_id))
             self.assertEqual(previous.upgrades_to, UnitId(current_id))
 
-    def test_known_unavailable_generic_siege_upgrades_are_not_promoted(self):
-        self.assertNotIn(UnitId(550), self.data.available_units)
-        self.assertNotIn(UnitId(588), self.data.available_units)
-        self.assertNotIn(UnitId(542), self.data.available_units)
+    def test_known_unavailable_generic_siege_upgrades_are_verified_unavailable(self):
+        for unit_id in (588, 542):
+            self.assertIn(UnitId(unit_id), self.data.verified_unavailable_units)
+            self.assertNotIn(UnitId(unit_id), self.data.available_units)
 
     def test_explicit_upgrade_relations_cover_all_bidirectional_upgrade_edges(self):
         edges = {
