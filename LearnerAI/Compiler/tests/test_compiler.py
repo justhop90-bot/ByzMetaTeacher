@@ -16,6 +16,13 @@ class CompilerTests(unittest.TestCase):
     def test_three_examples_parse(self):
         self.assertEqual([d.name for d in parse(EXAMPLES)], ["castle", "defensive-spearmen", "wheelbarrow"])
 
+    def test_checked_in_generated_fixture_matches_current_emitter(self):
+        generated = (
+            Path(__file__).resolve().parents[1] / "generated" / "Basilisk.per"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(generated, compile_source(EXAMPLES))
+        self.assertEqual(generated.count("(defrule"), 11)
+
     def test_output_is_deterministic_and_has_separate_lifecycle_stages(self):
         a = compile_source(EXAMPLES)
         self.assertEqual(a, compile_source(EXAMPLES))
