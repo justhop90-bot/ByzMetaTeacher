@@ -578,6 +578,7 @@ class AdmissibilityValidationPass:
             PredicateKind.OWNERSHIP: {"OWNERSHIP"},
             PredicateKind.STRATEGY: {"STRATEGY", "OBSERVATION"},
             PredicateKind.DEPENDENCY: {"OBSERVATION"},
+            PredicateKind.ADMISSIBILITY: {"ADMISSIBILITY"},
             PredicateKind.WITNESS: {"WITNESS"},
         }
 
