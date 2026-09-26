@@ -141,10 +141,6 @@ class CombinedValidationReport:
                     "path": str(item.path) if item.path is not None else None,
                     "line": item.line,
                     "column": item.column,
-                    "state_kind": item.state_kind,
-                    "state_identifier": item.state_identifier,
-                    "related_rule_order": item.related_rule_order,
-                    "related_operation": item.related_operation,
                     "end_line": item.end_line,
                     "end_column": item.end_column,
                     "references": list(item.references),
@@ -164,6 +160,10 @@ class CombinedValidationReport:
                     "path": str(item.path) if item.path is not None else None,
                     "line": item.line,
                     "column": item.column,
+                    "state_kind": item.state_kind,
+                    "state_identifier": item.state_identifier,
+                    "related_rule_order": item.related_rule_order,
+                    "related_operation": item.related_operation,
                 }
                 for item in self.rule_diagnostics
             ],
@@ -461,7 +461,20 @@ def semantic_failure_report(
             rule_diagnostics,
             key=lambda item: (
                 getattr(item, "rule_order", 0),
+                0
+                if getattr(
+                    getattr(item, "category", ""),
+                    "value",
+                    getattr(item, "category", ""),
+                ) == "FIRING_ELIGIBILITY"
+                else 1,
                 getattr(getattr(item, "code", ""), "value", getattr(item, "code", "")),
+                getattr(item, "state_kind", "") or "",
+                getattr(item, "state_identifier", "") or "",
+                getattr(item, "related_rule_order", -1)
+                if getattr(item, "related_rule_order", None) is not None
+                else -1,
+                getattr(item, "related_operation", "") or "",
                 str(getattr(item, "message", "")),
             ),
         )
