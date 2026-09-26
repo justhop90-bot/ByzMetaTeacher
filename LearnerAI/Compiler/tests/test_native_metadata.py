@@ -90,7 +90,7 @@ class NativeSupportStateTests(unittest.TestCase):
         )
         self.assertEqual(
             [diagnostic.code for diagnostic in assessment.diagnostics],
-            ['NATIVE-SUPPORT-001', 'NATIVE-SUPPORT-002', 'NATIVE-SUPPORT-003', 'NATIVE-SUPPORT-004'],
+            ['NATIVE-SUPPORT-001', 'NATIVE-SUPPORT-002', 'NATIVE-SUPPORT-003', 'NATIVE-SUPPORT-004', 'NATIVE-SUPPORT-005'],
         )
 
     def test_known_typed_command_without_adapter_is_unsupported(self):
@@ -114,7 +114,7 @@ class NativeSupportStateTests(unittest.TestCase):
             [NativeSupportState.NATIVE_KNOWN, NativeSupportState.NATIVE_TYPED, NativeSupportState.UNSUPPORTED],
         )
         self.assertEqual(assessment.message, 'native command is known and typed but has no semantic adapter')
-        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-006')
 
     def test_malformed_native_metadata_stops_at_native_known(self):
         registry = PrimitiveRegistry(
@@ -170,7 +170,7 @@ class NativeSupportStateTests(unittest.TestCase):
         assessment = registry.assess_support('not-a-command')
         self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
         self.assertEqual(assessment.diagnostics[0].state, NativeSupportState.UNSUPPORTED)
-        self.assertEqual(assessment.diagnostics[0].code, 'NATIVE-SUPPORT-005')
+        self.assertEqual(assessment.diagnostics[0].code, 'NATIVE-SUPPORT-006')
 
     def test_support_diagnostics_are_deterministic(self):
         registry = PrimitiveRegistry(
