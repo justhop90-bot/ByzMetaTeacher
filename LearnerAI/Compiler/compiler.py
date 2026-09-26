@@ -2,13 +2,12 @@
 """Basilisk compiler entry point.
 
 Pipeline: source -> AST -> semantic IR -> deterministic .per.
-Optional native validation adds:
-    generated .per -> staged artifact -> aoe2-ai-parser -> promotion.
+Artifact promotion requires the pinned aoe2-ai-parser validation gate:
+    generated .per -> staged artifact -> aoe2-ai-parser -> zero findings -> promotion.
 """
 from __future__ import annotations
 
 import argparse
-from dataclasses import replace
 import os
 import sys
 import tempfile
@@ -18,6 +17,7 @@ if __package__ in (None, ""):
     compiler_dir = Path(__file__).resolve().parent
     sys.path[:] = [entry for entry in sys.path if Path(entry or ".").resolve() != compiler_dir]
     sys.path.insert(0, str(compiler_dir.parent))
+    from dataclasses import replace
     from Compiler.backends.errors import NativeBackendError
     from Compiler.backends.models import NativeValidationResult, ValidationStatus
     from Compiler.diagnostics import (
@@ -44,6 +44,7 @@ if __package__ in (None, ""):
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
 else:
+    from dataclasses import replace
     from .backends.errors import NativeBackendError
     from .backends.models import NativeValidationResult, ValidationStatus
     from .diagnostics import (
