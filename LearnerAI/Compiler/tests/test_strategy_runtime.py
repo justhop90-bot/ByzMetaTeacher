@@ -3,11 +3,14 @@ from dataclasses import replace
 
 from LearnerAI.Compiler.compiler import compile_strategy_runtime_profile
 from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-from LearnerAI.Compiler.ir.game_data import CivId
+from LearnerAI.Compiler.ir.game_data import BuildingId, CivId
 from LearnerAI.Compiler.ir.strategy import (
+    CapabilityIntent,
+    CapabilityIntentKind,
     PostureTransition,
     StrategicEvidence,
     StrategicEvidenceKind,
+    StrategicEvidenceSource,
     StrategyPosture,
     StrategyProfile,
     build_byzantine_castle_strategy,
@@ -341,6 +344,76 @@ class StrategyRuntimeTests(unittest.TestCase):
                 ),
                 self.effective,
             )
+
+    def test_community_meta_evidence_requires_explicit_community_attribution(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(current-age >= feudal-age)",
+            "community-meta",
+            source=StrategicEvidenceSource.COMMUNITY_META,
+        )
+        with self.assertRaisesRegex(ValueError, "COMMUNITY_REFERENCE"):
+            bind_strategic_evidence(evidence, self.effective)
+
+    def test_byzantine_strategy_contains_explicitly_attributed_meta_evidence(self):
+        meta = self.profile.demand("castle-commitment").reason[0]
+        self.assertEqual(meta.source, StrategicEvidenceSource.COMMUNITY_META)
+        self.assertTrue(meta.provenance)
+        self.assertTrue(
+            any(ref.kind.value == "COMMUNITY_REFERENCE" for ref in meta.provenance)
+        )
+
+    def test_runtime_state_preserves_attributed_meta_evidence_evaluation(self):
+        runtime = evaluate_strategy_runtime(
+            self.profile,
+            self.effective,
+            self.snapshot(
+                facts=(("(current-age >= feudal-age)", True),),
+                previous=StrategyPosture.BOOM,
+            ),
+        )
+        self.assertTrue(runtime.evaluated_meta_evidence)
+        self.assertTrue(
+            any(provenance for _, _, provenance in runtime.evaluated_meta_evidence)
+        )
+
+    def test_meta_provenance_does_not_satisfy_factual_coverage(self):
+        castle = self.profile.demand("castle-commitment")
+        unverified = replace(
+            castle,
+            identity="unverified-meta-capability",
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit",
+                550,
+                BuildingId(49),
+            ),
+        )
+        profile = replace(
+            self.profile,
+            demands=(
+                unverified,
+                *(item for item in self.profile.demands if item.identity != "castle-commitment"),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "factual coverage"):
+            evaluate_strategy_runtime(profile, self.effective, self.snapshot())
+
+    def test_meta_provenance_changes_binding_identity(self):
+        base = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(current-age >= feudal-age)",
+            "binding",
+        )
+        meta = replace(
+            base,
+            source=StrategicEvidenceSource.COMMUNITY_META,
+            provenance=self.profile.demand("castle-commitment").reason[0].provenance,
+        )
+        self.assertNotEqual(
+            bind_strategic_evidence(base, self.effective).fingerprint,
+            bind_strategic_evidence(meta, self.effective).fingerprint,
+        )
 
     def test_runtime_state_does_not_define_a_second_lifecycle(self):
         lifecycle_names = {"ACTIVE", "ISSUED", "PENDING", "COMPLETE", "RELEASED", "CANCELLED"}
