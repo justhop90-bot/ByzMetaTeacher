@@ -284,10 +284,18 @@ class RuntimeBinder:
                     f"{slot.id.value}"
                 )
 
+        role_order = {
+            GoalRole.LIFECYCLE_STATE: 0,
+            GoalRole.PERSISTENT_STATE: 1,
+            GoalRole.DERIVED_SCALAR: 2,
+            GoalRole.NATIVE_OUTPUT: 3,
+            GoalRole.EXECUTION_MEMORY: 4,
+        }
         ordered = tuple(
             sorted(
                 requests,
                 key=lambda request: (
+                    role_order.get(request.role, 99),
                     request.request_id.owner.source_unit,
                     request.request_id.owner.local_name,
                     request.request_id.purpose,
