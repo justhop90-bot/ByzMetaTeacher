@@ -22,6 +22,7 @@ from ..ir.capability import (
     PredicateNode,
     ProviderId,
     ProviderKind,
+    SemanticId,
     WitnessId,
     WitnessKind,
 )
