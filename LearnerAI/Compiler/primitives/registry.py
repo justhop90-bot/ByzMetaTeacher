@@ -21,6 +21,7 @@ from .native_hygiene import (
     NativeStorageUse,
     NativeWitness,
     NativeWitnessKind,
+    PassConstraintScope,
     PassExecutionConstraint,
     PassFailureMode,
 )
@@ -568,7 +569,7 @@ def default_native_contract_catalog() -> NativeContractCatalog:
             PassExecutionConstraint(
                 identity="build-pass-singleton",
                 command="build",
-                scope="RULE_PASS",
+                scope=PassConstraintScope.RULE_PASS,
                 maximum_successes=1,
                 failure_mode=PassFailureMode.NO_EFFECT,
                 provenance=_engine_provenance("airef:build-pass-limit"),
