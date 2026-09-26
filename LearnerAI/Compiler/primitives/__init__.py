@@ -1,3 +1,10 @@
+from .native_binder import (
+    NativeSemanticBinder,
+    NativeSemanticBinding,
+    NativeSupportAssessment,
+    NativeSupportDiagnostic,
+    NativeSupportState,
+)
 from .engine_semantics import (
     EngineSemanticMapping,
     EngineSemanticMappingRegistry,
@@ -53,9 +60,6 @@ from .native_hygiene import (
     validate_goal_span_non_overlap,
 )
 from .registry import (
-    NativeSupportAssessment,
-    NativeSupportDiagnostic,
-    NativeSupportState,
     Primitive,
     PrimitiveRegistry,
     default_de_registry,
