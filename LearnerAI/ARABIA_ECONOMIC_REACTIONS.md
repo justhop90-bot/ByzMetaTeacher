@@ -315,17 +315,24 @@ On a relevant forward foundation:
 
 ### 09:30-10:30: expected tower pressure
 
-If 2+ enemy builders or military protection is present:
+Require both:
+
+1. actual positional/resource denial if completed;
+2. 2+ enemy builders or military protection for the stronger T2 response.
+
+Then:
 
 - maintain +2 wood/+2 stone;
-- 3-4 defensive builders;
+- 3-4 defensive builders when completion time requires it;
 - defensive tower admissible;
 - short wall/gate admissible.
 
-If the tower is completed over gold/wood:
+If the tower is completed and actually denies gold/wood/food:
 
 - the affected resource becomes P0;
 - relocate workers if necessary rather than feeding them into a losing position.
+
+Builder count without denial remains an observation, not a resource crisis.
 
 ### 10:30-11:30: late tower pressure
 
