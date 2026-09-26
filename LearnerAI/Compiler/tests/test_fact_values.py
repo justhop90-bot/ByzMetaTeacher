@@ -87,7 +87,7 @@ class CanonicalFactValueTests(unittest.TestCase):
             CanonicalIdentifier(
                 namespace="BUILDING",
                 form=IdentifierForm.CLASS,
-                value="BUILDING-CLASS",
+                value="building-class",
             ),
         )
 
