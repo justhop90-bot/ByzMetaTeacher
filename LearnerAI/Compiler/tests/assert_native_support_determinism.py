@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source_with_report
 from Compiler.diagnostics import ReportStatus
+from native_support_replay_schema import validate_snapshot
 from test_compiler_native_integration import (
     CompilerNativeIntegrationTests,
     FakeBackend,
@@ -72,12 +73,13 @@ def build_snapshot() -> dict[str, object]:
                 "artifact_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
             }
 
-    return {
+    snapshot = {
         "schema_version": 1,
         "python": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
         "fixtures": fixtures,
     }
+    return validate_snapshot(snapshot, source="generated snapshot")
 
 def main() -> None:
     parser = argparse.ArgumentParser()
