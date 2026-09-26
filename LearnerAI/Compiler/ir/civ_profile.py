@@ -727,7 +727,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("dromon-line"), "Dromon line", (UnitId(1795),), (evidence,)),
     )
     units = (
-        _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",)),
+        _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_to=24),
         _unit(5, "Hand Cannoneer", "hand-cannoneer-line", Age.IMPERIAL, 87, ResourceCost(food=45, gold=50), classes=("RANGED",)),
         _unit(6, "Elite Skirmisher", "skirmisher-line", Age.CASTLE, 87, ResourceCost(food=25, wood=35), classes=("RANGED",), upgrades_from=7, upgrades_to=None),
         _unit(7, "Skirmisher", "skirmisher-line", Age.FEUDAL, 87, ResourceCost(food=25, wood=35), classes=("RANGED",), upgrades_to=6),
@@ -757,7 +757,7 @@ def _byzantine_game_data(
         _unit(474, "Heavy Cavalry Archer", "cavalry-archer-line", Age.IMPERIAL, 87, ResourceCost(wood=40, gold=60), classes=("CAVALRY", "RANGED"), upgrades_from=39),
         _unit(473, "Two-Handed Swordsman", "militia-line", Age.IMPERIAL, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_from=77, upgrades_to=567),
         _unit(492, "Arbalester", "crossbow-line", Age.IMPERIAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=24),
-        _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",),),
+        _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",), upgrades_to=532),
         _unit(532, "Fast Fire Ship", "fire-ship-line", Age.IMPERIAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",), upgrades_from=529),
         _unit(546, "Light Cavalry", "scout-cavalry-line", Age.CASTLE, 101, ResourceCost(food=80), classes=("CAVALRY",), upgrades_from=448, upgrades_to=441),
         _unit(553, "Elite Cataphract", "cataphract-line", Age.IMPERIAL, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"), upgrades_from=40),
