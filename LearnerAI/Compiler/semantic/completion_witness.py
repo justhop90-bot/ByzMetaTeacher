@@ -135,6 +135,7 @@ def validate_completion_witnesses(
                     WitnessStatus.BLOCKED,
                     f"demand '{demand.name}' has no completion witness contract",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
             continue
@@ -147,6 +148,7 @@ def validate_completion_witnesses(
                     f"completion witness for demand '{demand.name}' has invalid evidence kind "
                     f"'{contract.evidence_kind.value}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -158,6 +160,7 @@ def validate_completion_witnesses(
                     f"completion witness for demand '{demand.name}' establishes "
                     f"'{contract.establishes.local_name}', not '{demand.name}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -168,6 +171,7 @@ def validate_completion_witnesses(
                     WitnessStatus.OPEN_LOOP,
                     f"completion witness for demand '{demand.name}' contains timing evidence",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -184,6 +188,7 @@ def validate_completion_witnesses(
                     f"completion witness for demand '{demand.name}' reuses action primitive "
                     f"'{demand.action.expression.head}'",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
         else:
@@ -200,6 +205,7 @@ def validate_completion_witnesses(
                         f"completion witness for demand '{demand.name}' references unknown "
                         f"primitive '{contract.primitive}'",
                         demand.identity,
+                    location=contract.location or demand.location,
                     )
                 )
             completion_capable, _ = _completion_primitive(
@@ -215,6 +221,7 @@ def validate_completion_witnesses(
                     f"completion witness for demand '{demand.name}' contains no "
                     "completion-capable native observation",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
@@ -226,6 +233,7 @@ def validate_completion_witnesses(
                     f"completion witness for demand '{demand.name}' is not ordered before "
                     "action issuance",
                     demand.identity,
+                    location=contract.location or demand.location,
                 )
             )
 
