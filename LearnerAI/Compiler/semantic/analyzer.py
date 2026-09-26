@@ -69,14 +69,29 @@ def parse_expression(source: str) -> Expression:
 
 def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
     if expr.head in _LOGICAL_ARITY:
+        expected = _LOGICAL_ARITY[expr.head]
+        if len(expr.args) != expected:
+            raise CompileError(
+                f"logical operator '{expr.head}' requires {expected} operands"
+            )
         for child in expr.args:
             if not isinstance(child, Expression):
                 raise CompileError(f"logical operator '{expr.head}' requires nested expressions")
             _validate_expression(child, registry)
         return None
+    native = registry.native(expr.head)
+    if native is None:
+        raise CompileError(f"unknown AoE2 primitive '{expr.head}'")
     primitive = registry.get(expr.head)
     if primitive is None:
-        raise CompileError(f"unknown AoE2 primitive '{expr.head}'")
+        raise CompileError(
+            f"no Basilisk semantic adapter for native AoE2 command '{expr.head}'"
+        )
+    try:
+        registry.validate_native_signature(expr.head, len(expr.args))
+        registry.validate_adapter_contract(primitive)
+    except ValueError as exc:
+        raise CompileError(str(exc)) from exc
     if not (primitive.min_args <= len(expr.args) <= primitive.max_args):
         raise CompileError(
             f"primitive '{expr.head}' expects {primitive.min_args} argument(s), "
@@ -122,6 +137,19 @@ def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: se
         actual = ", ".join(sorted(roles))
         expected = ", ".join(sorted(allowed))
         raise CompileError(f"{context}: expression has role {actual}; expected only {expected}")
+
+
+def _validate_action(expr: Expression, registry: PrimitiveRegistry, context: str):
+    if expr.head in _LOGICAL_ARITY:
+        raise CompileError(
+            f"{context}: action must be one native action command, not logical "
+            f"operator '{expr.head}'"
+        )
+    primitive = _validate_expression(expr, registry)
+    if primitive.kind != "ACTION":
+        raise CompileError(f"{context}: command '{expr.head}' is not an action primitive")
+    _validate_context(expr, registry, {"ACTION"}, context)
+    return primitive
 
 
 def _stored_role(expr: Expression, registry: PrimitiveRegistry) -> str:
@@ -192,7 +220,21 @@ def analyze(
             if not any(_has_non_timing_evidence(req.expression, registry) for req in requirements):
                 raise CompileError("TIMING-WITHOUT-WORLD-EVIDENCE: demand " + demand.name + " uses timing as its only evidence")
         action = parse_expression(demand.action)
-        _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
+        action_primitive = _validate_action(
+            action,
+            registry,
+            f"demand '{demand.name}' action",
+        )
+        arbitration_request = None
+        if action_primitive.conflict_class:
+            owner = SemanticId(source_unit=source_unit, local_name="__execution_memory__")
+            arbitration_request = GoalSlotRequest(
+                request_id=StorageRequestId(
+                    owner=owner,
+                    purpose=f"action-claim:{action_primitive.conflict_class}",
+                ),
+                role=GoalRole.EXECUTION_MEMORY,
+            )
         if not demand.witness.strip() or demand.witness.strip() == "()":
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
@@ -219,7 +261,7 @@ def analyze(
                 semantic_id,
                 lifecycle,
                 tuple(requirements),
-                SemanticAction(action, "ACTION"),
+                SemanticAction(action, "ACTION", arbitration_request),
                 witness,
                 release,
                 _pending_diagnostics(demand),

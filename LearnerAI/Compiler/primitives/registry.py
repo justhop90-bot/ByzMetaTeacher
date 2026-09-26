@@ -1,10 +1,11 @@
-"""Small authoritative primitive profile for the first Basilisk compiler slice.
-
-This registry is intentionally explicit. Unknown commands are errors rather than
-being silently passed through as if the compiler understood them.
-"""
+"""Semantic adapters backed by the checked-in AIRef native command schema."""
 from __future__ import annotations
+
 from dataclasses import dataclass
+from pathlib import Path
+
+from .native_schema import NativeCommandRegistry, load_default_native_schema
+
 
 @dataclass(frozen=True)
 class Primitive:
@@ -15,10 +16,16 @@ class Primitive:
     max_args: int
     version: str = "DE"
     completion_witness: bool = True
+    conflict_class: str | None = None
 
 class PrimitiveRegistry:
-    def __init__(self, primitives: tuple[Primitive, ...]):
+    def __init__(
+        self,
+        primitives: tuple[Primitive, ...],
+        native_registry: NativeCommandRegistry | None = None,
+    ):
         self._items = {p.name: p for p in primitives}
+        self._native = native_registry
 
     def get(self, name: str) -> Primitive | None:
         return self._items.get(name)
@@ -29,10 +36,42 @@ class PrimitiveRegistry:
             raise KeyError(name)
         return item
 
+    def native(self, name: str):
+        return self._native.get(name) if self._native is not None else None
+
+    def require_native(self, name: str):
+        item = self.native(name)
+        if item is None:
+            raise KeyError(name)
+        return item
+
+    def validate_native_signature(self, name: str, arg_count: int) -> None:
+        native = self.require_native(name)
+        if arg_count != native.parameter_count:
+            raise ValueError(
+                f"native command '{name}' expects exactly "
+                f"{native.parameter_count} argument(s), got {arg_count}"
+            )
+
+    def validate_adapter_contract(self, primitive: Primitive) -> None:
+        native = self.require_native(primitive.name)
+        expected = "Action" if primitive.kind == "ACTION" else "Fact"
+        if native.command_type != expected:
+            raise ValueError(
+                f"semantic adapter kind mismatch for '{primitive.name}': "
+                f"adapter={primitive.kind}, native={native.command_type}"
+            )
+        if not (primitive.min_args <= native.parameter_count <= primitive.max_args):
+            raise ValueError(
+                f"semantic adapter arity mismatch for '{primitive.name}': "
+                f"native={native.parameter_count}, "
+                f"semantic={primitive.min_args}..{primitive.max_args}"
+            )
+
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self._items))
 
-def default_de_registry() -> PrimitiveRegistry:
+def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     facts = [
         Primitive("current-age", "FACT", "OBSERVATION", 2, 2),
         Primitive("game-time", "FACT", "TIMING", 2, 2, completion_witness=False),
@@ -55,8 +94,23 @@ def default_de_registry() -> PrimitiveRegistry:
         Primitive("research-completed", "FACT", "WITNESS", 1, 1, completion_witness=True),
     ]
     actions = [
-        Primitive("build", "ACTION", "ACTION", 1, 1),
+        Primitive(
+            "build",
+            "ACTION",
+            "ACTION",
+            1,
+            1,
+            conflict_class="BUILD_PASS_SINGLETON",
+        ),
         Primitive("train", "ACTION", "ACTION", 1, 1),
         Primitive("research", "ACTION", "ACTION", 1, 1),
     ]
-    return PrimitiveRegistry(tuple(facts + actions))
+    native_registry = (
+        load_default_native_schema()
+        if schema_path is None
+        else NativeCommandRegistry.from_path(schema_path)
+    )
+    registry = PrimitiveRegistry(tuple(facts + actions), native_registry)
+    for primitive in facts + actions:
+        registry.validate_adapter_contract(primitive)
+    return registry

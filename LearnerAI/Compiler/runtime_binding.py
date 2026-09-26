@@ -4,12 +4,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import hashlib
+import json
 
 from .ir import GoalRole, GoalSlotRequest, StorageRequestId
 
 
 GOAL_ID_MIN = 1
 GOAL_ID_MAX = 16_000
+ALLOCATOR_VERSION = "goal-slot-v2"
+BINDING_MANIFEST_VERSION = 1
 
 
 class StorageKind(str, Enum):
@@ -129,6 +132,8 @@ class NativeStorageContract:
 class BindingContext:
     occupied_goal_ids: frozenset[int] = frozenset()
     existing_bindings: tuple[tuple[StorageRequestId, GoalSlot], ...] = ()
+    package_inventory_sha: str = ""
+    allocator_version: str = ALLOCATOR_VERSION
 
 
 @dataclass(frozen=True)
@@ -146,6 +151,102 @@ class BindingResult:
             if record.request_id == request_id:
                 return record.binding
         raise KeyError(f"no binding for storage request {request_id}")
+
+    def to_manifest(
+        self,
+        *,
+        package_inventory_sha: str = "",
+        allocator_version: str = ALLOCATOR_VERSION,
+    ) -> "BindingManifest":
+        return BindingManifest(
+            format_version=BINDING_MANIFEST_VERSION,
+            package_inventory_sha=package_inventory_sha,
+            allocator_version=allocator_version,
+            records=self.records,
+        )
+
+
+@dataclass(frozen=True)
+class BindingManifest:
+    format_version: int
+    package_inventory_sha: str
+    allocator_version: str
+    records: tuple[BindingRecord, ...]
+
+    def to_json(self) -> str:
+        payload = {
+            "format_version": self.format_version,
+            "package_inventory_sha": self.package_inventory_sha,
+            "allocator_version": self.allocator_version,
+            "records": [
+                {
+                    "source_unit": record.request_id.owner.source_unit,
+                    "local_name": record.request_id.owner.local_name,
+                    "purpose": record.request_id.purpose,
+                    "goal_id": record.binding.id.value,
+                    "role": record.binding.role.value,
+                    "provenance_id": record.binding.provenance_id,
+                }
+                for record in self.records
+            ],
+        }
+        return json.dumps(payload, indent=2, sort_keys=True) + "\\n"
+
+    @classmethod
+    def from_json(cls, text: str) -> "BindingManifest":
+        payload = json.loads(text)
+        if payload.get("format_version") != BINDING_MANIFEST_VERSION:
+            raise ValueError(
+                f"unsupported binding manifest version {payload.get('format_version')}"
+            )
+        raw_records = payload.get("records")
+        if not isinstance(raw_records, list):
+            raise ValueError("binding manifest records must be an array")
+
+        records = []
+        seen_requests: set[StorageRequestId] = set()
+        seen_goals: set[int] = set()
+        for raw in raw_records:
+            owner = SemanticId(
+                source_unit=str(raw["source_unit"]),
+                local_name=str(raw["local_name"]),
+            )
+            request_id = StorageRequestId(owner=owner, purpose=str(raw["purpose"]))
+            goal_id = int(raw["goal_id"])
+            if request_id in seen_requests:
+                raise ValueError(f"duplicate binding manifest request {request_id}")
+            if goal_id in seen_goals:
+                raise ValueError(f"duplicate binding manifest GoalId {goal_id}")
+            seen_requests.add(request_id)
+            seen_goals.add(goal_id)
+            role = GoalRole(str(raw["role"]))
+            slot = GoalSlot(
+                id=GoalId(goal_id),
+                role=role,
+                provenance_id=str(raw["provenance_id"]),
+            )
+            records.append(BindingRecord(request_id, slot))
+
+        return cls(
+            format_version=BINDING_MANIFEST_VERSION,
+            package_inventory_sha=str(payload.get("package_inventory_sha", "")),
+            allocator_version=str(payload.get("allocator_version", "")),
+            records=tuple(records),
+        )
+
+    def to_context(
+        self,
+        *,
+        occupied_goal_ids: frozenset[int] = frozenset(),
+    ) -> BindingContext:
+        return BindingContext(
+            occupied_goal_ids=occupied_goal_ids,
+            existing_bindings=tuple(
+                (record.request_id, record.binding) for record in self.records
+            ),
+            package_inventory_sha=self.package_inventory_sha,
+            allocator_version=self.allocator_version,
+        )
 
 
 class RuntimeBinder:
@@ -167,8 +268,16 @@ class RuntimeBinder:
         for value in occupied:
             GoalId(value)
 
-        existing = dict(context.existing_bindings)
-        for request_id, slot in existing.items():
+        existing_pairs = tuple(context.existing_bindings)
+        existing_request_ids = [request_id for request_id, _ in existing_pairs]
+        if len(existing_request_ids) != len(set(existing_request_ids)):
+            raise ValueError("duplicate existing binding request identity")
+        existing_goal_ids = [slot.id.value for _, slot in existing_pairs]
+        if len(existing_goal_ids) != len(set(existing_goal_ids)):
+            raise ValueError("duplicate existing binding GoalId")
+
+        existing = dict(existing_pairs)
+        for request_id, slot in existing_pairs:
             if slot.id.value in occupied:
                 raise ValueError(
                     f"existing binding {request_id} conflicts with occupied GoalId "
@@ -191,7 +300,8 @@ class RuntimeBinder:
             raise ValueError("duplicate storage request identity")
 
         records: list[BindingRecord] = []
-        allocated: set[int] = set()
+        # Existing manifest assignments are reserved before sorting new requests.
+        allocated: set[int] = {slot.id.value for slot in existing.values()}
 
         for request in ordered:
             slot = existing.get(request.request_id)
@@ -207,10 +317,8 @@ class RuntimeBinder:
                     f"existing binding role mismatch for {request.request_id}"
                 )
 
-            if slot.id.value in allocated:
-                raise ValueError(
-                    f"binding collision on GoalId {slot.id.value}"
-                )
+            if slot.id.value in allocated and request.request_id not in existing:
+                raise ValueError(f"binding collision on GoalId {slot.id.value}")
             allocated.add(slot.id.value)
             records.append(BindingRecord(request.request_id, slot))
 

@@ -54,6 +54,7 @@ class SemanticRequirement:
 class SemanticAction:
     expression: Expression
     role: str
+    arbitration_request: GoalSlotRequest | None = None
 
 
 @dataclass(frozen=True)
