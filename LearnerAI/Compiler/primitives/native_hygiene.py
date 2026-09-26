@@ -508,6 +508,7 @@ class NativeContractCatalog:
     witnesses: Tuple[NativeWitness, ...] = ()
     storage_uses: Tuple[NativeStorageUse, ...] = ()
     pass_constraints: Tuple[PassExecutionConstraint, ...] = ()
+    citation_catalog: Optional[CitationRecordCatalog] = None
 
     def __post_init__(self) -> None:
         for values, label in (
@@ -529,6 +530,35 @@ class NativeContractCatalog:
         if len(commands) != len(set(commands)):
             raise ValueError("duplicate native pass constraint command")
         validate_goal_span_non_overlap(self.storage_uses)
+
+        citation_catalog = self.citation_catalog or default_native_citation_catalog()
+        object.__setattr__(self, "citation_catalog", citation_catalog)
+        self.validate_all_provenance()
+
+    def validate_all_provenance(self) -> None:
+        for owner, provenance in (
+            *(
+                (witness.identity, witness.provenance)
+                for witness in self.witnesses
+            ),
+            *(
+                (storage.identity, storage.provenance)
+                for storage in self.storage_uses
+            ),
+            *(
+                (constraint.identity, constraint.provenance)
+                for constraint in self.pass_constraints
+            ),
+        ):
+            try:
+                self.citation_catalog.validate_provenance(
+                    provenance,
+                    require_promotable=True,
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    f"native contract '{owner}' has invalid citation provenance: {exc}"
+                ) from exc
 
     def witness(self, identity: str) -> NativeWitness:
         for item in self.witnesses:
@@ -605,6 +635,43 @@ class CitationRecord:
         if self.state is CitationState.PINNED and self.retrieval is None:
             raise ValueError("pinned citations require retrieval metadata")
 
+
+@dataclass(frozen=True)
+class CitationRecordCatalog:
+    records: Tuple[CitationRecord, ...] = ()
+
+    def __post_init__(self) -> None:
+        identities = [record.citation_id for record in self.records]
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate CitationRecord citation_id")
+
+    def get(self, citation_id: str) -> Optional[CitationRecord]:
+        for record in self.records:
+            if record.citation_id == citation_id:
+                return record
+        return None
+
+    def resolve(self, citation_id: str) -> CitationRecord:
+        record = self.get(citation_id)
+        if record is None:
+            raise ValueError(f"unresolved citation '{citation_id}'")
+        return record
+
+    def validate_provenance(
+        self,
+        provenance: Tuple[AIRefProvenance, ...],
+        *,
+        require_promotable: bool,
+    ) -> None:
+        for evidence in provenance:
+            record = self.resolve(evidence.citation_id)
+            if require_promotable:
+                state = promotion_state(record, already_promoted=False)
+                if state is not PromotionState.ELIGIBLE:
+                    raise ValueError(
+                        f"citation '{evidence.citation_id}' is not promotable "
+                        f"(state={record.state.value})"
+                    )
 
 @dataclass(frozen=True)
 class CitationRevalidationEvent:
