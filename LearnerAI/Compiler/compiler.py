@@ -33,6 +33,7 @@ if __package__ in (None, ""):
     from Compiler.semantic import analyze
     from Compiler.semantic.demand_ownership import validate_demand_ownership
     from Compiler.semantic.action_issuance import validate_action_issuance
+    from Compiler.semantic.completion_witness import validate_completion_witnesses
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
@@ -55,6 +56,7 @@ else:
     from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
     from .semantic.action_issuance import validate_action_issuance
+    from .semantic.completion_witness import validate_completion_witnesses
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
@@ -91,6 +93,10 @@ def _compile_source_parts(
     ownership_report = validate_demand_ownership(ir)
     if ownership_report.errors:
         diagnostic = ownership_report.errors[0]
+        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    witness_report = validate_completion_witnesses(ir, registry)
+    if witness_report.errors:
+        diagnostic = witness_report.errors[0]
         raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
     issuance_report = validate_action_issuance(ir, registry)
     if issuance_report.errors:
