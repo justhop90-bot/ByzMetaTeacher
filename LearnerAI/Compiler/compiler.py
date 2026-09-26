@@ -8,7 +8,6 @@ Optional native validation adds:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 import tempfile
@@ -158,73 +157,6 @@ def _build_native_backend(
         profile=profile,
     )
     return Aoe2NativeBackend(spec)
-
-
-def _native_result_payload(result: NativeValidationResult) -> dict[str, object]:
-    return {
-        "status": result.status.value,
-        "failed": result.failed,
-        "backend": {
-            "name": result.backend.name,
-            "project_version": result.backend.project_version,
-            "commit_sha": result.backend.commit_sha,
-            "python_version": result.backend.python_version,
-        },
-        "invocation": {
-            "profile": result.invocation.profile,
-            "path": str(result.invocation.path),
-            "exit_code": result.invocation.exit_code,
-            "duration_ms": result.invocation.duration_ms,
-        },
-        "artifact": {
-            "path": str(result.artifact.path),
-            "sha256": result.artifact.sha256,
-        },
-        "summary": {
-            "finding_count": result.summary.finding_count,
-            "error_count": result.summary.error_count,
-            "warning_count": result.summary.warning_count,
-            "info_count": result.summary.info_count,
-            "conditional_count": result.summary.conditional_count,
-        },
-        "diagnostics": [
-            {
-                "id": item.id,
-                "source": item.source,
-                "code": item.code,
-                "severity": item.severity.value,
-                "confidence": item.confidence.value,
-                "message": item.message,
-                "suggestion": item.suggestion,
-                "source_location": {
-                    "path": str(item.source_location.path),
-                    "line": item.source_location.line,
-                    "column": item.source_location.column,
-                    "end_line": item.source_location.end_line,
-                    "end_column": item.source_location.end_column,
-                },
-                "references": list(item.references),
-            }
-            for item in result.diagnostics
-        ],
-        "stderr": result.stderr,
-    }
-
-
-def _print_native_result(result: NativeValidationResult, *, as_json: bool) -> None:
-    if as_json:
-        print(json.dumps(_native_result_payload(result), indent=2, sort_keys=True))
-        return
-    print(f"native validation: {result.status.value}")
-    for diagnostic in result.diagnostics:
-        location = diagnostic.source_location
-        if location.column is None:
-            position = f"{location.path}:{location.line}"
-        else:
-            position = f"{location.path}:{location.line}:{location.column}"
-        print(f"{position}: {diagnostic.severity.value} {diagnostic.code}: {diagnostic.message}", file=sys.stderr)
-    if result.stderr:
-        print(result.stderr, file=sys.stderr, end="" if result.stderr.endswith("\n") else "\n")
 
 
 def main() -> int:
