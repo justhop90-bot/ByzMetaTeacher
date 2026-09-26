@@ -95,7 +95,7 @@ class NativeSupportStateTests(unittest.TestCase):
         self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
         self.assertEqual(
             [diagnostic.state for diagnostic in assessment.diagnostics],
-            [NativeSupportState.NATIVE_KNOWN, NativeSupportState.NATIVE_TYPED],
+            [NativeSupportState.NATIVE_KNOWN, NativeSupportState.NATIVE_TYPED, NativeSupportState.UNSUPPORTED],
         )
         self.assertEqual(assessment.message, 'native command is known and typed but has no semantic adapter')
         self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
@@ -144,6 +144,7 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.NATIVE_KNOWN,
                 NativeSupportState.NATIVE_TYPED,
                 NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.UNSUPPORTED,
             ],
         )
         self.assertEqual(assessment.diagnostics[-1].code, 'NATIVE-SUPPORT-005')
@@ -173,7 +174,10 @@ class NativeSupportStateTests(unittest.TestCase):
         first = registry.support_diagnostics(('build', 'current-age'))
         second = registry.support_diagnostics(('build', 'current-age'))
         self.assertEqual(first, second)
-        self.assertEqual([item.command for item in first], ['build', 'current-age'])
+        self.assertEqual(
+            [item.command for item in first],
+            ['build', 'build', 'build', 'build', 'current-age', 'current-age', 'current-age', 'current-age'],
+        )
 
 
 if __name__ == "__main__":
