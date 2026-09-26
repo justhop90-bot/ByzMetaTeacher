@@ -428,9 +428,9 @@ def compile_package_with_report(
         staged_manifest = Path(staged_manifest_name)
 
     try:
-        staged.write_text(result, encoding="utf-8")
+        staged.write_bytes(result.encode("utf-8"))
         if staged_manifest is not None:
-            staged_manifest.write_text(manifest_text, encoding="utf-8")
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
         rule_graph = SourceGraphResolver().resolve(
             SourceGraphRequest(entrypoint=staged)
         )
@@ -448,7 +448,7 @@ def compile_package_with_report(
             result,
             rule_report.diagnostics,
         )
-        staged.write_text(artifact_result, encoding="utf-8")
+        staged.write_bytes(artifact_result.encode("utf-8"))
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
             native_result,
@@ -521,9 +521,9 @@ def compile_source_with_report(
         staged_manifest = Path(staged_manifest_name)
 
     try:
-        staged.write_text(result, encoding="utf-8")
+        staged.write_bytes(result.encode("utf-8"))
         if staged_manifest is not None:
-            staged_manifest.write_text(manifest_text, encoding="utf-8")
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
         rule_graph = SourceGraphResolver().resolve(
             SourceGraphRequest(entrypoint=staged)
         )
@@ -541,7 +541,7 @@ def compile_source_with_report(
             result,
             rule_report.diagnostics,
         )
-        staged.write_text(artifact_result, encoding="utf-8")
+        staged.write_bytes(artifact_result.encode("utf-8"))
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
             native_result,
@@ -610,9 +610,9 @@ def compile_to_file(
         staged_manifest = Path(staged_manifest_name)
 
     try:
-        staged.write_text(result, encoding="utf-8")
+        staged.write_bytes(result.encode("utf-8"))
         if staged_manifest is not None:
-            staged_manifest.write_text(manifest_text, encoding="utf-8")
+            staged_manifest.write_bytes(manifest_text.encode("utf-8"))
         rule_graph = SourceGraphResolver().resolve(
             SourceGraphRequest(entrypoint=staged)
         )
@@ -630,7 +630,7 @@ def compile_to_file(
             result,
             rule_report.diagnostics,
         )
-        staged.write_text(artifact_result, encoding="utf-8")
+        staged.write_bytes(artifact_result.encode("utf-8"))
         validation = _normalize_native_validation(native_backend.validate(staged))
         if validation.status is ValidationStatus.VALIDATED:
             os.replace(staged, output)
