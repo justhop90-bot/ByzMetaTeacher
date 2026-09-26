@@ -23,6 +23,8 @@ from .model import (
     AccessKind,
     ActionIssuance,
     CompletionWitnessContract,
+    ReleaseEvidenceKind,
+    ReleaseStateContract,
     WitnessEvidenceKind,
     ActionIssuanceFailure,
     ActionIssuancePhase,
