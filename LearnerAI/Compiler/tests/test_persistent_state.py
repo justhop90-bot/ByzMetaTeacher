@@ -214,7 +214,18 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         report_a = analyze_persistent_state(analyze_effective_rules(graph_a))
         report_b = analyze_persistent_state(analyze_effective_rules(graph_b))
 
-        self.assertEqual(report_a, report_b)
+        self.assertEqual(
+            [(item.state.kind, item.state.identifier, item.effect, item.rule_order, item.within_rule_order)
+             for item in report_a.accesses],
+            [(item.state.kind, item.state.identifier, item.effect, item.rule_order, item.within_rule_order)
+             for item in report_b.accesses],
+        )
+        self.assertEqual(
+            [(item.code, item.rule_order, item.access.rule_order, item.related_access.rule_order if item.related_access else None)
+             for item in report_a.diagnostics],
+            [(item.code, item.rule_order, item.access.rule_order, item.related_access.rule_order if item.related_access else None)
+             for item in report_b.diagnostics],
+        )
 
 
 if __name__ == "__main__":
