@@ -88,9 +88,9 @@ The compiler must never promote a community idiom into an engine fact merely bec
 
 - [x] New substrate has focused unit tests.
 - [x] Export native hygiene types from Compiler.primitives.
-- [ ] Consume NativeWitness in capability completion contracts.
-- [ ] Consume NativeStorageUse in package-storage binding for all namespaces.
-- [ ] Consume PassExecutionConstraint in emission-time native validation.
+- [x] Consume NativeWitness in action primitive promotion and demand lowering.
+- [x] Consume NativeStorageUse for lifecycle and transient action-claim bindings during lowering; broader DUC/SN/Timer package contracts remain pending.
+- [x] Consume PassExecutionConstraint in emission-time lowering and require its arbitration boundary.
 - [ ] Consume VersionScope in patch-aware primitive support promotion.
 - [ ] Replace string-only native evidence URLs with citation IDs.
 - [ ] Add replayable AIRef evidence snapshots.
