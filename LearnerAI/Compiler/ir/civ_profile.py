@@ -166,6 +166,28 @@ class EffectiveCivData:
     def matches_bonus_selector(self, selector: EntitySelector, entity: object) -> bool:
         return _selector_matches(selector, entity)
 
+    def factual_status(self, entity_type: str, entity_id: int | str) -> FactStatus:
+        if entity_type == "building":
+            typed_id = BuildingId(int(entity_id))
+            if typed_id in self.verified_unavailable_buildings:
+                return FactStatus.VERIFIED_UNAVAILABLE
+        elif entity_type == "unit":
+            typed_id = UnitId(int(entity_id))
+            if typed_id in self.verified_unavailable_units:
+                return FactStatus.VERIFIED_UNAVAILABLE
+        elif entity_type == "technology":
+            typed_id = TechId(int(entity_id))
+            if typed_id in self.verified_unavailable_technologies:
+                return FactStatus.VERIFIED_UNAVAILABLE
+        elif entity_type in {"unit-line", "age-advance"}:
+            pass
+        else:
+            raise ValueError(f"unknown factual entity type {entity_type}")
+
+        if self.coverage.verifies(entity_type, entity_id):
+            return FactStatus.VERIFIED
+        return FactStatus.UNKNOWN
+
     def require_coverage(self, entity_type: str, entity_id: int | str) -> None:
         if not self.coverage.verifies(entity_type, entity_id):
             raise ValueError(
