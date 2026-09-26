@@ -191,6 +191,15 @@ class PostureTransition:
 
 
 @dataclass(frozen=True)
+class StrategicCapabilityObservation:
+    identity: str
+    capability: CapabilityIntent
+    expression: str
+    source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
+    provenance: tuple[EvidenceRef, ...] = ()
+
+
+@dataclass(frozen=True)
 class StrategyProfile:
     profile_id: str
     civ_id: CivId
@@ -201,6 +210,7 @@ class StrategyProfile:
     demands: tuple[StrategicDemandSpec, ...]
     transitions: tuple[PostureTransition, ...]
     provenance: tuple[EvidenceRef, ...]
+    capability_observations: tuple[StrategicCapabilityObservation, ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -270,6 +280,60 @@ def _validate_evidence_attribution(
         )
 
 
+def _validate_capability_observations(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+) -> None:
+    identities: set[str] = set()
+    for observation in profile.capability_observations:
+        if observation.identity in identities:
+            raise ValueError(
+                f"duplicate strategic capability observation '{observation.identity}'"
+            )
+        identities.add(observation.identity)
+
+        if observation.source is StrategicEvidenceSource.COMMUNITY_META:
+            raise ValueError(
+                f"community meta cannot define factual capability '{observation.identity}'"
+            )
+        if observation.capability.kind is not CapabilityIntentKind.TRAIN:
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' must use TRAIN intent"
+            )
+        if observation.capability.entity_type != "unit":
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' must target a unit"
+            )
+        unit_id = int(observation.capability.entity_id)
+        status = effective.factual_status("unit", unit_id)
+        if status.value != "VERIFIED":
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' requires "
+                f"factual status VERIFIED for unit {unit_id}; status is {status.value}"
+            )
+        if observation.capability.provider_building is not None:
+            effective.building(observation.capability.provider_building)
+        if not observation.provenance:
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' requires factual provenance"
+            )
+
+        unit = effective.unit(unit_id)
+        aliases = {
+            str(unit_id),
+            unit.name.lower().replace(" ", "-"),
+        }
+        from_expression = observation.expression.strip()
+        if not from_expression.startswith("(can-train"):
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' must use a can-train native primitive"
+            )
+        if not any(alias in from_expression.lower() for alias in aliases):
+            raise ValueError(
+                f"strategic capability observation '{observation.identity}' does not bind its declared unit"
+            )
+
+
 def _validate_factual_coverage(
     demand: StrategicDemandSpec,
     effective: EffectiveCivData,
@@ -295,6 +359,8 @@ def resolve_strategy_profile(
         raise ValueError("strategy profile snapshot fingerprint does not match EffectiveCivData")
 
     seen: set[str] = set()
+    _validate_capability_observations(profile, effective)
+
     for demand in profile.demands:
         if demand.identity in seen:
             raise ValueError(f"duplicate strategic demand '{demand.identity}'")
@@ -757,6 +823,32 @@ def build_land_castle_strategy(
     )
 
 
+def _byzantine_capability_observations(
+    effective: EffectiveCivData,
+) -> tuple[StrategicCapabilityObservation, ...]:
+    return tuple(
+        StrategicCapabilityObservation(
+            identity=identity,
+            capability=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit",
+                unit_id,
+                provider_building=provider_building,
+            ),
+            expression=f"(can-train-with-escrow {token})",
+            provenance=effective.unit(unit_id).provenance,
+        )
+        for identity, unit_id, token, provider_building in (
+            ("cataphract-capability", 40, "cataphract", BuildingId(82)),
+            ("varangian-guard-capability", 2703, "varangian-guard", BuildingId(12)),
+            (
+                "elite-varangian-guard-capability",
+                2704,
+                "elite-varangian-guard",
+                BuildingId(12),
+            ),
+        )
+    )
 
 
 def build_byzantine_castle_strategy(
@@ -831,6 +923,7 @@ def build_byzantine_castle_strategy(
         demands=demands,
         transitions=transitions,
         provenance=(*profile.provenance, *meta_provenance),
+        capability_observations=_byzantine_capability_observations(effective),
     )
 
 def _validate_capability_intent(
