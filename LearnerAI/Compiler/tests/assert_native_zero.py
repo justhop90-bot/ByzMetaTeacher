@@ -2,6 +2,7 @@
 """CI acceptance gate: an emitted .per must have exactly zero native findings."""
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -9,11 +10,12 @@ from pathlib import Path
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: assert_native_zero.py <artifact>", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser()
+    parser.add_argument("artifact")
+    parser.add_argument("--report", type=Path)
+    args = parser.parse_args()
 
-    artifact = Path(sys.argv[1]).resolve()
+    artifact = Path(args.artifact).resolve()
     if not artifact.is_file():
         print(f"artifact does not exist: {artifact}", file=sys.stderr)
         return 2
@@ -48,6 +50,13 @@ def main() -> int:
     except json.JSONDecodeError as exc:
         print(f"native validator did not return JSON: {exc}", file=sys.stderr)
         return 2
+
+    if args.report is not None:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
     finding_count = payload.get("finding_count")
     findings = payload.get("findings")
