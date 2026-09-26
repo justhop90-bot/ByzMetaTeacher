@@ -404,9 +404,24 @@ def validate_game_data(data: GameData) -> None:
         for line in building.trainable_lines:
             if line not in line_ids:
                 raise ValueError(f"building {building.id} references unknown unit line {line}")
+            members = [item for item in data.units if item.line == line]
+            if not members:
+                raise ValueError(f"building {building.id} references empty unit line {line}")
+            for member in members:
+                if not any(provider.building == building.id for provider in member.providers):
+                    raise ValueError(
+                        f"building {building.id} claims trainable line {line}, "
+                        f"but unit {member.id} does not list the building as a provider"
+                    )
         for tech in building.researchable_technologies:
             if tech not in tech_ids:
                 raise ValueError(f"building {building.id} references unknown technology {tech}")
+            technology = next(item for item in data.technologies if item.id == tech)
+            if not any(provider.building == building.id for provider in technology.providers):
+                raise ValueError(
+                    f"building {building.id} claims research capability for {tech}, "
+                    "but the technology does not point back to the building"
+                )
 
     for unit in data.units:
         if unit.line not in line_ids:
@@ -415,6 +430,12 @@ def validate_game_data(data: GameData) -> None:
             if provider.building not in building_ids:
                 raise ValueError(
                     f"unit {unit.id} references unknown provider building {provider.building}"
+                )
+            provider_building = next(item for item in data.buildings if item.id == provider.building)
+            if unit.line not in provider_building.trainable_lines:
+                raise ValueError(
+                    f"unit {unit.id} names provider building {provider.building}, "
+                    f"but the building does not expose line {unit.line}"
                 )
         if unit.upgrades_from is not None:
             if unit.upgrades_from not in unit_ids:
@@ -434,6 +455,42 @@ def validate_game_data(data: GameData) -> None:
                     f"unit {unit.id} upgrade successor {unit.upgrades_to} "
                     "does not point back to this unit"
                 )
+
+    relation_keys = {
+        (item.previous, item.current, item.research)
+        for item in data.upgrade_relations
+    }
+    if len(relation_keys) != len(data.upgrade_relations):
+        raise ValueError("duplicate upgrade relation")
+    for relation in data.upgrade_relations:
+        if relation.previous not in unit_ids or relation.current not in unit_ids:
+            raise ValueError(
+                f"upgrade relation {relation.previous}->{relation.current} references unknown unit"
+            )
+        if relation.research not in tech_ids:
+            raise ValueError(
+                f"upgrade relation {relation.previous}->{relation.current} references unknown research technology {relation.research}"
+            )
+        previous = next(item for item in data.units if item.id == relation.previous)
+        current = next(item for item in data.units if item.id == relation.current)
+        if current.upgrades_from != previous.id or previous.upgrades_to != current.id:
+            raise ValueError(
+                f"upgrade relation {relation.previous}->{relation.current} disagrees with unit upgrade links"
+            )
+        research = next(item for item in data.technologies if item.id == relation.research)
+        if current.id not in research.upgrades:
+            raise ValueError(
+                f"upgrade relation {relation.previous}->{relation.current} is not exposed by technology {research.id}"
+            )
+
+    for unit in data.units:
+        if unit.upgrades_from is not None and not any(
+            relation.previous == unit.upgrades_from and relation.current == unit.id
+            for relation in data.upgrade_relations
+        ):
+            raise ValueError(
+                f"unit {unit.id} has an upgrade predecessor but no explicit research relation"
+            )
 
     for age_advance in data.age_advances:
         if age_advance.provider_building not in building_ids:
