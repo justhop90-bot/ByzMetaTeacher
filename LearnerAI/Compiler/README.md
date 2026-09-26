@@ -41,6 +41,7 @@ The compiler owns:
 - capability versus demand separation;
 - feasibility versus action;
 - pending state;
+- timing-vs-world-evidence semantics;
 - completion witnesses;
 - release;
 - future cancellation/obsolescence;
@@ -65,6 +66,8 @@ Examples already implemented:
 - Castle construction;
 - defensive Spearmen;
 - Wheelbarrow research.
+
+The timing layer now recognizes native `game-time` as interpretation evidence only. A timing-only demand cannot write an action, timing cannot prove completion, and timing alone cannot release a demand.
 
 These are compiler lifecycle examples, not the complete Byzantine player.
 
@@ -127,7 +130,7 @@ Run:
 
     python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
 
-The latest checked-in verification record contains 48 passing compiler tests. This is compiler evidence only. It is not gameplay evidence.
+The latest checked-in verification record contains the compiler regression suite plus timing-semantics tests. This is compiler evidence only. It is not gameplay evidence.
 
 ## Product boundary
 
