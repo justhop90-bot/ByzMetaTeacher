@@ -60,11 +60,16 @@ def _has_feasibility_guard(
     demand: SemanticDemand,
     registry: PrimitiveRegistry,
 ) -> bool:
-    for requirement in demand.requirements:
-        primitive = registry.get(requirement.expression.head)
+    def has_role(expr):
+        primitive = registry.get(expr.head)
         if primitive is not None and primitive.role == "FEASIBILITY":
             return True
-    return False
+        return any(
+            hasattr(argument, "head") and has_role(argument)
+            for argument in expr.args
+        )
+
+    return any(has_role(requirement.expression) for requirement in demand.requirements)
 
 
 def _key(item: IssuanceDiagnostic) -> tuple[object, ...]:
