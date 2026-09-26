@@ -342,13 +342,31 @@ class CapabilityGraphBuilder:
         return (identity.source_unit, identity.local_name)
 
     def build(self) -> CapabilityGraph:
-        provider_ids_by_capability: dict[CapabilityId, tuple[ProviderId, ...]] = {}
+        capability_by_id: dict[CapabilityId, Capability] = {}
         for capability in self._capabilities:
-            provider_ids_by_capability[capability.identity] = ()
+            existing = capability_by_id.get(capability.identity)
+            if existing is not None:
+                if existing.kind is not capability.kind:
+                    raise ValueError(
+                        f"capability '{capability.identity.source_unit}:{capability.identity.local_name}' "
+                        f"has conflicting kinds {existing.kind.value} and {capability.kind.value}"
+                    )
+                continue
+            capability_by_id[capability.identity] = capability
+
+        provider_ids_by_capability: dict[CapabilityId, tuple[ProviderId, ...]] = {
+            identity: ()
+            for identity in capability_by_id
+        }
         for provider in self._providers:
-            provider_ids_by_capability[provider.capability] = tuple(sorted(
-                (*provider_ids_by_capability.get(provider.capability, ()), provider.identity)
-            ))
+            provider_ids_by_capability[provider.capability] = tuple(
+                sorted(
+                    (
+                        *provider_ids_by_capability.get(provider.capability, ()),
+                        provider.identity,
+                    )
+                )
+            )
 
         capabilities = tuple(
             sorted(
@@ -359,7 +377,7 @@ class CapabilityGraphBuilder:
                         providers=provider_ids_by_capability.get(capability.identity, ()),
                         location=capability.location,
                     )
-                    for capability in self._capabilities
+                    for capability in capability_by_id.values()
                 ),
                 key=self._sort_key,
             )

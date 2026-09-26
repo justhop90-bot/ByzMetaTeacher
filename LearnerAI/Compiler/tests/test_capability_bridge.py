@@ -1,4 +1,9 @@
 import unittest
+
+from dataclasses import replace
+
+from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.ir.strategy import build_byzantine_castle_strategy, lower_strategy_profile
 from pathlib import Path
 import sys
 
@@ -95,3 +100,30 @@ def _atoms(node):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_strategy_bound_demands_share_factual_capability_identity(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        profile = build_byzantine_castle_strategy(effective)
+        first = profile.demand("castle-commitment")
+        second = replace(
+            first,
+            identity="castle-commitment-secondary",
+            owner="castle-trajectory-secondary",
+        )
+        profile = replace(profile, demands=profile.demands + (second,))
+
+        compilation = lower_strategy_profile(profile, effective)
+        graph = project_capability_graph(
+            compilation.demands,
+            default_de_registry(),
+        )
+
+        targets = {
+            demand.target
+            for demand in graph.demands
+            if demand.identity.local_name in {
+                "castle-commitment",
+                "castle-commitment-secondary",
+            }
+        }
+        self.assertEqual(len(targets), 1)

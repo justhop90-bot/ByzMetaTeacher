@@ -104,6 +104,8 @@ class ExecutionDemandTemplate:
     witness: str
     release: str
     invalidate: str | None = None
+    local_id: str = "primary"
+    capability_intent: CapabilityIntent | None = None
 
 
 @dataclass(frozen=True)
@@ -138,6 +140,7 @@ class StrategicDemandSpec:
     target: StrategicTarget
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
+    additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
 
     def with_overrides(
@@ -146,6 +149,7 @@ class StrategicDemandSpec:
         reason: tuple[StrategicEvidence, ...] | None = None,
         capability_entity_id: int | str | None = None,
         opportunity_cost_owner: str | None = None,
+        additional_execution_demands: tuple[ExecutionDemandTemplate, ...] | None = None,
     ) -> "StrategicDemandSpec":
         intent = self.capability_intent
         if capability_entity_id is not None:
@@ -158,6 +162,11 @@ class StrategicDemandSpec:
             reason=self.reason if reason is None else reason,
             capability_intent=intent,
             opportunity_cost=policy,
+            additional_execution_demands=(
+                self.additional_execution_demands
+                if additional_execution_demands is None
+                else additional_execution_demands
+            ),
         )
 
 
@@ -227,9 +236,9 @@ def resolve_strategy_profile(
             raise ValueError(f"duplicate strategic demand '{demand.identity}'")
         seen.add(demand.identity)
 
-        if demand.owner != demand.identity:
+        if not demand.owner:
             raise ValueError(
-                f"strategic demand '{demand.identity}' owner must equal its stable identity"
+                f"strategic demand '{demand.identity}' needs a strategic owner"
             )
         if not any(
             evidence.kind is StrategicEvidenceKind.PERSISTENT
@@ -249,13 +258,28 @@ def resolve_strategy_profile(
                     )
 
         _validate_capability_intent(demand, effective)
+        for execution in demand.execution_demands:
+            if execution.capability_intent is not None:
+                _validate_capability_intent_value(
+                    demand,
+                    execution.capability_intent,
+                    effective,
+                )
+        if len(demand.execution_demands) > 1 and any(
+            execution.local_id == "primary"
+            for execution in demand.execution_demands
+        ):
+            raise ValueError(
+                f"strategic demand '{demand.identity}' has multiple execution demands; "
+                "each must have a distinct local_id"
+            )
         _validate_target(demand, effective)
 
         if demand.opportunity_cost is not None:
-            if demand.opportunity_cost.owner != demand.identity:
+            if demand.opportunity_cost.owner != demand.owner:
                 raise ValueError(
                     f"strategic demand '{demand.identity}' opportunity-cost owner "
-                    f"must equal the strategic demand identity"
+                    f"must equal the strategic owner"
                 )
             _validate_resource_policy(demand, effective)
 
@@ -289,18 +313,40 @@ def lower_strategy_profile(
     from ..primitives import default_de_registry
     from ..semantic.analyzer import analyze
 
-    nodes = [
-        DemandNode(
-            name=spec.identity,
-            requirements=spec.execution.requirements,
-            action=spec.execution.action,
-            witness=spec.execution.witness,
-            release=spec.execution.release,
-            location=SourceLocation(1),
-            invalidate=spec.execution.invalidate,
-        )
-        for spec in profile.demands
-    ]
+    nodes = []
+    execution_owner: dict[str, str] = {}
+    for spec in profile.demands:
+        execution_demands = spec.execution_demands
+        if len(execution_demands) > 1 and any(
+            execution.local_id == "primary"
+            for execution in execution_demands
+        ):
+            raise ValueError(
+                f"strategic demand '{spec.identity}' has multiple execution demands; "
+                "each must have a distinct local_id"
+            )
+        for execution in execution_demands:
+            execution_name = (
+                spec.identity
+                if len(execution_demands) == 1 and execution.local_id == "primary"
+                else f"{spec.identity}::{execution.local_id}"
+            )
+            if execution_name in execution_owner:
+                raise ValueError(
+                    f"duplicate lowered execution demand '{execution_name}'"
+                )
+            execution_owner[execution_name] = spec.identity
+            nodes.append(
+                DemandNode(
+                    name=execution_name,
+                    requirements=execution.requirements,
+                    action=execution.action,
+                    witness=execution.witness,
+                    release=execution.release,
+                    location=SourceLocation(1),
+                    invalidate=execution.invalidate,
+                )
+            )
     semantic_demands = analyze(
         nodes,
         default_de_registry(),
@@ -312,22 +358,42 @@ def lower_strategy_profile(
     from dataclasses import replace as dc_replace
 
     for demand in semantic_demands:
-        spec = profile.demand(demand.name)
-        binding = StrategicBinding(
-            strategic_id=spec.identity,
-            owner=spec.owner,
-            posture=spec.posture,
-            priority=spec.priority,
-            reason=spec.reason,
-            target=spec.target,
-            capability_intent=spec.capability_intent,
-            opportunity_cost=spec.opportunity_cost,
+        spec = profile.demand(execution_owner[demand.name])
+        base_binding = bindings.get(spec.identity)
+        if base_binding is None:
+            base_binding = StrategicBinding(
+                strategic_id=spec.identity,
+                owner=spec.owner,
+                posture=spec.posture,
+                priority=spec.priority,
+                reason=spec.reason,
+                target=spec.target,
+                capability_intent=spec.capability_intent,
+                opportunity_cost=spec.opportunity_cost,
+            )
+            bindings[spec.identity] = base_binding
+
+        selected_execution = next(
+            execution
+            for execution in spec.execution_demands
+            if (
+                spec.identity
+                if len(spec.execution_demands) == 1 and execution.local_id == "primary"
+                else f"{spec.identity}::{execution.local_id}"
+            ) == demand.name
         )
-        bindings[spec.identity] = binding
+        selected_intent = (
+            selected_execution.capability_intent
+            or spec.capability_intent
+        )
+        execution_binding = dc_replace(
+            base_binding,
+            capability_intent=selected_intent,
+        )
         bound_demands.append(
             dc_replace(
                 demand,
-                strategic_binding=binding,
+                strategic_binding=execution_binding,
             )
         )
 
@@ -338,8 +404,10 @@ def lower_strategy_profile(
     )
 
 
-def build_byzantine_castle_strategy(
+def build_land_castle_strategy(
     effective: EffectiveCivData,
+    *,
+    profile_id: str = "land-castle-v1",
 ) -> StrategyProfile:
     castle_reason = (
         StrategicEvidence(
@@ -360,7 +428,7 @@ def build_byzantine_castle_strategy(
     demands = (
         StrategicDemandSpec(
             identity="feudal-transition",
-            owner="feudal-transition",
+            owner="age-transition",
             posture=StrategyPosture.BOOM,
             priority=StrategicPriority.CORE,
             reason=(
@@ -402,7 +470,7 @@ def build_byzantine_castle_strategy(
         ),
         StrategicDemandSpec(
             identity="early-defensive-spears",
-            owner="early-defensive-spears",
+            owner="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(
@@ -446,7 +514,7 @@ def build_byzantine_castle_strategy(
         ),
         StrategicDemandSpec(
             identity="feudal-infrastructure",
-            owner="feudal-infrastructure",
+            owner="economy",
             posture=StrategyPosture.BOOM,
             priority=StrategicPriority.SUPPORT,
             reason=(
@@ -487,7 +555,7 @@ def build_byzantine_castle_strategy(
         ),
         StrategicDemandSpec(
             identity="castle-commitment",
-            owner="castle-commitment",
+            owner="castle-trajectory",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.CORE,
             reason=castle_reason,
@@ -541,7 +609,7 @@ def build_byzantine_castle_strategy(
     )
 
     return StrategyProfile(
-        profile_id="byzantine-land-castle-v1",
+        profile_id=profile_id,
         civ_id=effective.civ_id,
         patch_key=effective.patch.key,
         effective_snapshot_fingerprint=effective.fingerprint,
@@ -562,11 +630,28 @@ def build_byzantine_castle_strategy(
     )
 
 
+
+
+def build_byzantine_castle_strategy(
+    effective: EffectiveCivData,
+) -> StrategyProfile:
+    return build_land_castle_strategy(
+        effective,
+        profile_id="byzantine-land-castle-v1",
+    )
+
 def _validate_capability_intent(
     demand: StrategicDemandSpec,
     effective: EffectiveCivData,
 ) -> None:
-    intent = demand.capability_intent
+    _validate_capability_intent_value(demand, demand.capability_intent, effective)
+
+
+def _validate_capability_intent_value(
+    demand: StrategicDemandSpec,
+    intent: CapabilityIntent,
+    effective: EffectiveCivData,
+) -> None:
     if intent.kind is CapabilityIntentKind.BUILD:
         if int(intent.entity_id) not in effective.available_buildings:
             raise ValueError(

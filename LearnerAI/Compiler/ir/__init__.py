@@ -128,6 +128,7 @@ from .strategy import (
     StrategyPosture,
     StrategyProfile,
     build_byzantine_castle_strategy,
+    build_land_castle_strategy,
     lower_strategy_profile,
     resolve_strategy_profile,
 )

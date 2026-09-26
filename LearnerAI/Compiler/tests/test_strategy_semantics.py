@@ -1,11 +1,14 @@
 import unittest
+from dataclasses import replace
 
 from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import (
+    ExecutionDemandTemplate,
     StrategyPosture,
     StrategicEvidenceKind,
     StrategicTargetKind,
     build_byzantine_castle_strategy,
+    build_land_castle_strategy,
     lower_strategy_profile,
     resolve_strategy_profile,
 )
@@ -33,7 +36,11 @@ class StrategySemanticsTests(unittest.TestCase):
 
         self.assertEqual(binding.strategic_id, "castle-commitment")
         self.assertEqual(binding.posture, StrategyPosture.CASTLE_POWER)
-        self.assertEqual(binding.opportunity_cost.owner, "castle-commitment")
+        self.assertEqual(binding.opportunity_cost.owner, "castle-trajectory")
+        self.assertNotEqual(
+            self.profile.demand("castle-commitment").owner,
+            self.profile.demand("castle-commitment").identity,
+        )
         self.assertEqual(demand.strategic_binding, binding)
 
     def test_castle_target_is_a_persistent_exact_target_not_an_execution_witness(self):
@@ -94,3 +101,40 @@ class StrategySemanticsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_one_strategic_demand_can_lower_to_multiple_execution_demands(self):
+        secondary = ExecutionDemandTemplate(
+            requirements=("(current-age >= feudal-age)", "(can-build castle)"),
+            action="(build castle)",
+            witness="(building-type-count castle > 0)",
+            release="(building-type-count castle > 0)",
+            local_id="secondary",
+        )
+        profile = self.profile.with_demand_override(
+            "castle-commitment",
+            additional_execution_demands=(secondary,),
+        )
+
+        compilation = lower_strategy_profile(profile, self.effective)
+
+        names = {demand.name for demand in compilation.demands}
+        self.assertIn("castle-commitment", names)
+        self.assertIn("castle-commitment::secondary", names)
+        self.assertEqual(
+            compilation.bindings["castle-commitment"].owner,
+            "castle-trajectory",
+        )
+
+    def test_generic_land_strategy_does_not_branch_on_byzantine_identity(self):
+        generic_effective = replace(
+            self.effective,
+            civ_id=2,
+            civ_name="SyntheticCiv",
+        )
+        profile = build_land_castle_strategy(
+            generic_effective,
+            profile_id="synthetic-land-castle-v1",
+        )
+
+        resolved = resolve_strategy_profile(profile, generic_effective)
+        self.assertIn("castle-commitment", resolved.demand_ids)

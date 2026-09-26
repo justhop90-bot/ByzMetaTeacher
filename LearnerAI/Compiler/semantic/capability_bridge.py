@@ -123,10 +123,18 @@ def project_capability_graph(
     builder = CapabilityGraphBuilder()
 
     for demand in demands:
-        capability_id = CapabilityId(
-            demand.identity.source_unit,
-            demand.identity.local_name,
-        )
+        strategic_binding = demand.strategic_binding
+        if strategic_binding is not None:
+            intent = strategic_binding.capability_intent
+            capability_id = CapabilityId(
+                "strategy-capability",
+                f"{intent.kind.value.lower()}:{intent.entity_type}:{intent.entity_id}",
+            )
+        else:
+            capability_id = CapabilityId(
+                demand.identity.source_unit,
+                demand.identity.local_name,
+            )
         action_kind, provider_kind = _provider_shape(demand.action.expression.head)
 
         requirements = tuple(
