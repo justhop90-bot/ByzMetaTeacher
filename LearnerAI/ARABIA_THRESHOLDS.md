@@ -150,24 +150,30 @@ The target is the exposed resource, not the entire base.
 
 ### Wall reinforcement
 
-Add a second local wall/gate when any one is true:
+Keep the **same positional/denial test** active for every wall escalation.
 
-- 4 or more enemy military units are committed;
+A second local wall/gate is justified when the exposed economic route remains open and at least one of these is true:
+
+- 4 or more enemy military units are committed to that route;
 - a previous raid has reached the exposed resource;
 - enemy production is forward and the route is still open;
-- the first wall creates a useful funnel that leaves another critical resource exposed.
+- the first wall creates a useful funnel while another critical resource remains exposed.
+
+Enemy unit count increases urgency. It does not create a wall demand without a resource/route that the wall can actually protect.
 
 ### Full/large Arabia enclosure
 
 Do **not** make a full perimeter a default Feudal demand.
 
-Permit a larger enclosure only when at least two of these are true:
+Permit a larger enclosure only when the economy has multiple meaningful attack routes/resources that cannot be handled by short local funnels **and** at least two of these are true:
 
 - 4+ enemy military units are actively pressuring;
 - multiple independent approaches reach the economy;
 - enemy forward military production is confirmed;
 - the economy has multiple exposed resource clusters;
 - the wall can be completed without materially delaying Castle investment.
+
+A large wall is therefore the consequence of multiple unresolved positional problems, not a reward for reaching a unit-count threshold.
 
 ### Wall wood cap
 
