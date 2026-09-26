@@ -77,26 +77,19 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
-      - name: Regenerate Basilisk compiler fixture and reject stale generated output
+      - name: Verify generated Basilisk fixture reproducibility
+        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py
+      - name: Regenerate current Basilisk artifact
         run: |
           python - <<'PY'
           from pathlib import Path
-          from LearnerAI.Compiler.compiler import compile_source
+          import sys
 
-          source_path = Path("LearnerAI/Compiler/examples/basics.basilisk")
-          checked_in = Path("LearnerAI/Compiler/generated/Basilisk.per")
-          fresh = Path("/tmp/Basilisk.per")
+          sys.path.insert(0, str(Path("LearnerAI").resolve()))
+          from Compiler.compiler import compile_source
 
-          generated = compile_source(source_path.read_text(encoding="utf-8"))
-          fresh.write_text(generated, encoding="utf-8")
-
-          checked_bytes = checked_in.read_bytes()
-          fresh_bytes = fresh.read_bytes()
-          if checked_bytes != fresh_bytes:
-              raise SystemExit(
-                  "generated/Basilisk.per is stale or non-reproducible; "
-                  "the checked-in artifact does not match current compiler output"
-              )
+          source = Path("LearnerAI/Compiler/examples/basics.basilisk").read_text(encoding="utf-8")
+          Path("/tmp/Basilisk.per").write_text(compile_source(source), encoding="utf-8")
           PY
       - name: Native zero-findings acceptance - freshly compiled Basilisk fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per
