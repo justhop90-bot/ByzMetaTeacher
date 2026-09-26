@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Basilisk compiler entry point.
+"""AoE2 .per compiler entry point.
 
 Pipeline: source -> AST -> semantic IR -> deterministic .per.
 Artifact promotion requires the pinned aoe2-ai-parser validation gate:
@@ -482,7 +482,7 @@ def _build_native_backend(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Compile Basilisk demand DSL to .per")
+    ap = argparse.ArgumentParser(description="Compile AoE2 AI semantic source to native .per")
     ap.add_argument("source", type=Path)
     ap.add_argument("output", type=Path)
     ap.add_argument("--base-goal", type=int, default=41)
