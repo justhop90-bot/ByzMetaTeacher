@@ -40,8 +40,8 @@ class ReleaseStateTests(unittest.TestCase):
         self.assertEqual(release.evidence_kind, ReleaseEvidenceKind.WORLD_STATE)
         self.assertEqual(release.from_state, LifecycleState.COMPLETE)
         self.assertEqual(release.to_state, LifecycleState.RELEASED)
-        self.assertEqual(release.source_order, 0)
-        self.assertEqual(release.witness_source_order, 2)
+        self.assertEqual(release.source_order, 1)
+        self.assertEqual(release.witness_source_order, 3)
 
     def test_release_must_be_guarded_by_complete_state(self):
         source = """
