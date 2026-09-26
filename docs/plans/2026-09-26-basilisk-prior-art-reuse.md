@@ -140,3 +140,16 @@ The bridge is intentionally validation-facing. It does not replace the demand IR
 - [x] Verify the layer through the compiler CI path.
 
 The next semantic boundary remains resource/conflict semantics and explicit action-issuance failure versus pending-state semantics. Broader source-order analysis should extend this access model to non-lifecycle state only when a real Basilisk behavior requires it.
+
+
+### Resource/conflict semantics implementation record (2026-09-26)
+
+- [x] Typed transient ResourceClaim and ConflictContract IR.
+- [x] Provider-level typed claim materialization from existing ActionSpec conflict metadata.
+- [x] Deterministic conflict-group validation with one arbitration owner per transient conflict class.
+- [x] Explicit rejection of orphan arbitration, missing arbitration owners, multiple owners, and incompatible competing claims.
+- [x] Compile gate ordering: ownership -> resource/conflict -> capability -> binding -> emission.
+- [x] Focused regression fixtures and exact deterministic diagnostics.
+- [x] Compiler CI verification: run 230 completed with native fixture finding_count=0 and 140 tests passing.
+
+The implementation intentionally does not create persistent resource reservations, global fairness scheduling, or a generic transaction manager.
