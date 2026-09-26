@@ -392,6 +392,42 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaisesRegex(CompileError, "TIMING-WITHOUT-WORLD-EVIDENCE"):
             compile_source(source)
 
+
+    def test_dropsite_min_distance_is_a_positional_observation(self):
+        expr = parse_expression("(dropsite-min-distance gold > 12)")
+        self.assertEqual(expr.head, "dropsite-min-distance")
+        self.assertEqual(expr.args, ("gold", ">", "12"))
+
+    def test_tower_response_can_require_timing_maa_and_positional_evidence(self):
+        source = """
+        demand maa-tower-defense {
+            require (game-time >= 510)
+            require (unit-type-count man-at-arms >= 2)
+            require (dropsite-min-distance gold > 12)
+            require (can-build watch-tower)
+            action (build watch-tower)
+            witness (building-type-count watch-tower > 0)
+            release (building-type-count watch-tower > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(game-time >= 510)", output)
+        self.assertIn("(unit-type-count man-at-arms >= 2)", output)
+        self.assertIn("(dropsite-min-distance gold > 12)", output)
+        self.assertIn("(can-build watch-tower)", output)
+
+    def test_positional_observation_cannot_be_completion_witness(self):
+        source = """
+        demand bad-tower {
+            require (can-build watch-tower)
+            action (build watch-tower)
+            witness (dropsite-min-distance gold > 12)
+            release (building-type-count watch-tower > 0)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "completion witness"):
+            compile_source(source)
+
     def test_cli_entrypoint_compiles_from_repository_root(self):
         repo = Path(__file__).resolve().parents[3]
         source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
