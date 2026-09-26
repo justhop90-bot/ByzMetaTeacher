@@ -74,8 +74,12 @@ class GameDataAuditTests(unittest.TestCase):
 
     def test_current_patch_attack_and_healing_modifiers_are_encoded(self):
         fire = next(item for item in self.profile.bonuses if item.id == "byz-fire-ship-speed")
+        dromon = next(item for item in self.profile.bonuses if item.id == "byz-dromon-speed")
         monk = next(item for item in self.profile.bonuses if item.id == "byz-team-monk-heal")
         self.assertEqual((fire.modifier.value.numerator, fire.modifier.value.denominator), (4, 5))
+        self.assertEqual(fire.selector, EntitySelector.unit_line(UnitLineId("fire-ship-line")))
+        self.assertEqual((dromon.modifier.value.numerator, dromon.modifier.value.denominator), (4, 5))
+        self.assertEqual(dromon.selector, EntitySelector.unit_line(UnitLineId("dromon-line")))
         self.assertEqual((monk.modifier.value.numerator, monk.modifier.value.denominator), (2, 1))
 
     def test_dromon_and_greek_fire_effects_are_present(self):
@@ -157,9 +161,13 @@ class GameDataAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "factual coverage"):
             self.data.require_coverage("unit", 550)
 
-    def test_unavailable_byzantine_techs_are_not_promoted_from_generic_ai_reference(self):
+    def test_verified_unavailable_byzantine_entities_are_first_class_facts(self):
         for tech_id in (435, 436, 239):
+            self.assertIn(tech_id, [int(item) for item in self.data.verified_unavailable_technologies])
             self.assertNotIn(tech_id, [int(item) for item in self.data.available_technologies])
+        for unit_id in (588, 542):
+            self.assertIn(UnitId(unit_id), self.data.verified_unavailable_units)
+            self.assertNotIn(UnitId(unit_id), self.data.available_units)
 
     def test_varangian_ids_are_repository_anchored_and_patch_valid(self):
         self.assertEqual(self.data.unit(2703).name, "Varangian Guard")
