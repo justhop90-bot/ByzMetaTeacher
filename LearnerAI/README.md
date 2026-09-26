@@ -55,6 +55,8 @@ ARABIA_OVERRIDE_THRESHOLDS.md: exception thresholds for scouts, archers, Men-at-
 
 ARABIA_TIMING_WINDOWS.md: timing-confidence bands for scouts, archers, Men-at-Arms, towers, and early opponent Castle pressure.
 
+ARABIA_ECONOMIC_REACTIONS.md: worker packets, production capacity, wall/tower builders, and resource-allocation reactions for those timing windows.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
