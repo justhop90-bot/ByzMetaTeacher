@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
+
+if TYPE_CHECKING:
+    from .resource import ResourceClaim
 
 from ..ast import Expression, SourceLocation
 from .model import LifecycleStorage, SemanticId
@@ -140,6 +143,7 @@ class CapabilityProvider:
     admissibility: PredicateNode | None = None
     action: ActionSpec | None = None
     witness: WitnessId | None = None
+    resource_claim: "ResourceClaim | None" = None
     location: SourceLocation | None = None
 
 
