@@ -34,6 +34,7 @@ The first source language remains deliberately small:
         action (<native .per action>)
         witness (<native .per world-state predicate>)
         release (<native .per predicate>)
+        invalidate (<native .per invalidation predicate>)   # optional
     }
 
 Native expressions stay visible. The compiler does not try to invent a second AoE2 engine.
@@ -54,7 +55,7 @@ The compiler owns:
 - refusal to invent unsupported builder-count semantics;
 - completion witnesses;
 - release;
-- future cancellation/obsolescence;
+- explicit strategic invalidation and cancellation;
 - ownership and dependency diagnostics.
 
 The native backend owns raw .per language legality.
@@ -70,6 +71,8 @@ A separate pending-admission rule moves issued to pending on the following scrip
 The typed completion-witness contract proves that completion evidence is an explicit world-state observation tied to the demand it establishes. The pending witness moves pending to complete.
 
 The typed release-state contract requires release to be guarded by COMPLETE and transition only to RELEASED. Release is validated independently from completion witnessing.
+
+An optional typed invalidation contract records world-state evidence that the strategic demand is obsolete. Its cancellation contract may transition only ACTIVE, ISSUED, or PENDING to terminal CANCELLED; COMPLETE is never cancelled by this layer. Invalidation is emitted before release and action issuance so a true invalidation preempts execution in the same rule pass.
 
 The action itself is never the witness, and issuance is not completion.
 
@@ -161,14 +164,15 @@ Implemented and connected to the compile gate:
 9. deterministic SCC cycle detection;
 10. dead-end, unrooted, open-loop, blocked, and disconnected diagnostics;
 11. deterministic capability and ownership diagnostics;
-12. projection of the current demand language into these semantic layers without adding source syntax.
+12. explicit strategic invalidation/cancellation semantics with deterministic diagnostics;
+13. projection of the current demand language into these semantic layers without adding source syntax.
 
 Still required for a full player compiler:
 
 1. richer owner boundaries once strategy/domain owner declarations exist;
 2. resource/conflict semantics beyond the current transient action-exclusion layer;
 3. explicit action-issuance failure versus pending-state semantics;
-4. cancellation/obsolescence and capability-loss closure;
+4. capability-loss closure and execution-state recovery while preserving strategic demand;
 5. broader source-order and same-pass visibility analysis across non-lifecycle state;
 6. StrategicNumberSlot and TimerSlot allocation;
 7. Castle vertical-slice compilation against actual Basilisk strategy/economy semantics.
@@ -284,3 +288,8 @@ Completion is admitted only through a typed `CompletionWitnessContract`. The con
 ### Release-state boundary
 
 A `ReleaseStateContract` explicitly records release identity, world-state evidence, the demand it establishes, `COMPLETE -> RELEASED`, and emitter-aligned source order relative to the completion witness. Release validation rejects timing-only release, action coupling, wrong-demand release, invalid lifecycle transitions, invalid evidence kinds, unknown native primitives, and release rules emitted after their completion-witness rule. The source-language release remains intentionally small; strategic invalidation/cancellation is a separate future contract.
+
+
+### Invalidation / cancellation boundary
+
+`invalidate` is an optional source statement because existing compiler fixtures remain compatible while strategy sources are migrated to explicit strategic-admissibility evidence. When present, the compiler materializes an `InvalidationContract` and a `CancellationStateContract`. Invalidation rejects timing-only evidence, action coupling, missing world-state evidence, wrong demand identity, unknown native primitives, and invalid source ordering. Cancellation is restricted to `ACTIVE`, `ISSUED`, and `PENDING` and always terminates in `CANCELLED`; completed work remains owned by the release path. Capability-loss recovery that preserves strategic demand remains a separate future contract.
