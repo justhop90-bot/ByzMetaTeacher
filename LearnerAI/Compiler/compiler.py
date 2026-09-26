@@ -200,7 +200,12 @@ def _compile_ir_parts(
         _storage_requests(ir),
         context,
     )
-    return emit(ir, bindings), bindings, context
+    try:
+        for demand in ir:
+            registry.validate_demand_lowering(demand, bindings)
+    except (KeyError, ValueError) as exc:
+        raise CompileError(f"NATIVE-CONTRACT-LOWERING: {exc}") from exc
+    return emit(ir, bindings, registry=registry), bindings, context
 
 
 def _compile_source_parts(
