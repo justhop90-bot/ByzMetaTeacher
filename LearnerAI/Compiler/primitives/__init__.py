@@ -14,6 +14,7 @@ from .native_hygiene import (
     CitationRecord,
     CitationRecordCatalog,
     CitationRevalidationEvent,
+    EngineVersionScope,
     CitationState,
     ConfidenceBasis,
     ConfidenceLevel,
