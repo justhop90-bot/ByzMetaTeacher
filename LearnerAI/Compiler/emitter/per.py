@@ -41,6 +41,12 @@ def emit(demands: list[SemanticDemand], compiler_version: str = "0.4") -> str:
         #
         # Reversing this order would allow an already-true witness/release
         # to collapse the entire lifecycle in one pass.
+        #
+        # The action also requires both completion and release predicates to be
+        # false before entering pending. This is the stale-fact barrier:
+        # a world fact that was already true before the action cannot later
+        # masquerade as evidence that the action completed or that the demand
+        # became releasable.
         out += [
             f"; Release: {d.name} | COMPLETE -> RELEASED",
             "(defrule",
@@ -61,6 +67,8 @@ def emit(demands: list[SemanticDemand], compiler_version: str = "0.4") -> str:
             f"; Demand: {d.name} | ACTIVE -> PENDING",
             "(defrule",
             f"    (goal demand-{d.name} 1)",
+            f"    (not {d.witness.source})",
+            f"    (not {d.release.source})",
         ]
         out.extend(f"    {r.expression.source}" for r in d.requirements)
         out += [
