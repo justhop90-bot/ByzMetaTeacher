@@ -33,11 +33,20 @@ B0 protects:
 
 ### Worker-packet convention
 
-One packet = 1-2 villagers temporarily reassigned.
+One packet = the smallest temporary allocation change that closes the current shortage.
 
-Use the smallest packet that closes the current shortage.
+The packet is evaluated against:
 
-Do not create a second packet while the first packet's demand is already being satisfied unless the production queue or world-state witness proves the first packet is insufficient.
+- current worker count;
+- current stock;
+- resource price/opportunity cost;
+- active production queue;
+- active strategic demand;
+- construction feasibility.
+
+Do not create a second packet while the first packet is already closing the shortage unless current production or world-state evidence proves it is insufficient.
+
+Current official AI behavior also changes farm and tree-gathering behavior when wood becomes unusually expensive, so worker packets must yield to resource-price/crisis arbitration rather than force a fixed percentage.
 
 ## 2. Reaction ladder
 
@@ -435,6 +444,8 @@ The Strategy/Economy interface should expose named **modes**, not raw individual
 These modes are **relative modes**.
 
 They must not be implemented as universal percentages that ignore worker count, farms, dead villagers, fishing, map geometry, or current resource stock.
+
+A mode is a target tendency, not a hard assignment. The current stock/resource price and active demand may override it.
 
 ## 9. Production capacity rules
 
