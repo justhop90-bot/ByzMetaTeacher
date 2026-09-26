@@ -1,4 +1,5 @@
 import importlib
+import pkgutil
 import unittest
 
 
@@ -82,6 +83,48 @@ class BasiliskClientBoundaryTests(unittest.TestCase):
                     self.assertFalse(
                         hasattr(module, symbol),
                         f"{module_name} must not re-export Basilisk symbol {symbol}",
+                    )
+
+
+    def test_every_generic_package_module_rejects_basilisk_reexports(self):
+        import LearnerAI.Compiler as compiler_package
+        import LearnerAI.Compiler.clients.basilisk as basilisk_client
+
+        canonical_symbols = {
+            name: getattr(basilisk_client, name)
+            for name in BASILISK_STRATEGY_SYMBOLS
+        }
+        canonical_ids = {id(value): name for name, value in canonical_symbols.items()}
+
+        module_names = {compiler_package.__name__}
+        module_names.update(
+            info.name
+            for info in pkgutil.walk_packages(
+                compiler_package.__path__,
+                compiler_package.__name__ + ".",
+            )
+        )
+
+        for module_name in sorted(module_names):
+            module = importlib.import_module(module_name)
+            for symbol_name in dir(module):
+                if symbol_name.startswith("_"):
+                    continue
+                value = getattr(module, symbol_name)
+                canonical_name = canonical_ids.get(id(value))
+                if canonical_name is None:
+                    continue
+                origin = getattr(value, "__module__", None)
+                if origin == module_name:
+                    continue
+                with self.subTest(
+                    module=module_name,
+                    symbol=symbol_name,
+                    canonical=canonical_name,
+                ):
+                    self.fail(
+                        f"{module_name}.{symbol_name} re-exports Basilisk strategy "
+                        f"symbol {canonical_name} from {origin}"
                     )
 
     def test_basilisk_client_namespace_owns_strategy_exports(self):
