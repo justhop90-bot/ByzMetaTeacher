@@ -102,6 +102,12 @@ from .fact_evaluation import evaluate_static_truth
 from .fact_registry import FactSemanticAdapter, NativeFactRegistry
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
+from .rule_diagnostics import (
+    RuleDiagnostic,
+    RuleDiagnosticCode,
+    RuleDiagnosticReport,
+    analyze_rule_diagnostics,
+)
 
 from .fact_values import (
     CanonicalEnum,
