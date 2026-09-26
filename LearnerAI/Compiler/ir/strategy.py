@@ -612,8 +612,15 @@ def lower_strategy_profile(
 def _land_castle_observations(
     effective: EffectiveCivData,
 ) -> tuple[StrategicObservationSpec, ...]:
-    dark = effective.age_advance(Age.DARK).provenance
     feudal = effective.age_advance(Age.FEUDAL).provenance
+    dark = next(
+        (
+            advance.provenance
+            for advance in effective.age_advances
+            if advance.age is Age.DARK
+        ),
+        feudal,
+    )
     castle = effective.age_advance(Age.CASTLE).provenance
     imperial = effective.age_advance(Age.IMPERIAL).provenance
     knight = effective.unit(38).provenance
