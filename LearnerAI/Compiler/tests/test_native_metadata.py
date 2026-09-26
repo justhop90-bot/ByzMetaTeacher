@@ -117,6 +117,25 @@ class NativeSupportStateTests(unittest.TestCase):
         )
 
 
+    def test_primitive_registry_rejects_duplicate_names(self):
+        primitive = Primitive("current-age", "FACT", "OBSERVATION", 2, 2)
+        with self.assertRaisesRegex(ValueError, "duplicate primitive name"):
+            PrimitiveRegistry((primitive, primitive))
+
+    def test_native_command_registry_rejects_duplicate_names(self):
+        command = NativeCommandSpec(
+            "current-age",
+            "DE",
+            "Fact",
+            (),
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate native command name"):
+            NativeCommandRegistry(
+                (command, command),
+                source_blob_sha="test",
+                command_count=2,
+            )
+
     def test_unknown_engine_semantic_mapping_is_unsupported(self):
         registry = PrimitiveRegistry(
             (
