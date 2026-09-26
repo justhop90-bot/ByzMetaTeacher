@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, Resource
-from .versioning import EvidenceRef
+from .versioning import EvidenceKind, EvidenceRef
 
 if TYPE_CHECKING:
     from .model import SemanticDemand
@@ -25,6 +25,11 @@ class StrategicEvidenceKind(str, Enum):
     PERSISTENT = "PERSISTENT"
     EXECUTION = "EXECUTION"
     TIMING = "TIMING"
+
+
+class StrategicEvidenceSource(str, Enum):
+    AUTHORING = "AUTHORING"
+    COMMUNITY_META = "COMMUNITY_META"
 
 
 class StrategicTargetKind(str, Enum):
@@ -62,6 +67,8 @@ class StrategicEvidence:
     kind: StrategicEvidenceKind
     expression: str
     label: str
+    source: StrategicEvidenceSource = StrategicEvidenceSource.AUTHORING
+    provenance: tuple[EvidenceRef, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -201,6 +208,20 @@ class StrategyProfile:
                 return item
         raise KeyError(f"unknown strategic demand '{identity}'")
 
+    @property
+    def community_meta_evidence(self) -> tuple[StrategicEvidence, ...]:
+        evidence: list[StrategicEvidence] = []
+        for demand in self.demands:
+            evidence.extend(demand.reason)
+            evidence.extend(demand.admissibility)
+            evidence.extend(demand.invalidation)
+        for transition in self.transitions:
+            evidence.extend(transition.evidence)
+        return tuple(
+            item for item in evidence
+            if item.source is StrategicEvidenceSource.COMMUNITY_META
+        )
+
     def with_demand_override(self, identity: str, **kwargs) -> "StrategyProfile":
         target = self.demand(identity)
         updated = target.with_overrides(**kwargs)
@@ -222,6 +243,31 @@ class StrategyCompilation:
     profile: StrategyProfile
     demands: tuple["SemanticDemand", ...]
     bindings: dict[str, StrategicBinding]
+
+
+def _validate_evidence_attribution(
+    evidence: StrategicEvidence,
+    effective: EffectiveCivData | None = None,
+) -> None:
+    if evidence.source is not StrategicEvidenceSource.COMMUNITY_META:
+        return
+    if evidence.kind is not StrategicEvidenceKind.PERSISTENT:
+        raise ValueError(
+            f"community meta evidence '{evidence.label}' must be PERSISTENT"
+        )
+    if not any(
+        ref.kind is EvidenceKind.COMMUNITY_REFERENCE
+        for ref in evidence.provenance
+    ):
+        raise ValueError(
+            f"community meta evidence '{evidence.label}' requires COMMUNITY_REFERENCE provenance"
+        )
+    if effective is not None and any(
+        ref.patch != effective.patch for ref in evidence.provenance
+    ):
+        raise ValueError(
+            f"community meta evidence '{evidence.label}' has provenance for a different patch"
+        )
 
 
 def _validate_factual_coverage(
@@ -266,6 +312,7 @@ def resolve_strategy_profile(
                 f"strategic demand '{demand.identity}' needs persistent strategic evidence"
             )
         for evidence in (*demand.reason, *demand.admissibility, *demand.invalidation):
+            _validate_evidence_attribution(evidence, effective)
             if evidence.kind is StrategicEvidenceKind.TIMING and evidence.expression:
                 if all(
                     other.kind is StrategicEvidenceKind.TIMING
@@ -303,6 +350,8 @@ def resolve_strategy_profile(
             _validate_resource_policy(demand, effective)
 
     for transition in profile.transitions:
+        for evidence in transition.evidence:
+            _validate_evidence_attribution(evidence, effective)
         if not transition.evidence:
             raise ValueError(
                 f"posture transition '{transition.label}' needs evidence"
@@ -713,9 +762,70 @@ def build_land_castle_strategy(
 def build_byzantine_castle_strategy(
     effective: EffectiveCivData,
 ) -> StrategyProfile:
-    return build_land_castle_strategy(
+    profile = build_land_castle_strategy(
         effective,
         profile_id="byzantine-land-castle-v1",
+    )
+    community_meta = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://www.reddit.com/r/aoe2/comments/1tr849c/byz_vs_chinese/",
+        "2026-05-29",
+        "community discussion of Byzantine defensive/counter-unit and Castle/Imperial transitions",
+        effective.patch,
+        verification="contextual-strategy",
+    )
+    supporting_meta = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://www.reddit.com/r/aoe2/comments/1ajkopd",
+        "2024-02-05",
+        "community discussion of defensive Feudal play, counter-unit transitions, and reaching Castle",
+        effective.patch,
+        verification="contextual-strategy",
+    )
+    meta_provenance = (community_meta, supporting_meta)
+    meta_labels = {
+        "Castle-capability trajectory remains strategically intended",
+        "Sustained mounted pressure changes the active defensive posture",
+        "Mounted pressure has cleared enough to resume the economic trajectory",
+    }
+
+    demands = tuple(
+        replace(
+            demand,
+            reason=tuple(
+                replace(
+                    evidence,
+                    source=StrategicEvidenceSource.COMMUNITY_META,
+                    provenance=meta_provenance,
+                )
+                if evidence.label in meta_labels
+                else evidence
+                for evidence in demand.reason
+            ),
+        )
+        for demand in profile.demands
+    )
+    transitions = tuple(
+        replace(
+            transition,
+            evidence=tuple(
+                replace(
+                    evidence,
+                    source=StrategicEvidenceSource.COMMUNITY_META,
+                    provenance=meta_provenance,
+                )
+                if evidence.label in meta_labels
+                else evidence
+                for evidence in transition.evidence
+            ),
+        )
+        for transition in profile.transitions
+    )
+    return replace(
+        profile,
+        demands=demands,
+        transitions=transitions,
+        provenance=(*profile.provenance, *meta_provenance),
     )
 
 def _validate_capability_intent(
