@@ -11,6 +11,7 @@ ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source_with_report
+from Compiler.artifact_diagnostics import append_persistent_rule_diagnostics
 from Compiler.diagnostics import ReportStatus
 from native_support_replay_schema import validate_snapshot
 from test_compiler_native_integration import (
@@ -19,6 +20,30 @@ from test_compiler_native_integration import (
     ValidationStatus,
     fake_result,
 )
+
+
+def persistent_artifact_sha256() -> str:
+    artifact = "(defrule (true) => (set-goal 7 1))\n"
+    category = type("Category", (), {"value": "PERSISTENT_STATE"})()
+    code = type("Code", (), {"value": "PSTATE-002"})()
+    severity = type("Severity", (), {"value": "warning"})()
+    diagnostic = type(
+        "Diagnostic",
+        (),
+        {
+            "category": category,
+            "rule_order": 2,
+            "code": code,
+            "severity": severity,
+            "state_kind": "GOAL",
+            "state_identifier": "7",
+            "related_rule_order": 1,
+            "related_operation": "set-goal",
+            "message": "goal state '7' has a later writer in rule 2 after writer in rule 1",
+        },
+    )()
+    rendered = append_persistent_rule_diagnostics(artifact, (diagnostic,))
+    return hashlib.sha256(rendered.encode("utf-8")).hexdigest()
 
 UNSUPPORTED_STATES = (
     "native-known",
@@ -74,9 +99,10 @@ def build_snapshot() -> dict[str, object]:
             }
 
     snapshot = {
-        "schema_version": 1,
+        "schema_version": 2,
         "python": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
+        "persistent_artifact_sha256": persistent_artifact_sha256(),
         "fixtures": fixtures,
     }
     return validate_snapshot(snapshot, source="generated snapshot")
