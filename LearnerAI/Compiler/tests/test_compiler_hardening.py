@@ -220,6 +220,22 @@ class EmitterBudgetAndArbitrationTests(unittest.TestCase):
 
 
 
+    def test_compile_rejects_action_without_native_feasibility(self):
+        source = """
+        demand castle {
+            require (building-available castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            r"CAP-041: provider 'castle-provider' has no native feasibility predicate",
+        ):
+            compile_source(source)
+
+
 class NativeStorageContractCatalogTests(unittest.TestCase):
     def test_ai_ref_catalog_derives_point_and_search_state_spans(self):
         catalog = default_storage_contracts()
