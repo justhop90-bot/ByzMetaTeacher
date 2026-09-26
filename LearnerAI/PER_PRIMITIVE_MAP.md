@@ -1335,42 +1335,268 @@ The hard invariants are:
 
 ## 21. Canonical lifecycle: defensive Spearmen
 
+This is the canonical Production/Military example. It teaches that a defensive unit requirement is not “train N units once.” The real lifecycle is threat interpretation → persistent requirement → unit availability → production feasibility → queued/trained state → force-state witness → reassessment.
+
 ### Demand
 
-Information identifies a relevant cavalry threat. Military establishes a minimum defensive requirement.
+Information identifies a relevant cavalry threat. Military translates that observation into a minimum defensive requirement.
 
-### Capability
-
-Relevant production building, age, technology and resources.
-
-### Feasibility
+Conceptually:
 
 ```
-(can-train spearman)
+cavalry threat observed
+→ defensive requirement = required Spearman-line count
 ```
+
+The requirement is strategic intent, not a train command.
+
+For example:
+
+```
+required Spearman-line count = 4
+current Spearman-line count < required count
+cavalry-defense posture remains active
+```
+
+The exact threshold is strategy-dependent. The important lesson is that the threat creates a persistent demand, while Production owns the mechanics of satisfying it.
+
+### Admissibility
+
+The demand remains admissible while the underlying military reason exists. Examples include relevant enemy cavalry remaining observed, the defensive posture not being cancelled, and the minimum defensive requirement not already being satisfied.
+
+Do not confuse “enemy cavalry exists” with “train Spearman immediately.” Information supplies evidence; Military/Strategy determines the requirement.
+
+### Capability: unit availability
+
+First establish that the requested unit or unit line is available to the civilization and its current tech-tree state.
+
+```
+(unit-available spearman-line)
+```
+
+This is a capability/prerequisite question. It does not prove that a Barracks exists, that the unit can be trained now, that resources are available to this demand, or that the unit is already trained.
+
+For a learner script:
+
+```
+unit-available
+    ≠
+can-train
+```
+
+### Production infrastructure
+
+The Production domain must also have an appropriate production building and usable production capacity. For Spearmen this normally means a Barracks capable of training the requested unit line.
+
+Distinguish:
+- the unit is available to the civ;
+- the required production building exists;
+- the production building can train the unit;
+- relevant production capacity is usable;
+- the economy can support the training.
+
+Do not collapse “we have a Barracks” into “we can train a Spearman.”
+
+### Resource arbitration and escrow
+
+Training competes with villagers, upgrades, buildings, farms, and other military units.
+
+```
+resource exists
+    ≠
+resource is available to this demand
+    ≠
+training can start
+```
+
+If escrow is used, the resource reservation belongs to Economy/resource arbitration. It does not prove that a Spearman was trained.
+
+AIRef exposes both can-train and can-train-with-escrow forms. The distinction mirrors the Castle lesson: ordinary feasibility and escrow-aware feasibility are separate engine questions. citeturn0search0
+
+### Feasibility: can-train
+
+The engine-native production feasibility test is:
+
+```
+(can-train spearman-line)
+```
+
+AIRef defines can-train as checking whether training of the requested unit can start. citeturn0search0
+
+Keep these questions separate:
+
+| Question | Primitive/concept |
+|---|---|
+| Is the unit available to the civ/tech state? | `unit-available spearman-line` |
+| Can training start under normal resources? | `can-train spearman-line` |
+| Can training start using escrow-aware resources? | `can-train-with-escrow spearman-line` |
+| Has the unit actually trained? | `unit-type-count spearman-line` |
+| Has the unit trained or entered the queue? | `unit-type-count-total spearman-line` |
+
+### Repeat prevention: queued versus trained
+
+This is the production equivalent of Castle pending construction.
+
+The important state distinction is:
+
+```
+REQUIRED
+  ↓
+TRAIN REQUESTED
+  ↓
+QUEUED / TRAINING
+  ↓
+TRAINED
+```
+
+unit-type-count counts trained units. unit-type-count-total includes trained and queued units. AIRef documents this distinction, and UserPatch notes confirm that total/pending counting includes queued training. citeturn0search0turn0search3
+
+Therefore a production threshold should normally use the total count when its purpose is: “Do not queue more units once the required force is already trained or queued.”
+
+Example:
+
+```
+(unit-type-count-total spearman-line < required-count)
+(can-train spearman-line)
+=>
+(train spearman-line)
+```
+
+This prevents the classic loop:
+
+```
+4 Spearmen required
+→ 0 trained
+→ train
+→ still 0 trained because the unit is queued
+→ train again
+→ duplicate queueing
+```
+
+AIRef community examples use the same pattern: a total unit-count threshold is paired with can-train before issuing train. citeturn0search1
 
 ### Action
 
+Once the demand remains admissible and training is feasible:
+
 ```
-(train spearman)
+(train spearman-line)
 ```
 
-### Witness
+This is an action request. It is not proof that the unit immediately exists on the map. The action can result in queued/training state before the trained-unit witness changes.
+
+### World-state witness
+
+There are two legitimate witnesses, depending on what the domain is trying to prove.
+
+For production progress / force reservation:
 
 ```
 (unit-type-count-total spearman-line >= required-count)
 ```
 
-### Release/reassess
+This proves that the required number is either trained or queued.
 
-The minimum requirement is satisfied, but the threat remains observable. Therefore the standing strategic condition may generate a new or continued demand later.
+For actual fielded military strength:
 
-### Lesson
+```
+(unit-type-count spearman-line >= required-count)
+```
 
-A production threshold is often a better teaching model than “train N units once.” It demonstrates persistent intent plus world-state completion.
+This proves that the required number of units actually exists as trained units.
+
+That distinction is critical. Production can use unit-type-count-total to prevent over-queueing, while Military readiness should use unit-type-count when it needs actual fielded strength.
+
+### Completion versus release
+
+Completion of the current production target is not necessarily release of the defensive posture.
+
+```
+COMPLETION OF CURRENT PRODUCTION TARGET
+    ≠
+RELEASE OF DEFENSIVE POSTURE
+```
+
+The threat may still exist after the initial requirement is trained. The correct loop is:
+
+```
+threat observed
+→ defensive requirement established
+→ production target satisfied
+→ military remains vigilant
+→ threat changes
+→ requirement reassessed
+→ new production demand may be created
+```
+
+Release belongs to the demand, not automatically to the production action. A later threat increase can raise the target; a threat disappearance can make the requirement obsolete.
+
+### Reassessment
+
+Military should reassess the world state after production changes: enemy cavalry count can increase, friendly Spearman-line count can fall because units die, the opponent can transition away from cavalry, or another counter can become preferable.
+
+This is why the example must not become a one-shot “train four Spearmen and forget about it” script. The persistent strategic demand is stable; the numerical production target is the current execution requirement.
+
+### Canonical defensive Spearman trace
+
+```
+OBSERVE
+  relevant cavalry threat exists
+        ↓
+INTERPRET
+  cavalry threat is strategically relevant
+        ↓
+DEMAND
+  minimum Spearman-line requirement established
+        ↓
+ADMISSIBILITY
+  defensive posture remains active
+        ↓
+CAPABILITY
+  unit available
+  + production infrastructure
+  + economic support
+        ↓
+RESOURCE ARBITRATION
+  resources are available to this demand
+        ↓
+FEASIBILITY
+  can-train spearman-line
+        ↓
+ACTION
+  train spearman-line
+        ↓
+EXECUTION STATE
+  queued / training
+        ↓
+WORLD-STATE WITNESS
+  unit-type-count-total reaches target
+        ↓
+CURRENT PRODUCTION TARGET SATISFIED
+        ↓
+MILITARY REASSESSMENT
+  actual trained force and enemy threat are observed
+        ↓
+RELEASE / CONTINUE / ESCALATE
+  demand may clear, persist, or increase
+```
+
+### Hard invariants
+
+- unit-available is not can-train.
+- can-train is not train.
+- train is not proof of a trained unit.
+- resources in the bank are not automatically resources available to this demand.
+- escrow is resource arbitration, not a military witness.
+- unit-type-count is not unit-type-count-total.
+- queued units are not fielded units.
+- satisfying a production target is not necessarily release of the defensive posture.
+- a persistent threat can generate a new demand after the previous production target was satisfied.
+- Military readiness should use actual world state when fielded strength matters.
+- Production should use queued-aware thresholds when the objective is to prevent over-queueing.
+- Production executes the current requirement; Strategy/Military owns why that requirement exists.
 
 ---
-
 ## 22. Canonical lifecycle: Fletching
 
 ### Demand
