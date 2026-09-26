@@ -57,6 +57,8 @@ ARABIA_TIMING_WINDOWS.md: timing-confidence bands for scouts, archers, Men-at-Ar
 
 ARABIA_ECONOMIC_REACTIONS.md: worker packets, production capacity, wall/tower builders, and resource-allocation reactions for those timing windows.
 
+ARABIA_RESEARCH_AUDIT.md: current official/community cross-reference and the revision log for the Arabia rules and compiler semantics.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
