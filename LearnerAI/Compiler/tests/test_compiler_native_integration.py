@@ -176,6 +176,53 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
             self.assertEqual(manifest.read_text(encoding="utf-8"), "KEEP MANIFEST\n")
 
+    def test_compiler_manifest_carries_package_inventory_fingerprint(self):
+        from Compiler.runtime_binding import (
+            BindingContext,
+            PackageStorageInventory,
+            PackageStorageReservation,
+            StorageKind,
+        )
+
+        inventory = PackageStorageInventory(
+            package_id="compiler-test",
+            package_revision="r1",
+            reservations=(
+                PackageStorageReservation(
+                    kind=StorageKind.GOAL_SLOT,
+                    start=1000,
+                    end=1000,
+                    provenance_id="external-goal",
+                ),
+            ),
+        )
+        context = BindingContext.from_package_inventory(inventory)
+        source = EXAMPLES
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            output = tmp / "Basilisk.per"
+            manifest = tmp / "Basilisk.bindings.json"
+            fake = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            result = compile_to_file(
+                source,
+                output,
+                native_backend=fake,
+                binding_context=context,
+                binding_manifest=manifest,
+            )
+
+            self.assertEqual(result.status, ValidationStatus.VALIDATED)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(
+                payload["package_inventory_sha"],
+                inventory.inventory_sha,
+            )
+            self.assertEqual(
+                json.loads(inventory.to_json())["inventory_sha"],
+                payload["package_inventory_sha"],
+            )
+
     def test_native_support_state_fixtures_traverse_full_compiler_pipeline(self):
         fixture_root = Path(__file__).parent / "fixtures" / "native_support_states"
         cases = (
