@@ -191,26 +191,6 @@ class PrimitiveRegistry:
 
     def pass_constraints_for(self, command: str) -> tuple[PassExecutionConstraint, ...]:
         return self._native_contracts.pass_constraints_for(command)
-
-    def citation_ids(self) -> tuple[str, ...]:
-        ids = {
-            provenance.citation_id
-            for primitive in self._items.values()
-            if primitive.kind == "ACTION"
-            for identity in (
-                *primitive.native_witness_ids,
-                *primitive.native_storage_use_ids,
-                *primitive.native_pass_constraint_ids,
-            )
-            for provenance in (
-                self._native_contracts.witness(identity).provenance
-                if identity in {item.identity for item in self._native_contracts.witnesses}
-                else self._native_contracts.storage(identity).provenance
-                if identity in {item.identity for item in self._native_contracts.storage_uses}
-                else self._native_contracts.pass_constraint(identity).provenance,
-            )
-        }
-        return tuple(sorted(ids))
     @staticmethod
     def _native_typed(native) -> bool:
         if not native.version or native.command_type not in {"Fact", "Action"}:
