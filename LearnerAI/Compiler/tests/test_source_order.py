@@ -64,6 +64,26 @@ class NonLifecycleSourceOrderTests(unittest.TestCase):
             within_rule_order=within_rule_order,
         )
 
+    def test_lifecycle_ownership_ignores_non_lifecycle_accesses(self):
+        from Compiler.semantic.demand_ownership import validate_demand_ownership
+
+        demand = self._demand()
+        ordinary = self._access(
+            demand,
+            purpose="timer",
+            storage_kind=StateStorageKind.TIMER,
+            kind=AccessKind.WRITE,
+            rule_order=4,
+            within_rule_order=0,
+            source_order=100,
+            operation="set-timer",
+        )
+        report = validate_demand_ownership(
+            (replace(demand, state_accesses=demand.state_accesses + (ordinary,)),)
+        )
+
+        self.assertTrue(report.valid)
+
     def test_same_rule_write_then_read_is_visible_without_persisted_latch(self):
         demand = self._demand()
         accesses = (
