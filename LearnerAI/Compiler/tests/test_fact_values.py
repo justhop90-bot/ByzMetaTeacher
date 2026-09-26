@@ -240,6 +240,25 @@ class CanonicalFactValueTests(unittest.TestCase):
         self.assertNotEqual(StaticTruth.UNKNOWN, True)
         self.assertNotEqual(StaticTruth.UNKNOWN, False)
 
+    def test_fact_domain_rejects_proposition_truth_metadata(self):
+        with self.assertRaises(TypeError):
+            FactDomain(
+                identity="AGE",
+                kind=FactDomainKind.ORDERED_ENUM,
+                value_type="Age",
+                ordered=True,
+                values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+                invariant_truth=StaticTruth.TRUE,
+                provenance=(
+                    AIRefProvenance(
+                        evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                        confidence=ConfidenceLevel.HIGH,
+                        confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                        citation_id="test://domain/no-proposition-truth",
+                    ),
+                ),
+            )
+
     def test_integer_fact_domain_enforces_invariant_bounds_only(self):
         domain = FactDomain(
             identity="RESOURCE_AMOUNT",
