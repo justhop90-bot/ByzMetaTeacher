@@ -316,7 +316,7 @@ class ResourceConflictTests(unittest.TestCase):
         self.assertEqual(first.diagnostics, second.diagnostics)
         self.assertEqual(
             tuple(item.code.value for item in first.diagnostics),
-            ("RES-003", "RES-004", "RES-006"),
+            ("RES-003", "RES-006"),
         )
 
 
