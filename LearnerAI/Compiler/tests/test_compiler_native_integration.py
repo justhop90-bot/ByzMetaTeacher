@@ -76,10 +76,12 @@ class FakeBackend:
         self.result = result
         self.seen_artifact = None
         self.seen_artifact_text = None
+        self.seen_artifact_bytes = None
 
     def validate(self, artifact: Path):
         self.seen_artifact = artifact
         self.seen_artifact_text = artifact.read_text(encoding="utf-8")
+        self.seen_artifact_bytes = artifact.read_bytes()
         return self.result
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
@@ -187,7 +189,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 artifact,
             )
             self.assertIsNotNone(fake.seen_artifact)
-            self.assertNotIn(b"\r\n", fake.seen_artifact.read_bytes())
+            self.assertNotIn(b"\r\n", fake.seen_artifact_bytes)
 
     def test_package_promotion_embeds_persistent_state_annotation(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -248,7 +250,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     native_backend=fake,
                 )
 
-            self.assertEqual(report.status, ReportStatus.REJECTED)
+            self.assertEqual(report.status, ReportStatus.NATIVE_REJECTED)
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP OLD ARTIFACT\n")
             self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
             self.assertIn("PSTATE-002", fake.seen_artifact_text)
