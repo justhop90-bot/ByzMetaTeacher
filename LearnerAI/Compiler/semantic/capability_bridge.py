@@ -135,7 +135,12 @@ def project_capability_graph(
         )
         admissibility = _all_of(requirements)
 
-        witness_predicate = _predicate(demand.witness, registry)
+        witness_expression = (
+            demand.completion_witness.expression
+            if demand.completion_witness is not None
+            else demand.witness
+        )
+        witness_predicate = _predicate(witness_expression, registry)
         release_predicate = _predicate(demand.release, registry)
 
         provider_id = ProviderId(
