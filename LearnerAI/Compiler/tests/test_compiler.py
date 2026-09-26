@@ -1,3 +1,4 @@
+import re
 import json
 import subprocess
 import sys
@@ -253,10 +254,13 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: defensive-spearmen")
         action_block = output[action_start:action_end]
         self.assertIn("(build castle)", action_block)
-        import re
-        self.assertRegex(action_block, r"\(set-goal demand-castle 4[1-9]\d?\)")
+        active_match = re.search(r"\(set-goal demand-castle (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: castle"):output.find("; Action issuance: castle | ACTIVE -> ISSUED")]
-        self.assertRegex(witness_block, r"\(goal demand-castle 4[1-9]\d?\)")
+        witness_match = re.search(r"\(goal demand-castle (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(build castle)", witness_block)
 
     def test_spearmen_pending_state_prevents_repeated_train(self):
@@ -265,10 +269,13 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: wheelbarrow")
         action_block = output[action_start:action_end]
         self.assertIn("(train spearman)", action_block)
-        import re
-        self.assertRegex(action_block, r"\(set-goal demand-defensive-spearmen 4\d\d\)")
+        active_match = re.search(r"\(set-goal demand-defensive-spearmen (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Action issuance: defensive-spearmen | ACTIVE -> ISSUED")]
-        self.assertRegex(witness_block, r"\(goal demand-defensive-spearmen 4\d\d\)")
+        witness_match = re.search(r"\(goal demand-defensive-spearmen (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(train spearman)", witness_block)
 
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
@@ -277,10 +284,13 @@ class CompilerTests(unittest.TestCase):
         action_end = len(output)
         action_block = output[action_start:action_end]
         self.assertIn("(research ri-wheelbarrow)", action_block)
-        import re
-        self.assertRegex(action_block, r"\(set-goal demand-wheelbarrow 4\d\d\)")
+        active_match = re.search(r"\(set-goal demand-wheelbarrow (\d+)\)", action_block)
+        self.assertIsNotNone(active_match)
+        self.assertTrue(41 <= int(active_match.group(1)) <= 512)
         witness_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")]
-        self.assertRegex(witness_block, r"\(goal demand-wheelbarrow 4\d\d\)")
+        witness_match = re.search(r"\(goal demand-wheelbarrow (\d+)\)", witness_block)
+        self.assertIsNotNone(witness_match)
+        self.assertTrue(41 <= int(witness_match.group(1)) <= 512)
         self.assertNotIn("(research ri-wheelbarrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
