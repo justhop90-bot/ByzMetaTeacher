@@ -1,13 +1,19 @@
 ;============================================================
 ; BASILISK GENERATED .PER
-; Compiler: Basilisk compiler 0.2
+; Compiler: Basilisk compiler 0.3
 ; Generated from validated semantic IR. Do not edit by hand.
 ;============================================================
 
 ; Demand goal constants
 (defconst demand-castle 1000)
-(defconst demand-defensive-spearmen 1001)
-(defconst demand-wheelbarrow 1002)
+(defconst pending-castle 1001)
+(defconst complete-castle 1002)
+(defconst demand-defensive-spearmen 1003)
+(defconst pending-defensive-spearmen 1004)
+(defconst complete-defensive-spearmen 1005)
+(defconst demand-wheelbarrow 1006)
+(defconst pending-wheelbarrow 1007)
+(defconst complete-wheelbarrow 1008)
 
 ; Demand initialization
 (defrule
@@ -18,7 +24,7 @@
     (disable-self)
 )
 
-; Demand: castle
+; Demand: castle | ACTIVE -> PENDING
 (defrule
     (goal demand-castle 1)
     (current-age >= castle)
@@ -27,25 +33,26 @@
     (can-build castle)
 =>
     (build castle)
+    (set-goal demand-castle 1001)
 )
 
-; Completion witness: castle
+; Completion witness: castle | PENDING -> COMPLETE
 (defrule
-    (goal demand-castle 1)
+    (goal demand-castle 1001)
     (building-type-count castle > 0)
 =>
-    (set-goal demand-castle 2)
+    (set-goal demand-castle 1002)
 )
 
-; Release: castle
+; Release: castle | COMPLETE -> RELEASED
 (defrule
-    (goal demand-castle 2)
+    (goal demand-castle 1002)
     (building-type-count castle > 0)
 =>
     (set-goal demand-castle 0)
 )
 
-; Demand: defensive-spearmen
+; Demand: defensive-spearmen | ACTIVE -> PENDING
 (defrule
     (goal demand-defensive-spearmen 1)
     (current-age >= feudal)
@@ -53,25 +60,26 @@
     (can-train spearman)
 =>
     (train spearman)
+    (set-goal demand-defensive-spearmen 1004)
 )
 
-; Completion witness: defensive-spearmen
+; Completion witness: defensive-spearmen | PENDING -> COMPLETE
 (defrule
-    (goal demand-defensive-spearmen 1)
+    (goal demand-defensive-spearmen 1004)
     (unit-type-count spearman >= 2)
 =>
-    (set-goal demand-defensive-spearmen 2)
+    (set-goal demand-defensive-spearmen 1005)
 )
 
-; Release: defensive-spearmen
+; Release: defensive-spearmen | COMPLETE -> RELEASED
 (defrule
-    (goal demand-defensive-spearmen 2)
+    (goal demand-defensive-spearmen 1005)
     (unit-type-count spearman >= 2)
 =>
     (set-goal demand-defensive-spearmen 0)
 )
 
-; Demand: wheelbarrow
+; Demand: wheelbarrow | ACTIVE -> PENDING
 (defrule
     (goal demand-wheelbarrow 1)
     (research-available ri-wheelbarrow)
@@ -79,19 +87,20 @@
     (can-research ri-wheelbarrow)
 =>
     (research ri-wheelbarrow)
+    (set-goal demand-wheelbarrow 1007)
 )
 
-; Completion witness: wheelbarrow
+; Completion witness: wheelbarrow | PENDING -> COMPLETE
 (defrule
-    (goal demand-wheelbarrow 1)
+    (goal demand-wheelbarrow 1007)
     (research-completed ri-wheelbarrow)
 =>
-    (set-goal demand-wheelbarrow 2)
+    (set-goal demand-wheelbarrow 1008)
 )
 
-; Release: wheelbarrow
+; Release: wheelbarrow | COMPLETE -> RELEASED
 (defrule
-    (goal demand-wheelbarrow 2)
+    (goal demand-wheelbarrow 1008)
     (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 0)
