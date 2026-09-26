@@ -431,6 +431,23 @@ class PassExecutionConstraint:
 
 
 @dataclass(frozen=True)
+class SourceRetrieval:
+    retrieved_at_utc: str
+    canonical_url: str
+    final_url: str
+    http_status: Optional[int] = None
+    content_type: Optional[str] = None
+    etag: Optional[str] = None
+    last_modified: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if not self.retrieved_at_utc or not self.canonical_url or not self.final_url:
+            raise ValueError("retrieval timestamp and URLs are required")
+        if self.http_status is not None and not 100 <= self.http_status <= 599:
+            raise ValueError("HTTP status must be within 100..599")
+
+
+@dataclass(frozen=True)
 class CitationRecord:
     citation_id: str
     canonical_url: str
@@ -439,6 +456,7 @@ class CitationRecord:
     locator: str
     excerpt: Optional[SourceExcerpt] = None
     source_hash: Optional[SourceContentHash] = None
+    retrieval: Optional[SourceRetrieval] = None
     state: CitationState = CitationState.CANDIDATE
     revalidation_events: Tuple[str, ...] = ()
 
@@ -456,6 +474,8 @@ class CitationRecord:
             raise ValueError("verified citations require excerpt")
         if self.state is CitationState.PINNED and self.source_hash is None:
             raise ValueError("pinned citations require source hash")
+        if self.state is CitationState.PINNED and self.retrieval is None:
+            raise ValueError("pinned citations require retrieval metadata")
 
 
 @dataclass(frozen=True)
@@ -465,6 +485,10 @@ class CitationRevalidationEvent:
     trigger: RevalidationTrigger
     previous_citation_id: str
     current_citation_id: Optional[str]
+    previous_url: str
+    current_url: Optional[str]
+    previous_locator: str
+    current_locator: Optional[str]
     changes: Tuple[CitationChangeKind, ...]
     previous_source_hash: Optional[str]
     current_source_hash: Optional[str]
@@ -477,11 +501,12 @@ class CitationRevalidationEvent:
     def __post_init__(self) -> None:
         if not self.event_id or not self.evidence_id or not self.previous_citation_id:
             raise ValueError("revalidation identity is required")
+        if not self.previous_url or not self.previous_locator:
+            raise ValueError("revalidation requires the previous citation location")
         if not self.source_available and self.result is not RevalidationResult.SOURCE_UNAVAILABLE:
             raise ValueError("unavailable source requires SOURCE_UNAVAILABLE")
         if self.source_available and self.result is RevalidationResult.SOURCE_UNAVAILABLE:
             raise ValueError("SOURCE_UNAVAILABLE requires source_available=False")
-
 
 def compare_excerpts(stored: SourceExcerpt, current_text: str) -> ExcerptMatchKind:
     if stored.exact_sha256 == sha256(current_text.encode()).hexdigest():
