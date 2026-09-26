@@ -42,11 +42,11 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             [
                 (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 1, 0),
                 (PersistentStateKind.STRATEGIC_NUMBER, PersistentStateAccessKind.WRITE, 1, 1),
-                (PersistentStateKind.GOAL, PersistentStateAccessKind.READ, 2, 0),
-                (PersistentStateKind.STRATEGIC_NUMBER, PersistentStateAccessKind.READ, 2, 1),
-                (PersistentStateKind.TIMER, PersistentStateAccessKind.WRITE, 2, 0),
-                (PersistentStateKind.TIMER, PersistentStateAccessKind.READ, 3, 0),
-                (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 3, 0),
+                (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 2, 0),
+                (PersistentStateKind.GOAL, PersistentStateAccessKind.READ, 3, 0),
+                (PersistentStateKind.STRATEGIC_NUMBER, PersistentStateAccessKind.READ, 3, 1),
+                (PersistentStateKind.TIMER, PersistentStateAccessKind.WRITE, 3, 0),
+                (PersistentStateKind.TIMER, PersistentStateAccessKind.READ, 4, 0),
                 (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 4, 0),
             ],
         )
@@ -56,11 +56,11 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             [
                 "set-goal",
                 "set-strategic-number",
+                "set-goal",
                 "goal",
                 "strategic-number",
                 "up-set-timer",
                 "up-timer-status",
-                "set-goal",
                 "set-goal",
             ],
         )
