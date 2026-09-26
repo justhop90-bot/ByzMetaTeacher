@@ -280,3 +280,44 @@ Implemented:
 - Compiler gate executes the new pass before capability projection and emission.
 
 GitHub Actions verification: 298 compiler tests passed; all four native zero-findings acceptance fixtures passed; all nine cross-platform native-support replay jobs and the aggregate comparison passed.
+
+
+## Post-audit addendum — native semantic gap / Philosopher's Stone (2026-09-26)
+
+The previous recovery/community-semantics tranche was re-audited against current AIRef material and community practice.
+
+Findings corrected:
+
+1. Goal semantics were too broadly described as "later writes replace the stored value." Goal mutation is command-specific; ordinary set-goal writes a value, while other native commands can perform arithmetic or multi-goal output. The semantic registry now describes Goal state as persistent engine state with command-specific mutation semantics.
+
+2. Rule source order was too close to being treated as execution order. The corrected contract is:
+   - rule order establishes source precedence and visibility;
+   - actual firing depends on facts, disabled state, and prior native mutations;
+   - rule_order is never evidence that the rule fired.
+
+3. The compiler gate was overstated. It validates the internal community-engine evidence registry; it does not yet prove that every compiled native construct has an ENGINE_SEMANTICS_MAPPED contract. The gate comment and architecture now say this explicitly.
+
+4. Capability recovery was tightened:
+   - EXECUTION_FEASIBILITY and PROVIDER_WORLD_STATE are distinct observation kinds;
+   - false can-* is not capability loss;
+   - loss requires true -> false provider/capability history;
+   - recovery requires false -> true history;
+   - provider-state recovery remains a partial slice until generic BUILD/TRAIN/RESEARCH provider semantics are implemented.
+
+5. The native semantic support model now has an explicit missing stage:
+   NATIVE_KNOWN -> NATIVE_TYPED -> SEMANTICALLY_ADAPTED -> ENGINE_SEMANTICS_MAPPED -> EXECUTABLE_SAFE.
+   The new gap map records the difference between signature adaptation and true engine-semantic mapping.
+
+6. Two authoritative design documents were added:
+   - LearnerAI/Compiler/NATIVE_PER_SEMANTIC_GAP_MAP_2026-09-26.md
+   - LearnerAI/Compiler/PHILOSOPHERS_STONE_ARCHITECTURE_2026-09-26.md
+
+External cross-checks reconfirm:
+- Goals/SNs/Timers have finite, distinct engine semantics and Goal/SN output restrictions. AIRef documents 10,000 rules, 32 DE elements per rule, Goal 1..16000, SN 0..511, Timer 1..50, DUC local 240 / remote 40, and conditional-load depth limits. 
+- AIRef explicitly distinguishes Fact evaluation from Action execution and documents Fact/Action dual-role UserPatch commands.
+- DUC search state is mutable: tutorials explicitly reset searches/filters and use Goal outputs to carry search state.
+- Community attack loops use persistent SNs and timers rather than treating attack-now/attack-groups as stateless one-shot semantics.
+- UserPatch history documents that pending-object and total-count semantics have changed/fixed around queued units, reinforcing the need for versioned engine semantics rather than timeless hard-coded assumptions.
+
+Current conclusion:
+The compiler is no longer missing a generic "recovery feature" so much as a coherent native semantic substrate. The next correct implementation target is ENGINE_SEMANTICS_MAPPED plus the effective source graph and recurrent rule semantics, followed by DUC/attack state. Strategy work should remain downstream.
