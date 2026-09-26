@@ -593,8 +593,6 @@ class NativeStorageUse:
                 raise ValueError("Goal span width does not match its native command shape")
             if not minimum_start <= self.base <= maximum_start:
                 raise ValueError("Goal span start is outside its native span contract")
-            if self.contract_id is None:
-                raise ValueError("Goal spans require a dedicated span contract")
         elif self.storage_class is NativeStorageClass.ENGINE_MANAGED_LIST:
             if self.base is not None or self.span_length != 1:
                 raise ValueError("engine-managed lists do not use Goal slots")
@@ -712,6 +710,21 @@ class NativeContractCatalog:
                     provenance
                     for constraint in self.pass_constraints
                     for provenance in constraint.provenance
+                ),
+                *(
+                    provenance
+                    for contract in self.goal_storage_contracts
+                    for provenance in contract.provenance
+                ),
+                *(
+                    provenance
+                    for contract in self.goal_span_contracts
+                    for provenance in contract.provenance
+                ),
+                *(
+                    provenance
+                    for contract in self.parameter_ranges
+                    for provenance in contract.provenance
                 ),
             )
         }
