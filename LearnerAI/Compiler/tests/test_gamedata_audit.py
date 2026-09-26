@@ -20,8 +20,8 @@ class GameDataAuditTests(unittest.TestCase):
             ResourceCost(food=667, gold=536),
         )
         self.assertEqual(
-            self.data.cost_of("unit:359"),
-            ResourceCost(food=35, wood=25),
+            self.data.cost_of("unit:38"),
+            ResourceCost(food=60, gold=75),
         )
         self.assertEqual(
             self.data.cost_of("building:235"),

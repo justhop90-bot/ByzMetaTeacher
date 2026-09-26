@@ -287,7 +287,7 @@ def lower_strategy_profile(
     # Import these only when lowering so StrategyProfile remains a domain IR
     # rather than depending on the execution lifecycle at module import time.
     from ..primitives import default_de_registry
-    from .analyzer import analyze
+    from ..semantic.analyzer import analyze
 
     nodes = [
         DemandNode(
