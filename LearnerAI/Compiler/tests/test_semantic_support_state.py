@@ -84,8 +84,8 @@ class SemanticSupportStateTests(unittest.TestCase):
             if item.status.value == "EVIDENCE_ONLY"
         }
         mappings = {
-            item.engine_semantics_id
-            for item in default_de_registry()._items.values()
+            default_de_registry().require(name).engine_semantics_id
+            for name in default_de_registry().names()
         }
         self.assertIn("duc.search-state-retained", evidence_only)
         self.assertIn("attack.group-state-control", evidence_only)
