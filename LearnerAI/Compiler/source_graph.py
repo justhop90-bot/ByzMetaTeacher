@@ -791,9 +791,9 @@ def _scan_load_occurrences(
         if in_string:
             if escape:
                 escape = False
-            elif char == "\":
+            elif char == "\\":
                 escape = True
-            elif char == '"':
+            elif char == "\\":
                 in_string = False
             index += 1
             continue
@@ -840,7 +840,7 @@ def _scan_load_occurrences(
                     index = close
                     continue
             depth += 1
-        elif char == ")" and depth > 0:
+            elif char == "\\":
             depth -= 1
         index += 1
 
@@ -857,16 +857,16 @@ def _find_balanced_form(source: str, start: int) -> int:
         if in_string:
             if escape:
                 escape = False
-            elif char == "\":
+            elif char == "\\":
                 escape = True
-            elif char == '"':
+            elif char == "\\":
                 in_string = False
             continue
         if char == '"':
             in_string = True
-        elif char == "(":
+            elif char == "\\":
             depth += 1
-        elif char == ")":
+            elif char == "\\":
             depth -= 1
             if depth == 0:
                 return index + 1
@@ -875,14 +875,14 @@ def _find_balanced_form(source: str, start: int) -> int:
 
 def _parse_load_form(form: str) -> tuple[str, str | None] | None:
     body = form[1:-1].strip()
-    match = re.fullmatch(r'loads+"((?:\.|[^"\])*)"', body)
+    match = re.fullmatch(r'load\s+"((?:\\.|[^"\\])*)"', body)
     if match:
         return "load", _decode_string(match.group(1))
 
-    random_match = re.fullmatch(r"load-random(.*)", body, re.DOTALL)
+    random_match = re.fullmatch(r"load-random\b(.*)", body, re.DOTALL)
     if random_match:
         random_body = random_match.group(1).strip()
-        if not random_body or not re.search(r'"(?:\.|[^"\])*"', random_body):
+        if not random_body or not re.search(r'"(?:\\.|[^"\\])*"', random_body)
             raise ValueError("malformed load-random directive")
         return "load-random", None
 
@@ -896,9 +896,9 @@ def _decode_string(body: str) -> str:
     index = 0
     while index < len(body):
         char = body[index]
-        if char == "\" and index + 1 < len(body):
+        if char == "\\" and index + 1 < len(body):
             next_char = body[index + 1]
-            if next_char in {'"', "\"}:
+            if next_char in {'"', "\\"}:
                 result.append(next_char)
                 index += 2
                 continue
