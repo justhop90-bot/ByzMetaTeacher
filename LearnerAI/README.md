@@ -49,6 +49,8 @@ CAPABILITY_MATRIX.md: complete stock-style Byzantine capability coverage, priori
 
 MAP_PRIORITY_RULES.md: concrete priority contracts for Arabia, Arena, Black Forest, hybrid, full-water, and transport-critical positions.
 
+ARABIA_THRESHOLDS.md: executable numeric cutoffs for Feudal military, walls, towers, docks, and Castle investment on open Arabia.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
