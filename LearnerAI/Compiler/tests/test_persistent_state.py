@@ -119,6 +119,23 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             2,
         )
 
+    def test_cross_rule_multiple_writers_are_not_classified_as_same_rule_sequence(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\\n"
+            "(defrule (true) => (set-goal 7 2))\\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertEqual(
+            report.boundaries[0].visibility,
+            PersistentStateVisibility.UNCONSUMED,
+        )
+        self.assertEqual(
+            [writer.rule_order for writer in report.boundaries[0].writers],
+            [1, 2],
+        )
+
     def test_same_rule_later_action_overwrites_earlier_action_in_source_order(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1) (set-goal 7 2))\n"
