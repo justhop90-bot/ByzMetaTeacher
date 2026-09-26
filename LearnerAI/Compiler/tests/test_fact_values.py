@@ -1,6 +1,13 @@
 import unittest
 from enum import Enum
 
+from Compiler.ast import SourceLocation
+from Compiler.primitives.native_hygiene import (
+    AIRefProvenance,
+    ConfidenceBasis,
+    ConfidenceLevel,
+    EvidenceKind,
+)
 from Compiler.semantic.fact_values import (
     CanonicalEnum,
     CanonicalIdentifier,
@@ -8,6 +15,7 @@ from Compiler.semantic.fact_values import (
     CanonicalKind,
     CanonicalSymbol,
     CanonicalizationContext,
+    NormalizedFact,
     IdentifierForm,
     canonicalize_value,
 )
@@ -114,6 +122,87 @@ class CanonicalFactValueTests(unittest.TestCase):
             CanonicalSymbol("GOAL", "strategy-goal"),
             CanonicalSymbol("STRATEGIC_NUMBER", "strategy-goal"),
         )
+
+
+    def test_repeated_atoms_share_identity_key_but_keep_occurrence_provenance(self):
+        args = (
+            CanonicalIdentifier(
+                namespace="BUILDING",
+                form=IdentifierForm.NUMERIC_ID,
+                value=109,
+            ),
+            CanonicalInteger(1),
+        )
+        first = NormalizedFact(
+            semantic_id="observation.world.building-count",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://fact/building-count",
+                ),
+            ),
+        )
+        repeated = NormalizedFact(
+            semantic_id="observation.world.building-count",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://fact/building-count-repeated",
+                ),
+            ),
+        )
+
+        self.assertEqual(first.identity_key, repeated.identity_key)
+        self.assertEqual(
+            first.identity_key,
+            (
+                "observation.world.building-count",
+                args,
+            ),
+        )
+        self.assertNotEqual(first, repeated)
+        self.assertNotEqual(first.provenance, repeated.provenance)
+
+    def test_identity_key_is_independent_of_provenance(self):
+        args = (
+            CanonicalEnum("AGE", "CASTLE"),
+            CanonicalInteger(1),
+        )
+        first = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="test://fact/age/root",
+                ),
+            ),
+        )
+        loaded = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=args,
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.MEDIUM,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TABLE,
+                    citation_id="test://fact/age/loaded",
+                ),
+            ),
+        )
+
+        self.assertEqual(first.identity_key, loaded.identity_key)
+        self.assertEqual(hash(first.identity_key), hash(loaded.identity_key))
+        self.assertEqual(first.canonical_args, loaded.canonical_args)
+
 
     def test_canonical_kind_is_explicit_for_union_members(self):
         self.assertEqual(
