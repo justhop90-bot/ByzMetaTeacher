@@ -13,14 +13,21 @@ from .ir import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest, Semant
 
 GOAL_ID_MIN = 1
 GOAL_ID_MAX = 16_000
-ALLOCATOR_VERSION = "goal-storage-v3"
-BINDING_MANIFEST_VERSION = 2
+LIFECYCLE_GOAL_MAX = GOAL_ID_MAX - 4
+SN_ID_MIN = 0
+SN_ID_MAX = 511
+TIMER_ID_MIN = 1
+TIMER_ID_MAX = 50
+ALLOCATOR_VERSION = "native-storage-v4"
+BINDING_MANIFEST_VERSION = 3
 GoalStorageShape = GoalSpanKind
 
 
 class StorageKind(str, Enum):
     GOAL_SLOT = "GOAL_SLOT"
     GOAL_SPAN = "GOAL_SPAN"
+    STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
+    TIMER = "TIMER"
 
 
 class NativeParameterKind(str, Enum):
@@ -102,8 +109,79 @@ class GoalSpan:
         )
 
 
-Binding = GoalSlot | GoalSpan
-StorageRequest = GoalSlotRequest | GoalSpanRequest
+@dataclass(frozen=True)
+class StrategicNumberInventory:
+    """Explicit DE strategic-number inventory used for deterministic custom allocation."""
+
+    inventory_sha: str
+    documented_ids: frozenset[int]
+    candidate_ids: frozenset[int]
+
+    def __post_init__(self) -> None:
+        for value in self.documented_ids | self.candidate_ids:
+            if not SN_ID_MIN <= value <= SN_ID_MAX:
+                raise ValueError(f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}, got {value}")
+        if self.documented_ids & self.candidate_ids:
+            raise ValueError("documented and candidate Strategic Number ids must not overlap")
+
+    @classmethod
+    def from_records(cls, records: Iterable[dict], *, inventory_sha: str) -> "StrategicNumberInventory":
+        documented = {int(record["sn_id"]) for record in records if record.get("de") == 1}
+        candidates = frozenset(value for value in range(SN_ID_MIN, SN_ID_MAX + 1) if value not in documented)
+        return cls(
+            inventory_sha=inventory_sha,
+            documented_ids=frozenset(documented),
+            candidate_ids=candidates,
+        )
+
+
+@dataclass(frozen=True)
+class StrategicNumberRequest:
+    request_id: StorageRequestId
+    why_not_goal: str
+    stability_key: str
+    role: GoalRole = GoalRole.PERSISTENT_STATE
+
+
+@dataclass(frozen=True)
+class TimerRequest:
+    request_id: StorageRequestId
+    initialization_policy: str
+    stability_key: str
+    role: GoalRole = GoalRole.EXECUTION_MEMORY
+
+    def __post_init__(self) -> None:
+        if not self.initialization_policy.strip():
+            raise ValueError("TimerRequest initialization_policy must not be empty")
+
+
+@dataclass(frozen=True)
+class StrategicNumberSlot:
+    id: int
+    role: GoalRole
+    provenance_id: str
+
+    def __post_init__(self) -> None:
+        if not SN_ID_MIN <= self.id <= SN_ID_MAX:
+            raise ValueError(f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}, got {self.id}")
+
+
+@dataclass(frozen=True)
+class TimerSlot:
+    id: int
+    role: GoalRole
+    provenance_id: str
+    initialization_policy: str
+
+    def __post_init__(self) -> None:
+        if not TIMER_ID_MIN <= self.id <= TIMER_ID_MAX:
+            raise ValueError(f"Timer id must be in range {TIMER_ID_MIN}..{TIMER_ID_MAX}, got {self.id}")
+        if not self.initialization_policy.strip():
+            raise ValueError("TimerSlot initialization_policy must not be empty")
+
+
+Binding = GoalSlot | GoalSpan | StrategicNumberSlot | TimerSlot
+StorageRequest = GoalSlotRequest | GoalSpanRequest | StrategicNumberRequest | TimerRequest
 
 
 @dataclass(frozen=True)
