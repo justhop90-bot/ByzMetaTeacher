@@ -61,6 +61,37 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
             ],
         )
 
+
+    def test_nested_rule_body_preserves_nested_parentheses(self):
+        graph = self._graph(
+            '(defrule nested '
+            '(and (true) (not (false))) '
+            '=> '
+            '(set-goal nested 1) '
+            '(if (true) (set-goal nested-2 2) (set-goal nested-2 3))'
+            ')\\n',
+        )
+
+        report = analyze_effective_rules(graph)
+
+        rule = report.rules[0]
+        self.assertEqual(len(rule.facts), 1)
+        self.assertEqual(rule.facts[0].head, "and")
+        self.assertEqual(len(rule.facts[0].args), 2)
+        self.assertEqual(len(rule.actions), 2)
+        self.assertEqual(rule.actions[1].expression.head, "if")
+
+    def test_outer_defrule_closing_parenthesis_is_consumed_by_rule_parser(self):
+        graph = self._graph(
+            '(defrule closes-cleanly (true) => (set-goal closed 1))\\n',
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(len(report.rules), 1)
+        self.assertEqual(report.rules[0].actions[0].expression.head, "set-goal")
+        self.assertEqual(report.rules[0].actions[0].expression.args[0], "closed")
+
     def test_plain_rule_is_recurrent_across_passes(self):
         graph = self._graph(
             '(defrule (true) => (set-goal recurring 1))\n',
