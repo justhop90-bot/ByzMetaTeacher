@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
-from .game_data import Age, BuildingId, CivId, Resource
+from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
 
 if TYPE_CHECKING:
@@ -306,7 +306,7 @@ def _validate_capability_observations(
             )
         unit_id = int(observation.capability.entity_id)
         status = effective.factual_status("unit", unit_id)
-        if status.value != "VERIFIED":
+        if status is not FactStatus.VERIFIED:
             raise ValueError(
                 f"strategic capability observation '{observation.identity}' requires "
                 f"factual status VERIFIED for unit {unit_id}; status is {status.value}"
