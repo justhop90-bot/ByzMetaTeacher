@@ -156,6 +156,7 @@ class FactDomain:
     minimum: int | None = None
     maximum: int | None = None
     values: tuple[str, ...] = ()
+    invariant_truth: StaticTruth = StaticTruth.UNKNOWN
     provenance: tuple[AIRefProvenance, ...] = ()
 
     def __post_init__(self) -> None:
@@ -167,6 +168,8 @@ class FactDomain:
             raise TypeError("fact domain provenance must be a tuple")
         if not self.provenance:
             raise ValueError("fact domain provenance is required")
+        if not isinstance(self.invariant_truth, StaticTruth):
+            raise TypeError("fact domain invariant_truth must be StaticTruth")
 
         if len(self.values) != len(set(self.values)):
             raise ValueError(
