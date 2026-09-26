@@ -1599,40 +1599,279 @@ RELEASE / CONTINUE / ESCALATE
 ---
 ## 22. Canonical lifecycle: Fletching
 
+This is the canonical Research example. It teaches that a technology has its own lifecycle: **strategic demand → tech availability/prerequisites → affordability → research feasibility → queued/researching state → completed research witness → release/reassessment**. A research command is an action, not proof that the technology already exists.
+
 ### Demand
 
-A technology is justified by the current strategic/economic posture.
+Strategy or the relevant domain establishes that Fletching is currently useful or required.
 
-### Capability
+Conceptually:
 
-Blacksmith and technology prerequisites exist.
+```
+ranged-combat posture active
+→ Fletching is an admissible technology demand
+```
 
-### Feasibility
+The demand is persistent intent. It is not the same thing as issuing `(research ri-fletching)`.
+
+### Admissibility
+
+The research demand remains valid while the strategic reason remains valid.
+
+Examples:
+- ranged units are part of the current military/economic plan;
+- the technology has not already been completed;
+- Strategy has not cancelled or superseded the upgrade;
+- the technology remains relevant to the current posture.
+
+Do not let the existence of a Blacksmith turn every available technology into an automatic research demand. Availability is not strategic justification.
+
+### Capability: technology availability and prerequisites
+
+First establish that Fletching is actually available to the civilization and current tech-tree state.
+
+Conceptually:
+
+```
+(research-available ri-fletching)
+```
+
+The exact research-availability primitive should be verified against the target engine build/reference set before being used as executable `.per`; the learner must not invent a predicate merely because the semantic concept exists.
+
+At the capability level, distinguish:
+- technology is available to the civ/age/tech tree;
+- required Blacksmith/infrastructure exists;
+- prerequisite technologies/buildings are satisfied;
+- technology has not already completed;
+- the technology is not already in research/pending state.
+
+Capability means **the technology could be researched under the relevant prerequisites**. It does not mean research can start this instant.
+
+### Affordability
+
+Resource affordability is a separate question.
+
+Conceptually:
+
+```
+(can-afford-research ri-fletching)
+```
+
+If the target engine exposes a dedicated affordability predicate, use that engine-native predicate. If it does not, do not fabricate one: resource predicates and the actual `can-research` predicate must be treated according to the supported command set.
+
+The semantic distinction remains:
+
+```
+technology is available
+    ≠
+technology is affordable
+    ≠
+technology is feasible now
+```
+
+Fletching can be available in the tech tree while its food/gold cost is unavailable to the current economic posture.
+
+### Resource arbitration and escrow
+
+Research competes with villagers, buildings, units, farms, and other technologies.
+
+```
+resource exists
+    ≠
+resource is available to Fletching
+    ≠
+research can start
+```
+
+If escrow/resource reservation is used, it belongs to Economy/resource arbitration. It does not prove that Fletching completed.
+
+Where an escrow-aware research feasibility primitive exists, distinguish it explicitly from ordinary research feasibility. Do not silently equate “resources are reserved” with “technology is researched.”
+
+### Feasibility: `can-research`
+
+The engine-native feasibility stage is:
 
 ```
 (can-research ri-fletching)
 ```
 
+Teach this as the engine's current answer to **“Can the research action start now?”**
+
+Keep the stages separate:
+
+| Question | Primitive/concept |
+|---|---|
+| Is Fletching available in the current tech-tree state? | research availability / tech-tree state |
+| Are its normal resources affordable? | research affordability / resource state |
+| Can the engine start the research now? | `can-research ri-fletching` |
+| Has research been requested or entered pending state? | research action / pending research state |
+| Has Fletching actually completed? | research-completion state |
+
+Do not replace `can-research` with a hand-built test of food, gold, age, and Blacksmith count. Those facts explain prerequisites and economic state; `can-research` is the engine-native feasibility test.
+
+### Research state and repeat prevention
+
+Research has a state transition just like construction and production:
+
+```
+DEMANDED
+  ↓
+RESEARCH REQUESTED
+  ↓
+PENDING / RESEARCHING
+  ↓
+COMPLETED
+```
+
+The learner must distinguish **not completed** from **not started**.
+
+If the completion witness remains false while Fletching is already pending, a naive rule can repeatedly issue the research action. The research rule therefore needs an explicit research-state guard or an engine-supported research-status predicate where available.
+
+Where the engine exposes a research-status primitive, use it to distinguish pending/researching from completed. AIRef's UserPatch documentation includes `up-research-status`, which can be used for this kind of state inspection. citeturn0search3
+
+Do not use a retry counter as a substitute for knowing whether research is already pending.
+
 ### Action
+
+Once the demand remains admissible and research is feasible:
 
 ```
 (research ri-fletching)
 ```
 
-### Witness
+This is an **action request**.
 
-Use the appropriate technology/research completion fact.
+It does not prove that:
+- Fletching started;
+- resources were successfully committed;
+- the research is currently progressing;
+- Fletching completed.
 
-### Release
+The next observable state must come from the engine's research state, not from the fact that the rule fired.
 
-End the research demand only after actual completion or explicit cancellation.
+### Completion witness
 
-### Lesson
+The completion witness must prove **technology completion**, not merely affordability, availability, action issuance, or pending research.
 
-A research command is not a technology witness.
+Conceptually:
+
+```
+research-status == COMPLETED
+```
+
+or the engine-native completed-technology fact supported by the target build/reference set.
+
+Do not teach a generic “research command succeeded” boolean. The witness must come from world/engine state showing that Fletching is actually researched.
+
+If a research-status primitive distinguishes pending from completed, then:
+
+```
+PENDING / RESEARCHING
+    ≠
+COMPLETED
+```
+
+is the key teaching point.
+
+### Completion versus release
+
+Research completion and demand release are related but distinct.
+
+```
+Fletching completion
+    ≠
+automatic strategic release
+```
+
+Normally:
+
+```
+Fletching demand active
+→ research completes
+→ completion witness becomes true
+→ Fletching demand releases or transitions
+→ Strategy reassesses the new technology state
+```
+
+However, release can also occur before completion if Strategy explicitly cancels or supersedes the demand.
+
+Therefore distinguish:
+- **COMPLETED:** Fletching is actually researched;
+- **CANCELLED/OBSOLETE:** Strategy no longer wants it;
+- **BLOCKED:** Strategy still wants it but research cannot currently proceed;
+- **ACTIVE/PENDING:** Strategy still wants it and research is unresolved or in progress.
+
+Never clear the demand merely because `(research ri-fletching)` fired.
+
+### Blocked behavior
+
+If `can-research ri-fletching` remains false while the demand remains admissible, preserve the demand and diagnose the blocking layer:
+
+1. Is the technology actually available to the current civ/age/tech tree?
+2. Are the required Blacksmith and prerequisites satisfied?
+3. Is the research already pending?
+4. Are the required resources unavailable or reserved for another demand?
+5. Is another research or engine state preventing the action?
+6. Has Strategy actually cancelled or superseded the demand?
+
+`can-research` is the immediate engine feasibility result. The other facts explain the strategic, prerequisite, resource, or pending state around that result.
+
+Do not turn a persistent technology demand into a permanent retry counter. Preserve intent, use transient cooldown/backoff where appropriate, and reassess the actual blocking state.
+
+### Canonical Fletching trace
+
+```
+DEMAND
+  Strategy wants Fletching
+        ↓
+ADMISSIBILITY
+  ranged-combat posture remains active
+        ↓
+CAPABILITY
+  technology available
+  + Blacksmith/prerequisites
+        ↓
+AFFORDABILITY / RESOURCE ARBITRATION
+  required resources are available to this demand
+        ↓
+FEASIBILITY
+  can-research ri-fletching
+        ↓
+ACTION
+  research ri-fletching
+        ↓
+RESEARCH STATE
+  pending / researching
+        ↓
+WORLD-STATE WITNESS
+  completed research state is true
+        ↓
+COMPLETION
+  Fletching actually researched
+        ↓
+RELEASE
+  Fletching demand clears/transitions
+        ↓
+REASSESS
+  Strategy and Military react to the new technology state
+```
+
+### Hard invariants
+
+- technology availability is not affordability.
+- affordability is not feasibility.
+- `can-research` is not `research`.
+- `research` is not proof of completion.
+- pending/researching is not completed.
+- resource escrow is arbitration, not a technology witness.
+- a Blacksmith existing is not proof that Fletching can start now.
+- a technology completion witness must come from actual research state.
+- completion is not automatically identical to strategic release.
+- cancellation/obsolescence is not successful completion.
+- a persistent Fletching demand survives temporary blockage unless Strategy explicitly removes it.
+- do not invent an engine predicate simply because a semantic concept would be convenient; verify the exact command/status primitive against AIRef and the target engine build.
 
 ---
-
 ## 23. Canonical lifecycle: farm construction
 
 Farm production is a useful economic example because it demonstrates that resource pressure and infrastructure demand are distinct.
