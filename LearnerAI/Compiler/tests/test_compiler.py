@@ -114,6 +114,41 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaises(CompileError):
             compile_source(source)
 
+
+    def test_lifecycle_rule_order_prevents_same_pass_collapse(self):
+        output = compile_source(EXAMPLES)
+        release = output.find("; Release: castle | COMPLETE -> RELEASED")
+        witness = output.find("; Completion witness: castle | PENDING -> COMPLETE")
+        action = output.find("; Demand: castle | ACTIVE -> PENDING")
+        self.assertGreaterEqual(release, 0)
+        self.assertGreaterEqual(witness, 0)
+        self.assertGreaterEqual(action, 0)
+        self.assertLess(release, witness)
+        self.assertLess(witness, action)
+
+    def test_lifecycle_needs_three_script_passes_when_witness_and_release_are_true(self):
+        output = compile_source(EXAMPLES)
+
+        def run_pass(goal: int, rule_order: tuple[str, ...]) -> int:
+            for stage in rule_order:
+                if stage == "release" and goal == 1002:
+                    goal = 0
+                elif stage == "witness" and goal == 1001:
+                    goal = 1002
+                elif stage == "action" and goal == 1:
+                    goal = 1001
+            return goal
+
+        rule_order = ("release", "witness", "action")
+        goal = 1
+        states = []
+        for _ in range(3):
+            goal = run_pass(goal, rule_order)
+            states.append(goal)
+
+        self.assertEqual(states, [1001, 1002, 0])
+        self.assertNotEqual(states[0], 0)
+        self.assertNotEqual(states[1], 0)
     def test_castle_enters_pending_and_cannot_reissue_while_pending(self):
         output = compile_source(EXAMPLES)
         action_block = output[output.find("; Demand: castle | ACTIVE -> PENDING"):output.find("; Completion witness: castle")]
