@@ -8,7 +8,7 @@ This document defines the runtime-binding contract for the generic AoE2 .per com
 Evidence is classified explicitly:
 
 - **CONFIRMED**: directly supported by the checked-in repository or current AIRef/native documentation.
-- **POLICY**: an intentional Basilisk compiler rule chosen to make generated state deterministic and auditable. A policy is not an engine fact.
+- **POLICY**: an intentional compiler rule chosen to make generated state deterministic and auditable. A policy is not an engine fact.
 - **ASSUMPTION / OPEN**: not yet established by the repository or native runtime and therefore must not be treated as an implementation guarantee.
 
 The compiler must preserve that distinction in code comments, diagnostics, tests, and future documentation.
