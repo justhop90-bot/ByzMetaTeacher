@@ -37,6 +37,36 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 14)
 
+    def test_known_typed_native_command_without_adapter_reports_support_state(self):
+        source = """
+        demand flare {
+            require (up-find-flare 500)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "NATIVE-SUPPORT-005:.*known and typed but has no semantic adapter",
+        ):
+            compile_source(source)
+
+    def test_unknown_native_command_reports_unsupported_state(self):
+        source = """
+        demand bad {
+            require (definitely-not-a-native-command castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "NATIVE-SUPPORT-005:.*not present in the checked-in native schema",
+        ):
+            compile_source(source)
+
     def test_unknown_primitive_rejected(self):
         source = """
         demand bad {
