@@ -118,7 +118,7 @@ def compile_source(source: str, base_goal: int = 1000) -> str:
         out.extend(f"    {r}" for r in d.requirements)
         out += ["=>", f"    {d.action}", ")", "",
                 f"; Witness/release: {d.name}", "(defrule",
-                f"    (goal demand-{d.name} 1)", f"    {d.witness}",
+                f"    (goal demand-{d.name} 1)", f"    {d.witness}", f"    {d.release}",
                 "=>", f"    (set-goal demand-{d.name} 0)", ")", ""]
     return "\n".join(out).rstrip() + "\n"
 
