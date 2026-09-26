@@ -4410,3 +4410,191 @@ The Basilisk invariant is:
 - A later rule cannot repair an incorrect witness by merely appearing later in the file.
 - Rule order is an execution mechanism, not a general-purpose state machine.
 - The smallest source-order dependency that correctly expresses the community behavior is preferable to hidden scheduler-like machinery.
+
+## 35. Market and commodity exchange: community resource conversion
+
+The market is a resource-conversion mechanism, not a substitute for economic planning. Community scripts can use it to convert one resource into another when the current stockpile, technology, or strategic demand makes the exchange useful. The important learner distinction is between observing a resource shortage, deciding that conversion is admissible, checking whether the engine permits the transaction, and treating the transaction as successful.
+
+### 35.1 Community pattern
+
+The basic market pattern is:
+
+    RESOURCE STATE
+        ↓
+    STRATEGIC DEMAND / ECONOMIC NEED
+        ↓
+    MARKET ADMISSIBILITY
+        ↓
+    CAN-BUY / CAN-SELL
+        ↓
+    MARKET ACTION
+        ↓
+    RESOURCE WORLD STATE
+        ↓
+    REASSESS
+
+A market rule should therefore answer two different questions:
+
+- Why is resource conversion wanted?
+- Is the engine currently able to perform the conversion?
+
+A shortage by itself does not answer the second question.
+
+### 35.2 Market primitives
+
+The classic AoE2 primitives are:
+
+- commodity-buying-price observes the current buying price for a commodity.
+- commodity-selling-price observes the current selling price for a commodity.
+- can-buy-commodity checks whether one lot can currently be purchased.
+- can-sell-commodity checks whether one lot can currently be sold.
+- buy-commodity buys one lot of the specified commodity.
+- sell-commodity sells one lot of the specified commodity.
+
+The exact resource being bought or sold is an engine-defined commodity/resource parameter. These commands are actions and facts, not persistent economic intent.
+
+### 35.3 Minimal valid buy pattern
+
+A minimal market executor has an explicit strategic predicate and engine feasibility:
+
+    (goal NEED-WOOD 1)
+    (can-buy-commodity wood)
+    =>
+    (buy-commodity wood)
+
+The goal establishes why the conversion is wanted. can-buy-commodity establishes that the engine currently permits the transaction. buy-commodity requests the transaction.
+
+Do not treat the presence of the goal as proof that the market action succeeded.
+
+### 35.4 Minimal valid sell pattern
+
+Selling is the same lifecycle in the opposite direction:
+
+    (goal SURPLUS-GOLD 1)
+    (can-sell-commodity gold)
+    =>
+    (sell-commodity gold)
+
+A real economy policy should also constrain the transaction so that strategic reserves are not destroyed merely because a conversion is technically legal.
+
+For example, a food-to-gold conversion policy should be conceptually closer to:
+
+    surplus food
+    + gold demand
+    + market admissibility
+    + can-sell food / can-buy gold
+    → conversion
+
+than to:
+
+    gold low
+    → sell whatever is available
+
+The first describes an economic policy. The second is how bots accidentally turn themselves into unemployed merchants.
+
+### 35.5 Prices are observations, not policy
+
+commodity-buying-price and commodity-selling-price expose current market conditions. They can inform an economic decision, but observing a price does not itself create a demand or authorize a transaction.
+
+A price-aware policy can be expressed as:
+
+    OBSERVE PRICE
+        ↓
+    INTERPRET ECONOMIC STATE
+        ↓
+    ESTABLISH / MAINTAIN DEMAND
+        ↓
+    CHECK MARKET FEASIBILITY
+        ↓
+    BUY / SELL
+        ↓
+    OBSERVE RESOURCE CHANGE
+        ↓
+    RELEASE OR REASSESS
+
+The learner should keep the price observation separate from the action predicate. Otherwise a useful information primitive becomes an accidental action trigger.
+
+### 35.6 Market action is not a resource witness
+
+buy-commodity and sell-commodity are requests to perform an exchange. The resulting stockpile must be observed afterward through the appropriate resource facts.
+
+Conceptually:
+
+    (buy-commodity wood)
+    ↓
+    wood-amount
+
+or:
+
+    (sell-commodity food)
+    ↓
+    food-amount
+
+The action does not prove that the desired economic state has been reached. A later resource observation is the relevant world-state evidence.
+
+This matters when the market action is part of a larger pending requirement. A resource threshold should not be released merely because the transaction rule fired.
+
+### 35.7 Common failure
+
+#### Buying without strategic demand
+
+A rule repeatedly converts resources because the market is available, without a persistent economic reason to do so.
+
+#### Selling the reserve
+
+A rule fixes one shortage by selling a resource that another active demand requires. Resource arbitration and strategic reserves must remain part of the economic policy.
+
+#### Treating can-buy or can-sell as the goal
+
+Feasibility answers whether the engine can perform the action now. It does not answer whether the action is strategically desirable.
+
+#### Using price as a completion witness
+
+A favorable price proves only a market observation. It does not prove that a resource conversion occurred.
+
+#### Repeating the transaction after partial progress
+
+If the desired resource threshold is not checked after the action, repeated rules can convert more resources than intended. Use the resulting resource state, demand threshold, and any necessary reservation/escrow policy to bound the transaction.
+
+### 35.8 Basilisk-scale variant
+
+Basilisk should treat market conversion as a controlled economic capability, not as a global emergency button:
+
+    STRATEGY
+        persistent resource demand
+            ↓
+    ECONOMY
+        identifies surplus and shortage
+            ↓
+    MARKET ADMISSIBILITY
+        exchange is economically permitted
+            ↓
+    FEASIBILITY
+        can-buy / can-sell
+            ↓
+    ACTION
+        buy-commodity / sell-commodity
+            ↓
+    WORLD STATE
+        resource amount changes
+            ↓
+    WITNESS
+        required resource state is actually observed
+            ↓
+    RELEASE / REASSESS
+
+Market conversion must not silently override higher-priority resource commitments. In Basilisk terms, the market is one mechanism available to satisfy a demand. It is not the demand, not the capability, and not the completion witness.
+
+If a resource is already committed through escrow or reserved by a higher-priority economic demand, the market policy must account for that commitment before treating the visible stockpile as surplus.
+
+### 35.9 Hard invariants
+
+- Resource shortage establishes economic information, not automatic market intent.
+- Market intent and market feasibility are separate predicates.
+- can-buy-commodity and can-sell-commodity authorize current engine feasibility; they do not establish strategic desirability.
+- buy-commodity and sell-commodity are actions, not completion witnesses.
+- Price observations are information, not policy by themselves.
+- Resulting resource amounts must be used to verify the economic effect.
+- Market conversion must respect persistent demands, resource commitments, and strategic reserves.
+- A market action must not become an unbounded retry loop merely because its source condition remains true.
+- The smallest community-native market rule that preserves demand, feasibility, action, witness, and release is preferable to a generic economic transaction manager.
