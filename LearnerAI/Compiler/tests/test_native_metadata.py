@@ -13,6 +13,7 @@ from LearnerAI.Compiler.primitives.registry import (
     NativeSupportState,
     Primitive,
     PrimitiveRegistry,
+    default_de_registry,
 )
 
 
@@ -46,6 +47,19 @@ class NativeMetadataTests(unittest.TestCase):
 
 
 class NativeSupportStateTests(unittest.TestCase):
+    def test_checked_in_airef_operator_placeholder_is_typed(self):
+        assessment = default_de_registry().assess_support("current-age")
+        self.assertEqual(assessment.state, NativeSupportState.EXECUTABLE_SAFE)
+        self.assertEqual(
+            [diagnostic.state for diagnostic in assessment.diagnostics],
+            [
+                NativeSupportState.NATIVE_KNOWN,
+                NativeSupportState.NATIVE_TYPED,
+                NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.EXECUTABLE_SAFE,
+            ],
+        )
+
     def test_current_command_reaches_executable_safe(self):
         registry = PrimitiveRegistry(
             (Primitive('current-age', 'FACT', 'OBSERVATION', 2, 2),),
