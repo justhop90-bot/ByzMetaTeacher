@@ -29,15 +29,24 @@ action must resolve to an AoE2 action primitive. A fact such as can-build cannot
 
 witness is completion evidence. It describes a world-state condition that proves the requested action produced the intended state. An action firing is not proof of completion.
 
-release is separate from completion. The compiler currently represents this distinction with an intermediate demand goal:
+release is separate from completion, and pending state is separate from both. The compiler now represents the lifecycle with three allocated states:
 
-    goal = 1  persistent demand / action phase
-    goal = 2  witnessed completion / release phase
-    goal = 0  released demand
+    goal = demand  active / action may be issued
+    goal = pending  action has fired / repeated action is blocked
+    goal = complete  world-state witness observed / release may occur
+    goal = 0  released
 
-Therefore a release condition cannot clear the demand merely because it is true while the action is still pending. The witness must first advance the demand into the release phase.
+The action rule is the only rule allowed to issue the action, and it immediately moves the demand into its pending state. The witness rule requires that pending state. The release rule requires the completed state. This prevents the common polling-loop failure where an action remains eligible on every pass while its engine-side result is still pending.
 
-This is deliberately stricter than the original prototype, which placed witness and release beside one another in the same rule and therefore did not model their lifecycle relationship.
+For the first examples this means:
+- Castle: build castle fires once, then the demand waits for building-type-count castle > 0.
+- Spearmen: train spearman fires once, then the demand waits for unit-type-count spearman >= 2.
+- Wheelbarrow: research ri-wheelbarrow fires once, then the demand waits for research-completed ri-wheelbarrow.
+
+Pending is a lifecycle state, not a retry counter. Temporary failure to satisfy the action requirements leaves the demand active. Successful action issuance moves it to pending. A pending demand does not become active again until its witness advances it to completion.
+
+This is deliberately stricter than the original prototype, which placed witness and release beside one another in the same rule and therefore did not model either pending execution or the separation between completion and release.
+
 
 ## Primitive registry
 
