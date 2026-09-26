@@ -569,8 +569,6 @@ class NativeStorageUse:
                 raise ValueError("persistent scalar requires one slot")
             if self.base is None and not self.symbolic:
                 raise ValueError("persistent scalar requires an explicit slot unless symbolic")
-            if self.kind is NativeStorageKind.GOAL and self.contract_id not in {None, "ordinary-persistent-goal-storage"}:
-                raise ValueError("ordinary Goal storage must use its dedicated storage contract")
             if self.base is not None:
                 bounds = {
                     NativeStorageKind.GOAL: (1, 512),
