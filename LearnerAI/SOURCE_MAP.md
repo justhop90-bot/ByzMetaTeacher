@@ -97,7 +97,7 @@ State needs ownership, durable strategy memory, local execution memory, map-cond
 
 Engineering needs parser constraints, rule size, logical arity, source order, lifecycle analysis, native validation, and runtime acceptance criteria across land, water, siege, fortification, and Monk/relic behaviors. Read LearnerAI/ENGINEERING.md, validation/basilisk-validator.js, validation/basilisk-validator-selftest.js, validation/repair-lifecycle-replay.js, and LearnerAI/Compiler.
 
-Compiler needs schemas, lifecycle rules, primitive profiles, IR, emitter, native backend protocol, map-conditional capability semantics, and future ownership/dependency diagnostics. Read SCHEMAS.md, LIFECYCLE.md, Compiler/README.md, Compiler/RESEARCH_CHECKLIST.md, and Compiler/backends/README.md.
+Compiler needs schemas, lifecycle rules, primitive profiles, IR, emitter, native backend protocol, timing-vs-world-evidence semantics, map-conditional capability semantics, and future ownership/dependency diagnostics. Read SCHEMAS.md, LIFECYCLE.md, Compiler/README.md, Compiler/RESEARCH_CHECKLIST.md, and Compiler/backends/README.md.
 
 ## Research workflow
 
