@@ -69,6 +69,18 @@ class Primitive:
     native_storage_use_ids: tuple[str, ...] = ()
     native_pass_constraint_ids: tuple[str, ...] = ()
 
+    def __post_init__(self) -> None:
+        for field_name in (
+            "native_witness_ids",
+            "native_storage_use_ids",
+            "native_pass_constraint_ids",
+        ):
+            values = getattr(self, field_name)
+            if len(values) != len(set(values)):
+                raise ValueError(
+                    f"{field_name} for primitive '{self.name}' must not contain duplicates"
+                )
+
 class PrimitiveRegistry:
     def __init__(
         self,
@@ -131,8 +143,9 @@ class PrimitiveRegistry:
                 raise ValueError(
                     f"native pass constraint '{identity}' targets '{constraint.command}', not '{primitive.name}'"
                 )
+        declared_pass_constraints = set(primitive.native_pass_constraint_ids)
         for constraint in self._native_contracts.pass_constraints_for(primitive.name):
-            if constraint.maximum_successes == 1 and constraint.identity not in primitive.native_pass_constraint_ids:
+            if constraint.identity not in declared_pass_constraints:
                 raise ValueError(
                     f"native pass constraint '{constraint.identity}' is not declared by '{primitive.name}'"
                 )
