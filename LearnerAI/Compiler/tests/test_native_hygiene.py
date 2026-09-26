@@ -50,6 +50,69 @@ def provenance(
 
 
 class NativeHygieneTests(unittest.TestCase):
+
+    def test_native_witness_requires_documented_native_fact(self):
+        with self.assertRaises(ValueError):
+            NativeWitness(
+                "inferred-witness",
+                NativeWitnessKind.UNIT_COUNT,
+                "unit-type-count",
+                subject="spearman",
+                comparator=">=",
+                value=1,
+                provenance=(
+                    provenance(
+                        EvidenceKind.INFERRED_MAPPING,
+                        ConfidenceBasis.MECHANICAL_DERIVATION,
+                    ),
+                ),
+            )
+
+    def test_native_storage_requires_documented_native_fact(self):
+        with self.assertRaises(ValueError):
+            NativeStorageUse(
+                "inferred-storage",
+                NativeStorageClass.PERSISTENT_SCALAR,
+                NativeStorageKind.GOAL,
+                symbolic=True,
+                request_purpose="lifecycle",
+                provenance=(
+                    provenance(
+                        EvidenceKind.INFERRED_MAPPING,
+                        ConfidenceBasis.MECHANICAL_DERIVATION,
+                    ),
+                ),
+            )
+
+    def test_native_witness_validates_comparator_and_evidence_shape(self):
+        with self.assertRaises(ValueError):
+            NativeWitness(
+                "bad-comparator",
+                NativeWitnessKind.UNIT_COUNT,
+                "unit-type-count",
+                subject="spearman",
+                comparator="approximately",
+                value=1,
+                provenance=(provenance(),),
+            )
+        with self.assertRaises(ValueError):
+            NativeWitness(
+                "missing-evidence",
+                NativeWitnessKind.UNIT_COUNT,
+                "unit-type-count",
+                subject="spearman",
+                provenance=(provenance(),),
+            )
+
+    def test_engine_managed_state_requires_native_state_kind(self):
+        with self.assertRaises(ValueError):
+            NativeStorageUse(
+                "bad-state",
+                NativeStorageClass.ENGINE_MANAGED_STATE,
+                NativeStorageKind.DUC_LOCAL_LIST,
+                provenance=(provenance(),),
+            )
+
     def test_ai_ref_storage_limits_are_enforced(self):
         NativeStorageUse(
             "goal-target",
