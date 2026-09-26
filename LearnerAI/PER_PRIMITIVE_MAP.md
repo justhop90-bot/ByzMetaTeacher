@@ -1872,44 +1872,346 @@ REASSESS
 - do not invent an engine predicate simply because a semantic concept would be convenient; verify the exact command/status primitive against AIRef and the target engine build.
 
 ---
-## 23. Canonical lifecycle: farm construction
+## 23. Canonical lifecycle: economic upgrade
 
-Farm production is a useful economic example because it demonstrates that resource pressure and infrastructure demand are distinct.
+Use an economic technology such as Wheelbarrow as the canonical upgrade example. This teaches the same lifecycle as Fletching, but the strategic reason is economic: **economic demand → research availability → affordability → research feasibility → pending state → completion witness → release/reassessment**.
+
+Do not teach an economic upgrade as “we have food and gold, so research it.” The engine has separate facts for availability, affordability, feasibility, and completion. Human beings apparently require several nouns to prevent one technology button from becoming a theology.
 
 ### Demand
 
-Food infrastructure requires another farm under the economic policy.
+Economy/Strategy establishes that the upgrade is currently justified by the economic posture.
 
-### Capability
-
-Mill/farm prerequisites, resources, builder availability and farm-specific engine conditions.
-
-### Feasibility
+Conceptually:
 
 ```
-(can-build farm)
+economic posture requires improved villager efficiency
+→ Wheelbarrow demand is active
 ```
+
+A demand can be represented semantically by a goal or equivalent domain state. The representation is project-specific; the important fact is that the demand persists independently of the research action.
+
+### Admissibility
+
+The economic upgrade remains admissible while its strategic/economic reason remains valid.
+
+Examples:
+- the economy still benefits from the upgrade;
+- the upgrade has not already completed;
+- Strategy has not cancelled or superseded the economic plan;
+- the current age/posture still makes the upgrade appropriate.
+
+Availability of the technology is not admissibility. A technology can be available while Strategy deliberately postpones it because food, gold, builders, military production, or another economic priority has precedence.
+
+### Capability: `research-available`
+
+First establish whether the technology is actually available to the civilization and current game state.
+
+```
+(research-available ri-wheelbarrow)
+```
+
+AIRef defines `research-available` as checking that the research is available to the civilization and available at the current time. citeturn0search1
+
+This is the **availability/prerequisite** question. It does not prove that the upgrade is affordable, that research can start immediately, or that the upgrade has completed.
+
+Keep the semantic layers distinct:
+
+```
+research-available
+    ≠
+can-afford-research
+    ≠
+can-research
+    ≠
+research-completed
+```
+
+### Capability: prerequisites and infrastructure
+
+Availability is the engine-level answer to the technology's current tech-tree eligibility. The learner may still need to understand the world-state prerequisites that explain the result, such as age, required building, or prerequisite research.
+
+Do not replace `research-available` with a homemade list of prerequisites and assume the list is equivalent to engine behavior. Use documented engine facts as the authority and use prerequisite facts for diagnosis or strategic reasoning.
+
+Likewise, the existence of a Mill, Market, or other economic building is not itself proof that Wheelbarrow can be researched.
+
+### Affordability: `can-afford-research`
+
+Resource affordability is a separate engine question.
+
+```
+(can-afford-research ri-wheelbarrow)
+```
+
+AIRef documents `can-afford-research` as checking whether the computer player has enough resources to perform the given research. citeturn0search1
+
+This answers **“Can the normal research cost be paid?”**
+
+It does not prove:
+- the technology is available;
+- the research can start under the current engine state;
+- resources will remain available until the action is evaluated;
+- the research will complete.
+
+The distinction is therefore:
+
+```
+technology available
+    ≠
+technology affordable
+    ≠
+technology feasible now
+```
+
+### Resource arbitration and escrow
+
+Economic upgrades compete directly with other economic demands. Food and gold can be needed simultaneously for villagers, age advancement, military, buildings, and additional technologies.
+
+Therefore:
+
+```
+resource exists
+    ≠
+resource is available to the upgrade
+    ≠
+research can start
+```
+
+If the AI uses escrow, escrow represents resource commitment/arbitration. It is not an upgrade-completion witness.
+
+AIRef also documents `can-research-with-escrow`, which checks whether research can start when escrowed resources are included. citeturn0search1
+
+Use the distinction deliberately:
+
+- `can-research` = ordinary current-resource feasibility;
+- `can-research-with-escrow` = feasibility when the relevant escrowed resources are included.
+
+Do not silently substitute one for the other. The economic policy must decide whether escrowed resources are legitimately available to this demand.
+
+### Feasibility: `can-research`
+
+The decisive engine-native feasibility test is:
+
+```
+(can-research ri-wheelbarrow)
+```
+
+AIRef defines `can-research` as checking whether the given research can start. citeturn0search1
+
+Teach this as the boundary between **economic intent** and **engine execution**.
+
+Do not write a homemade predicate such as:
+
+```
+food >= cost
+gold >= cost
+age = feudal
+has required building
+→ therefore research is possible
+```
+
+Those conditions may describe pieces of capability or explain a blockage, but `can-research` is the engine-native feasibility answer.
+
+### Pending state and repeat prevention
+
+Research has an execution state:
+
+```
+DEMANDED
+  ↓
+RESEARCH REQUESTED
+  ↓
+PENDING / RESEARCHING
+  ↓
+COMPLETED
+```
+
+The learner must distinguish **not completed** from **not started**.
+
+`up-research-status` provides an explicit research-state inspection mechanism. UserPatch defines research states including `research-unavailable`, `research-available`, `research-pending`, and `research-complete`. citeturn0search0
+
+Conceptually:
+
+```
+(up-research-status c:>= ri-wheelbarrow research-pending)
+```
+
+Use the exact comparison syntax appropriate to the target engine/reference set. The important semantic rule is that a pending upgrade must block another identical research request.
+
+Without a pending guard, this failure is possible:
+
+```
+Wheelbarrow incomplete
+→ research wheelbarrow
+→ research still pending
+→ completion witness still false
+→ research wheelbarrow again
+→ duplicate research requests
+```
+
+Repeat prevention is therefore a state problem, not a retry-counter problem.
 
 ### Action
 
+Once the demand is admissible, the technology is available, resources are legitimately available, and the engine says research can start:
+
 ```
-(build farm)
+(research ri-wheelbarrow)
 ```
 
-### Witness
+This is an **action request**.
 
-Farm count/state or the economic condition the farm demand was created to correct.
+It does not prove that:
+- the research entered the queue;
+- resources were successfully committed;
+- the upgrade is progressing;
+- Wheelbarrow completed.
 
-### Anti-pattern
+The action must be followed by an engine/world-state witness.
 
-“Food is low, therefore build farms forever.”
+### Completion witness: `research-completed`
 
-The economic demand must have an admissibility condition and an actual target/boundary.
+The canonical completion witness is:
 
-Community examples use farm counts/goals and `can-build farm` as part of economic control. citeturn0search0
+```
+(research-completed ri-wheelbarrow)
+```
+
+AIRef defines `research-completed` as checking that the given research is completed. citeturn0search1
+
+This is materially stronger than `research-available`, `can-afford-research`, or the fact that the `research` action fired.
+
+The learner should therefore keep this invariant:
+
+```
+research action
+    ≠
+pending research
+    ≠
+completed research
+```
+
+`up-research-status` can also expose the completed state when the script needs a more general research-state interface. Use one authoritative completion witness rather than maintaining a second homemade completion flag.
+
+### Completion versus release
+
+Completion and release are related but distinct.
+
+```
+Wheelbarrow completed
+    ≠
+automatic release of every economic-upgrade demand
+```
+
+The normal successful path is:
+
+```
+economic upgrade demand active
+→ research completes
+→ research-completed witness is true
+→ current upgrade demand releases/transitions
+→ Economy/Strategy reassesses
+```
+
+Release may also occur before completion if Strategy explicitly cancels or supersedes the demand.
+
+Distinguish:
+- **COMPLETED:** the upgrade is actually researched;
+- **CANCELLED/OBSOLETE:** Strategy no longer wants it;
+- **BLOCKED:** Strategy still wants it but research cannot currently proceed;
+- **ACTIVE/PENDING:** Strategy still wants it and research is unresolved or in progress.
+
+Never clear the economic demand merely because `(research ri-wheelbarrow)` fired.
+
+### Reassessment
+
+After completion, Economy/Strategy must reassess the new economic state.
+
+Examples:
+- the upgrade improves the current gathering plan;
+- another economic upgrade becomes admissible;
+- military demand now has different resource requirements;
+- the economic posture changes because the game state changed;
+- the upgrade becomes strategically irrelevant before completion.
+
+The upgrade demand is therefore a lifecycle, not a one-shot button press.
+
+### Blocked behavior
+
+If `can-research ri-wheelbarrow` remains false while the demand is still admissible, retain the demand and diagnose the layer that is actually blocking progress:
+
+1. Is `research-available` false?
+2. Is the upgrade already pending?
+3. Is it already completed?
+4. Is `can-afford-research` false?
+5. Are the required resources reserved for another legitimate demand?
+6. Is escrow-aware feasibility intentionally different from ordinary feasibility?
+7. Is another research or engine state preventing the action?
+8. Has Strategy cancelled or superseded the economic demand?
+
+`can-research` is the immediate engine feasibility result. The surrounding facts explain availability, affordability, arbitration, pending state, or strategic cancellation.
+
+Do not convert a persistent economic demand into an infinite retry counter. Preserve the demand, use transient cooldown/backoff where appropriate, and reassess the real blocking state.
+
+### Canonical economic-upgrade trace
+
+```
+DEMAND
+  Strategy/Economy wants Wheelbarrow
+        ↓
+ADMISSIBILITY
+  economic posture still justifies the upgrade
+        ↓
+CAPABILITY
+  research-available
+  + required tech-tree prerequisites
+        ↓
+AFFORDABILITY
+  can-afford-research
+        ↓
+RESOURCE ARBITRATION
+  resources are legitimately available to this demand
+        ↓
+FEASIBILITY
+  can-research ri-wheelbarrow
+        ↓
+ACTION
+  research ri-wheelbarrow
+        ↓
+RESEARCH STATE
+  pending / researching
+        ↓
+WORLD-STATE WITNESS
+  research-completed ri-wheelbarrow
+        ↓
+COMPLETION
+  Wheelbarrow actually researched
+        ↓
+RELEASE
+  current upgrade demand clears/transitions
+        ↓
+REASSESS
+  Economy/Strategy react to the new technology state
+```
+
+### Hard invariants
+
+- `research-available` is not `can-afford-research`.
+- `can-afford-research` is not `can-research`.
+- `can-research` is not `research`.
+- `research` is not proof of completion.
+- pending/researching is not completed.
+- escrow is resource arbitration, not a completion witness.
+- `can-research-with-escrow` is not interchangeable with ordinary `can-research`.
+- a prerequisite/building fact is not a substitute for the engine's research-availability or feasibility facts.
+- `research-completed` is the completion witness, not the research action.
+- repeat prevention must account for pending research.
+- completion is not automatically identical to strategic release.
+- cancellation/obsolescence is not successful completion.
+- a persistent economic-upgrade demand survives temporary blockage unless Strategy explicitly removes it.
+- do not invent engine predicates where a documented availability, affordability, feasibility, status, or completion primitive already exists.
 
 ---
-
 ## 24. Capability versus feasibility
 
 This distinction deserves its own section because it is where otherwise competent scripts become haunted.
