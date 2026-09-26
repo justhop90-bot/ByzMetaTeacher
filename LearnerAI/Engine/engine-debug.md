@@ -1,7 +1,23 @@
 # Engine Debug
 
-Framework workspace placeholder.
+Defines how engine assumptions are investigated when static evidence is insufficient.
 
-Purpose: define the teaching contract, inputs, outputs, ownership, lifecycle, examples, and validation requirements for this area before any executable .per code is written.
+## Debug loop
 
-Implementation status: not started.
+source claim -> native validation -> minimal reproduction -> runtime test -> recorded result
+
+## Must distinguish
+
+- parser rejection;
+- native feasibility false;
+- action accepted but delayed;
+- action accepted but world state unchanged;
+- incorrect witness;
+- source-order interaction;
+- actual engine defect or undocumented behavior.
+
+## Sources
+
+Use LearnerAI/ENGINEERING.md, Compiler/backends/, docs/reference/engine/, and runtime evidence.
+
+Do not turn debugging workarounds into permanent strategy state without proving that the state is actually required.

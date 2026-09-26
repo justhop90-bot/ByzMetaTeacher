@@ -1,65 +1,155 @@
 # Interfaces and Ownership Contracts
 
-The module map says where code belongs. These contracts define who decides, who writes, what crosses the boundary, and what constitutes completion.
+These contracts describe how the modules cooperate to build one Byzantine player.
 
 ## Engine
 
-Owns engine configuration, engine-native facts/actions, strategic-number interfaces, timers as engine mechanisms, and engine-specific primitives.
+Owns native facts, actions, strategic-number interfaces, timers, identifiers, and engine quirks.
 
-Provides facts, capabilities, feasibility predicates, and actions. It does not decide strategic purpose.
+Provides what the engine can report or attempt.
 
-Contract: engine permission to execute is not proof that the requested world-state change occurred.
+Does not decide strategic purpose.
 
-## State
-
-Owns persistent representation of strategy, demands, transitions, temporary modes, and controlled timers.
-
-Every persistent state variable has one semantic owner, legal values, initialization, transition rules, readers, and release behavior.
-
-State represents decisions; it does not invent them.
+Source: docs/reference/AIREF-COMMAND-SOURCE.md, docs/reference/inventories/, docs/reference/engine/, docs/reference/BYZANTINES_manifest.txt.
 
 ## Information
 
-Owns observations and interpretations of external game state: scouting, enemy/map information, threat facts, and freshness/re-observation.
+Owns observations and interpretations of the external position:
 
-Contract: observation informs interpretation; Information does not directly spam strategic responses.
+- scouting;
+- enemy composition;
+- map/game context;
+- threat facts;
+- observation freshness;
+- re-observation.
+
+Provides facts to Strategy and domains.
+
+Does not directly execute counters or economic responses.
+
+Source: AIRef/engine references plus current Basilisk scouting and threat rules.
 
 ## Strategy
 
-Owns strategic purpose: strategy selection, posture, age objectives, economic/military posture, adaptation, and creation/cancellation of strategic demands.
+Owns why the player wants a position.
 
-Contract: Strategy decides why; domain modules determine how.
+Creates and cancels strategic posture and persistent demands.
+
+Examples:
+
+- Castle commitment;
+- BOOM posture;
+- controlled Feudal pressure;
+- defensive posture;
+- Imperial conversion.
+
+Strategy does not directly build, train, research, or attack.
+
+Source: docs/project/BotDirection.txt, docs/project/Basilisk-Controller-Specification.md, Basilisk/Basilisk.per.
+
+## State
+
+Owns persistent strategic representation and genuinely necessary execution memory.
+
+A state value must have one owner, legal values, initialization, readers, writers, transition rules, and release/invalidation.
+
+State represents decisions and lifecycles. It does not invent strategy.
+
+Source: LearnerAI/OWNERSHIP.md, SCHEMAS.md, LIFECYCLE.md.
 
 ## Economy
 
-Owns worker/resource allocation, farms, economic technologies, resource pressure, recovery, and transient arbitration between legitimate demands.
+Owns worker allocation, resources, farms, economic technologies, capital protection, and transient resource arbitration.
 
-Contract: Economy owns resource allocation, not the strategic objectives competing for those resources.
+Its question is:
+
+What resource shortage currently prevents the chosen strategy from functioning?
+
+Economy does not decide which strategy exists.
+
+Source: Basilisk/Basilisk.per, docs/project/BotDirection.txt, docs/audits/Basilisk-BOOM-Patch-Checklist-2026-09.md.
 
 ## Construction
 
-Owns the building lifecycle: demand, prerequisite checking, existing/pending checks, builder requirements, build request, construction state, completion, and release.
+Owns building capability and construction lifecycle.
 
-Contract: a build request is not completion. Completion requires a world-state witness.
+It consumes building demands and produces infrastructure.
+
+It must distinguish:
+
+existing;
+pending/foundation;
+feasible;
+action issued;
+completed;
+obsolete.
+
+A build command is never the completion witness.
+
+Source: validation/castle-capability-checklist.md, validation/repair-lifecycle-replay.js, docs/audits/Basilisk-Lifecycle-Audit-2026-09.md.
 
 ## Production
 
-Owns production capability and queues for villagers, military units, production buildings, and upgrades.
+Owns production capability and queues for villagers, units, and technologies.
 
-Contract: Production converts legitimate demands into feasible production actions; it does not independently invent strategic need.
+Capacity follows live production demand.
+
+Production must be queue-aware and must not silently invent strategic purpose.
+
+Source: Basilisk/Basilisk.per, docs/project/BotDirection.txt, LearnerAI/Production.
 
 ## Military
 
-Owns military demands below strategic intent and military execution: defense, composition, readiness, attack, siege, reinforcement, retreat, and military recovery.
+Owns military demands below strategic posture and military execution:
 
-Contract: Military may translate strategy and information into military demands, but does not silently rewrite global strategy.
+- minimum defense;
+- counters;
+- army readiness;
+- attack reserve;
+- attack;
+- retreat;
+- reinforcement;
+- siege;
+- recovery.
+
+Military may translate Strategy and Information into military demands but does not rewrite global strategy silently.
+
+Source: Basilisk/Basilisk.per, validation/strategy-rush-checklist.md, docs/project/BotDirection.txt.
 
 ## Engineering
 
-Owns validation and verification discipline: parser/engine legality checks, lifecycle witnesses, failure detection, diagnostics, and recovery analysis.
+Owns static validation, lifecycle diagnostics, native-validation plumbing, and verification discipline.
 
-Contract: Engineering verifies and diagnoses; it does not become a second Strategy or generic manager.
+Engineering diagnoses.
+
+It is not a hidden scheduler or gameplay manager.
+
+Source: LearnerAI/ENGINEERING.md, validation/, LearnerAI/Compiler/.
+
+## Compiler
+
+Compiler is infrastructure shared by all modules.
+
+It owns:
+
+- source parsing;
+- semantic lifecycle validation;
+- demand/capability/witness diagnostics;
+- deterministic .per emission;
+- native backend integration.
+
+It does not own gameplay strategy.
 
 ## Universal contract
 
-Strategy owns why. Domain modules own how. Engine owns engine-native feasibility and execution. World state proves what actually happened. Engineering verifies the chain.
+Strategy owns why.
+
+Domains own how.
+
+Engine owns feasibility and execution.
+
+World state proves completion.
+
+Engineering validates the chain.
+
+Compiler makes the semantic contract explicit and deterministic.

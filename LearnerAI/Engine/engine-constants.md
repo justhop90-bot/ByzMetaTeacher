@@ -1,7 +1,22 @@
 # Engine Constants
 
-Framework workspace placeholder.
+Defines the identifier discipline for the player.
 
-Purpose: define the teaching contract, inputs, outputs, ownership, lifecycle, examples, and validation requirements for this area before any executable .per code is written.
+## Must contain
 
-Implementation status: not started.
+- verified unit IDs;
+- verified building IDs;
+- verified tech IDs;
+- strategic-number IDs;
+- timer ranges;
+- version-sensitive aliases.
+
+## Sources
+
+Use docs/reference/inventories/, docs/reference/BYZANTINES_manifest.txt, and AIRef.
+
+Never invent an identifier because its name looks plausible.
+
+## Gate
+
+Every identifier used in generated player code must resolve against the current reference data or be explicitly documented as a verified version-specific local alias.

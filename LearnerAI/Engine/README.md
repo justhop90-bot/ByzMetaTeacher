@@ -1,5 +1,42 @@
 # Engine Module
 
-Specification only. Owns engine configuration, constants, engine-native facts/actions, strategic-number interfaces, timers as engine mechanisms, initialization, and documented engine quirks.
+Engine is the native AoE2DE interface layer for the player.
 
-Boundary: Engine exposes what the game engine reports and permits. It does not choose strategic purpose. An action is never proof of completion.
+It does not choose strategy.
+
+## Owns
+
+- native facts;
+- native actions;
+- constants and identifiers;
+- strategic numbers;
+- timers;
+- engine configuration;
+- documented engine quirks.
+
+## Provides
+
+- observations;
+- capability facts;
+- can-* feasibility;
+- executable actions;
+- world-state facts used as witnesses.
+
+## Sources
+
+Primary:
+
+    docs/reference/AIREF-COMMAND-SOURCE.md
+    docs/reference/inventories/
+    docs/reference/engine/
+    docs/reference/BYZANTINES_manifest.txt
+
+Supplement with current official update notes and runtime tests when documentation is incomplete.
+
+## Boundary
+
+Engine permission is not completion.
+
+An action is a request.
+
+The game is the final authority.

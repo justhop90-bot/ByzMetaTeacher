@@ -1,43 +1,106 @@
-# Learning Path
+# Learning and Build Path
 
-The learner should progress from engine literacy to complete adaptive behavior rather than starting with a giant architecture and hoping the student develops telepathy.
+This path is both curriculum and implementation order. The point is to learn the engine while constructing a complete player.
 
 ## Stage 1 — Engine literacy
 
-Learn .ai versus .per, rule syntax, facts, actions, constants, strategic numbers, timers, initialization, parser constraints, and engine-native feasibility predicates.
+Learn:
 
-## Stage 2 — Basic economic loop
+- .ai versus .per;
+- rules, facts, actions;
+- constants and strategic numbers;
+- timers;
+- parser limits;
+- engine-native feasibility;
+- native completion evidence.
 
-Villagers, housing, dropsites, resource allocation, farms, age advancement, and economic technologies. Each behavior must distinguish action from completion.
+Use docs/reference, AIRef, and PER_PRIMITIVE_MAP.md.
 
-## Stage 3 — Construction and production
+## Stage 2 — Dark Age economic slice
 
-Teach existing/pending checks, prerequisites, can-* feasibility, builder/production capability, queues, and world-state witnesses.
+Implement:
 
-## Stage 4 — Persistent demands
+- villager continuity;
+- houses;
+- dropsites;
+- food/wood/gold allocation;
+- farms;
+- economic technology;
+- age-up preparation.
 
-Convert disconnected trigger rules into explicit objectives with creation, persistence, completion, cancellation, and release conditions.
+Every behavior must distinguish intent, capability, feasibility, action, witness, and reassessment.
 
-## Stage 5 — Information and adaptation
+## Stage 3 — Feudal and Castle trajectory
 
-Scouting, enemy facts, threat interpretation, stale observations, and strategic adaptation. Information informs Strategy; it does not directly spam counters.
+Implement:
 
-## Stage 6 — Military lifecycle
+- threat interpretation;
+- minimum defensive military;
+- limited Feudal escalation;
+- Castle demand;
+- Castle prerequisites;
+- construction;
+- Castle witness.
 
-Defense, composition, readiness, production demand, attack preparation, execution, outcome witnessing, reinforcement, retreat, and reassessment.
+This is the first competitive vertical slice.
 
-## Stage 7 — Resource arbitration
+## Stage 4 — Castle conversion
 
-Teach competing food/wood/gold/stone requirements, economic opportunity cost, temporary arbitration, and protection of higher-level persistent objectives.
+Implement:
 
-## Stage 8 — Engineering discipline
+- farm scaling;
+- Town Center expansion;
+- production scaling;
+- counter composition;
+- siege;
+- appropriate technology;
+- monastery/university capability.
 
-Static audits for rule order, first writer/first consumer, dead ends, unfed state, blocked demands, duplicate/conflicting writers, open loops, parser traps, rule-length limits, operator arity, and invalid identifiers.
+## Stage 5 — Interruption and recovery
 
-## Stage 9 — Community-standard synthesis
+Test:
 
-Combine all modules into a readable, traceable AI where an experienced community scripter can follow intent → capability → feasibility → action → witness → release without hidden managers.
+- raids;
+- enemy composition switches;
+- lost army;
+- resource shortages;
+- failed construction;
+- delayed research;
+- obsolete plans.
 
-## Completion standard
+Persistent strategy must survive transient execution problems.
 
-The learner has succeeded when they can add a new behavior by defining its owner, demand, capability, action, witness, release condition, resource interactions, and failure/recovery path before writing the first executable rule.
+## Stage 6 — Military conversion
+
+Implement standing army, attack reserve, attack lifecycle, retreat, reinforcement, siege, and production-capacity feedback.
+
+## Stage 7 — Imperial conversion
+
+Implement mature economy -> Imperial -> upgraded production -> siege/anti-building -> strategic pressure.
+
+## Stage 8 — Engineering hardening
+
+Static checks:
+
+- source order;
+- first writer/consumer;
+- rule limits;
+- logical arity;
+- invalid identifiers;
+- dead-end/unfed/blocked/open-loop state;
+- repeated actions;
+- impossible witnesses.
+
+Runtime checks remain mandatory.
+
+## Stage 9 — Competitive hardening
+
+Test against Extreme and compare with established community AIs.
+
+The comparison question is:
+
+What useful behavior are they doing that our player is not?
+
+It is not:
+
+How do we copy their entire script?

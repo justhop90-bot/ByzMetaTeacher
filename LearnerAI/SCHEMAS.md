@@ -1,49 +1,142 @@
 # Concrete Semantic Schemas
 
-These are semantic schemas for .per design. AoE2DE does not provide general-purpose structs, so implementation should use goals, constants, facts, actions, strategic numbers, timers, and rule conditions rather than pretending the engine is a typed application framework.
+AoE2DE does not provide typed runtime structs. These schemas are semantic contracts mapped onto goals, facts, actions, strategic numbers, timers, and rule conditions.
 
 ## Demand
 
-DEMAND { owner, subject, purpose, state, priority, quantity, prerequisites, conflict-class, creation-condition, cancellation-condition, completion-witness }
+A demand states what should become true and why it remains relevant.
 
-Required concepts: owner, subject, purpose, lifecycle state, creation, cancellation, and completion witness. Quantity and priority apply when relevant.
+DEMAND includes:
 
-Typical states: inactive, active, preparing, executing, complete, cancelled.
+- owner;
+- subject;
+- purpose;
+- lifecycle state;
+- priority when meaningful;
+- quantity when meaningful;
+- prerequisites;
+- conflict class;
+- creation condition;
+- cancellation or invalidation condition;
+- completion witness.
+
+A demand is not an action.
+
+Examples:
+
+Castle demand.
+
+Minimum anti-cavalry army demand.
+
+Second Town Center demand.
+
+Farm-capacity demand.
+
+Siege capability demand.
 
 ## Capability
 
-CAPABILITY { owner, subject, provider, prerequisites, resource-requirements, quantity, availability, pending-state, feasibility-test }
+A capability is the means required to satisfy a demand.
 
-Capability answers what means exist. Feasibility answers whether the engine permits the action now. They are not the same thing.
+CAPABILITY includes:
+
+- owner;
+- subject;
+- provider;
+- prerequisites;
+- resource requirements;
+- quantity;
+- availability;
+- pending state when relevant;
+- feasibility test.
+
+Capability never substitutes for strategic demand.
+
+Example: a Stable is a capability provider for a mounted-unit demand. The Stable itself is not a strategic reason.
 
 ## Action
 
-ACTION { owner, subject, target, prerequisites, capability, feasibility, execution, expected-witness, repeat-policy }
+An action is a request sent to the engine.
 
-An action is an engine request, not a success record. Every important action should have an expected witness and an explicit repeat policy.
+ACTION includes:
+
+- owner;
+- subject;
+- target;
+- prerequisites;
+- capability;
+- feasibility predicate;
+- execution command;
+- expected witness;
+- repeat policy.
+
+Action issuance is never success evidence.
 
 ## Witness
 
-WITNESS { owner, subject, expected-state, observation, validity-condition, completion-condition, failure-condition }
+A witness is an observable world-state fact that proves the expected result.
 
-Witnesses may prove existence, count, state transition, technology completion, economic transition, or military outcome.
+WITNESS includes:
 
-## Release
+- owner;
+- subject;
+- expected state;
+- observation;
+- validity condition;
+- completion condition;
+- failure condition.
 
-RELEASE { owner, demand, trigger, witness, cleanup, next-state }
+Examples:
 
-A demand can release because it completed, became obsolete, was cancelled by strategy, or otherwise no longer applies. Release must clean up associated commitments where applicable.
+Castle exists.
 
-## Domain examples
+Research is completed.
 
-Construction demand → construction capability → build action → building-exists witness → release.
+Current age is Castle.
 
-Military unit demand → production capability → train action → unit-count witness → release or escalation reassessment.
+Unit count reaches the target.
 
-Age demand → age capability/feasibility → research action → current-age witness → transition/release.
+A queued or pending total is not automatically a completion witness.
 
-Economic demand → resource allocation capability → allocation action → observed economic state → release/reassess.
+## Release / invalidation
 
-## Hard rule
+A demand may:
 
-Action is never the witness. Capability is never the demand. Existence of a capability is never proof of successful execution.
+- complete;
+- transition to another objective;
+- become obsolete;
+- be cancelled by Strategy;
+- lose its capability;
+- remain valid while temporarily blocked.
+
+Execution state must be cleaned up when its owning demand ends.
+
+## Interruption rule
+
+Temporary execution failure must normally preserve valid strategic demand.
+
+This is a central product requirement, not an optional compiler exercise.
+
+## Resource conflict
+
+A demand may compete for resources.
+
+Economy arbitrates the temporary allocation, but Strategy retains ownership of the strategic reason.
+
+sn-resource-control or equivalent global mechanisms are exceptional. They require a real contention problem and a documented release path.
+
+## Hard rules
+
+Action is never the witness.
+
+Capability is never the demand.
+
+can-* is feasibility, not completion.
+
+Pending is not completed.
+
+A strategy phase is not a task queue.
+
+A timer is not strategic truth.
+
+State must buy real control capability or it should probably not exist.

@@ -1,7 +1,20 @@
 # Engine Config
 
-Framework workspace placeholder.
+Defines the DE environment assumptions used by the learner player.
 
-Purpose: define the teaching contract, inputs, outputs, ownership, lifecycle, examples, and validation requirements for this area before any executable .per code is written.
+## Must record
 
-Implementation status: not started.
+- target DE build;
+- AI folder/package assumptions;
+- .ai/.per loading model;
+- version-sensitive commands;
+- native backend version;
+- runtime test environment.
+
+## Sources
+
+Use docs/reference/engine/, docs/reference/AIREF-COMMAND-SOURCE.md, and the native backend lock in Compiler/backends/.
+
+## Gate
+
+Version-sensitive behavior is recorded as an assumption until runtime evidence confirms it.

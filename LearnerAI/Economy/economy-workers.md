@@ -1,7 +1,19 @@
 # Economy Workers
 
-Framework workspace placeholder.
+Defines worker allocation as a demand response, not a fixed spreadsheet.
 
-Purpose: define the teaching contract, inputs, outputs, ownership, lifecycle, examples, and validation requirements for this area before any executable .per code is written.
+## Required behavior
 
-Implementation status: not started.
+- continuous villager production;
+- allocation based on current shortages;
+- farm expansion before food collapse;
+- preserved worker flow during military pressure;
+- recovery after temporary reallocations.
+
+## Source
+
+Use Basilisk/Basilisk.per for current community-style worker allocation, docs/reference/engine/ for native strategic-number interfaces, and docs/project/BotDirection.txt for the intended binding-shortage doctrine.
+
+## Acceptance
+
+Worker allocation must remain connected to the selected strategy and recover after temporary interruption.

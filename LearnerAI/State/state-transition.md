@@ -1,7 +1,33 @@
 # State Transition
 
-Framework workspace placeholder.
+Defines deliberate transitions between persistent strategic states.
 
-Purpose: define the teaching contract, inputs, outputs, ownership, lifecycle, examples, and validation requirements for this area before any executable .per code is written.
+## Rule
 
-Implementation status: not started.
+A transition must have:
+
+- triggering observation or condition;
+- owning strategy;
+- explicit precedence;
+- target state;
+- invalidation or recovery path.
+
+## Examples
+
+Opening posture -> Anti-Rush.
+
+RUSH -> Castle conversion.
+
+Defense -> recovered economic posture.
+
+Castle conversion -> Imperial conversion.
+
+## Requirement
+
+Transitions represent meaningful changes in what position the player is trying to create.
+
+They are not a queue of build steps.
+
+## Source
+
+Read docs/project/BotDirection.txt, docs/project/Basilisk-Controller-Specification.md, Basilisk/Basilisk.per, and validation/strategy-rush-checklist.md.

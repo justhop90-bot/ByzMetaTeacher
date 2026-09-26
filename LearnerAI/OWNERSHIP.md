@@ -1,32 +1,57 @@
 # Ownership Matrix
 
-| State/fact | Semantic owner | Typical readers | External writers |
+Ownership answers who is responsible for the semantic truth represented by a state or fact.
+
+| State or fact | Owner | Typical readers | External writers |
 |---|---|---|---|
-| Engine configuration | Engine | Relevant modules | None |
-| Strategic posture | Strategy | All domains | Strategy |
-| Strategic demands | Strategy | Relevant domains | Strategy |
-| Economic allocation | Economy | Strategy/domains | Economy |
-| Construction state | Construction | Strategy/Engineering | Construction |
-| Production state | Production | Military/Strategy/Engineering | Production |
-| Enemy observations | Information | Strategy/Military/Economy | Information |
+| Engine configuration | Engine | all relevant modules | none |
+| Strategic posture | Strategy | all domains | Strategy |
+| Strategic demand | Strategy | relevant domain | Strategy |
+| Resource allocation | Economy | Strategy/domains | Economy |
+| Construction lifecycle | Construction | Strategy/Engineering | Construction |
+| Production lifecycle | Production | Strategy/Military/Engineering | Production |
+| Enemy observation | Information | Strategy/Military/Economy | Information |
 | Threat interpretation | Information | Strategy/Military | Information |
 | Military posture | Strategy | Military | Strategy |
-| Military execution state | Military | Strategy/Engineering | Military |
-| Completion meaning | Owning domain | State/Strategy/Engineering | Domain owner |
-| Witness validation | Engineering | Domain/Strategy | Engineering |
-| Diagnostics | Engineering | Human/debugging | Engineering |
+| Military execution | Military | Strategy/Engineering | Military |
+| Completion meaning | owning domain | Strategy/Engineering | owner |
+| Diagnostic interpretation | Engineering | humans/compiler | Engineering |
 
-## Rules
+## Ownership rules
 
-1. One semantic owner per persistent state variable.
-2. Multiple readers are acceptable; competing writers are not.
-3. External modules request or consume outcomes rather than mutating another module's private state.
-4. State names must have defined lifecycle meaning.
-5. A release condition must identify what proves completion and what happens afterward.
-6. Temporary arbitration is not a substitute for strategic ownership.
+One semantic owner per persistent state variable.
 
-## Read/write principle
+Multiple readers are normal.
 
-Read broadly when necessary. Write narrowly.
+Competing writers require explicit transition semantics. Accidental source-order overwrites are defects.
 
-This is intentionally practical for .per; the language does not provide modern encapsulation, so ownership must be enforced by discipline, naming, source organization, and audits.
+A domain may consume another domain's state but should not mutate the owner's private state.
+
+A release rule must explain what proved completion and what happens afterward.
+
+Transient arbitration is not strategic ownership.
+
+## State-entry test
+
+Before adding a goal, strategic number, timer, claim, stage, or latch, ask:
+
+1. Can current engine facts express the answer?
+2. Can an existing demand express it?
+3. Can rule order provide the needed precedence?
+4. Is genuine multi-pass memory required?
+5. Is there real resource or capability contention?
+6. Does removing the state remove actual control capability?
+
+If the first three are enough, prefer not adding state.
+
+## Failure and invalidation
+
+Execution failure changes timing, not strategic truth.
+
+Strategy invalidation can destroy a strategic demand.
+
+Capability loss can destroy a local execution claim while leaving the demand alive.
+
+Finished execution state must be released.
+
+An owner that can never release its state is an open loop.

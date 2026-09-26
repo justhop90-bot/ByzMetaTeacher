@@ -1,65 +1,93 @@
-# Worked Examples: Specification Only
+# Canonical Behavior Traces
 
-This file reserves canonical teaching examples. No executable code belongs here yet.
+These examples define the kinds of complete behaviors the learner player must eventually implement.
 
-## Example A — Castle
+They are specifications until executable code exists.
 
-Strategic intent: establish Castle-age infrastructure.
+## Example A — Castle conversion
 
-Demand owner: Strategy.
+Observation: economy is stable enough for a Castle trajectory and threat does not require uncontrolled Feudal mass.
 
-Domain requirement: Construction requires one Castle.
+Interpretation: Castle conversion remains strategically valuable.
 
-Capability: Castle Age, sufficient stone/resources, eligible builder, required engine capability.
+Demand: Strategy owns persistent Castle demand.
 
-Feasibility: engine-native can-build condition is true.
+Capability: Castle prerequisites, resources, builder path, and construction capability.
 
-Action: Construction requests Castle construction.
+Feasibility: engine says construction can start.
 
-Witness: Castle exists in world state.
+Action: Construction issues build.
 
-Release: construction demand and associated temporary commitments are released; Castle infrastructure demand may transition to the next objective.
+Pending: action enters construction lifecycle and duplicate construction is blocked.
 
-Blocked case: preserve legitimate strategic intent while diagnosing resource, prerequisite, builder, pending, or competing-demand blockage.
+Witness: Castle exists.
 
-## Example B — defensive Spearmen
+Release: construction state releases. Strategy reassesses the now-Castle position and opens downstream economic, production, military, and technology demands.
 
-Observation: Information identifies a cavalry threat.
+Interruption: enemy pressure may temporarily raise military demand. Castle intent survives if still strategically valid.
 
-Interpretation: Strategy/Military establishes a defensive requirement.
+## Example B — Defensive Spearmen
 
-Demand: maintain the required minimum Spearman count.
+Observation: current enemy composition contains meaningful cavalry threat.
 
-Capability: appropriate production building, technology/age prerequisites, and resources.
+Interpretation: maintain minimum anti-cavalry floor.
 
-Feasibility: engine-native can-train condition.
+Demand: Military owns a finite standing-defense requirement.
 
-Action: Production queues the unit.
+Capability: Barracks and production resources.
 
-Witness: unit count reaches the requested threshold.
+Feasibility: can-train and queue/pending guards.
 
-Release: minimum-defense production demand is satisfied, while continued threat observation may create a new demand later.
+Action: Production trains.
 
-## Example C — Fletching
+Witness: actual unit count reaches the target.
 
-Demand: technology is strategically/economically admissible.
+Release: the finite production deficit clears. Continued cavalry threat can recreate the demand later.
 
-Capability: Blacksmith and prerequisites.
+## Example C — Economy shortage
 
-Feasibility: engine permits research.
+Observation: chosen strategy is functioning except that wood is preventing farms and required infrastructure.
 
-Action: research request.
+Interpretation: wood is the binding shortage.
 
-Witness: technology is actually researched.
+Demand: Economy does not invent a new strategic plan. It reallocates workers to satisfy the selected strategic demands.
 
-Release: research demand ends and downstream capabilities may change.
+Capability: available lumber infrastructure and workers.
 
-## Example D — adaptive military production
+Feasibility: engine facts permit allocation/action.
 
-Observation → interpretation → military demand → production capability → feasible action → unit witness → threat reassessment.
+Witness: wood pressure falls enough for downstream work to continue.
 
-The important lesson is not the specific unit count. The lesson is the lifecycle and ownership boundary.
+Reassess: if food, gold, stone, or military becomes the new binding shortage, allocation changes.
 
-## Rule for future examples
+## Example D — Interrupted preferred plan
 
-Every example must document owner, demand, capability, feasibility, action, witness, release, conflicts, and blocked/recovery behavior before executable code is written.
+Preferred plan: Castle boom.
+
+Interruption: opponent attacks while Castle prerequisites are being accumulated.
+
+Response: military demand rises and economy reallocates temporarily.
+
+Persistence: Castle demand remains alive.
+
+Recovery: once defense is adequate, Castle resource protection resumes.
+
+Reassessment: if Castle has become strategically obsolete, Strategy cancels it instead of blindly continuing.
+
+## Required evidence
+
+Every future example must document:
+
+owner;
+observation;
+interpretation;
+demand;
+capability;
+feasibility;
+action;
+witness;
+release/invalidation;
+resource interaction;
+interruption;
+recovery;
+reassessment.
