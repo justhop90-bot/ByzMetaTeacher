@@ -17,6 +17,9 @@ class EngineSemanticMappingStatus(str, Enum):
     OPEN = "open"
 
 
+_ENGINE_EVIDENCE_CLASSES = frozenset(
+    {"ENGINE FACT", "COMMUNITY PRACTICE", "COMPILER POLICY", "OPEN / UNKNOWN"}
+)
 @dataclass(frozen=True)
 class EngineSemanticMapping:
     identity: str
@@ -45,10 +48,25 @@ class EngineSemanticMappingRegistry:
         for item in self.mappings:
             if not item.identity:
                 raise ValueError("engine semantic mapping identity must not be empty")
-            if not item.evidence_class:
-                raise ValueError(f"engine semantic mapping '{item.identity}' lacks evidence class")
+            if item.evidence_class not in _ENGINE_EVIDENCE_CLASSES:
+                raise ValueError(
+                    f"engine semantic mapping '{item.identity}' has unsupported "
+                    f"evidence class '{item.evidence_class}'"
+                )
+            if item.status is EngineSemanticMappingStatus.CONTRACTED and item.evidence_class == "OPEN / UNKNOWN":
+                raise ValueError(
+                    f"contracted engine semantic mapping '{item.identity}' "
+                    "cannot use OPEN / UNKNOWN evidence"
+                )
             if not item.evidence_sources:
                 raise ValueError(f"engine semantic mapping '{item.identity}' lacks evidence")
+            for source in item.evidence_sources:
+                if not isinstance(source, str) or not source.startswith(
+                    ("https://", "http://", "repo://", "test://")
+                ):
+                    raise ValueError(
+                        f"engine semantic mapping '{item.identity}' has invalid evidence source"
+                    )
             for field_name in (
                 "state_effects",
                 "lifetime",
