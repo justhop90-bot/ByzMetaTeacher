@@ -149,9 +149,9 @@ class SemanticDemand:
     lifecycle: LifecycleStorage
     requirements: tuple[SemanticRequirement, ...]
     action: SemanticAction
-    action_issuance: ActionIssuance | None = None
     witness: Expression
     release: Expression
+    action_issuance: ActionIssuance | None = None
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
