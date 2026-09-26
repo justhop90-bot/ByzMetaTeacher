@@ -2,9 +2,36 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 from .native_schema import NativeCommandRegistry, load_default_native_schema
+
+
+
+class NativeSupportState(str, Enum):
+    NATIVE_KNOWN = "native-known"
+    NATIVE_TYPED = "native-typed"
+    SEMANTICALLY_ADAPTED = "semantically-adapted"
+    EXECUTABLE_SAFE = "executable-safe"
+    UNSUPPORTED = "unsupported"
+
+
+@dataclass(frozen=True)
+class NativeSupportDiagnostic:
+    command: str
+    state: NativeSupportState
+    code: str
+    severity: str
+    message: str
+
+
+@dataclass(frozen=True)
+class NativeSupportAssessment:
+    command: str
+    state: NativeSupportState
+    message: str
+    diagnostics: tuple[NativeSupportDiagnostic, ...]
 
 
 @dataclass(frozen=True)
@@ -26,6 +53,159 @@ class PrimitiveRegistry:
     ):
         self._items = {p.name: p for p in primitives}
         self._native = native_registry
+
+
+
+    @staticmethod
+    def _native_typed(native) -> bool:
+        if not native.version or native.command_type not in {"Fact", "Action"}:
+            return False
+        if native.parameter_count > 4:
+            return False
+        for parameter in native.parameters:
+            if not parameter.name or not parameter.type or not parameter.direction:
+                return False
+        return True
+
+    @staticmethod
+    def _diagnostic(
+        command: str,
+        state: NativeSupportState,
+        code: str,
+        severity: str,
+        message: str,
+    ) -> NativeSupportDiagnostic:
+        return NativeSupportDiagnostic(
+            command=command,
+            state=state,
+            code=code,
+            severity=severity,
+            message=message,
+        )
+
+    def assess_support(self, name: str) -> NativeSupportAssessment:
+        diagnostics: list[NativeSupportDiagnostic] = []
+        native = self.native(name)
+        if native is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-005",
+                "error",
+                "command is not present in the checked-in native schema",
+            )
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=(diagnostic,),
+            )
+
+        diagnostics.append(
+            self._diagnostic(
+                name,
+                NativeSupportState.NATIVE_KNOWN,
+                "NATIVE-SUPPORT-001",
+                "info",
+                "command is present in the checked-in native schema",
+            )
+        )
+
+        if not self._native_typed(native):
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-005",
+                "error",
+                "native metadata is not typed",
+            )
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
+        diagnostics.append(
+            self._diagnostic(
+                name,
+                NativeSupportState.NATIVE_TYPED,
+                "NATIVE-SUPPORT-002",
+                "info",
+                "native command signature and parameter metadata are structurally typed",
+            )
+        )
+
+        primitive = self.get(name)
+        if primitive is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-005",
+                "error",
+                "native command is known and typed but has no semantic adapter",
+            )
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
+        diagnostics.append(
+            self._diagnostic(
+                name,
+                NativeSupportState.SEMANTICALLY_ADAPTED,
+                "NATIVE-SUPPORT-003",
+                "info",
+                "a semantic adapter is registered for the native command",
+            )
+        )
+
+        try:
+            self.validate_adapter_contract(primitive)
+        except ValueError as exc:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-005",
+                "error",
+                f"semantic adapter is not executable-safe: {exc}",
+            )
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
+        diagnostics.append(
+            self._diagnostic(
+                name,
+                NativeSupportState.EXECUTABLE_SAFE,
+                "NATIVE-SUPPORT-004",
+                "info",
+                "native signature and semantic adapter contract are executable-safe",
+            )
+        )
+        return NativeSupportAssessment(
+            command=name,
+            state=NativeSupportState.EXECUTABLE_SAFE,
+            message="command is executable-safe",
+            diagnostics=tuple(diagnostics),
+        )
+
+    def support_state(self, name: str) -> NativeSupportState:
+        return self.assess_support(name).state
+
+    def support_diagnostics(self, names: tuple[str, ...] | None = None) -> tuple[NativeSupportDiagnostic, ...]:
+        requested = names if names is not None else tuple(sorted(set(self._items) | set(self._native.names() if self._native else ())))
+        assessments = tuple(self.assess_support(name) for name in requested)
+        return tuple(
+            diagnostic
+            for assessment in sorted(assessments, key=lambda item: item.command)
+            for diagnostic in assessment.diagnostics
+        )
 
     def get(self, name: str) -> Primitive | None:
         return self._items.get(name)
