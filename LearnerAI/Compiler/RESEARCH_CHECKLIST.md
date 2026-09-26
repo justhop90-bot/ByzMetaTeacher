@@ -311,3 +311,15 @@ The model deliberately stops at transient action exclusion. Persistent resource 
 - [x] Compiler CI run 275 verified the final tree: native `finding_count=0`; full compiler suite `145 tests, OK`.
 
 Runtime limitation remains explicit: the native action command does not provide a Boolean issuance-return channel. `ISSUED` therefore means the action rule fired; it is not a claim that the game reports successful world-side execution. PENDING remains a separate compiler lifecycle state admitted on the following pass.
+
+
+### Completion-witness implementation record (2026-09-26)
+
+- [x] Add typed `CompletionWitnessContract` and `WitnessEvidenceKind.WORLD_STATE` to semantic IR.
+- [x] Attach explicit witness contracts to `SemanticDemand` without adding source syntax.
+- [x] Add deterministic `WIT-*` diagnostics for missing contract, timing evidence, non-completion-capable observation, action coupling, identity mismatch, order violation, invalid evidence kind, and invalid native primitive.
+- [x] Validate atomic and logical witness expressions recursively.
+- [x] Connect witness validation before action issuance, resource/conflict, capability validation, binding, and emission.
+- [x] Project the typed witness expression into the capability graph without bypassing the contract.
+- [x] Add focused typed-IR, causal-order, timing, action-coupling, non-completion-observation, identity-mismatch, deterministic-validator, and valid-witness regression fixtures.
+- [x] Compiler CI run 298 verified the final witness tree: native `finding_count=0`; full compiler suite `151 tests, OK`.
