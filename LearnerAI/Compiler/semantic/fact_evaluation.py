@@ -2,35 +2,28 @@
 
 from __future__ import annotations
 
-from .fact_values import FactDomain, NormalizedFact, StaticTruth
+from .fact_registry import FactSemanticAdapter
+from .fact_values import NormalizedFact, StaticTruth
 
 
 def evaluate_static_truth(
     fact: NormalizedFact,
-    domain: FactDomain,
+    adapter: FactSemanticAdapter,
 ) -> StaticTruth:
     """
-    Evaluate only truth that is provable from immutable semantic metadata.
+    Evaluate only proposition truth proved by the semantic fact adapter.
 
-    This function never observes engine state. A domain defaults to UNKNOWN;
-    TRUE or FALSE require an explicit invariant proof carried by that domain.
-
-    If the NormalizedFact already carries a domain, its semantic domain identity
-    must match the supplied domain. Provenance is deliberately ignored when
-    checking compatibility.
+    FactDomain metadata is deliberately not consulted for proposition truth.
+    Domains describe legal value spaces; adapters own any compile-time proof
+    that a specific normalized fact is necessarily true, necessarily false, or
+    still runtime-dependent.
     """
     if not isinstance(fact, NormalizedFact):
         raise TypeError("fact must be a NormalizedFact")
-    if not isinstance(domain, FactDomain):
-        raise TypeError("domain must be a FactDomain")
+    if not isinstance(adapter, FactSemanticAdapter):
+        raise TypeError("adapter must be a FactSemanticAdapter")
 
-    if fact.domain is not None and fact.domain.identity != domain.identity:
-        raise ValueError(
-            f"fact domain '{fact.domain.identity}' does not describe fact "
-            f"under supplied domain '{domain.identity}'"
-        )
-
-    return domain.invariant_truth
+    return adapter.evaluate_static_truth(fact)
 
 
 __all__ = ["evaluate_static_truth"]
