@@ -145,12 +145,17 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
-      - name: Upload native validation reports
+      - name: Upload native validation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: native-validation-reports
-          path: /tmp/native-reports
+          name: native-validation-evidence
+          path: |
+            /tmp/native-reports
+            /tmp/Basilisk.per
+            /tmp/basilisk-strategy.per
+            /tmp/basilisk-strategy-runtime.per
+            /tmp/basilisk-invalidation.per
           if-no-files-found: warn
           retention-days: 14
 
@@ -177,10 +182,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Record verification result
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          test_result="${{ needs.test.result }}"
+          replay_result="${{ needs['compare-cross-platform-native-support'].result }}"
+          {
+            echo "## Compiler verification gate"
+            echo ""
+            echo "- Compiler tests + native zero-findings: ${test_result}"
+            echo "- Cross-platform native-support comparison: ${replay_result}"
+            echo "- Native parser: pinned commit 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+            if [ "${test_result}" = "success" ] && [ "${replay_result}" = "success" ]; then
+              echo "- Result: PASSED"
+            else
+              echo "- Result: FAILED"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Enforce required verification jobs
         run: |
-          echo "Compiler tests + native zero-findings: ${{ needs.test.result }}"
-          echo "Cross-platform native-support comparison: ${{ needs['compare-cross-platform-native-support'].result }}"
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Compiler test/native zero-findings job did not pass."
             exit 1
@@ -189,13 +211,3 @@ jobs:
             echo "Cross-platform native-support comparison did not pass."
             exit 1
           fi
-      - name: Record verification result
-        run: |
-          {
-            echo "## Compiler verification gate"
-            echo ""
-            echo "- Compiler tests + native zero-findings: ${{ needs.test.result }}"
-            echo "- Cross-platform native-support comparison: ${{ needs['compare-cross-platform-native-support'].result }}"
-            echo "- Native parser: pinned commit 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-            echo "- Result: PASSED"
-          } >> "${GITHUB_STEP_SUMMARY}"
