@@ -398,3 +398,44 @@ It is StrategyProfile -> StrategicDemand -> CapabilityIntent:
 - [ ] strategic admissibility/invalidation evidence;
 - [ ] deterministic lowering into the existing SemanticDemand/capability pipeline;
 - [ ] first Dark -> Feudal -> Castle Byzantine vertical slice.
+### StrategyProfile / StrategicDemand implementation record (2026-09-26)
+
+- [x] Typed FLUSH/RUSH/BOOM/CASTLE-POWER postures.
+- [x] StrategyProfile bound to exact EffectiveCivData patch and fingerprint.
+- [x] Strategic owner separate from stable demand identity.
+- [x] Persistent strategic evidence distinct from execution feasibility and timing evidence.
+- [x] Exact, standing-floor, current+queued, and bounded-package targets.
+- [x] Opportunity-cost policy with protected floors and emergency-posture metadata.
+- [x] One strategic demand can lower to multiple execution demands.
+- [x] Per-execution capability-intent overrides.
+- [x] Multiple strategic demands can share a factual capability identity without collapsing their strategic identities.
+- [x] Generic land Castle strategy constructor plus Byzantine wrapper.
+- [x] Dark -> Feudal -> Castle vertical slice through the existing lifecycle/capability pipeline.
+- [x] Native CI validates the generated strategy `.per`.
+- [x] Final implementation head verified by CI run 368 (`36238612808`): three native fixtures clean; `190 tests, OK`.
+
+### GameData / CivProfile harsh-audit repairs
+
+- [x] Imperial Age discount modeled as an age-advance cost override.
+- [x] Byzantine building HP modeled as an age-scoped building modifier.
+- [x] Spearman/Pikeman/Halberdier and Camel Rider discounts remain civilization modifiers over unit-line facts.
+- [x] Fire Ship and Dromon current attack-speed bonuses separated from generic unit facts.
+- [x] Current team Monk healing modifier represented as a team-scoped civ bonus.
+- [x] Town Watch and Town Patrol free facts represented separately from ordinary technology costs.
+- [x] Logistica cost and Greek Fire effects represented in the current verified subset.
+- [x] Verified production relationships made explicit for the current subset.
+- [x] Unverified static age-up building prerequisites removed rather than encoded as false facts; native `can-research-with-escrow` remains the runtime authority.
+- [x] Unit-line membership references are now structurally validated.
+
+### Current compiler boundary
+
+The compiler now describes static strategy intent and lowers it into execution semantics. It still lacks live StrategicEvidenceBinding / StrategyRuntimeState: typed native observations, deterministic posture selection, strategic demand activation/invalidation, opportunity-cost override/release, and strategic reassessment.
+
+### Data-layer open work
+
+- [ ] Complete 145-node Byzantine manifest ingestion.
+- [ ] Complete verified research cost/time/effect ingestion.
+- [ ] Independently verify/promote current-patch Varangian Guard numeric IDs.
+- [ ] Expand NativeEngineProfile to the complete checked-in AIRef command/parameter inventory.
+- [ ] Implement replayable historical patch overlays rather than explicit snapshot matching.
+- [ ] Add broader factual cross-civilization datasets.

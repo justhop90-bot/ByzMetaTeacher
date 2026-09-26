@@ -312,4 +312,26 @@ The compiler now has a typed factual layer beneath strategy:
 
 The current Byzantine fixture is anchored to the repository manifest and Update 185872. It intentionally does not invent unverified current-patch Varangian numeric unit IDs or missing research-cost data. This is a verified factual subset, not yet the complete 145-node Byzantine database.
 
-The next semantic layer is `StrategyProfile`: strategic posture and persistent intent must consume `EffectiveCivData` and lower into the existing demand/capability lifecycle rather than bypassing it.
+The StrategyProfile layer is implemented. It consumes EffectiveCivData, preserves strategic owner/intent separately from execution state, supports one-to-many execution mappings, carries opportunity-cost policy and strategic evidence, lowers through the existing demand/capability pipeline, and is native-validated in CI. The next missing layer is live strategic evidence/posture binding.
+## StrategyProfile / StrategicDemand layer
+
+Implemented:
+
+- typed FLUSH/RUSH/BOOM/CASTLE-POWER postures;
+- exact EffectiveCivData patch/fingerprint binding;
+- strategic owner distinct from stable demand identity;
+- persistent/admissibility/execution/timing evidence classes;
+- exact, standing-floor, current+queued, and bounded-package targets;
+- opportunity-cost policy with protected floors and emergency posture metadata;
+- one-to-many execution-demand mapping with stable local IDs;
+- per-execution capability-intent overrides;
+- shared factual capability identities for strategy-bound demands;
+- generic land Castle strategy constructor with Byzantine wrapper;
+- Dark -> Feudal -> Castle strategy fixture through the existing lifecycle/capability compiler;
+- native CI validation of the generated strategy `.per`.
+
+Verification: CI run 368 (`36238612808`) reported `finding_count=0` for the generated Basilisk, strategy, and invalidation fixtures and `190 tests, OK`.
+
+### Current strategy boundary
+
+StrategyProfile describes strategic intent and static admissibility, but it does not yet evaluate live strategic observations into changing posture, demand activation, strategic invalidation, opportunity-cost override/release, and reassessment. That is the next compiler layer.

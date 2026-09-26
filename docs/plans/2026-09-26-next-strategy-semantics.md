@@ -99,3 +99,17 @@ Add deterministic fingerprint tests and at least one non-Byzantine fixture to pr
 The layer is complete only when the compiler can explain why a Castle demand exists, which factual capability satisfies it, what blocks execution, which strategic resource policy protects it, and what world-state observation releases it, while preserving the distinction between strategic intent, capability, feasibility, execution state, and world-state truth.
 
 Do not modify Basilisk gameplay rules merely to make the compiler architecture look useful.
+
+## Implementation result
+
+This planned layer is implemented on main.
+
+The compiler now has StrategyProfile, StrategicDemandSpec, typed strategic evidence, opportunity-cost policy, one-to-many execution mapping, shared factual capability identity, and a native-validated Dark -> Feudal -> Castle fixture.
+
+Final verification for the implementation head:
+- CI run 368: generated Basilisk fixture finding_count=0.
+- CI run 368: strategy fixture finding_count=0.
+- CI run 368: invalidation fixture finding_count=0.
+- CI run 368: 190 compiler tests passed.
+
+The next missing layer is not another static strategy type. It is StrategicEvidenceBinding / StrategyRuntimeState, which must evaluate live native observations into posture selection, strategic demand activation/invalidation, opportunity-cost override/release, and reassessment without duplicating the execution lifecycle.
