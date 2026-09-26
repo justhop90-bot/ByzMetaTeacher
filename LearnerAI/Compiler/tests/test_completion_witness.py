@@ -36,12 +36,12 @@ class CompletionWitnessTests(unittest.TestCase):
         self.assertEqual(witness.evidence_kind, WitnessEvidenceKind.WORLD_STATE)
         self.assertEqual(witness.establishes.local_name, "castle")
         self.assertEqual(witness.primitive, "building-type-count")
-        self.assertEqual(witness.source_order, 2)
+        self.assertEqual(witness.source_order, 3)
 
     def test_witness_validation_rejects_timing_deterministically(self):
         with self.assertRaisesRegex(
             CompileError,
-            r"TIMING-CANNOT-WITNESS: demand castle cannot use timing as completion witness",
+            r"WIT-002: completion witness for demand 'castle' contains timing evidence",
         ):
             compile_source(
                 """
