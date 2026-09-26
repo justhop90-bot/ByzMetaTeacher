@@ -131,7 +131,7 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
         EnginePractice(
             "state.goal.persistent",
             "persistent-state",
-            "Goal values survive rule passes; later writes replace the stored value.",
+            "Goal state persists across rule passes; subsequent Goal-mutating actions change the stored value according to their native command semantics.",
             EvidenceClass.ENGINE_FACT,
             PracticeStatus.CONTRACTED,
             (limits, scripting, aoe2ai),
@@ -161,12 +161,12 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
         EnginePractice(
             "rules.recurrent-pass-order",
             "rule-order",
-            "Rules are evaluated repeatedly; separate rules form pass boundaries while actions within one rule remain sequential.",
+            "Rules are evaluated recurrently; emitted rule order is a source-order dependency, while guards, disable-self, and native action behavior determine whether a rule actually fires.",
             EvidenceClass.ENGINE_FACT,
             PracticeStatus.CONTRACTED,
             (scripting, airef),
             "Record emitted rule order and within-rule order separately; do not invent an asynchronous boundary inside one rule.",
-            "A later rule sees engine-backed state produced by an earlier rule/pass, subject to native execution timing.",
+            "A later eligible rule can observe engine-backed state established by an earlier firing rule; source order alone never guarantees that the earlier rule fired.",
         ),
         EnginePractice(
             "actions.request-not-completion",
