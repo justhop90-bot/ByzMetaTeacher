@@ -46,6 +46,29 @@ class NativeMetadataTests(unittest.TestCase):
             profile.goal_range = (1, 10)
 
 
+class NativeFactRegistryIntegrationTests(unittest.TestCase):
+    def test_default_registry_exposes_deterministic_native_fact_registry(self):
+        registry = default_de_registry()
+        facts = registry.fact_registry
+
+        self.assertEqual(
+            facts.names()[:4],
+            (
+                "building-available",
+                "building-type-count",
+                "building-type-count-total",
+                "can-afford-building",
+            ),
+        )
+        current_age = facts.require("current-age")
+        self.assertEqual(current_age.native_command, "current-age")
+        self.assertEqual(current_age.semantic_id, "observation.age.current")
+        self.assertEqual(current_age.arity, 2)
+        self.assertEqual(current_age.parameter_contexts[0].parameter_name, "compareOp")
+        self.assertEqual(current_age.parameter_contexts[1].parameter_name, "Age")
+        self.assertIs(registry.fact_registry, registry.fact_registry)
+
+
 class NativeSupportStateTests(unittest.TestCase):
     def test_checked_in_airef_operator_placeholder_is_typed(self):
         assessment = default_de_registry().assess_support("current-age")
