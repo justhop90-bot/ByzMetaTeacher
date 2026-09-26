@@ -54,6 +54,115 @@ def provenance(
 
 class NativeHygieneTests(unittest.TestCase):
 
+    def test_citation_catalog_audit_detects_unused_record(self):
+        records = (
+            CitationRecord(
+                "ai:used",
+                "https://example.test/source#used",
+                "https://example.test/source#used",
+                LocatorType.COMMAND,
+                "used",
+                excerpt=SourceExcerpt.capture("used", ExcerptKind.FACT),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "ai:unused",
+                "https://example.test/source#unused",
+                "https://example.test/source#unused",
+                LocatorType.COMMAND,
+                "unused",
+                excerpt=SourceExcerpt.capture("unused", ExcerptKind.FACT),
+                state=CitationState.VERIFIED,
+            ),
+        )
+        audit = CitationRecordCatalog(records).audit(("ai:used",))
+        self.assertEqual(audit.unused, ("ai:unused",))
+
+    def test_citation_catalog_audit_detects_duplicate_location(self):
+        records = (
+            CitationRecord(
+                "ai:first",
+                "https://example.test/source#same",
+                "https://example.test/source#same",
+                LocatorType.COMMAND,
+                "same",
+                excerpt=SourceExcerpt.capture("same", ExcerptKind.FACT),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "ai:second",
+                "https://example.test/source#same",
+                "https://example.test/source#same",
+                LocatorType.COMMAND,
+                "same",
+                excerpt=SourceExcerpt.capture("same", ExcerptKind.FACT),
+                state=CitationState.VERIFIED,
+            ),
+        )
+        audit = CitationRecordCatalog(records).audit(("ai:first", "ai:second"))
+        self.assertEqual(audit.duplicates, (("ai:first", "ai:second"),))
+
+    def test_citation_catalog_audit_detects_stale_record(self):
+        record = CitationRecord(
+            "ai:stale",
+            "https://example.test/source#stale",
+            "https://example.test/source#stale",
+            LocatorType.COMMAND,
+            "stale",
+            excerpt=SourceExcerpt.capture("stale", ExcerptKind.FACT),
+            state=CitationState.REVIEW_REQUIRED,
+        )
+        audit = CitationRecordCatalog((record,)).audit(("ai:stale",))
+        self.assertEqual(audit.stale, ("ai:stale",))
+
+    def test_citation_catalog_audit_detects_weak_command_locator(self):
+        record = CitationRecord(
+            "ai:weak",
+            "https://example.test/source",
+            "https://example.test/source",
+            LocatorType.COMMAND,
+            "weak-command",
+            excerpt=SourceExcerpt.capture("weak command", ExcerptKind.FACT),
+            state=CitationState.VERIFIED,
+        )
+        audit = CitationRecordCatalog((record,)).audit(("ai:weak",))
+        self.assertEqual(audit.weak, ("ai:weak",))
+
+    def test_current_default_catalog_has_no_unused_duplicate_stale_or_weak_entries(self):
+        from Compiler.primitives.registry import default_native_contract_catalog
+
+        citations = default_native_citation_catalog()
+        contracts = default_native_contract_catalog()
+        audit = citations.audit(contracts.citation_ids())
+        self.assertTrue(audit.clean, audit)
+
+    def test_building_type_count_citation_is_source_specific(self):
+        record = default_native_citation_catalog().resolve("airef:building-type-count")
+        self.assertEqual(
+            record.final_url,
+            "https://airef.github.io/commands/commands-details.html#building-type-count",
+        )
+
+    def test_unit_type_count_citation_is_source_specific(self):
+        record = default_native_citation_catalog().resolve("airef:unit-type-count")
+        self.assertEqual(
+            record.final_url,
+            "https://airef.github.io/commands/commands-details.html#unit-type-count",
+        )
+
+    def test_research_completed_citation_is_source_specific(self):
+        record = default_native_citation_catalog().resolve("airef:research-completed")
+        self.assertEqual(
+            record.final_url,
+            "https://airef.github.io/commands/commands-details.html#research-completed",
+        )
+
+    def test_goal_storage_citation_uses_exact_table_entry(self):
+        record = default_native_citation_catalog().resolve("airef:goal-storage")
+        self.assertIs(record.locator_type, LocatorType.TABLE_ENTRY)
+        self.assertEqual(record.locator, "Goals: 1 to 16,000")
+
+
     def test_citation_catalog_resolves_native_provenance(self):
         citation = CitationRecord(
             "ai:test-resolved",
