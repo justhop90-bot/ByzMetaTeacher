@@ -110,7 +110,7 @@ def validate_action_issuance(
                     IssuanceStatus.BLOCKED,
                     f"demand '{demand.name}' has no action issuance contract",
                     demand.identity,
-                    location=issuance.location or demand.action.location or demand.location,
+                    location=demand.location,
                 )
             )
             continue
