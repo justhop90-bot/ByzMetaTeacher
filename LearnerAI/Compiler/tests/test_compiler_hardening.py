@@ -231,7 +231,7 @@ class EmitterBudgetAndArbitrationTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            r"CAP-041: provider 'castle-provider' has no native feasibility predicate",
+            r"ISS-002: action issuance for demand 'castle' has no native feasibility guard",
         ):
             compile_source(source)
 
