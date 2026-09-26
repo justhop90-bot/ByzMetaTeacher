@@ -309,8 +309,8 @@ def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticM
 
 def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
     witness = {
-        "build": "building-type-count-total",
-        "train": "unit-type-count-total",
+        "build": "building-type-count",
+        "train": "unit-type-count",
         "research": "research-completed",
     }[command]
     return EngineSemanticMapping(
