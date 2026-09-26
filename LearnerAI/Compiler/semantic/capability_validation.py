@@ -422,22 +422,23 @@ class ProviderContractValidationPass:
                                 location=provider.action.location or provider.location,
                             )
                         )
-                    try:
-                        registry.validate_native_signature(
-                            provider.action.primitive,
-                            len(provider.action.arguments),
-                        )
-                        registry.validate_adapter_contract(primitive)
-                    except (KeyError, ValueError) as exc:
-                        diagnostics.append(
-                            _diag(
-                                CapabilityDiagnosticCode.ACTION_NOT_NATIVE,
-                                f"provider '{provider.identity.local_name}': {exc}",
-                                node=provider.identity,
-                                status=GraphStatus.DEAD_END,
-                                location=provider.action.location or provider.location,
+                    else:
+                        try:
+                            registry.validate_native_signature(
+                                provider.action.primitive,
+                                len(provider.action.arguments),
                             )
-                        )
+                            registry.validate_adapter_contract(primitive)
+                        except (KeyError, ValueError) as exc:
+                            diagnostics.append(
+                                _diag(
+                                    CapabilityDiagnosticCode.ACTION_NOT_NATIVE,
+                                    f"provider '{provider.identity.local_name}': {exc}",
+                                    node=provider.identity,
+                                    status=GraphStatus.DEAD_END,
+                                    location=provider.action.location or provider.location,
+                                )
+                            )
 
                 if provider.action.conflict_class and not provider.action.arbitration:
                     diagnostics.append(
