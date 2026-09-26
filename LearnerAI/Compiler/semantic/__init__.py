@@ -77,3 +77,16 @@ from .source_order import (
     analyze_non_lifecycle_source_order,
     validate_non_lifecycle_source_order,
 )
+
+
+from .community_engine import (
+    CapabilityTransition,
+    CommunityEngineSemanticsRegistry,
+    EngineLifecycleContract,
+    EnginePractice,
+    EvidenceClass,
+    PracticeStatus,
+    capability_loss_preserves_demand,
+    classify_capability_transition,
+    default_community_engine_registry,
+)
