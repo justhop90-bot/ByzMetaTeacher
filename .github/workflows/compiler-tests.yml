@@ -2,6 +2,8 @@ name: Compiler tests
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
