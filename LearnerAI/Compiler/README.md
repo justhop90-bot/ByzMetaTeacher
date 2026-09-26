@@ -77,6 +77,8 @@ AoE2 goal values update immediately, so this source order prevents an already-tr
 
 The compiler has regression coverage for the rule ordering and the three-pass state sequence.
 
+The action rule also requires both the completion witness and release predicate to be false before entering pending. This stale-fact barrier prevents a predicate that was already true before the action from being reused as post-action completion or release evidence. It does not claim engine timestamps or universal observation freshness; it establishes the strongest causal guard available at the compiler layer.
+
 Examples already implemented:
 
 - Castle construction;
