@@ -308,6 +308,6 @@ The model deliberately stops at transient action exclusion. Persistent resource 
 - [x] Validate native feasibility recursively through nested logical requirement expressions.
 - [x] Add deterministic `ISS-*` diagnostics and compile-gate precedence before resource/capability validation.
 - [x] Update lifecycle/ownership regressions and generated Basilisk fixture for the four-stage lifecycle.
-- [x] Compiler CI run 270 verified the final tree: native `finding_count=0`; full compiler suite `144 tests, OK`.
+- [x] Compiler CI run 275 verified the final tree: native `finding_count=0`; full compiler suite `145 tests, OK`.
 
 Runtime limitation remains explicit: the native action command does not provide a Boolean issuance-return channel. `ISSUED` therefore means the action rule fired; it is not a claim that the game reports successful world-side execution. PENDING remains a separate compiler lifecycle state admitted on the following pass.
