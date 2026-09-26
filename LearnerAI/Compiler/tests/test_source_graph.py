@@ -273,7 +273,7 @@ class SourceGraphTests(unittest.TestCase):
             (("TEST", LoadSymbolState.DEFINED),),
         )
         load_edges = [item for item in graph.edges if item.target_path is not None]
-        self.assertEqual(load_edges[0].kind, LoadKind.RAW_LOAD)
+        self.assertEqual(load_edges[0].kind, LoadKind.FILE)
         self.assertEqual(
             load_edges[0].condition_kind,
             LoadKind.CONDITIONAL_DEFINED,
