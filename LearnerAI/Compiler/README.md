@@ -77,6 +77,35 @@ AoE2 logical operators are not arbitrary variadic functions. and, or, nand, nor,
 
 The compiler currently permits nested logical expressions but keeps ordinary primitive arguments atomic. It rejects rule separators, unknown primitives, invalid contexts, and incorrect argument counts.
 
+## Combined validation report
+
+When native validation is enabled, the compiler exposes one authoritative report containing the semantic state, native state, and normalized diagnostics.
+
+Diagnostic ordering is deterministic:
+
+    LearnerAI diagnostics first
+        -> path
+        -> line
+        -> column
+        -> severity
+        -> diagnostic code
+        -> message
+        -> stable diagnostic id
+
+Native diagnostics retain their native code, severity, confidence, suggestion, references, and source location.
+
+Semantic compiler failures use the code emitted by the existing semantic error when it has an explicit uppercase diagnostic prefix such as PENDING-WITNESS-MISSING. Otherwise they use SEMANTIC-COMPILE-ERROR. The compiler does not invent source coordinates that the semantic layer does not currently know.
+
+Validation exit states are:
+
+    0 = SEMANTIC_VALIDATED or VALIDATED
+    1 = SEMANTIC_REJECTED or NATIVE_REJECTED
+    2 = BACKEND_FAILURE
+
+A semantic rejection never invokes the native backend. A native backend failure is not treated as a .per rejection. Existing output is promoted only after native VALIDATED status.
+
+--native-json prints the complete combined report rather than a native-only payload.
+
 ## Native validation
 
 The compiler now has a native validation boundary after deterministic .per emission:
