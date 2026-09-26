@@ -4247,3 +4247,166 @@ The important Basilisk rule is that a temporary resource shortage should normall
 - Stale escrow must not permanently starve unrelated valid demands.
 - Completion must still be proved by world state.
 - The smallest community-standard resource-control mechanism that correctly expresses the policy is preferable to a universal resource manager.
+---
+
+## 34. Rule order, same-pass visibility, and source-order hazards
+
+`.per` rules are evaluated by an engine, not by a magical intent interpreter. Source order, rule eligibility, action timing, and the engine's pass behavior can therefore change what a later rule observes. This is one of the most important primitive-level lessons because a logically correct rule can still behave incorrectly when its producer and consumer are ordered badly.
+
+### 34.1 Community pattern
+
+Community scripts commonly use ordered rules to form small pipelines:
+
+    OBSERVE → SET / MODIFY STATE → CONSUME STATE → REQUEST ACTION → LATER WITNESS
+
+The learner should trace these as actual source-order relationships rather than assuming that every action immediately rewrites every fact everywhere in the same evaluation pass.
+
+### 34.2 Writer before reader
+
+When one rule establishes a goal, strategic number, or other script-visible state and another rule consumes it, identify the writer and reader explicitly.
+
+    Rule A: condition → (set-goal GOAL-X 1)
+    Rule B: (goal GOAL-X 1) → action
+
+The important questions are:
+
+- Is Rule A earlier or later than Rule B?
+- Does the engine expose the changed value to Rule B in the same pass?
+- If not, what does Rule B see until the next evaluation cycle?
+- Can another rule fire before the consumer?
+
+Do not infer same-pass visibility from source-code appearance alone. Verify the target engine behavior when the distinction affects correctness.
+
+### 34.3 Action is not immediate world-state proof
+
+The same rule-order problem appears with engine actions.
+
+    (build castle)
+    ↓
+    building-type-count castle
+
+The build request does not mean that the completed-building witness becomes true immediately. Construction can enter pending or foundation state first and complete later.
+
+Likewise:
+
+    (train knight-line)
+    ↓
+    unit-type-count-total knight-line
+
+and:
+
+    (research ri-example-tech)
+    ↓
+    (research-completed ri-example-tech)
+
+must be treated as execution followed by later observable state, not as an instantaneous variable assignment.
+
+### 34.4 Same-pass hazards
+
+Several common hazards deserve explicit tracing.
+
+#### Writer/reader hazard
+
+A state-setting rule fires after the rule that consumes that state. The consumer waits for a later pass, or another rule path fires first.
+
+#### Action/witness hazard
+
+A rule assumes that an action has already changed the world when the engine has only accepted or queued the request.
+
+#### Release/re-entry hazard
+
+A completion or cancellation rule changes demand state while another rule in the same evaluation cycle can still observe the previous state, potentially issuing another request.
+
+#### Competing-writer hazard
+
+Two rules write the same goal or strategic number with overlapping predicates. Source order can determine which policy wins or whether later rules override earlier intent.
+
+#### Capability/feasibility hazard
+
+A rule sees a capability fact and immediately acts even though the engine's actual `can-*` feasibility condition is false.
+
+These are not abstract software-theory problems. They are ordinary `.per` debugging problems.
+
+### 34.5 Minimal trace method
+
+For any stateful behavior, write a short ordered trace:
+
+    PASS N
+        Rule 100: establishes demand
+        Rule 110: checks feasibility
+        Rule 120: requests action
+        Rule 130: checks completion
+
+Then record which facts are true before and after each relevant action, and which changes are only visible on a later pass.
+
+The learner should identify:
+
+    FIRST WRITER
+    FIRST CONSUMER
+    FIRST ACTION
+    FIRST WITNESS
+    FIRST RELEASE
+
+This exposes dead-end state, stale reads, duplicate actions, and release races quickly.
+
+### 34.6 Common failure
+
+#### Assuming procedural execution
+
+Writing `.per` as though it were ordinary top-to-bottom imperative code leads to false assumptions about when actions take effect.
+
+#### Assuming all rules see the same state
+
+Two rules in one pass may not have the same effective observation after an action or state mutation. The exact engine behavior must be established rather than guessed.
+
+#### Fixing order by duplication
+
+When a consumer misses a state transition, adding another copy of the same action later in the file often hides the actual producer/consumer defect instead of fixing it.
+
+#### Competing writers without ownership
+
+If several modules can write the same strategic number or goal, the final value becomes an accidental consequence of rule order.
+
+### 34.7 Basilisk-scale variant
+
+Basilisk should treat source order as an execution concern, not as a substitute for architecture:
+
+    STRATEGY
+        establishes persistent demand
+            ↓
+    ECONOMY / DOMAIN
+        establishes resource or capability posture
+            ↓
+    FEASIBILITY
+        evaluates current engine permission
+            ↓
+    ACTION
+        requests execution
+            ↓
+    WORLD STATE
+        changes when the engine actually changes it
+            ↓
+    WITNESS
+        observes the changed world
+            ↓
+    RELEASE / REASSESS
+
+Rule order should make this chain traceable. It should not be used to manufacture hidden state transitions that the learner cannot explain.
+
+Where same-pass behavior is relied upon, document and verify it. Where a later-pass witness is required, preserve the demand until that witness appears.
+
+The Basilisk invariant is:
+
+**Source order can control when rules get an opportunity to act, but it must never replace the semantic distinction between demand, feasibility, action, pending state, witness, and release.**
+
+### 34.8 Hard invariants
+
+- First writer and first consumer of important state must be traceable.
+- Source order must not be treated as proof that an action completed.
+- Action and world-state witness remain separate even when the engine appears to react quickly.
+- Persistent demand must survive until its actual completion or release condition is true.
+- Competing writers require explicit semantic ownership.
+- Same-pass assumptions must be verified against the target engine rather than inferred.
+- A later rule cannot repair an incorrect witness by merely appearing later in the file.
+- Rule order is an execution mechanism, not a general-purpose state machine.
+- The smallest source-order dependency that correctly expresses the community behavior is preferable to hidden scheduler-like machinery.
