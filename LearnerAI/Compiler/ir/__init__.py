@@ -20,6 +20,8 @@ from .capability import (
     WitnessKind,
 )
 from .model import (
+    AccessKind,
+    DemandOwnership,
     GoalRole,
     GoalSpanKind,
     GoalSpanRequest,
@@ -28,6 +30,8 @@ from .model import (
     LifecycleStorage,
     PendingDiagnostic,
     SemanticAction,
+    LifecycleAccessPhase,
+    StateAccess,
     SemanticDemand,
     SemanticId,
     SemanticRequirement,
