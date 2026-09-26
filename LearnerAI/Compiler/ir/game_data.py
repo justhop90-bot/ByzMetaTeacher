@@ -313,6 +313,8 @@ class UnitDef:
     classes: tuple[str, ...] = ()
     validity: Validity | None = None
     provenance: tuple[EvidenceRef, ...] = ()
+    engine_classes: tuple[EngineUnitClass, ...] = ()
+    effects: tuple[UnitEffect, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -322,6 +324,8 @@ class AgeAdvanceDef:
     provider_building: BuildingId
     base_cost: ResourceCost | None
     research_time_seconds: int | None
+    from_age: Age | None = None
+    native_tech_id: TechId | None = None
     prerequisites: tuple[Prerequisite, ...] = ()
     validity: Validity | None = None
     provenance: tuple[EvidenceRef, ...] = ()
@@ -352,8 +356,10 @@ class GameData:
     unit_lines: tuple[UnitLineDef, ...]
     technologies: tuple[TechnologyDef, ...]
     age_advances: tuple[AgeAdvanceDef, ...]
+    upgrade_relations: tuple[UpgradeRelation, ...] = ()
     patch_changes: tuple[PatchChange, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
+    coverage: FactualCoverage = FactualCoverage(CoverageStatus.UNKNOWN)
 
     def building(self, building_id: int) -> BuildingDef:
         return _lookup(self.buildings, BuildingId(building_id), "building")
