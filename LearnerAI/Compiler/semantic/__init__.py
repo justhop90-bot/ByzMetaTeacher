@@ -43,3 +43,11 @@ from .action_issuance import (
     IssuanceValidationReport,
     validate_action_issuance,
 )
+
+from .completion_witness import (
+    WitnessDiagnostic,
+    WitnessDiagnosticCode,
+    WitnessStatus,
+    WitnessValidationReport,
+    validate_completion_witnesses,
+)
