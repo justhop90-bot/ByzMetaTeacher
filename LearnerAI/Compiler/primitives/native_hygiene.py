@@ -384,6 +384,39 @@ class NativeStorageUse:
     symbolic: bool = False
     provenance: Tuple[AIRefProvenance, ...] = ()
 
+
+    def validate_binding_shape(
+        self,
+        *,
+        binding_kind: str,
+        start: int,
+        end: int,
+    ) -> None:
+        expected = {
+            (NativeStorageClass.PERSISTENT_SCALAR, NativeStorageKind.GOAL): "GOAL_SLOT",
+            (NativeStorageClass.PERSISTENT_SCALAR, NativeStorageKind.STRATEGIC_NUMBER): "STRATEGIC_NUMBER",
+            (NativeStorageClass.PERSISTENT_SCALAR, NativeStorageKind.TIMER): "TIMER",
+            (NativeStorageClass.GOAL_SPAN, NativeStorageKind.POINT_GOAL_SPAN): "GOAL_SPAN",
+            (NativeStorageClass.GOAL_SPAN, NativeStorageKind.COST_DATA_GOAL_SPAN): "GOAL_SPAN",
+            (NativeStorageClass.GOAL_SPAN, NativeStorageKind.SEARCH_STATE_GOAL_SPAN): "GOAL_SPAN",
+            (NativeStorageClass.GOAL_SPAN, NativeStorageKind.GUARD_STATE_GOAL_SPAN): "GOAL_SPAN",
+            (NativeStorageClass.ENGINE_MANAGED_LIST, NativeStorageKind.DUC_LOCAL_LIST): "DUC_LOCAL_LIST",
+            (NativeStorageClass.ENGINE_MANAGED_LIST, NativeStorageKind.DUC_REMOTE_LIST): "DUC_REMOTE_LIST",
+            (NativeStorageClass.ENGINE_MANAGED_GROUP, NativeStorageKind.DUC_GROUP): "DUC_GROUP",
+            (NativeStorageClass.ENGINE_MANAGED_STATE, NativeStorageKind.FLAG): "ENGINE_MANAGED_STATE",
+            (NativeStorageClass.ENGINE_MANAGED_STATE, NativeStorageKind.ESCROW): "ENGINE_MANAGED_STATE",
+        }.get((self.storage_class, self.kind))
+        if binding_kind != expected:
+            raise ValueError(
+                f"native storage use '{self.identity}' requires {expected}, got {binding_kind}"
+            )
+        if start > end:
+            raise ValueError("native storage binding start must not exceed end")
+        if self.base is not None and start != self.base:
+            raise ValueError(f"native storage use '{self.identity}' requires start {self.base}, got {start}")
+        if self.storage_class is NativeStorageClass.GOAL_SPAN:
+            if end - start + 1 != self.span_length:
+                raise ValueError(f"native storage use '{self.identity}' requires width {self.span_length}, got {end - start + 1}")
     def __post_init__(self) -> None:
         if not self.identity or not self.provenance:
             raise ValueError("storage identity and provenance are required")
@@ -447,6 +480,60 @@ class PassExecutionConstraint:
             raise ValueError("bounded pass constraints require failure mode")
         if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
             raise ValueError("hard pass constraints require documented native facts")
+
+
+@dataclass(frozen=True)
+class NativeContractCatalog:
+    witnesses: Tuple[NativeWitness, ...] = ()
+    storage_uses: Tuple[NativeStorageUse, ...] = ()
+    pass_constraints: Tuple[PassExecutionConstraint, ...] = ()
+
+    def __post_init__(self) -> None:
+        for values, label in (
+            (self.witnesses, "native witness"),
+            (self.storage_uses, "native storage use"),
+            (self.pass_constraints, "pass execution constraint"),
+        ):
+            identities = [item.identity for item in values]
+            if len(identities) != len(set(identities)):
+                raise ValueError(f"duplicate {label} identity")
+        purposes = [
+            item.request_purpose
+            for item in self.storage_uses
+            if item.request_purpose is not None
+        ]
+        if len(purposes) != len(set(purposes)):
+            raise ValueError("duplicate native storage request purpose")
+        commands = [item.command for item in self.pass_constraints]
+        if len(commands) != len(set(commands)):
+            raise ValueError("duplicate native pass constraint command")
+
+    def witness(self, identity: str) -> NativeWitness:
+        for item in self.witnesses:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def storage(self, identity: str) -> NativeStorageUse:
+        for item in self.storage_uses:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def storage_for_purpose(self, purpose: str) -> NativeStorageUse:
+        for item in self.storage_uses:
+            if item.request_purpose == purpose:
+                return item
+        raise KeyError(purpose)
+
+    def pass_constraint(self, identity: str) -> PassExecutionConstraint:
+        for item in self.pass_constraints:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def pass_constraints_for(self, command: str) -> Tuple[PassExecutionConstraint, ...]:
+        return tuple(item for item in self.pass_constraints if item.command == command)
 
 
 @dataclass(frozen=True)
