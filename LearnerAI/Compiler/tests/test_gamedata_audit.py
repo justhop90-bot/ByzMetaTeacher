@@ -112,6 +112,22 @@ if __name__ == "__main__":
         self.assertEqual(len(greek_fire.effects), 3)
 
 
+
+    def test_logistica_trample_target_is_verified_cataphract_line(self):
+        interaction = next(
+            item for item in self.profile.interactions
+            if item.id == "logistica-trample-cataphract"
+        )
+        self.assertEqual(
+            interaction.target,
+            EntitySelector.unit_line(UnitLineId("cataphract-line")),
+        )
+        self.assertNotIn(
+            "VARANGIAN_OR_CATAPHRACT",
+            interaction.target.tags,
+        )
+
+
     def test_provider_graph_has_verified_production_relationships(self):
         self.assertIn(
             UnitLineId("skirmisher-line"),
@@ -133,3 +149,6 @@ if __name__ == "__main__":
     def test_age_advances_do_not_claim_unverified_static_building_prerequisites(self):
         for age in (Age.FEUDAL, Age.CASTLE, Age.IMPERIAL):
             self.assertEqual(self.data.age_advance(age).prerequisites, ())
+
+if __name__ == "__main__":
+    unittest.main()

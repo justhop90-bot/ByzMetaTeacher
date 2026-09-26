@@ -351,9 +351,9 @@ class ByzantineProfile:
             ),
             interactions=(
                 CivInteraction(
-                    "logistica-trample-expansion",
+                    "logistica-trample-cataphract",
                     EntitySelector.tech(TechId(61)),
-                    EntitySelector.unit_class("VARANGIAN_OR_CATAPHRACT"),
+                    EntitySelector.unit_line(UnitLineId("cataphract-line")),
                     CivInteractionKind.TRAMPLE_DAMAGE,
                     provenance=(official,),
                 ),
