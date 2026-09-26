@@ -63,6 +63,15 @@ class GameDataTests(unittest.TestCase):
                 )
             )
 
+    def test_verified_unavailable_facts_are_part_of_snapshot_identity(self):
+        profile = ByzantineProfile.for_update_185872()
+        first = resolve_effective_civ(profile)
+        self.assertTrue(profile.availability)
+        altered = resolve_effective_civ(
+            replace(profile, availability=profile.availability[:-1])
+        )
+        self.assertNotEqual(first.fingerprint, altered.fingerprint)
+
     def test_strategy_semantics_are_not_available_in_game_data(self):
         unit = UnitDef(
             id=358,
