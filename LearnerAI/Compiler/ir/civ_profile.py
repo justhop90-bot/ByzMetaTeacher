@@ -604,6 +604,9 @@ def _unit(
     upgrades_from: int | None = None,
     upgrades_to: int | None = None,
     validity: Validity | None = None,
+    engine_classes: tuple[EngineUnitClass, ...] = (),
+    effects: tuple[UnitEffect, ...] = (),
+    provenance: tuple[EvidenceRef, ...] = (),
 ) -> UnitDef:
     return UnitDef(
         id=UnitId(unit_id),
@@ -617,6 +620,9 @@ def _unit(
         upgrades_to=UnitId(upgrades_to) if upgrades_to is not None else None,
         classes=classes,
         validity=validity,
+        provenance=provenance,
+        engine_classes=engine_classes,
+        effects=effects,
     )
 
 def _byzantine_game_data(
@@ -636,7 +642,11 @@ def _byzantine_game_data(
                 UnitLineId("spearman-line"),
                 UnitLineId("varangian-guard-line"),
             ),
-            researchable_technologies=(TechId(1454),),
+            researchable_technologies=(
+                TechId(222), TechId(207), TechId(217), TechId(264),
+                TechId(197), TechId(429), TechId(602), TechId(875),
+                TechId(215), TechId(1454),
+            ),
         ),
         BuildingDef(
             BuildingId(49),
@@ -650,6 +660,7 @@ def _byzantine_game_data(
                 UnitLineId("siege-tower-line"),
                 UnitLineId("bombard-cannon-line"),
             ),
+            researchable_technologies=(TechId(96), TechId(255), TechId(257), TechId(239)),
         ),
         BuildingDef(
             BuildingId(45),
@@ -661,6 +672,7 @@ def _byzantine_game_data(
                 UnitLineId("fire-ship-line"),
                 UnitLineId("dromon-line"),
             ),
+            researchable_technologies=(TechId(906), TechId(65), TechId(34), TechId(35)),
         ),
         BuildingDef(BuildingId(50), "Farm", Age.DARK, ResourceCost(wood=60)),
         BuildingDef(BuildingId(68), "Mill", Age.DARK, ResourceCost(wood=50)),
@@ -677,7 +689,7 @@ def _byzantine_game_data(
                 UnitLineId("petard-line"),
                 UnitLineId("trebuchet-line"),
             ),
-            researchable_technologies=(TechId(61), TechId(464)),
+            researchable_technologies=(TechId(361), TechId(61), TechId(464)),
         ),
         BuildingDef(BuildingId(84), "Market", Age.FEUDAL, ResourceCost(wood=175)),
         BuildingDef(
@@ -692,6 +704,9 @@ def _byzantine_game_data(
                 UnitLineId("hand-cannoneer-line"),
                 UnitLineId("cavalry-archer-line"),
             ),
+            researchable_technologies=(
+                TechId(100), TechId(237), TechId(98), TechId(218), TechId(437), TechId(436),
+            ),
         ),
         BuildingDef(
             BuildingId(101),
@@ -702,6 +717,10 @@ def _byzantine_game_data(
                 UnitLineId("scout-cavalry-line"),
                 UnitLineId("knight-line"),
                 UnitLineId("camel-rider-line"),
+            ),
+            researchable_technologies=(
+                TechId(254), TechId(428), TechId(209), TechId(265),
+                TechId(236), TechId(435), TechId(39),
             ),
         ),
         BuildingDef(BuildingId(103), "Blacksmith", Age.FEUDAL, ResourceCost(wood=150)),
@@ -717,10 +736,17 @@ def _byzantine_game_data(
             "Town Center",
             Age.DARK,
             ResourceCost(wood=275, stone=100),
+            researchable_technologies=(TechId(8), TechId(280)),
         ),
         BuildingDef(BuildingId(117), "Stone Wall", Age.FEUDAL, None),
         BuildingDef(BuildingId(155), "Fortified Wall", Age.CASTLE, None),
-        BuildingDef(BuildingId(209), "University", Age.CASTLE, ResourceCost(wood=200)),
+        BuildingDef(
+            BuildingId(209),
+            "University",
+            Age.CASTLE,
+            ResourceCost(wood=200),
+            researchable_technologies=(TechId(47), TechId(93), TechId(374), TechId(375), TechId(373)),
+        ),
         BuildingDef(BuildingId(234), "Guard Tower", Age.CASTLE, None),
         BuildingDef(BuildingId(235), "Keep", Age.IMPERIAL, None),
         BuildingDef(BuildingId(236), "Bombard Tower", Age.IMPERIAL, None),
