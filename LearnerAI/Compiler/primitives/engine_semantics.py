@@ -98,6 +98,19 @@ class EngineSemanticMappingRegistry:
             )
         return matches[0] if matches else None
 
+    def validate_practice_references(self, practice_identities: set[str]) -> None:
+        referenced = {
+            reference
+            for item in self.mappings
+            for reference in item.practice_references
+        }
+        missing = sorted(referenced - practice_identities)
+        if missing:
+            raise ValueError(
+                "engine semantic mapping references unknown engine practices: "
+                f"{missing}"
+            )
+
     def validate_exact_executable_commands(self, commands: tuple[str, ...]) -> None:
         expected = tuple(sorted(commands))
         actual = tuple(
@@ -366,6 +379,12 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         )
     )
     registry = EngineSemanticMappingRegistry(tuple(mappings))
+    from ..semantic.community_engine import default_community_engine_registry
+
+    practice_ids = {
+        item.identity for item in default_community_engine_registry().practices
+    }
+    registry.validate_practice_references(practice_ids)
     registry.validate_exact_executable_commands(
         tuple(command for command, _identity in _OBSERVATION_SPECS)
         + tuple(command for command, _identity in _ADMISSIBILITY_SPECS)
