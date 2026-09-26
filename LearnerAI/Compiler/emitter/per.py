@@ -120,7 +120,7 @@ def emit(
         out.append("; Demand initialization")
         for start in range(0, len(demands), INITIALIZATION_CHUNK):
             chunk = demands[start : start + INITIALIZATION_CHUNK]
-            out += ["(defrule", "    =>"]
+            out += ["(defrule", "    (true)", "=>"]
             for demand in chunk:
                 out.append(
                     f"    (set-goal demand-{demand.name} "
