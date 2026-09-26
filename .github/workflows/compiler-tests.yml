@@ -9,15 +9,25 @@ on:
     paths:
       - "LearnerAI/Compiler/**"
       - ".github/workflows/compiler-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: compiler-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   cross-platform-native-support:
+    name: Native-support determinism (${{ matrix.os }}, Python ${{ matrix.python-version }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,10 +40,13 @@ jobs:
           name: native-support-replay-${{ matrix.os }}-${{ matrix.python-version }}
           path: native-support-replay.json
           if-no-files-found: error
+          retention-days: 14
 
   compare-cross-platform-native-support:
+    name: Compare native-support snapshots
     needs: cross-platform-native-support
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,7 +61,9 @@ jobs:
         run: python LearnerAI/Compiler/tests/compare_native_support_replays.py --root snapshots
 
   test:
+    name: Compiler tests + native zero-findings
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -56,6 +71,8 @@ jobs:
           python-version: "3.12"
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Verify native parser import
+        run: python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
       - name: Native zero-findings acceptance - generated Basilisk fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py LearnerAI/Compiler/generated/Basilisk.per
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
@@ -122,4 +139,48 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per
-      - run: python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
+      - name: Run compiler regression suite
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" 2>&1 | tee compiler-tests.log
+      - name: Upload compiler verification log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiler-verification-log
+          path: compiler-tests.log
+          if-no-files-found: error
+          retention-days: 14
+
+  verification-gate:
+    name: Compiler verification gate
+    if: ${{ always() }}
+    needs:
+      - test
+      - compare-cross-platform-native-support
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Enforce required verification jobs
+        run: |
+          echo "Compiler tests + native zero-findings: ${{ needs.test.result }}"
+          echo "Cross-platform native-support comparison: ${{ needs['compare-cross-platform-native-support'].result }}"
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Compiler test/native zero-findings job did not pass."
+            exit 1
+          fi
+          if [ "${{ needs['compare-cross-platform-native-support'].result }}" != "success" ]; then
+            echo "Cross-platform native-support comparison did not pass."
+            exit 1
+          fi
+      - name: Record verification result
+        run: |
+          {
+            echo "## Compiler verification gate"
+            echo ""
+            echo "- Compiler tests + native zero-findings: ${{ needs.test.result }}"
+            echo "- Cross-platform native-support comparison: ${{ needs['compare-cross-platform-native-support'].result }}"
+            echo "- Native parser: pinned commit 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+            echo "- Result: PASSED"
+          } >> "${GITHUB_STEP_SUMMARY}"
