@@ -173,6 +173,36 @@ def compile_strategy_profile(
     return result
 
 
+def compile_strategy_runtime_profile(
+    profile,
+    effective,
+    runtime_profile,
+    base_goal: int = 1000,
+    *,
+    binding_context: BindingContext | None = None,
+) -> str:
+    from .ir.strategy import lower_strategy_profile
+    from .ir.strategy_runtime import evaluate_strategy_runtime
+
+    runtime_state = evaluate_strategy_runtime(profile, effective, runtime_profile)
+    compilation = lower_strategy_profile(profile, effective)
+    active_ids = set(runtime_state.active_or_blocked_demands)
+    selected = tuple(
+        demand
+        for demand in compilation.demands
+        if demand.strategic_binding is not None
+        and demand.strategic_binding.strategic_id in active_ids
+    )
+    registry = default_de_registry()
+    result, _bindings, _context = _compile_ir_parts(
+        selected,
+        registry,
+        base_goal,
+        binding_context=binding_context,
+    )
+    return result
+
+
 def _binding_manifest_text(bindings, context: BindingContext) -> str:
     return bindings.to_manifest(
         package_inventory_sha=context.package_inventory_sha,

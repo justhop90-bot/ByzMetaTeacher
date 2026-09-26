@@ -74,6 +74,12 @@ class PrimitiveRegistry:
 def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     facts = [
         Primitive("current-age", "FACT", "OBSERVATION", 2, 2),
+        Primitive("food-amount", "FACT", "OBSERVATION", 2, 2),
+        Primitive("wood-amount", "FACT", "OBSERVATION", 2, 2),
+        Primitive("gold-amount", "FACT", "OBSERVATION", 2, 2),
+        Primitive("stone-amount", "FACT", "OBSERVATION", 2, 2),
+        Primitive("players-unit-type-count", "FACT", "OBSERVATION", 4, 4),
+        Primitive("players-building-type-count", "FACT", "OBSERVATION", 4, 4),
         Primitive("game-time", "FACT", "TIMING", 2, 2, completion_witness=False),
         Primitive("dropsite-min-distance", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("building-available", "FACT", "ADMISSIBILITY", 1, 1),

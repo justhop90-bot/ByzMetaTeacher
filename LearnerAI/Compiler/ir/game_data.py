@@ -117,6 +117,13 @@ class EntitySelector:
         return EntitySelector(SelectorKind.UNIT_LINE, ids=(str(line),))
 
     @staticmethod
+    def units(*unit_ids: UnitId) -> "EntitySelector":
+        return EntitySelector(
+            SelectorKind.UNIT,
+            ids=tuple(str(int(unit_id)) for unit_id in unit_ids),
+        )
+
+    @staticmethod
     def building(building_id: BuildingId) -> "EntitySelector":
         return EntitySelector(SelectorKind.BUILDING, ids=(str(int(building_id)),))
 
@@ -305,10 +312,24 @@ def validate_game_data(data: GameData) -> None:
                 raise ValueError(
                     f"unit {unit.id} references unknown provider building {provider.building}"
                 )
-        if unit.upgrades_from is not None and unit.upgrades_from not in unit_ids:
-            raise ValueError(f"unit {unit.id} references unknown upgrade predecessor")
-        if unit.upgrades_to is not None and unit.upgrades_to not in unit_ids:
-            raise ValueError(f"unit {unit.id} references unknown upgrade successor")
+        if unit.upgrades_from is not None:
+            if unit.upgrades_from not in unit_ids:
+                raise ValueError(f"unit {unit.id} references unknown upgrade predecessor")
+            predecessor = next(item for item in data.units if item.id == unit.upgrades_from)
+            if predecessor.upgrades_to != unit.id:
+                raise ValueError(
+                    f"unit {unit.id} upgrade predecessor {unit.upgrades_from} "
+                    "does not point back to this unit"
+                )
+        if unit.upgrades_to is not None:
+            if unit.upgrades_to not in unit_ids:
+                raise ValueError(f"unit {unit.id} references unknown upgrade successor")
+            successor = next(item for item in data.units if item.id == unit.upgrades_to)
+            if successor.upgrades_from != unit.id:
+                raise ValueError(
+                    f"unit {unit.id} upgrade successor {unit.upgrades_to} "
+                    "does not point back to this unit"
+                )
 
     for age_advance in data.age_advances:
         if age_advance.provider_building not in building_ids:

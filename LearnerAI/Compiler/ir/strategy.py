@@ -180,6 +180,7 @@ class PostureTransition:
     to_posture: StrategyPosture
     evidence: tuple[StrategicEvidence, ...]
     label: str
+    priority: int = 0
 
 
 @dataclass(frozen=True)
@@ -599,6 +600,58 @@ def build_land_castle_strategy(
 
     transitions = (
         PostureTransition(
+            from_postures=(),
+            to_posture=StrategyPosture.BOOM,
+            evidence=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(current-age == dark-age)",
+                    "Dark Age opens the baseline economic trajectory",
+                ),
+            ),
+            label="opening-dark-boom",
+            priority=10,
+        ),
+        PostureTransition(
+            from_postures=(),
+            to_posture=StrategyPosture.BOOM,
+            evidence=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(current-age >= feudal-age)",
+                    "Existing Feudal state begins on the economic trajectory",
+                ),
+            ),
+            label="opening-feudal-boom",
+            priority=10,
+        ),
+        PostureTransition(
+            from_postures=(StrategyPosture.BOOM, StrategyPosture.CASTLE_POWER),
+            to_posture=StrategyPosture.FLUSH,
+            evidence=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(players-unit-type-count any-enemy knight >= 3)",
+                    "Sustained mounted pressure changes the active defensive posture",
+                ),
+            ),
+            label="enemy-mounted-pressure",
+            priority=80,
+        ),
+        PostureTransition(
+            from_postures=(StrategyPosture.FLUSH,),
+            to_posture=StrategyPosture.BOOM,
+            evidence=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(players-unit-type-count any-enemy knight < 3)",
+                    "Mounted pressure has cleared enough to resume the economic trajectory",
+                ),
+            ),
+            label="pressure-cleared",
+            priority=40,
+        ),
+        PostureTransition(
             from_postures=(StrategyPosture.FLUSH, StrategyPosture.BOOM),
             to_posture=StrategyPosture.CASTLE_POWER,
             evidence=(
@@ -609,6 +662,7 @@ def build_land_castle_strategy(
                 ),
             ),
             label="castle-complete-reassessment",
+            priority=100,
         ),
     )
 

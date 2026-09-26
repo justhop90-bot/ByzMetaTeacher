@@ -38,6 +38,7 @@ from .versioning import (
     PatchChange,
     PatchId,
     PatchOperationKind,
+    Validity,
 )
 
 
@@ -225,6 +226,13 @@ class ByzantineProfile:
             "Byzantine civilization bonuses and technology costs",
             patch,
         )
+        controller = EvidenceRef(
+            EvidenceKind.REPOSITORY_CONTROLLER,
+            "Basilisk/Basilisk.per",
+            "main",
+            "defconst varangian-guard 2703; defconst elite-varangian-guard 2704; defconst ri-elite-varangian-guard 1454",
+            patch,
+        )
         return CivProfile(
             civ_id=cls.CIV_ID,
             name="Byzantines",
@@ -351,11 +359,16 @@ class ByzantineProfile:
             ),
             interactions=(
                 CivInteraction(
-                    "logistica-trample-cataphract",
+                    "logistica-trample-current-units",
                     EntitySelector.tech(TechId(61)),
-                    EntitySelector.unit_line(UnitLineId("cataphract-line")),
+                    EntitySelector.units(
+                        UnitId(40),
+                        UnitId(553),
+                        UnitId(2703),
+                        UnitId(2704),
+                    ),
                     CivInteractionKind.TRAMPLE_DAMAGE,
-                    provenance=(official,),
+                    provenance=(official, controller),
                 ),
                 CivInteraction(
                     "cataphract-anti-infantry-185872",
@@ -384,8 +397,9 @@ class ByzantineProfile:
                     None,
                     None,
                     (
-                        ("varangian-guard", "enabled;numeric-id-unverified"),
-                        ("elite-varangian-guard", "enabled;numeric-id-unverified"),
+                        ("varangian-guard", "enabled;numeric-id=2703"),
+                        ("elite-varangian-guard", "enabled;numeric-id=2704"),
+                        ("elite-varangian-guard-tech", "tech-id=1454"),
                         ("cataphract-infantry-bonus", "13"),
                         ("elite-cataphract-infantry-bonus", "18"),
                         ("logistica-target", "cataphract,varangian-guard"),
@@ -393,7 +407,7 @@ class ByzantineProfile:
                     (official,),
                 ),
             ),
-            provenance=(manifest, community, official),
+            provenance=(manifest, community, official, controller),
         )
 
 
@@ -559,6 +573,8 @@ def _unit(
     *,
     classes: tuple[str, ...],
     upgrades_from: int | None = None,
+    upgrades_to: int | None = None,
+    validity: Validity | None = None,
 ) -> UnitDef:
     return UnitDef(
         id=UnitId(unit_id),
@@ -569,9 +585,10 @@ def _unit(
         base_cost=cost,
         train_time_seconds=None,
         upgrades_from=UnitId(upgrades_from) if upgrades_from is not None else None,
+        upgrades_to=UnitId(upgrades_to) if upgrades_to is not None else None,
         classes=classes,
+        validity=validity,
     )
-
 
 def _byzantine_game_data(
     patch: PatchId,
@@ -584,7 +601,12 @@ def _byzantine_game_data(
             "Barracks",
             Age.DARK,
             ResourceCost(wood=175),
-            trainable_lines=(UnitLineId("militia-line"), UnitLineId("spearman-line")),
+            trainable_lines=(
+                UnitLineId("militia-line"),
+                UnitLineId("spearman-line"),
+                UnitLineId("varangian-guard-line"),
+            ),
+            researchable_technologies=(TechId(1454),),
         ),
         BuildingDef(
             BuildingId(49),
@@ -595,6 +617,8 @@ def _byzantine_game_data(
                 UnitLineId("ram-line"),
                 UnitLineId("mangonel-line"),
                 UnitLineId("scorpion-line"),
+                UnitLineId("siege-tower-line"),
+                UnitLineId("bombard-cannon-line"),
             ),
         ),
         BuildingDef(
@@ -618,7 +642,10 @@ def _byzantine_game_data(
             "Castle",
             Age.CASTLE,
             ResourceCost(stone=650),
-            trainable_lines=(UnitLineId("cataphract-line"), UnitLineId("trebuchet-line")),
+            trainable_lines=(
+                UnitLineId("cataphract-line"),
+                UnitLineId("trebuchet-line"),
+            ),
             researchable_technologies=(TechId(61), TechId(464)),
         ),
         BuildingDef(BuildingId(84), "Market", Age.FEUDAL, ResourceCost(wood=175)),
@@ -631,6 +658,7 @@ def _byzantine_game_data(
                 UnitLineId("archer-line"),
                 UnitLineId("crossbow-line"),
                 UnitLineId("skirmisher-line"),
+                UnitLineId("hand-cannoneer-line"),
                 UnitLineId("cavalry-archer-line"),
             ),
         ),
@@ -653,7 +681,12 @@ def _byzantine_game_data(
             ResourceCost(wood=175),
             trainable_lines=(UnitLineId("monk-line"),),
         ),
-        BuildingDef(BuildingId(109), "Town Center", Age.DARK, ResourceCost(wood=275, stone=100)),
+        BuildingDef(
+            BuildingId(109),
+            "Town Center",
+            Age.DARK,
+            ResourceCost(wood=275, stone=100),
+        ),
         BuildingDef(BuildingId(117), "Stone Wall", Age.FEUDAL, None),
         BuildingDef(BuildingId(155), "Fortified Wall", Age.CASTLE, None),
         BuildingDef(BuildingId(209), "University", Age.CASTLE, ResourceCost(wood=200)),
@@ -669,53 +702,72 @@ def _byzantine_game_data(
         BuildingDef(BuildingId(792), "Palisade Gate", Age.DARK, None),
     )
     lines = (
-        UnitLineDef(UnitLineId("militia-line"), "Militia line", (UnitId(74),), (evidence,)),
+        UnitLineDef(UnitLineId("militia-line"), "Militia line", (UnitId(74), UnitId(75), UnitId(77), UnitId(473), UnitId(567)), (evidence,)),
         UnitLineDef(UnitLineId("spearman-line"), "Spearman line", (UnitId(93), UnitId(358), UnitId(359)), (evidence,)),
         UnitLineDef(UnitLineId("skirmisher-line"), "Skirmisher line", (UnitId(7), UnitId(6)), (evidence,)),
         UnitLineDef(UnitLineId("camel-rider-line"), "Camel Rider line", (UnitId(329), UnitId(330)), (evidence,)),
-        UnitLineDef(UnitLineId("knight-line"), "Knight line", (UnitId(38),), (evidence,)),
-        UnitLineDef(UnitLineId("scout-cavalry-line"), "Scout Cavalry line", (UnitId(448),), (evidence,)),
+        UnitLineDef(UnitLineId("scout-cavalry-line"), "Scout Cavalry line", (UnitId(448), UnitId(546), UnitId(441)), (evidence,)),
+        UnitLineDef(UnitLineId("knight-line"), "Knight line", (UnitId(38), UnitId(283), UnitId(569)), (evidence,)),
         UnitLineDef(UnitLineId("archer-line"), "Archer line", (UnitId(4),), (evidence,)),
         UnitLineDef(UnitLineId("crossbow-line"), "Crossbow line", (UnitId(24), UnitId(492)), (evidence,)),
+        UnitLineDef(UnitLineId("cavalry-archer-line"), "Cavalry Archer line", (UnitId(39), UnitId(474)), (evidence,)),
+        UnitLineDef(UnitLineId("hand-cannoneer-line"), "Hand Cannoneer line", (UnitId(5),), (evidence,)),
         UnitLineDef(UnitLineId("cataphract-line"), "Cataphract line", (UnitId(40), UnitId(553)), (evidence,)),
+        UnitLineDef(UnitLineId("varangian-guard-line"), "Varangian Guard line", (UnitId(2703), UnitId(2704)), (controller,)),
         UnitLineDef(UnitLineId("monk-line"), "Monk line", (UnitId(125),), (evidence,)),
-        UnitLineDef(UnitLineId("ram-line"), "Ram line", (UnitId(1258),), (evidence,)),
+        UnitLineDef(UnitLineId("ram-line"), "Ram line", (UnitId(1258), UnitId(422), UnitId(548)), (evidence,)),
         UnitLineDef(UnitLineId("mangonel-line"), "Mangonel line", (UnitId(280),), (evidence,)),
         UnitLineDef(UnitLineId("scorpion-line"), "Scorpion line", (UnitId(279),), (evidence,)),
+        UnitLineDef(UnitLineId("siege-tower-line"), "Siege Tower line", (UnitId(1105),), (evidence,)),
         UnitLineDef(UnitLineId("trebuchet-line"), "Trebuchet line", (UnitId(331),), (evidence,)),
         UnitLineDef(UnitLineId("bombard-cannon-line"), "Bombard Cannon line", (UnitId(36),), (evidence,)),
-        UnitLineDef(UnitLineId("cavalry-archer-line"), "Cavalry Archer line", (UnitId(474),), (evidence,)),
         UnitLineDef(UnitLineId("fire-galley-line"), "Fire Galley line", (UnitId(1103),), (evidence,)),
         UnitLineDef(UnitLineId("fire-ship-line"), "Fire Ship line", (UnitId(529), UnitId(532)), (evidence,)),
         UnitLineDef(UnitLineId("dromon-line"), "Dromon line", (UnitId(1795),), (evidence,)),
     )
     units = (
         _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",)),
-        _unit(6, "Elite Skirmisher", "skirmisher-line", Age.CASTLE, 87, ResourceCost(food=25, wood=35), classes=("RANGED",), upgrades_from=7),
-        _unit(7, "Skirmisher", "skirmisher-line", Age.FEUDAL, 87, ResourceCost(food=25, wood=35), classes=("RANGED",)),
-        _unit(24, "Crossbowman", "crossbow-line", Age.CASTLE, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=4),
-        _unit(36, "Bombard Cannon", "bombard-cannon-line", Age.IMPERIAL, 209, ResourceCost(wood=225, gold=225), classes=("SIEGE",)),
-        _unit(38, "Knight", "knight-line", Age.CASTLE, 101, ResourceCost(food=60, gold=75), classes=("CAVALRY",)),
-        _unit(40, "Cataphract", "cataphract-line", Age.CASTLE, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"),),
-        _unit(74, "Militia", "militia-line", Age.DARK, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",)),
-        _unit(93, "Spearman", "spearman-line", Age.FEUDAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",)),
+        _unit(5, "Hand Cannoneer", "hand-cannoneer-line", Age.IMPERIAL, 87, ResourceCost(food=45, gold=50), classes=("RANGED",)),
+        _unit(6, "Elite Skirmisher", "skirmisher-line", Age.CASTLE, 87, ResourceCost(food=25, wood=35), classes=("RANGED",), upgrades_from=7, upgrades_to=None),
+        _unit(7, "Skirmisher", "skirmisher-line", Age.FEUDAL, 87, ResourceCost(food=25, wood=35), classes=("RANGED",), upgrades_to=6),
+        _unit(24, "Crossbowman", "crossbow-line", Age.CASTLE, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=4, upgrades_to=492),
+        _unit(36, "Bombard Cannon", "bombard-cannon-line", Age.IMPERIAL, 49, ResourceCost(wood=225, gold=225), classes=("SIEGE",)),
+        _unit(38, "Knight", "knight-line", Age.CASTLE, 101, ResourceCost(food=60, gold=75), classes=("CAVALRY",), upgrades_to=283),
+        _unit(39, "Cavalry Archer", "cavalry-archer-line", Age.CASTLE, 87, ResourceCost(wood=40, gold=60), classes=("RANGED", "CAVALRY"), upgrades_to=474),
+        _unit(40, "Cataphract", "cataphract-line", Age.CASTLE, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"), upgrades_to=553),
+        _unit(74, "Militia", "militia-line", Age.DARK, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_to=75),
+        _unit(75, "Man-at-Arms", "militia-line", Age.FEUDAL, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_from=74, upgrades_to=77),
+        _unit(77, "Long Swordsman", "militia-line", Age.CASTLE, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_from=75, upgrades_to=473),
+        _unit(93, "Spearman", "spearman-line", Age.FEUDAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_to=358),
         _unit(125, "Monk", "monk-line", Age.CASTLE, 104, ResourceCost(gold=100), classes=("MONK",)),
         _unit(279, "Scorpion", "scorpion-line", Age.CASTLE, 49, ResourceCost(wood=75, gold=75), classes=("SIEGE",)),
-        _unit(280, "Mangonel", "mangonel-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=135), classes=("SIEGE",)),
-        _unit(329, "Camel Rider", "camel-rider-line", Age.CASTLE, 101, ResourceCost(food=55, gold=60), classes=("CAVALRY",)),
+        _unit(280, "Mangonel", "mangonel-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=135), classes=("SIEGE",), upgrades_to=None),
+        _unit(283, "Cavalier", "knight-line", Age.IMPERIAL, 101, ResourceCost(food=60, gold=75), classes=("CAVALRY",), upgrades_from=38, upgrades_to=569),
+        _unit(329, "Camel Rider", "camel-rider-line", Age.CASTLE, 101, ResourceCost(food=55, gold=60), classes=("CAVALRY",), upgrades_to=330),
         _unit(330, "Heavy Camel Rider", "camel-rider-line", Age.IMPERIAL, 101, ResourceCost(food=55, gold=60), classes=("CAVALRY",), upgrades_from=329),
         _unit(331, "Trebuchet", "trebuchet-line", Age.IMPERIAL, 82, ResourceCost(wood=200, gold=200), classes=("SIEGE",)),
-        _unit(358, "Pikeman", "spearman-line", Age.CASTLE, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=93),
+        _unit(358, "Pikeman", "spearman-line", Age.CASTLE, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=93, upgrades_to=359),
         _unit(359, "Halberdier", "spearman-line", Age.IMPERIAL, 12, ResourceCost(food=35, wood=25), classes=("INFANTRY",), upgrades_from=358),
-        _unit(448, "Scout Cavalry", "scout-cavalry-line", Age.FEUDAL, 101, ResourceCost(food=80), classes=("CAVALRY",)),
-        _unit(474, "Heavy Cavalry Archer", "cavalry-archer-line", Age.IMPERIAL, 87, ResourceCost(wood=40, gold=60), classes=("CAVALRY", "RANGED")),
+        _unit(422, "Capped Ram", "ram-line", Age.IMPERIAL, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",), upgrades_from=1258, upgrades_to=548),
+        _unit(548, "Siege Ram", "ram-line", Age.IMPERIAL, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",), upgrades_from=422),
+        _unit(440, "Petard", "petard-line", Age.CASTLE, 82, ResourceCost(food=65, gold=20), classes=("SIEGE", "UNIQUE")),
+        _unit(441, "Hussar", "scout-cavalry-line", Age.IMPERIAL, 101, ResourceCost(food=80), classes=("CAVALRY",), upgrades_from=546),
+        _unit(448, "Scout Cavalry", "scout-cavalry-line", Age.FEUDAL, 101, ResourceCost(food=80), classes=("CAVALRY",), upgrades_to=546),
+        _unit(474, "Heavy Cavalry Archer", "cavalry-archer-line", Age.IMPERIAL, 87, ResourceCost(wood=40, gold=60), classes=("CAVALRY", "RANGED"), upgrades_from=39),
+        _unit(473, "Two-Handed Swordsman", "militia-line", Age.IMPERIAL, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_from=77, upgrades_to=567),
         _unit(492, "Arbalester", "crossbow-line", Age.IMPERIAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_from=24),
-        _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
+        _unit(529, "Fire Ship", "fire-ship-line", Age.CASTLE, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",),),
         _unit(532, "Fast Fire Ship", "fire-ship-line", Age.IMPERIAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",), upgrades_from=529),
-        _unit(1795, "Dromon", "dromon-line", Age.IMPERIAL, 45, ResourceCost(wood=175, gold=150), classes=("NAVAL",)),
+        _unit(546, "Light Cavalry", "scout-cavalry-line", Age.CASTLE, 101, ResourceCost(food=80), classes=("CAVALRY",), upgrades_from=448, upgrades_to=441),
         _unit(553, "Elite Cataphract", "cataphract-line", Age.IMPERIAL, 82, ResourceCost(food=70, gold=75), classes=("CAVALRY", "UNIQUE"), upgrades_from=40),
+        _unit(567, "Champion", "militia-line", Age.IMPERIAL, 12, ResourceCost(food=50, gold=20), classes=("INFANTRY",), upgrades_from=473),
+        _unit(569, "Paladin", "knight-line", Age.IMPERIAL, 101, ResourceCost(food=60, gold=75), classes=("CAVALRY",), upgrades_from=283),
         _unit(1103, "Fire Galley", "fire-galley-line", Age.FEUDAL, 45, ResourceCost(wood=75, gold=45), classes=("NAVAL",)),
-        _unit(1258, "Battering Ram", "ram-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",)),
+        _unit(1105, "Siege Tower", "siege-tower-line", Age.CASTLE, 49, ResourceCost(wood=100, gold=120), classes=("SIEGE",)),
+        _unit(1258, "Battering Ram", "ram-line", Age.CASTLE, 49, ResourceCost(wood=160, gold=75), classes=("SIEGE",), upgrades_to=422),
+        _unit(1795, "Dromon", "dromon-line", Age.IMPERIAL, 45, ResourceCost(wood=175, gold=150), classes=("NAVAL",)),
+        _unit(2703, "Varangian Guard", "varangian-guard-line", Age.CASTLE, 12, ResourceCost(food=65, gold=45), classes=("INFANTRY", "UNIQUE"), validity=Validity(patch, None), upgrades_to=2704),
+        _unit(2704, "Elite Varangian Guard", "varangian-guard-line", Age.IMPERIAL, 12, ResourceCost(food=65, gold=45), classes=("INFANTRY", "UNIQUE"), validity=Validity(patch, None), upgrades_from=2703),
     )
     techs = (
         TechnologyDef(
@@ -725,6 +777,10 @@ def _byzantine_game_data(
         TechnologyDef(
             TechId(61), "Logistica", Age.IMPERIAL, (ResearchProvider(BuildingId(82)),),
             ResourceCost(food=800, gold=600), 50,
+        ),
+        TechnologyDef(
+            TechId(1454), "Elite Varangian Guard", Age.IMPERIAL, (ResearchProvider(BuildingId(12)),),
+            None, None, validity=Validity(patch, None), provenance=(controller,),
         ),
         TechnologyDef(
             TechId(65), "Gillnets", Age.CASTLE, (ResearchProvider(BuildingId(45)),),
