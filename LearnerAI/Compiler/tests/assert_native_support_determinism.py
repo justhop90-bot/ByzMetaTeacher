@@ -12,8 +12,6 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source_with_report
 from Compiler.diagnostics import ReportStatus
-from Compiler.primitives.registry import NativeSupportState
-
 from test_compiler_native_integration import (
     CompilerNativeIntegrationTests,
     FakeBackend,
