@@ -32,6 +32,14 @@ The central pipeline is:
 
 Runtime remains the authority for actual game execution. The compiler may prove what the source claims and what the engine documents; it must not pretend static analysis proves gameplay outcomes.
 
+## 2. Community engine semantics layer
+
+The compiler must explicitly model the accumulated engine-specific practice that is not captured by a flat command/parameter schema. This layer covers persistent Goal/SN/Timer state, recurrent rule/pass behavior, asynchronous pending work, feasibility versus completion, transient resource arbitration, build/train/research work queues, DUC/search state, attack machinery, recovery, and the effective source graph.
+
+A critical semantic distinction is mandatory: **execution feasibility is not capability state**. A false `can-*` result can be ordinary resource or queue blockage. Capability loss requires observed previous provider/capability availability followed by current unavailability. Recovery returns to the original strategic demand/execution mapping and re-enters through native feasibility. It must not manufacture an action-failure Boolean or a second recovery FSM.
+
+The machine-readable evidence and implementation frontier live in `LearnerAI/Compiler/semantic/community_engine.py` and `LearnerAI/Compiler/COMMUNITY_ENGINE_SEMANTICS_CHECKLIST_2026-09-26.md`.
+
 ## 2. Evidence hierarchy
 
 The compiler must distinguish four kinds of knowledge.
