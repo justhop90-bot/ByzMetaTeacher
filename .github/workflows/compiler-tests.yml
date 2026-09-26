@@ -78,19 +78,7 @@ jobs:
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
       - name: Verify generated Basilisk fixture reproducibility
-        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py
-      - name: Regenerate current Basilisk artifact
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import sys
-
-          sys.path.insert(0, str(Path("LearnerAI").resolve()))
-          from Compiler.compiler import compile_source
-
-          source = Path("LearnerAI/Compiler/examples/basics.basilisk").read_text(encoding="utf-8")
-          Path("/tmp/Basilisk.per").write_text(compile_source(source), encoding="utf-8")
-          PY
+        run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/Basilisk.per
       - name: Native zero-findings acceptance - freshly compiled Basilisk fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
