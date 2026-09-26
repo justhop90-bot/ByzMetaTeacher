@@ -55,6 +55,8 @@ def parse(source: str) -> list[DemandNode]:
         if not reqs:
             raise CompileError(f"demand '{name}' needs at least one require")
         if missing:
+            if "witness" in missing:
+                raise CompileError(f"PENDING-WITNESS-MISSING: demand '{name}' missing completion witness")
             raise CompileError(f"demand '{name}' missing: {', '.join(missing)}")
         out.append(DemandNode(name, tuple(reqs), fields["action"], fields["witness"],
                               fields["release"], SourceLocation(line_no)))
