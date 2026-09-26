@@ -69,6 +69,7 @@ class StateAccess:
     storage_kind: StateStorageKind = StateStorageKind.LIFECYCLE
     rule_order: int | None = None
     within_rule_order: int = 0
+    location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
         if self.source_order < 0:
