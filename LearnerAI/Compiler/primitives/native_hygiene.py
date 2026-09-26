@@ -635,6 +635,33 @@ class CitationRevalidationEvent:
         if self.source_available and self.result is RevalidationResult.SOURCE_UNAVAILABLE:
             raise ValueError("SOURCE_UNAVAILABLE requires source_available=False")
 
+        actual_changes = {
+            CitationChangeKind.URL_CHANGED: self.current_url is not None and self.current_url != self.previous_url,
+            CitationChangeKind.LOCATOR_CHANGED: self.current_locator is not None and self.current_locator != self.previous_locator,
+            CitationChangeKind.SOURCE_HASH_CHANGED: self.current_source_hash != self.previous_source_hash,
+            CitationChangeKind.EXCERPT_CHANGED: self.current_excerpt_hash != self.previous_excerpt_hash,
+        }
+        if CitationChangeKind.NONE in self.changes and any(actual_changes.values()):
+            raise ValueError("NONE cannot accompany an actual citation change")
+        for change, changed in actual_changes.items():
+            if changed != (change in self.changes):
+                raise ValueError(f"citation change set disagrees with observed {change.value}")
+
+        required_change = {
+            RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED: CitationChangeKind.SOURCE_HASH_CHANGED,
+            RevalidationResult.LOCATOR_CHANGED_EXCERPT_MATCHED: CitationChangeKind.LOCATOR_CHANGED,
+            RevalidationResult.URL_CHANGED_EXCERPT_MATCHED: CitationChangeKind.URL_CHANGED,
+            RevalidationResult.REDIRECTED_AND_VERIFIED: CitationChangeKind.URL_CHANGED,
+            RevalidationResult.EXCERPT_CHANGED: CitationChangeKind.EXCERPT_CHANGED,
+            RevalidationResult.SOURCE_CHANGED_EXCERPT_BROKEN: CitationChangeKind.EXCERPT_CHANGED,
+        }.get(self.result)
+        if required_change is not None and required_change not in self.changes:
+            raise ValueError(f"{self.result.value} requires {required_change.value}")
+        if self.result is RevalidationResult.VERIFIED_UNCHANGED and any(actual_changes.values()):
+            raise ValueError("VERIFIED_UNCHANGED cannot claim citation changes")
+        if self.result not in {RevalidationResult.SOURCE_UNAVAILABLE, RevalidationResult.VERIFIED_UNCHANGED, RevalidationResult.AMBIGUOUS_MATCH} and self.current_citation_id is None:
+            raise ValueError("available revalidation results require current citation id")
+
 def compare_excerpts(stored: SourceExcerpt, current_text: str) -> ExcerptMatchKind:
     if stored.exact_sha256 == sha256(current_text.encode()).hexdigest():
         return ExcerptMatchKind.EXACT
