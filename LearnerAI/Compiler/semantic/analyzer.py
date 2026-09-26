@@ -415,6 +415,7 @@ def analyze(
                 witness=witness,
                 completion_witness=completion_witness,
                 release=release,
+                release_state=release_state,
                 ownership=ownership,
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
