@@ -345,10 +345,19 @@ class NativeWitness:
     def __post_init__(self) -> None:
         if not self.identity or not self.primitive or not self.provenance:
             raise ValueError("native witness identity, primitive, and provenance are required")
-        if self.comparator is not None and self.value is None:
-            raise ValueError("comparison witnesses require a value")
+        if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
+            raise ValueError("native witness semantics require documented native facts")
+        if self.comparator is not None:
+            if self.comparator not in {"==", "!=", "<", "<=", ">", ">="}:
+                raise ValueError("invalid native witness comparator")
+            if self.value is None:
+                raise ValueError("comparison witnesses require a value")
+        if self.value is not None and self.comparator is None:
+            raise ValueError("numeric witness values require a comparator")
         if self.state is not None and self.value is not None:
             raise ValueError("state and numeric value are mutually exclusive")
+        if self.comparator is None and self.state is None:
+            raise ValueError("native witness requires comparison or state evidence")
         if self.kind in {
             NativeWitnessKind.UNIT_COUNT,
             NativeWitnessKind.UNIT_COUNT_TOTAL,
