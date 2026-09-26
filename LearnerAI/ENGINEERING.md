@@ -59,3 +59,28 @@ Persistent intent should normally survive temporary resource or timing failures.
 ## Engineering boundary
 
 Engineering reports failures and verifies lifecycle truth. It does not silently repair gameplay by becoming a universal manager.
+
+
+## Native backend verification
+
+Native .per validation is delegated to the pinned aoe2-ai-parser backend through an isolated subprocess. LearnerAI does not import or copy the backend implementation.
+
+The adapter checks backend name, project version, source commit, and Python major/minor before linting. It uses shell=False, a temporary working directory, redirected stdin, bounded execution time, sanitized Python environment variables, and separate stdout/stderr handling.
+
+Only JSON on stdout is considered validation protocol. Stderr is diagnostic process output and is never promoted into a native finding.
+
+The normalized native result distinguishes:
+
+- VALIDATED
+- REJECTED
+- BACKEND_UNAVAILABLE
+- BACKEND_VERSION_MISMATCH
+- BACKEND_PROTOCOL_ERROR
+- BACKEND_TIMEOUT
+- BACKEND_PROCESS_ERROR
+
+A backend failure never becomes a script rejection. Without valid backend evidence, native validation is unknown.
+
+Protocol validation is strict. Malformed JSON, count mismatches, unknown severity/confidence values, invalid spans, path mismatches, missing required fields, and inconsistent exit-code/failed-flag combinations are protocol errors.
+
+The fixture matrix is stored under Compiler/tests/fixtures/native_backend/protocol. The current adapter suite covers the complete protocol/process boundary specified in Compiler/backends/README.md.
