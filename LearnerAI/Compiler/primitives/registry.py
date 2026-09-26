@@ -1,7 +1,7 @@
 """Semantic adapters backed by the checked-in AIRef native command schema."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 
@@ -13,6 +13,7 @@ class NativeSupportState(str, Enum):
     NATIVE_KNOWN = "native-known"
     NATIVE_TYPED = "native-typed"
     SEMANTICALLY_ADAPTED = "semantically-adapted"
+    ENGINE_SEMANTICS_MAPPED = "engine-semantics-mapped"
     EXECUTABLE_SAFE = "executable-safe"
     UNSUPPORTED = "unsupported"
 
@@ -44,6 +45,7 @@ class Primitive:
     version: str = "DE"
     completion_witness: bool = True
     conflict_class: str | None = None
+    engine_semantics_id: str | None = None
 
 class PrimitiveRegistry:
     def __init__(
@@ -177,9 +179,25 @@ class PrimitiveRegistry:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
-                "NATIVE-SUPPORT-005",
+                "NATIVE-SUPPORT-006",
                 "error",
                 f"semantic adapter is not executable-safe: {exc}",
+            )
+            diagnostics.append(diagnostic)
+            return NativeSupportAssessment(
+                command=name,
+                state=NativeSupportState.UNSUPPORTED,
+                message=diagnostic.message,
+                diagnostics=tuple(diagnostics),
+            )
+
+        if not primitive.engine_semantics_id:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-SUPPORT-006",
+                "error",
+                "native command is semantically adapted but has no engine semantic mapping",
             )
             diagnostics.append(diagnostic)
             return NativeSupportAssessment(
@@ -192,10 +210,19 @@ class PrimitiveRegistry:
         diagnostics.append(
             self._diagnostic(
                 name,
-                NativeSupportState.EXECUTABLE_SAFE,
+                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                 "NATIVE-SUPPORT-004",
                 "info",
-                "native signature and semantic adapter contract are executable-safe",
+                f"engine semantic mapping registered: {primitive.engine_semantics_id}",
+            )
+        )
+        diagnostics.append(
+            self._diagnostic(
+                name,
+                NativeSupportState.EXECUTABLE_SAFE,
+                "NATIVE-SUPPORT-005",
+                "info",
+                "native signature, semantic adapter, and engine semantic mapping are executable-safe",
             )
         )
         return NativeSupportAssessment(
@@ -307,7 +334,44 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         if schema_path is None
         else NativeCommandRegistry.from_path(schema_path)
     )
-    registry = PrimitiveRegistry(tuple(facts + actions), native_registry)
-    for primitive in facts + actions:
+    semantic_mappings = {
+        "current-age": "observation.age.current",
+        "food-amount": "observation.resource.food",
+        "wood-amount": "observation.resource.wood",
+        "gold-amount": "observation.resource.gold",
+        "stone-amount": "observation.resource.stone",
+        "players-unit-type-count": "observation.threat.unit-count",
+        "players-building-type-count": "observation.world.building-count",
+        "game-time": "observation.timing.game-time",
+        "dropsite-min-distance": "observation.placement.dropsite-distance",
+        "building-available": "admissibility.building.available",
+        "can-afford-building": "arbitration.building.affordability",
+        "can-build": "execution.build.feasibility",
+        "can-build-with-escrow": "execution.build.feasibility.escrow",
+        "building-type-count": "witness.building.present",
+        "building-type-count-total": "witness.building.present.total",
+        "unit-type-count": "observation.unit.count",
+        "unit-type-count-total": "witness.unit.present.total",
+        "can-train": "execution.train.feasibility",
+        "can-train-with-escrow": "execution.train.feasibility.escrow",
+        "up-pending-objects": "execution.pending-objects",
+        "research-available": "admissibility.research.available",
+        "can-afford-research": "arbitration.research.affordability",
+        "can-research": "execution.research.feasibility",
+        "can-research-with-escrow": "execution.research.feasibility.escrow",
+        "research-completed": "witness.research.completed",
+        "build": "execution.build.request",
+        "train": "execution.train.request",
+        "research": "execution.research.request",
+    }
+    primitive_items = tuple(facts + actions)
+    if set(semantic_mappings) != {item.name for item in primitive_items}:
+        raise ValueError("default native semantic mapping inventory is incomplete")
+    mapped_items = tuple(
+        replace(item, engine_semantics_id=semantic_mappings[item.name])
+        for item in primitive_items
+    )
+    registry = PrimitiveRegistry(mapped_items, native_registry)
+    for primitive in mapped_items:
         registry.validate_adapter_contract(primitive)
     return registry
