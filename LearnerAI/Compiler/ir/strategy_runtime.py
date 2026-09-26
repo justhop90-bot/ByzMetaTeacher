@@ -11,6 +11,7 @@ from ..primitives.native_schema import NativeParameterSpec
 from .civ_profile import EffectiveCivData
 from .game_data import canonical_fingerprint
 from .strategy import (
+    CapabilityIntentKind,
     StrategicCapabilityObservation,
     StrategicDemandSpec,
     StrategicEvidence,
@@ -170,7 +171,7 @@ def bind_strategic_capability_observation(
         raise ValueError(
             f"community meta cannot define factual capability '{observation.identity}'"
         )
-    if observation.capability.kind.name != "TRAIN":
+    if observation.capability.kind is not CapabilityIntentKind.TRAIN:
         raise ValueError(
             f"strategic capability observation '{observation.identity}' must use TRAIN intent"
         )
@@ -193,6 +194,16 @@ def bind_strategic_capability_observation(
         provenance=observation.provenance,
     )
     binding = bind_strategic_evidence(evidence, effective, registry)
+    unit = effective.unit(unit_id)
+    aliases = {
+        str(unit_id),
+        unit.name.lower().replace(" ", "-"),
+    }
+    observation_expression = binding.observations[0].expression
+    if not observation_expression.args or str(observation_expression.args[0]).lower() not in aliases:
+        raise ValueError(
+            f"strategic capability observation '{observation.identity}' does not bind its declared unit"
+        )
     if not any(
         item.semantic_type is StrategicObservationType.UNIT_CAPABILITY
         for item in binding.observations
