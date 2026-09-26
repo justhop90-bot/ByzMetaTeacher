@@ -8,6 +8,7 @@ from typing import Iterable
 from ..ast import Expression
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
+from ..semantic.community_engine import CapabilityTransition, classify_capability_transition
 from .civ_profile import EffectiveCivData
 from .game_data import canonical_fingerprint
 from .strategy import (
@@ -69,6 +70,7 @@ class ReassessmentReason(str, Enum):
     DEMAND_INVALIDATION = "DEMAND_INVALIDATION"
     CAPABILITY_COMPLETION = "CAPABILITY_COMPLETION"
     CAPABILITY_LOSS = "CAPABILITY_LOSS"
+    CAPABILITY_RECOVERY = "CAPABILITY_RECOVERY"
     ENEMY_COMPOSITION_CHANGE = "ENEMY_COMPOSITION_CHANGE"
     AGE_TRANSITION = "AGE_TRANSITION"
     MAP_OPENING_CHANGE = "MAP_OPENING_CHANGE"
@@ -117,6 +119,7 @@ class RuntimeObservationSnapshot:
     completed_demands: frozenset[str] = frozenset()
     previous_posture: StrategyPosture | None = None
     previous_demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...] = ()
+    previous_capability_observations: tuple[tuple[str, bool | None], ...] = ()
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
 
     def result_for(self, expression: Expression) -> EvidenceTruth:
@@ -146,6 +149,7 @@ class StrategyRuntimeState:
         ...
     ] = ()
     evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
+    capability_transitions: tuple[tuple[str, CapabilityTransition], ...] = ()
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -757,19 +761,33 @@ def evaluate_strategy_runtime(
         )
 
     evaluated_capability_observations: list[tuple[str, EvidenceTruth]] = []
+    capability_transitions: list[tuple[str, CapabilityTransition]] = []
+    previous_capability_observations = dict(snapshot.previous_capability_observations)
     for capability_observation in profile.capability_observations:
         binding = bind_strategic_capability_observation(
             capability_observation,
             effective,
             registry,
         )
+        truth = evaluate_binding(binding, snapshot)
         evaluated_capability_observations.append(
             (
                 capability_observation.identity,
-                evaluate_binding(binding, snapshot),
+                truth,
             )
         )
-
+        current_bool = (
+            True if truth is EvidenceTruth.TRUE
+            else False if truth is EvidenceTruth.FALSE
+            else None
+        )
+        transition = classify_capability_transition(
+            previous_capability_observations.get(capability_observation.identity),
+            current_bool,
+        )
+        capability_transitions.append(
+            (capability_observation.identity, transition)
+        )
 
     owners: list[tuple[str, str]] = []
     active: list[str] = []
@@ -809,6 +827,21 @@ def evaluate_strategy_runtime(
         elif prior is not None and prior != state and state is StrategicDemandRuntimeState.STRATEGIC_COMPLETE:
             reasons.add(ReassessmentReason.CAPABILITY_COMPLETION)
 
+        matched_capabilities = {
+            observation.identity
+            for observation in profile.capability_observations
+            if observation.capability == demand.capability_intent
+        }
+        for capability_identity, transition in capability_transitions:
+            if capability_identity not in matched_capabilities:
+                continue
+            if state is StrategicDemandRuntimeState.STRATEGIC_INVALIDATED:
+                continue
+            if transition is CapabilityTransition.LOST:
+                reasons.add(ReassessmentReason.CAPABILITY_LOSS)
+            elif transition is CapabilityTransition.RECOVERED:
+                reasons.add(ReassessmentReason.CAPABILITY_RECOVERY)
+
         if demand.opportunity_cost is not None:
             if state is StrategicDemandRuntimeState.STRATEGIC_COMPLETE and demand.opportunity_cost.release_on_completion:
                 opportunity.append((demand.identity, OpportunityCostRuntimeState.RELEASED))
@@ -833,6 +866,7 @@ def evaluate_strategy_runtime(
             "reassessment": sorted(reason.value for reason in reasons),
             "evaluated_meta_evidence": evaluated_meta_evidence,
             "evaluated_capability_observations": evaluated_capability_observations,
+            "capability_transitions": capability_transitions,
         }
     )
 
@@ -858,5 +892,8 @@ def evaluate_strategy_runtime(
         ),
         evaluated_capability_observations=tuple(
             sorted(evaluated_capability_observations)
+        ),
+        capability_transitions=tuple(
+            sorted(capability_transitions, key=lambda item: item[0])
         ),
     )
