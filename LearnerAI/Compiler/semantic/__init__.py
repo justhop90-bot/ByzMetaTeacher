@@ -68,3 +68,12 @@ from .invalidation import (
     InvalidationValidationReport,
     validate_invalidation_contracts,
 )
+
+
+from .source_order import (
+    SourceOrderReport,
+    StateOrderBoundary,
+    StateOrderVisibility,
+    analyze_non_lifecycle_source_order,
+    validate_non_lifecycle_source_order,
+)
