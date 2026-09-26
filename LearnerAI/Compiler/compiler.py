@@ -45,6 +45,8 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
+    from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
+    from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -77,6 +79,8 @@ else:
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
+    from .semantic.rule_diagnostics import analyze_rule_diagnostics
+    from .semantic.rule_execution import analyze_effective_rules
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -399,8 +403,19 @@ def compile_package_with_report(
         staged.write_text(result, encoding="utf-8")
         if staged_manifest is not None:
             staged_manifest.write_text(manifest_text, encoding="utf-8")
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        rule_report = analyze_rule_diagnostics(
+            analyze_effective_rules(rule_graph),
+            registry,
+        )
         native_result = _normalize_native_validation(native_backend.validate(staged))
-        report = report_from_native_result(native_result, output)
+        report = report_from_native_result(
+            native_result,
+            output,
+            rule_diagnostics=rule_report.diagnostics,
+        )
         if report.status is ReportStatus.VALIDATED:
             os.replace(staged, output)
             if staged_manifest is not None:
@@ -470,8 +485,19 @@ def compile_source_with_report(
         staged.write_text(result, encoding="utf-8")
         if staged_manifest is not None:
             staged_manifest.write_text(manifest_text, encoding="utf-8")
+        rule_graph = SourceGraphResolver().resolve(
+            SourceGraphRequest(entrypoint=staged)
+        )
+        rule_report = analyze_rule_diagnostics(
+            analyze_effective_rules(rule_graph),
+            registry,
+        )
         native_result = _normalize_native_validation(native_backend.validate(staged))
-        report = report_from_native_result(native_result, output)
+        report = report_from_native_result(
+            native_result,
+            output,
+            rule_diagnostics=rule_report.diagnostics,
+        )
         if report.status is ReportStatus.VALIDATED:
             os.replace(staged, output)
             if staged_manifest is not None:
