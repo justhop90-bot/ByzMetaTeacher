@@ -194,6 +194,7 @@ def _has_operational_evidence(kinds: frozenset[PredicateKind]) -> bool:
             PredicateKind.OWNERSHIP,
             PredicateKind.STRATEGY,
             PredicateKind.DEPENDENCY,
+            PredicateKind.ADMISSIBILITY,
         }
     )
 
