@@ -145,7 +145,8 @@ Evidence classes are intentionally separate:
 ## Gate 7 — capability loss and recovery
 
 - [x] Require previous capability truth before declaring capability loss.
-- [x] Distinguish capability loss from ordinary feasibility failure.
+- [x] Distinguish provider/capability world-state from ordinary execution feasibility.
+- [x] Distinguish capability loss from ordinary feasibility failure, so false can-* never becomes loss.
 - [x] Detect only true -> false capability transitions.
 - [x] Detect false -> true recovery transitions.
 - [x] Preserve original strategic demand identity through loss/recovery.
@@ -228,7 +229,8 @@ Implemented in this pass:
    - capability-loss/recovery transition classifier;
    - load/preprocessor and performance evidence records.
 
-2. LearnerAI/Compiler/ir/strategy_runtime.py
+2. LearnerAI/Compiler/ir/strategy.py + LearnerAI/Compiler/ir/strategy_runtime.py
+   - explicit EXECUTION_FEASIBILITY versus PROVIDER_WORLD_STATE capability observation kinds;
    - previous capability-observation history;
    - true->false loss detection;
    - false->true recovery detection;
