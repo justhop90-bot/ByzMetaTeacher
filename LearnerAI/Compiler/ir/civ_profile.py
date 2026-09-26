@@ -11,6 +11,7 @@ from .game_data import (
     BuildingDef,
     CoverageStatus,
     EngineUnitClass,
+    FactStatus,
     FactualCoverage,
     GameDataScope,
     BuildingId,
