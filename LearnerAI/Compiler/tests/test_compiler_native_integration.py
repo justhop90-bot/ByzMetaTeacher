@@ -475,7 +475,7 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 fixture_root = test_path.parent / "fixtures" / "native_support_states"
-source = (fixture_root / f"{fixture_name}.basilisk").read_text(encoding="utf-8")
+source = (fixture_root / f"{fixture_name}.perdsl").read_text(encoding="utf-8")
 registry = module.CompilerNativeIntegrationTests._native_support_fixture_registry(fixture_name)
 backend = module.FakeBackend(
     module.fake_result(output, module.ValidationStatus.VALIDATED)
@@ -485,7 +485,7 @@ report = module.compile_source_with_report(
     output,
     native_backend=backend,
     registry=registry,
-    source_unit=f"native-support/{fixture_name}.basilisk",
+    source_unit=f"native-support/{fixture_name}.perdsl",
 )
 assessment = registry.assess_support("fixture-command")
 payload = {
