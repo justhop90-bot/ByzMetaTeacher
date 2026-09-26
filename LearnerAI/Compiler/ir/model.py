@@ -21,3 +21,5 @@ class SemanticDemand:
     action: SemanticAction
     witness: Expression
     release: Expression
+    pending_goal: int
+    completed_goal: int
