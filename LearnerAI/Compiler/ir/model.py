@@ -27,6 +27,13 @@ class AccessKind(str, Enum):
     WRITE = "WRITE"
 
 
+class StateStorageKind(str, Enum):
+    LIFECYCLE = "LIFECYCLE"
+    GOAL = "GOAL"
+    STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
+    TIMER = "TIMER"
+
+
 class LifecycleAccessPhase(str, Enum):
     INITIALIZATION = "INITIALIZATION"
     RELEASE = "RELEASE"
@@ -50,15 +57,26 @@ class SemanticId:
     local_name: str
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class StateAccess:
     state: StorageRequestId
     owner: SemanticId | None
     demand: SemanticId
     kind: AccessKind
-    phase: LifecycleAccessPhase
+    phase: LifecycleAccessPhase | None
     source_order: int
     operation: str
+    storage_kind: StateStorageKind = StateStorageKind.LIFECYCLE
+    rule_order: int | None = None
+    within_rule_order: int = 0
+
+    def __post_init__(self) -> None:
+        if self.source_order < 0:
+            raise ValueError("state access source_order must be non-negative")
+        if self.rule_order is not None and self.rule_order < 0:
+            raise ValueError("state access rule_order must be non-negative")
+        if self.within_rule_order < 0:
+            raise ValueError("state access within_rule_order must be non-negative")
 
 
 @dataclass(frozen=True)
