@@ -211,6 +211,9 @@ Use Compiler/backends/README.md for the protocol and pin.
 compiler.py:
 orchestration and CLI.
 
+clients/:
+explicit downstream client adapters; the generic compiler core is strategy-neutral.
+
 parser.py:
 source syntax to AST.
 
@@ -269,7 +272,7 @@ Still open:
 - resource/conflict semantics beyond the build-pass singleton;
 - action-issuance versus pending-state distinction;
 - broader source-order and same-pass visibility analysis across non-lifecycle state;
-- Castle vertical slice compiled against actual Basilisk strategy/economy semantics.
+- downstream strategy-client compilation through an explicit client adapter.
 
 ## Verification
 
