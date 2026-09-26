@@ -134,8 +134,17 @@ class CombinedValidationReport:
         return json.dumps(self.to_dict(), indent=2, sort_keys=True)
 
 
-def _semantic_id(code: str, message: str) -> str:
-    return hashlib.sha256(f"LearnerAI\x00{code}\x00{message}".encode("utf-8")).hexdigest()
+def _semantic_id(
+    code: str,
+    message: str,
+    *,
+    path: Path | None = None,
+    line: int | None = None,
+    column: int | None = None,
+) -> str:
+    return hashlib.sha256(
+        f"LearnerAI\x00{code}\x00{path or ''}\x00{line}\x00{column}\x00{message}".encode("utf-8")
+    ).hexdigest()
 
 
 def semantic_diagnostic(error: Exception) -> SemanticDiagnostic:
@@ -151,6 +160,54 @@ def semantic_diagnostic(error: Exception) -> SemanticDiagnostic:
         code=code,
         severity=DiagnosticSeverity.ERROR,
         message=text,
+    )
+
+
+def semantic_diagnostic_from_validator(
+    item: object,
+    *,
+    fallback_source_unit: str = "<source>",
+) -> SemanticDiagnostic:
+    code_value = getattr(item, "code", "SEMANTIC-COMPILE-ERROR")
+    code = getattr(code_value, "value", str(code_value))
+    severity_value = getattr(item, "severity", DiagnosticSeverity.ERROR)
+    severity = (
+        severity_value
+        if isinstance(severity_value, DiagnosticSeverity)
+        else DiagnosticSeverity(str(severity_value))
+    )
+    message = str(getattr(item, "message", item))
+    location = getattr(item, "location", None)
+
+    subject = None
+    for attribute in ("demand", "node", "provider", "state", "access"):
+        candidate = getattr(item, attribute, None)
+        if candidate is not None:
+            subject = candidate
+            if location is None:
+                location = getattr(candidate, "location", None)
+            if location is not None:
+                break
+
+    source_unit = getattr(subject, "source_unit", None) or fallback_source_unit
+    path = Path(source_unit) if source_unit else None
+    line = getattr(location, "line", None) if location is not None else None
+    column = getattr(location, "column", None) if location is not None else None
+    return SemanticDiagnostic(
+        id=_semantic_id(
+            code,
+            message,
+            path=path,
+            line=line,
+            column=column,
+        ),
+        source=DiagnosticSource.LEARNERAI,
+        code=code,
+        severity=severity,
+        message=message,
+        path=path,
+        line=line,
+        column=column,
     )
 
 
@@ -221,7 +278,10 @@ def order_diagnostics(
 ) -> tuple[ReportDiagnostic, ...]:
     combined = [_from_semantic(item) for item in semantic]
     combined.extend(_from_native(item) for item in native)
-    return tuple(sorted(combined, key=_diagnostic_sort_key))
+    unique: dict[tuple[str, str], ReportDiagnostic] = {}
+    for item in combined:
+        unique[(item.source.value, item.id)] = item
+    return tuple(sorted(unique.values(), key=_diagnostic_sort_key))
 
 
 def exit_code_for_report(report: CombinedValidationReport) -> int:
@@ -260,10 +320,15 @@ def report_from_native_result(
 
 
 def semantic_failure_report(error: Exception, output_path: Path) -> CombinedValidationReport:
-    diagnostic = semantic_diagnostic(error)
+    semantic = tuple(getattr(error, "diagnostics", ()))
+    diagnostics = (
+        order_diagnostics(semantic, ())
+        if semantic
+        else order_diagnostics((semantic_diagnostic(error),), ())
+    )
     return CombinedValidationReport(
         status=ReportStatus.SEMANTIC_REJECTED,
-        diagnostics=order_diagnostics((diagnostic,), ()),
+        diagnostics=diagnostics,
         native_result=None,
         output_path=output_path.resolve(),
     )
