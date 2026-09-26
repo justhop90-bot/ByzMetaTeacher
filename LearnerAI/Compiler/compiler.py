@@ -64,7 +64,8 @@ else:
     from .errors import CompileError
     from .parser import parse
     from .primitives import PrimitiveRegistry, default_de_registry
-    from .semantic import analyze
+    from .semantic.community_engine import default_community_engine_registry
+from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
     from .semantic.source_order import validate_non_lifecycle_source_order
     from .semantic.action_issuance import validate_action_issuance
@@ -132,6 +133,11 @@ def _compile_ir_parts(
     binding_context: BindingContext | None = None,
 ):
     reports = []
+
+    # Validate the compiler's explicit community/native engine contract before
+    # compiling any semantic IR. This does not pretend to validate arbitrary
+    # .per behavior; it protects the evidence-backed contract from drift.
+    default_community_engine_registry().validate()
 
     ownership_report = validate_demand_ownership(ir)
     reports.append(ownership_report)
