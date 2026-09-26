@@ -51,7 +51,7 @@
 - Consumes: `GoalSlotRequest`, `NativeStorageContract`, `BindingContext`.
 - Produces: `GoalSpanRequest`, `GoalInterval`, generalized `BindingRecord`, interval-aware `BindingContext`, deterministic scalar/span allocation.
 
-- [ ] Add `GoalSpanRequest` with explicit width, shape, contract bounds, and symbolic provenance.
+- [x] Add `GoalSpanRequest` with explicit width, shape, contract bounds, and symbolic provenance.
 - [x] Represent occupied external Goal spans as intervals.
 - [x] Reject scalar/span overlap, invalid contract ranges, zero-width spans, and duplicate storage identities.
 - [x] Allocate scalar lifecycle state from the existing scalar pool and extended spans from their contract pool without aliasing.
@@ -111,4 +111,4 @@
 
 ## Verification record
 
-The storage reuse tranche is implemented on `main`. The compiler workflow has passed native validation and the full unittest suite on the implementation head before documentation-only commits. The next verification cycle will re-run the same checks against the documentation-updated head.
+The storage reuse tranche is implemented on `main`. Compiler workflow run 123 passed native validation and the full unittest suite after the storage fixes. The subsequent commits changed documentation only; no compiler/runtime files changed after that verification.
