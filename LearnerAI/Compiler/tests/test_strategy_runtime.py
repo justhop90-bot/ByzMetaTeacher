@@ -10,7 +10,6 @@ from LearnerAI.Compiler.ir.strategy import (
     PostureTransition,
     StrategicCapabilityObservation,
     StrategicEvidence,
-    StrategicObservationSpec,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
     StrategyPosture,
