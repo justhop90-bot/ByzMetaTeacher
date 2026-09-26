@@ -16,7 +16,8 @@ from Compiler.backends.models import (
     ValidationStatus,
     ValidationSummary,
 )
-from Compiler.compiler import compile_to_file
+from Compiler.compiler import compile_source_with_report, compile_to_file
+from Compiler.diagnostics import ReportStatus
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.basilisk").read_text(encoding="utf-8")
 
@@ -55,6 +56,20 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
             self.assertFalse(output.exists())
 
+    def test_compile_source_with_report_requires_native_validation(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Path(tmp_dir) / "Basilisk.per"
+            output.write_text("KEEP THIS\n", encoding="utf-8")
+
+            report = compile_source_with_report(EXAMPLES, output)
+
+            self.assertEqual(report.status, ReportStatus.BACKEND_FAILURE)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
+            self.assertEqual(
+                report.diagnostics[0].code,
+                "NATIVE-VALIDATION-REQUIRED",
+            )
+
     def test_validated_backend_with_findings_never_promotes(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
@@ -75,7 +90,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
             validation = compile_to_file(EXAMPLES, output, native_backend=fake)
 
-            self.assertEqual(validation.status, ValidationStatus.VALIDATED)
+            self.assertEqual(validation.status, ValidationStatus.BACKEND_PROTOCOL_ERROR)
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
 
     def test_validated_backend_promotes_staged_output(self):
