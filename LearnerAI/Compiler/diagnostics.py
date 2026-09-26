@@ -49,12 +49,15 @@ class ReportDiagnostic:
     source: DiagnosticSource
     code: str
     severity: DiagnosticSeverity
+    confidence: str | None
     message: str
+    suggestion: str | None
     path: Path | None
     line: int | None
     column: int | None
     end_line: int | None
     end_column: int | None
+    references: tuple[dict[str, object], ...]
 
 
 @dataclass(frozen=True)
@@ -112,12 +115,15 @@ class CombinedValidationReport:
                     "source": item.source.value,
                     "code": item.code,
                     "severity": item.severity.value,
+                    "confidence": item.confidence,
                     "message": item.message,
+                    "suggestion": item.suggestion,
                     "path": str(item.path) if item.path is not None else None,
                     "line": item.line,
                     "column": item.column,
                     "end_line": item.end_line,
                     "end_column": item.end_column,
+                    "references": list(item.references),
                 }
                 for item in self.diagnostics
             ],
@@ -154,7 +160,9 @@ def _from_semantic(item: SemanticDiagnostic) -> ReportDiagnostic:
         source=item.source,
         code=item.code,
         severity=item.severity,
+        confidence=None,
         message=item.message,
+        suggestion=None,
         path=item.path,
         line=item.line,
         column=item.column,
@@ -170,12 +178,15 @@ def _from_native(item: NativeDiagnostic) -> ReportDiagnostic:
         source=DiagnosticSource.NATIVE,
         code=item.code,
         severity=DiagnosticSeverity(item.severity.value),
+        confidence=item.confidence.value,
         message=item.message,
+        suggestion=item.suggestion,
         path=location.path,
         line=location.line,
         column=location.column,
         end_line=location.end_line,
         end_column=location.end_column,
+        references=item.references,
     )
 
 
