@@ -278,7 +278,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     native_backend=fake,
                 )
 
-            self.assertEqual(report.status, ReportStatus.REJECTED)
+            self.assertEqual(report.status, ReportStatus.NATIVE_REJECTED)
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP OLD PACKAGE ARTIFACT\n")
             self.assertIn("; COMPILER RULE DIAGNOSTICS", fake.seen_artifact_text)
 
