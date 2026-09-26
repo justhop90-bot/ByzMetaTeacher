@@ -98,6 +98,20 @@ from .rule_execution import (
     RulePassBehavior,
     analyze_effective_rules,
 )
+
+from .persistent_state import (
+    PersistentStateAccess,
+    PersistentStateAccessKind,
+    PersistentStateBoundary,
+    PersistentStateDiagnostic,
+    PersistentStateDiagnosticCode,
+    PersistentStateKind,
+    PersistentStateRef,
+    PersistentStateReport,
+    PersistentStateVisibility,
+    analyze_persistent_state,
+)
+
 from .fact_evaluation import evaluate_static_truth
 from .fact_registry import FactSemanticAdapter, NativeFactRegistry
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
