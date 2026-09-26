@@ -45,6 +45,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
+    from Compiler.semantic.persistent_state import analyze_persistent_state
     from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.emitter import emit
