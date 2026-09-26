@@ -42,6 +42,8 @@ The compiler owns:
 - feasibility versus action;
 - pending state;
 - timing-vs-world-evidence semantics;
+- native positional observations where the engine exposes them;
+- refusal to invent unsupported builder-count semantics;
 - completion witnesses;
 - release;
 - future cancellation/obsolescence;
