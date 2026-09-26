@@ -31,6 +31,7 @@ class EngineSemanticMapping:
     admission: str
     completion: str
     recovery: str
+    practice_references: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -59,6 +60,11 @@ class EngineSemanticMappingRegistry:
                 if not getattr(item, field_name):
                     raise ValueError(
                         f"engine semantic mapping '{item.identity}' lacks {field_name}"
+                    )
+            for reference in item.practice_references:
+                if not reference:
+                    raise ValueError(
+                        f"engine semantic mapping '{item.identity}' has an empty practice reference"
                     )
             if item.status is EngineSemanticMappingStatus.CONTRACTED:
                 if not item.native_command or not item.native_kind:
@@ -322,6 +328,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
                 admission="not executable until DUC IR/lifetime mapping exists",
                 completion="not a completion witness",
                 recovery="unknown; evidence-only",
+                practice_references=("duc.search-state-retained",),
             ),
             EngineSemanticMapping(
                 identity="attack.group-state-control",
@@ -336,6 +343,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
                 admission="not executable until attack lifecycle semantics are mapped",
                 completion="not a generic completion witness",
                 recovery="unknown; evidence-only",
+                practice_references=("attack.group-state-control",),
             ),
         )
     )
