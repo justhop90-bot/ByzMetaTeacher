@@ -4598,3 +4598,173 @@ If a resource is already committed through escrow or reserved by a higher-priori
 - Market conversion must respect persistent demands, resource commitments, and strategic reserves.
 - A market action must not become an unbounded retry loop merely because its source condition remains true.
 - The smallest community-native market rule that preserves demand, feasibility, action, witness, and release is preferable to a generic economic transaction manager.
+
+
+## 36. Player context and information scope
+
+Information in AoE2 AI scripting is scoped to players. The learner must distinguish the computer player's own state, a specific player's observed state, and the current focus-player context. This is the foundation for reusable enemy analysis. A correct fact applied to the wrong player is still wrong.
+
+### 36.1 Community pattern
+
+Community scripts commonly move through this chain:
+
+    IDENTIFY PLAYER
+        ↓
+    SELECT / FOCUS PLAYER CONTEXT
+        ↓
+    OBSERVE PLAYER STATE
+        ↓
+    INTERPRET ENEMY / ALLY CONDITION
+        ↓
+    ESTABLISH STRATEGIC DEMAND
+        ↓
+    DOMAIN RESPONSE
+
+Player selection is information context. It is not itself a strategic decision or military action.
+
+### 36.2 Local player versus remote player
+
+AIRef distinguishes facts about the computer player from facts about another player. Examples include:
+
+- player-number identifies the computer player's player number.
+- players-civ observes a specified player's civilization.
+- players-current-age observes a specified player's age.
+- players-population observes a specified player's population.
+- players-military-population observes a specified player's military population.
+- players-building-type-count observes a specified player's buildings.
+- players-unit-type-count observes a specified player's observed units.
+- players-stance checks a specified player's diplomatic stance toward the computer player.
+
+The players-* family is observational. It does not establish what that player intends to do.
+
+### 36.3 Observed information is not omniscience
+
+For remote units, players-unit-count and players-unit-type-count are based on what the computer player has seen. They therefore represent information available to the AI, not a cheating global census.
+
+This creates an important semantic distinction:
+
+    OBSERVED ENEMY KNIGHTS > 0
+
+proves:
+
+    THE AI HAS OBSERVED KNIGHTS
+
+It does not prove:
+
+    THE ENEMY CURRENTLY HAS EXACTLY THAT MANY KNIGHTS
+
+and does not prove:
+
+    THE ENEMY WILL ATTACK WITH KNIGHTS
+
+The first is Information. The second requires stronger knowledge than the fact supplies. The third is Strategy inference.
+
+### 36.4 Focus-player context
+
+The focus-player identifier provides a reusable player context. AIRef documents focus-player as being linked to the sn-focus-player-number strategic number. It can be used where a player-number parameter is accepted, allowing rules and advanced up-* systems to operate on a selected player without hard-coding one opponent. citeturn2search1turn2search2
+
+The learner should therefore understand:
+
+    PLAYER IDENTIFICATION
+        ↓
+    FOCUS-PLAYER
+        ↓
+    PLAYER-SCOPED FACTS / SEARCH
+
+Changing focus changes the subject of later player-scoped operations. It does not mutate the observed player or create a strategic relationship by itself.
+
+### 36.5 Finding players is different from observing them
+
+AIRef provides up-find-player and up-find-next-player for selecting active players according to a specified stance and search method. Documented examples include finding the nearest enemy and iterating through matching players. citeturn2search1
+
+This produces a useful two-stage pattern:
+
+    FIND PLAYER
+        ↓
+    STORE PLAYER NUMBER
+        ↓
+    FOCUS / QUERY PLAYER
+        ↓
+    OBSERVE FACTS
+        ↓
+    INTERPRET
+
+The search action does not itself prove that the selected player has a particular army, technology, or intention. It establishes player context for subsequent observation.
+
+### 36.6 Minimal valid pattern
+
+A minimal learner pattern is:
+
+    (up-find-player enemy find-closest g:gl-closest-player)
+
+followed by player-scoped observation using the resulting player number or appropriate focus context.
+
+Conceptually:
+
+    nearest enemy
+        → selected player
+        → observe military population / unit composition / age
+        → interpret threat
+        → maintain or release response demand
+
+Do not collapse all four stages into a single rule and then pretend the bot possesses strategic clairvoyance.
+
+### 36.7 Common failure
+
+#### Hard-coding one enemy
+
+A rule written for player 3 fails to generalize when player numbers change. Player identity should be discovered or parameterized when the behavior is intended to be reusable.
+
+#### Confusing focus with ownership
+
+focus-player selects the subject of a player-scoped operation. It does not transfer ownership of units, buildings, or resources.
+
+#### Treating observed counts as current truth
+
+Remote unit counts are limited by what the AI has seen. They are evidence, not omniscient state.
+
+#### Treating selection as strategy
+
+Finding the nearest enemy does not mean that the nearest enemy is strategically the correct target. Selection supplies context; Strategy interprets it.
+
+#### Letting stale focus leak across modules
+
+Advanced search code that changes focus context can make later rules operate on an unintended player if the scope is not explicit and traceable. Treat focus changes as part of the execution trace.
+
+### 36.8 Basilisk-scale variant
+
+Basilisk should keep player context inside Information and Engineering rather than allowing arbitrary military rules to invent their own enemy-selection semantics:
+
+    INFORMATION
+        discover / select relevant player
+            ↓
+        observe what is actually known
+            ↓
+    STRATEGY
+        interpret observed state
+            ↓
+        establish persistent response demand
+            ↓
+    MILITARY / ECONOMY / CONSTRUCTION
+        satisfy the demand through normal capability and feasibility paths
+            ↓
+    WORLD-STATE WITNESS
+        verify the response effect
+            ↓
+    RELEASE / REASSESS
+
+For example, observing enemy Spearmen can justify a persistent anti-Spear demand. It does not directly authorize a particular unit-production action. Production still owns capability and engine feasibility.
+
+If multiple opponents matter, player selection should be explicit in the trace: identify player, establish context, observe, interpret, then act. This prevents an up-* search primitive from quietly becoming a hidden strategy manager.
+
+### 36.9 Hard invariants
+
+- Player identity and player state are separate concepts.
+- players-* facts are observations about a specified player, not strategic intent.
+- Remote unit observations represent what the AI has seen, not omniscient current state. citeturn2search0
+- focus-player is context, not ownership and not strategy. citeturn2search1
+- Finding a player is not the same as interpreting that player's behavior.
+- Player selection must precede player-scoped reasoning when the target is dynamic.
+- Strategy interprets information; Information does not silently create military actions.
+- Focus changes and advanced player searches must be traceable when they affect later facts.
+- The smallest player-selection mechanism that preserves information scope and strategic ownership is preferable to hidden global targeting state.
