@@ -502,18 +502,26 @@ This is important because a queue is an obligation in the immediate production s
 
 ### Short wall
 
+The strategy demand must already have passed the resource/route exposure test.
+
 Use:
 
-- 2 builders;
+- 2 builders normally;
 - 1 temporary wood packet if necessary;
 - 60-80 wood normal budget.
 
+Builder count here is construction feasibility. It does not create the wall demand.
+
 ### Reinforced local wall
+
+Keep the same exposed-resource/route denial condition active.
 
 Use:
 
-- 3-4 builders;
+- 3-4 builders when the additional closure must complete before another attack path opens;
 - up to 120 total new wall wood under active pressure.
+
+Four enemy units alone do not authorize a wall if there is no meaningful route/resource to protect.
 
 ### Large enclosure
 
@@ -524,6 +532,8 @@ Use:
 - 4-6 builders;
 - explicit Castle-opportunity-cost check;
 - no concurrent optional Feudal production unless the defense requires it.
+
+A large enclosure should close multiple meaningful attack routes/resources. It is not an automatic response to a high unit count.
 
 ### Wall release
 
