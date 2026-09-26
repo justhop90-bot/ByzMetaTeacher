@@ -975,64 +975,361 @@ and destroys the feedback loop.
 
 ## 20. Canonical lifecycle: Castle
 
+This is the canonical Construction example because it forces the learner to distinguish **availability, affordability, buildability, execution state, completion, and strategic release**. These are separate engine questions.
+
 ### Demand
 
 Strategy establishes that Castle infrastructure is required.
 
-Possible representation:
+Possible semantic representation:
 
-```
+\u0060\u0060\u0060
 (goal GOAL-CASTLE 1)
-```
+\u0060\u0060\u0060
+
+The goal means **the strategy still wants a Castle**. It does not mean that the Castle is available, affordable, buildable, under construction, or completed.
+
+The demand should also have a target and an admissibility boundary, for example:
+
+\u0060\u0060\u0060
+required Castle count = 1
+completed Castle count < required count
+strategic Castle posture remains active
+\u0060\u0060\u0060
 
 ### Admissibility
 
-Conditions such as age/strategy/posture still justify the Castle.
+Strategy/domain conditions determine whether the demand still applies.
 
-### Capability
+Examples:
 
-The domain checks the relevant prerequisites, resources, builders, and construction state.
+- the intended strategic posture still calls for a Castle;
+- the player is in the appropriate age/context;
+- the demand has not been cancelled or superseded;
+- the required Castle count has not already been satisfied.
 
-### Feasibility
+Admissibility is **why we still care**. It is not an engine permission check.
 
-```
+### Capability: `building-available`
+
+First distinguish whether the building is actually available to the civilization and current technology-tree state.
+
+Conceptually:
+
+\u0060\u0060\u0060
+(building-available castle)
+\u0060\u0060\u0060
+
+This answers: **“Is Castle construction available in the current civ/tech-tree state?”**
+
+It does not prove that the Castle can be placed, that its resources are available, that a builder can execute the request, or that the Castle is not already pending.
+
+### Capability: `can-afford-building`
+
+Resource affordability is a separate question.
+
+Conceptually:
+
+\u0060\u0060\u0060
+(can-afford-building castle)
+\u0060\u0060\u0060
+
+This answers: **“Does the engine consider the normal Castle cost affordable right now?”**
+
+It does not prove placement, builder execution, freedom from competing resource commitments, or eventual completion.
+
+If the economy uses escrow/resource reservation, escrow represents **resource commitment/arbitration**, not Castle completion. A Castle can have resources protected without being built, and resources can exist in the bank while another demand has a legitimate claim on them.
+
+### Capability: builder availability and assignment
+
+Construction must distinguish:
+
+1. villagers exist who are eligible to construct the building;
+2. builders are actually available to be assigned;
+3. the construction request has entered the appropriate builder/execution state.
+
+Where explicit assignment is used, primitives such as:
+
+\u0060\u0060\u0060
+(up-assign-builders ...)
+\u0060\u0060\u0060
+
+are **execution/control operations**, not completion witnesses.
+
+A builder assignment request proves that the script requested builder assignment. It does not prove that construction completed.
+
+Do not turn “we have 10 villagers” into “Castle construction is feasible.” Worker availability is one input to construction execution, not the whole construction decision.
+
+### Capability: placement constraints
+
+Castle construction is spatial.
+
+The learner must distinguish:
+
+**“The Castle is affordable and available”**
+
+from:
+
+**“The engine can start a Castle at a legal/usable location now.”**
+
+Placement/location constraints therefore belong to actual build feasibility. They must not be inferred merely from resource amounts or prerequisite buildings.
+
+This is another reason `can-build castle` matters: it is the engine-facing feasibility test rather than a homemade claim that the prerequisites look good.
+
+### Feasibility: `can-build`
+
+The decisive engine-native construction test is:
+
+\u0060\u0060\u0060
 (can-build castle)
-```
+\u0060\u0060\u0060
+
+Teach this as: **“The engine currently permits the Castle construction request under its buildability rules.”**
+
+Keep it distinct from the diagnostic layers:
+
+| Question | Primitive/concept |
+|---|---|
+| Is Castle available to this civ/tech state? | `building-available castle` |
+| Can the normal cost be afforded? | `can-afford-building castle` |
+| Are suitable builders/execution resources available? | builder/construction state |
+| Can construction actually be started? | `can-build castle` |
+| Is a Castle already completed? | `building-type-count castle` |
+| Is a Castle completed or under construction? | `building-type-count-total castle` |
+| Is a Castle construction object pending? | `up-pending-objects ... castle` |
+
+Do not reduce all of these to one generic “Castle capability” flag.
+
+`can-build castle` is also not a strategic decision. Construction asks whether the demand should be serviced; the engine answers whether the requested construction is feasible now.
+
+### Escrow and resource arbitration
+
+A persistent Castle demand can compete with farms, Town Centers, military production, upgrades, or other infrastructure.
+
+The learner therefore needs this distinction:
+
+\u0060\u0060\u0060
+resource exists
+    ≠
+resource is available to this demand
+    ≠
+engine permits this build
+\u0060\u0060\u0060
+
+If the script uses escrow/resource reservation, escrow represents **resource commitment/arbitration**, not completion. It protects or commits resources for a purpose; it does not prove that a Castle exists.
+
+Likewise, resource arbitration should not replace `can-build`. Economy decides whether the demand receives access to scarce resources; engine feasibility decides whether construction can actually proceed.
+
+### Repeat prevention: completed versus pending
+
+The critical construction-state distinction is:
+
+\u0060\u0060\u0060
+ABSENT
+  ↓
+DEMANDED
+  ↓
+BUILD REQUESTED
+  ↓
+PENDING / FOUNDATION
+  ↓
+COMPLETED
+\u0060\u0060\u0060
+
+The learner must not interpret “Castle count is zero” as “issue another Castle request.”
+
+`building-type-count castle` is the important **completed/existing-building witness**.
+
+By contrast, `building-type-count-total castle` answers a different question because it includes existing and under-construction buildings.
+
+`up-pending-objects ... castle` can provide an explicit pending-construction guard when the script needs to know whether a Castle construction object is already pending or needs finer control over simultaneous requests.
+
+For a one-Castle demand, a construction rule must prevent:
+
+\u0060\u0060\u0060
+Castle absent
+→ build castle
+→ Castle not completed yet
+→ build castle again
+→ duplicate construction requests
+\u0060\u0060\u0060
+
+A pending/total-state guard is therefore execution correctness, not an optional optimization.
+
+A simple teaching rule may use `building-type-count-total` because it includes under-construction buildings:
+
+\u0060\u0060\u0060
+completed-or-under-construction Castle count < required count
++ can-build castle
+→ build castle
+\u0060\u0060\u0060
+
+A more explicit construction system can separately inspect `up-pending-objects` when it needs to distinguish pending state or control simultaneous construction more precisely.
 
 ### Action
 
-```
+Once the demand remains admissible, the required capability exists, and the engine says construction is feasible:
+
+\u0060\u0060\u0060
 (build castle)
-```
+\u0060\u0060\u0060
 
-### Pending protection
+This is an **action request**.
 
-```
-(up-pending-objects c: castle ...)
-```
+It is not a completion witness. It does not prove that a foundation was placed, builders were assigned, construction progressed, or the Castle completed.
 
-### Witness
+### World-state transition
 
-```
+After the action, construction may progress through:
+
+\u0060\u0060\u0060
+REQUESTED
+→ PENDING / FOUNDATION
+→ UNDER CONSTRUCTION
+→ COMPLETED
+\u0060\u0060\u0060
+
+The exact observable state available to the script depends on the engine primitive being used.
+
+This transition is why action and witness must remain separate.
+
+### Witness: `building-type-count`
+
+The primary completion witness is:
+
+\u0060\u0060\u0060
+(building-type-count castle > 0)
+\u0060\u0060\u0060
+
+This is intentionally **not**:
+
+\u0060\u0060\u0060
 (building-type-count-total castle > 0)
-```
+\u0060\u0060\u0060
 
-### Release
+The distinction is critical:
 
-Clear or transition the Castle demand only after the completion witness is true, unless strategy explicitly cancels it.
+- `building-type-count castle` teaches **completed/existing Castle**.
+- `building-type-count-total castle` teaches **completed plus under-construction Castle**.
+
+Therefore a positive total count can establish that the Castle lifecycle has entered construction state, but it must not automatically be used as proof that the Castle is completed.
+
+For a target of N Castles:
+
+\u0060\u0060\u0060
+building-type-count castle >= required-count
+\u0060\u0060\u0060
+
+is the natural completion witness.
+
+### Completion versus release
+
+**Completion** and **release** are not the same event.
+
+Completion means:
+
+\u0060\u0060\u0060
+world state proves required Castle count exists
+\u0060\u0060\u0060
+
+Release means:
+
+\u0060\u0060\u0060
+the strategic/domain demand no longer needs to remain active
+\u0060\u0060\u0060
+
+The normal successful path is:
+
+\u0060\u0060\u0060
+Castle demand active
+→ Castle construction completed
+→ completed-building witness true
+→ Castle demand released or transitioned
+\u0060\u0060\u0060
+
+But release can also occur without completion when Strategy explicitly cancels or supersedes the demand.
+
+Therefore distinguish:
+
+- **COMPLETED:** expected world state exists;
+- **CANCELLED/OBSOLETE:** Strategy no longer wants it;
+- **BLOCKED:** Strategy still wants it, but execution is currently impossible;
+- **ACTIVE:** Strategy still wants it and construction remains unresolved.
+
+Never clear the demand merely because `build castle` fired.
 
 ### Blocked behavior
 
-If `can-build castle` remains false, retain legitimate strategic intent and diagnose:
+If `can-build castle` remains false while the Castle demand is still admissible, preserve the demand and diagnose the blocking layer:
 
-- resources;
-- prerequisites;
-- builders;
-- pending construction;
-- competing resource demands;
-- construction constraints.
+1. Is `building-available castle` false?
+2. Is the normal cost unaffordable?
+3. Are resources committed to another demand/escrow?
+4. Are eligible builders unavailable?
+5. Is a Castle already pending?
+6. Is the intended placement currently invalid?
+7. Is another engine construction constraint blocking the action?
+8. Is another rule consuming the resources or builders first?
+9. Has Strategy actually cancelled or superseded the demand?
 
-Do not solve a blocked persistent demand by incrementing a retry counter forever.
+`can-build castle` is the immediate engine-level feasibility result. These other observations explain why it may be false or why the demand may remain blocked.
+
+Do not solve a blocked persistent demand by accumulating permanent retry counters. Preserve intent, use transient cooldown/backoff where necessary, and reassess the actual blocking state.
+
+### Canonical Castle trace
+
+\u0060\u0060\u0060
+DEMAND
+  Strategy wants one Castle
+        ↓
+ADMISSIBILITY
+  strategic Castle posture remains valid
+        ↓
+CAPABILITY
+  building-available
+  + resources/affordability
+  + builders
+  + prerequisites
+  + construction state
+        ↓
+RESOURCE ARBITRATION
+  required resources are available to this demand
+        ↓
+FEASIBILITY
+  can-build castle
+        ↓
+ACTION
+  build castle
+        ↓
+EXECUTION STATE
+  pending/foundation/under construction
+        ↓
+WORLD-STATE WITNESS
+  building-type-count castle >= required count
+        ↓
+COMPLETION
+  required Castle actually exists
+        ↓
+RELEASE
+  Castle demand clears/transitions
+        ↓
+REASSESS
+  Strategy and domains react to the new infrastructure
+\u0060\u0060\u0060
+
+The hard invariants are:
+
+- `building-available` is not `can-build`.
+- `can-afford-building` is not `can-build`.
+- builder availability is not completion.
+- placement validity is not strategic demand.
+- escrow is not completion.
+- `build castle` is not completion.
+- `building-type-count-total` is not the same witness as `building-type-count`.
+- pending is not completed.
+- completion is not automatically identical to release.
+- cancellation/obsolescence is not successful completion.
+- a persistent Castle demand survives temporary blockage unless Strategy explicitly removes it.
 
 ---
 
