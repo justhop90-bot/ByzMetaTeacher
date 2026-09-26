@@ -849,7 +849,7 @@ def _byzantine_game_data(
                 UnitEffect(
                     UnitEffectKind.TECHNOLOGY_INTERACTION,
                     "affected-by-gambesons",
-                    target=EntitySelector.technology(TechId(875)),
+                    target=EntitySelector.tech(TechId(875)),
                     provenance=(controller,),
                 ),
             ),
@@ -914,6 +914,7 @@ def _byzantine_game_data(
         TechnologyDef(TechId(255), "Siege Ram", Age.IMPERIAL, (ResearchProvider(BuildingId(49)),), None, None, upgrades=(UnitId(548),), provenance=(evidence,)),
         TechnologyDef(TechId(257), "Onager", Age.IMPERIAL, (ResearchProvider(BuildingId(49)),), None, None, provenance=(evidence,)),
         TechnologyDef(TechId(34), "Warships", Age.CASTLE, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(361), "Elite Cataphract", Age.IMPERIAL, (ResearchProvider(BuildingId(82)),), None, None, upgrades=(UnitId(553),), provenance=(evidence,)),
         TechnologyDef(TechId(35), "Heavy Warships", Age.IMPERIAL, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
         TechnologyDef(TechId(246), "Fast Fire Ship", Age.IMPERIAL, (ResearchProvider(BuildingId(45)),), None, None, provenance=(evidence,)),
         TechnologyDef(
