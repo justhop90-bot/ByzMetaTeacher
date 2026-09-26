@@ -69,6 +69,40 @@ def fact_provenance():
 
 
 class NativeContractIntegrationTests(unittest.TestCase):
+    def test_default_goal_contracts_remain_distinct(self):
+        catalog = default_native_contract_catalog()
+        goal = catalog.goal_storage_contract("ordinary-persistent-goal-storage")
+        span = catalog.goal_span_contract("extended-4-goal-span")
+        parameter = catalog.parameter_range("goal-id-parameter-range")
+        self.assertEqual((goal.minimum_id, goal.maximum_id), (1, 512))
+        self.assertEqual((span.width, span.minimum_start, span.maximum_start), (4, 41, 15996))
+        self.assertEqual((parameter.minimum, parameter.maximum), (1, 16000))
+        self.assertEqual(catalog.parameter_ranges_for("goal", "GoalId"), (parameter,))
+        self.assertEqual(catalog.parameter_ranges_for("set-goal", "GoalId"), (parameter,))
+
+    def test_goal_storage_citation_cannot_back_goal_id_parameter_contract(self):
+        base = default_native_contract_catalog()
+        bad_storage = replace(
+            base.goal_storage_contract("ordinary-persistent-goal-storage"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:goal-id-parameter-range",
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "expected ORDINARY_PERSISTENT_GOAL_STORAGE"):
+            NativeContractCatalog(
+                witnesses=base.witnesses,
+                storage_uses=base.storage_uses,
+                pass_constraints=base.pass_constraints,
+                goal_storage_contracts=(bad_storage,),
+                goal_span_contracts=base.goal_span_contracts,
+                parameter_ranges=base.parameter_ranges,
+            )
+
     def test_missing_citation_record_blocks_native_contract_catalog(self):
         base = default_native_contract_catalog()
         witness = replace(
