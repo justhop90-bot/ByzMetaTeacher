@@ -110,6 +110,7 @@ StorageRequest = GoalSlotRequest | GoalSpanRequest
 class LifecycleEncoding:
     released: GoalValue
     active: GoalValue
+    issued: GoalValue
     pending: GoalValue
     complete: GoalValue
 
@@ -121,6 +122,7 @@ class LifecycleEncoding:
             active=GoalValue(1),
             pending=GoalValue(goal + 1),
             complete=GoalValue(goal + 2),
+            issued=GoalValue(goal + 3),
         )
 
 
