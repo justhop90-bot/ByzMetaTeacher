@@ -157,30 +157,36 @@ class CompilerTests(unittest.TestCase):
         self.assertNotEqual(states[1], 0)
     def test_castle_enters_pending_and_cannot_reissue_while_pending(self):
         output = compile_source(EXAMPLES)
-        action_block = output[output.find("; Demand: castle | ACTIVE -> PENDING"):output.find("; Completion witness: castle")]
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        action_end = output.find("; Pending diagnostics: defensive-spearmen")
+        action_block = output[action_start:action_end]
         self.assertIn("(build castle)", action_block)
         self.assertIn("(set-goal demand-castle 1001)", action_block)
-        pending_block = output[output.find("; Completion witness: castle"):output.find("; Release: castle")]
-        self.assertIn("(goal demand-castle 1001)", pending_block)
-        self.assertNotIn("(build castle)", pending_block)
+        witness_block = output[output.find("; Completion witness: castle"):output.find("; Demand: castle | ACTIVE -> PENDING")]
+        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertNotIn("(build castle)", witness_block)
 
     def test_spearmen_pending_state_prevents_repeated_train(self):
         output = compile_source(EXAMPLES)
-        action_block = output[output.find("; Demand: defensive-spearmen | ACTIVE -> PENDING"):output.find("; Completion witness: defensive-spearmen")]
+        action_start = output.find("; Demand: defensive-spearmen | ACTIVE -> PENDING")
+        action_end = output.find("; Pending diagnostics: wheelbarrow")
+        action_block = output[action_start:action_end]
         self.assertIn("(train spearman)", action_block)
         self.assertIn("(set-goal demand-defensive-spearmen 1004)", action_block)
-        pending_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Release: defensive-spearmen")]
-        self.assertIn("(goal demand-defensive-spearmen 1004)", pending_block)
-        self.assertNotIn("(train spearman)", pending_block)
+        witness_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Demand: defensive-spearmen | ACTIVE -> PENDING")]
+        self.assertIn("(goal demand-defensive-spearmen 1004)", witness_block)
+        self.assertNotIn("(train spearman)", witness_block)
 
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
         output = compile_source(EXAMPLES)
-        action_block = output[output.find("; Demand: wheelbarrow | ACTIVE -> PENDING"):output.find("; Completion witness: wheelbarrow")]
+        action_start = output.find("; Demand: wheelbarrow | ACTIVE -> PENDING")
+        action_end = len(output)
+        action_block = output[action_start:action_end]
         self.assertIn("(research ri-wheelbarrow)", action_block)
         self.assertIn("(set-goal demand-wheelbarrow 1007)", action_block)
-        pending_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Release: wheelbarrow")]
-        self.assertIn("(goal demand-wheelbarrow 1007)", pending_block)
-        self.assertNotIn("(research ri-wheelbarrow)", pending_block)
+        witness_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Demand: wheelbarrow | ACTIVE -> PENDING")]
+        self.assertIn("(goal demand-wheelbarrow 1007)", witness_block)
+        self.assertNotIn("(research ri-wheelbarrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
         output = compile_source(EXAMPLES)
@@ -252,30 +258,33 @@ class CompilerTests(unittest.TestCase):
 
     def test_pending_negative_witness_cannot_fire_before_action(self):
         output = compile_source(EXAMPLES)
-        action_end = output.find("; Completion witness: castle")
-        witness_start = action_end
-        witness_end = output.find("; Release: castle")
+        witness_start = output.find("; Completion witness: castle")
+        witness_end = output.find("; Demand: castle | ACTIVE -> PENDING")
         witness_block = output[witness_start:witness_end]
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
         self.assertIn("(goal demand-castle 1001)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
-        self.assertNotIn("(set-goal demand-castle 1002)", output[:action_end])
+        self.assertNotIn("(set-goal demand-castle 1002)", output[action_start:])
 
     def test_pending_negative_completion_requires_pending_transition(self):
         output = compile_source(EXAMPLES)
-        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        release_start = output.find("; Release: castle")
         witness_start = output.find("; Completion witness: castle")
-        action_block = output[action_start:witness_start]
-        witness_end = output.find("; Release: castle")
-        witness_block = output[witness_start:witness_end]
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        release_block = output[release_start:witness_start]
+        witness_block = output[witness_start:action_start]
+        action_block = output[action_start:output.find("; Pending diagnostics: defensive-spearmen")]
         self.assertIn("(set-goal demand-castle 1001)", action_block)
         self.assertIn("(goal demand-castle 1001)", witness_block)
         self.assertIn("(set-goal demand-castle 1002)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
         self.assertNotIn("(set-goal demand-castle 1002)", action_block)
+        self.assertIn("(goal demand-castle 1002)", release_block)
+        self.assertIn("(set-goal demand-castle 0)", release_block)
 
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
-        castle_release = output[output.find("; Release: castle"):output.find("; Demand: defensive-spearmen")]
+        castle_release = output[output.find("; Release: castle"):output.find("; Completion witness: castle")]
         self.assertIn("(goal demand-castle 1002)", castle_release)
         self.assertIn("(set-goal demand-castle 0)", castle_release)
         self.assertNotIn("(goal demand-castle 1001)", castle_release)
