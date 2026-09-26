@@ -19,6 +19,18 @@ class GoalSpanKind(str, Enum):
     EXTENDED_4 = "EXTENDED_4"
 
 
+class AccessKind(str, Enum):
+    READ = "READ"
+    WRITE = "WRITE"
+
+
+class LifecycleAccessPhase(str, Enum):
+    INITIALIZATION = "INITIALIZATION"
+    RELEASE = "RELEASE"
+    COMPLETION_WITNESS = "COMPLETION_WITNESS"
+    ACTION = "ACTION"
+
+
 class GoalRole(str, Enum):
     LIFECYCLE_STATE = "LIFECYCLE_STATE"
     PERSISTENT_STATE = "PERSISTENT_STATE"
@@ -31,6 +43,24 @@ class GoalRole(str, Enum):
 class SemanticId:
     source_unit: str
     local_name: str
+
+
+@dataclass(frozen=True, order=True)
+class StateAccess:
+    state: StorageRequestId
+    owner: SemanticId | None
+    demand: SemanticId
+    kind: AccessKind
+    phase: LifecycleAccessPhase
+    source_order: int
+    operation: str
+
+
+@dataclass(frozen=True)
+class DemandOwnership:
+    demand: SemanticId
+    owner: SemanticId | None
+    state: StorageRequestId
 
 
 @dataclass(frozen=True, order=True)
@@ -98,6 +128,8 @@ class SemanticDemand:
     action: SemanticAction
     witness: Expression
     release: Expression
+    ownership: DemandOwnership | None = None
+    state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
 
     @property
