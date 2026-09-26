@@ -18,6 +18,7 @@ from .native_hygiene import (
     ExcerptKind,
     ExcerptMatchKind,
     LocatorType,
+    NativeContractCatalog,
     NativeStorageClass,
     NativeStorageKind,
     NativeStorageUse,
