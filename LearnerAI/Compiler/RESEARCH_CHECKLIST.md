@@ -1,13 +1,31 @@
 # Current Compiler Frontier (2026-09-26)
 
-The package-storage P0 repair is now implemented. The current generic queue is:
+The package-storage P0 repair and P1 non-lifecycle source-order repair are now implemented. The current generic queue is:
 
 1. P0 complete: native support-state visibility, namespace-safe storage binding, explicit package-storage inventory, deterministic diagnostics/reproducibility.
-2. P1 next: non-lifecycle source-order analysis.
-3. P1: capability-loss/recovery, DUC/search safety, load/preprocessor graph.
+2. P1 next: capability-loss/recovery.
+3. P1: DUC/search safety, load/preprocessor graph.
 4. P2: community-practice registry, golden fixtures, generic reference bot, FlareMesh fixture.
 5. P3: evidence-backed performance/cost analysis.
 6. P4: experimental spatial coordination.
+
+## Non-lifecycle source-order repair checklist
+
+- [x] Cross-reference existing lifecycle writer/consumer analysis rather than creating a second diagnostic vocabulary.
+- [x] Add typed state-storage classification for lifecycle, Goal, Strategic Number, and Timer state.
+- [x] Add emitted rule scope (`rule_order`) and within-rule sequence (`within_rule_order`) to state accesses.
+- [x] Classify same-rule writer→reader as sequentially visible.
+- [x] Classify later-rule writer→reader as a persisted pass-boundary dependency.
+- [x] Reuse `OWN-008` for same-rule and cross-rule reader-before-writer violations.
+- [x] Fail closed when an ordinary state access lacks an emitted rule scope.
+- [x] Keep lifecycle ownership analysis isolated from ordinary Goal/SN/Timer accesses.
+- [x] Preserve source locations on state accesses.
+- [x] Integrate the pass before capability validation and emission.
+- [x] CI verification: 296 tests, four native acceptance fixtures clean, 3×3 native-support replay matrix clean.
+
+### Cross-reference outcome
+
+The existing emitter/lifecycle contract already establishes that actions within one `.per` rule are sequential while separate rules form pass boundaries. The new semantic pass makes that distinction explicit for engine-backed Goal, Strategic Number, and Timer state without inventing a latch or scheduler. Later-rule consumers are valid because the storage namespace itself persists; only reader-before-writer dependencies are rejected.
 
 ## Package-storage repair checklist
 
@@ -227,14 +245,16 @@ Do not turn this into a universal scheduler.
 
 ### 7. Source-order analysis
 
-Where Basilisk-style rule order is deliberate, the compiler should eventually identify:
+Implemented for ordinary engine-backed Goal, Strategic Number, and Timer state:
 
 - first writer;
 - first consumer;
-- reset-then-recompute chains;
-- same-pass visibility assumptions;
-- later overwrites;
-- unreachable or preempted rules.
+- same-rule sequential visibility;
+- cross-rule persisted dependencies;
+- reader-before-writer violations;
+- explicit failure when emitted rule scope is missing.
+
+Future source-order work is now the later-overwrite and unreachable/preempted-rule analysis once additional non-lifecycle lowering exists.
 
 ### 8. Timing and map-conditioned evidence
 
