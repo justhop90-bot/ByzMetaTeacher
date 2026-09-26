@@ -31,6 +31,7 @@ from Compiler.primitives.native_hygiene import (
     PerformanceEvidence,
     PromotionState,
     RevalidationResult,
+    RevalidationTrigger,
     SourceContentHash,
     SourceRetrieval,
     SourceExcerpt,
