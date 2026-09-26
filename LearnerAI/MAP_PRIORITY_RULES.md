@@ -210,6 +210,8 @@ Transport-critical is an **override profile**. It can coexist with hybrid or ful
 
 ## 4. Arabia / open-land priority rules
 
+For timing-confidence windows behind the Arabia profile, read `LearnerAI/ARABIA_TIMING_WINDOWS.md`. Timing changes interpretation confidence; it does not directly create production actions.
+
 ### Primary objective
 
 Build a stable land economy, survive the first military interaction, reach Castle without unnecessary Feudal drag, then convert the Castle economy into production/siege/TC/Monk/relic capability as justified.
