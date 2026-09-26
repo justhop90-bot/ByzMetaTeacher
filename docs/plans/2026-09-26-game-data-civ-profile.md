@@ -17,7 +17,7 @@
 
 - [ ] Full 145-node Byzantine manifest ingestion.
 - [ ] Complete verified research cost/time/effect ingestion.
-- [ ] Independent verification of current Varangian Guard unit numeric IDs.
+- [ ] Independent engine/DAT verification of current Varangian Guard unit and tech numeric IDs.
 - [ ] Full AIRef native command/parameter metadata ingestion.
 - [ ] Historical multi-patch replay fixtures.
 
