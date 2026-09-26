@@ -427,17 +427,6 @@ class ProviderContractValidationPass:
                             )
                         )
 
-                if provider.witness is None:
-                    diagnostics.append(
-                        _diag(
-                            CapabilityDiagnosticCode.PROVIDER_NO_WITNESS,
-                            f"action provider '{provider.identity.local_name}' has no completion witness",
-                            node=provider.identity,
-                            status=GraphStatus.OPEN_LOOP,
-                            location=provider.location,
-                        )
-                    )
-
                 if provider.action.conflict_class and not provider.action.arbitration:
                     diagnostics.append(
                         _diag(
@@ -449,6 +438,17 @@ class ProviderContractValidationPass:
                             location=provider.action.location or provider.location,
                         )
                     )
+
+            if provider.witness is None:
+                diagnostics.append(
+                    _diag(
+                        CapabilityDiagnosticCode.PROVIDER_NO_WITNESS,
+                        f"provider '{provider.identity.local_name}' has no completion witness",
+                        node=provider.identity,
+                        status=GraphStatus.OPEN_LOOP,
+                        location=provider.location,
+                    )
+                )
 
             if provider.admissibility is None and provider.action is not None:
                 diagnostics.append(
