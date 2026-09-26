@@ -4,6 +4,8 @@ from dataclasses import replace
 from LearnerAI.Compiler.compiler import compile_strategy_runtime_profile
 from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import BuildingId, CivId
+from LearnerAI.Compiler.semantic.community_engine import CapabilityTransition
+
 from LearnerAI.Compiler.ir.strategy import (
     CapabilityIntent,
     CapabilityIntentKind,
@@ -20,13 +22,10 @@ from LearnerAI.Compiler.ir.strategy import (
 from LearnerAI.Compiler.ir.strategy_runtime import (
     EvidenceTruth,
     OpportunityCostRuntimeState,
-
     RuntimeObservationSnapshot,
     StrategicDemandRuntimeState,
     StrategicObservationType,
     StrategyRuntimeState,
-    CapabilityTransition,
-    ReassessmentReason,
     bind_observation_reference,
     bind_strategic_capability_observation,
     bind_strategic_evidence,
