@@ -1,13 +1,18 @@
 demand before {
-    require (current-age >= dark-age)
-    action (build house)
-    witness (building-type-count house > 0)
-    release (building-type-count house > 0)
+    require (current-age >= castle-age)
+    require (building-available castle)
+    require (can-afford-building castle)
+    require (can-build castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
 }
 (load "child.perdsl")
 demand after {
-    require (current-age >= dark-age)
-    action (build house)
-    witness (building-type-count house > 0)
-    release (building-type-count house > 0)
+    require (research-available ri-wheelbarrow)
+    require (can-afford-research ri-wheelbarrow)
+    require (can-research ri-wheelbarrow)
+    action (research ri-wheelbarrow)
+    witness (research-completed ri-wheelbarrow)
+    release (research-completed ri-wheelbarrow)
 }
