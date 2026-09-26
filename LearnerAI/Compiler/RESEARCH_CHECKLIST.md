@@ -1,3 +1,21 @@
+# Current Compiler Frontier (2026-09-26)
+
+The compiler is a general AoE2 .per engineering platform. Basilisk and Byzantine strategy are downstream clients.
+
+The authoritative current roadmap is `COMPILER_FORENSIC_AUDIT_2026-09-26.md` plus `COMMUNITY_PER_PRACTICE_SPEC.md`.
+
+Priority order:
+1. P0: native correctness, support-state visibility, storage/package reproducibility, diagnostics.
+2. P1: non-lifecycle state ordering, capability-loss recovery, DUC/search safety, load/preprocessor graph.
+3. P2: community-practice registry, golden fixtures, generic reference bot.
+4. P3: evidence-backed performance analysis.
+5. P4: experimental coordination/spatial patterns.
+
+Important same-pass rule: actions inside one .per rule execute sequentially. A latch or persisted state is required when the dependency crosses rules/passes, not when actions are already in the same action list.
+
+Historical implementation sections below are retained as records. Their old Basilisk-specific exit criteria are no longer the compiler completion definition.
+
+---
 # LearnerAI Compiler Research Checklist
 
 This checklist keeps compiler work subordinate to the actual Byzantine player.
