@@ -5,16 +5,14 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Protocol
 
+from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..primitives import PrimitiveRegistry
-from ..ast import Expression
 from ..ir.capability import (
     CapabilityDemand,
     CapabilityGraph,
     CapabilityId,
-    CapabilityKind,
     CapabilityProvider,
-    CompletionWitness,
     DemandId,
     NodeId,
     Predicate,
@@ -80,7 +78,7 @@ class GraphDiagnostic:
     status: GraphStatus | None = None
     node: NodeId | None = None
     related: tuple[NodeId, ...] = ()
-    location: object | None = None
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -148,7 +146,7 @@ def _diag(
     related: Iterable[NodeId] = (),
     status: GraphStatus | None = None,
     severity: DiagnosticSeverity = DiagnosticSeverity.ERROR,
-    location: object | None = None,
+    location: SourceLocation | None = None,
 ) -> GraphDiagnostic:
     return GraphDiagnostic(
         code=code,
@@ -284,9 +282,6 @@ class StructuralValidationPass:
 
         capability_ids = {
             capability.identity for capability in graph.capabilities
-        }
-        provider_ids = {
-            provider.identity for provider in graph.providers
         }
         witness_ids = {
             witness.identity for witness in graph.witnesses
