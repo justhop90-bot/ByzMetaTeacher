@@ -770,8 +770,8 @@ class RuntimeBinder:
             candidate += 1
         if max_goal == LIFECYCLE_GOAL_MAX:
             raise ValueError(
-                f"unable to allocate lifecycle GoalId in range "
-                f"{self._base_goal}..{max_goal}"
+                f"unable to allocate lifecycle GoalId; lifecycle GoalId must leave room "
+                f"through GoalValue {GOAL_ID_MAX}; range {self._base_goal}..{max_goal}"
             )
         raise ValueError(
             f"unable to allocate GoalId in range "
