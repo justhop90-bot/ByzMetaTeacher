@@ -32,7 +32,7 @@ SUPPORT_CODES = frozenset(
     }
 )
 
-TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "persistent_artifact_sha256", "fixtures"})
+TOP_LEVEL_FIELDS = frozenset({"schema_version", "python", "platform", "persistent_artifacts", "fixtures"})
 FIXTURE_FIELDS = frozenset(
     {
         "diagnostics",
@@ -225,15 +225,25 @@ def validate_snapshot(
     if platform not in PLATFORMS:
         _fail(f"{source}.platform", f"unsupported platform {platform!r}")
 
-    persistent_artifact_sha256 = _string(
-        root["persistent_artifact_sha256"],
-        f"{source}.persistent_artifact_sha256",
+    persistent_artifacts = _mapping(
+        root["persistent_artifacts"],
+        f"{source}.persistent_artifacts",
     )
-    if not _HEX64.fullmatch(persistent_artifact_sha256):
-        _fail(
-            f"{source}.persistent_artifact_sha256",
-            "must be a 64-character lowercase SHA-256 digest",
+    _exact_keys(
+        persistent_artifacts,
+        frozenset({"file", "package"}),
+        f"{source}.persistent_artifacts",
+    )
+    for kind in ("file", "package"):
+        artifact_hash = _string(
+            persistent_artifacts[kind],
+            f"{source}.persistent_artifacts.{kind}",
         )
+        if not _HEX64.fullmatch(artifact_hash):
+            _fail(
+                f"{source}.persistent_artifacts.{kind}",
+                "must be a 64-character lowercase SHA-256 digest",
+            )
 
     fixtures = _mapping(root["fixtures"], f"{source}.fixtures")
     actual_fixtures = set(fixtures)
