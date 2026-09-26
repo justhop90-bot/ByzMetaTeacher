@@ -6,7 +6,7 @@ from enum import Enum
 import hashlib
 import json
 
-from .ir import GoalRole, GoalSlotRequest, StorageRequestId
+from .ir import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
 
 
 GOAL_ID_MIN = 1
