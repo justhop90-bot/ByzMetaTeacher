@@ -7,11 +7,8 @@ from Compiler.semantic.fact_values import (
     CanonicalInteger,
     CanonicalKind,
     CanonicalSymbol,
-    EnumNormalization,
+    CanonicalizationContext,
     IdentifierForm,
-    IdentifierNormalization,
-    ParameterSemanticKind,
-    SymbolNormalization,
     canonicalize_value,
 )
 
@@ -23,10 +20,7 @@ class ExampleAge(str, Enum):
 
 class CanonicalFactValueTests(unittest.TestCase):
     def test_integer_normalization_rejects_bool_and_normalizes_decimal_text(self):
-        context = EnumNormalization.parameter(
-            ParameterSemanticKind.INTEGER,
-            parameter_name="Value",
-        )
+        context = CanonicalizationContext.integer(parameter_name="Value")
 
         self.assertEqual(
             canonicalize_value(42, context),
@@ -41,8 +35,7 @@ class CanonicalFactValueTests(unittest.TestCase):
             canonicalize_value(True, context)
 
     def test_enum_normalization_is_domain_scoped_and_accepts_enum_instances(self):
-        context = EnumNormalization.parameter(
-            ParameterSemanticKind.ENUM,
+        context = CanonicalizationContext.enum(
             parameter_name="Age",
             domain="AGE",
             members=("DARK", "CASTLE"),
@@ -61,7 +54,7 @@ class CanonicalFactValueTests(unittest.TestCase):
             canonicalize_value("IMPERIAL", context)
 
     def test_identifier_normalization_preserves_namespace_and_reference_form(self):
-        context = IdentifierNormalization.parameter(
+        context = CanonicalizationContext.identifier(
             parameter_name="BuildingId",
             namespace="BUILDING",
             accepted_forms=(
@@ -69,6 +62,8 @@ class CanonicalFactValueTests(unittest.TestCase):
                 IdentifierForm.NUMERIC_ID,
                 IdentifierForm.CLASS,
             ),
+            names=("castle",),
+            classes=("building-class",),
         )
 
         self.assertEqual(
@@ -102,7 +97,7 @@ class CanonicalFactValueTests(unittest.TestCase):
         )
 
     def test_symbol_normalization_preserves_symbol_namespace(self):
-        context = SymbolNormalization.parameter(
+        context = CanonicalizationContext.symbol(
             parameter_name="Goal",
             namespace="GOAL",
         )
