@@ -101,6 +101,77 @@ class StaticFactEvaluationTests(unittest.TestCase):
             StaticTruth.UNKNOWN,
         )
 
+
+    def test_fact_domain_identity_mismatch_is_rejected_even_when_shape_is_valid(self):
+        fact_domain = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            invariant_truth=StaticTruth.TRUE,
+            provenance=self._provenance("fact-domain-identity"),
+        )
+        supplied_domain = FactDomain(
+            identity="RESOURCE",
+            kind=FactDomainKind.RESOURCE_AMOUNT,
+            value_type="int",
+            non_negative=True,
+            invariant_truth=StaticTruth.TRUE,
+            provenance=self._provenance("supplied-domain-identity"),
+        )
+        fact = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
+            provenance=self._provenance("identity-mismatch-fact"),
+            domain=fact_domain,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "fact domain 'AGE'.*supplied domain 'RESOURCE'",
+        ):
+            evaluate_static_truth(fact, supplied_domain)
+
+    def test_evaluator_result_is_independent_of_fact_and_domain_provenance(self):
+        fact_domain_a = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            invariant_truth=StaticTruth.UNKNOWN,
+            provenance=self._provenance("domain-a"),
+        )
+        fact_domain_b = FactDomain(
+            identity="AGE",
+            kind=FactDomainKind.ORDERED_ENUM,
+            value_type="Age",
+            ordered=True,
+            values=("DARK", "FEUDAL", "CASTLE", "IMPERIAL"),
+            invariant_truth=StaticTruth.UNKNOWN,
+            provenance=self._provenance("domain-b"),
+        )
+        fact_a = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
+            provenance=self._provenance("fact-a"),
+            domain=fact_domain_a,
+        )
+        fact_b = NormalizedFact(
+            semantic_id="observation.age.current",
+            canonical_args=(CanonicalEnum("AGE", "CASTLE"),),
+            provenance=self._provenance("fact-b"),
+            domain=fact_domain_b,
+        )
+
+        result_a = evaluate_static_truth(fact_a, fact_domain_a)
+        result_b = evaluate_static_truth(fact_b, fact_domain_b)
+
+        self.assertIs(result_a, StaticTruth.UNKNOWN)
+        self.assertIs(result_b, StaticTruth.UNKNOWN)
+        self.assertIs(result_a, result_b)
+
     def test_fact_domain_mismatch_is_rejected(self):
         domain = FactDomain(
             identity="AGE",
