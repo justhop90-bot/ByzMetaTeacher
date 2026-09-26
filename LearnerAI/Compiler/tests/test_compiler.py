@@ -139,7 +139,13 @@ class CompilerTests(unittest.TestCase):
                     goal = 1001
             return goal
 
-        rule_order = ("release", "witness", "action")
+        markers = {
+            "release": output.find("; Release: castle | COMPLETE -> RELEASED"),
+            "witness": output.find("; Completion witness: castle | PENDING -> COMPLETE"),
+            "action": output.find("; Demand: castle | ACTIVE -> PENDING"),
+        }
+        self.assertTrue(all(index >= 0 for index in markers.values()))
+        rule_order = tuple(stage for stage, _ in sorted(markers.items(), key=lambda item: item[1]))
         goal = 1
         states = []
         for _ in range(3):
