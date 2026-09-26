@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..ir import (
     CompletionWitnessContract,
@@ -40,6 +41,7 @@ class WitnessDiagnostic:
     status: WitnessStatus
     message: str
     demand: object | None = None
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,8 @@ def _diag(
     status: WitnessStatus,
     message: str,
     demand: object,
+    *,
+    location: SourceLocation | None = None,
 ) -> WitnessDiagnostic:
     return WitnessDiagnostic(
         code=code,
@@ -81,6 +85,7 @@ def _diag(
         status=status,
         message=message,
         demand=demand,
+        location=location,
     )
 
 
