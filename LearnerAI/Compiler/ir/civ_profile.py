@@ -148,10 +148,9 @@ class EffectiveCivData:
 
     def is_free_for_civ(self, key: str) -> bool:
         kind, raw_id = key.split(":", 1)
-        if kind == "tech":
-            entity = self.tech(int(raw_id))
-        else:
-            raise KeyError(f"FREE modifiers are only supported for technologies, got {kind}")
+        if kind != "tech":
+            return False
+        entity = self.tech(int(raw_id))
         return any(
             bonus.kind is CivBonusKind.FREE
             and _selector_matches(bonus.selector, entity)
