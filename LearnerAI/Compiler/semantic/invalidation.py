@@ -127,7 +127,7 @@ def validate_invalidation_contracts(
                     f"invalidation for demand '{demand.name}' has invalid evidence kind "
                     f"'{invalidation.evidence_kind.value}'",
                     demand.identity,
-                    location=invalidation.location or demand.location,
+                    location=demand.location,
                 )
             )
 
