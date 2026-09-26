@@ -360,3 +360,10 @@ Opportunity-cost runtime state is restricted to protected, overridden, and relea
 Runtime evaluation records deterministic reassessment causes and a fingerprint. Native storage is not requested merely because a strategic state exists; the current evaluator requests no runtime Goal storage.
 
 The CI runtime fixture exercises posture-dependent strategy activation, blocked Castle execution, opportunity-cost policy, and the existing lifecycle lowering. The exact final verification is recorded in RESEARCH_CHECKLIST.md.
+## GameData factual boundary
+
+GameData is now an explicit factual boundary rather than a strategy database. The checked-in Byzantine 185872 snapshot is intentionally marked `CIVILIZATION` scoped and `FACTUAL_SUBSET`. It carries typed provider edges, upgrade/research relations, age-transition prerequisites, civilization modifiers, factual unit effects, and coverage metadata.
+
+A partial snapshot never means "unavailable to the civilization." StrategyProfile capability intents are admitted only when their referenced factual entity is covered by the resolved snapshot. The runtime engine remains authoritative for actual feasibility and execution.
+
+The full universal game-data baseline, civ availability overlays, and replayable historical patch overlays remain separate open data-layer work. Do not bypass the coverage gate by filling absent entities from generic AIRef records: AIRef native technology IDs establish engine identity and command metadata, not Byzantine civilization availability.
