@@ -547,6 +547,29 @@ class NativeContractCatalog:
         object.__setattr__(self, "citation_catalog", citation_catalog)
         self.validate_all_provenance()
 
+    def citation_ids(self) -> Tuple[str, ...]:
+        ids = {
+            provenance.citation_id
+            for provenance in (
+                *(
+                    provenance
+                    for witness in self.witnesses
+                    for provenance in witness.provenance
+                ),
+                *(
+                    provenance
+                    for storage in self.storage_uses
+                    for provenance in storage.provenance
+                ),
+                *(
+                    provenance
+                    for constraint in self.pass_constraints
+                    for provenance in constraint.provenance
+                ),
+            )
+        }
+        return tuple(sorted(ids))
+
     def validate_all_provenance(self) -> None:
         for owner, provenance in (
             *(
@@ -920,8 +943,8 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         records=(
             CitationRecord(
                 "airef:building-type-count",
-                airef_commands,
-                airef_commands,
+                f"{airef_commands}#building-type-count",
+                f"{airef_commands}#building-type-count",
                 LocatorType.COMMAND,
                 "building-type-count",
                 excerpt=SourceExcerpt.capture(
@@ -932,8 +955,8 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
             ),
             CitationRecord(
                 "airef:unit-type-count",
-                airef_commands,
-                airef_commands,
+                f"{airef_commands}#unit-type-count",
+                f"{airef_commands}#unit-type-count",
                 LocatorType.COMMAND,
                 "unit-type-count",
                 excerpt=SourceExcerpt.capture(
@@ -944,8 +967,8 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
             ),
             CitationRecord(
                 "airef:research-completed",
-                airef_commands,
-                airef_commands,
+                f"{airef_commands}#research-completed",
+                f"{airef_commands}#research-completed",
                 LocatorType.COMMAND,
                 "research-completed",
                 excerpt=SourceExcerpt.capture(
@@ -958,8 +981,8 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "airef:goal-storage",
                 "https://airef.github.io/resources/articles/data-limits.html",
                 "https://airef.github.io/resources/articles/data-limits.html",
-                LocatorType.HEADING,
-                "Goals",
+                LocatorType.TABLE_ENTRY,
+                "Goals: 1 to 16,000",
                 excerpt=SourceExcerpt.capture(
                     "Goals: 1 to 16,000",
                     ExcerptKind.TABLE_ENTRY,
