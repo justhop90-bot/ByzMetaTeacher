@@ -55,6 +55,8 @@ These projects are useful reference points, but none replaces the LearnerAI sema
   Exposes native AI functionality to external code at runtime. It is not a compiler or static validation backend.
 - mboop127/AlphaScripter: https://github.com/mboop127/AlphaScripter
   Explores generated/evolved AI scripts rather than compiler semantics.
+- lewisc64/aoe2ai: https://github.com/lewisc64/aoe2ai
+  Provides a higher-level AoE2 AI language and translates structured strategy commands into .per. It is useful precedent for source-language ergonomics and code generation, but it does not replace LearnerAI's persistent-demand lifecycle semantics.
 
 Conclusion: no discovered project matches LearnerAI's specific combination of persistent demand lifecycle, capability/feasibility separation, pending state, world-state witnesses, release semantics, ownership, and teaching-oriented diagnostics.
 
