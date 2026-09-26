@@ -115,6 +115,26 @@ class NativeHygieneTests(unittest.TestCase):
                 require_promotable=True,
             )
 
+    def test_default_native_citation_catalog_is_complete_and_promotable(self):
+        catalog = default_native_citation_catalog()
+        self.assertEqual(
+            {record.citation_id for record in catalog.records},
+            {
+                "airef:building-type-count",
+                "airef:unit-type-count",
+                "airef:research-completed",
+                "airef:goal-storage",
+                "airef:build-pass-limit",
+            },
+        )
+        self.assertTrue(
+            all(
+                promotion_state(record, already_promoted=False)
+                is PromotionState.ELIGIBLE
+                for record in catalog.records
+            )
+        )
+
     def test_native_contract_catalog_resolves_all_contract_provenance(self):
         from Compiler.primitives.registry import default_native_contract_catalog
 
