@@ -114,10 +114,12 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
         result.append(SemanticDemand(
             demand.name,
-            base_goal + offset,
+            base_goal + (offset * 3),
             tuple(requirements),
             SemanticAction(action, "ACTION"),
             witness,
             release,
+            base_goal + (offset * 3) + 1,
+            base_goal + (offset * 3) + 2,
         ))
     return result
