@@ -8,7 +8,8 @@ from typing import Iterable
 from ..ast import Expression
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
-from .game_data import EffectiveCivData, canonical_fingerprint
+from .civ_profile import EffectiveCivData
+from .game_data import canonical_fingerprint
 from .strategy import (
     StrategicDemandSpec,
     StrategicEvidence,
