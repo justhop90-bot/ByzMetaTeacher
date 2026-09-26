@@ -1,0 +1,16 @@
+{
+  "path": "Basilisk.per",
+  "finding_count": 1,
+  "findings": [{
+    "path": "Basilisk.per",
+    "line": 1,
+    "severity": "error",
+    "confidence": "maybe",
+    "code": "native-error",
+    "message": "unknown confidence",
+    "suggestion": null,
+    "references": [],
+    "span": null
+  }],
+  "failed": true
+}
