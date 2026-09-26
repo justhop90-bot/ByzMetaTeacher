@@ -130,6 +130,7 @@ def validate_release_states(
             diagnostics.append(
                 _diag(
                     ReleaseDiagnosticCode.IDENTITY_MISMATCH,
+                    ReleaseStatus.CONFLICTING,
                     f"release for demand '{demand.name}' establishes "
                     f"'{contract.establishes.local_name}', not '{demand.name}'",
                     demand.identity,
@@ -181,7 +182,7 @@ def validate_release_states(
                 )
             )
 
-        if roles.isdisjoint({"OBSERVATION", "WITNESS"}):
+        if roles.isdisjoint({"OBSERVATION", "WITNESS"}) and "ACTION" not in roles:
             diagnostics.append(
                 _diag(
                     ReleaseDiagnosticCode.NO_WORLD_STATE,
