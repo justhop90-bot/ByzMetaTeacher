@@ -4,7 +4,7 @@
 
 The Philosopher's Stone is not a larger Demand/Capability framework.
 
-It is the missing compiler architecture that turns accumulated native/community .per engine knowledge into explicit, typed, evidence-backed semantics without replacing the AoE2 engine or turning Basilisk into a scheduler.
+It is the missing compiler architecture that turns accumulated native/community .per engine knowledge into explicit, typed, evidence-backed semantics without replacing the AoE2 engine or turning the compiler into a scheduler.
 
 Its purpose is to make the compiler answer, for every supported native construct:
 
@@ -500,7 +500,7 @@ Do not use this architecture to build:
 - a general-purpose programming language;
 - a whole-engine simulator;
 - an optimizer that searches all possible .per programs;
-- a Basilisk-specific strategy manager;
+- a client-specific strategy manager;
 - an automatic runtime recovery agent.
 
 ## Implementation order
