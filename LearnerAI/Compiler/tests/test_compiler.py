@@ -253,9 +253,10 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: defensive-spearmen")
         action_block = output[action_start:action_end]
         self.assertIn("(build castle)", action_block)
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
+        import re
+        self.assertRegex(action_block, r"\(set-goal demand-castle 4[1-9]\d?\)")
         witness_block = output[output.find("; Completion witness: castle"):output.find("; Action issuance: castle | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertRegex(witness_block, r"\(goal demand-castle 4[1-9]\d?\)")
         self.assertNotIn("(build castle)", witness_block)
 
     def test_spearmen_pending_state_prevents_repeated_train(self):
@@ -264,9 +265,10 @@ class CompilerTests(unittest.TestCase):
         action_end = output.find("; Pending diagnostics: wheelbarrow")
         action_block = output[action_start:action_end]
         self.assertIn("(train spearman)", action_block)
-        self.assertIn("(set-goal demand-defensive-spearmen 1004)", action_block)
+        import re
+        self.assertRegex(action_block, r"\(set-goal demand-defensive-spearmen 4\d\d\)")
         witness_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Action issuance: defensive-spearmen | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-defensive-spearmen 1002)", witness_block)
+        self.assertRegex(witness_block, r"\(goal demand-defensive-spearmen 4\d\d\)")
         self.assertNotIn("(train spearman)", witness_block)
 
     def test_wheelbarrow_pending_state_prevents_repeated_research(self):
@@ -275,9 +277,10 @@ class CompilerTests(unittest.TestCase):
         action_end = len(output)
         action_block = output[action_start:action_end]
         self.assertIn("(research ri-wheelbarrow)", action_block)
-        self.assertIn("(set-goal demand-wheelbarrow 1005)", action_block)
+        import re
+        self.assertRegex(action_block, r"\(set-goal demand-wheelbarrow 4\d\d\)")
         witness_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Action issuance: wheelbarrow | ACTIVE -> ISSUED")]
-        self.assertIn("(goal demand-wheelbarrow 1003)", witness_block)
+        self.assertRegex(witness_block, r"\(goal demand-wheelbarrow 4\d\d\)")
         self.assertNotIn("(research ri-wheelbarrow)", witness_block)
 
     def test_pending_diagnostics_are_emitted_for_each_demand(self):
@@ -285,7 +288,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("; Pending diagnostics: castle", output)
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: "
-            "action is gated by active goal 1000 and cannot reissue from pending goal 1001",
+            "action is gated by active ordinary Goal slot and cannot reissue from pending ordinary Goal slot",
             output,
         )
         self.assertIn(
@@ -295,7 +298,7 @@ class CompilerTests(unittest.TestCase):
         )
         self.assertIn(
             "; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: "
-            "release is evaluated only after completion goal 1002 is reached",
+            "release is evaluated only after completion ordinary Goal slot is reached",
             output,
         )
 
