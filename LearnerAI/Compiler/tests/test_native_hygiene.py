@@ -251,6 +251,42 @@ class NativeHygieneTests(unittest.TestCase):
         )
 
 
+    def test_provenance_basis_is_strict(self):
+        with self.assertRaises(ValueError):
+            provenance(
+                EvidenceKind.DOCUMENTED_FACT,
+                ConfidenceBasis.MECHANICAL_DERIVATION,
+            )
+        with self.assertRaises(ValueError):
+            provenance(
+                EvidenceKind.BENCHMARK_OBSERVATION,
+                ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+            )
+
+    def test_broken_excerpt_transitions_to_broken(self):
+        self.assertEqual(
+            next_citation_state(
+                CitationState.PINNED,
+                RevalidationResult.SOURCE_CHANGED_EXCERPT_BROKEN,
+            ),
+            CitationState.BROKEN,
+        )
+
+    def test_reviewed_states_block_revalidation_back_to_verified_without_repair(self):
+        with self.assertRaises(ValueError):
+            next_citation_state(
+                CitationState.REVIEW_REQUIRED,
+                RevalidationResult.VERIFIED_UNCHANGED,
+            )
+
+    def test_superseded_is_terminal(self):
+        with self.assertRaises(ValueError):
+            next_citation_state(
+                CitationState.SUPERSEDED,
+                RevalidationResult.VERIFIED_UNCHANGED,
+            )
+
+
     def test_pinned_citation_requires_retrieval_metadata(self):
         with self.assertRaises(ValueError):
             CitationRecord(
