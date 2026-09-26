@@ -111,6 +111,13 @@ class LocatorType(str, Enum):
     SEARCH_TERM = "SEARCH_TERM"
 
 
+class CitationSemanticScope(str, Enum):
+    GENERAL_NATIVE_FACT = "GENERAL_NATIVE_FACT"
+    ORDINARY_PERSISTENT_GOAL_STORAGE = "ORDINARY_PERSISTENT_GOAL_STORAGE"
+    EXTENDED_GOAL_SPAN = "EXTENDED_GOAL_SPAN"
+    GOAL_ID_PARAMETER_RANGE = "GOAL_ID_PARAMETER_RANGE"
+
+
 class CitationState(str, Enum):
     CANDIDATE = "CANDIDATE"
     VERIFIED = "VERIFIED"
@@ -392,10 +399,104 @@ class NativeWitness:
 
 
 @dataclass(frozen=True)
+class NativeGoalStorageContract:
+    identity: str
+    minimum_id: int
+    maximum_id: int
+    provenance: Tuple[AIRefProvenance, ...]
+
+    def __post_init__(self) -> None:
+        if not self.identity or not self.provenance:
+            raise ValueError("Goal storage contract identity and provenance are required")
+        if self.minimum_id < 1 or self.maximum_id != 512 or self.minimum_id > self.maximum_id:
+            raise ValueError("ordinary persistent Goal storage must be exactly 1..512")
+        if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
+            raise ValueError("Goal storage contracts require documented native facts")
+
+    def validate_id(self, goal_id: int) -> None:
+        if not self.minimum_id <= goal_id <= self.maximum_id:
+            raise ValueError(
+                f"Goal storage contract '{self.identity}' permits ids "
+                f"{self.minimum_id}..{self.maximum_id}, got {goal_id}"
+            )
+
+
+@dataclass(frozen=True)
+class NativeGoalSpanContract:
+    identity: str
+    storage_kind: NativeStorageKind
+    width: int
+    minimum_start: int
+    maximum_start: int
+    provenance: Tuple[AIRefProvenance, ...]
+
+    def __post_init__(self) -> None:
+        expected = {
+            NativeStorageKind.POINT_GOAL_SPAN: (2, 15998),
+            NativeStorageKind.COST_DATA_GOAL_SPAN: (4, 15996),
+            NativeStorageKind.SEARCH_STATE_GOAL_SPAN: (4, 15996),
+            NativeStorageKind.GUARD_STATE_GOAL_SPAN: (4, 15996),
+        }
+        if not self.identity or not self.provenance:
+            raise ValueError("Goal span contract identity and provenance are required")
+        if self.storage_kind not in expected:
+            raise ValueError("Goal span contract requires an extended Goal span kind")
+        expected_width, expected_max = expected[self.storage_kind]
+        if self.width != expected_width or self.maximum_start != expected_max or self.minimum_start != 41:
+            raise ValueError("Goal span contract does not match the documented native shape")
+        if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
+            raise ValueError("Goal span contracts require documented native facts")
+
+    def validate_shape(self, start: int, end: int) -> None:
+        if end - start + 1 != self.width:
+            raise ValueError(
+                f"Goal span contract '{self.identity}' requires width {self.width}"
+            )
+        if start < self.minimum_start or start > self.maximum_start:
+            raise ValueError(
+                f"Goal span contract '{self.identity}' permits starts "
+                f"{self.minimum_start}..{self.maximum_start}, got {start}"
+            )
+
+
+@dataclass(frozen=True)
+class NativeGoalParameterRangeContract:
+    identity: str
+    parameter_type: str
+    minimum: int
+    maximum: int
+    commands: Tuple[str, ...]
+    provenance: Tuple[AIRefProvenance, ...]
+
+    def __post_init__(self) -> None:
+        if (
+            not self.identity
+            or not self.parameter_type
+            or not self.commands
+            or not self.provenance
+        ):
+            raise ValueError("GoalId parameter-range contract is incomplete")
+        if self.parameter_type != "GoalId" or self.minimum != 1 or self.maximum != 16000:
+            raise ValueError("GoalId parameter range must be exactly 1..16000")
+        if len(self.commands) != len(set(self.commands)):
+            raise ValueError("GoalId parameter-range commands must be unique")
+        if any(p.evidence_kind is not EvidenceKind.DOCUMENTED_FACT for p in self.provenance):
+            raise ValueError("GoalId parameter-range contracts require documented native facts")
+
+    def validate_value(self, value: int) -> None:
+        if not self.minimum <= value <= self.maximum:
+            raise ValueError(
+                f"parameter contract '{self.identity}' permits values "
+                f"{self.minimum}..{self.maximum}, got {value}"
+            )
+
+
+@dataclass(frozen=True)
 class NativeStorageUse:
     identity: str
     storage_class: NativeStorageClass
     kind: NativeStorageKind
+    contract_id: Optional[str] = None
     base: Optional[int] = None
     span_length: int = 1
     access: str = "READ"
@@ -435,9 +536,25 @@ class NativeStorageUse:
             raise ValueError("native storage binding start must not exceed end")
         if self.base is not None and start != self.base:
             raise ValueError(f"native storage use '{self.identity}' requires start {self.base}, got {start}")
+        if self.storage_class is NativeStorageClass.PERSISTENT_SCALAR and self.kind is NativeStorageKind.GOAL:
+            if not 1 <= start <= 512 or start != end:
+                raise ValueError(
+                    f"native storage use '{self.identity}' requires ordinary Goal id 1..512, got {start}..{end}"
+                )
         if self.storage_class is NativeStorageClass.GOAL_SPAN:
             if end - start + 1 != self.span_length:
                 raise ValueError(f"native storage use '{self.identity}' requires width {self.span_length}, got {end - start + 1}")
+            limits = {
+                NativeStorageKind.POINT_GOAL_SPAN: (41, 15998),
+                NativeStorageKind.COST_DATA_GOAL_SPAN: (41, 15996),
+                NativeStorageKind.SEARCH_STATE_GOAL_SPAN: (41, 15996),
+                NativeStorageKind.GUARD_STATE_GOAL_SPAN: (41, 15996),
+            }
+            minimum_start, maximum_start = limits[self.kind]
+            if not minimum_start <= start <= maximum_start:
+                raise ValueError(
+                    f"native storage use '{self.identity}' requires span start {minimum_start}..{maximum_start}, got {start}"
+                )
     def __post_init__(self) -> None:
         if not self.identity or not self.provenance:
             raise ValueError("storage identity and provenance are required")
@@ -452,24 +569,32 @@ class NativeStorageUse:
                 raise ValueError("persistent scalar requires one slot")
             if self.base is None and not self.symbolic:
                 raise ValueError("persistent scalar requires an explicit slot unless symbolic")
+            if self.kind is NativeStorageKind.GOAL and self.contract_id not in {None, "ordinary-persistent-goal-storage"}:
+                raise ValueError("ordinary Goal storage must use its dedicated storage contract")
             if self.base is not None:
                 bounds = {
-                    NativeStorageKind.GOAL: (1, 16000),
+                    NativeStorageKind.GOAL: (1, 512),
                     NativeStorageKind.STRATEGIC_NUMBER: (0, 511),
                     NativeStorageKind.TIMER: (1, 50),
                 }
                 if self.kind in bounds and not bounds[self.kind][0] <= self.base <= bounds[self.kind][1]:
-                    raise ValueError("storage slot is outside AIRef documented range")
+                    raise ValueError("storage slot is outside its native storage contract")
         elif self.storage_class is NativeStorageClass.GOAL_SPAN:
-            if self.kind not in {
-                NativeStorageKind.POINT_GOAL_SPAN,
-                NativeStorageKind.COST_DATA_GOAL_SPAN,
-                NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
-                NativeStorageKind.GUARD_STATE_GOAL_SPAN,
-            } or self.base is None or self.span_length < 2:
+            expected = {
+                NativeStorageKind.POINT_GOAL_SPAN: (2, 41, 15998),
+                NativeStorageKind.COST_DATA_GOAL_SPAN: (4, 41, 15996),
+                NativeStorageKind.SEARCH_STATE_GOAL_SPAN: (4, 41, 15996),
+                NativeStorageKind.GUARD_STATE_GOAL_SPAN: (4, 41, 15996),
+            }
+            if self.kind not in expected or self.base is None:
                 raise ValueError("invalid documented Goal span")
-            if self.base < 41 or self.base + self.span_length - 1 > 16000:
-                raise ValueError("documented multi-Goal span is outside the native multi-Goal namespace")
+            width, minimum_start, maximum_start = expected[self.kind]
+            if self.span_length != width:
+                raise ValueError("Goal span width does not match its native command shape")
+            if not minimum_start <= self.base <= maximum_start:
+                raise ValueError("Goal span start is outside its native span contract")
+            if self.contract_id is None:
+                raise ValueError("Goal spans require a dedicated span contract")
         elif self.storage_class is NativeStorageClass.ENGINE_MANAGED_LIST:
             if self.base is not None or self.span_length != 1:
                 raise ValueError("engine-managed lists do not use Goal slots")
@@ -520,6 +645,9 @@ class NativeContractCatalog:
     witnesses: Tuple[NativeWitness, ...] = ()
     storage_uses: Tuple[NativeStorageUse, ...] = ()
     pass_constraints: Tuple[PassExecutionConstraint, ...] = ()
+    goal_storage_contracts: Tuple[NativeGoalStorageContract, ...] = ()
+    goal_span_contracts: Tuple[NativeGoalSpanContract, ...] = ()
+    parameter_ranges: Tuple[NativeGoalParameterRangeContract, ...] = ()
     citation_catalog: Optional[CitationRecordCatalog] = None
 
     def __post_init__(self) -> None:
@@ -527,6 +655,9 @@ class NativeContractCatalog:
             (self.witnesses, "native witness"),
             (self.storage_uses, "native storage use"),
             (self.pass_constraints, "pass execution constraint"),
+            (self.goal_storage_contracts, "Goal storage contract"),
+            (self.goal_span_contracts, "Goal span contract"),
+            (self.parameter_ranges, "GoalId parameter-range contract"),
         ):
             identities = [item.identity for item in values]
             if len(identities) != len(set(identities)):
@@ -542,6 +673,22 @@ class NativeContractCatalog:
         if len(commands) != len(set(commands)):
             raise ValueError("duplicate native pass constraint command")
         validate_goal_span_non_overlap(self.storage_uses)
+
+        goal_storage_ids = {contract.identity for contract in self.goal_storage_contracts}
+        goal_span_ids = {contract.identity for contract in self.goal_span_contracts}
+        parameter_range_ids = {contract.identity for contract in self.parameter_ranges}
+        if not goal_storage_ids:
+            raise ValueError("native catalog requires an ordinary Goal storage contract")
+        if not goal_span_ids:
+            raise ValueError("native catalog requires at least one extended Goal span contract")
+        if not parameter_range_ids:
+            raise ValueError("native catalog requires a GoalId parameter-range contract")
+
+        for storage in self.storage_uses:
+            if storage.kind is NativeStorageKind.GOAL and storage.contract_id not in goal_storage_ids:
+                raise ValueError(f"Goal storage '{storage.identity}' references an unknown Goal storage contract")
+            if storage.storage_class is NativeStorageClass.GOAL_SPAN and storage.contract_id not in goal_span_ids:
+                raise ValueError(f"Goal span '{storage.identity}' references an unknown Goal span contract")
 
         citation_catalog = self.citation_catalog or default_native_citation_catalog()
         object.__setattr__(self, "citation_catalog", citation_catalog)
@@ -570,6 +717,31 @@ class NativeContractCatalog:
         }
         return tuple(sorted(ids))
 
+    def goal_storage_contract(self, identity: str) -> NativeGoalStorageContract:
+        for item in self.goal_storage_contracts:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def goal_span_contract(self, identity: str) -> NativeGoalSpanContract:
+        for item in self.goal_span_contracts:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def parameter_range(self, identity: str) -> NativeGoalParameterRangeContract:
+        for item in self.parameter_ranges:
+            if item.identity == identity:
+                return item
+        raise KeyError(identity)
+
+    def parameter_ranges_for(self, command: str, parameter: str) -> Tuple[NativeGoalParameterRangeContract, ...]:
+        return tuple(
+            item
+            for item in self.parameter_ranges
+            if command in item.commands and parameter == "GoalId"
+        )
+
     def validate_all_provenance(self) -> None:
         for owner, provenance in (
             *(
@@ -583,6 +755,18 @@ class NativeContractCatalog:
             *(
                 (constraint.identity, constraint.provenance)
                 for constraint in self.pass_constraints
+            ),
+            *(
+                (contract.identity, contract.provenance)
+                for contract in self.goal_storage_contracts
+            ),
+            *(
+                (contract.identity, contract.provenance)
+                for contract in self.goal_span_contracts
+            ),
+            *(
+                (contract.identity, contract.provenance)
+                for contract in self.parameter_ranges
             ),
         ):
             try:
@@ -645,6 +829,7 @@ class CitationRecord:
     citation_id: str
     canonical_url: str
     final_url: str
+    semantic_scope: CitationSemanticScope = CitationSemanticScope.GENERAL_NATIVE_FACT
     locator_type: LocatorType
     locator: str
     excerpt: Optional[SourceExcerpt] = None
@@ -669,6 +854,15 @@ class CitationRecord:
             raise ValueError("pinned citations require source hash")
         if self.state is CitationState.PINNED and self.retrieval is None:
             raise ValueError("pinned citations require retrieval metadata")
+        if self.semantic_scope is CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE:
+            if self.locator_type is not LocatorType.TABLE_ENTRY or self.locator != "Goals: 1 to 512":
+                raise ValueError("ordinary Goal storage citations must identify the 1..512 Goal table entry")
+        elif self.semantic_scope is CitationSemanticScope.EXTENDED_GOAL_SPAN:
+            if self.locator_type is not LocatorType.COMMAND:
+                raise ValueError("extended Goal span citations must identify a native command")
+        elif self.semantic_scope is CitationSemanticScope.GOAL_ID_PARAMETER_RANGE:
+            if self.locator_type is not LocatorType.COMMAND or "GoalId" not in self.locator:
+                raise ValueError("GoalId parameter citations must identify a GoalId command parameter")
 
 
 @dataclass(frozen=True)
@@ -982,11 +1176,51 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "https://airef.github.io/resources/articles/data-limits.html",
                 "https://airef.github.io/resources/articles/data-limits.html",
                 LocatorType.TABLE_ENTRY,
-                "Goals: 1 to 16,000",
+                "Goals: 1 to 512",
                 excerpt=SourceExcerpt.capture(
-                    "Goals: 1 to 16,000",
-                    ExcerptKind.TABLE_ENTRY,
+                    "AI scripts has 512 different goals they can use to store different values, which are numbered from 1 to 512.",
+                    ExcerptKind.FACT,
                 ),
+                semantic_scope=CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE,
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:extended-goal-span-point",
+                f"{airef_commands}#up-get-point",
+                f"{airef_commands}#up-get-point",
+                LocatorType.COMMAND,
+                "up-get-point Point: 41 to 15998, 2 consecutive goals",
+                excerpt=SourceExcerpt.capture(
+                    "an extended GoalId from 41 to 15998; the first of 2 consecutive goals to store the (x,y) pair.",
+                    ExcerptKind.PARAMETER,
+                ),
+                semantic_scope=CitationSemanticScope.EXTENDED_GOAL_SPAN,
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:extended-goal-span-4",
+                f"{airef_commands}#up-get-search-state",
+                f"{airef_commands}#up-get-search-state",
+                LocatorType.COMMAND,
+                "up-get-search-state OutputGoalId: 41 to 15996, 4 consecutive goals",
+                excerpt=SourceExcerpt.capture(
+                    "an extended GoalId from 41 to 15996",
+                    ExcerptKind.PARAMETER,
+                ),
+                semantic_scope=CitationSemanticScope.EXTENDED_GOAL_SPAN,
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:goal-id-parameter-range",
+                f"{airef_commands}#goal",
+                f"{airef_commands}#goal",
+                LocatorType.COMMAND,
+                "goal GoalId: 1 to 16000",
+                excerpt=SourceExcerpt.capture(
+                    "A valid GoalId, from 1 to 16000.",
+                    ExcerptKind.PARAMETER,
+                ),
+                semantic_scope=CitationSemanticScope.GOAL_ID_PARAMETER_RANGE,
                 state=CitationState.VERIFIED,
             ),
             CitationRecord(
