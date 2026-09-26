@@ -1,4 +1,4 @@
-"""Parser for the intentionally small Basilisk demand language."""
+"""Parser for the intentionally small AoE2 .per compiler source language."""
 from __future__ import annotations
 import re
 from .ast import DemandNode, SourceLocation
