@@ -208,20 +208,23 @@ Current ranged army and active production determine it.
 
 ### 06:30-08:30: commitment detection
 
-This window changes information handling, not production.
+This window changes information handling, not production by itself.
 
 With only suspicion:
 
-- no Archer packet yet;
 - maintain B0;
-- ensure wood reserve can build one Range if MAA materialize;
-- keep one safe building site/resource shelter path available.
+- preserve enough wood for the first Archery Range;
+- keep a safe Range placement available;
+- do not start Archer production from the clock.
 
 With actual forward Militia/MAA evidence:
 
-- +1 wood;
+- make the first Archery Range a protected P1 capability;
 - +1 food;
-- prepare Range capability.
+- +1-2 wood until the Range is placed and the first Archer queue is serviceable;
+- preserve the Castle gold floor.
+
+The strategic purpose is readiness, not a prebuilt Archer mass. Current community discussion specifically emphasizes getting the Range up early enough that the first Archer can meet fast MAA pressure, while small resource walls buy the required time. citeturn358751reddit22turn358751reddit25
 
 ### 08:30-10:00: early MAA
 
@@ -261,9 +264,12 @@ Worker packet:
 
 - +1 food;
 - +3 wood while the Archer target is being assembled;
-- then immediately return excess wood workers toward Castle/farm needs.
+- preserve the Castle gold floor;
+- return excess wood workers toward Castle/farm needs once the standing Archer target is serviceable.
 
-Do not add a second Range merely because 6 Archers are desired. Open a second Range only when production time is actually preventing the standing target from being replaced in a reasonable window.
+One Range is the default provider for the first Archer package.
+
+A second Range becomes admissible only when the current MAA pressure persists and one Range cannot restore the required Archer standing target within the active threat/reassessment window. Merely seeing 5-7 MAA does not authorize permanent double-Range production.
 
 ### 11:30-12:30: late MAA
 
