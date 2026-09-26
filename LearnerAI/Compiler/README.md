@@ -120,6 +120,28 @@ Pending construction/training/research state, escrow policy, ownership, goal-ran
 
 The compiler also does not claim that an emitted action succeeded. AoE2 world state remains the runtime authority and the witness remains the completion authority. The pending diagnostics deliberately reinforce this distinction: action issuance moves the lifecycle to pending; only the world-state witness advances it to complete.
 
+## Native validation
+
+The compiler can stage its generated .per and ask the pinned native backend to validate it before promotion:
+
+    python LearnerAI/Compiler/compiler.py ^
+        LearnerAI/Compiler/examples/basics.basilisk ^
+        LearnerAI/Compiler/generated/Basilisk.per ^
+        --validate-native ^
+        --native-backend-root tools/native-backends/aoe2-ai-parser
+
+Use --native-json for the normalized machine-readable validation result.
+
+Without --validate-native, compilation retains the original direct-write behavior. With native validation enabled, a rejected artifact or unavailable backend does not replace an existing output file.
+
+Exit status with native validation is:
+
+    0 = VALIDATED
+    1 = REJECTED
+    2 = backend/process/validation infrastructure failure
+
+See backends/README.md and RESEARCH_CHECKLIST.md for the adapter contract and remaining research work.
+
 ## Compile
 
 From the repository root:
