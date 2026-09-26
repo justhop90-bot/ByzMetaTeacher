@@ -103,7 +103,14 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
 
 
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
+    # Validate the logical node itself before descending. Otherwise a nested
+    # malformed logical expression can bypass _validate_expression entirely.
     if expr.head in _LOGICAL_ARITY:
+        expected = _LOGICAL_ARITY[expr.head]
+        if len(expr.args) != expected:
+            raise CompileError(
+                f"logical operator '{expr.head}' requires {expected} operands"
+            )
         roles = set()
         for child in expr.args:
             roles.update(_root_roles(child, registry))
@@ -121,6 +128,11 @@ def _context_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
 
 def _validate_completion_witness(expr: Expression, registry: PrimitiveRegistry):
     if expr.head in _LOGICAL_ARITY:
+        expected = _LOGICAL_ARITY[expr.head]
+        if len(expr.args) != expected:
+            raise CompileError(
+                f"logical operator '{expr.head}' requires {expected} operands"
+            )
         for child in expr.args:
             _validate_completion_witness(child, registry)
         return
