@@ -31,6 +31,7 @@ from Compiler.primitives.native_hygiene import (
     VersionScope,
     classify_revalidation,
     compare_excerpts,
+    default_native_citation_catalog,
     next_citation_state,
     promotion_state,
     validate_goal_span_non_overlap,
