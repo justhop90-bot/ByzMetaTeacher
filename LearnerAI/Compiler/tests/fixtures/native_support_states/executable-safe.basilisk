@@ -1,0 +1,6 @@
+demand fixture {
+    require (fixture-command castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
