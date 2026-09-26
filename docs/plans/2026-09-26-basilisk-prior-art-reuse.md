@@ -101,6 +101,7 @@
 ## Next semantic tranche after this implementation
 
 - [x] Capability-provider graph and provider admissibility diagnostics.
+- [x] Project the existing SemanticDemand IR into that graph and make capability validation a compile gate before binding/emission.
 - [ ] Demand ownership and first-writer/first-consumer contracts.
 - [x] Prerequisite dependency graph with SCC cycle/dead-end/unfed diagnostics.
 - [ ] Resource/conflict relations beyond the existing build-pass singleton.
@@ -112,3 +113,16 @@
 ## Verification record
 
 The storage reuse tranche is implemented on `main`. Compiler workflow run 123 passed native validation and the full unittest suite after the storage fixes. The subsequent commits changed documentation only; no compiler/runtime files changed after that verification.
+
+
+### Compiler capability-gate integration record (2026-09-26)
+
+- [x] Add an explicit `ADMISSIBILITY` predicate kind so semantic role and validator meaning remain aligned.
+- [x] Add a typed demand-to-capability bridge without introducing new source syntax.
+- [x] Project build/train/research demands into typed capability/provider/witness chains.
+- [x] Preserve existing feasibility, resource, admissibility, and witness roles in the projection.
+- [x] Reject capability-contract errors before runtime binding and `.per` emission.
+- [x] Add deterministic projection/validation regression coverage.
+- [x] Update compiler documentation to distinguish the validation projection from future source-level capability composition.
+
+The bridge is intentionally validation-facing. It does not replace the demand IR, introduce a generic planner, or make the capability graph a second strategy language.
