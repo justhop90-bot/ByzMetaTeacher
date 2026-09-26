@@ -372,6 +372,11 @@ class Aoe2NativeBackend:
                 ValidationStatus.BACKEND_VERSION_MISMATCH, False, fallback_backend,
                 invocation, artifact_identity, _empty_summary(), (), str(exc),
             )
+        except TimeoutError as exc:
+            return NativeValidationResult(
+                ValidationStatus.BACKEND_TIMEOUT, False, fallback_backend,
+                invocation, artifact_identity, _empty_summary(), (), str(exc),
+            )
         except (BackendProtocolError, OSError) as exc:
             return NativeValidationResult(
                 ValidationStatus.BACKEND_PROTOCOL_ERROR, False, fallback_backend,
