@@ -191,6 +191,12 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 output = Path(tmp_dir) / f"{name}.per"
                 backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
 
+                if name != "executable-safe":
+                    output.write_text("KEEP UNSUPPORTED ARTIFACT\\n", encoding="utf-8")
+                    before = output.read_text(encoding="utf-8")
+                else:
+                    before = None
+
                 report = compile_source_with_report(
                     source,
                     output,
@@ -199,19 +205,6 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     source_unit=f"native-support/{name}.basilisk",
                 )
 
-                if name == "executable-safe":
-                    self.assertEqual(report.status, ReportStatus.VALIDATED)
-                    self.assertIsNotNone(backend.seen_artifact)
-                    self.assertTrue(output.exists())
-                else:
-                    self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
-                    self.assertFalse(output.exists())
-                    self.assertEqual(report.diagnostics[0].code, expected_code)
-
-                assessment = registry.assess_support("fixture-command")
-                self.assertEqual(assessment.state, expected_state)
-
-                states = [diagnostic.state for diagnostic in assessment.diagnostics]
                 expected_states = {
                     "native-known": [
                         NativeSupportState.NATIVE_KNOWN,
@@ -234,9 +227,61 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                         NativeSupportState.SEMANTICALLY_ADAPTED,
                         NativeSupportState.EXECUTABLE_SAFE,
                     ],
-                    "unsupported": [NativeSupportState.UNSUPPORTED],
+                    "unsupported": [
+                        NativeSupportState.UNSUPPORTED,
+                    ],
                 }
-                self.assertEqual(states, expected_states[name])
+                expected_codes = {
+                    "native-known": ["NATIVE-SUPPORT-001", "NATIVE-SUPPORT-005"],
+                    "native-typed": [
+                        "NATIVE-SUPPORT-001",
+                        "NATIVE-SUPPORT-002",
+                        "NATIVE-SUPPORT-005",
+                    ],
+                    "semantically-adapted": [
+                        "NATIVE-SUPPORT-001",
+                        "NATIVE-SUPPORT-002",
+                        "NATIVE-SUPPORT-003",
+                        "NATIVE-SUPPORT-005",
+                    ],
+                    "executable-safe": [
+                        "NATIVE-SUPPORT-001",
+                        "NATIVE-SUPPORT-002",
+                        "NATIVE-SUPPORT-003",
+                        "NATIVE-SUPPORT-004",
+                    ],
+                    "unsupported": ["NATIVE-SUPPORT-005"],
+                }
+
+                assessment = registry.assess_support("fixture-command")
+                repeat_assessment = registry.assess_support("fixture-command")
+                self.assertEqual(assessment.state, expected_state)
+                self.assertEqual(
+                    [diagnostic.state for diagnostic in assessment.diagnostics],
+                    expected_states[name],
+                )
+                self.assertEqual(
+                    [diagnostic.code for diagnostic in assessment.diagnostics],
+                    expected_codes[name],
+                )
+                self.assertEqual(
+                    [diagnostic.code for diagnostic in repeat_assessment.diagnostics],
+                    expected_codes[name],
+                )
+
+                if name == "executable-safe":
+                    self.assertEqual(report.status, ReportStatus.VALIDATED)
+                    self.assertIsNotNone(backend.seen_artifact)
+                    self.assertTrue(output.exists())
+                else:
+                    self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
+                    self.assertEqual(
+                        [diagnostic.code for diagnostic in report.diagnostics],
+                        ["NATIVE-SUPPORT-005"],
+                    )
+                    self.assertIsNone(backend.seen_artifact)
+                    self.assertTrue(output.exists())
+                    self.assertEqual(output.read_text(encoding="utf-8"), before)
 
     @staticmethod
     def _native_support_fixture_registry(name):
