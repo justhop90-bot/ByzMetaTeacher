@@ -60,8 +60,8 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertLess(witness, pending)
         self.assertLess(pending, action)
         action_block = output[action:]
-        self.assertIn("(set-goal demand-castle 1003)", action_block)
-        self.assertIn("(set-goal demand-castle 1001)", output[pending:action])
+        self.assertIn("(set-goal demand-castle 44)", action_block)
+        self.assertIn("(set-goal demand-castle 42)", output[pending:action])
 
     def test_emitter_records_native_pass_constraint_for_build_action(self):
         source = """
