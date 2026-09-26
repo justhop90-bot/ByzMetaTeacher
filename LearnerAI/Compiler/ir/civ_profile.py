@@ -997,7 +997,19 @@ def _byzantine_game_data(
             None,
             from_age=Age.DARK,
             native_tech_id=TechId(101),
-            prerequisites=(),
+            prerequisites=(
+                Prerequisite(
+                    PrerequisiteKind.N_OF,
+                    count=2,
+                    children=(
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(584)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(562)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(68)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(45)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(12)),
+                    ),
+                ),
+            ),
             provenance=(evidence,),
         ),
         AgeAdvanceDef(
@@ -1008,7 +1020,18 @@ def _byzantine_game_data(
             None,
             from_age=Age.FEUDAL,
             native_tech_id=TechId(102),
-            prerequisites=(),
+            prerequisites=(
+                Prerequisite(
+                    PrerequisiteKind.N_OF,
+                    count=2,
+                    children=(
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(87)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(101)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(103)),
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(84)),
+                    ),
+                ),
+            ),
             provenance=(evidence,),
         ),
         AgeAdvanceDef(
@@ -1019,7 +1042,23 @@ def _byzantine_game_data(
             None,
             from_age=Age.CASTLE,
             native_tech_id=TechId(103),
-            prerequisites=(),
+            prerequisites=(
+                Prerequisite(
+                    PrerequisiteKind.ANY,
+                    children=(
+                        Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(82)),
+                        Prerequisite(
+                            PrerequisiteKind.N_OF,
+                            count=2,
+                            children=(
+                                Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(49)),
+                                Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(104)),
+                                Prerequisite(PrerequisiteKind.BUILDING, building=BuildingId(209)),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
             provenance=(evidence,),
         ),
     )
