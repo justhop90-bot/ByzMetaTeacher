@@ -15,6 +15,7 @@ from Compiler.ir import (
     StateAccess,
 )
 from Compiler.compiler import compile_source
+from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.errors import CompileError
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
@@ -114,9 +115,7 @@ class DemandOwnershipTests(unittest.TestCase):
     def test_compile_pipeline_uses_ownership_validation_gate(self):
         diagnostic = OwnershipDiagnostic(
             code=OwnershipDiagnosticCode.DEMAND_MISSING_OWNERSHIP,
-            severity=OwnershipStatus.BLOCKED and __import__(
-                "Compiler.diagnostics", fromlist=["DiagnosticSeverity"]
-            ).DiagnosticSeverity.ERROR,
+            severity=DiagnosticSeverity.ERROR,
             message="demand 'castle' has no semantic owner",
             status=OwnershipStatus.BLOCKED,
         )
