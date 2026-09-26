@@ -198,7 +198,7 @@ class CompilerTests(unittest.TestCase):
         }
         """
         output = compile_source(source)
-        action_start = output.find("; Demand: defensive | ACTIVE -> PENDING")
+        action_start = output.find("; Action issuance: defensive | ACTIVE -> ISSUED")
         action_end = output.find("; Pending diagnostics:", action_start + 1)
         action_block = output[action_start:action_end]
         self.assertIn("(not (unit-type-count scout-unit == 0))", action_block)
