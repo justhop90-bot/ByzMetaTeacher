@@ -222,55 +222,6 @@ def bind_strategic_capability_observation(
     return binding
 
 
-def bind_strategic_enemy_composition_observation(
-    observation: StrategicEnemyCompositionObservation,
-    effective: EffectiveCivData,
-    registry: PrimitiveRegistry | None = None,
-) -> StrategicEvidenceBinding:
-    if observation.source is StrategicEvidenceSource.COMMUNITY_META:
-        raise ValueError(
-            f"community meta cannot define native enemy observation '{observation.identity}'"
-        )
-    status = effective.factual_status("unit", observation.unit_id)
-    if status.value != "VERIFIED":
-        raise ValueError(
-            f"strategic enemy composition observation '{observation.identity}' requires "
-            f"factual status VERIFIED for unit {observation.unit_id}; status is {status.value}"
-        )
-    if not observation.provenance:
-        raise ValueError(
-            f"strategic enemy composition observation '{observation.identity}' requires factual provenance"
-        )
-    evidence = StrategicEvidence(
-        StrategicEvidenceKind.PERSISTENT,
-        observation.expression,
-        observation.identity,
-        source=observation.source,
-        provenance=observation.provenance,
-    )
-    binding = bind_strategic_evidence(evidence, effective, registry)
-    if not any(
-        item.semantic_type is StrategicObservationType.ENEMY_UNIT_COUNT
-        for item in binding.observations
-    ):
-        raise ValueError(
-            f"strategic enemy composition observation '{observation.identity}' "
-            "did not bind to ENEMY_UNIT_COUNT"
-        )
-    unit = effective.unit(observation.unit_id)
-    aliases = {
-        str(observation.unit_id),
-        unit.name.lower().replace(" ", "-"),
-    }
-    observation_expression = binding.observations[0].expression
-    if len(observation_expression.args) < 2 or str(observation_expression.args[1]).lower() not in aliases:
-        raise ValueError(
-            f"strategic enemy composition observation '{observation.identity}' "
-            "does not bind its declared unit"
-        )
-    return binding
-
-
 def bind_observation_reference(
     evidence: StrategicEvidence,
     profile: StrategyProfile,
