@@ -59,6 +59,7 @@ class PrerequisiteKind(str, Enum):
     ENTITY_COUNT = "ENTITY_COUNT"
     ALL = "ALL"
     ANY = "ANY"
+    N_OF = "N_OF"
 
 
 class TechEffectKind(str, Enum):
@@ -205,6 +206,13 @@ class Prerequisite:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "kind", PrerequisiteKind(self.kind))
+        if self.kind is PrerequisiteKind.N_OF:
+            if self.count is None or self.count < 1:
+                raise ValueError("N_OF prerequisites require a positive count")
+            if not self.children:
+                raise ValueError("N_OF prerequisites require child predicates")
+            if self.count > len(self.children):
+                raise ValueError("N_OF prerequisite count cannot exceed child predicate count")
 
 
 @dataclass(frozen=True)
