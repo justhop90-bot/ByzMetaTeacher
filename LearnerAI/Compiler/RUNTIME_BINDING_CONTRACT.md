@@ -44,7 +44,10 @@ These are lifecycle values associated with one Goal storage location, not separa
 
 ### OPEN
 
-Full GoalSpan/SN/Timer allocation, authoritative command-contract inventory, package-wide occupancy discovery, binding persistence, and artifact-budget accounting remain unimplemented.
+Full GoalSpan/SN/Timer allocation and package-wide occupancy discovery remain unimplemented.
+The checked-in AIRef command schema is now the native signature source, and the binding layer
+now provides a deterministic JSON manifest model with stable reservation of existing assignments.
+Automatic end-to-end manifest write-back remains open.
 
 ## 2. Engine resource model
 
@@ -533,11 +536,15 @@ A source edit must not renumber unrelated bindings merely because a new demand a
 
 ### POLICY
 
-Binding manifests are persistent artifacts and are part of reproducibility.
+Binding manifests are persistent artifacts and are part of reproducibility. The v1 in-memory
+BindingManifest already has deterministic JSON serialization, duplicate-request rejection, and
+duplicate-GoalId rejection.
 
 ### OPEN
 
-The final on-disk manifest format and whether it lives under `LearnerAI/Compiler/` or project-generated state remains an implementation decision.
+The final on-disk location and automatic write-back step remain implementation work. The compiler
+must still receive a package occupancy inventory before generated storage can safely coexist with
+the full Basilisk controller.
 
 ## 15. Diagnostics
 
