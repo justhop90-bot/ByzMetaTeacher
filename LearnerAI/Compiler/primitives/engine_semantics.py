@@ -277,7 +277,7 @@ def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticM
         native_command=command,
         native_kind="Fact",
         status=EngineSemanticMappingStatus.CONTRACTED,
-        evidence_class="ENGINE FACT" if category in {"OBSERVATION", "ADMISSIBILITY", "WITNESS"} else "COMMUNITY PRACTICE",
+        evidence_class="ENGINE FACT",
         evidence_sources=sources,
         state_effects=state_effects,
         lifetime=lifetime,
