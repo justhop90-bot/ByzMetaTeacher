@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from ..errors import CompileError
 from ..ir import SemanticDemand
+from ..primitives import PrimitiveRegistry, default_de_registry
 from ..runtime_binding import BindingResult, LifecycleEncoding
 
 MAX_RULES = 10_000
@@ -65,7 +66,10 @@ def emit(
     demands: list[SemanticDemand],
     bindings: BindingResult,
     compiler_version: str = "0.4",
+    *,
+    registry: PrimitiveRegistry | None = None,
 ) -> str:
+    registry = registry or default_de_registry()
     out = [
         ";============================================================",
         "; BASILISK GENERATED .PER",
@@ -82,6 +86,21 @@ def emit(
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = LifecycleEncoding.for_goal_slot(slot)
         encoded[demand.name] = lifecycle
+
+        native_pass_constraints = registry.pass_constraints_for(demand.action.expression.head)
+        for constraint in native_pass_constraints:
+            out.append(
+                f"; NATIVE-PASS-CONSTRAINT {demand.action.expression.head} "
+                f"maximum-successes={constraint.maximum_successes}"
+            )
+            if (
+                constraint.maximum_successes == 1
+                and demand.action.arbitration_request is None
+            ):
+                raise CompileError(
+                    f"EMITTER-NATIVE-PASS-CONSTRAINT: action '{demand.action.expression.head}' "
+                    "requires a transient arbitration owner for maximum-successes=1"
+                )
 
         request = demand.action.arbitration_request
         if request is not None:
