@@ -9,6 +9,8 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source_with_report, exit_code_for_report
 from Compiler.diagnostics import DiagnosticSeverity, DiagnosticSource, ReportStatus, SemanticDiagnostic, order_diagnostics
+from Compiler.semantic.completion_witness import WitnessDiagnostic, WitnessDiagnosticCode, WitnessStatus, WitnessValidationReport
+from Compiler.semantic.demand_ownership import OwnershipDiagnostic, OwnershipDiagnosticCode, OwnershipReport, OwnershipStatus
 from Compiler.backends.models import (
     ArtifactIdentity,
     BackendIdentity,
@@ -118,6 +120,63 @@ class CombinedReportTests(unittest.TestCase):
             self.assertEqual(len(report.diagnostics), 1)
             self.assertEqual(report.diagnostics[0].source, 'LearnerAI')
             self.assertEqual(exit_code_for_report(report), 1)
+
+    def test_semantic_validation_aggregates_errors_from_multiple_validators(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            artifact = Path(tmp_dir) / "Basilisk.per"
+            backend = FakeBackend(native_result(artifact, ValidationStatus.VALIDATED))
+            ownership = OwnershipReport(
+                diagnostics=(
+                    OwnershipDiagnostic(
+                        code=OwnershipDiagnosticCode.DEMAND_MISSING_OWNERSHIP,
+                        severity=DiagnosticSeverity.ERROR,
+                        message="demand 'castle' has no semantic owner",
+                        status=OwnershipStatus.BLOCKED,
+                    ),
+                ),
+                boundaries=(),
+            )
+            witness = WitnessValidationReport(
+                diagnostics=(
+                    WitnessDiagnostic(
+                        code=WitnessDiagnosticCode.MISSING_CONTRACT,
+                        severity=DiagnosticSeverity.ERROR,
+                        message="demand 'castle' has no completion witness contract",
+                        status=WitnessStatus.BLOCKED,
+                        demand=None,
+                    ),
+                ),
+            )
+            source = '''
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            '''
+            with patch(
+                "Compiler.compiler.validate_demand_ownership",
+                return_value=ownership,
+            ), patch(
+                "Compiler.compiler.validate_completion_witnesses",
+                return_value=witness,
+            ):
+                report = compile_source_with_report(
+                    source,
+                    native_backend=backend,
+                    output=artifact,
+                )
+
+            self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
+            self.assertEqual(
+                [item.code for item in report.semantic_diagnostics],
+                ["OWN-001", "WIT-001"],
+            )
+            self.assertEqual(backend.calls, 0)
+            self.assertFalse(artifact.exists())
 
     def test_backend_failure_has_infrastructure_exit_state(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
