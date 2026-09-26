@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..ir.capability import CapabilityGraph, CapabilityProvider
 from ..ir.model import SemanticId
@@ -43,6 +44,7 @@ class ResourceDiagnostic:
     status: ResourceStatus
     provider: object | None = None
     conflict_class: str | None = None
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +96,7 @@ def _diag(
     status: ResourceStatus,
     provider: SemanticId | None = None,
     conflict_class: str | None = None,
+    location: SourceLocation | None = None,
 ) -> ResourceDiagnostic:
     return ResourceDiagnostic(
         code=code,
@@ -102,6 +105,7 @@ def _diag(
         status=status,
         provider=provider,
         conflict_class=conflict_class,
+        location=location,
     )
 
 
