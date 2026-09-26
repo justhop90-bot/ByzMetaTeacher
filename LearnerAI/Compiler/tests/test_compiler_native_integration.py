@@ -281,7 +281,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 "Fact",
                 (parameter,),
             )
-            primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 2, 2)
+            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 2, 2)
         elif name == "executable-safe":
             native = NativeCommandSpec(
                 "fixture-command",
@@ -289,7 +289,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 "Fact",
                 (parameter,),
             )
-            primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 1, 1)
+            primitive = Primitive("fixture-command", "FACT", "FEASIBILITY", 1, 1)
         else:
             return base_registry
 
