@@ -118,7 +118,7 @@ native/community .per examples, and the CI test runner.
 
 ### GitHub prior-art cross-check (2026-09-26)
 
-The public prior art was compared directly against the current Basilisk compiler:
+The public prior art was compared directly against the current generic compiler:
 
 - `01010100b/AgeScript`: adopt the typed Compilation -> Assembly -> Script separation, explicit intermediate instructions, Goal-backed memory discipline, deterministic lowering, and hard rule-budget enforcement. Do not copy its general-purpose programming language model.
 - `JOTworks/AgeOfPython`: adopt AIRef-derived native metadata, explicit parameter typing, compiler-owned Goal memory allocation, and strong separation between source variables and native storage. Do not copy its Python-like frontend or opaque memory conventions.
