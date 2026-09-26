@@ -1,4 +1,4 @@
-"""Typed factual GameData for the Basilisk compiler."""
+"""Typed factual GameData contracts for the AoE2 .per compiler."""
 from __future__ import annotations
 
 import hashlib
