@@ -40,7 +40,7 @@ A growing mounted count entering the economic area is Military pressure.
 | 5-6 mounted units OR 2 active Stables producing mounted units | S3 | 6 Spearmen; no additional Feudal counter unless another threat exists |
 | 7+ mounted units OR sustained all-in scout/light-cavalry pressure | S4 | 6 Spearmen + local wall/tower package; suspend optional Castle spending until the economy is safe |
 
-Because Byzantines receive a 25% discount on the Spearman line, a small anti-cavalry package is particularly compatible with the civilization's defensive identity. citeturn404664search1
+Because Byzantines receive a 25% discount on the Spearman line, a small anti-cavalry package is particularly compatible with the civilization's defensive identity.
 
 ### Scout release
 
@@ -114,7 +114,7 @@ Do not answer Men-at-Arms with the normal Spear/Skirmisher package.
 
 The correct Feudal response is an Archer capability, supported by walls, TC positioning, or a defensive tower when necessary.
 
-The official game guidance describes Archer-line units as effective against infantry and Spearman-line units as the cavalry counter, which is why the MAA override must be a separate branch. citeturn404604search4
+The official game guidance describes Archer-line units as effective against infantry and Spearman-line units as the cavalry counter, which is why the MAA override must be a separate branch.
 
 ### MAA thresholds
 
@@ -453,9 +453,9 @@ Do not implement these as unrelated hard-coded "rush scripts."
 
 ## 12. Why these exceptions exist
 
-Community Arabia discussion consistently treats Men-at-Arms, Scouts, Archers, and tower pressure as distinct opening problems rather than one generic "rush" category. Typical community descriptions place MAA earlier than Scouts and straight Archers, while noting that Scout pressure commonly produces Spears and Archer pressure produces Skirmishers. Community discussion also explicitly treats tower pressure as a positional problem that may justify changing the defensive structure of the response. citeturn973885search4turn973885search1turn973885search2
+Community Arabia discussion consistently treats Men-at-Arms, Scouts, Archers, and tower pressure as distinct opening problems rather than one generic "rush" category. Typical community descriptions place MAA earlier than Scouts and straight Archers, while noting that Scout pressure commonly produces Spears and Archer pressure produces Skirmishers. Community discussion also explicitly treats tower pressure as a positional problem that may justify changing the defensive structure of the response.
 
-The official game guidance likewise describes Archer-line units as an infantry counter and Spearman-line units as a cavalry counter, supporting the separate MAA branch instead of treating every Feudal threat as a Spear/Skirmisher problem. citeturn404664search4
+The official game guidance likewise describes Archer-line units as an infantry counter and Spearman-line units as a cavalry counter, supporting the separate MAA branch instead of treating every Feudal threat as a Spear/Skirmisher problem.
 
 ## 13. Reference sources
 
