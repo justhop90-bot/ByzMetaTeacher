@@ -298,24 +298,25 @@ def analyze_demand_ownership(
                 )
             )
 
-        phases: dict[object, list[StateAccess]] = {}
-        for access in writers:
-            phases.setdefault(access.phase, []).append(access)
-        for phase, phase_writers in sorted(
-            phases.items(),
-            key=lambda item: item[0].value,
-        ):
-            if len(phase_writers) > 1:
-                diagnostics.append(
-                    _diag(
-                        OwnershipDiagnosticCode.DUPLICATE_WRITER_PHASE,
-                        f"lifecycle state '{state.owner.source_unit}:{state.purpose}' "
-                        f"has multiple writers in phase '{phase.value}'",
-                        status=OwnershipStatus.CONFLICTING,
-                        state=state,
-                        access=min(phase_writers, key=_access_key),
+        if len(writer_owners) <= 1:
+            phases: dict[object, list[StateAccess]] = {}
+            for access in writers:
+                phases.setdefault(access.phase, []).append(access)
+            for phase, phase_writers in sorted(
+                phases.items(),
+                key=lambda item: item[0].value,
+            ):
+                if len(phase_writers) > 1:
+                    diagnostics.append(
+                        _diag(
+                            OwnershipDiagnosticCode.DUPLICATE_WRITER_PHASE,
+                            f"lifecycle state '{state.owner.source_unit}:{state.purpose}' "
+                            f"has multiple writers in phase '{phase.value}'",
+                            status=OwnershipStatus.CONFLICTING,
+                            state=state,
+                            access=min(phase_writers, key=_access_key),
+                        )
                     )
-                )
 
     return OwnershipReport(
         diagnostics=tuple(sorted(diagnostics, key=_diagnostic_key)),
