@@ -4,7 +4,7 @@
 
 Authoritative target: generic AoE2 `.per` compiler. Basilisk/Byzantine strategy is a downstream client and is not part of the generic compiler exit condition.
 
-Repository head at audit start: 159687d39e30bd9204ec2f9e5dad09bac7da54c5. The audit also includes the subsequent generic storage repair commits on `main`.
+Repository head at audit start: 159687d39e30bd9204ec2f9e5dad09bac7da54c5. The audit also includes the subsequent generic storage repair commits on `main`. Final verified code head for this pass: 8bec6c7c38d2c42926ed64adcc3659042fcbbb30.
 
 External evidence was cross-checked against the current AIRef command/schema corpus, AIRef data limits, DUC and performance material, UserPatch patch notes, aoe2-ai-parser diagnostics, and public prior-art compiler projects.
 
@@ -50,7 +50,7 @@ Do not move Basilisk StrategyProfile or Byzantine GameData into the generic core
 | Resource arbitration | Transient ACTION_EXCLUSION modeled; no scheduler | resource conflict pass | CONNECTED / deliberately narrow | P1 | Generalize only into evidence-backed conflict relations |
 | Goal binding | Deterministic GoalSlot/GoalSpan binding with package occupancy | runtime binding + manifests | CONNECTED | P0 | Preserve namespace collision guarantees |
 | Lifecycle Goal range | Previous allocator could assign Goal 16000 even though encoded lifecycle values need four higher values | native Goal range + lifecycle encoding | REPAIRED | P0 | Enforce Goal <= 15996 for lifecycle storage |
-| Strategic Number binding | Added typed inventory-aware binding, WHY_NOT_GOAL justification, deterministic allocation and provenance | AIRef SN limits/inventory | IMPLEMENTED, pending final CI | P0 | Add broader semantic SN usage contracts |
+| Strategic Number binding | Typed inventory-aware binding, WHY_NOT_GOAL justification, deterministic allocation, collision checks, manifest provenance | AIRef SN limits/inventory | CONNECTED / VERIFIED | P0 | Add broader semantic SN usage contracts |
 | Timer binding | Added typed TimerSlot allocation, explicit initialization policy, deterministic range/collision checks | AIRef timer range + timer initialization guidance | IMPLEMENTED, pending final CI | P0 | Connect timer allocation to actual lowering when timer semantics are introduced |
 | Package binding | Goal package occupancy exists; SN/timer namespace separation now represented | runtime binding | INCOMPLETE | P0 | Expand package inventory to all native storage namespaces |
 | Source-order analysis | Lifecycle-specific source order exists; generic state-order analysis does not | emitter order + lifecycle contracts | UNFINISHED | P1 | Model cross-rule read/write visibility and same-pass assumptions |
@@ -218,3 +218,14 @@ The compiler must be able to answer, deterministically:
 - What exact source location produced the finding?
 
 That is the compiler target. The bot comes after the substrate is honest.
+## Verification for this pass
+
+GitHub Actions compiler run on final code head 8bec6c7c38d2c42926ed64adcc3659042fcbbb30:
+
+- Native generated Basilisk fixture: finding_count=0.
+- Native strategy vertical-slice fixture: finding_count=0.
+- Native strategy-runtime fixture: finding_count=0.
+- Native explicit-invalidation fixture: finding_count=0.
+- Full compiler unittest suite: Ran 258 tests in 1.264s, OK.
+
+The separate Basilisk Validator workflow is intentionally not part of this generic compiler repair gate. At the time of this record it was still executing independently.
