@@ -422,7 +422,7 @@ def build_land_castle_strategy(
     )
 
     castle_policy = OpportunityCostPolicy(
-        owner="castle-commitment",
+        owner="castle-trajectory",
         protected_floors=(
             ProtectedResourceFloor(Resource.STONE, 650),
         ),
