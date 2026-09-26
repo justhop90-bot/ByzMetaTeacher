@@ -298,7 +298,7 @@ Return to the normal trajectory once the blocking condition clears.
 
 Exploit the safe starting position to accelerate economic and Castle conversion while avoiding pointless Feudal military expenditure.
 
-Current official AI behavior itself uses map-closedness when deciding whether to commit to walls, which is the correct semantic pattern: closure is a strategic input, not a universal walling command. citeturn822552search3
+Current official AI behavior itself uses map-closedness when deciding whether to commit to walls, which is the correct semantic pattern: closure is a strategic input, not a universal walling command.
 
 ### Dark Age
 
@@ -453,7 +453,7 @@ Open a Dock demand when at least one of these is materially true:
 
 Do not open the Dock merely because water is visible.
 
-Official AI changes have repeatedly tightened this principle, including reducing unnecessary docks when ships are not planned and correcting cases where the AI selected a distant dock despite having nearby useful water. citeturn822552search2
+Official AI changes have repeatedly tightened this principle, including reducing unnecessary docks when ships are not planned and correcting cases where the AI selected a distant dock despite having nearby useful water.
 
 ### Dark/Feudal
 
@@ -536,7 +536,7 @@ P2:
 - landing/shoreline scouting;
 - island resource access.
 
-The official AI has received repeated fixes and improvements for water and island behavior, including transport across islands, fishing behavior, migration, and dock selection. citeturn822552search0turn822552search3turn822552search5
+The official AI has received repeated fixes and improvements for water and island behavior, including transport across islands, fishing behavior, migration, and dock selection.
 
 ### Feudal
 
@@ -867,4 +867,4 @@ Not:
 
 **six separate build orders pretending to be one AI.**
 
-The current stock AI direction supports treating map shape and water as strategic inputs. Recent official updates explicitly mention transport improvements on island maps, water/fishing behavior, map-closure checks for walls, and reducing unnecessary docks when ships are not planned. Those are precedent for the capability-gated approach used here. citeturn822552search0turn822552search2turn822552search3
+The current stock AI direction supports treating map shape and water as strategic inputs. Recent official updates explicitly mention transport improvements on island maps, water/fishing behavior, map-closure checks for walls, and reducing unnecessary docks when ships are not planned. Those are precedent for the capability-gated approach used here.
