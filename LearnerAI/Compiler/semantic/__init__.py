@@ -118,6 +118,7 @@ from .guard_satisfiability import GuardSatisfiability, analyze_guard
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
 from .rule_diagnostics import (
     RuleDiagnostic,
+    RuleDiagnosticCategory,
     RuleDiagnosticCode,
     RuleDiagnosticReport,
     analyze_rule_diagnostics,
