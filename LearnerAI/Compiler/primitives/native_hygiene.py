@@ -848,6 +848,74 @@ def promotion_state(citation: CitationRecord, *, already_promoted: bool) -> Prom
     return PromotionState.NOT_ELIGIBLE
 
 
+def default_native_citation_catalog() -> CitationRecordCatalog:
+    airef_commands = "https://airef.github.io/commands/commands-details.html"
+    return CitationRecordCatalog(
+        records=(
+            CitationRecord(
+                "airef:building-type-count",
+                airef_commands,
+                airef_commands,
+                LocatorType.COMMAND,
+                "building-type-count",
+                excerpt=SourceExcerpt.capture(
+                    "(building-type-count <BuildingId> <compareOp> <Value>)",
+                    ExcerptKind.FACT,
+                ),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:unit-type-count",
+                airef_commands,
+                airef_commands,
+                LocatorType.COMMAND,
+                "unit-type-count",
+                excerpt=SourceExcerpt.capture(
+                    "(unit-type-count <UnitId> <compareOp> <Value>)",
+                    ExcerptKind.FACT,
+                ),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:research-completed",
+                airef_commands,
+                airef_commands,
+                LocatorType.COMMAND,
+                "research-completed",
+                excerpt=SourceExcerpt.capture(
+                    "(research-completed <TechId>)",
+                    ExcerptKind.FACT,
+                ),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:goal-storage",
+                "https://airef.github.io/resources/articles/data-limits.html",
+                "https://airef.github.io/resources/articles/data-limits.html",
+                LocatorType.HEADING,
+                "Goals",
+                excerpt=SourceExcerpt.capture(
+                    "Goals: 1 to 16,000",
+                    ExcerptKind.TABLE_ENTRY,
+                ),
+                state=CitationState.VERIFIED,
+            ),
+            CitationRecord(
+                "airef:build-pass-limit",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                LocatorType.PATCH_RELEASE,
+                "20120416-093415",
+                excerpt=SourceExcerpt.capture(
+                    "only 1 build/up-build command is allowed to succeed per AI rule pass.",
+                    ExcerptKind.PATCH_NOTE,
+                ),
+                state=CitationState.VERIFIED,
+            ),
+        )
+    )
+
+
 def validate_goal_span_non_overlap(uses: Tuple[NativeStorageUse, ...]) -> None:
     spans = []
     for use in uses:
