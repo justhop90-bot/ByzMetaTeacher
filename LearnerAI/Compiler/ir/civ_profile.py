@@ -882,6 +882,11 @@ def _byzantine_game_data(
         ),
     )
     techs = (
+        TechnologyDef(TechId(47), "Chemistry", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(93), "Ballistics", Age.CASTLE, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(374), "Careening", Age.CASTLE, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(375), "Dry Dock", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
+        TechnologyDef(TechId(373), "Shipwright", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
         TechnologyDef(TechId(222), "Man-at-Arms", Age.FEUDAL, (ResearchProvider(BuildingId(12)),), None, None, upgrades=(UnitId(75),), provenance=(evidence,)),
         TechnologyDef(TechId(207), "Long Swordsman", Age.CASTLE, (ResearchProvider(BuildingId(12)),), None, None, upgrades=(UnitId(77),), provenance=(evidence,)),
         TechnologyDef(TechId(217), "Two-Handed Swordsman", Age.IMPERIAL, (ResearchProvider(BuildingId(12)),), None, None, upgrades=(UnitId(473),), provenance=(evidence,)),
@@ -1018,12 +1023,47 @@ def _byzantine_game_data(
             provenance=(evidence,),
         ),
     )
+    buildings = tuple(
+        replace(item, provenance=item.provenance or (evidence,))
+        for item in buildings
+    )
+    units = tuple(
+        replace(item, provenance=item.provenance or (evidence,))
+        for item in units
+    )
+    techs = tuple(
+        replace(item, provenance=item.provenance or (evidence,))
+        for item in techs
+    )
+    advances = tuple(
+        replace(item, provenance=item.provenance or (evidence,))
+        for item in advances
+    )
+    resolved_buildings = tuple(sorted(buildings, key=lambda item: int(item.id)))
+    resolved_units = tuple(sorted(units, key=lambda item: int(item.id)))
+    resolved_lines = tuple(sorted(lines, key=lambda item: str(item.id)))
+    resolved_techs = tuple(sorted(techs, key=lambda item: int(item.id)))
+    resolved_advances = tuple(sorted(advances, key=lambda item: item.age.value))
+    coverage = FactualCoverage(
+        CoverageStatus.FACTUAL_SUBSET,
+        verified_buildings=frozenset(item.id for item in resolved_buildings),
+        verified_units=frozenset(item.id for item in resolved_units),
+        verified_unit_lines=frozenset(item.id for item in resolved_lines),
+        verified_technologies=frozenset(item.id for item in resolved_techs),
+        verified_age_advances=frozenset(item.id for item in resolved_advances),
+        verified_upgrade_relations=frozenset(
+            (item.previous, item.current, item.research)
+            for item in upgrade_relations
+        ),
+    )
     return GameData(
         patch=patch,
-        buildings=tuple(sorted(buildings, key=lambda item: int(item.id))),
-        units=tuple(sorted(units, key=lambda item: int(item.id))),
-        unit_lines=tuple(sorted(lines, key=lambda item: str(item.id))),
-        technologies=tuple(sorted(techs, key=lambda item: int(item.id))),
-        age_advances=tuple(sorted(advances, key=lambda item: item.age.value)),
+        buildings=resolved_buildings,
+        units=resolved_units,
+        unit_lines=resolved_lines,
+        technologies=resolved_techs,
+        age_advances=resolved_advances,
+        upgrade_relations=upgrade_relations,
         provenance=(evidence, community),
+        coverage=coverage,
     )
