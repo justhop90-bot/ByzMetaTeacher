@@ -166,7 +166,7 @@ def _parse_expression(source: str, location: SourceLocation) -> Expression:
 def _top_level_forms(text: str) -> tuple[tuple[int, int], ...]:
     forms: list[tuple[int, int]] = []
     index = 0
-    while index < body_end:
+    while index < len(text):
         char = text[index]
         if char.isspace():
             index += 1
@@ -196,14 +196,14 @@ def _split_rule_body(
     arrow_start: int | None = None
     index = body_start
 
-    while index < len(text):
+    while index < body_end:
         char = text[index]
         if char.isspace():
             index += 1
             continue
         if char == ";":
             newline = text.find("\n", index)
-            index = len(text) if newline < 0 else newline + 1
+            index = body_end if newline < 0 else min(newline + 1, body_end)
             continue
         if text.startswith("=>", index):
             if arrow_start is not None:
@@ -216,13 +216,19 @@ def _split_rule_body(
             index += 2
             continue
         if char != "(":
-            location = _line_column(slice_, index)
+            location = _line_column(slice_, source_offset + index)
             raise CompileError(
                 f"RULE-PARSE-005: unexpected token in defrule at "
                 f"{location.source_unit}:{location.line}:{location.column}"
             )
         end = _scan_balanced(text, index)
-        location = _line_column(slice_, index)
+        if end > body_end:
+            location = _line_column(slice_, source_offset + index)
+            raise CompileError(
+                f"RULE-PARSE-002: nested expression crosses defrule boundary at "
+                f"{location.source_unit}:{location.line}:{location.column}"
+            )
+        location = _line_column(slice_, source_offset + index)
         expression = _parse_expression(text[index:end], location)
         if arrow_start is None:
             facts.append(expression)
@@ -242,7 +248,7 @@ def _split_rule_body(
             f"{location.source_unit}:{location.line}:{location.column}"
         )
     if not facts:
-        location = _line_column(slice_, body_start)
+        location = _line_column(slice_, source_offset + body_start)
         raise CompileError(
             f"RULE-PARSE-006: defrule has no facts at "
             f"{location.source_unit}:{location.line}:{location.column}"
