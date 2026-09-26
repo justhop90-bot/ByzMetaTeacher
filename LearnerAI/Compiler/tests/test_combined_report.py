@@ -372,6 +372,14 @@ demand second {
             self.assertEqual(report.status, ReportStatus.VALIDATED)
             self.assertEqual(report.diagnostics, ())
             self.assertTrue(report.rule_diagnostics)
+            self.assertTrue(
+                all(
+                    item.category == "FIRING_ELIGIBILITY"
+                    and item.state_kind is None
+                    and item.state_identifier is None
+                    for item in report.rule_diagnostics
+                )
+            )
             self.assertEqual(
                 [item.rule_order for item in report.rule_diagnostics],
                 sorted(item.rule_order for item in report.rule_diagnostics),
