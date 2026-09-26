@@ -19,10 +19,16 @@ from Compiler.primitives import (
 from Compiler.primitives.engine_semantics import default_engine_semantic_mapping_registry
 from Compiler.primitives.native_hygiene import (
     AIRefProvenance,
+    CitationRecord,
+    CitationRecordCatalog,
+    CitationState,
     ConfidenceBasis,
     ConfidenceLevel,
     EvidenceKind,
+    ExcerptKind,
+    LocatorType,
     PassFailureMode,
+    SourceExcerpt,
 )
 from Compiler.primitives.native_schema import load_default_native_schema
 from Compiler.primitives.registry import NativeSupportState, PrimitiveRegistry
@@ -63,6 +69,74 @@ def fact_provenance():
 
 
 class NativeContractIntegrationTests(unittest.TestCase):
+    def test_missing_citation_record_blocks_native_contract_catalog(self):
+        base = default_native_contract_catalog()
+        witness = replace(
+            base.witness("build-completion-witness"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:missing",
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "unresolved citation 'airef:missing'"):
+            NativeContractCatalog(
+                witnesses=(
+                    witness,
+                    *(
+                        item
+                        for item in base.witnesses
+                        if item.identity != "build-completion-witness"
+                    ),
+                ),
+                storage_uses=base.storage_uses,
+                pass_constraints=base.pass_constraints,
+            )
+
+    def test_non_promotable_citation_blocks_native_contract_catalog(self):
+        base = default_native_contract_catalog()
+        broken = CitationRecord(
+            "airef:building-type-count",
+            "https://airef.github.io/commands/commands-details.html",
+            "https://airef.github.io/commands/commands-details.html",
+            LocatorType.COMMAND,
+            "building-type-count",
+            excerpt=SourceExcerpt.capture(
+                "(building-type-count <BuildingId> <compareOp> <Value>)",
+                ExcerptKind.FACT,
+            ),
+            state=CitationState.BROKEN,
+        )
+        citation_catalog = CitationRecordCatalog(
+            (
+                broken,
+                *(
+                    item
+                    for item in base.citation_catalog.records
+                    if item.citation_id != "airef:building-type-count"
+                ),
+            )
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "citation 'airef:building-type-count' is not promotable",
+        ):
+            NativeContractCatalog(
+                witnesses=base.witnesses,
+                storage_uses=base.storage_uses,
+                pass_constraints=base.pass_constraints,
+                citation_catalog=citation_catalog,
+            )
+
+    def test_default_compile_resolves_every_native_contract_citation(self):
+        registry = default_de_registry()
+        registry.native_contracts.validate_all_provenance()
+        output = compile_source(SOURCE)
+        self.assertIn("(build castle)", output)
+
     def test_missing_native_witness_blocks_primitive_promotion(self):
         base = default_native_contract_catalog()
         catalog = NativeContractCatalog(
