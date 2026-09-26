@@ -72,11 +72,11 @@ class ActionIssuanceTests(unittest.TestCase):
         """
         output = compile_source(source)
         failure_marker = output.index("; Issuance failure: castle")
-        action_marker = output.index("; Action issuance: castle")
-        failure_block = output[failure_marker:action_marker]
+        release_marker = output.index("; Release: castle", failure_marker)
+        failure_block = output[failure_marker:release_marker]
 
         self.assertIn("RETAIN-ACTIVE", failure_block)
-        self.assertNotIn("(set-goal demand-castle 1001)", failure_block)
+        self.assertNotIn("(set-goal demand-castle", failure_block)
 
     def test_invalid_issuance_contract_is_rejected_deterministically(self):
         with self.assertRaisesRegex(
