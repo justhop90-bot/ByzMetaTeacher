@@ -126,8 +126,7 @@ def emit(
                     f"    (set-goal demand-{demand.name} "
                     f"{encoded[demand.name].active.value})"
                 )
-            if start + INITIALIZATION_CHUNK >= len(demands):
-                out.append("    (disable-self)")
+            out.append("    (disable-self)")
             out += [")", ""]
 
     for demand in demands:
