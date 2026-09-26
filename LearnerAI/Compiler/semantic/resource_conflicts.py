@@ -198,7 +198,7 @@ def validate_resource_conflicts(
                         provider.identity.local_name,
                     ),
                     conflict_class=conflict_class,
-                    location=providers[0].location if providers else None,
+                    location=provider.location,
                 )
             )
             continue
@@ -219,6 +219,7 @@ def validate_resource_conflicts(
                         provider.identity.local_name,
                     ),
                     conflict_class=conflict_class,
+                    location=provider.location,
                 )
             )
             continue
@@ -309,6 +310,7 @@ def validate_resource_conflicts(
                     f"arbitration owners: {owner_text}",
                     status=ResourceStatus.CONFLICTING,
                     conflict_class=conflict_class,
+                    location=providers[0].location if providers else None,
                 )
             )
             continue
