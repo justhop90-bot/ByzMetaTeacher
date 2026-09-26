@@ -26,6 +26,7 @@ if __package__ in (None, ""):
         backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
+        semantic_diagnostic_from_validator,
         semantic_failure_report,
     )
     from Compiler.backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
@@ -53,6 +54,7 @@ else:
         backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
+        semantic_diagnostic_from_validator,
         semantic_failure_report,
     )
     from .backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
@@ -88,6 +90,36 @@ def _storage_requests(ir):
             requests.append(request)
     return tuple(requests)
 
+def _semantic_compile_failure(
+    diagnostics,
+) -> CompileError:
+    ordered = tuple(
+        sorted(
+            diagnostics,
+            key=lambda item: (
+                str(item.path or ""),
+                item.line if item.line is not None else 0,
+                item.column if item.column is not None else 0,
+                item.code,
+                item.message,
+                item.id,
+            ),
+        )
+    )
+    lines = []
+    for item in ordered:
+        position = str(item.path or "<source>")
+        if item.line is not None:
+            position += f":{item.line}"
+            if item.column is not None:
+                position += f":{item.column}"
+        lines.append(f"{position}: [{item.code}] {item.message}")
+    return CompileError(
+        "\n".join(lines),
+        diagnostics=ordered,
+    )
+
+
 def _compile_ir_parts(
     ir,
     registry,
@@ -95,41 +127,45 @@ def _compile_ir_parts(
     *,
     binding_context: BindingContext | None = None,
 ):
+    reports = []
+
     ownership_report = validate_demand_ownership(ir)
-    if ownership_report.errors:
-        diagnostic = ownership_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(ownership_report)
 
     witness_report = validate_completion_witnesses(ir, registry)
-    if witness_report.errors:
-        diagnostic = witness_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(witness_report)
 
     release_report = validate_release_states(ir, registry)
-    if release_report.errors:
-        diagnostic = release_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(release_report)
 
     invalidation_report = validate_invalidation_contracts(ir, registry)
-    if invalidation_report.errors:
-        diagnostic = invalidation_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(invalidation_report)
 
     issuance_report = validate_action_issuance(ir, registry)
-    if issuance_report.errors:
-        diagnostic = issuance_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(issuance_report)
 
     capability_graph = project_capability_graph(ir, registry)
     resource_report = validate_resource_conflicts(capability_graph, registry)
-    if resource_report.errors:
-        diagnostic = resource_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(resource_report)
 
     capability_report = validate_capability_graph(capability_graph, registry)
-    if capability_report.errors:
-        diagnostic = capability_report.errors[0]
-        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    reports.append(capability_report)
+
+    fallback_source_unit = (
+        ir[0].identity.source_unit
+        if ir
+        else "<source>"
+    )
+    semantic_diagnostics = tuple(
+        semantic_diagnostic_from_validator(
+            diagnostic,
+            fallback_source_unit=fallback_source_unit,
+        )
+        for report in reports
+        for diagnostic in report.errors
+    )
+    if semantic_diagnostics:
+        raise _semantic_compile_failure(semantic_diagnostics)
 
     context = binding_context or BindingContext()
     bindings = RuntimeBinder(base_goal=base_goal).bind(
