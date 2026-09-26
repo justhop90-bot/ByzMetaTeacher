@@ -7,6 +7,7 @@ from LearnerAI.Compiler.ir.game_data import BuildingId, CivId
 from LearnerAI.Compiler.semantic.community_engine import CapabilityTransition
 
 from LearnerAI.Compiler.clients.basilisk import (
+    ByzantineProfile,
     CapabilityIntent,
     CapabilityIntentKind,
     PostureTransition,
