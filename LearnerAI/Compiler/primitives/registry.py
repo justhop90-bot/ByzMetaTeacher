@@ -458,9 +458,22 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
             1,
             completion_witness=False,
             conflict_class="BUILD_PASS_SINGLETON",
+            native_witness_ids=("build-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage", "build-action-claim-storage"),
+            native_pass_constraint_ids=("build-pass-singleton",),
         ),
-        Primitive("train", "ACTION", "ACTION", 1, 1, completion_witness=False),
-        Primitive("research", "ACTION", "ACTION", 1, 1, completion_witness=False),
+        Primitive(
+            "train", "ACTION", "ACTION", 1, 1,
+            completion_witness=False,
+            native_witness_ids=("train-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage",),
+        ),
+        Primitive(
+            "research", "ACTION", "ACTION", 1, 1,
+            completion_witness=False,
+            native_witness_ids=("research-completion-witness",),
+            native_storage_use_ids=("lifecycle-goal-storage",),
+        ),
     ]
     native_registry = (
         load_default_native_schema()
@@ -468,6 +481,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         else NativeCommandRegistry.from_path(schema_path)
     )
     semantic_registry = default_engine_semantic_mapping_registry()
+    native_contracts = default_native_contract_catalog()
     primitive_items = tuple(facts + actions)
     semantic_registry.validate_exact_executable_commands(
         tuple(item.name for item in primitive_items)
@@ -483,7 +497,81 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         mapped_items,
         native_registry,
         semantic_mappings=semantic_registry,
+        native_contracts=native_contracts,
     )
     for primitive in mapped_items:
         registry.validate_adapter_contract(primitive)
     return registry
+
+def _engine_provenance(citation_id: str) -> tuple[AIRefProvenance, ...]:
+    return (
+        AIRefProvenance(
+            evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+            confidence=ConfidenceLevel.HIGH,
+            confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+            citation_id=citation_id,
+        ),
+    )
+
+
+def default_native_contract_catalog() -> NativeContractCatalog:
+    return NativeContractCatalog(
+        witnesses=(
+            NativeWitness(
+                identity="build-completion-witness",
+                kind=NativeWitnessKind.OBJECT_COUNT,
+                primitive="building-type-count",
+                subject="ARG0",
+                comparator=">=",
+                value=1,
+                provenance=_engine_provenance("airef:building-type-count"),
+            ),
+            NativeWitness(
+                identity="train-completion-witness",
+                kind=NativeWitnessKind.UNIT_COUNT,
+                primitive="unit-type-count",
+                subject="ARG0",
+                comparator=">=",
+                value=1,
+                provenance=_engine_provenance("airef:unit-type-count"),
+            ),
+            NativeWitness(
+                identity="research-completion-witness",
+                kind=NativeWitnessKind.RESEARCH_STATUS,
+                primitive="research-completed",
+                subject="ARG0",
+                state="completed",
+                provenance=_engine_provenance("airef:research-completed"),
+            ),
+        ),
+        storage_uses=(
+            NativeStorageUse(
+                identity="lifecycle-goal-storage",
+                storage_class=NativeStorageClass.PERSISTENT_SCALAR,
+                kind=NativeStorageKind.GOAL,
+                request_purpose="lifecycle",
+                symbolic=True,
+                access="READ_WRITE",
+                provenance=_engine_provenance("airef:goal-storage"),
+            ),
+            NativeStorageUse(
+                identity="build-action-claim-storage",
+                storage_class=NativeStorageClass.PERSISTENT_SCALAR,
+                kind=NativeStorageKind.GOAL,
+                request_purpose="action-claim:BUILD_PASS_SINGLETON",
+                symbolic=True,
+                access="READ_WRITE",
+                provenance=_engine_provenance("airef:goal-storage"),
+            ),
+        ),
+        pass_constraints=(
+            PassExecutionConstraint(
+                identity="build-pass-singleton",
+                command="build",
+                scope="RULE_PASS",
+                maximum_successes=1,
+                failure_mode=PassFailureMode.NO_EFFECT,
+                provenance=_engine_provenance("airef:build-pass-limit"),
+            ),
+        ),
+    )
