@@ -8,7 +8,7 @@ from ..runtime_binding import BindingResult, LifecycleEncoding
 MAX_RULES = 10_000
 MAX_RULE_ELEMENTS = 32
 MAX_LINE_LENGTH = 255
-INITIALIZATION_CHUNK = 31
+INITIALIZATION_CHUNK = 30
 
 
 def _claim_name(conflict_class: str) -> str:
