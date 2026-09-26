@@ -379,6 +379,19 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaisesRegex(CompileError, "TIMING.*release"):
             compile_source(source)
 
+
+    def test_timing_only_composite_requirement_is_rejected(self):
+        source = """
+        demand timed-maa {
+            require (and (game-time >= 510) (game-time < 750))
+            action (train archer)
+            witness (unit-type-count archer >= 3)
+            release (unit-type-count man-at-arms == 0)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "TIMING-WITHOUT-WORLD-EVIDENCE"):
+            compile_source(source)
+
     def test_cli_entrypoint_compiles_from_repository_root(self):
         repo = Path(__file__).resolve().parents[3]
         source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
