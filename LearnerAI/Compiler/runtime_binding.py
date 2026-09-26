@@ -160,10 +160,13 @@ class StrategicNumberSlot:
     id: int
     role: GoalRole
     provenance_id: str
+    inventory_sha: str
 
     def __post_init__(self) -> None:
         if not SN_ID_MIN <= self.id <= SN_ID_MAX:
             raise ValueError(f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}, got {self.id}")
+        if not self.inventory_sha.strip():
+            raise ValueError("Strategic Number slot requires inventory provenance")
 
 
 @dataclass(frozen=True)
@@ -345,6 +348,7 @@ class BindingManifest:
                     {
                         "binding_kind": StorageKind.STRATEGIC_NUMBER.value,
                         "strategic_number_id": record.binding.id,
+                        "strategic_number_inventory_sha": record.binding.inventory_sha,
                     }
                 )
             else:
@@ -416,6 +420,7 @@ class BindingManifest:
                     id=int(raw["strategic_number_id"]),
                     role=role,
                     provenance_id=str(raw["provenance_id"]),
+                    inventory_sha=str(raw["strategic_number_inventory_sha"]),
                 )
             elif binding_kind == StorageKind.TIMER.value:
                 binding = TimerSlot(
@@ -627,10 +632,16 @@ class RuntimeBinder:
                         occupied_sn_ids,
                         context.strategic_number_inventory,
                     )
+                    inventory = context.strategic_number_inventory
+                    if inventory is None:
+                        raise ValueError(
+                            "Strategic Number allocation requires an explicit AIRef inventory"
+                        )
                     binding = StrategicNumberSlot(
                         id=sn_id,
                         role=request.role,
                         provenance_id=_provenance_id(request.request_id, sn_id),
+                        inventory_sha=inventory.inventory_sha,
                     )
                     occupied_sn_ids.add(sn_id)
                 else:
@@ -712,11 +723,16 @@ class RuntimeBinder:
                 raise ValueError(
                     f"Strategic Number request {request.request_id} requires WHY_NOT_GOAL justification"
                 )
-            if strategic_number_inventory is not None and binding.id not in strategic_number_inventory.candidate_ids:
-                raise ValueError(
-                    f"existing Strategic Number {binding.id} is not approved by inventory "
-                    f"{strategic_number_inventory.inventory_sha}"
-                )
+            if strategic_number_inventory is not None:
+                if binding.id not in strategic_number_inventory.candidate_ids:
+                    raise ValueError(
+                        f"existing Strategic Number {binding.id} is not approved by inventory "
+                        f"{strategic_number_inventory.inventory_sha}"
+                    )
+                if binding.inventory_sha != strategic_number_inventory.inventory_sha:
+                    raise ValueError(
+                        f"existing Strategic Number {binding.id} provenance inventory mismatch"
+                    )
             return
 
         if not isinstance(binding, TimerSlot):
