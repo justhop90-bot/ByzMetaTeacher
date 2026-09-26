@@ -11,6 +11,42 @@ on:
       - ".github/workflows/compiler-tests.yml"
 
 jobs:
+  cross-platform-native-support:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Generate native support determinism snapshot
+        run: python LearnerAI/Compiler/tests/assert_native_support_determinism.py --output native-support-replay.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-support-replay-${{ matrix.os }}-${{ matrix.python-version }}
+          path: native-support-replay.json
+          if-no-files-found: error
+
+  compare-cross-platform-native-support:
+    needs: cross-platform-native-support
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-support-replay-*
+          path: snapshots
+          merge-multiple: false
+      - name: Compare Python and OS snapshots
+        run: python LearnerAI/Compiler/tests/compare_native_support_replays.py --root snapshots
+
   test:
     runs-on: ubuntu-latest
     steps:
