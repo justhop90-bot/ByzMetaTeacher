@@ -47,7 +47,13 @@ def parse_expression(source: str) -> Expression:
         raise CompileError(f"logical operator '{head}' requires {_LOGICAL_ARITY[head]} operands")
     return Expression(source=source, head=head, args=args)
 
-def _validate_primitive(expr: Expression, registry: PrimitiveRegistry):
+def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
+    if expr.head in _LOGICAL_ARITY:
+        for child in expr.args:
+            if not isinstance(child, Expression):
+                raise CompileError(f"logical operator '{expr.head}' requires nested expressions")
+            _validate_expression(child, registry)
+        return None
     primitive = registry.get(expr.head)
     if primitive is None:
         raise CompileError(f"unknown AoE2 primitive '{expr.head}'")
@@ -56,19 +62,25 @@ def _validate_primitive(expr: Expression, registry: PrimitiveRegistry):
             f"primitive '{expr.head}' expects {primitive.min_args} argument(s), "
             f"got {len(expr.args)}"
         )
-    if primitive.kind == "FACT" and any(hasattr(a, "head") for a in expr.args):
-        # Nested expressions are valid for logical operators, not ordinary first-slice facts.
+    if any(isinstance(a, Expression) for a in expr.args):
         raise CompileError(f"nested expression is not supported in primitive '{expr.head}'")
     return primitive
 
-def _validate_role(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
-    primitive = _validate_primitive(expr, registry)
-    if primitive.role not in allowed:
-        allowed_text = ", ".join(sorted(allowed))
-        raise CompileError(
-            f"{context}: '{expr.head}' has role {primitive.role}; expected one of {allowed_text}"
-        )
-    return primitive
+def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
+    if expr.head in _LOGICAL_ARITY:
+        roles = set()
+        for child in expr.args:
+            roles.update(_root_roles(child, registry))
+        return roles
+    primitive = _validate_expression(expr, registry)
+    return {primitive.role}
+
+def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
+    roles = _root_roles(expr, registry)
+    if not roles or not roles.issubset(allowed):
+        actual = ", ".join(sorted(roles)) or "UNKNOWN"
+        expected = ", ".join(sorted(allowed))
+        raise CompileError(f"{context}: expression has role {actual}; expected only {expected}")
 
 def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: int = 1000) -> list[SemanticDemand]:
     if base_goal < 0:
@@ -78,21 +90,22 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         requirements = []
         for raw in demand.requirements:
             expr = parse_expression(raw)
-            role = _validate_primitive(expr, registry).role
-            if role not in {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"}:
-                raise CompileError(f"demand '{demand.name}': requirement '{expr.head}' is not a valid requirement")
+            _validate_context(expr, registry,
+                              {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
+                              f"demand '{demand.name}' requirement")
+            role = next(iter(_root_roles(expr, registry)))
             requirements.append(SemanticRequirement(expr, role))
         action = parse_expression(demand.action)
-        action_primitive = _validate_role(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
+        _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
         witness = parse_expression(demand.witness)
-        _validate_role(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
+        _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         release = parse_expression(demand.release)
-        _validate_role(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
+        _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
         result.append(SemanticDemand(
             demand.name,
             base_goal + offset,
             tuple(requirements),
-            SemanticAction(action, action_primitive.role),
+            SemanticAction(action, "ACTION"),
             witness,
             release,
         ))
