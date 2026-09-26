@@ -118,7 +118,7 @@ class NativeSupportStateTests(unittest.TestCase):
         self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
         self.assertEqual(
             [diagnostic.state for diagnostic in assessment.diagnostics],
-            [NativeSupportState.NATIVE_KNOWN],
+            [NativeSupportState.NATIVE_KNOWN, NativeSupportState.UNSUPPORTED],
         )
         self.assertIn('native metadata is not typed', assessment.message)
 
