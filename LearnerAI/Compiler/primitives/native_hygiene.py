@@ -687,10 +687,18 @@ class NativeContractCatalog:
             raise ValueError("Goal span uses require an extended Goal span contract")
 
         for storage in self.storage_uses:
-            if storage.kind is NativeStorageKind.GOAL and storage.contract_id not in goal_storage_ids:
-                raise ValueError(f"Goal storage '{storage.identity}' references an unknown Goal storage contract")
-            if storage.storage_class is NativeStorageClass.GOAL_SPAN and storage.contract_id not in goal_span_ids:
-                raise ValueError(f"Goal span '{storage.identity}' references an unknown Goal span contract")
+            if storage.kind is NativeStorageKind.GOAL:
+                if storage.contract_id not in goal_storage_ids:
+                    raise ValueError(f"Goal storage '{storage.identity}' references an unknown Goal storage contract")
+            if storage.storage_class is NativeStorageClass.GOAL_SPAN:
+                if storage.contract_id not in goal_span_ids:
+                    raise ValueError(f"Goal span '{storage.identity}' references an unknown Goal span contract")
+                span_contract = self.goal_span_contract(storage.contract_id)
+                if span_contract.storage_kind is not storage.kind:
+                    raise ValueError(
+                        f"Goal span '{storage.identity}' references contract "
+                        f"for {span_contract.storage_kind.value}, not {storage.kind.value}"
+                    )
 
         citation_catalog = self.citation_catalog or default_native_citation_catalog()
         object.__setattr__(self, "citation_catalog", citation_catalog)
@@ -1231,7 +1239,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "Goals: 1 to 512",
                 excerpt=SourceExcerpt.capture(
                     "AI scripts has 512 different goals they can use to store different values, which are numbered from 1 to 512.",
-                    ExcerptKind.FACT,
+                    ExcerptKind.TABLE_ENTRY,
                     locator_text="Goals: 1 to 512",
                 ),
                 semantic_scope=CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE,
