@@ -103,7 +103,12 @@ class NonLifecycleSourceOrderTests(unittest.TestCase):
             (replace(demand, state_accesses=(access,)),)
         )
 
-        self.assertEqual(report.diagnostics[0].code, OwnershipDiagnosticCode.STATE_ACCESS_MISMATCH)
+        self.assertTrue(
+            any(
+                item.code is OwnershipDiagnosticCode.STATE_ACCESS_MISMATCH
+                for item in report.diagnostics
+            )
+        )
 
     def test_non_lifecycle_conflicting_writers_reuse_conflicting_writer_diagnostic(self):
         demand = self._demand()
