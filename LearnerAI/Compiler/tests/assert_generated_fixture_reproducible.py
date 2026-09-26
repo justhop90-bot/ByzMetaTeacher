@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-
-from Compiler.compiler import compile_source
+import sys
 
 
 ROOT = Path(__file__).parents[2]
 SOURCE = ROOT / "Compiler" / "examples" / "basics.basilisk"
 GENERATED = ROOT / "Compiler" / "generated" / "Basilisk.per"
+sys.path.insert(0, str(ROOT))
+
+from Compiler.compiler import compile_source
 
 
 def main() -> int:
