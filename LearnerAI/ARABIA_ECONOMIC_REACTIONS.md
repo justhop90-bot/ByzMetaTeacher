@@ -224,7 +224,7 @@ With actual forward Militia/MAA evidence:
 - +1-2 wood until the Range is placed and the first Archer queue is serviceable;
 - preserve the Castle gold floor.
 
-The strategic purpose is readiness, not a prebuilt Archer mass. Current community discussion specifically emphasizes getting the Range up early enough that the first Archer can meet fast MAA pressure, while small resource walls buy the required time. citeturn358751reddit22turn358751reddit25
+The strategic purpose is readiness, not a prebuilt Archer mass. Current community discussion specifically emphasizes getting the Range up early enough that the first Archer can meet fast MAA pressure, while small resource walls buy the required time.
 
 ### 08:30-10:00: early MAA
 
