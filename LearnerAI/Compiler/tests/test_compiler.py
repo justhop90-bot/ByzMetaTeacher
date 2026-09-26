@@ -166,6 +166,47 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(first_diags, second_diags)
         self.assertEqual(len(first_diags), 15)
 
+    def test_pending_negative_repeated_action_is_guarded(self):
+        source = """
+        demand repeated {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn(
+            "PENDING-ACTION-GUARD",
+            output,
+        )
+        pending = output[output.find("; Completion witness: repeated"):output.find("; Release: repeated")]
+        self.assertNotIn("(train spearman)", pending)
+
+    def test_pending_negative_missing_witness_is_rejected(self):
+        source = """
+        demand missing {
+            require (can-build castle)
+            action (build castle)
+            witness ()
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "PENDING-WITNESS-MISSING"):
+            compile_source(source)
+
+    def test_pending_negative_premature_release_is_rejected(self):
+        source = """
+        demand premature {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (build castle)
+        }
+        """
+        with self.assertRaisesRegex(CompileError, "PENDING-RELEASE-PREMATURE"):
+            compile_source(source)
+
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
         castle_release = output[output.find("; Release: castle"):output.find("; Demand: defensive-spearmen")]
