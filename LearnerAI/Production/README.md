@@ -34,7 +34,9 @@ Monks.
 
 Technology packages associated with those capabilities.
 
-## First competitive target
+## Arabia timing-window reactions
+
+`LearnerAI/ARABIA_ECONOMIC_REACTIONS.md` defines when worker packets and timing evidence may open or close Feudal production targets, second-production capacity, and Fast Castle production shutdown.
 
 Do not overproduce Feudal military.
 
