@@ -829,9 +829,9 @@ class CitationRecord:
     citation_id: str
     canonical_url: str
     final_url: str
-    semantic_scope: CitationSemanticScope = CitationSemanticScope.GENERAL_NATIVE_FACT
     locator_type: LocatorType
     locator: str
+    semantic_scope: CitationSemanticScope = CitationSemanticScope.GENERAL_NATIVE_FACT
     excerpt: Optional[SourceExcerpt] = None
     source_hash: Optional[SourceContentHash] = None
     retrieval: Optional[SourceRetrieval] = None
@@ -946,7 +946,13 @@ class CitationRecordCatalog:
                 if record.excerpt is None or not record.excerpt.heading_path:
                     weak.append(record.citation_id)
             elif record.locator_type is LocatorType.TABLE_ENTRY:
-                if record.excerpt is None or record.locator.strip() != record.excerpt.text.strip():
+                if (
+                    record.excerpt is None
+                    or (
+                        record.locator.strip() not in record.excerpt.text.strip()
+                        and record.excerpt.locator_text != record.locator
+                    )
+                ):
                     weak.append(record.citation_id)
 
         return CitationCatalogAudit(
