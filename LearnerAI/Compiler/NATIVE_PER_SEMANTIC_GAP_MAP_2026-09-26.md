@@ -126,3 +126,7 @@ native syntax
 -> native parser zero-findings.
 
 The companion Philosopher's Stone architecture defines the components and gates that implement this chain.
+
+## Phase 0 implementation status — semantic support promotion
+
+Implemented: native primitive support now has an explicit `ENGINE_SEMANTICS_MAPPED` stage between `SEMANTICALLY_ADAPTED` and `EXECUTABLE_SAFE`. Every default DE primitive carries a deterministic semantic mapping identity; synthetic adapters without one fail closed. The community-engine registry now explicitly inventories provider availability, queue admission, escrow, object birth, and recovery/reassertion as distinct semantic identities. DUC and attack practices remain evidence-only and are not promoted into executable native support.
