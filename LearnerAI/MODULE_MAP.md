@@ -1,36 +1,36 @@
 # Module Map
 
-LearnerAI is organized around one player loop. The directories are ownership boundaries, not arbitrary software packages.
+LearnerAI is organized around one stock-style Byzantine player loop. The directories are ownership boundaries, not arbitrary software packages.
 
 ## Repository shape
 
     LearnerAI/
-      NORTH_STAR.md       target player
-      SOURCE_MAP.md       information authorities
-      BUILD_ROADMAP.md    implementation order
-      README.md           entry point
-      GOAL.md             product requirements
-      MODULE_MAP.md       ownership and dependencies
-      INTERFACES.md       cross-module contracts
-      SCHEMAS.md          demand/capability/action/witness model
-      LIFECYCLE.md        common execution lifecycle
-      OWNERSHIP.md        persistent-state rules
-      LEARNING_PATH.md    build/teaching sequence
-      ENGINEERING.md      static/runtime verification
-      EXAMPLES.md         canonical behavior traces
-      PER_PRIMITIVE_MAP.md engine primitive reference index
-      Compiler/           semantic compiler and native adapter
-      Engine/             native engine facts/actions and versioned references
-      State/              persistent intent and execution memory
-      Information/        observations and interpretation
-      Strategy/           strategic posture and demand creation
-      Economy/             resource/workforce policy
-      Construction/       building capability and construction lifecycle
-      Production/         production capability and queue execution
-      Military/           defense, composition, attack, siege, recovery
-      Engineering/        verification and diagnostics
+      NORTH_STAR.md
+      SOURCE_MAP.md
+      BUILD_ROADMAP.md
+      README.md
+      GOAL.md
+      MODULE_MAP.md
+      INTERFACES.md
+      SCHEMAS.md
+      LIFECYCLE.md
+      OWNERSHIP.md
+      LEARNING_PATH.md
+      ENGINEERING.md
+      EXAMPLES.md
+      PER_PRIMITIVE_MAP.md
+      Compiler/
+      Engine/
+      State/
+      Information/
+      Strategy/
+      Economy/
+      Construction/
+      Production/
+      Military/
+      Engineering/
 
-## Dependency flow
+## Player loop
 
     Engine/reference
          |
@@ -39,42 +39,41 @@ LearnerAI is organized around one player loop. The directories are ownership bou
          |              v
          +-------> persistent demands
                         |
-                 +------+------+
-                 |      |      |
-              Economy Construction Production
-                 |      |      |
-                 +------+------+
-                        |
-                     Military
-                        |
+                 +------+-------+---------+
+                 |      |       |         |
+              Economy Construction Production Military
+                 |       |       |         |
+                 +-------+-------+---------+
+                         |
                     world state
-                        |
+                         |
                     Information
 
-Engineering observes and validates this loop. It is not a gameplay manager.
+Engineering observes and validates this loop.
 
 Compiler turns semantic specifications into deterministic .per and asks the native backend to verify native language legality.
 
 ## Module responsibilities
 
-| Module | Owns | Consumes | Produces |
-|---|---|---|---|
-| Engine | native facts, actions, SNs, timers, IDs | AIRef, engine reference, DE data | engine capability vocabulary |
-| Information | scouting and interpretation | engine observations, Basilisk patterns | threat/map/opening facts |
-| Strategy | strategic posture and demand creation/cancellation | information, economy/army state | persistent strategic intent |
-| State | persistent goals and local execution memory | Strategy/domain lifecycle | durable state representation |
-| Economy | worker/resource allocation and recovery | Strategy demands, current shortages | resource posture and economic capability |
-| Construction | building capability/action lifecycle | demands, prerequisites, builders | completed infrastructure |
-| Production | queues, unit/tech production, capacity | military/economic demands | units and research |
-| Military | minimum defense, counters, attack, siege, retreat | information + strategy | military demands and execution |
-| Engineering | static/runtime verification | all modules + compiler output | diagnostics and regression evidence |
-| Compiler | semantic validation + deterministic emission | schemas + engine primitive profile | auditable .per |
+| Module | Owns | Important capabilities |
+|---|---|---|
+| Engine | native facts/actions, SNs, timers, IDs | native game vocabulary |
+| Information | scouting and interpretation | map, threat, enemy, water, relic, terrain context |
+| Strategy | strategic posture and demands | land/water posture, Castle/boom/pressure/defense |
+| State | persistent goals and execution memory | durable posture, pending work, justified transitions |
+| Economy | workers/resources/recovery | farms, fishing, capital protection, arbitration |
+| Construction | building lifecycle | land buildings, docks, towers, walls, Castle |
+| Production | queues/capacity | villagers, land units, ships, siege, research |
+| Military | defense/attack/siege | counters, readiness, retreat, siege, naval posture |
+| Engineering | validation/verification | semantic, native, static, runtime evidence |
+| Compiler | semantic translation | lifecycle diagnostics and auditable .per |
 
 ## First vertical slice
 
-The first executable learner player must connect these modules end-to-end:
+The first executable player must connect:
 
-    Dark economy
+    map context
+      -> Dark economy
       -> Feudal transition
       -> minimum defensive military
       -> Castle admissibility
@@ -85,19 +84,27 @@ The first executable learner player must connect these modules end-to-end:
       -> production scaling
       -> reassessment
 
-Do not implement every module broadly before this trace exists.
+The slice must be structurally capable of branching when the map makes water strategically meaningful.
 
-## Source location
+## Capability coverage
 
-Use SOURCE_MAP.md for the authoritative source behind every module.
+The eventual player must support ordinary conditional capability families:
 
-Use Basilisk/Basilisk.per for proven implementation patterns.
+- economic infrastructure;
+- military production;
+- siege;
+- docks and ships;
+- transport;
+- Monasteries and Monks;
+- relic collection/denial;
+- walls and gates;
+- Outposts and towers;
+- Castles;
+- late Bombard Towers;
+- Town Centers and Markets;
+- Universities and technology infrastructure.
 
-Use docs/reference/ for engine facts.
-
-Use validation/ for known lifecycle and regression contracts.
-
-Use LearnerAI/Compiler/ for compiler semantics and native validation.
+Not every capability fires in every game.
 
 ## Ownership rule
 

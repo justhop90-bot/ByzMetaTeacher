@@ -1,6 +1,6 @@
 # LearnerAI
 
-LearnerAI is the design, teaching, semantic-validation, and compilation workspace for a competent 1v1 standard-land Byzantine AoE2DE AI.
+LearnerAI is the design, teaching, semantic-validation, and compilation workspace for a competent stock-style 1v1 Byzantine AoE2DE AI.
 
 It is documentation-first while interfaces and source contracts are being established, but it is not documentation-only. The workspace exists to produce a real player. The compiler exists to make that player explicit, checkable, and maintainable. Runtime behavior remains the final authority.
 
@@ -9,17 +9,22 @@ It is documentation-first while interfaces and source contracts are being establ
 The target player must:
 
 - maintain a coherent Dark Age economy;
-- transition through Feudal without wrecking its Castle trajectory;
+- adapt its plan to common open, closed, hybrid, and water contexts;
+- transition through Feudal without wrecking the next strategic objective;
 - maintain a minimum defensible military;
+- build ordinary economic and military infrastructure when justified;
+- use docks, fishing, naval units, and transport when water matters;
+- use siege when the battlefield requires it;
+- use Monks and contest relics when the position justifies it;
+- use walls, gates, towers, Castles, and late defensive structures conditionally;
 - reach Castle at sensible times for the position;
 - expand its economy in Castle Age;
-- build infrastructure required by actual military and economic demands;
 - adapt composition to observed enemy commitments;
 - recover when the preferred plan is interrupted;
 - reach Imperial with a functioning economy;
 - convert Imperial resources into pressure.
 
-The target is 1v1 standard-land Byzantines first. Generalization comes later.
+The target is Byzantines first, on ordinary random-map situations. Generalization comes later.
 
 ## North-star loop
 
@@ -56,7 +61,7 @@ LearnerAI is not a hidden Basilisk rewrite. Learn from Basilisk, compare against
 
 LearnerAI does not replace the AoE2 native parser ecosystem.
 
-The pinned aoe2-ai-parser backend validates emitted .per syntax and native command usage. LearnerAI owns semantic questions the native parser does not know about: demand intent, capability providers, lifecycle meaning, ownership, pending state, witnesses, release, cancellation, and recovery.
+The pinned aoe2-ai-parser backend validates emitted .per syntax and native command usage. LearnerAI owns semantic questions the native parser does not know about: demand intent, capability providers, lifecycle meaning, ownership, pending state, witnesses, release, cancellation, recovery, and map-conditional capability.
 
 ## Information boundary
 

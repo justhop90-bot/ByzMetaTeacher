@@ -2,11 +2,20 @@
 
 ## Product goal
 
-Build a competent 1v1 standard-land Byzantine AoE2DE heuristic AI through the LearnerAI semantic model and compiler.
+Build a competent stock-style 1v1 Byzantine AoE2DE heuristic AI for ordinary random-map play.
 
-This is a real-player target, not merely a teaching exercise.
+The player should not be land-only. It must understand enough of the common AoE2 ruleset to behave like a normal stock AI across open land, closed land, hybrid, and meaningful water situations.
 
-The player must sustain a coherent economic and military position through Dark, Feudal, Castle, and Imperial while adapting to observed threats and recovering from interrupted plans.
+This includes conditional use of:
+
+- docks and fishing;
+- naval combat and transport;
+- walls, gates, Outposts, watch/Guard Towers, Castles, and late Bombard Towers;
+- Siege Workshops and appropriate siege units;
+- Monasteries, Monks, healing/conversion, and relic collection/denial;
+- Markets, Town Centers, Blacksmiths, Universities, and other ordinary infrastructure.
+
+The requirement is **competence and conditional use**, not maximum utilization of every building.
 
 ## Behavioral requirements
 
@@ -22,18 +31,30 @@ It must:
 - establish and replace farms before food collapse;
 - maintain houses and dropsites;
 - fund the current age objective;
-- protect capital investments such as Castle and additional Town Centers;
-- recover from raids and resource shortages.
+- protect capital investments such as Castle, Town Centers, docks, and major infrastructure;
+- recover from raids and resource shortages;
+- recognize when water economy is valuable and when it should be abandoned.
 
-### Age progression
+### Map-aware play
 
-Dark -> Feudal -> Castle is the first vertical slice.
+The player must derive strategy from the map and current position.
 
-Castle timing must be driven by position, resources, infrastructure, military requirements, and threat, not only by a clock.
+It must recognize at least these broad cases:
 
-Imperial must follow a mature Castle economy rather than prematurely starving the Castle boom.
+- open land;
+- closed land;
+- hybrid;
+- meaningful fishing water;
+- island/transport problems;
+- defensively exposed resource areas.
 
-### Military
+Map context should modify demand creation.
+
+A land map with no worthwhile water should not trigger pointless dock construction.
+
+A hybrid or water map where fish, transport, or naval control materially affect the position should create the appropriate demand.
+
+### Military and infrastructure
 
 The military system must distinguish:
 
@@ -44,19 +65,20 @@ The military system must distinguish:
 - readiness;
 - attack execution;
 - retreat;
-- reinforcement.
+- reinforcement;
+- siege support.
 
-The bot must not convert every observed counter-threat into uncontrolled Feudal military mass.
+Infrastructure must follow capability demand.
 
-### Infrastructure
+A Range exists because ranged production is needed.
 
-Buildings are capability providers.
+A Siege Workshop exists because siege capability is needed.
 
-A production building exists because a live production demand requires it.
+A Monastery exists because Monk/relic/healing/conversion capability is useful.
 
-A Castle exists because a strategic Castle demand has become admissible and executable.
+A dock exists because water economy, naval control, trade, or transport is strategically relevant.
 
-A Monastery, University, Siege Workshop, Town Center, Blacksmith, Range, Stable, or Barracks must have a traceable strategic or domain purpose.
+A Bombard Tower exists because late defensive artillery is economically and strategically justified.
 
 ### Recovery
 
@@ -70,6 +92,8 @@ The player must survive:
 - enemy composition changes;
 - raids;
 - military losses;
+- naval setbacks;
+- transport setbacks;
 - obsolete plans.
 
 ## Architectural requirements
@@ -106,7 +130,8 @@ It must eventually detect:
 - conflicting writers;
 - broken dependency chains;
 - persistent intent that disappears on temporary execution failure;
-- source-order defects where precedence is intentional.
+- source-order defects where precedence is intentional;
+- missing capability paths for ordinary player surfaces such as docks, siege, fortifications, and Monks.
 
 The compiler is not required to replace the native .per parser.
 
@@ -115,11 +140,11 @@ The compiler is not required to replace the native .per parser.
 Phase 1 scope:
 
 - 1v1;
-- standard land maps;
+- ordinary random-map land/hybrid/water situations;
 - Byzantines;
 - contemporary DE rules/data.
 
-Later expansion may add other maps, civilizations, or broader generalization.
+Later expansion may add other civilizations, broader map families, or more specialized strategies.
 
 ## Non-goals
 
@@ -130,11 +155,13 @@ Do not build:
 - a full AoE2 simulator;
 - a replacement native parser;
 - an optimized build-order generator for every opening;
-- a universal multi-civilization architecture before the Byzantine vertical slice works.
+- a universal multi-civilization architecture before the Byzantine player works.
 
 ## Completion standard
 
-The goal is achieved only when the new player is behaviorally coherent enough to survive ordinary variation and interruption, and its important behaviors can be traced from observation through demand, capability, feasibility, action, witness, release, and reassessment.
+The goal is achieved only when the new player can handle the ordinary game surface without collapsing into a special-case script.
+
+It must demonstrate coherent economic and military behavior, conditional infrastructure use, meaningful map adaptation, recovery from interruption, and traceable demand/capability/feasibility/action/witness/release lifecycles.
 
 Static validity is necessary.
 

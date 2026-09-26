@@ -1,6 +1,6 @@
 # Canonical Behavior Traces
 
-These examples define the kinds of complete behaviors the learner player must eventually implement.
+These examples define the kinds of complete behaviors the stock-style Byzantine player must eventually implement.
 
 They are specifications until executable code exists.
 
@@ -22,11 +22,47 @@ Pending: action enters construction lifecycle and duplicate construction is bloc
 
 Witness: Castle exists.
 
-Release: construction state releases. Strategy reassesses the now-Castle position and opens downstream economic, production, military, and technology demands.
+Release: construction state releases. Strategy reassesses the now-Castle position and opens downstream economic, production, military, siege, Monk/relic, and technology demands as justified.
 
 Interruption: enemy pressure may temporarily raise military demand. Castle intent survives if still strategically valid.
 
-## Example B — Defensive Spearmen
+## Example B — Dock and fishing
+
+Observation: the map has meaningful fish/water and the fish economy is strategically valuable.
+
+Interpretation: water economy is admissible.
+
+Demand: Strategy opens a dock/fishing demand.
+
+Capability: dock placement, builders, fishing-ship production, fish access.
+
+Feasibility: engine permits the current build/train actions.
+
+Action: build dock, then produce fishing ships.
+
+Witness: dock exists; fishing fleet reaches the useful target.
+
+Reassessment: enemy naval pressure or fish depletion may change the water posture.
+
+Release/invalidation: if water loses strategic value, naval expansion is stopped and land economy resumes.
+
+## Example C — Transport
+
+Observation: a required resource base or military target is separated by water and ordinary land access is insufficient.
+
+Interpretation: transport capability is strategically required.
+
+Demand: transport capability.
+
+Capability: dock + transport ship + protected embarkation/landing path.
+
+Action: produce and use transport.
+
+Witness: transport operation reaches the intended world-state outcome.
+
+Failure: preserve strategic intent while changing landing/escort or abandoning the operation when it becomes obsolete.
+
+## Example D — Defensive Spearmen
 
 Observation: current enemy composition contains meaningful cavalry threat.
 
@@ -44,35 +80,53 @@ Witness: actual unit count reaches the target.
 
 Release: the finite production deficit clears. Continued cavalry threat can recreate the demand later.
 
-## Example C — Economy shortage
+## Example E — Siege
 
-Observation: chosen strategy is functioning except that wood is preventing farms and required infrastructure.
+Observation: enemy ranged mass, fortified position, buildings, or composition makes siege materially useful.
 
-Interpretation: wood is the binding shortage.
+Interpretation: siege capability is admissible.
 
-Demand: Economy does not invent a new strategic plan. It reallocates workers to satisfy the selected strategic demands.
+Demand: Siege Workshop and relevant siege-unit demand.
 
-Capability: available lumber infrastructure and workers.
+Capability: Workshop, resources, required research/age, protected production.
 
-Feasibility: engine facts permit allocation/action.
+Action: build workshop, then produce siege.
 
-Witness: wood pressure falls enough for downstream work to continue.
+Witness: workshop and actual siege count.
 
-Reassess: if food, gold, stone, or military becomes the new binding shortage, allocation changes.
+Release/reassess: production scales or stops when the tactical problem changes.
 
-## Example D — Interrupted preferred plan
+## Example F — Monks and relics
 
-Preferred plan: Castle boom.
+Observation: a relic is available and the route is safe enough relative to expected value, or Monks are strategically useful for healing/conversion.
 
-Interruption: opponent attacks while Castle prerequisites are being accumulated.
+Interpretation: Monk/relic demand is admissible.
 
-Response: military demand rises and economy reallocates temporarily.
+Demand: monastery and Monk/relic objective.
 
-Persistence: Castle demand remains alive.
+Capability: monastery, Monk production, escort, map access.
 
-Recovery: once defense is adequate, Castle resource protection resumes.
+Action: build monastery, train Monk, contest/collect relic.
 
-Reassessment: if Castle has become strategically obsolete, Strategy cancels it instead of blindly continuing.
+Witness: monastery exists; Monk count and relic state change.
+
+Release/reassess: stop Monk investment when relic opportunity closes, Monks are lost, or military/economic opportunity cost becomes excessive.
+
+## Example G — Fortification
+
+Observation: exposed economy, chokepoint, sustained enemy pressure, or late positional defense creates a defensive requirement.
+
+Interpretation: fortification is worth the resource cost.
+
+Demand: wall/gate/tower/fortification capability.
+
+Capability: builders, placement, age, stone/wood, feasible action.
+
+Action: construct the chosen defensive structure.
+
+Witness: structure reaches the required world state.
+
+Release/reassess: defensive demand changes as the enemy or map position changes.
 
 ## Required evidence
 

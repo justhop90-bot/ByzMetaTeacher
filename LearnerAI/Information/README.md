@@ -7,28 +7,35 @@ Information turns engine observations into decision-useful interpretation.
 - scouting;
 - enemy composition;
 - map/game context;
+- terrain/water context;
 - threat categories;
+- relic opportunity;
 - observation freshness;
 - re-observation.
 
 ## Product role
 
-Scouting must answer decisions:
+Information must answer decisions:
 
 - Is cavalry actually being committed?
 - Is ranged pressure temporary or sustained?
 - Is the opponent expanding?
 - Where is dangerous army mass?
-- Is the map forcing a different economic posture?
+- Does the map make fishing or naval control worthwhile?
+- Is transport required?
+- Is a relic worth contesting?
+- Is the economy exposed enough to justify walls or towers?
+- Is a late fortification needed?
+- What changed since the previous interpretation?
 
 Information should not collect facts nobody reads.
 
 ## Sources
 
-Use docs/reference/engine/, PER_PRIMITIVE_MAP.md, Basilisk/Basilisk.per, and docs/project/BotDirection.txt.
+Use docs/reference/engine/, PER_PRIMITIVE_MAP.md, Basilisk/Basilisk.per, docs/project/BotDirection.txt, and the community examples identified in SOURCE_MAP.md.
 
 ## Boundary
 
 Information informs Strategy and domains.
 
-It does not directly spam counters.
+It does not directly spam counters or build orders.

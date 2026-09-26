@@ -20,19 +20,9 @@ DEMAND includes:
 - cancellation or invalidation condition;
 - completion witness.
 
+Examples include Castle, second Town Center, dock, siege capability, Monk/relic, transport, or defensive tower.
+
 A demand is not an action.
-
-Examples:
-
-Castle demand.
-
-Minimum anti-cavalry army demand.
-
-Second Town Center demand.
-
-Farm-capacity demand.
-
-Siege capability demand.
 
 ## Capability
 
@@ -48,11 +38,12 @@ CAPABILITY includes:
 - quantity;
 - availability;
 - pending state when relevant;
-- feasibility test.
+- feasibility test;
+- map/context admissibility when relevant.
+
+Examples include Dock, Siege Workshop, Monastery, Transport Ship, Guard Tower, or Bombard Tower.
 
 Capability never substitutes for strategic demand.
-
-Example: a Stable is a capability provider for a mounted-unit demand. The Stable itself is not a strategic reason.
 
 ## Action
 
@@ -90,11 +81,19 @@ Examples:
 
 Castle exists.
 
+Dock exists.
+
+Fishing fleet reaches target.
+
+Siege Workshop exists and siege count reaches target.
+
+Monastery exists and Monk/relic state changes.
+
+Tower/fortification exists.
+
 Research is completed.
 
 Current age is Castle.
-
-Unit count reaches the target.
 
 A queued or pending total is not automatically a completion witness.
 
@@ -115,7 +114,7 @@ Execution state must be cleaned up when its owning demand ends.
 
 Temporary execution failure must normally preserve valid strategic demand.
 
-This is a central product requirement, not an optional compiler exercise.
+This is a central product requirement.
 
 ## Resource conflict
 
