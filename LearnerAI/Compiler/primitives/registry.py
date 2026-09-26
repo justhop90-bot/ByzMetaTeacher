@@ -35,6 +35,7 @@ class PrimitiveRegistry:
 def default_de_registry() -> PrimitiveRegistry:
     facts = [
         Primitive("current-age", "FACT", "OBSERVATION", 2, 2),
+        Primitive("game-time", "FACT", "TIMING", 2, 2, completion_witness=False),
         Primitive("building-available", "FACT", "ADMISSIBILITY", 1, 1),
         Primitive("can-afford-building", "FACT", "RESOURCE_ARBITRATION", 1, 1),
         Primitive("can-build", "FACT", "FEASIBILITY", 1, 1),
