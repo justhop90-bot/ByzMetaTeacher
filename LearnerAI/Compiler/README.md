@@ -77,6 +77,20 @@ AoE2 logical operators are not arbitrary variadic functions. and, or, nand, nor,
 
 The compiler currently permits nested logical expressions but keeps ordinary primitive arguments atomic. It rejects rule separators, unknown primitives, invalid contexts, and incorrect argument counts.
 
+## Native validation
+
+The compiler now has a native validation boundary after deterministic .per emission:
+
+    source -> AST -> semantic IR -> .per -> native backend adapter -> normalized diagnostics
+
+The adapter invokes the pinned aoe2-ai-parser release through subprocess rather than importing its code. Its backend identity is locked by version, source commit, and Python major/minor.
+
+The adapter validates the machine-readable JSON protocol strictly. Native findings retain their backend diagnostic codes and confidence/severity. Source columns are normalized from the backend's zero-based spans to LearnerAI's one-based columns.
+
+Backend failures are never reported as script rejection. Timeout, executable failure, version mismatch, and malformed JSON all mean that native validation evidence is unavailable or invalid.
+
+See backends/README.md for the complete protocol, process isolation rules, research findings, and fixture matrix.
+
 ## Current architecture
 
     compiler.py
