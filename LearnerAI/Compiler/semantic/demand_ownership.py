@@ -263,6 +263,7 @@ def analyze_demand_ownership(
                     f"lifecycle state '{state.owner.source_unit}:{state.purpose}' has no writer",
                     status=OwnershipStatus.BLOCKED,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
         if first_consumer is None:
@@ -272,6 +273,7 @@ def analyze_demand_ownership(
                     f"lifecycle state '{state.owner.source_unit}:{state.purpose}' is never consumed",
                     status=OwnershipStatus.UNCONSUMED,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
 
@@ -310,6 +312,7 @@ def analyze_demand_ownership(
                     f"has conflicting writers: {names}",
                     status=OwnershipStatus.CONFLICTING,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
 
