@@ -24,8 +24,8 @@ class GameDataAuditTests(unittest.TestCase):
             ResourceCost(food=60, gold=75),
         )
         self.assertEqual(
-            self.data.cost_of("building:235"),
-            self.data.building(235).base_cost,
+            self.data.cost_of("building:82"),
+            self.data.building(82).base_cost,
         )
 
     def test_spearman_line_discount_covers_all_three_units(self):
