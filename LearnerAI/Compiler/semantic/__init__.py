@@ -17,3 +17,13 @@ from .capability_validation import (
 )
 
 from .capability_bridge import project_capability_graph, validate_projected_capabilities
+
+from .demand_ownership import (
+    OwnershipBoundary,
+    OwnershipDiagnostic,
+    OwnershipDiagnosticCode,
+    OwnershipReport,
+    OwnershipStatus,
+    analyze_demand_ownership,
+    validate_demand_ownership,
+)
