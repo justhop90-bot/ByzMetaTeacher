@@ -10,6 +10,7 @@ from ..ast import Expression
 class LifecycleState(str, Enum):
     RELEASED = "RELEASED"
     ACTIVE = "ACTIVE"
+    ISSUED = "ISSUED"
     PENDING = "PENDING"
     COMPLETE = "COMPLETE"
 
@@ -28,7 +29,8 @@ class LifecycleAccessPhase(str, Enum):
     INITIALIZATION = "INITIALIZATION"
     RELEASE = "RELEASE"
     COMPLETION_WITNESS = "COMPLETION_WITNESS"
-    ACTION = "ACTION"
+    PENDING_ADMISSION = "PENDING_ADMISSION"
+    ISSUANCE = "ISSUANCE"
 
 
 class GoalRole(str, Enum):
@@ -108,6 +110,22 @@ class SemanticAction:
 
 
 @dataclass(frozen=True)
+class ActionIssuance:
+    demand: SemanticId
+    primitive: str
+    phase: str
+    issued_state: LifecycleState
+    pending_state: LifecycleState
+    failure: "ActionIssuanceFailure"
+    retryable: bool = True
+    source_order: int = 0
+
+
+class ActionIssuanceFailure(str, Enum):
+    RETAIN_ACTIVE = "RETAIN_ACTIVE"
+
+
+@dataclass(frozen=True)
 class PendingDiagnostic:
     code: str
     severity: str
@@ -126,6 +144,7 @@ class SemanticDemand:
     lifecycle: LifecycleStorage
     requirements: tuple[SemanticRequirement, ...]
     action: SemanticAction
+    action_issuance: ActionIssuance | None = None
     witness: Expression
     release: Expression
     ownership: DemandOwnership | None = None
