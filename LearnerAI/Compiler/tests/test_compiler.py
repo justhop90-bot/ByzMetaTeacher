@@ -48,7 +48,7 @@ class CompilerTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            "NATIVE-SUPPORT-005:.*known and typed but has no semantic adapter",
+            "NATIVE-SUPPORT-006:.*known and typed but has no semantic adapter",
         ):
             compile_source(source)
 
@@ -63,7 +63,7 @@ class CompilerTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            "NATIVE-SUPPORT-005:.*not present in the checked-in native schema",
+            "NATIVE-SUPPORT-006:.*not present in the checked-in native schema",
         ):
             compile_source(source)
 
