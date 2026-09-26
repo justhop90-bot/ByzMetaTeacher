@@ -52,6 +52,22 @@ class NativeBackendTests(unittest.TestCase):
     def _python_probe(self):
         return ProcessOutput("Python 3.12.7\\n", "", 0, 1)
 
+    def _fixture_path(self, name: str) -> Path:
+        return Path(__file__).resolve().parent / "fixtures" / "native_backend" / "protocol" / name
+
+    def _fixture_text(self, name: str) -> str:
+        return self._fixture_path(name).read_text(encoding="utf-8")
+
+    def _run_fixture(self, tmp: Path, fixture: str, *, exit_code: int = 1, stderr: str = ""):
+        artifact = tmp / "Basilisk.per"
+        artifact.write_text("(build castle)\\n", encoding="utf-8")
+        runner = FakeRunner([
+            self._python_probe(),
+            ProcessOutput(self._fixture_text(fixture), stderr, exit_code, 4),
+        ])
+        result = Aoe2NativeBackend(self._installation(tmp), runner).validate(artifact)
+        return artifact, runner, result
+
     def _backend_payload(self, artifact: Path, *, failed=False, findings=None):
         return json.dumps({
             "path": str(artifact),
@@ -135,38 +151,141 @@ class NativeBackendTests(unittest.TestCase):
             self.assertEqual(result.status, ValidationStatus.BACKEND_VERSION_MISMATCH)
             self.assertEqual(runner.calls, [])
 
-    def test_bad_finding_count_is_protocol_error(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp = Path(tmp_dir)
-            artifact = tmp / "Basilisk.per"
-            artifact.write_text("(nop)\\n", encoding="utf-8")
-            payload = json.dumps({
-                "path": str(artifact),
-                "finding_count": 1,
-                "findings": [],
-                "failed": False,
-            })
-            runner = FakeRunner([
-                self._python_probe(),
-                ProcessOutput(payload, "", 0, 4),
-            ])
-            result = Aoe2NativeBackend(self._installation(tmp), runner).validate(artifact)
-            self.assertEqual(result.status, ValidationStatus.BACKEND_PROTOCOL_ERROR)
-            self.assertFalse(result.failed)
+    def test_protocol_fixture_matrix_rejects_invalid_backend_payloads(self):
+        cases = (
+            ("malformed_json.txt", ValidationStatus.BACKEND_PROTOCOL_ERROR, 0),
+            ("finding_count_mismatch.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 0),
+            ("unknown_severity.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("unknown_confidence.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("span_missing_coordinate.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("span_negative.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("span_end_before_start.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("span_non_integer.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("path_mismatch.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+            ("missing_findings.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 0),
+            ("non_object_finding.json", ValidationStatus.BACKEND_PROTOCOL_ERROR, 1),
+        )
+        for fixture, expected_status, exit_code in cases:
+            with self.subTest(fixture=fixture):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    tmp = Path(tmp_dir)
+                    _, runner, result = self._run_fixture(tmp, fixture, exit_code=exit_code)
+                    self.assertEqual(result.status, expected_status)
+                    self.assertFalse(result.failed)
+                    self.assertEqual(result.diagnostics, ())
+                    self.assertEqual(len(runner.calls), 2)
 
-    def test_backend_process_failure_is_distinct_from_native_diagnostic(self):
+    def test_valid_rejection_fixture_preserves_native_diagnostic(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact, _, result = self._run_fixture(tmp, "valid_rejection.json", exit_code=1)
+            self.assertEqual(result.status, ValidationStatus.REJECTED)
+            self.assertTrue(result.failed)
+            self.assertEqual(result.summary.finding_count, 1)
+            self.assertEqual(result.summary.error_count, 1)
+            self.assertEqual(result.diagnostics[0].code, "command-role-mismatch")
+            self.assertEqual(result.diagnostics[0].source, "aoe2-ai-parser")
+            self.assertEqual(result.diagnostics[0].source_location.path, artifact.resolve())
+            self.assertEqual(result.diagnostics[0].source_location.column, 2)
+            self.assertEqual(result.diagnostics[0].source_location.end_column, 7)
+
+    def test_inconsistent_failure_flags_are_protocol_errors(self):
+        for fixture, exit_code in (
+            ("failed_true_exit_zero.json", 0),
+            ("failed_false_exit_nonzero.json", 1),
+        ):
+            with self.subTest(fixture=fixture):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    tmp = Path(tmp_dir)
+                    _, _, result = self._run_fixture(tmp, fixture, exit_code=exit_code)
+                    self.assertEqual(result.status, ValidationStatus.BACKEND_PROTOCOL_ERROR)
+                    self.assertFalse(result.failed)
+                    self.assertEqual(result.diagnostics, ())
+
+    def test_stderr_only_diagnostic_text_is_never_treated_as_native_diagnostic(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            stderr = self._fixture_text("stderr_only.txt")
+            _, _, result = self._run_fixture(
+                tmp, "malformed_json.txt", exit_code=1, stderr=stderr
+            )
+            self.assertEqual(result.status, ValidationStatus.BACKEND_PROTOCOL_ERROR)
+            self.assertFalse(result.failed)
+            self.assertEqual(result.diagnostics, ())
+            self.assertIn("not valid JSON", result.stderr)
+
+    def test_timeout_is_not_script_rejection(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            artifact = tmp / "Basilisk.per"
+            artifact.write_text("(build castle)\\n", encoding="utf-8")
+            runner = FakeRunner([self._python_probe(), TimeoutError("timed out")])
+            result = Aoe2NativeBackend(self._installation(tmp), runner).validate(artifact)
+            self.assertEqual(result.status, ValidationStatus.BACKEND_TIMEOUT)
+            self.assertFalse(result.failed)
+            self.assertEqual(result.diagnostics, ())
+
+    def test_backend_process_error_is_distinct_from_native_rejection(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
             artifact = tmp / "Basilisk.per"
             artifact.write_text("(nop)\\n", encoding="utf-8")
-            runner = FakeRunner([
-                self._python_probe(),
-                ProcessOutput("", "backend exploded", 2, 4),
-            ])
+            runner = FakeRunner([self._python_probe(), OSError("process launch failed")])
             result = Aoe2NativeBackend(self._installation(tmp), runner).validate(artifact)
-            self.assertEqual(result.status, ValidationStatus.BACKEND_PROTOCOL_ERROR)
+            self.assertEqual(result.status, ValidationStatus.BACKEND_PROCESS_ERROR)
             self.assertFalse(result.failed)
-            self.assertIn("not valid JSON", result.stderr)
+            self.assertEqual(result.diagnostics, ())
+
+    def test_missing_executable_is_backend_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            spec = self._installation(tmp)
+            spec.executable.unlink()
+            artifact = tmp / "Basilisk.per"
+            artifact.write_text("(nop)\\n", encoding="utf-8")
+            runner = FakeRunner([])
+            result = Aoe2NativeBackend(spec, runner).validate(artifact)
+            self.assertEqual(result.status, ValidationStatus.BACKEND_UNAVAILABLE)
+            self.assertFalse(result.failed)
+            self.assertEqual(result.diagnostics, ())
+            self.assertEqual(runner.calls, [])
+
+    def test_project_and_commit_mismatches_block_before_probe(self):
+        for manifest_name, manifest_value in (
+            ("project version", "0.2.0"),
+            ("commit", "0" * 40),
+        ):
+            with self.subTest(manifest_name=manifest_name):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    tmp = Path(tmp_dir)
+                    spec = self._installation(tmp)
+                    manifest = {
+                        "name": spec.name,
+                        "project_version": spec.project_version if manifest_name == "commit" else manifest_value,
+                        "commit_sha": manifest_value if manifest_name == "commit" else spec.commit_sha,
+                    }
+                    (spec.root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+                    artifact = tmp / "Basilisk.per"
+                    artifact.write_text("(nop)\\n", encoding="utf-8")
+                    runner = FakeRunner([])
+                    result = Aoe2NativeBackend(spec, runner).validate(artifact)
+                    self.assertEqual(result.status, ValidationStatus.BACKEND_VERSION_MISMATCH)
+                    self.assertFalse(result.failed)
+                    self.assertEqual(runner.calls, [])
+
+    def test_python_version_mismatch_is_blocked_before_lint(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            spec = self._installation(tmp)
+            artifact = tmp / "Basilisk.per"
+            artifact.write_text("(nop)\\n", encoding="utf-8")
+            runner = FakeRunner([ProcessOutput("Python 3.11.9\\n", "", 0, 1)])
+            result = Aoe2NativeBackend(spec, runner).validate(artifact)
+            self.assertEqual(result.status, ValidationStatus.BACKEND_VERSION_MISMATCH)
+            self.assertFalse(result.failed)
+            self.assertEqual(len(runner.calls), 1)
+
+
 
 
 class LockTests(unittest.TestCase):
