@@ -308,6 +308,17 @@ class StructuralValidationPass:
                         location=demand.location,
                     )
                 )
+            elif not graph.providers_of(demand.target):
+                diagnostics.append(
+                    _diag(
+                        CapabilityDiagnosticCode.PROVIDERLESS_CAPABILITY,
+                        f"demand '{demand.identity.local_name}' targets capability "
+                        f"'{demand.target.local_name}' with no providers",
+                        node=demand.identity,
+                        status=GraphStatus.UNFED,
+                        location=demand.location,
+                    )
+                )
 
         for provider in graph.providers:
             if provider.capability not in capability_ids:
