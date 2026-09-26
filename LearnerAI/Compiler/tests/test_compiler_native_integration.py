@@ -148,7 +148,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
             self.assertEqual(result.status, ValidationStatus.VALIDATED)
             payload = json.loads(manifest.read_text(encoding="utf-8"))
-            self.assertEqual(payload["format_version"], 2)
+            self.assertEqual(payload["format_version"], 3)
             self.assertEqual(len(payload["records"]), 4)
             self.assertTrue(all("goal_id" in record for record in payload["records"]))
 
