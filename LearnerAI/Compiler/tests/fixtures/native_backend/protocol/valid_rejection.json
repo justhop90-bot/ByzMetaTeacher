@@ -1,0 +1,21 @@
+{
+  "path": "Basilisk.per",
+  "finding_count": 1,
+  "findings": [{
+    "path": "Basilisk.per",
+    "line": 1,
+    "severity": "error",
+    "confidence": "definite",
+    "code": "command-role-mismatch",
+    "message": "build is not valid in this context",
+    "suggestion": "use the matching fact or action",
+    "references": [],
+    "span": {
+      "start_line": 1,
+      "start_col": 1,
+      "end_line": 1,
+      "end_col": 6
+    }
+  }],
+  "failed": true
+}
