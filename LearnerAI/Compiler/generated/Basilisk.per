@@ -1,0 +1,73 @@
+;============================================================
+; BASILISK GENERATED .PER
+; Generated from Basilisk demand DSL. Do not edit by hand.
+;============================================================
+
+; Demand goal constants
+(defconst demand-castle 1000)
+(defconst demand-defensive-spearmen 1001)
+(defconst demand-wheelbarrow 1002)
+
+; Demand initialization
+(defrule
+    =>
+    (set-goal demand-castle 1)
+    (set-goal demand-defensive-spearmen 1)
+    (set-goal demand-wheelbarrow 1)
+    (disable-self)
+)
+
+; Demand: castle
+(defrule
+    (goal demand-castle 1)
+    (players-current-age >= castle)
+    (building-available castle)
+    (can-afford-building castle)
+    (can-build castle)
+=>
+    (build castle)
+)
+
+; Witness/release: castle
+(defrule
+    (goal demand-castle 1)
+    (building-type-count castle > 0)
+=>
+    (set-goal demand-castle 0)
+)
+
+; Demand: defensive-spearmen
+(defrule
+    (goal demand-defensive-spearmen 1)
+    (players-current-age >= feudal)
+    (unit-type-count-total spearman < 2)
+    (can-train spearman)
+=>
+    (train spearman)
+)
+
+; Witness/release: defensive-spearmen
+(defrule
+    (goal demand-defensive-spearmen 1)
+    (unit-type-count spearman >= 2)
+=>
+    (set-goal demand-defensive-spearmen 0)
+)
+
+; Demand: wheelbarrow
+(defrule
+    (goal demand-wheelbarrow 1)
+    (research-available ri-wheelbarrow)
+    (can-afford-research ri-wheelbarrow)
+    (can-research ri-wheelbarrow)
+=>
+    (research ri-wheelbarrow)
+)
+
+; Witness/release: wheelbarrow
+(defrule
+    (goal demand-wheelbarrow 1)
+    (research-completed ri-wheelbarrow)
+=>
+    (set-goal demand-wheelbarrow 0)
+)
