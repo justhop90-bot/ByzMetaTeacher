@@ -90,4 +90,11 @@ from .community_engine import (
     classify_capability_transition,
     default_community_engine_registry,
 )
-\nfrom .rule_execution import (\n    EffectiveRule,\n    RuleAction,\n    RuleExecutionReport,\n    RulePassBehavior,\n    analyze_effective_rules,\n)\n
+
+from .rule_execution import (
+    EffectiveRule,
+    RuleAction,
+    RuleExecutionReport,
+    RulePassBehavior,
+    analyze_effective_rules,
+)
