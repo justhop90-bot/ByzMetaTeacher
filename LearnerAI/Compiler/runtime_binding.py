@@ -40,6 +40,228 @@ class NativeParameterKind(str, Enum):
 
 
 @dataclass(frozen=True, order=True)
+class PackageStorageReservation:
+    kind: StorageKind
+    start: int
+    end: int
+    provenance_id: str
+
+    def __post_init__(self) -> None:
+        if not self.provenance_id.strip():
+            raise ValueError("package storage reservation requires provenance_id")
+        if self.start > self.end:
+            raise ValueError("package storage reservation start must not exceed end")
+
+        if self.kind is StorageKind.GOAL_SLOT:
+            if self.start != self.end:
+                raise ValueError("GOAL_SLOT reservation must cover exactly one GoalId")
+            GoalId(self.start)
+            return
+
+        if self.kind is StorageKind.GOAL_SPAN:
+            GoalInterval(self.start, self.end)
+            return
+
+        if self.start != self.end:
+            raise ValueError(
+                f"{self.kind.value} reservation must cover exactly one identifier"
+            )
+
+        if self.kind is StorageKind.STRATEGIC_NUMBER:
+            if not SN_ID_MIN <= self.start <= SN_ID_MAX:
+                raise ValueError(
+                    f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}"
+                )
+        elif self.kind is StorageKind.TIMER:
+            if not TIMER_ID_MIN <= self.start <= TIMER_ID_MAX:
+                raise ValueError(
+                    f"Timer id must be in range {TIMER_ID_MIN}..{TIMER_ID_MAX}"
+                )
+        else:
+            raise ValueError(f"unsupported package storage kind {self.kind}")
+
+    @property
+    def interval(self) -> GoalInterval | None:
+        if self.kind in {StorageKind.GOAL_SLOT, StorageKind.GOAL_SPAN}:
+            return GoalInterval(self.start, self.end)
+        return None
+
+
+@dataclass(frozen=True)
+class PackageStorageInventory:
+    package_id: str
+    package_revision: str
+    reservations: tuple[PackageStorageReservation, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.package_id.strip():
+            raise ValueError("package storage inventory requires package_id")
+        if not self.package_revision.strip():
+            raise ValueError("package storage inventory requires package_revision")
+
+        seen_provenance: set[str] = set()
+        goal_intervals: list[GoalInterval] = []
+        sn_ids: set[int] = set()
+        timer_ids: set[int] = set()
+
+        for reservation in self.reservations:
+            if reservation.provenance_id in seen_provenance:
+                raise ValueError(
+                    f"duplicate package storage reservation provenance {reservation.provenance_id}"
+                )
+            seen_provenance.add(reservation.provenance_id)
+
+            if reservation.interval is not None:
+                interval = reservation.interval
+                if any(interval.overlaps(existing) for existing in goal_intervals):
+                    raise ValueError(
+                        f"overlapping Goal storage reservations at "
+                        f"{interval.start}..{interval.end}"
+                    )
+                goal_intervals.append(interval)
+            elif reservation.kind is StorageKind.STRATEGIC_NUMBER:
+                if reservation.start in sn_ids:
+                    raise ValueError(
+                        f"duplicate occupied Strategic Number {reservation.start}"
+                    )
+                sn_ids.add(reservation.start)
+            elif reservation.kind is StorageKind.TIMER:
+                if reservation.start in timer_ids:
+                    raise ValueError(
+                        f"duplicate occupied TimerId {reservation.start}"
+                    )
+                timer_ids.add(reservation.start)
+
+    @property
+    def inventory_sha(self) -> str:
+        material = json.dumps(
+            {
+                "package_id": self.package_id,
+                "package_revision": self.package_revision,
+                "reservations": [
+                    {
+                        "kind": reservation.kind.value,
+                        "start": reservation.start,
+                        "end": reservation.end,
+                        "provenance_id": reservation.provenance_id,
+                    }
+                    for reservation in sorted(self.reservations)
+                ],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+    @property
+    def occupied_goal_ids(self) -> frozenset[int]:
+        return frozenset(
+            reservation.start
+            for reservation in self.reservations
+            if reservation.kind is StorageKind.GOAL_SLOT
+        )
+
+    @property
+    def occupied_goal_intervals(self) -> tuple[tuple[int, int], ...]:
+        return tuple(
+            (reservation.start, reservation.end)
+            for reservation in sorted(self.reservations)
+            if reservation.kind is StorageKind.GOAL_SPAN
+        )
+
+    @property
+    def occupied_sn_ids(self) -> frozenset[int]:
+        return frozenset(
+            reservation.start
+            for reservation in self.reservations
+            if reservation.kind is StorageKind.STRATEGIC_NUMBER
+        )
+
+    @property
+    def occupied_timer_ids(self) -> frozenset[int]:
+        return frozenset(
+            reservation.start
+            for reservation in self.reservations
+            if reservation.kind is StorageKind.TIMER
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "format_version": 1,
+            "package_id": self.package_id,
+            "package_revision": self.package_revision,
+            "inventory_sha": self.inventory_sha,
+            "reservations": [
+                {
+                    "kind": reservation.kind.value,
+                    "start": reservation.start,
+                    "end": reservation.end,
+                    "provenance_id": reservation.provenance_id,
+                }
+                for reservation in sorted(self.reservations)
+            ],
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "PackageStorageInventory":
+        expected = {
+            "format_version",
+            "package_id",
+            "package_revision",
+            "inventory_sha",
+            "reservations",
+        }
+        if set(payload) != expected:
+            raise ValueError("package storage inventory has missing or extra fields")
+        if payload["format_version"] != 1:
+            raise ValueError(
+                f"unsupported package storage inventory version {payload['format_version']}"
+            )
+        raw_reservations = payload["reservations"]
+        if not isinstance(raw_reservations, list):
+            raise ValueError("package storage inventory reservations must be an array")
+
+        inventory = cls(
+            package_id=str(payload["package_id"]),
+            package_revision=str(payload["package_revision"]),
+            reservations=tuple(
+                PackageStorageReservation(
+                    kind=StorageKind(str(raw["kind"])),
+                    start=int(raw["start"]),
+                    end=int(raw["end"]),
+                    provenance_id=str(raw["provenance_id"]),
+                )
+                for raw in raw_reservations
+            ),
+        )
+        if str(payload["inventory_sha"]) != inventory.inventory_sha:
+            raise ValueError("package storage inventory fingerprint mismatch")
+        return inventory
+
+    @classmethod
+    def from_json(cls, text: str) -> "PackageStorageInventory":
+        payload = json.loads(text)
+        if not isinstance(payload, dict):
+            raise ValueError("package storage inventory must be a JSON object")
+        return cls.from_dict(payload)
+
+    @classmethod
+    def empty(
+        cls,
+        package_id: str,
+        package_revision: str = "empty",
+    ) -> "PackageStorageInventory":
+        return cls(
+            package_id=package_id,
+            package_revision=package_revision,
+            reservations=(),
+        )
+
+
+@dataclass(frozen=True, order=True)
 class GoalInterval:
     start: int
     end: int
@@ -278,6 +500,32 @@ class BindingContext:
     existing_bindings: tuple[tuple[StorageRequestId, Binding], ...] = ()
     package_inventory_sha: str = ""
     allocator_version: str = ALLOCATOR_VERSION
+    package_inventory: PackageStorageInventory | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            self.package_inventory is not None
+            and self.package_inventory_sha
+            and self.package_inventory_sha != self.package_inventory.inventory_sha
+        ):
+            raise ValueError("package inventory fingerprint mismatch")
+
+    @classmethod
+    def from_package_inventory(
+        cls,
+        package_inventory: PackageStorageInventory,
+        *,
+        strategic_number_inventory: StrategicNumberInventory | None = None,
+        existing_bindings: tuple[tuple[StorageRequestId, Binding], ...] = (),
+        allocator_version: str = ALLOCATOR_VERSION,
+    ) -> "BindingContext":
+        return cls(
+            strategic_number_inventory=strategic_number_inventory,
+            existing_bindings=existing_bindings,
+            package_inventory_sha=package_inventory.inventory_sha,
+            allocator_version=allocator_version,
+            package_inventory=package_inventory,
+        )
 
 
 @dataclass(frozen=True)
@@ -488,24 +736,34 @@ class RuntimeBinder:
         context: BindingContext = BindingContext(),
     ) -> BindingResult:
         occupied_ids = set(context.occupied_goal_ids)
+        occupied_intervals = [
+            _coerce_interval(interval) for interval in context.occupied_goal_intervals
+        ]
+        if context.package_inventory is not None:
+            occupied_ids.update(context.package_inventory.occupied_goal_ids)
+            occupied_intervals.extend(
+                _coerce_interval(interval)
+                for interval in context.package_inventory.occupied_goal_intervals
+            )
         for value in occupied_ids:
             GoalId(value)
         occupied_sn_ids = set(context.occupied_sn_ids)
+        if context.package_inventory is not None:
+            occupied_sn_ids.update(context.package_inventory.occupied_sn_ids)
         for value in occupied_sn_ids:
             if not SN_ID_MIN <= value <= SN_ID_MAX:
                 raise ValueError(
                     f"Strategic Number id must be in range {SN_ID_MIN}..{SN_ID_MAX}"
                 )
         occupied_timer_ids = set(context.occupied_timer_ids)
+        if context.package_inventory is not None:
+            occupied_timer_ids.update(context.package_inventory.occupied_timer_ids)
         for value in occupied_timer_ids:
             if not TIMER_ID_MIN <= value <= TIMER_ID_MAX:
                 raise ValueError(
                     f"Timer id must be in range {TIMER_ID_MIN}..{TIMER_ID_MAX}"
                 )
 
-        occupied_intervals = [
-            _coerce_interval(interval) for interval in context.occupied_goal_intervals
-        ]
         for interval in occupied_intervals:
             if any(
                 GoalInterval(value, value).overlaps(interval)
