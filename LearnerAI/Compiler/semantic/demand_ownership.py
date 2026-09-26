@@ -150,6 +150,10 @@ def analyze_demand_ownership(
     )
 
     grouped: dict[object, list[StateAccess]] = {}
+    state_locations = {
+        demand.lifecycle.slot.request_id: demand.location
+        for demand in ordered_demands
+    }
 
     for demand in ordered_demands:
         ownership = _ownership_for(demand)
@@ -163,6 +167,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.BLOCKED,
                     demand=demand.identity,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
             continue
@@ -216,6 +221,7 @@ def analyze_demand_ownership(
                         demand=demand.identity,
                         state=state,
                         access=access,
+                        location=demand.location,
                     )
                 )
             if access.state != state or access.demand != demand.identity:
@@ -319,6 +325,7 @@ def analyze_demand_ownership(
                             status=OwnershipStatus.CONFLICTING,
                             state=state,
                             access=max(phase_writers, key=_access_key),
+                            location=state_locations.get(state),
                         )
                     )
 
