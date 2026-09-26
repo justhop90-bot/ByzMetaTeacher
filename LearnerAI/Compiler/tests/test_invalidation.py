@@ -185,5 +185,41 @@ class InvalidationTests(unittest.TestCase):
         )
 
 
+    def test_invalidation_diagnostics_are_deterministic(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+            invalidate (not (building-available castle))
+        }
+        """
+        registry = default_de_registry()
+        ir = analyze(parse(source), registry, source_unit="test")
+        broken = replace(
+            ir[0],
+            invalidation=replace(
+                ir[0].invalidation,
+                invalidates=replace(ir[0].identity, local_name="other"),
+                source_order=10,
+                action_source_order=7,
+            ),
+            cancellation=replace(
+                ir[0].cancellation,
+                from_states=(LifecycleState.COMPLETE,),
+                to_state=LifecycleState.RELEASED,
+            ),
+        )
+
+        first = validate_invalidation_contracts((broken,), registry)
+        second = validate_invalidation_contracts((broken,), registry)
+
+        self.assertEqual(first.diagnostics, second.diagnostics)
+        self.assertEqual(
+            tuple(item.code.value for item in first.diagnostics),
+            ("CXL-002", "CXL-003", "INV-005", "INV-007", "INV-007"),
+        )
+
 if __name__ == "__main__":
     unittest.main()
