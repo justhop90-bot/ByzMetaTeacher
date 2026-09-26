@@ -37,3 +37,12 @@ from .model import (
     SemanticRequirement,
     StorageRequestId,
 )
+
+from .resource import (
+    ConflictContract,
+    ResourceClaim,
+    ResourceClaimId,
+    ResourceConflictGraph,
+    ResourceKind,
+    ResourceScope,
+)
