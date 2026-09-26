@@ -32,6 +32,7 @@ def emit(
         out.append(f"    (set-goal demand-{demand.name} {encoded[demand.name].active.value})")
     out += ["    (disable-self)", ")", ""]
     for demand in demands:
+        slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = encoded[demand.name]
         out += [
             f"; Pending diagnostics: {demand.name}",

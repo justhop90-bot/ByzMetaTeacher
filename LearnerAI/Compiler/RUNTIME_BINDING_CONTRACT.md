@@ -3,7 +3,7 @@
 
 ## Status
 
-This document defines the proposed runtime-binding contract for the LearnerAI compiler. It is a design contract, not an implementation claim.
+This document defines the runtime-binding contract for the LearnerAI compiler. The lifecycle GoalSlot portion is implemented; the broader storage families remain explicitly scoped extension points.
 
 Evidence is classified explicitly:
 
@@ -17,37 +17,34 @@ The compiler must preserve that distinction in code comments, diagnostics, tests
 
 ### CONFIRMED
 
-The current semantic IR contains:
+The semantic IR now contains one symbolic lifecycle GoalSlotRequest in each SemanticDemand. It contains no resolved GoalId, pending GoalId, or complete GoalId.
 
-- one `goal` integer in `SemanticDemand`;
-- one `pending_goal` integer;
-- one `completed_goal` integer.
+The analyzer no longer computes `base_goal + (offset * 3)`. The `base_goal` compiler option is now binding configuration.
 
-The current analyzer computes:
+The emitter receives a resolved BindingResult and performs the current native lifecycle-value encoding:
 
-    goal = base_goal + (offset * 3)
-    pending_goal = goal + 1
-    completed_goal = goal + 2
+    GoalId = G
+    ACTIVE = 1
+    PENDING = G + 1
+    COMPLETE = G + 2
+    RELEASED = 0
 
-The current emitter defines:
+These are lifecycle values associated with one Goal storage location, not separate GoalIds.
 
-    demand-<name>
-    pending-<name>
-    complete-<name>
+### IMPLEMENTED
 
-but all three values are values associated with the same demand state Goal. `pending_goal` and `completed_goal` are not separate GoalIds. They are lifecycle state values stored in that Goal.
-
-This is the first binding correction: a GoalId and a GoalValue are different types.
-
-The current compiler also exposes `base_goal` as an API/CLI parameter. That parameter currently chooses actual GoalIds directly. No package-wide collision model exists yet.
-
-### POLICY
-
-Runtime binding should remove raw native storage IDs from semantic IR.
+- GoalId and GoalValue are distinct native-layer types.
+- SemanticDemand uses typed symbolic storage requests.
+- RuntimeBinder is the sole resolver for lifecycle GoalIds.
+- Existing bindings can be reused.
+- Occupied GoalIds are respected.
+- Allocation order is deterministic.
+- GoalId bounds are checked.
+- Native parameter/storage contract types exist without being confused with semantic primitive roles.
 
 ### OPEN
 
-The migration from integer fields to typed binding references is not implemented yet.
+Full GoalSpan/SN/Timer allocation, authoritative command-contract inventory, package-wide occupancy discovery, binding persistence, and artifact-budget accounting remain unimplemented.
 
 ## 2. Engine resource model
 
@@ -567,6 +564,22 @@ These are compiler diagnostics.
 The pinned `aoe2-ai-parser` remains the final authority for actual .per syntax and native legality.
 
 ## 16. Integration with the current IR
+
+### IMPLEMENTED MIGRATION
+
+The compiler now uses:
+
+    DemandNode
+      -> semantic validation
+      -> SemanticDemand + LifecycleStorage + GoalSlotRequest
+      -> RuntimeBinder
+      -> BindingResult + GoalSlot
+      -> LifecycleEncoding
+      -> deterministic .per
+
+The first migration deliberately preserves the existing lifecycle behavior while removing native storage identity from semantic analysis.
+
+The remaining sections below describe the future storage families and full binding contract; they are not claims that those allocators already exist.
 
 The first migration should change only the storage typing.
 

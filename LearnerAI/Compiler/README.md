@@ -101,18 +101,16 @@ These are compiler lifecycle examples, not the complete Byzantine player.
 It defines the contracts for:
 
 - scalar GoalSlot;
-- native consecutive GoalSpan;
-- StrategicNumberSlot;
-- TimerSlot;
-- native storage contracts;
-- package occupancy;
-- provenance;
-- deterministic binding;
-- collision diagnostics.
+- native consecutive GoalSpan contracts;
+- typed native parameter contracts;
+- StrategicNumberSlot and TimerSlot extension points;
+- package occupancy and persisted binding extension points;
+- deterministic lifecycle Goal binding;
+- collision and range diagnostics.
 
 The design deliberately distinguishes a GoalId from the integer value stored in that Goal. In the current lifecycle compiler, active/pending/complete are values of one lifecycle Goal, not three GoalIds.
 
-Do not implement runtime allocation directly from raw semantic integers. The binding contract requires typed storage requests first.
+The lifecycle GoalSlot boundary is implemented. SemanticDemand carries a symbolic storage request; RuntimeBinder resolves it to one native GoalId; the emitter alone converts the resolved slot into the current native lifecycle-value encoding.
 
 ## What the compiler must grow into
 
@@ -166,6 +164,23 @@ semantic and backend regression evidence.
 
 examples/ and generated/:
 small lifecycle fixtures only. They are not the full Basilisk controller.
+
+## Current implementation boundary
+
+Implemented now:
+- one symbolic lifecycle GoalSlot request per demand;
+- typed GoalId and GoalValue wrappers;
+- deterministic GoalSlot binding with occupied-ID and existing-binding support;
+- native parameter/storage contract types;
+- lifecycle lowering isolated from semantic analysis;
+- regression tests proving pending/complete values are not separate GoalIds.
+
+Still open:
+- checked-in authoritative native command-contract inventory;
+- GoalSpan allocator and command-specific span allocation;
+- SN and Timer allocators;
+- package-wide occupancy discovery and persistent binding manifests;
+- artifact-budget accounting.
 
 ## Verification
 
