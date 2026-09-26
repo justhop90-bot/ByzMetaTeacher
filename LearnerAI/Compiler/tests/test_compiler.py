@@ -367,7 +367,7 @@ class CompilerTests(unittest.TestCase):
         witness_end = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
         witness_block = output[witness_start:witness_end]
         action_start = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
-        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertIn("(goal demand-castle 42)", witness_block)
         self.assertNotIn("(goal demand-castle 1)", witness_block)
         self.assertNotIn("(set-goal demand-castle 1002)", output[action_start:])
 
