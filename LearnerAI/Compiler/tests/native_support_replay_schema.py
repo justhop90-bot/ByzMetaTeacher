@@ -179,6 +179,19 @@ def _validate_support_diagnostic(value: Any, path: str) -> None:
     if code not in SUPPORT_CODES:
         _fail(f"{path}.code", f"unsupported support diagnostic code {code!r}")
 
+    expected_code = {
+        "native-known": "NATIVE-SUPPORT-001",
+        "native-typed": "NATIVE-SUPPORT-002",
+        "semantically-adapted": "NATIVE-SUPPORT-003",
+        "executable-safe": "NATIVE-SUPPORT-004",
+        "unsupported": "NATIVE-SUPPORT-005",
+    }[state]
+    if code != expected_code:
+        _fail(
+            f"{path}.code",
+            f"state {state!r} requires {expected_code}, got {code!r}",
+        )
+
     severity = _string(item["severity"], f"{path}.severity")
     if severity not in DIAGNOSTIC_SEVERITIES:
         _fail(f"{path}.severity", f"unsupported severity {severity!r}")
@@ -224,6 +237,8 @@ def validate_snapshot(
         _exact_keys(fixture, FIXTURE_FIELDS, path)
 
         diagnostics = _list(fixture["diagnostics"], f"{path}.diagnostics")
+        if not diagnostics:
+            _fail(f"{path}.diagnostics", "must contain at least one diagnostic")
         for index, diagnostic in enumerate(diagnostics):
             _validate_diagnostic(diagnostic, f"{path}.diagnostics[{index}]")
 
@@ -231,6 +246,11 @@ def validate_snapshot(
             fixture["support_diagnostics"],
             f"{path}.support_diagnostics",
         )
+        if not support_diagnostics:
+            _fail(
+                f"{path}.support_diagnostics",
+                "must contain at least one support diagnostic",
+            )
         for index, diagnostic in enumerate(support_diagnostics):
             _validate_support_diagnostic(
                 diagnostic,
@@ -255,6 +275,12 @@ def validate_snapshot(
                 path,
                 "support_state_sequence must exactly match "
                 "support_diagnostics[*].state",
+            )
+
+            if states[-1] != "unsupported":
+            _fail(
+                path,
+                "support_state_sequence must terminate in unsupported",
             )
 
         artifact_hash = _string(
