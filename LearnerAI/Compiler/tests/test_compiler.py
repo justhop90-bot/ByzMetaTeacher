@@ -19,7 +19,8 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(a, compile_source(EXAMPLES))
         self.assertIn("(set-goal demand-castle 1)", a)
         self.assertIn("(build castle)", a)
-        self.assertIn("(set-goal demand-castle 2)", a)
+        self.assertIn("(set-goal demand-castle 1001)", a)
+        self.assertIn("(set-goal demand-castle 1002)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 10)
 
