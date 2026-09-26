@@ -113,6 +113,7 @@ class LifecycleEncoding:
     issued: GoalValue
     pending: GoalValue
     complete: GoalValue
+    cancelled: GoalValue
 
     @staticmethod
     def for_goal_slot(slot: GoalSlot) -> "LifecycleEncoding":
@@ -123,6 +124,7 @@ class LifecycleEncoding:
             pending=GoalValue(goal + 1),
             complete=GoalValue(goal + 2),
             issued=GoalValue(goal + 3),
+            cancelled=GoalValue(goal + 4),
         )
 
 
