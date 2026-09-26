@@ -61,11 +61,25 @@ class ReportDiagnostic:
 
 
 @dataclass(frozen=True)
+class ReportRuleDiagnostic:
+    id: str
+    rule_order: int
+    code: str
+    severity: DiagnosticSeverity
+    eligibility: str
+    message: str
+    path: Path | None
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True)
 class CombinedValidationReport:
     status: ReportStatus
     diagnostics: tuple[ReportDiagnostic, ...]
     native_result: NativeValidationResult | None
     output_path: Path
+    rule_diagnostics: tuple[ReportRuleDiagnostic, ...] = ()
 
     @property
     def semantic_diagnostics(self) -> tuple[ReportDiagnostic, ...]:
@@ -126,6 +140,20 @@ class CombinedValidationReport:
                     "references": list(item.references),
                 }
                 for item in self.diagnostics
+            ],
+            "rule_diagnostics": [
+                {
+                    "id": item.id,
+                    "rule_order": item.rule_order,
+                    "code": item.code,
+                    "severity": item.severity.value,
+                    "eligibility": item.eligibility,
+                    "message": item.message,
+                    "path": str(item.path) if item.path is not None else None,
+                    "line": item.line,
+                    "column": item.column,
+                }
+                for item in self.rule_diagnostics
             ],
             "native": native,
         }
@@ -248,6 +276,50 @@ def _from_native(item: NativeDiagnostic) -> ReportDiagnostic:
     )
 
 
+def report_rule_diagnostic(
+    item: object,
+    *,
+    path: Path | None = None,
+) -> ReportRuleDiagnostic:
+    code_value = getattr(item, "code", "RULE-FIRE-UNKNOWN")
+    code = getattr(code_value, "value", str(code_value))
+    severity_value = getattr(item, "severity", DiagnosticSeverity.INFO)
+    severity = (
+        severity_value
+        if isinstance(severity_value, DiagnosticSeverity)
+        else DiagnosticSeverity(str(severity_value))
+    )
+    eligibility_value = getattr(item, "eligibility", "")
+    eligibility = getattr(eligibility_value, "value", str(eligibility_value))
+    message = str(getattr(item, "message", item))
+    rule_order = int(getattr(item, "rule_order", 0))
+    location = getattr(item, "location", None)
+    resolved_path = path
+    if resolved_path is None and location is not None:
+        source_unit = getattr(location, "source_unit", None)
+        resolved_path = Path(source_unit) if source_unit else None
+    line = getattr(location, "line", None) if location is not None else None
+    column = getattr(location, "column", None) if location is not None else None
+    identity = _semantic_id(
+        f"RULE-{code}",
+        f"{rule_order}:{eligibility}:{message}",
+        path=resolved_path,
+        line=line,
+        column=column,
+    )
+    return ReportRuleDiagnostic(
+        id=identity,
+        rule_order=rule_order,
+        code=code,
+        severity=severity,
+        eligibility=eligibility,
+        message=message,
+        path=resolved_path,
+        line=line,
+        column=column,
+    )
+
+
 _SOURCE_ORDER = {
     DiagnosticSource.LEARNERAI: 0,
     DiagnosticSource.NATIVE: 1,
@@ -296,6 +368,7 @@ def report_from_native_result(
     native_result: NativeValidationResult,
     output_path: Path,
     semantic: tuple[SemanticDiagnostic, ...] = (),
+    rule_diagnostics: tuple[object, ...] = (),
 ) -> CombinedValidationReport:
     clean = (
         native_result.status is ValidationStatus.VALIDATED
@@ -311,26 +384,56 @@ def report_from_native_result(
         status = ReportStatus.BACKEND_FAILURE
     else:
         status = ReportStatus.BACKEND_FAILURE
+    resolved_output = output_path.resolve()
+    public_rule_diagnostics = tuple(
+        report_rule_diagnostic(item, path=resolved_output)
+        for item in sorted(
+            rule_diagnostics,
+            key=lambda item: (
+                getattr(item, "rule_order", 0),
+                getattr(getattr(item, "code", ""), "value", getattr(item, "code", "")),
+                str(getattr(item, "message", "")),
+            ),
+        )
+    )
     return CombinedValidationReport(
         status=status,
         diagnostics=order_diagnostics(semantic, native_result.diagnostics),
         native_result=native_result,
-        output_path=output_path.resolve(),
+        output_path=resolved_output,
+        rule_diagnostics=public_rule_diagnostics,
     )
 
 
-def semantic_failure_report(error: Exception, output_path: Path) -> CombinedValidationReport:
+def semantic_failure_report(
+    error: Exception,
+    output_path: Path,
+    rule_diagnostics: tuple[object, ...] = (),
+) -> CombinedValidationReport:
     semantic = tuple(getattr(error, "diagnostics", ()))
     diagnostics = (
         order_diagnostics(semantic, ())
         if semantic
         else order_diagnostics((semantic_diagnostic(error),), ())
     )
+    resolved_output = output_path.resolve()
+    public_rule_diagnostics = tuple(
+        report_rule_diagnostic(item, path=resolved_output)
+        for item in sorted(
+            rule_diagnostics,
+            key=lambda item: (
+                getattr(item, "rule_order", 0),
+                getattr(getattr(item, "code", ""), "value", getattr(item, "code", "")),
+                str(getattr(item, "message", "")),
+            ),
+        )
+    )
     return CombinedValidationReport(
         status=ReportStatus.SEMANTIC_REJECTED,
         diagnostics=diagnostics,
         native_result=None,
-        output_path=output_path.resolve(),
+        output_path=resolved_output,
+        rule_diagnostics=public_rule_diagnostics,
     )
 
 def backend_failure_report(
