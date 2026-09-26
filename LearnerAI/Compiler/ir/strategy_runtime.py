@@ -832,11 +832,13 @@ def evaluate_strategy_runtime(
             for observation in profile.capability_observations
             if observation.capability == demand.capability_intent
         }
-        for capability_identity, transition in capability_transitions:
-            if capability_identity not in matched_capabilities:
-                continue
-            if state is StrategicDemandRuntimeState.STRATEGIC_INVALIDATED:
-                continue
+        if state in {
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_BLOCKED,
+        }:
+            for capability_identity, transition in capability_transitions:
+                if capability_identity not in matched_capabilities:
+                    continue
             if transition is CapabilityTransition.LOST:
                 reasons.add(ReassessmentReason.CAPABILITY_LOSS)
             elif transition is CapabilityTransition.RECOVERED:
