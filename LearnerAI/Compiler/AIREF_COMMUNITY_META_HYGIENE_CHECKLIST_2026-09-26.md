@@ -87,7 +87,7 @@ The compiler must never promote a community idiom into an engine fact merely bec
 ### Integration boundary
 
 - [x] New substrate has focused unit tests.
-- [ ] Export native hygiene types from Compiler.primitives.
+- [x] Export native hygiene types from Compiler.primitives.
 - [ ] Consume NativeWitness in capability completion contracts.
 - [ ] Consume NativeStorageUse in package-storage binding for all namespaces.
 - [ ] Consume PassExecutionConstraint in emission-time native validation.
