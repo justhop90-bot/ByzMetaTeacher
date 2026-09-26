@@ -125,6 +125,23 @@ class CompletionWitnessContract:
     issuance_source_order: int
 
 
+class ReleaseEvidenceKind(str, Enum):
+    WORLD_STATE = "WORLD_STATE"
+
+
+@dataclass(frozen=True)
+class ReleaseStateContract:
+    identity: SemanticId
+    evidence_kind: ReleaseEvidenceKind
+    primitive: str
+    expression: Expression
+    establishes: SemanticId
+    from_state: LifecycleState
+    to_state: LifecycleState
+    source_order: int
+    witness_source_order: int
+
+
 @dataclass(frozen=True)
 class ActionIssuance:
     demand: SemanticId
@@ -168,6 +185,7 @@ class SemanticDemand:
     witness: Expression
     release: Expression
     completion_witness: CompletionWitnessContract | None = None
+    release_state: ReleaseStateContract | None = None
     action_issuance: ActionIssuance | None = None
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
