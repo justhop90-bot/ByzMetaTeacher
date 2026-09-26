@@ -34,9 +34,13 @@ def valid_snapshot():
         "message": "native command is not present in the checked-in native schema",
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "python": "3.12.7",
         "platform": "linux",
+        "persistent_artifacts": {
+            "file": "c" * 64,
+            "package": "d" * 64,
+        },
         "fixtures": {
             name: {
                 "diagnostics": [copy.deepcopy(diagnostic)],
