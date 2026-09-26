@@ -242,6 +242,9 @@ Implemented in this pass:
 3. LearnerAI/Compiler/semantic/__init__.py
    - exported engine-semantics contracts.
 
+4. LearnerAI/Compiler/compiler.py
+   - compile gate validates the evidence-backed community engine contract before semantic compilation.
+
 ## What is deliberately not claimed
 
 The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them.
