@@ -153,3 +153,12 @@ The next semantic boundary remains resource/conflict semantics and explicit acti
 - [x] Compiler CI verification: run 230 completed with native fixture finding_count=0 and 140 tests passing.
 
 The implementation intentionally does not create persistent resource reservations, global fairness scheduling, or a generic transaction manager.
+
+
+### Action-issuance semantics implementation record (2026-09-26)
+
+- [x] Typed `ActionIssuance` contract separates action-rule firing from pending-state admission.
+- [x] Lifecycle now uses `ACTIVE -> ISSUED -> PENDING -> COMPLETE -> RELEASED`.
+- [x] `RETAIN_ACTIVE` models unsatisfied issuance guards as failure without falsely entering pending.
+- [x] Compiler gate validates issuance before resource/conflict and capability validation.
+- [x] Focused regressions and generated fixture updated; Compiler CI run 270 passed with 144 tests and native finding_count=0.
