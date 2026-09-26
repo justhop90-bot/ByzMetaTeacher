@@ -376,7 +376,11 @@ class NativeHygieneTests(unittest.TestCase):
             current_url="https://airef.github.io/new",
             previous_locator="old-heading",
             current_locator="new-heading",
-            changes=(),
+            changes=(
+                CitationChangeKind.URL_CHANGED,
+                CitationChangeKind.LOCATOR_CHANGED,
+                CitationChangeKind.SOURCE_HASH_CHANGED,
+            ),
             previous_source_hash="0" * 64,
             current_source_hash="1" * 64,
             previous_excerpt_hash="0" * 64,
