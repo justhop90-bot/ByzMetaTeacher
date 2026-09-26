@@ -11,7 +11,17 @@ from ..diagnostics import DiagnosticSeverity
 from ..primitives import PrimitiveRegistry, default_de_registry
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
+from .persistent_state import (
+    PersistentStateDiagnostic,
+    PersistentStateDiagnosticCode,
+    PersistentStateReport,
+)
 from .rule_execution import EffectiveRule, RuleExecutionReport
+
+
+class RuleDiagnosticCategory(str, Enum):
+    FIRING_ELIGIBILITY = "FIRING_ELIGIBILITY"
+    PERSISTENT_STATE = "PERSISTENT_STATE"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -19,6 +29,9 @@ class RuleDiagnosticCode(str, Enum):
     RUNTIME_DEPENDENT = "RULE-FIRE-002"
     FIRST_PASS_ELIGIBLE = "RULE-FIRE-003"
     RECURRENTLY_ELIGIBLE = "RULE-FIRE-004"
+    PERSISTENT_CONSUMER_BEFORE_WRITER = "PSTATE-001"
+    PERSISTENT_LATER_OVERWRITE = "PSTATE-002"
+    PERSISTENT_CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
 
 
 @dataclass(frozen=True)
@@ -26,9 +39,15 @@ class RuleDiagnostic:
     rule_order: int
     code: RuleDiagnosticCode
     severity: DiagnosticSeverity
-    eligibility: FiringEligibility
+    eligibility: FiringEligibility | None
     message: str
     location: SourceLocation
+    category: RuleDiagnosticCategory
+    source_code: str
+    state_kind: str | None = None
+    state_identifier: str | None = None
+    related_rule_order: int | None = None
+    related_operation: str | None = None
 
 
 @dataclass(frozen=True)
@@ -105,6 +124,71 @@ def _diagnostic_for(
         eligibility=eligibility,
         message=message,
         location=rule.source_location,
+        category=RuleDiagnosticCategory.FIRING_ELIGIBILITY,
+        source_code=code.value,
+    )
+
+
+_PERSISTENT_RULE_CODES = {
+    PersistentStateDiagnosticCode.CONSUMER_BEFORE_WRITER:
+        RuleDiagnosticCode.PERSISTENT_CONSUMER_BEFORE_WRITER,
+    PersistentStateDiagnosticCode.LATER_OVERWRITE:
+        RuleDiagnosticCode.PERSISTENT_LATER_OVERWRITE,
+    PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER:
+        RuleDiagnosticCode.PERSISTENT_CONSUMER_SHADOWED_BY_WRITER,
+}
+
+
+def _persistent_diagnostic_for(
+    item: PersistentStateDiagnostic,
+) -> RuleDiagnostic:
+    try:
+        code = _PERSISTENT_RULE_CODES[item.code]
+    except KeyError as exc:
+        raise ValueError(
+            f"unsupported persistent-state diagnostic code '{item.code}'"
+        ) from exc
+
+    access = item.access
+    state_kind = access.state.kind.value
+    state_identifier = access.state.identifier
+    related_rule_order = (
+        item.related_access.rule_order
+        if item.related_access is not None
+        else None
+    )
+    related_operation = (
+        item.related_access.command
+        if item.related_access is not None
+        else None
+    )
+    return RuleDiagnostic(
+        rule_order=item.rule_order,
+        code=code,
+        severity=item.severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location or access.location,
+        category=RuleDiagnosticCategory.PERSISTENT_STATE,
+        source_code=item.code.value,
+        state_kind=state_kind,
+        state_identifier=state_identifier,
+        related_rule_order=related_rule_order,
+        related_operation=related_operation,
+    )
+
+
+def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
+    related_rule = item.related_rule_order if item.related_rule_order is not None else -1
+    return (
+        item.rule_order,
+        0 if item.category is RuleDiagnosticCategory.FIRING_ELIGIBILITY else 1,
+        item.code.value,
+        item.state_kind or "",
+        item.state_identifier or "",
+        related_rule,
+        item.related_operation or "",
+        item.message,
     )
 
 
@@ -114,6 +198,7 @@ def analyze_rule_diagnostics(
     *,
     runtime_demand_states: Mapping[int, object] | None = None,
     completion_witnesses: Mapping[int, object] | None = None,
+    persistent_state_report: PersistentStateReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -128,6 +213,12 @@ def analyze_rule_diagnostics(
         fact_registry = None
     runtime_demand_states = runtime_demand_states or {}
     completion_witnesses = completion_witnesses or {}
+    if persistent_state_report is not None and not isinstance(
+        persistent_state_report, PersistentStateReport
+    ):
+        raise TypeError(
+            "persistent_state_report must be a PersistentStateReport"
+        )
 
     diagnostics: list[RuleDiagnostic] = []
     for rule in report.rules:
@@ -152,11 +243,20 @@ def analyze_rule_diagnostics(
         )
         diagnostics.append(_diagnostic_for(rule, eligibility))
 
-    return RuleDiagnosticReport(tuple(diagnostics))
+    if persistent_state_report is not None:
+        diagnostics.extend(
+            _persistent_diagnostic_for(item)
+            for item in persistent_state_report.diagnostics
+        )
+
+    return RuleDiagnosticReport(
+        tuple(sorted(diagnostics, key=_diagnostic_sort_key))
+    )
 
 
 __all__ = [
     "RuleDiagnostic",
+    "RuleDiagnosticCategory",
     "RuleDiagnosticCode",
     "RuleDiagnosticReport",
     "analyze_rule_diagnostics",
