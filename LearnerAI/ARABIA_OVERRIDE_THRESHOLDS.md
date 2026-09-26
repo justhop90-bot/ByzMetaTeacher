@@ -124,7 +124,7 @@ The official game guidance describes Archer-line units as effective against infa
 | 2 enemy MAA approaching economy | M1 | 3 Archers + short wall/funnel if available |
 | 3-4 enemy MAA | M2 | 4 Archers; preserve TC/resource shelter |
 | 5-7 enemy MAA OR active forward Barracks/MAA production | M3 | 6 Archers + local wall/gate |
-| 8+ MAA OR MAA + ranged support | M4 | 6-8 Archers + 2 Skirmishers if ranged support is present; tower becomes admissible |
+| 8+ MAA OR MAA + ranged support | M4 | 6-8 Archers + 2 Skirmishers if ranged support is present; additional tower escalation is allowed only if the general tower/resource test is also satisfied |
 | MAA are actively idling multiple critical resources | M5 | suspend optional Feudal spending and protect the endangered economy first |
 
 The MAA package is intentionally Archer-heavy rather than Skirmisher-heavy.
@@ -154,7 +154,7 @@ Drop the Archer target when:
 
 - MAA production stops;
 - MAA count falls below the active threshold;
-- the enemy switches to Castle;
+- the enemy has transitioned toward Castle **and** the surviving MAA no longer satisfy the active pressure threshold;
 - or the enemy's surviving MAA can no longer reach the economy.
 
 Do not keep manufacturing Archers simply because the enemy once had MAA.
