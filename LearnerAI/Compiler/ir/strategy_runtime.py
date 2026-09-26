@@ -93,6 +93,10 @@ class StrategicEvidenceBinding:
     predicate: StrategicPredicate
     fingerprint: str
 
+    @property
+    def observations(self) -> tuple[StrategicObservation, ...]:
+        return self.predicate.observations
+
 
 @dataclass(frozen=True)
 class RuntimeObservationSnapshot:

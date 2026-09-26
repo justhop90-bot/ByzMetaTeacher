@@ -571,7 +571,13 @@ def build_land_castle_strategy(
                     "Castle is the selected next strategic capability",
                 ),
             ),
-            invalidation=(),
+            invalidation=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    "(current-age >= imperial-age)",
+                    "Castle commitment is obsolete once Imperial Age is reached without the strategic Castle path",
+                ),
+            ),
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.BUILD,
                 "building",
