@@ -13,6 +13,7 @@ from Compiler.runtime_binding import (
     BindingContext,
     GoalId,
     GoalSlot,
+    GoalSpan,
     GoalValue,
     LifecycleEncoding,
     NativeParameterContract,
