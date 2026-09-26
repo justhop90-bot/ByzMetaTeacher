@@ -111,5 +111,39 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaises(CompileError):
             compile_source(source)
 
+    def test_castle_enters_pending_and_cannot_reissue_while_pending(self):
+        output = compile_source(EXAMPLES)
+        action_block = output[output.find("; Demand: castle | ACTIVE -> PENDING"):output.find("; Completion witness: castle")]
+        self.assertIn("(build castle)", action_block)
+        self.assertIn("(set-goal demand-castle 1001)", action_block)
+        pending_block = output[output.find("; Completion witness: castle"):output.find("; Release: castle")]
+        self.assertIn("(goal demand-castle 1001)", pending_block)
+        self.assertNotIn("(build castle)", pending_block)
+
+    def test_spearmen_pending_state_prevents_repeated_train(self):
+        output = compile_source(EXAMPLES)
+        action_block = output[output.find("; Demand: defensive-spearmen | ACTIVE -> PENDING"):output.find("; Completion witness: defensive-spearmen")]
+        self.assertIn("(train spearman)", action_block)
+        self.assertIn("(set-goal demand-defensive-spearmen 1004)", action_block)
+        pending_block = output[output.find("; Completion witness: defensive-spearmen"):output.find("; Release: defensive-spearmen")]
+        self.assertIn("(goal demand-defensive-spearmen 1004)", pending_block)
+        self.assertNotIn("(train spearman)", pending_block)
+
+    def test_wheelbarrow_pending_state_prevents_repeated_research(self):
+        output = compile_source(EXAMPLES)
+        action_block = output[output.find("; Demand: wheelbarrow | ACTIVE -> PENDING"):output.find("; Completion witness: wheelbarrow")]
+        self.assertIn("(research ri-wheelbarrow)", action_block)
+        self.assertIn("(set-goal demand-wheelbarrow 1007)", action_block)
+        pending_block = output[output.find("; Completion witness: wheelbarrow"):output.find("; Release: wheelbarrow")]
+        self.assertIn("(goal demand-wheelbarrow 1007)", pending_block)
+        self.assertNotIn("(research ri-wheelbarrow)", pending_block)
+
+    def test_release_requires_completed_state(self):
+        output = compile_source(EXAMPLES)
+        castle_release = output[output.find("; Release: castle"):output.find("; Demand: defensive-spearmen")]
+        self.assertIn("(goal demand-castle 1002)", castle_release)
+        self.assertIn("(set-goal demand-castle 0)", castle_release)
+        self.assertNotIn("(goal demand-castle 1001)", castle_release)
+
 if __name__ == "__main__":
     unittest.main()
