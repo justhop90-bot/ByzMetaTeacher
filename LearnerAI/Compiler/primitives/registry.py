@@ -127,8 +127,6 @@ class PrimitiveRegistry:
                 "native metadata is not typed",
             )
             diagnostics.append(diagnostic)
-            diagnostics.append(diagnostic)
-            diagnostics.append(diagnostic)
             return NativeSupportAssessment(
                 command=name,
                 state=NativeSupportState.UNSUPPORTED,
@@ -155,6 +153,7 @@ class PrimitiveRegistry:
                 "error",
                 "native command is known and typed but has no semantic adapter",
             )
+            diagnostics.append(diagnostic)
             return NativeSupportAssessment(
                 command=name,
                 state=NativeSupportState.UNSUPPORTED,
@@ -182,6 +181,7 @@ class PrimitiveRegistry:
                 "error",
                 f"semantic adapter is not executable-safe: {exc}",
             )
+            diagnostics.append(diagnostic)
             return NativeSupportAssessment(
                 command=name,
                 state=NativeSupportState.UNSUPPORTED,
