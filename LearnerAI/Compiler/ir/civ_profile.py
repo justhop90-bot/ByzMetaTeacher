@@ -1013,7 +1013,7 @@ def _byzantine_game_data(
         ),
         TechnologyDef(
             TechId(1454), "Elite Varangian Guard", Age.IMPERIAL, (ResearchProvider(BuildingId(12)),),
-            None, None, validity=Validity(patch, None), provenance=(controller,),
+            None, None, upgrades=(UnitId(2704),), validity=Validity(patch, None), provenance=(controller,),
         ),
         TechnologyDef(
             TechId(65), "Gillnets", Age.CASTLE, (ResearchProvider(BuildingId(45)),),
