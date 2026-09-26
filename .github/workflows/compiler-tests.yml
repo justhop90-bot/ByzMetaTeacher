@@ -80,7 +80,7 @@ jobs:
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
-        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/Basilisk.per --report /tmp/native-reports/basilisk.json
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
@@ -152,7 +152,7 @@ jobs:
           name: native-validation-evidence
           path: |
             /tmp/native-reports
-            /tmp/Basilisk.per
+            /tmp/CompilerFixture.per
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/basilisk-invalidation.per
