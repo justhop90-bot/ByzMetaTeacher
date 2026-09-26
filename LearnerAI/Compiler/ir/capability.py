@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 from ..ast import Expression, SourceLocation
 from .model import LifecycleStorage, SemanticId
+from .strategy import StrategicBinding
 
 
 class CapabilityKind(str, Enum):
@@ -155,6 +156,7 @@ class CapabilityDemand:
     activation: tuple[PredicateNode, ...] = ()
     release: tuple[PredicateNode, ...] = ()
     owner: SemanticId | None = None
+    strategic_binding: StrategicBinding | None = None
     location: SourceLocation | None = None
 
 

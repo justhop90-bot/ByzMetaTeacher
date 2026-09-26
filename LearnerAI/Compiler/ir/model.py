@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..ast import Expression
+from .strategy import StrategicBinding
 
 
 class LifecycleState(str, Enum):
@@ -219,6 +220,7 @@ class SemanticDemand:
     ownership: DemandOwnership | None = None
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
+    strategic_binding: StrategicBinding | None = None
 
     @property
     def name(self) -> str:

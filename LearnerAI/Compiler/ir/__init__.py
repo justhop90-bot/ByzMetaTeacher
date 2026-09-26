@@ -107,3 +107,27 @@ from .native_metadata import (
     NativeParameterContract,
     default_de_native_profile,
 )
+
+from .strategy import (
+    CapabilityIntent,
+    CapabilityIntentKind,
+    ExecutionDemandTemplate,
+    OpportunityCostPolicy,
+    PostureTransition,
+    ProtectedResourceFloor,
+    ResolvedStrategyProfile,
+    StrategicBinding,
+    StrategicDemandSpec,
+    StrategicEvidence,
+    StrategicEvidenceKind,
+    StrategicPriority,
+    StrategicTarget,
+    StrategicTargetKind,
+    StrategyCompilation,
+    StrategyEnvelope,
+    StrategyPosture,
+    StrategyProfile,
+    build_byzantine_castle_strategy,
+    lower_strategy_profile,
+    resolve_strategy_profile,
+)

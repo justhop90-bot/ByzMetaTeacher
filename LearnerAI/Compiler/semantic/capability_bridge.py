@@ -217,6 +217,7 @@ def project_capability_graph(
                 activation=requirements,
                 release=(release_predicate,),
                 owner=demand.identity,
+                strategic_binding=demand.strategic_binding,
             )
         )
 
