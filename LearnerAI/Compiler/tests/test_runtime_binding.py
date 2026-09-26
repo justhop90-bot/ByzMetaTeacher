@@ -4,8 +4,11 @@ from Compiler.ast import DemandNode, SourceLocation
 from Compiler.ir import (
     GoalRole,
     GoalSlotRequest,
+    GoalSpanKind,
+    GoalSpanRequest,
     LifecycleState,
     SemanticDemand,
+    SemanticId,
 )
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
