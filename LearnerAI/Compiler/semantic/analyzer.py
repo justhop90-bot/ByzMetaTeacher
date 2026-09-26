@@ -161,11 +161,11 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         witness = parse_expression(demand.witness)
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         release = parse_expression(demand.release)
-        _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
         if release.head == action.head:
             raise CompileError(
                 f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
             )
+        _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
         goal = base_goal + (offset * 3)
         pending_goal = goal + 1
         completed_goal = goal + 2
