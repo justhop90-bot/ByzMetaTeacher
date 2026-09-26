@@ -30,6 +30,7 @@ def parse(source: str) -> list[DemandNode]:
         if not match:
             raise CompileError(f"line {line_no}: expected 'demand <name> {{'")
         name = match.group(1)
+        header_location = _location(line_no, column)
         if not _NAME_RE.fullmatch(name):
             raise CompileError(f"line {line_no}: invalid demand name '{name}'")
         i += 1
@@ -76,7 +77,7 @@ def parse(source: str) -> list[DemandNode]:
                 fields["action"],
                 fields["witness"],
                 fields["release"],
-                _location(line_no, column),
+                header_location,
                 fields.get("invalidate"),
                 tuple(req_locations),
                 field_locations.get("action"),
