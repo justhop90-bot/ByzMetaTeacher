@@ -1,0 +1,248 @@
+import unittest
+
+from Compiler.primitives.native_hygiene import (
+    AIRefProvenance,
+    AIRefVersionFamily,
+    CitationRecord,
+    CitationState,
+    ConfidenceBasis,
+    ConfidenceLevel,
+    EvidenceKind,
+    ExcerptKind,
+    ExcerptMatchKind,
+    LocatorType,
+    NativeStorageClass,
+    NativeStorageKind,
+    NativeStorageUse,
+    NativeWitness,
+    NativeWitnessKind,
+    PassConstraintScope,
+    PassExecutionConstraint,
+    PassFailureMode,
+    PerformanceClass,
+    PerformanceEvidence,
+    PromotionState,
+    RevalidationResult,
+    SourceContentHash,
+    SourceExcerpt,
+    VersionScope,
+    classify_revalidation,
+    compare_excerpts,
+    next_citation_state,
+    promotion_state,
+    validate_goal_span_non_overlap,
+)
+
+
+def provenance(
+    kind: EvidenceKind = EvidenceKind.DOCUMENTED_FACT,
+    basis: ConfidenceBasis = ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+) -> AIRefProvenance:
+    return AIRefProvenance(
+        evidence_kind=kind,
+        confidence=ConfidenceLevel.HIGH,
+        confidence_basis=basis,
+        citation_id="ai:test",
+        parent_evidence=("ai:parent",) if kind is EvidenceKind.INFERRED_MAPPING else (),
+        derivation="mechanically derived" if kind is EvidenceKind.INFERRED_MAPPING else None,
+    )
+
+
+class NativeHygieneTests(unittest.TestCase):
+    def test_ai_ref_storage_limits_are_enforced(self):
+        NativeStorageUse(
+            "goal-target",
+            NativeStorageClass.PERSISTENT_SCALAR,
+            NativeStorageKind.GOAL,
+            base=400,
+            provenance=(provenance(),),
+        )
+        NativeStorageUse(
+            "duc-local",
+            NativeStorageClass.ENGINE_MANAGED_LIST,
+            NativeStorageKind.DUC_LOCAL_LIST,
+            maximum_cardinality=240,
+            provenance=(provenance(),),
+        )
+        NativeStorageUse(
+            "duc-remote",
+            NativeStorageClass.ENGINE_MANAGED_LIST,
+            NativeStorageKind.DUC_REMOTE_LIST,
+            maximum_cardinality=40,
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            NativeStorageUse(
+                "bad-span",
+                NativeStorageClass.GOAL_SPAN,
+                NativeStorageKind.COST_DATA_GOAL_SPAN,
+                base=40,
+                span_length=4,
+                provenance=(provenance(),),
+            )
+
+    def test_goal_spans_cannot_overlap(self):
+        left = NativeStorageUse(
+            "cost-data",
+            NativeStorageClass.GOAL_SPAN,
+            NativeStorageKind.COST_DATA_GOAL_SPAN,
+            base=100,
+            span_length=4,
+            provenance=(provenance(),),
+        )
+        right = NativeStorageUse(
+            "point",
+            NativeStorageClass.GOAL_SPAN,
+            NativeStorageKind.POINT_GOAL_SPAN,
+            base=103,
+            span_length=2,
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            validate_goal_span_non_overlap((left, right))
+
+    def test_witness_keeps_total_pending_and_completion_distinct(self):
+        NativeWitness(
+            "spears-total",
+            NativeWitnessKind.UNIT_COUNT_TOTAL,
+            "unit-type-count-total",
+            subject="spearman-line",
+            comparator=">=",
+            value=3,
+            provenance=(provenance(),),
+        )
+        NativeWitness(
+            "house-pending",
+            NativeWitnessKind.PENDING_OBJECTS,
+            "up-pending-objects",
+            subject="house",
+            comparator=">=",
+            value=1,
+            provenance=(provenance(),),
+        )
+
+    def test_pass_constraint_requires_documented_native_evidence(self):
+        PassExecutionConstraint(
+            "build-one-per-pass",
+            "up-build",
+            PassConstraintScope.RULE_PASS,
+            maximum_successes=1,
+            failure_mode=PassFailureMode.NO_EFFECT,
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            PassExecutionConstraint(
+                "bad",
+                "up-build",
+                PassConstraintScope.RULE_PASS,
+                maximum_successes=1,
+                failure_mode=PassFailureMode.NO_EFFECT,
+                provenance=(
+                    provenance(
+                        EvidenceKind.INFERRED_MAPPING,
+                        ConfidenceBasis.MECHANICAL_DERIVATION,
+                    ),
+                ),
+            )
+
+    def test_version_scope_rejects_benchmark_provenance(self):
+        VersionScope(
+            supported_families=(AIRefVersionFamily.DE,),
+            provenance=(provenance(),),
+        )
+        with self.assertRaises(ValueError):
+            VersionScope(
+                supported_families=(AIRefVersionFamily.DE,),
+                provenance=(
+                    provenance(
+                        EvidenceKind.BENCHMARK_OBSERVATION,
+                        ConfidenceBasis.CONTEXTUAL_BENCHMARK,
+                    ),
+                ),
+            )
+
+    def test_performance_evidence_is_benchmark_only(self):
+        PerformanceEvidence(
+            "duc-local-240",
+            "up-find-local",
+            PerformanceClass.MEDIUM,
+            "240 existing units among 400",
+            tested_cardinality=240,
+            loops_for_lag=80000,
+            lag_fraction=0.5,
+            version_context="AIRef benchmark",
+            map_context="WK",
+            speed_context="fast",
+            provenance=(
+                provenance(
+                    EvidenceKind.BENCHMARK_OBSERVATION,
+                    ConfidenceBasis.CONTEXTUAL_BENCHMARK,
+                ),
+            ),
+        )
+        with self.assertRaises(ValueError):
+            PerformanceEvidence(
+                "bad",
+                "up-find-local",
+                PerformanceClass.MEDIUM,
+                "benchmark",
+                provenance=(provenance(),),
+            )
+
+    def test_excerpt_hash_and_revalidation(self):
+        stored = SourceExcerpt.capture(
+            "line one\r\nline two\r\n",
+            ExcerptKind.FACT,
+        )
+        self.assertEqual(
+            compare_excerpts(stored, "line one\nline two\n"),
+            ExcerptMatchKind.NORMALIZED,
+        )
+        self.assertEqual(
+            classify_revalidation(
+                url_changed=False,
+                locator_changed=False,
+                source_hash_changed=True,
+                excerpt_match=ExcerptMatchKind.EXACT,
+                source_available=True,
+            ),
+            RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED,
+        )
+        self.assertEqual(
+            next_citation_state(
+                CitationState.PINNED,
+                RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED,
+            ),
+            CitationState.VERIFIED_SOURCE_CHANGED,
+        )
+        self.assertEqual(
+            next_citation_state(
+                CitationState.VERIFIED,
+                RevalidationResult.EXCERPT_CHANGED,
+            ),
+            CitationState.REVIEW_REQUIRED,
+        )
+
+    def test_promotion_rules_preserve_existing_evidence_on_outage(self):
+        citation = CitationRecord(
+            "c1",
+            "https://airef.github.io/",
+            "https://airef.github.io/",
+            LocatorType.COMMAND,
+            "up-find-local",
+            excerpt=SourceExcerpt.capture("text", ExcerptKind.FACT),
+            source_hash=SourceContentHash("sha256", "0" * 64, "RAW_BYTES"),
+            state=CitationState.UNAVAILABLE,
+        )
+        self.assertEqual(
+            promotion_state(citation, already_promoted=True),
+            PromotionState.EXISTING_PROMOTION_RETAINED,
+        )
+        self.assertEqual(
+            promotion_state(citation, already_promoted=False),
+            PromotionState.NOT_ELIGIBLE,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
