@@ -12,6 +12,7 @@ from ..ir.model import (
     SemanticDemand,
     SemanticId,
     StateAccess,
+    StateStorageKind,
     StorageRequestId,
 )
 
@@ -214,6 +215,8 @@ def analyze_demand_ownership(
             continue
 
         for access in demand.state_accesses:
+            if access.storage_kind is not StateStorageKind.LIFECYCLE:
+                continue
             grouped.setdefault(access.state, []).append(access)
             if access.owner is None:
                 diagnostics.append(
