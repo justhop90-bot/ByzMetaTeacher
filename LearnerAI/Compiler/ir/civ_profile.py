@@ -12,6 +12,7 @@ from .game_data import (
     CoverageStatus,
     EngineUnitClass,
     FactualCoverage,
+    GameDataScope,
     BuildingId,
     CivId,
     EntitySelector,
@@ -446,6 +447,13 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         raise ValueError(
             "CivProfile patch must match the GameData snapshot patch; "
             "patch overlays are not silently inferred"
+        )
+    if (
+        profile.base_data.scope is GameDataScope.CIVILIZATION
+        and profile.base_data.scope_civ_id != profile.civ_id
+    ):
+        raise ValueError(
+            "civilization-scoped GameData does not match CivProfile civilization"
         )
     validate_game_data(profile.base_data)
 
@@ -1106,4 +1114,6 @@ def _byzantine_game_data(
         upgrade_relations=upgrade_relations,
         provenance=(evidence, community),
         coverage=coverage,
+        scope=GameDataScope.CIVILIZATION,
+        scope_civ_id=CivId(7),
     )
