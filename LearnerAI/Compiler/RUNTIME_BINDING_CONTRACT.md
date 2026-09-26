@@ -3,7 +3,7 @@
 
 ## Status
 
-This document defines the runtime-binding contract for the generic AoE2 .per compiler. Lifecycle GoalSlot, GoalSpan, StrategicNumberSlot, and TimerSlot binding are implemented; whole-package occupancy discovery remains an explicit integration boundary.
+This document defines the runtime-binding contract for the generic AoE2 .per compiler. Lifecycle GoalSlot, GoalSpan, StrategicNumberSlot, TimerSlot, and explicit package-storage inventory binding are implemented. Automatic discovery of arbitrary externally-authored .per occupancy remains an integration boundary.
 
 Evidence is classified explicitly:
 
@@ -49,9 +49,17 @@ StrategicNumberSlot allocation requires an explicit AIRef inventory snapshot and
 TimerSlot allocation is deterministic, range-checked, collision-aware, and records an explicit initialization policy.
 Binding manifests are versioned and preserve Goal, SN, and Timer binding kinds.
 
+### IMPLEMENTED
+
+`PackageStorageInventory` is the explicit package boundary for externally occupied Goal, GoalSpan, Strategic Number, and Timer namespaces. Each reservation carries provenance, reservations are collision-checked within the inventory, and the inventory has a deterministic SHA-256 fingerprint over its canonical package/revision/reservation payload.
+
+`BindingContext.from_package_inventory(...)` imports that inventory into the binder. The binder merges package occupancy with explicit context occupancy before allocating new storage, so scalar GoalIds, GoalSpan intervals, SNs, and Timers are all collision-checked against the declared package.
+
+The binding manifest carries the package inventory fingerprint, making a binding reproducible against a specific package inventory snapshot.
+
 ### OPEN
 
-Package-wide occupancy discovery for arbitrary externally-authored .per remains an integration boundary.
+The compiler does not discover arbitrary external `.per` storage automatically. A package inventory must be supplied by the package/build integration layer when external occupancy exists.
 
 ## 2. Engine resource model
 
