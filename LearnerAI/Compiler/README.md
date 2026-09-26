@@ -11,12 +11,15 @@ Its job is to turn explicit player semantics into auditable .per while rejecting
     player specification
       -> source parser / AST
       -> semantic lifecycle analysis
+      -> typed capability projection + validation
       -> validated IR
       -> runtime binding
       -> deterministic .per
       -> native aoe2-ai-parser validation
       -> AoE2DE runtime
       -> runtime evidence
+
+The capability graph is currently a semantic validation projection of the existing demand IR. It is not yet the source language for strategy composition, and the emitter still lowers the validated demand IR rather than the capability graph.
 
 The runtime remains the final authority.
 
@@ -136,18 +139,30 @@ Compiler output can optionally carry a binding manifest:
 
 When native validation is enabled, the .per artifact and manifest are staged together and promoted together only after the pinned native backend accepts the generated .per. This keeps semantic storage assignment reproducible without making the native parser responsible for Basilisk semantics.
 
-## What the compiler must grow into
+## Current semantic position
 
-The next semantic work is driven by the player:
+Implemented and connected to the compile gate:
 
-1. demand ownership;
-2. capability providers;
-3. dependency chains;
-4. resource/conflict semantics;
-5. cancellation and obsolescence;
-6. source-order and first-writer/consumer analysis;
-7. dead-end/unfed/blocked/open-loop diagnostics;
-8. domain-aware player diagnostics.
+1. typed capability/provider/witness graph;
+2. provider contract validation;
+3. feasibility and admissibility validation;
+4. prerequisite dependency closure;
+5. deterministic SCC cycle detection;
+6. dead-end, unrooted, open-loop, blocked, and disconnected diagnostics;
+7. deterministic capability diagnostics;
+8. projection of the current demand language into that graph without adding source syntax.
+
+Still required for a full player compiler:
+
+1. demand ownership and first-writer/first-consumer contracts;
+2. resource/conflict relations beyond the existing build-pass singleton;
+3. explicit action-issuance failure versus pending-state semantics;
+4. cancellation/obsolescence and capability-loss closure;
+5. source-order and same-pass visibility analysis;
+6. StrategicNumberSlot and TimerSlot allocation;
+7. Castle vertical-slice compilation against actual Basilisk strategy/economy semantics.
+
+The compiler should grow by semantic need, not by accumulating a second programming language.
 
 Do not add syntax first. Add semantic capability when a real player behavior requires it.
 
@@ -205,19 +220,24 @@ small lifecycle fixtures only. They are not the full Basilisk controller.
 Implemented now:
 - one symbolic lifecycle GoalSlot request per demand;
 - typed GoalId and GoalValue wrappers;
-- deterministic GoalSlot binding with occupied-ID and existing-binding support;
+- deterministic GoalSlot and GoalSpan binding with occupied-ID/interval and existing-binding support;
 - native parameter/storage contract types;
+- deterministic binding manifests and staged promotion;
 - lifecycle lowering isolated from semantic analysis;
-- regression tests proving pending/complete values are not separate GoalIds.
+- typed capability-provider/witness IR;
+- provider, witness, admissibility, feasibility, dependency, and lifecycle-closure validation;
+- compiler-gate integration of capability validation before runtime binding/emission;
+- deterministic SCC and dead-end diagnostics;
+- regression tests for lifecycle, binding, capability validation, and compiler/native integration.
 
 Still open:
-- GoalSpan allocator and command-specific span allocation;
-- StrategicNumberSlot and TimerSlot allocators;
 - package-wide occupancy discovery from an explicit package inventory;
-- automatic end-to-end binding-manifest write-back;
-- capability-provider/dependency graph semantics;
+- StrategicNumberSlot and TimerSlot allocators;
+- demand ownership and writer/consumer contracts;
+- resource/conflict semantics beyond the build-pass singleton;
+- action-issuance failure versus pending-state distinction;
 - source-order/first-writer/first-consumer analysis;
-- action-issuance failure versus pending-state distinction.
+- Castle vertical slice compiled against actual Basilisk strategy/economy semantics.
 
 ## Verification
 
