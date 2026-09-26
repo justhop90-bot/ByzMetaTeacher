@@ -272,7 +272,7 @@ class IdentifierNormalization:
         normalized = value.strip()
         if not normalized:
             raise ValueError("identifier names/classes cannot be empty")
-        return normalized if self.case_sensitive else normalized.upper()
+        return normalized if self.case_sensitive else normalized.lower()
 
     def canonicalize(self, value: object) -> CanonicalIdentifier:
         if isinstance(value, bool):
@@ -436,9 +436,9 @@ class SymbolNormalization:
 class CanonicalizationContext:
     parameter_name: str
     kind: ParameterSemanticKind
-    enum: EnumNormalization | None = None
-    identifier: IdentifierNormalization | None = None
-    symbol: SymbolNormalization | None = None
+    enum_spec: EnumNormalization | None = None
+    identifier_spec: IdentifierNormalization | None = None
+    symbol_spec: SymbolNormalization | None = None
     minimum: int | None = None
     maximum: int | None = None
 
@@ -447,13 +447,13 @@ class CanonicalizationContext:
             raise ValueError("parameter_name is required")
 
         selected = {
-            ParameterSemanticKind.ENUM: self.enum,
-            ParameterSemanticKind.IDENTIFIER: self.identifier,
-            ParameterSemanticKind.SYMBOL: self.symbol,
+            ParameterSemanticKind.ENUM: self.enum_spec,
+            ParameterSemanticKind.IDENTIFIER: self.identifier_spec,
+            ParameterSemanticKind.SYMBOL: self.symbol_spec,
         }
 
         if self.kind is ParameterSemanticKind.INTEGER:
-            if self.enum or self.identifier or self.symbol:
+            if any(contract is not None for contract in (self.enum_spec, self.identifier_spec, self.symbol_spec)):
                 raise ValueError("integer context cannot carry enum/identifier/symbol contracts")
         else:
             contract = selected[self.kind]
@@ -494,7 +494,7 @@ class CanonicalizationContext:
         return cls(
             parameter_name=parameter_name,
             kind=ParameterSemanticKind.ENUM,
-            enum=EnumNormalization(
+            enum_spec=EnumNormalization(
                 domain=domain,
                 members=members,
                 aliases=aliases,
@@ -520,7 +520,7 @@ class CanonicalizationContext:
         return cls(
             parameter_name=parameter_name,
             kind=ParameterSemanticKind.IDENTIFIER,
-            identifier=IdentifierNormalization(
+            identifier_spec=IdentifierNormalization(
                 namespace=namespace,
                 accepted_forms=accepted_forms,
                 names=names,
@@ -546,7 +546,7 @@ class CanonicalizationContext:
         return cls(
             parameter_name=parameter_name,
             kind=ParameterSemanticKind.SYMBOL,
-            symbol=SymbolNormalization(
+            symbol_spec=SymbolNormalization(
                 namespace=namespace,
                 case_sensitive=case_sensitive,
                 allowed_names=allowed_names,
@@ -587,16 +587,16 @@ def canonicalize_value(
         return CanonicalInteger(normalized)
 
     if context.kind is ParameterSemanticKind.ENUM:
-        assert context.enum is not None
-        return context.enum.canonicalize(value)
+        assert context.enum_spec is not None
+        return context.enum_spec.canonicalize(value)
 
     if context.kind is ParameterSemanticKind.IDENTIFIER:
-        assert context.identifier is not None
-        return context.identifier.canonicalize(value)
+        assert context.identifier_spec is not None
+        return context.identifier_spec.canonicalize(value)
 
     if context.kind is ParameterSemanticKind.SYMBOL:
-        assert context.symbol is not None
-        return context.symbol.canonicalize(value)
+        assert context.symbol_spec is not None
+        return context.symbol_spec.canonicalize(value)
 
     raise ValueError(
         f"unsupported canonicalization kind '{context.kind.value}'"
