@@ -45,6 +45,8 @@ Strategy owns why. Domains own how. Engine predicates decide whether an action c
 
 NORTH_STAR.md: exact target player and non-negotiable behavior.
 
+CAPABILITY_MATRIX.md: complete stock-style Byzantine capability coverage, priority bands, map-conditioned branches, and lifecycle expectations.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
