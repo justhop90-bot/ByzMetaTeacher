@@ -135,9 +135,10 @@ def _compile_ir_parts(
 ):
     reports = []
 
-    # Validate the compiler's explicit community/native engine contract before
-    # compiling any semantic IR. This does not pretend to validate arbitrary
-    # .per behavior; it protects the evidence-backed contract from drift.
+    # Validate the compiler's evidence registry before semantic compilation.
+    # This is a registry-integrity gate, not proof that every native construct
+    # has been semantically mapped; construct-level semantic mapping is a
+    # separate frontier tracked by the Philosopher's Stone architecture.
     default_community_engine_registry().validate()
 
     ownership_report = validate_demand_ownership(ir)
