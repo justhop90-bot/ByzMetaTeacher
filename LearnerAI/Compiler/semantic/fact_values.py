@@ -304,7 +304,7 @@ class IdentifierNormalization:
 
         if (
             self.allow_numeric_strings
-            and re.fullmatch(r"[+-]?\\d+", raw)
+            and re.fullmatch(r"[+-]?\d+", raw)
             and IdentifierForm.NUMERIC_ID in self.accepted_forms
         ):
             numeric = int(raw, 10)
