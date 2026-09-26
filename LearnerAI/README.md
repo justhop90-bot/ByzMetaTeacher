@@ -47,6 +47,8 @@ NORTH_STAR.md: exact target player and non-negotiable behavior.
 
 CAPABILITY_MATRIX.md: complete stock-style Byzantine capability coverage, priority bands, map-conditioned branches, and lifecycle expectations.
 
+MAP_PRIORITY_RULES.md: concrete priority contracts for Arabia, Arena, Black Forest, hybrid, full-water, and transport-critical positions.
+
 SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
 BUILD_ROADMAP.md: implementation order and exit conditions.
