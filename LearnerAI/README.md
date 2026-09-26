@@ -1,36 +1,91 @@
-# LearnerAI Framework
+# LearnerAI
 
-This directory is the framework and workspace for a comprehensive AoE2DE .per learner AI. It is documentation-first by design. No gameplay implementation belongs here until the framework is agreed and the lessons are ready.
+LearnerAI is the design, teaching, semantic-validation, and compilation workspace for a competent 1v1 standard-land Byzantine AoE2DE AI.
 
-The learner teaches community-standard AoE2 AI scripting craft: engine facts and actions, persistent state, scouting and interpretation, strategic intent, resource management, construction and production lifecycles, military adaptation, verification, recovery, and rule-order reasoning.
+It is documentation-first while interfaces and source contracts are being established, but it is not documentation-only. The workspace exists to produce a real player. The compiler exists to make that player explicit, checkable, and maintainable. Runtime behavior remains the final authority.
 
-The learner is not a Basilisk implementation and is not intended to reproduce one community bot. It teaches recurring community patterns while keeping the architecture explicit enough for a beginner to inspect.
+## What we are building
 
-North-star lifecycle:
+The target player must:
 
-OBSERVE -> INTERPRET -> STRATEGIC INTENT -> DEMAND -> CAPABILITY -> FEASIBILITY -> ENGINE ACTION -> WORLD-STATE WITNESS -> RELEASE/CONTINUE -> REASSESS
+- maintain a coherent Dark Age economy;
+- transition through Feudal without wrecking its Castle trajectory;
+- maintain a minimum defensible military;
+- reach Castle at sensible times for the position;
+- expand its economy in Castle Age;
+- build infrastructure required by actual military and economic demands;
+- adapt composition to observed enemy commitments;
+- recover when the preferred plan is interrupted;
+- reach Imperial with a functioning economy;
+- convert Imperial resources into pressure.
 
-Strategy owns why. Domain modules own how. The engine owns whether an operation can execute. World state proves whether it happened. Engineering verifies that the script understood all four.
+The target is 1v1 standard-land Byzantines first. Generalization comes later.
 
-## Workspace status
+## North-star loop
 
-- Framework: established
-- Module boundaries: established
-- Interfaces: established
-- Schemas: established
-- Curriculum: established
-- Gameplay code: intentionally absent
-- Semantic compiler validation: implemented for the current lifecycle slice
-- Native .per validation adapter: implemented with a pinned external aoe2-ai-parser backend
-- Runtime tuning: intentionally absent
+    OBSERVE
+      -> INTERPRET
+      -> STRATEGIC POSTURE
+      -> PERSISTENT DEMAND
+      -> CAPABILITY
+      -> ENGINE FEASIBILITY
+      -> ENGINE ACTION
+      -> WORLD-STATE WITNESS
+      -> RELEASE / INVALIDATE
+      -> REASSESS
 
-See MODULE_MAP.md, OWNERSHIP.md, INTERFACES.md, SCHEMAS.md, LIFECYCLE.md, and LEARNING_PATH.md before adding implementation.
+Strategy owns why. Domains own how. Engine predicates decide whether an action can execute. World state proves whether it actually happened.
 
+## Governing documents
 
-## Validation boundary
+NORTH_STAR.md: exact target player and non-negotiable behavior.
 
-LearnerAI deliberately does not rebuild AoE2's native parser/linter. The compiler validates its own lifecycle semantics, then stages generated .per and invokes the pinned external aoe2-ai-parser through a subprocess boundary.
+SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
 
-Native validation is evidence about the emitted .per artifact. It is not evidence that the AI has behaved correctly in the game. The runtime remains the final engine authority.
+BUILD_ROADMAP.md: implementation order and exit conditions.
 
-See Compiler/backends/README.md for the backend research, pin, protocol, normalization rules, process isolation, failure taxonomy, and fixture matrix.
+Read these before adding a module, compiler feature, goal, timer, claim, or abstraction.
+
+## Relationship to Basilisk
+
+Basilisk remains the current production controller and strongest local implementation reference.
+
+LearnerAI is not a hidden Basilisk rewrite. Learn from Basilisk, compare against it, and reuse verified mechanisms where appropriate. The new learner player must earn its behavior through explicit specifications and runtime evidence.
+
+## Relationship to the native compiler ecosystem
+
+LearnerAI does not replace the AoE2 native parser ecosystem.
+
+The pinned aoe2-ai-parser backend validates emitted .per syntax and native command usage. LearnerAI owns semantic questions the native parser does not know about: demand intent, capability providers, lifecycle meaning, ownership, pending state, witnesses, release, cancellation, and recovery.
+
+## Information boundary
+
+The repository already contains the necessary information:
+
+    docs/reference/AIREF-COMMAND-SOURCE.md
+    docs/reference/inventories/
+    docs/reference/engine/
+    docs/reference/BYZANTINES_manifest.txt
+    docs/project/BotDirection.txt
+    docs/project/Basilisk-Controller-Specification.md
+    Basilisk/Basilisk.per
+    validation/
+    LearnerAI/PER_PRIMITIVE_MAP.md
+
+Use SOURCE_MAP.md to choose the correct authority rather than searching randomly.
+
+## Current status
+
+Semantic lifecycle compiler: implemented for the current slice.
+
+Native .per backend adapter: implemented.
+
+Combined semantic/native diagnostics: implemented.
+
+Module specifications: established.
+
+Full Byzantine player: not implemented yet.
+
+Runtime tuning of the new player: not implemented yet.
+
+The architecture exists to build the player next. It is not the product by itself.
