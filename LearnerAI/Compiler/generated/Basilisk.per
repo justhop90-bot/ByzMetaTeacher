@@ -1,20 +1,29 @@
 ;============================================================
-; GENERATED COMPILER LIFECYCLE FIXTURE
-; This file is compiler output, not the complete Basilisk controller.
-; Source: LearnerAI/Compiler/examples/basics.basilisk
-; Do not edit by hand.
+; BASILISK GENERATED .PER
+; Compiler: Basilisk compiler 0.4
+; Generated from validated semantic IR. Do not edit by hand.
 ;============================================================
 
+; Demand goal constants
 (defconst demand-castle 1000)
 (defconst pending-castle 1001)
 (defconst complete-castle 1002)
-(defconst demand-defensive-spearmen 1003)
-(defconst pending-defensive-spearmen 1004)
-(defconst complete-defensive-spearmen 1005)
-(defconst demand-wheelbarrow 1006)
-(defconst pending-wheelbarrow 1007)
-(defconst complete-wheelbarrow 1008)
+(defconst demand-defensive-spearmen 1001)
+(defconst pending-defensive-spearmen 1002)
+(defconst complete-defensive-spearmen 1003)
+(defconst demand-wheelbarrow 1002)
+(defconst pending-wheelbarrow 1003)
+(defconst complete-wheelbarrow 1004)
+(defconst action-claim-build-pass-singleton 1003)
 
+; Per-pass transient action arbitration
+(defrule
+    (true)
+=>
+    (set-goal action-claim-build-pass-singleton 0)
+)
+
+; Demand initialization
 (defrule
     =>
     (set-goal demand-castle 1)
@@ -29,16 +38,12 @@
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1002 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
-; Demand: castle | ACTIVE -> PENDING
+; Release: castle | COMPLETE -> RELEASED
 (defrule
-    (goal demand-castle 1)
-    (current-age >= castle)
-    (building-available castle)
-    (can-afford-building castle)
-    (can-build castle)
+    (goal demand-castle 1002)
+    (building-type-count castle > 0)
 =>
-    (build castle)
-    (set-goal demand-castle 1001)
+    (set-goal demand-castle 0)
 )
 
 ; Completion witness: castle | PENDING -> COMPLETE
@@ -49,60 +54,88 @@
     (set-goal demand-castle 1002)
 )
 
-; Release: castle | COMPLETE -> RELEASED
+; Demand: castle | ACTIVE -> PENDING
 (defrule
-    (goal demand-castle 1002)
-    (building-type-count castle > 0)
+    (goal demand-castle 1)
+    (not (building-type-count castle > 0))
+    (not (building-type-count castle > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle)
+    (building-available castle)
+    (can-afford-building castle)
+    (can-build castle)
 =>
-    (set-goal demand-castle 0)
+    (build castle)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle 1001)
 )
 
 ; Pending diagnostics: defensive-spearmen
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1001 and cannot reissue from pending goal 1002
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1002 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1003 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Release: defensive-spearmen | COMPLETE -> RELEASED
 (defrule
-    (goal demand-defensive-spearmen 1)
-    (current-age >= feudal)
-    (unit-type-count-total spearman < 2)
-    (can-train spearman)
-=>
-    (train spearman)
-    (set-goal demand-defensive-spearmen 1004)
-)
-
-(defrule
-    (goal demand-defensive-spearmen 1004)
-    (unit-type-count spearman >= 2)
-=>
-    (set-goal demand-defensive-spearmen 1005)
-)
-
-(defrule
-    (goal demand-defensive-spearmen 1005)
+    (goal demand-defensive-spearmen 1003)
     (unit-type-count spearman >= 2)
 =>
     (set-goal demand-defensive-spearmen 0)
 )
 
+; Completion witness: defensive-spearmen | PENDING -> COMPLETE
+(defrule
+    (goal demand-defensive-spearmen 1002)
+    (unit-type-count spearman >= 2)
+=>
+    (set-goal demand-defensive-spearmen 1003)
+)
+
+; Demand: defensive-spearmen | ACTIVE -> PENDING
+(defrule
+    (goal demand-defensive-spearmen 1)
+    (not (unit-type-count spearman >= 2))
+    (not (unit-type-count spearman >= 2))
+    (current-age >= feudal)
+    (unit-type-count-total spearman < 2)
+    (can-train spearman)
+=>
+    (train spearman)
+    (set-goal demand-defensive-spearmen 1002)
+)
+
 ; Pending diagnostics: wheelbarrow
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 1002 and cannot reissue from pending goal 1003
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 1003 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1004 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Release: wheelbarrow | COMPLETE -> RELEASED
+(defrule
+    (goal demand-wheelbarrow 1004)
+    (research-completed ri-wheelbarrow)
+=>
+    (set-goal demand-wheelbarrow 0)
+)
+
+; Completion witness: wheelbarrow | PENDING -> COMPLETE
+(defrule
+    (goal demand-wheelbarrow 1003)
+    (research-completed ri-wheelbarrow)
+=>
+    (set-goal demand-wheelbarrow 1004)
+)
+
+; Demand: wheelbarrow | ACTIVE -> PENDING
 (defrule
     (goal demand-wheelbarrow 1)
+    (not (research-completed ri-wheelbarrow))
+    (not (research-completed ri-wheelbarrow))
     (research-available ri-wheelbarrow)
     (can-afford-research ri-wheelbarrow)
     (can-research ri-wheelbarrow)
 =>
     (research ri-wheelbarrow)
-    (set-goal demand-wheelbarrow 1007)
-)
-
-(defrule
-    (goal demand-wheelbarrow 1007)
-    (research-completed ri-wheelbarrow)
-=>
-    (set-goal demand-wheelbarrow 1008)
-)
-
-(defrule
-    (goal demand-wheelbarrow 1008)
-    (research-completed ri-wheelbarrow)
-=>
-    (set-goal demand-wheelbarrow 0)
+    (set-goal demand-wheelbarrow 1003)
 )
