@@ -10,6 +10,7 @@ from Compiler.primitives.native_hygiene import (
     CitationState,
     ConfidenceBasis,
     ConfidenceLevel,
+    EngineVersionScope,
     EvidenceKind,
     ExcerptKind,
     ExcerptMatchKind,
@@ -293,6 +294,165 @@ class NativeHygieneTests(unittest.TestCase):
                 ),
                 require_promotable=True,
             )
+
+    def test_git_blob_source_hash_is_accepted_and_strict(self):
+        SourceContentHash(
+            "git-sha1",
+            "0" * 40,
+            "GIT_BLOB",
+        )
+        with self.assertRaises(ValueError):
+            SourceContentHash(
+                "git-sha1",
+                "0" * 64,
+                "GIT_BLOB",
+            )
+        with self.assertRaises(ValueError):
+            SourceContentHash(
+                "sha256",
+                "0" * 64,
+                "GIT_BLOB",
+            )
+
+    def test_pinned_citation_requires_explicit_engine_scope(self):
+        with self.assertRaisesRegex(ValueError, "engine-version scope"):
+            CitationRecord(
+                "pinned-no-scope",
+                "https://airef.github.io/",
+                "https://airef.github.io/",
+                LocatorType.COMMAND,
+                "up-find-local",
+                excerpt=SourceExcerpt.capture("text", ExcerptKind.FACT),
+                source_hash=SourceContentHash("git-sha1", "0" * 40, "GIT_BLOB"),
+                retrieval=SourceRetrieval(
+                    retrieved_at_utc="2026-09-26T18:25:41Z",
+                    canonical_url="https://raw.githubusercontent.com/example/revision/file",
+                    final_url="https://raw.githubusercontent.com/example/revision/file",
+                    provider="github",
+                    source_revision="1" * 40,
+                    http_status=200,
+                ),
+                state=CitationState.PINNED,
+            )
+
+    def test_pinned_github_git_blob_requires_source_revision(self):
+        with self.assertRaisesRegex(ValueError, "source revision"):
+            CitationRecord(
+                "pinned-no-revision",
+                "https://airef.github.io/",
+                "https://airef.github.io/",
+                LocatorType.COMMAND,
+                "up-find-local",
+                excerpt=SourceExcerpt.capture("text", ExcerptKind.FACT),
+                source_hash=SourceContentHash("git-sha1", "0" * 40, "GIT_BLOB"),
+                retrieval=SourceRetrieval(
+                    retrieved_at_utc="2026-09-26T18:25:41Z",
+                    canonical_url="https://raw.githubusercontent.com/example/file",
+                    final_url="https://raw.githubusercontent.com/example/file",
+                    provider="github",
+                    http_status=200,
+                ),
+                state=CitationState.PINNED,
+                engine_version_scope=EngineVersionScope(
+                    source_families=(AIRefVersionFamily.UP,),
+                    engine_targets=(AIRefVersionFamily.DE,),
+                    introduced_family=AIRefVersionFamily.UP,
+                ),
+            )
+
+    def test_default_native_citations_are_immutable_and_version_scoped(self):
+        catalog = default_native_citation_catalog()
+        expected_revision = "49f687b5a3fc3e09fc9308372f0bcd4187610071"
+        self.assertTrue(all(record.state is CitationState.PINNED for record in catalog.records))
+        self.assertTrue(all(record.engine_version_scope is not None for record in catalog.records))
+        self.assertTrue(all(record.source_hash is not None for record in catalog.records))
+        self.assertTrue(all(record.retrieval is not None for record in catalog.records))
+        self.assertTrue(
+            all(
+                record.retrieval.source_revision == expected_revision
+                for record in catalog.records
+            )
+        )
+        self.assertEqual(
+            catalog.resolve("airef:building-type-count").source_hash.digest,
+            "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+        )
+        self.assertEqual(
+            catalog.resolve("airef:goal-storage").source_hash.digest,
+            "804dd1b59821f8778133fd8ee4e475304adf8702",
+        )
+        self.assertEqual(
+            catalog.resolve("airef:build-pass-limit").source_hash.digest,
+            "10369e24ac76941d575b82f4ca3bfc1e2eb65382",
+        )
+
+    def test_pinned_native_citation_revalidation_uses_immutable_source_hash(self):
+        record = default_native_citation_catalog().resolve("airef:building-type-count")
+        current_hash = "f" * 40
+        event = CitationRevalidationEvent(
+            event_id="evt-pinned-source-change",
+            evidence_id=record.citation_id,
+            trigger=RevalidationTrigger.HASH_MISMATCH,
+            previous_citation_id=record.citation_id,
+            current_citation_id=record.citation_id,
+            previous_url=record.retrieval.final_url,
+            current_url=record.retrieval.final_url,
+            previous_locator=record.locator,
+            current_locator=record.locator,
+            changes=(CitationChangeKind.SOURCE_HASH_CHANGED,),
+            previous_source_hash=record.source_hash.digest,
+            current_source_hash=current_hash,
+            previous_excerpt_hash=record.excerpt.exact_sha256,
+            current_excerpt_hash=record.excerpt.exact_sha256,
+            excerpt_match=ExcerptMatchKind.EXACT,
+            result=RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED,
+            source_available=True,
+        )
+        self.assertEqual(
+            event.previous_source_hash,
+            "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+        )
+        self.assertEqual(
+            next_citation_state(
+                record.state,
+                event.result,
+            ),
+            CitationState.VERIFIED_SOURCE_CHANGED,
+        )
+        self.assertEqual(
+            promotion_state(record, already_promoted=False),
+            PromotionState.ELIGIBLE,
+        )
+
+    def test_pinned_native_citation_becomes_unavailable_without_losing_hash_identity(self):
+        record = default_native_citation_catalog().resolve("airef:research-completed")
+        event = CitationRevalidationEvent(
+            event_id="evt-pinned-unavailable",
+            evidence_id=record.citation_id,
+            trigger=RevalidationTrigger.SOURCE_FETCH,
+            previous_citation_id=record.citation_id,
+            current_citation_id=None,
+            previous_url=record.retrieval.final_url,
+            current_url=None,
+            previous_locator=record.locator,
+            current_locator=None,
+            changes=(CitationChangeKind.SOURCE_UNAVAILABLE,),
+            previous_source_hash=record.source_hash.digest,
+            current_source_hash=None,
+            previous_excerpt_hash=record.excerpt.exact_sha256,
+            current_excerpt_hash=None,
+            excerpt_match=ExcerptMatchKind.NONE,
+            result=RevalidationResult.SOURCE_UNAVAILABLE,
+            source_available=False,
+        )
+        self.assertEqual(
+            next_citation_state(record.state, event.result),
+            CitationState.UNAVAILABLE,
+        )
+        self.assertEqual(
+            record.source_hash.digest,
+            "e2fc2c9b6a6b23f63d0743524dc94252eacfc2af",
+        )
 
     def test_default_native_citation_catalog_is_complete_and_promotable(self):
         catalog = default_native_citation_catalog()
