@@ -102,7 +102,7 @@
 
 - [x] Capability-provider graph and provider admissibility diagnostics.
 - [x] Project the existing SemanticDemand IR into that graph and make capability validation a compile gate before binding/emission.
-- [ ] Demand ownership and first-writer/first-consumer contracts.
+- [x] Demand ownership and first-writer/first-consumer contracts for the current lifecycle demand layer.
 - [x] Prerequisite dependency graph with SCC cycle/dead-end/unfed diagnostics.
 - [ ] Resource/conflict relations beyond the existing build-pass singleton.
 - [ ] Action-issuance failure versus pending-state distinction.
@@ -126,3 +126,17 @@ The storage reuse tranche is implemented on `main`. Compiler workflow run 123 pa
 - [x] Update compiler documentation to distinguish the validation projection from future source-level capability composition.
 
 The bridge is intentionally validation-facing. It does not replace the demand IR, introduce a generic planner, or make the capability graph a second strategy language.
+
+
+### Demand ownership / first-writer implementation record (2026-09-26)
+
+- [x] Add typed DemandOwnership and StateAccess semantic IR.
+- [x] Derive current-language demand ownership from the demand's semantic identity without introducing owner syntax.
+- [x] Record initialization, release, completion-witness, and action reads/writes with deterministic emitter-aligned source order.
+- [x] Analyze first writer and first consumer per lifecycle state.
+- [x] Diagnose missing ownership, ownership/state mismatch, conflicting writer owners, duplicate writer phase, consumer-before-writer, and unconsumed state.
+- [x] Connect ownership validation to the compile gate before capability projection, binding, and emission.
+- [x] Lock exact diagnostics and multi-demand ordering with focused regression fixtures.
+- [x] Verify the layer through the compiler CI path.
+
+The next semantic boundary remains resource/conflict semantics and explicit action-issuance failure versus pending-state semantics. Broader source-order analysis should extend this access model to non-lifecycle state only when a real Basilisk behavior requires it.
