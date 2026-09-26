@@ -47,20 +47,32 @@ assert.match(
   "[Profile self-test] modern-only RUSH stall lifecycle gate is not profile-scoped",
 );
 
-const legacyProfile = run(["--profile=8596a45"]);
-const legacyOutput = output(legacyProfile);
-assert.ok(
-  !legacyOutput.includes("[Goal namespace] reserved high-range GoalId 775 is missing"),
-  "[Profile self-test] 8596a45 profile must bypass the post-baseline GoalId 775 requirement",
+const goalProfileSource = controllerSource.replace(
+  "(defconst bt-rush-stall-latch-goal 775)",
+  "",
 );
+assert.notEqual(
+  goalProfileSource,
+  controllerSource,
+  "[Profile self-test] GoalId 775 profile fixture could not remove the modern-only requirement",
+);
+const goalProfileFixture = writeFixture(goalProfileSource, "goal-profile");
+try {
+  const legacyProfile = run(["--profile=8596a45", goalProfileFixture.file]);
+  assert.ok(
+    !output(legacyProfile).includes("[Goal namespace] reserved high-range GoalId 775 is missing"),
+    "[Profile self-test] 8596a45 profile must bypass the post-baseline GoalId 775 requirement",
+  );
 
-const modernProfile = run([]);
-const modernOutput = output(modernProfile);
-assert.match(
-  modernOutput,
-  /\[Goal namespace\] reserved high-range GoalId 775 is missing/,
-  "[Profile self-test] default profile must retain the modern GoalId requirement",
-);
+  const modernProfile = run([goalProfileFixture.file]);
+  assert.match(
+    output(modernProfile),
+    /\[Goal namespace\] reserved high-range GoalId 775 is missing/,
+    "[Profile self-test] default profile must enforce the modern GoalId requirement",
+  );
+} finally {
+  fs.rmSync(goalProfileFixture.dir, { recursive: true, force: true });
+}
 
 const parserFixture = writeFixture(
   controllerSource +
