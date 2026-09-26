@@ -456,6 +456,9 @@ class BindingManifest:
         return BindingContext(
             occupied_goal_ids=occupied_goal_ids,
             occupied_goal_intervals=occupied_goal_intervals,
+            occupied_sn_ids=occupied_sn_ids,
+            occupied_timer_ids=occupied_timer_ids,
+            strategic_number_inventory=strategic_number_inventory,
             existing_bindings=tuple(
                 (record.request_id, record.binding) for record in self.records
             ),
@@ -515,31 +518,40 @@ class RuntimeBinder:
         existing_intervals: list[GoalInterval] = []
         existing: dict[StorageRequestId, Binding] = {}
         for request_id, binding in existing_pairs:
-            interval = _binding_interval(binding)
-            if any(interval.overlaps(other) for other in existing_intervals):
-                if isinstance(binding, GoalSlot) and any(
-                    isinstance(existing_binding, GoalSlot)
-                    and existing_binding.id.value == binding.id.value
-                    for _, existing_binding in existing_pairs
+            if isinstance(binding, (GoalSlot, GoalSpan)):
+                interval = _binding_interval(binding)
+                if any(interval.overlaps(other) for other in existing_intervals):
+                    raise ValueError(
+                        f"duplicate existing binding storage overlap at "
+                        f"{interval.start}..{interval.end}"
+                    )
+                if any(interval.overlaps(other) for other in occupied_intervals):
+                    raise ValueError(
+                        f"existing binding {request_id} conflicts with occupied GoalInterval"
+                    )
+                if any(
+                    GoalInterval(value, value).overlaps(interval)
+                    for value in occupied_ids
                 ):
-                    raise ValueError("duplicate existing binding GoalId")
-                raise ValueError(
-                    f"duplicate existing binding storage overlap at "
-                    f"{interval.start}..{interval.end}"
-                )
-            if any(interval.overlaps(other) for other in occupied_intervals):
-                raise ValueError(
-                    f"existing binding {request_id} conflicts with occupied GoalInterval"
-                )
-            if any(
-                GoalInterval(value, value).overlaps(interval)
-                for value in occupied_ids
-            ):
-                raise ValueError(
-                    f"existing binding {request_id} conflicts with occupied GoalId"
-                )
+                    raise ValueError(
+                        f"existing binding {request_id} conflicts with occupied GoalId"
+                    )
+                existing_intervals.append(interval)
+            elif isinstance(binding, StrategicNumberSlot):
+                if binding.id in occupied_sn_ids:
+                    raise ValueError(
+                        f"existing binding {request_id} conflicts with occupied Strategic Number {binding.id}"
+                    )
+                occupied_sn_ids.add(binding.id)
+            elif isinstance(binding, TimerSlot):
+                if binding.id in occupied_timer_ids:
+                    raise ValueError(
+                        f"existing binding {request_id} conflicts with occupied TimerId {binding.id}"
+                    )
+                occupied_timer_ids.add(binding.id)
+            else:
+                raise TypeError(f"unsupported existing binding type {type(binding).__name__}")
             existing[request_id] = binding
-            existing_intervals.append(interval)
 
         role_order = {
             GoalRole.LIFECYCLE_STATE: 0,
