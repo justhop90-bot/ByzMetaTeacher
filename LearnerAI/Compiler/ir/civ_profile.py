@@ -238,7 +238,7 @@ class ByzantineProfile:
             name="Byzantines",
             tech_tree_id=cls.TECH_TREE_ID,
             patch=patch,
-            base_data=_byzantine_game_data(patch, manifest, community),
+            base_data=_byzantine_game_data(patch, manifest, community, controller),
             availability=(),
             bonuses=(
                 CivBonus(
@@ -594,6 +594,7 @@ def _byzantine_game_data(
     patch: PatchId,
     evidence: EvidenceRef,
     community: EvidenceRef,
+    controller: EvidenceRef,
 ) -> GameData:
     buildings = (
         BuildingDef(
