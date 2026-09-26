@@ -23,6 +23,9 @@ from .native_hygiene import (
     NativeStorageKind,
     NativeStorageUse,
     NativeWitness,
+    default_native_goal_parameter_ranges,
+    default_native_goal_span_contracts,
+    default_native_goal_storage_contracts,
     NativeWitnessKind,
     PassConstraintScope,
     PassExecutionConstraint,
@@ -558,58 +561,9 @@ def _engine_provenance(citation_id: str) -> tuple[AIRefProvenance, ...]:
 
 def default_native_contract_catalog() -> NativeContractCatalog:
     return NativeContractCatalog(
-        goal_storage_contracts=(
-            NativeGoalStorageContract(
-                identity="ordinary-persistent-goal-storage",
-                minimum_id=1,
-                maximum_id=512,
-                provenance=_engine_provenance("airef:goal-storage"),
-            ),
-        ),
-        goal_span_contracts=(
-            NativeGoalSpanContract(
-                identity="point-goal-span",
-                storage_kind=NativeStorageKind.POINT_GOAL_SPAN,
-                width=2,
-                minimum_start=41,
-                maximum_start=15998,
-                provenance=_engine_provenance("airef:extended-goal-span-point"),
-            ),
-            NativeGoalSpanContract(
-                identity="extended-4-goal-span",
-                storage_kind=NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
-                width=4,
-                minimum_start=41,
-                maximum_start=15996,
-                provenance=_engine_provenance("airef:extended-goal-span-4"),
-            ),
-            NativeGoalSpanContract(
-                identity="cost-data-4-goal-span",
-                storage_kind=NativeStorageKind.COST_DATA_GOAL_SPAN,
-                width=4,
-                minimum_start=41,
-                maximum_start=15996,
-                provenance=_engine_provenance("airef:extended-goal-span-4"),
-            ),
-            NativeGoalSpanContract(
-                identity="guard-state-4-goal-span",
-                storage_kind=NativeStorageKind.GUARD_STATE_GOAL_SPAN,
-                width=4,
-                minimum_start=41,
-                maximum_start=15996,
-                provenance=_engine_provenance("airef:extended-goal-span-4"),
-            ),
-        ),
-        parameter_ranges=(
-            NativeGoalParameterRangeContract(
-                identity="goal-id-parameter-range",
-                parameter_type="GoalId",
-                minimum=1,
-                maximum=16000,
-                commands=("goal", "set-goal"),
-                provenance=_engine_provenance("airef:goal-id-parameter-range"),
-            ),
-        ),
+        goal_storage_contracts=default_native_goal_storage_contracts(),
+        goal_span_contracts=default_native_goal_span_contracts(),
+        parameter_ranges=default_native_goal_parameter_ranges(),
         witnesses=(
             NativeWitness(
                 identity="build-completion-witness",
