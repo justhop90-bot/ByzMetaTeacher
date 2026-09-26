@@ -178,6 +178,81 @@ class CombinedReportTests(unittest.TestCase):
             self.assertEqual(backend.calls, 0)
             self.assertFalse(artifact.exists())
 
+    def test_validator_diagnostics_have_source_file_and_deterministic_locations(self):
+        from Compiler.parser import parse
+        from Compiler.semantic import analyze
+        from Compiler.primitives import default_de_registry
+
+        source = """demand first {
+    require (can-build castle)
+    action (build castle)
+    witness (game-time >= 60)
+    release (building-type-count castle > 0)
+}
+
+demand second {
+    require (can-build monastery)
+    action (build monastery)
+    witness (game-time >= 120)
+    release (building-type-count monastery > 0)
+}
+"""
+        nodes = parse(source)
+        self.assertEqual(nodes[0].location.line, 1)
+        self.assertEqual(nodes[0].location.column, 1)
+        self.assertEqual(nodes[0].witness_location.line, 4)
+        self.assertEqual(nodes[0].witness_location.column, 13)
+
+        ir = analyze(
+            nodes,
+            default_de_registry(),
+            source_unit="fixtures/location-test.basilisk",
+        )
+        self.assertEqual(ir[0].location.line, 1)
+        self.assertEqual(ir[0].location.column, 1)
+        self.assertEqual(ir[0].completion_witness.location.line, 4)
+        self.assertEqual(ir[0].completion_witness.location.column, 13)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            artifact = Path(tmp_dir) / "Basilisk.per"
+            backend = FakeBackend(
+                native_result(artifact, ValidationStatus.VALIDATED)
+            )
+            report = compile_source_with_report(
+                source,
+                native_backend=backend,
+                output=artifact,
+                source_unit="fixtures/location-test.basilisk",
+            )
+
+            witness = [
+                item
+                for item in report.semantic_diagnostics
+                if item.code == "WIT-002"
+            ]
+            self.assertEqual(
+                [(item.path, item.line, item.column) for item in witness],
+                [
+                    (Path("fixtures/location-test.basilisk"), 4, 13),
+                    (Path("fixtures/location-test.basilisk"), 12, 13),
+                ],
+            )
+
+            ordered = [
+                (item.line, item.column, item.code)
+                for item in report.semantic_diagnostics
+                if item.code in {"WIT-002", "WIT-003"}
+            ]
+            self.assertEqual(
+                ordered,
+                [
+                    (4, 13, "WIT-002"),
+                    (4, 13, "WIT-003"),
+                    (12, 13, "WIT-002"),
+                    (12, 13, "WIT-003"),
+                ],
+            )
+
     def test_backend_failure_has_infrastructure_exit_state(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
