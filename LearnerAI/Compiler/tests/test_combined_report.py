@@ -133,6 +133,35 @@ class CombinedReportTests(unittest.TestCase):
             self.assertEqual(report.diagnostics, ())
             self.assertEqual(exit_code_for_report(report), 0)
 
+    def test_cli_semantic_rejection_uses_validation_exit_state(self):
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            source = tmp / "bad.basilisk"
+            output = tmp / "Basilisk.per"
+            source.write_text(
+                """demand bad {
+    require (can-build castle)
+    action (can-build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
+""",
+                encoding="utf-8",
+            )
+            run = subprocess.run(
+                [sys.executable, str(ROOT / "Compiler" / "compiler.py"), str(source), str(output)],
+                cwd=ROOT.parent,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(run.returncode, 1)
+            self.assertFalse(output.exists())
+            self.assertIn("SEMANTIC_REJECTED", run.stdout)
+            self.assertIn("LearnerAI", run.stderr)
+
     def test_report_json_is_deterministic(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
