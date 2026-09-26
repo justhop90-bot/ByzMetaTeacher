@@ -1,12 +1,12 @@
 import unittest
 from dataclasses import replace
 
-from LearnerAI.Compiler.compiler import compile_strategy_runtime_profile
-from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+from LearnerAI.Compiler.clients.basilisk import compile_strategy_runtime_profile
+from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import BuildingId, CivId
 from LearnerAI.Compiler.semantic.community_engine import CapabilityTransition
 
-from LearnerAI.Compiler.ir.strategy import (
+from LearnerAI.Compiler.clients.basilisk import (
     CapabilityIntent,
     CapabilityIntentKind,
     PostureTransition,
@@ -19,7 +19,7 @@ from LearnerAI.Compiler.ir.strategy import (
     StrategyProfile,
     build_byzantine_castle_strategy,
 )
-from LearnerAI.Compiler.ir.strategy_runtime import (
+from LearnerAI.Compiler.clients.basilisk import (
     EvidenceTruth,
     OpportunityCostRuntimeState,
     RuntimeObservationSnapshot,
