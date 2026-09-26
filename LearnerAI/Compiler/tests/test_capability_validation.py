@@ -129,6 +129,150 @@ def witness_for(capability, *, name="castle-built", kind=WitnessKind.COUNT_STATE
     )
 
 
+def diagnostic_signature(diagnostic):
+    node = None
+    if diagnostic.node is not None:
+        node = (
+            type(diagnostic.node).__name__,
+            diagnostic.node.source_unit,
+            diagnostic.node.local_name,
+        )
+    related = tuple(
+        (
+            type(node).__name__,
+            node.source_unit,
+            node.local_name,
+        )
+        for node in diagnostic.related
+    )
+    return (
+        diagnostic.code.value,
+        diagnostic.severity.value,
+        diagnostic.status.value if diagnostic.status is not None else None,
+        node,
+        related,
+        diagnostic.message,
+    )
+
+
+def rooted_scc_fixture():
+    a = CapabilityId("test", "a")
+    b = CapabilityId("test", "b")
+    seed_witness = witness_for(a, name="a-seed")
+    b_witness = witness_for(b, name="b-witness")
+
+    builder = CapabilityGraphBuilder()
+    builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
+    builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
+    builder.add_witness(seed_witness)
+    builder.add_witness(b_witness)
+    builder.add_provider(
+        build_provider(
+            a,
+            name="a-seed",
+            prerequisites=(),
+            witness=seed_witness,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_provider(
+        build_provider(
+            a,
+            name="a-from-b",
+            prerequisites=(b,),
+            witness=seed_witness,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_provider(
+        build_provider(
+            b,
+            name="b-from-a",
+            prerequisites=(a,),
+            witness=b_witness,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_demand(demand("a-demand", a))
+    return builder
+
+
+def unrooted_scc_fixture():
+    a = CapabilityId("test", "a")
+    b = CapabilityId("test", "b")
+    wa = witness_for(a, name="a-witness")
+    wb = witness_for(b, name="b-witness")
+
+    builder = CapabilityGraphBuilder()
+    builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
+    builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
+    builder.add_witness(wa)
+    builder.add_witness(wb)
+    builder.add_provider(
+        build_provider(
+            a,
+            name="build-a",
+            prerequisites=(b,),
+            witness=wa,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_provider(
+        build_provider(
+            b,
+            name="build-b",
+            prerequisites=(a,),
+            witness=wb,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_demand(demand("a-demand", a))
+    return builder
+
+
+def invalid_provider_scc_fixture():
+    a = CapabilityId("test", "a")
+    b = CapabilityId("test", "b")
+    wa = witness_for(a, name="a-witness")
+    wb = witness_for(b, name="b-witness")
+
+    builder = CapabilityGraphBuilder()
+    builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
+    builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
+    builder.add_witness(wa)
+    builder.add_witness(wb)
+    builder.add_provider(
+        build_provider(
+            a,
+            name="invalid-a-root",
+            prerequisites=(),
+            witness=wa,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+            action_primitive="building-type-count",
+        )
+    )
+    builder.add_provider(
+        build_provider(
+            a,
+            name="build-a-from-b",
+            prerequisites=(b,),
+            witness=wa,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_provider(
+        build_provider(
+            b,
+            name="build-b-from-a",
+            prerequisites=(a,),
+            witness=wb,
+            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
+        )
+    )
+    builder.add_demand(demand("a-demand", a))
+    return builder
+
+
 class CapabilityValidationTests(unittest.TestCase):
     def _validate(self, builder):
         return validate_capability_graph(builder.build(), default_de_registry())
@@ -358,129 +502,99 @@ class CapabilityValidationTests(unittest.TestCase):
             {item.code for item in report.diagnostics},
         )
 
-    def test_rooted_scc_is_not_reported_as_cycle(self):
-        a = CapabilityId("test", "a")
-        b = CapabilityId("test", "b")
-        seed_witness = witness_for(a, name="a-seed")
-        b_witness = witness_for(b, name="b-witness")
+    def test_rooted_scc_fixture_has_exactly_no_diagnostics(self):
+        report = self._validate(rooted_scc_fixture())
 
-        builder = CapabilityGraphBuilder()
-        builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
-        builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
-        builder.add_witness(seed_witness)
-        builder.add_witness(b_witness)
-
-        builder.add_provider(
-            build_provider(
-                a,
-                name="a-seed",
-                prerequisites=(),
-                witness=seed_witness,
-                admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-            )
-        )
-        builder.add_provider(
-            build_provider(
-                a,
-                name="a-from-b",
-                prerequisites=(b,),
-                witness=seed_witness,
-                admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-            )
-        )
-        builder.add_provider(
-            build_provider(
-                b,
-                name="b-from-a",
-                prerequisites=(a,),
-                witness=b_witness,
-                admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-            )
-        )
-        builder.add_demand(demand("a-demand", a))
-
-        report = self._validate(builder)
-        self.assertNotIn(
-            CapabilityDiagnosticCode.CYCLE,
-            {d.code for d in report.diagnostics},
+        self.assertTrue(report.valid)
+        self.assertEqual(
+            tuple(diagnostic_signature(item) for item in report.diagnostics),
+            (),
         )
 
-    def test_invalid_provider_does_not_root_dependency_cycle(self):
-        a = CapabilityId("test", "a")
-        b = CapabilityId("test", "b")
-        wa = witness_for(a, name="a-witness")
-        wb = witness_for(b, name="b-witness")
+    def test_unrooted_scc_fixture_has_exact_deterministic_diagnostics(self):
+        first = self._validate(unrooted_scc_fixture())
+        second = self._validate(unrooted_scc_fixture())
 
-        builder = CapabilityGraphBuilder()
-        builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
-        builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
-        builder.add_witness(wa)
-        builder.add_witness(wb)
-
-        builder.add_provider(build_provider(
-            a,
-            name="invalid-a-root",
-            prerequisites=(),
-            witness=wa,
-            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-            action_primitive="building-type-count",
-        ))
-        builder.add_provider(build_provider(
-            a,
-            name="build-a-from-b",
-            prerequisites=(b,),
-            witness=wa,
-            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-        ))
-        builder.add_provider(build_provider(
-            b,
-            name="build-b-from-a",
-            prerequisites=(a,),
-            witness=wb,
-            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-        ))
-        builder.add_demand(demand("a-demand", a))
-
-        report = self._validate(builder)
-        self.assertIn(
-            CapabilityDiagnosticCode.CYCLE,
-            {item.code for item in report.diagnostics},
+        expected = (
+            (
+                "CAP-021",
+                "error",
+                "DEAD-END",
+                ("DemandId", "test", "a-demand"),
+                (
+                    ("ProviderId", "test", "build-a"),
+                ),
+                "demand 'a-demand' has no satisfiable provider path to capability 'a'",
+            ),
+            (
+                "CAP-022",
+                "error",
+                "DEAD-END",
+                ("CapabilityId", "test", "a"),
+                (
+                    ("CapabilityId", "test", "a"),
+                    ("CapabilityId", "test", "b"),
+                ),
+                "unrooted capability dependency cycle: test:a -> test:b",
+            ),
         )
 
-    def test_unrooted_two_node_scc_reports_cycle_and_dead_end(self):
-        a = CapabilityId("test", "a")
-        b = CapabilityId("test", "b")
-        wa = witness_for(a, name="a-witness")
-        wb = witness_for(b, name="b-witness")
+        self.assertEqual(
+            tuple(diagnostic_signature(item) for item in first.diagnostics),
+            expected,
+        )
+        self.assertEqual(
+            tuple(diagnostic_signature(item) for item in second.diagnostics),
+            expected,
+        )
+        self.assertEqual(first.diagnostics, second.diagnostics)
 
-        builder = CapabilityGraphBuilder()
-        builder.add_capability(Capability(a, CapabilityKind.CONSTRUCTION))
-        builder.add_capability(Capability(b, CapabilityKind.CONSTRUCTION))
-        builder.add_witness(wa)
-        builder.add_witness(wb)
-        builder.add_provider(build_provider(
-            a,
-            name="build-a",
-            prerequisites=(b,),
-            witness=wa,
-            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-        ))
-        builder.add_provider(build_provider(
-            b,
-            name="build-b",
-            prerequisites=(a,),
-            witness=wb,
-            admissibility=atom(PredicateKind.FEASIBILITY, "can-build", "castle"),
-        ))
-        builder.add_demand(demand("a-demand", a))
+    def test_invalid_provider_scc_fixture_has_exact_deterministic_diagnostics(self):
+        first = self._validate(invalid_provider_scc_fixture())
+        second = self._validate(invalid_provider_scc_fixture())
 
-        report = self._validate(builder)
-        codes = {item.code for item in report.diagnostics}
-        self.assertIn(CapabilityDiagnosticCode.CYCLE, codes)
-        self.assertIn(CapabilityDiagnosticCode.DEAD_END, codes)
+        expected = (
+            (
+                "CAP-007",
+                "error",
+                "DEAD-END",
+                ("ProviderId", "test", "invalid-a-root"),
+                (),
+                "provider 'invalid-a-root' action 'building-type-count' is not an action primitive",
+            ),
+            (
+                "CAP-021",
+                "error",
+                "DEAD-END",
+                ("DemandId", "test", "a-demand"),
+                (
+                    ("ProviderId", "test", "build-a-from-b"),
+                    ("ProviderId", "test", "invalid-a-root"),
+                ),
+                "demand 'a-demand' has no satisfiable provider path to capability 'a'",
+            ),
+            (
+                "CAP-022",
+                "error",
+                "DEAD-END",
+                ("CapabilityId", "test", "a"),
+                (
+                    ("CapabilityId", "test", "a"),
+                    ("CapabilityId", "test", "b"),
+                ),
+                "unrooted capability dependency cycle: test:a -> test:b",
+            ),
+        )
 
-        cycle = next(item for item in report.diagnostics if item.code is CapabilityDiagnosticCode.CYCLE)
-        self.assertEqual(tuple(sorted(node.local_name for node in cycle.related)), ("a", "b"))
+        self.assertEqual(
+            tuple(diagnostic_signature(item) for item in first.diagnostics),
+            expected,
+        )
+        self.assertEqual(
+            tuple(diagnostic_signature(item) for item in second.diagnostics),
+            expected,
+        )
+        self.assertEqual(first.diagnostics, second.diagnostics)
 
     def test_providerless_demand_is_unfed(self):
         capability = CapabilityId("test", "castle-exists")
