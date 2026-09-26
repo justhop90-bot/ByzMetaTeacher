@@ -207,6 +207,29 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaisesRegex(CompileError, "PENDING-RELEASE-PREMATURE"):
             compile_source(source)
 
+    def test_pending_negative_witness_cannot_fire_before_action(self):
+        output = compile_source(EXAMPLES)
+        action_end = output.find("; Completion witness: castle")
+        witness_start = action_end
+        witness_end = output.find("; Release: castle")
+        witness_block = output[witness_start:witness_end]
+        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertNotIn("(goal demand-castle 1)", witness_block)
+        self.assertNotIn("(set-goal demand-castle 1002)", output[:action_end])
+
+    def test_pending_negative_completion_requires_pending_transition(self):
+        output = compile_source(EXAMPLES)
+        action_start = output.find("; Demand: castle | ACTIVE -> PENDING")
+        witness_start = output.find("; Completion witness: castle")
+        action_block = output[action_start:witness_start]
+        witness_end = output.find("; Release: castle")
+        witness_block = output[witness_start:witness_end]
+        self.assertIn("(set-goal demand-castle 1001)", action_block)
+        self.assertIn("(goal demand-castle 1001)", witness_block)
+        self.assertIn("(set-goal demand-castle 1002)", witness_block)
+        self.assertNotIn("(goal demand-castle 1)", witness_block)
+        self.assertNotIn("(set-goal demand-castle 1002)", action_block)
+
     def test_release_requires_completed_state(self):
         output = compile_source(EXAMPLES)
         castle_release = output[output.find("; Release: castle"):output.find("; Demand: defensive-spearmen")]
