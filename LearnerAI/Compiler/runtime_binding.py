@@ -190,7 +190,7 @@ class BindingManifest:
                 for record in self.records
             ],
         }
-        return json.dumps(payload, indent=2, sort_keys=True) + "\\n"
+        return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
     @classmethod
     def from_json(cls, text: str) -> "BindingManifest":
