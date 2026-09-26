@@ -33,8 +33,7 @@ class SourceGraphTests(unittest.TestCase):
 
     def test_load_position_splices_child(self):
         graph = self._resolve("load-position/root.perdsl")
-        effective = "
-".join(item.text for item in graph.slices)
+        effective = "\n".join(item.text for item in graph.slices)
         self.assertLess(effective.index("demand before"), effective.index("demand child"))
         self.assertLess(effective.index("demand child"), effective.index("demand after"))
 
@@ -111,6 +110,13 @@ class SourceGraphTests(unittest.TestCase):
     def test_unknown_conditional_symbol_fails_closed(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-006"):
             self._resolve("conditional-defined/root.perdsl")
+
+    def test_malformed_conditional_directive_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "root.perdsl"
+            entry.write_text("#load-if-defined\n", encoding="utf-8")
+            with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-012"):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
 
     def test_random_load_is_rejected_without_selection_policy(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-007"):

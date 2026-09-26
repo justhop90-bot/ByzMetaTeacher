@@ -504,13 +504,10 @@ class SourceGraphResolver:
     ) -> None:
         if not text.strip():
             return
-        start_line = physical_text.count("
-", 0, start_offset) + 1
-        last_newline = physical_text.rfind("
-", 0, start_offset)
+        start_line = physical_text.count("\n", 0, start_offset) + 1
+        last_newline = physical_text.rfind("\n", 0, start_offset)
         start_column = start_offset - last_newline
-        end_line = start_line + text.count("
-")
+        end_line = start_line + text.count("\n")
         self._slices.append(
             EffectiveSourceSlice(
                 ordinal=self._slice_counter,
@@ -667,6 +664,34 @@ def _mask_conditionals(
             )
             continue
 
+        if (
+            stripped.startswith("#load-if-defined")
+            or stripped.startswith("#load-if-not-defined")
+        ):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed preprocessor conditional directive",
+                path=path,
+                line=index,
+                column=1,
+            )
+        if stripped.startswith("#else"):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed #else directive",
+                path=path,
+                line=index,
+                column=1,
+            )
+        if stripped.startswith("#end-if"):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed #end-if directive",
+                path=path,
+                line=index,
+                column=1,
+            )
+
         active_flags.append(current_active)
         contexts.append(context)
 
@@ -687,9 +712,7 @@ def _mask_conditionals(
         else:
             masked.append(
                 "".join(
-                    "
-" if char == "
-" else "" if char == "" else " "
+                    "\n" if char == "\n" else "\r" if char == "\r" else " "
                     for char in raw_line
                 )
             )
@@ -704,10 +727,8 @@ def _scan_load_occurrences(
     occurrences: list[_LoadOccurrence] = []
 
     for match in re.finditer(r"(?m)^[ 	]*#load(?:-random)?(?:[ 	].*)?$", source):
-        line = source.count("
-", 0, match.start()) + 1
-        column = match.start() - source.rfind("
-", 0, match.start())
+        line = source.count("\n", 0, match.start()) + 1
+        column = match.start() - source.rfind("\n", 0, match.start())
         stripped = match.group(0).strip()
         if stripped.startswith("#load-random"):
             body = stripped[len("#load-random"):].strip()
@@ -763,8 +784,7 @@ def _scan_load_occurrences(
     while index < length:
         char = source[index]
         if in_comment:
-            if char == "
-":
+            if char == "\n":
                 in_comment = False
             index += 1
             continue
@@ -793,10 +813,8 @@ def _scan_load_occurrences(
                     form = source[index:close]
                     parsed = _parse_load_form(form)
                 except ValueError as exc:
-                    line = source.count("
-", 0, index) + 1
-                    column = index - source.rfind("
-", 0, index)
+                    line = source.count("\n", 0, index) + 1
+                    column = index - source.rfind("\n", 0, index)
                     raise SourceGraphError(
                         "SOURCE-GRAPH-009" if "malformed" in str(exc) else "SOURCE-GRAPH-010",
                         str(exc),
@@ -806,10 +824,8 @@ def _scan_load_occurrences(
                     ) from exc
                 if parsed is not None:
                     head, target = parsed
-                    line = source.count("
-", 0, index) + 1
-                    column = index - source.rfind("
-", 0, index)
+                    line = source.count("\n", 0, index) + 1
+                    column = index - source.rfind("\n", 0, index)
                     occurrences.append(
                         _LoadOccurrence(
                             index,
