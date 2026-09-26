@@ -21,6 +21,12 @@ from Compiler.backends.models import (
 from Compiler.compiler import compile_source_with_report, compile_to_file
 from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec, load_default_native_schema
 from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry, default_de_registry
+from Compiler.primitives.engine_semantics import (
+    EngineSemanticMapping,
+    EngineSemanticMappingRegistry,
+    EngineSemanticMappingStatus,
+    default_engine_semantic_mapping_registry,
+)
 from Compiler.diagnostics import ReportStatus
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.basilisk").read_text(encoding="utf-8")
@@ -566,7 +572,28 @@ print(json.dumps(payload, sort_keys=True))
             source_blob_sha=f"native-support-{name}",
             command_count=len(base_native_commands) + 1,
         )
-        return PrimitiveRegistry(primitives, native_registry)
+        semantic_registry = default_engine_semantic_mapping_registry()
+        if name == "executable-safe":
+            semantic_registry = EngineSemanticMappingRegistry(
+                semantic_registry.mappings
+                + (
+                    EngineSemanticMapping(
+                        identity="fixture.execution.safe",
+                        native_command="fixture-command",
+                        native_kind="Fact",
+                        status=EngineSemanticMappingStatus.CONTRACTED,
+                        evidence_class="ENGINE FACT",
+                        evidence_sources=("test://compiler-native-integration",),
+                        state_effects="test fixture has no persistent state mutation",
+                        lifetime="test fixture semantic mapping exists for this test only",
+                        ordering="test fixture fact is read during rule evaluation",
+                        admission="test fixture native fact is admissible",
+                        completion="test fixture fact is the executable promotion boundary",
+                        recovery="test fixture has no recovery semantics",
+                    ),
+                )
+            )
+        return PrimitiveRegistry(primitives, native_registry, semantic_registry)
 
 
 if __name__ == "__main__":
