@@ -1,8 +1,8 @@
 import unittest
 from dataclasses import replace
 
-from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
-from LearnerAI.Compiler.ir.strategy import (
+from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.clients.basilisk import (
     ExecutionDemandTemplate,
     StrategyPosture,
     StrategicEvidenceKind,
