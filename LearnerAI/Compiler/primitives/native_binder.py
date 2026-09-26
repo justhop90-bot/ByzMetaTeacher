@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable
 
+from .engine_semantics import EngineSemanticMappingStatus
+
 
 class NativeSupportState(str, Enum):
     NATIVE_KNOWN = "native-known"
@@ -40,7 +42,7 @@ class NativeSemanticBinding:
     adapter_role: str
     adapter_name: str
     semantic_mapping_id: str
-    mapping_status: object
+    mapping_status: EngineSemanticMappingStatus
     evidence_class: str
     evidence_sources: tuple[str, ...]
     native_witness_ids: tuple[str, ...]
