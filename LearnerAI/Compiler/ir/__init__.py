@@ -62,6 +62,7 @@ from .game_data import (
     CoverageStatus,
     EngineUnitClass,
     FactualCoverage,
+    GameDataScope,
     BuildingId,
     CivId,
     EntitySelector,
