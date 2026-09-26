@@ -14,6 +14,7 @@ class Primitive:
     min_args: int
     max_args: int
     version: str = "DE"
+    completion_witness: bool = True
 
 class PrimitiveRegistry:
     def __init__(self, primitives: tuple[Primitive, ...]):
@@ -37,15 +38,19 @@ def default_de_registry() -> PrimitiveRegistry:
         Primitive("building-available", "FACT", "ADMISSIBILITY", 1, 1),
         Primitive("can-afford-building", "FACT", "RESOURCE_ARBITRATION", 1, 1),
         Primitive("can-build", "FACT", "FEASIBILITY", 1, 1),
+        Primitive("can-build-with-escrow", "FACT", "FEASIBILITY", 1, 1),
         Primitive("building-type-count", "FACT", "OBSERVATION", 3, 3),
-        Primitive("building-type-count-total", "FACT", "OBSERVATION", 3, 3),
+        Primitive("building-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("unit-type-count", "FACT", "OBSERVATION", 3, 3),
-        Primitive("unit-type-count-total", "FACT", "OBSERVATION", 3, 3),
+        Primitive("unit-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("can-train", "FACT", "FEASIBILITY", 1, 1),
+        Primitive("can-train-with-escrow", "FACT", "FEASIBILITY", 1, 1),
+        Primitive("up-pending-objects", "FACT", "OBSERVATION", 4, 4, completion_witness=False),
         Primitive("research-available", "FACT", "ADMISSIBILITY", 1, 1),
         Primitive("can-afford-research", "FACT", "RESOURCE_ARBITRATION", 1, 1),
         Primitive("can-research", "FACT", "FEASIBILITY", 1, 1),
-        Primitive("research-completed", "FACT", "WITNESS", 1, 1),
+        Primitive("can-research-with-escrow", "FACT", "FEASIBILITY", 1, 1),
+        Primitive("research-completed", "FACT", "WITNESS", 1, 1, completion_witness=True),
     ]
     actions = [
         Primitive("build", "ACTION", "ACTION", 1, 1),

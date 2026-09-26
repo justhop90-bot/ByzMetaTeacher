@@ -9,7 +9,9 @@ import sys
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    compiler_dir = Path(__file__).resolve().parent
+    sys.path[:] = [entry for entry in sys.path if Path(entry or ".").resolve() != compiler_dir]
+    sys.path.insert(0, str(compiler_dir.parent))
     from Compiler.errors import CompileError
     from Compiler.parser import parse
     from Compiler.primitives import default_de_registry

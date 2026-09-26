@@ -59,6 +59,16 @@ primitives/registry.py is the authoritative profile for the commands understood 
 
 The registry is intentionally incomplete. That is a feature at this stage: silently passing unknown commands would make the compiler appear smarter than it is.
 
+## Engine-state semantics
+
+The primitive profile now distinguishes capability, pending, queued/under-construction, and completed evidence.
+
+up-pending-objects is an observation of pending work. building-type-count-total and unit-type-count-total include existing plus queued/under-construction objects. Those facts are valid execution inputs but are not completion witnesses.
+
+Completion witnesses must use evidence that proves the requested world state. The compiler therefore rejects pending and total-count primitives as completion witnesses instead of allowing a demand to declare its own action still being queued as success.
+
+The capability profile also includes can-build-with-escrow, can-train-with-escrow, and can-research-with-escrow. These remain feasibility predicates: escrow-aware feasibility authorizes an action but does not prove that the action succeeded.
+
 ## Expression validation
 
 The semantic analyzer parses parenthesized native .per expressions enough to identify their root primitive, validate primitive argument counts, and validate logical operator arity.

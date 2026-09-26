@@ -1,4 +1,6 @@
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -236,6 +238,64 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(goal demand-castle 1002)", castle_release)
         self.assertIn("(set-goal demand-castle 0)", castle_release)
         self.assertNotIn("(goal demand-castle 1001)", castle_release)
+
+    def test_pending_engine_fact_is_available_as_requirement(self):
+        source = """
+        demand castle {
+            require (up-pending-objects c: castle < 1)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        compile_source(source)
+
+    def test_pending_and_total_state_cannot_be_completion_witness(self):
+        for witness in (
+            "(up-pending-objects c: castle >= 1)",
+            "(building-type-count-total castle >= 1)",
+            "(unit-type-count-total spearman >= 1)",
+        ):
+            source = f"""
+            demand bad {{
+                require (can-build castle)
+                action (build castle)
+                witness {witness}
+                release (building-type-count castle > 0)
+            }}
+            """
+            with self.assertRaisesRegex(CompileError, "completion witness"):
+                compile_source(source)
+
+    def test_escrow_capability_primitives_are_feasibility_facts(self):
+        for capability, subject, action, witness in (
+            ("can-build-with-escrow", "castle", "build castle", "building-type-count castle > 0"),
+            ("can-train-with-escrow", "spearman-line", "train spearman-line", "unit-type-count spearman-line >= 1"),
+            ("can-research-with-escrow", "ri-wheelbarrow", "research ri-wheelbarrow", "research-completed ri-wheelbarrow"),
+        ):
+            source = f"""
+            demand capability {{
+                require ({capability} {subject})
+                action ({action})
+                witness ({witness})
+                release ({witness})
+            }}
+            """
+            compile_source(source)
+
+    def test_cli_entrypoint_compiles_from_repository_root(self):
+        repo = Path(__file__).resolve().parents[3]
+        source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "Basilisk.per"
+            run = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve().parents[1] / "compiler.py"), str(source), str(output)],
+                cwd=repo, capture_output=True, text=True,
+            )
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertTrue(output.exists())
+            self.assertIn("BASILISK GENERATED .PER", output.read_text(encoding="utf-8"))
 
 if __name__ == "__main__":
     unittest.main()

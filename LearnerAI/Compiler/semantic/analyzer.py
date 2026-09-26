@@ -93,6 +93,18 @@ def _context_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     return roles
 
 
+def _validate_completion_witness(expr: Expression, registry: PrimitiveRegistry):
+    if expr.head in _LOGICAL_ARITY:
+        for child in expr.args:
+            _validate_completion_witness(child, registry)
+        return
+    primitive = registry.require(expr.head)
+    if not primitive.completion_witness:
+        raise CompileError(
+            f"completion witness '{expr.head}' does not prove completed world state"
+        )
+
+
 def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
     roles = _context_roles(expr, registry)
     if not roles.issubset(allowed):
@@ -160,6 +172,7 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
+        _validate_completion_witness(witness, registry)
         release = parse_expression(demand.release)
         if release.head == action.head:
             raise CompileError(
