@@ -9,7 +9,6 @@ from typing import Mapping
 from ..ast import Expression, SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..primitives import PrimitiveRegistry, default_de_registry
-from ..primitives.native_hygiene import NativeFactRegistry
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
 from .guard_satisfiability import analyze_guard
 from .rule_execution import EffectiveRule, RuleExecutionReport
