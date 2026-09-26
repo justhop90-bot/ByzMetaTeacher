@@ -8,6 +8,7 @@ from .native_hygiene import (
     AIRefProvenance,
     AIRefVersion,
     AIRefVersionFamily,
+    CitationCatalogAudit,
     CitationChangeKind,
     CitationRecord,
     CitationRecordCatalog,
