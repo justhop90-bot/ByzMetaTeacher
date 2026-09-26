@@ -661,8 +661,9 @@ def build_land_castle_strategy(
     castle_reason = (
         StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
-            "(current-age >= feudal-age)",
+            None,
             "Castle-capability trajectory remains strategically intended",
+            observation_ref="current-feudal-age",
         ),
     )
 
@@ -683,15 +684,17 @@ def build_land_castle_strategy(
             reason=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age == dark-age)",
+                    None,
                     "Reach Feudal so the intended Byzantine development path can continue",
+                    observation_ref="current-dark-age",
                 ),
             ),
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age == dark-age)",
+                    None,
                     "Dark Age transition remains admissible until it completes",
+                    observation_ref="current-dark-age",
                 ),
             ),
             invalidation=(),
@@ -725,15 +728,17 @@ def build_land_castle_strategy(
             reason=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "Maintain a minimum cheap defensive military floor",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "The Feudal defensive package remains admissible",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             invalidation=(),
@@ -769,15 +774,17 @@ def build_land_castle_strategy(
             reason=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "Maintain core Feudal infrastructure needed by the selected trajectory",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "Blacksmith remains an admissible core Feudal provider",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             invalidation=(),
@@ -811,15 +818,17 @@ def build_land_castle_strategy(
             admissibility=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "Castle is the selected next strategic capability",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             invalidation=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= imperial-age)",
+                    None,
                     "Castle commitment is obsolete once Imperial Age is reached without the strategic Castle path",
+                    observation_ref="current-imperial-age",
                 ),
             ),
             capability_intent=CapabilityIntent(
@@ -855,8 +864,9 @@ def build_land_castle_strategy(
             evidence=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age == dark-age)",
+                    None,
                     "Dark Age opens the baseline economic trajectory",
+                    observation_ref="current-dark-age",
                 ),
             ),
             label="opening-dark-boom",
@@ -868,8 +878,9 @@ def build_land_castle_strategy(
             evidence=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(current-age >= feudal-age)",
+                    None,
                     "Existing Feudal state begins on the economic trajectory",
+                    observation_ref="current-feudal-age",
                 ),
             ),
             label="opening-feudal-boom",
@@ -881,8 +892,9 @@ def build_land_castle_strategy(
             evidence=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(players-unit-type-count any-enemy knight >= 3)",
+                    None,
                     "Sustained mounted pressure changes the active defensive posture",
+                    observation_ref="enemy-knight-pressure",
                 ),
             ),
             label="enemy-mounted-pressure",
@@ -894,8 +906,9 @@ def build_land_castle_strategy(
             evidence=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(players-unit-type-count any-enemy knight < 3)",
+                    None,
                     "Mounted pressure has cleared enough to resume the economic trajectory",
+                    observation_ref="enemy-knight-pressure-cleared",
                 ),
             ),
             label="pressure-cleared",
@@ -907,8 +920,9 @@ def build_land_castle_strategy(
             evidence=(
                 StrategicEvidence(
                     StrategicEvidenceKind.PERSISTENT,
-                    "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
+                    None,
                     "Castle completion materially changes the strategic posture",
+                    observation_ref="castle-complete",
                 ),
             ),
             label="castle-complete-reassessment",
@@ -964,20 +978,6 @@ def _byzantine_capability_observations(
                 BuildingId(12),
             ),
         )
-    )
-
-
-def _byzantine_enemy_composition_observations(
-    effective: EffectiveCivData,
-) -> tuple[StrategicEnemyCompositionObservation, ...]:
-    knight = effective.unit(38)
-    return (
-        StrategicEnemyCompositionObservation(
-            identity="enemy-knight-pressure",
-            unit_id=38,
-            expression="(players-unit-type-count any-enemy knight >= 3)",
-            provenance=knight.provenance,
-        ),
     )
 
 
@@ -1054,7 +1054,6 @@ def build_byzantine_castle_strategy(
         transitions=transitions,
         provenance=(*profile.provenance, *meta_provenance),
         capability_observations=_byzantine_capability_observations(effective),
-        enemy_composition_observations=_byzantine_enemy_composition_observations(effective),
     )
 
 def _validate_capability_intent(
