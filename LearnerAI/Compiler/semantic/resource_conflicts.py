@@ -181,6 +181,7 @@ def validate_resource_conflicts(
                         provider.identity.source_unit,
                         provider.identity.local_name,
                     ),
+                    location=provider.location,
                 )
             )
             continue
@@ -197,6 +198,7 @@ def validate_resource_conflicts(
                         provider.identity.local_name,
                     ),
                     conflict_class=conflict_class,
+                    location=providers[0].location if providers else None,
                 )
             )
             continue
@@ -243,6 +245,7 @@ def validate_resource_conflicts(
                     status=ResourceStatus.CONFLICTING,
                     provider=provider_id,
                     conflict_class=conflict_class,
+                    location=provider.location,
                 )
             )
             continue
@@ -268,6 +271,7 @@ def validate_resource_conflicts(
                     status=ResourceStatus.DUPLICATE,
                     provider=claim.claimant,
                     conflict_class=claim.conflict_class,
+                    location=claim.location,
                 )
             )
         else:
