@@ -56,13 +56,14 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.NATIVE_KNOWN,
                 NativeSupportState.NATIVE_TYPED,
                 NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                 NativeSupportState.EXECUTABLE_SAFE,
             ],
         )
 
     def test_current_command_reaches_executable_safe(self):
         registry = PrimitiveRegistry(
-            (Primitive('current-age', 'FACT', 'OBSERVATION', 2, 2),),
+            (Primitive('current-age', 'FACT', 'OBSERVATION', 2, 2, engine_semantics_id='observation.age.current'),),
             NativeCommandRegistry(
                 (NativeCommandSpec(
                     'current-age',
@@ -83,6 +84,7 @@ class NativeSupportStateTests(unittest.TestCase):
                 NativeSupportState.NATIVE_KNOWN,
                 NativeSupportState.NATIVE_TYPED,
                 NativeSupportState.SEMANTICALLY_ADAPTED,
+                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
                 NativeSupportState.EXECUTABLE_SAFE,
             ],
         )
@@ -138,7 +140,7 @@ class NativeSupportStateTests(unittest.TestCase):
 
     def test_adapted_but_contract_invalid_never_becomes_executable_safe(self):
         registry = PrimitiveRegistry(
-            (Primitive('synthetic', 'ACTION', 'ACTION', 2, 2),),
+            (Primitive('synthetic', 'ACTION', 'ACTION', 2, 2, engine_semantics_id='execution.synthetic'),),
             NativeCommandRegistry(
                 (NativeCommandSpec(
                     'synthetic',
