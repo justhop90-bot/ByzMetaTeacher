@@ -10,7 +10,7 @@ from enum import Enum
 
 from ..ast import Expression
 from ..ir import CompletionWitnessContract, WitnessEvidenceKind
-from ..ir.strategy_runtime import StrategicDemandRuntimeState
+from ..ir import strategy_runtime as _strategy_runtime
 from .guard_satisfiability import GuardSatisfiability
 from .rule_execution import EffectiveRule, RulePassBehavior
 
@@ -44,7 +44,7 @@ def analyze_firing_eligibility(
     rule: EffectiveRule,
     guard_satisfiability: GuardSatisfiability,
     *,
-    runtime_demand_state: StrategicDemandRuntimeState | None = None,
+    runtime_demand_state: _strategy_runtime.StrategicDemandRuntimeState | None = None,
     completion_witness: CompletionWitnessContract | None = None,
 ) -> FiringEligibility:
     """Classify whether a rule is statically eligible to fire.
@@ -62,19 +62,19 @@ def analyze_firing_eligibility(
         )
     if runtime_demand_state is not None and not isinstance(
         runtime_demand_state,
-        StrategicDemandRuntimeState,
+        _strategy_runtime.StrategicDemandRuntimeState,
     ):
         raise TypeError(
-            "runtime_demand_state must be a StrategicDemandRuntimeState or None"
+            "runtime_demand_state must be a _strategy_runtime.StrategicDemandRuntimeState or None"
         )
 
     if guard_satisfiability is GuardSatisfiability.UNSATISFIABLE:
         return FiringEligibility.NEVER_ELIGIBLE
 
     if runtime_demand_state in {
-        StrategicDemandRuntimeState.STRATEGIC_INACTIVE,
-        StrategicDemandRuntimeState.STRATEGIC_INVALIDATED,
-        StrategicDemandRuntimeState.STRATEGIC_COMPLETE,
+        _strategy_runtime.StrategicDemandRuntimeState.STRATEGIC_INACTIVE,
+        _strategy_runtime.StrategicDemandRuntimeState.STRATEGIC_INVALIDATED,
+        _strategy_runtime.StrategicDemandRuntimeState.STRATEGIC_COMPLETE,
     }:
         return FiringEligibility.NEVER_ELIGIBLE
 
@@ -85,7 +85,7 @@ def analyze_firing_eligibility(
     if guard_satisfiability is GuardSatisfiability.UNKNOWN:
         return FiringEligibility.RUNTIME_DEPENDENT
 
-    if runtime_demand_state is StrategicDemandRuntimeState.STRATEGIC_ACTIVE_BLOCKED:
+    if runtime_demand_state is _strategy_runtime.StrategicDemandRuntimeState.STRATEGIC_ACTIVE_BLOCKED:
         return FiringEligibility.RUNTIME_DEPENDENT
 
     if rule.pass_behavior is RulePassBehavior.ONE_SHOT:
