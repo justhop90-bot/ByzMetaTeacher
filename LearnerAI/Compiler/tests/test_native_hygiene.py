@@ -5,6 +5,7 @@ from Compiler.primitives.native_hygiene import (
     AIRefVersionFamily,
     CitationChangeKind,
     CitationRecord,
+    CitationRecordCatalog,
     CitationState,
     ConfidenceBasis,
     ConfidenceLevel,
@@ -51,6 +52,74 @@ def provenance(
 
 
 class NativeHygieneTests(unittest.TestCase):
+
+    def test_citation_catalog_resolves_native_provenance(self):
+        citation = CitationRecord(
+            "ai:test-resolved",
+            "https://airef.github.io/",
+            "https://airef.github.io/",
+            LocatorType.COMMAND,
+            "test-command",
+            excerpt=SourceExcerpt.capture("test command", ExcerptKind.FACT),
+            state=CitationState.VERIFIED,
+        )
+        catalog = CitationRecordCatalog((citation,))
+        resolved = catalog.resolve("ai:test-resolved")
+        self.assertEqual(resolved.citation_id, "ai:test-resolved")
+
+    def test_citation_catalog_rejects_missing_native_provenance(self):
+        citation = CitationRecord(
+            "ai:test-resolved",
+            "https://airef.github.io/",
+            "https://airef.github.io/",
+            LocatorType.COMMAND,
+            "test-command",
+            excerpt=SourceExcerpt.capture("test command", ExcerptKind.FACT),
+            state=CitationState.VERIFIED,
+        )
+        catalog = CitationRecordCatalog((citation,))
+        with self.assertRaisesRegex(ValueError, "unresolved citation 'ai:missing'"):
+            catalog.validate_provenance(
+                (
+                    AIRefProvenance(
+                        evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                        confidence=ConfidenceLevel.HIGH,
+                        confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                        citation_id="ai:missing",
+                    ),
+                ),
+                require_promotable=True,
+            )
+
+    def test_non_promotable_citation_blocks_native_provenance(self):
+        citation = CitationRecord(
+            "ai:broken",
+            "https://airef.github.io/",
+            "https://airef.github.io/",
+            LocatorType.COMMAND,
+            "test-command",
+            excerpt=SourceExcerpt.capture("test command", ExcerptKind.FACT),
+            state=CitationState.BROKEN,
+        )
+        catalog = CitationRecordCatalog((citation,))
+        with self.assertRaisesRegex(ValueError, "citation 'ai:broken' is not promotable"):
+            catalog.validate_provenance(
+                (
+                    AIRefProvenance(
+                        evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                        confidence=ConfidenceLevel.HIGH,
+                        confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                        citation_id="ai:broken",
+                    ),
+                ),
+                require_promotable=True,
+            )
+
+    def test_native_contract_catalog_resolves_all_contract_provenance(self):
+        from Compiler.primitives.registry import default_native_contract_catalog
+
+        catalog = default_native_contract_catalog()
+        catalog.validate_all_provenance()
 
     def test_native_witness_requires_documented_native_fact(self):
         with self.assertRaises(ValueError):
