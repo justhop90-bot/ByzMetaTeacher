@@ -14,6 +14,7 @@ from .game_data import canonical_fingerprint
 from .strategy import (
     CapabilityIntentKind,
     StrategicCapabilityObservation,
+    StrategicCapabilityObservationKind,
     StrategicDemandSpec,
     StrategicEvidence,
     StrategicObservationSpec,
@@ -776,6 +777,11 @@ def evaluate_strategy_runtime(
                 truth,
             )
         )
+        if (
+            capability_observation.observation_kind
+            is not StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE
+        ):
+            continue
         current_bool = (
             True if truth is EvidenceTruth.TRUE
             else False if truth is EvidenceTruth.FALSE
