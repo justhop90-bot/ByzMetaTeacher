@@ -219,6 +219,134 @@ class RuntimeBindingTests(unittest.TestCase):
         self.assertEqual(contract.start_max, 508)
 
 
+
+class NativeMemoryBindingTests(unittest.TestCase):
+    def _request_id(self, name: str) -> StorageRequestId:
+        return StorageRequestId(SemanticId('generic.compiler', name), 'state')
+
+    def test_strategic_number_requires_inventory(self):
+        request = StrategicNumberRequest(
+            self._request_id('sn'),
+            why_not_goal='Goal semantics do not map onto engine behavior settings',
+            stability_key='sn-test',
+        )
+        with self.assertRaisesRegex(ValueError, 'explicit AIRef inventory'):
+            RuntimeBinder().bind((request,))
+
+    def test_strategic_number_allocates_highest_candidate(self):
+        request = StrategicNumberRequest(
+            self._request_id('sn'),
+            why_not_goal='Goal semantics do not map onto engine behavior settings',
+            stability_key='sn-test',
+        )
+        inventory = StrategicNumberInventory(
+            inventory_sha='inventory-test',
+            documented_ids=frozenset({510}),
+            candidate_ids=frozenset({509, 508}),
+        )
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(strategic_number_inventory=inventory),
+        )
+        binding = result.binding_for(request.request_id)
+        self.assertIsInstance(binding, StrategicNumberSlot)
+        self.assertEqual(binding.id, 509)
+
+    def test_strategic_number_skips_occupied_candidate(self):
+        request = StrategicNumberRequest(
+            self._request_id('sn'),
+            why_not_goal='A Goal is already allocated to lifecycle state',
+            stability_key='sn-test',
+        )
+        inventory = StrategicNumberInventory(
+            inventory_sha='inventory-test',
+            documented_ids=frozenset({510}),
+            candidate_ids=frozenset({509, 508}),
+        )
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(
+                occupied_sn_ids=frozenset({509}),
+                strategic_number_inventory=inventory,
+            ),
+        )
+        self.assertEqual(result.binding_for(request.request_id).id, 508)
+
+    def test_strategic_number_rejects_empty_why_not_goal(self):
+        request = StrategicNumberRequest(
+            self._request_id('sn'),
+            why_not_goal='',
+            stability_key='sn-test',
+        )
+        inventory = StrategicNumberInventory(
+            inventory_sha='inventory-test',
+            documented_ids=frozenset(),
+            candidate_ids=frozenset({510}),
+        )
+        with self.assertRaisesRegex(ValueError, 'WHY_NOT_GOAL'):
+            RuntimeBinder().bind(
+                (request,),
+                BindingContext(strategic_number_inventory=inventory),
+            )
+
+    def test_timer_allocates_lowest_free_id_and_records_initialization_policy(self):
+        request = TimerRequest(
+            self._request_id('timer'),
+            initialization_policy='DISABLE_BEFORE_FIRST_USE',
+            stability_key='timer-test',
+        )
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(occupied_timer_ids=frozenset({1, 2})),
+        )
+        binding = result.binding_for(request.request_id)
+        self.assertIsInstance(binding, TimerSlot)
+        self.assertEqual(binding.id, 3)
+        self.assertEqual(binding.initialization_policy, 'DISABLE_BEFORE_FIRST_USE')
+
+    def test_timer_rejects_out_of_range_occupied_id(self):
+        request = TimerRequest(
+            self._request_id('timer'),
+            initialization_policy='DISABLE_BEFORE_FIRST_USE',
+            stability_key='timer-test',
+        )
+        with self.assertRaisesRegex(ValueError, 'Timer id must be in range 1..50'):
+            RuntimeBinder().bind(
+                (request,),
+                BindingContext(occupied_timer_ids=frozenset({51})),
+            )
+
+    def test_manifest_round_trip_preserves_sn_and_timer(self):
+        sn = StrategicNumberRequest(
+            self._request_id('sn'),
+            why_not_goal='Goal cannot represent the engine strategic-number behavior',
+            stability_key='sn-test',
+        )
+        timer = TimerRequest(
+            self._request_id('timer'),
+            initialization_policy='DISABLE_BEFORE_FIRST_USE',
+            stability_key='timer-test',
+        )
+        inventory = StrategicNumberInventory(
+            inventory_sha='inventory-test',
+            documented_ids=frozenset({511}),
+            candidate_ids=frozenset({510, 509}),
+        )
+        result = RuntimeBinder().bind(
+            (sn, timer),
+            BindingContext(strategic_number_inventory=inventory),
+        )
+        manifest = result.to_manifest(package_inventory_sha='package-test')
+        restored = BindingManifest.from_json(manifest.to_json())
+        restored_bindings = {
+            record.request_id.owner.local_name: record.binding
+            for record in restored.records
+        }
+        self.assertIsInstance(restored_bindings['sn'], StrategicNumberSlot)
+        self.assertIsInstance(restored_bindings['timer'], TimerSlot)
+        self.assertEqual(restored_bindings['sn'].id, 510)
+        self.assertEqual(restored_bindings['timer'].id, 1)
+
 if __name__ == "__main__":
     unittest.main()
 
