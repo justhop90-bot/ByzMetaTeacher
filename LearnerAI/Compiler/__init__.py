@@ -1,1 +1,1 @@
-"""Basilisk compiler package."""
+"""AoE2 .per compiler package."""
