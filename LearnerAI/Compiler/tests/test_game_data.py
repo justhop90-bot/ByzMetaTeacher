@@ -21,6 +21,7 @@ from LearnerAI.Compiler.ir.versioning import PatchId
 
 
 class GameDataTests(unittest.TestCase):
+    # Temporary CI verification branch; no semantic change.
     def test_byzantine_185872_resolves_current_factual_snapshot(self):
         data = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
