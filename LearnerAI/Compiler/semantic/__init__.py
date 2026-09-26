@@ -15,3 +15,5 @@ from .capability_validation import (
     WitnessValidationPass,
     validate_capability_graph,
 )
+
+from .capability_bridge import project_capability_graph, validate_projected_capabilities
