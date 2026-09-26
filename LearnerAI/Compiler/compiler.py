@@ -32,6 +32,7 @@ if __package__ in (None, ""):
     from Compiler.primitives import default_de_registry
     from Compiler.semantic import analyze
     from Compiler.semantic.demand_ownership import validate_demand_ownership
+    from Compiler.semantic.action_issuance import validate_action_issuance
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
