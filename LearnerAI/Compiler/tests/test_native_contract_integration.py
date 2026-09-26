@@ -80,6 +80,59 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(catalog.parameter_ranges_for("goal", "GoalId"), (parameter,))
         self.assertEqual(catalog.parameter_ranges_for("set-goal", "GoalId"), (parameter,))
 
+    def test_goal_storage_citation_cannot_back_goal_span_contract(self):
+        base = default_native_contract_catalog()
+        bad_span = replace(
+            base.goal_span_contract("extended-4-goal-span"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:goal-storage",
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "expected EXTENDED_GOAL_SPAN"):
+            NativeContractCatalog(
+                witnesses=base.witnesses,
+                storage_uses=base.storage_uses,
+                pass_constraints=base.pass_constraints,
+                goal_storage_contracts=base.goal_storage_contracts,
+                goal_span_contracts=(
+                    bad_span,
+                    *(
+                        item
+                        for item in base.goal_span_contracts
+                        if item.identity != "extended-4-goal-span"
+                    ),
+                ),
+                parameter_ranges=base.parameter_ranges,
+            )
+
+    def test_goal_parameter_citation_cannot_back_ordinary_goal_storage_contract(self):
+        base = default_native_contract_catalog()
+        bad_goal = replace(
+            base.goal_storage_contract("ordinary-persistent-goal-storage"),
+            provenance=(
+                AIRefProvenance(
+                    evidence_kind=EvidenceKind.DOCUMENTED_FACT,
+                    confidence=ConfidenceLevel.HIGH,
+                    confidence_basis=ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                    citation_id="airef:goal-id-parameter-range",
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "expected ORDINARY_PERSISTENT_GOAL_STORAGE"):
+            NativeContractCatalog(
+                witnesses=base.witnesses,
+                storage_uses=base.storage_uses,
+                pass_constraints=base.pass_constraints,
+                goal_storage_contracts=(bad_goal,),
+                goal_span_contracts=base.goal_span_contracts,
+                parameter_ranges=base.parameter_ranges,
+            )
+
     def test_goal_storage_citation_cannot_back_goal_id_parameter_contract(self):
         base = default_native_contract_catalog()
         bad_storage = replace(
