@@ -2212,41 +2212,369 @@ REASSESS
 - do not invent engine predicates where a documented availability, affordability, feasibility, status, or completion primitive already exists.
 
 ---
-## 24. Capability versus feasibility
+## 24. Canonical lifecycle: military production
 
-This distinction deserves its own section because it is where otherwise competent scripts become haunted.
+Use a Knight-line production demand as the canonical Military/Production example. It makes the capability-versus-feasibility distinction concrete while also teaching **availability, affordability, production capacity, queue state, repeat prevention, completion witnesses, and strategic release**.
 
-### Capability
+AIRef defines `unit-available` as checking unit availability and tech-tree prerequisites, `can-afford-unit` as resource affordability, `can-train` as whether training can start, and `unit-type-count-total` as including queued units. citeturn0search0
 
-“Could we satisfy this demand in principle?”
+### Demand
 
-Examples:
-
-- Castle Age reached;
-- Castle prerequisites exist;
-- production building exists;
-- technology is available;
-- resources are being accumulated;
-- a builder can potentially be assigned.
-
-### Feasibility
-
-“Does the engine permit this exact action now?”
-
-Examples:
+Military/Strategy establishes that a cavalry force is currently required.
 
 ```
-(can-build castle)
+enemy composition or strategic posture justifies Knights
+→ required Knight-line count = target
+```
+
+The target is persistent military intent. It is not a command to train a fixed number once.
+
+For example:
+
+```
+required Knight-line count = 4
+current Knight-line count < required count
+cavalry production posture remains active
+```
+
+The target may later increase, decrease, or disappear as the battlefield changes.
+
+### Admissibility
+
+The production demand remains admissible while the military reason exists.
+
+Examples:
+- the current strategy still calls for the Knight line;
+- the opponent or strategic posture still justifies cavalry;
+- the required force has not been made obsolete;
+- the target has not already been satisfied;
+- Strategy has not cancelled or superseded the cavalry plan.
+
+Do not let `unit-available` become the strategy. A Knight can be available while Military deliberately chooses not to produce one.
+
+### Capability: `unit-available`
+
+First establish whether the requested unit is available to the civilization and current tech-tree state.
+
+```
+(unit-available knight-line)
+```
+
+AIRef defines `unit-available` as checking that the unit is available to the civ and that its tech-tree prerequisites for training are met. citeturn0search0
+
+This answers:
+
+**“Could this civilization train this unit under the current technology-tree state?”**
+
+It does not prove that the unit is affordable, that the production building has usable capacity, that training can start now, or that the unit is already trained.
+
+Keep the distinction explicit:
+
+```
+unit-available
+    ≠
+can-afford-unit
+    ≠
+can-train
+```
+
+### Production infrastructure and capacity
+
+Capability also includes the production infrastructure required to execute the demand.
+
+For a Knight line this normally means the appropriate stable production infrastructure exists and is usable.
+
+Distinguish:
+- the unit is available to the civ;
+- the production building exists;
+- the building is capable of training the requested unit line;
+- the production queue/capacity permits another training action;
+- the economic policy is willing to spend the required resources.
+
+A Stable existing is not proof that a Knight can train immediately. Production infrastructure is capability; `can-train` is engine-level feasibility.
+
+### Affordability: `can-afford-unit`
+
+Resource affordability is a separate question.
+
+```
+(can-afford-unit knight-line)
+```
+
+AIRef defines `can-afford-unit` as checking whether the computer player has enough resources to train the given unit. citeturn0search0
+
+This answers:
+
+**“Can the normal Knight-line cost be paid?”**
+
+It does not prove that the unit is available, that a production slot is usable, that the engine will accept the training request now, or that the unit will complete.
+
+Therefore:
+
+```
+unit available
+    ≠
+unit affordable
+    ≠
+unit trainable right now
+```
+
+### Resource arbitration and escrow
+
+Military production competes with villagers, buildings, upgrades, farms, age advancement, and other military units.
+
+```
+resource exists
+    ≠
+resource is available to Knights
+    ≠
+Knight training can start
+```
+
+If escrow is used, it is resource arbitration, not a military completion witness.
+
+AIRef documents `can-train-with-escrow` as the escrow-aware counterpart to `can-train`. citeturn0search0turn0search1
+
+Keep the two meanings separate:
+
+- `can-train` = ordinary current-resource feasibility;
+- `can-train-with-escrow` = feasibility when escrowed resources are included.
+
+Do not use escrow as evidence that a Knight exists. Escrow proves only that resources are being treated as committed/available under the chosen arbitration model.
+
+### Feasibility: `can-train`
+
+The decisive engine-native production test is:
+
+```
 (can-train knight-line)
-(can-research ri-fletching)
 ```
 
-### Rule
+AIRef defines `can-train` as checking that training of the given unit can start. citeturn0search0
 
-Capability should normally feed feasibility. Capability should never be treated as proof that feasibility is true.
+This is the boundary between the Military demand and engine execution.
+
+Do not replace it with a homemade conjunction of resource amounts and building counts:
+
+```
+food >= cost
+gold >= cost
+stable exists
+→ therefore train Knight
+```
+
+Those facts can explain capability and resource state. `can-train` is the engine-native feasibility result.
+
+### Pending state and repeat prevention
+
+Military production has a state transition:
+
+```
+DEMANDED
+  ↓
+TRAIN REQUESTED
+  ↓
+QUEUED / TRAINING
+  ↓
+TRAINED
+```
+
+`unit-type-count` counts trained units. `unit-type-count-total` includes queued units. AIRef documents that the total form includes queued training, and UserPatch notes explicitly describe total/pending unit counting behavior. citeturn0search0turn0search1
+
+`up-pending-objects` can provide an explicit pending-object check when the script needs finer control over pending production. It should not be confused with the completed-unit witness.
+
+For a force target, the normal anti-repeat pattern is:
+
+```
+(unit-type-count-total knight-line < required-count)
+(can-train knight-line)
+=>
+(train knight-line)
+```
+
+This prevents the classic failure:
+
+```
+target = 4
+trained = 0
+→ train Knight
+→ Knight remains queued
+→ trained = 0
+→ naive rule fires again
+→ queue fills before the strategy notices
+```
+
+Repeat prevention is therefore a world-state/queue-state problem, not a retry-counter problem.
+
+UserPatch also documents configurable training queues and notes that queue behavior affects `can-train` and `train`. citeturn0search1
+
+### Action
+
+Once the demand is admissible, the unit is available, resources are legitimately available, and `can-train` is true:
+
+```
+(train knight-line)
+```
+
+This is an **action request**.
+
+It does not prove that the Knight exists on the map. It does not prove that training completed, and it should not be used as the completion witness.
+
+### Completion witnesses
+
+There are two different useful witnesses.
+
+For **production-target accounting / anti-repeat control**:
+
+```
+(unit-type-count-total knight-line >= required-count)
+```
+
+This proves that the target number is either trained or queued.
+
+For **actual military strength**:
+
+```
+(unit-type-count knight-line >= required-count)
+```
+
+This proves that the target number of units is actually trained.
+
+Therefore:
+
+```
+queued Knight
+    ≠
+fielded Knight
+```
+
+Production may use the total count to avoid over-queueing. Military readiness, attack composition, or a commitment requiring actual units should use the trained-unit witness.
+
+### Completion versus release
+
+Satisfying the current production target is not automatically release of the military posture.
+
+```
+production target satisfied
+    ≠
+cavalry strategy released
+```
+
+The correct successful lifecycle is:
+
+```
+Knight demand active
+→ required target reached
+→ completion/target witness true
+→ current production demand may release
+→ Military reassesses the battlefield
+```
+
+Release can also occur before the target is reached if Strategy explicitly cancels or supersedes the demand.
+
+Distinguish:
+- **COMPLETED:** the current production target is actually satisfied;
+- **CANCELLED/OBSOLETE:** Strategy no longer wants the cavalry target;
+- **BLOCKED:** Strategy still wants it but training cannot currently proceed;
+- **ACTIVE/PENDING:** Strategy still wants it and the production requirement remains unresolved.
+
+A cavalry posture can therefore remain active after four Knights exist, because four may only have been the current minimum target.
+
+### Reassessment
+
+Military must reassess after production changes.
+
+Examples:
+- enemy composition changes;
+- Knights die and actual trained count falls;
+- the target is increased because more cavalry is required;
+- another counter becomes preferable;
+- the opponent reaches defenses that make further Knights strategically unnecessary;
+- the economy can no longer sustain the current target without violating higher-priority demands.
+
+The production rule executes the current target. It does not own the strategic reason for that target.
+
+### Blocked behavior
+
+If `can-train knight-line` remains false while the demand is still admissible, preserve the demand and diagnose the actual layer:
+
+1. Is `unit-available knight-line` false?
+2. Is the production infrastructure missing?
+3. Is the production capacity/queue occupied?
+4. Is `can-afford-unit knight-line` false?
+5. Are resources reserved for another legitimate demand?
+6. Is escrow-aware feasibility intentionally different?
+7. Is the unit already pending and therefore protected by the repeat guard?
+8. Is another production rule consuming the available capacity or resources?
+9. Has Strategy cancelled or superseded the demand?
+
+`can-train` is the immediate engine feasibility result. The surrounding facts explain capability, affordability, arbitration, pending state, or strategic cancellation.
+
+Do not solve a blocked military demand by incrementing a permanent retry counter. Preserve the demand, use transient cooldown/backoff when needed, and reassess the actual blocker.
+
+### Canonical military-production trace
+
+```
+OBSERVE / INTERPRET
+  battlefield and strategic posture justify cavalry
+        ↓
+DEMAND
+  required Knight-line target established
+        ↓
+ADMISSIBILITY
+  cavalry posture remains active
+        ↓
+CAPABILITY
+  unit-available
+  + production infrastructure
+        ↓
+AFFORDABILITY
+  can-afford-unit
+        ↓
+RESOURCE ARBITRATION
+  resources legitimately available to the demand
+        ↓
+FEASIBILITY
+  can-train knight-line
+        ↓
+ACTION
+  train knight-line
+        ↓
+EXECUTION STATE
+  queued / training
+        ↓
+COMPLETION / TARGET WITNESS
+  unit-type-count-total reaches target
+        ↓
+MILITARY READINESS WITNESS
+  unit-type-count reaches required fielded strength
+        ↓
+RELEASE / CONTINUE / ESCALATE
+  production demand clears, persists, or target increases
+        ↓
+REASSESS
+  Military/Strategy react to the new battlefield state
+```
+
+### Hard invariants
+
+- `unit-available` is not `can-afford-unit`.
+- `can-afford-unit` is not `can-train`.
+- `can-train` is not `train`.
+- `train` is not proof of a trained unit.
+- production infrastructure is capability, not feasibility.
+- resource escrow is arbitration, not a military witness.
+- `can-train-with-escrow` is not interchangeable with ordinary `can-train`.
+- `unit-type-count` is not `unit-type-count-total`.
+- queued units are not fielded units.
+- pending production must be accounted for when preventing repeated training requests.
+- satisfying a production target is not necessarily release of the military posture.
+- cancellation/obsolescence is not successful completion.
+- a persistent military demand survives temporary blockage unless Strategy explicitly removes it.
+- Production executes the current target; Military/Strategy owns why the target exists.
+- documented engine facts should be preferred over homemade approximations of availability, affordability, or feasibility.
 
 ---
-
 ## 25. Pending versus completed
 
 The learner must be able to draw this state ladder:
