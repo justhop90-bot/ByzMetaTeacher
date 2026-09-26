@@ -112,7 +112,7 @@ These are compiler lifecycle examples, not the complete Byzantine player.
 `RUNTIME_BINDING_CONTRACT.md` defines the typed binding boundary between semantic IR and native storage. It explicitly separates:
 
 - confirmed engine/repository facts;
-- Basilisk compiler policy;
+- compiler policy;
 - assumptions and unresolved implementation work.
 
 It defines the contracts for:
