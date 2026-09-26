@@ -166,32 +166,12 @@ def validate_completion_witnesses(
                 )
             )
 
-        if not _contains_primitive(
+        action_coupled = _contains_primitive(
             contract.expression,
             demand.action.expression.head,
-        ):
-            primitive = registry.get(contract.primitive)
-            if primitive is None and contract.expression.head not in {"and", "or", "nand", "nor", "xor", "xnor", "not"}:
-                diagnostics.append(
-                    _diag(
-                        WitnessDiagnosticCode.NATIVE_PRIMITIVE_INVALID,
-                        WitnessStatus.BLOCKED,
-                        f"completion witness for demand '{demand.name}' references unknown "
-                        f"primitive '{contract.primitive}'",
-                        demand.identity,
-                    )
-                )
-            elif primitive is not None and not primitive.completion_witness:
-                diagnostics.append(
-                    _diag(
-                        WitnessDiagnosticCode.NO_COMPLETION_CAPABLE_OBSERVATION,
-                        WitnessStatus.OPEN_LOOP,
-                        f"completion witness for demand '{demand.name}' contains no "
-                        "completion-capable native observation",
-                        demand.identity,
-                    )
-                )
-        else:
+        )
+        completion_capable = False
+        if action_coupled:
             diagnostics.append(
                 _diag(
                     WitnessDiagnosticCode.ACTION_COUPLING,
@@ -201,12 +181,28 @@ def validate_completion_witnesses(
                     demand.identity,
                 )
             )
+        else:
+            primitive = registry.get(contract.primitive)
+            if (
+                primitive is None
+                and contract.expression.head
+                not in {"and", "or", "nand", "nor", "xor", "xnor", "not"}
+            ):
+                diagnostics.append(
+                    _diag(
+                        WitnessDiagnosticCode.NATIVE_PRIMITIVE_INVALID,
+                        WitnessStatus.BLOCKED,
+                        f"completion witness for demand '{demand.name}' references unknown "
+                        f"primitive '{contract.primitive}'",
+                        demand.identity,
+                    )
+                )
+            completion_capable, _ = _completion_primitive(
+                contract.expression,
+                registry,
+            )
 
-        completion_capable, _ = _completion_primitive(
-            contract.expression,
-            registry,
-        )
-        if not completion_capable:
+        if not completion_capable and not action_coupled:
             diagnostics.append(
                 _diag(
                     WitnessDiagnosticCode.NO_COMPLETION_CAPABLE_OBSERVATION,
