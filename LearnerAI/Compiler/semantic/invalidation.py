@@ -127,6 +127,7 @@ def validate_invalidation_contracts(
                     f"invalidation for demand '{demand.name}' has invalid evidence kind "
                     f"'{invalidation.evidence_kind.value}'",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -138,6 +139,7 @@ def validate_invalidation_contracts(
                     f"invalidation for demand '{demand.name}' invalidates "
                     f"'{invalidation.invalidates.local_name}', not '{demand.name}'",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -150,6 +152,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.OPEN_LOOP,
                     f"invalidation for demand '{demand.name}' contains timing evidence",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -161,6 +164,7 @@ def validate_invalidation_contracts(
                     f"invalidation for demand '{demand.name}' reuses action primitive "
                     f"'{demand.action.expression.head}'",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -171,6 +175,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.OPEN_LOOP,
                     f"invalidation for demand '{demand.name}' contains no world-state evidence",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -184,6 +189,7 @@ def validate_invalidation_contracts(
                         f"invalidation for demand '{demand.name}' references unknown "
                         f"primitive '{invalidation.primitive}'",
                         demand.identity,
+                    location=invalidation.location or demand.location,
                     )
                 )
 
@@ -194,6 +200,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.ORDER_VIOLATION,
                     f"invalidation for demand '{demand.name}' must precede action issuance",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -205,6 +212,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.ORDER_VIOLATION,
                     f"invalidation for demand '{demand.name}' must precede release",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -215,6 +223,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.BLOCKED,
                     f"demand '{demand.name}' has invalidation evidence but no cancellation contract",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
             continue
@@ -233,6 +242,7 @@ def validate_invalidation_contracts(
                     f"cancellation for demand '{demand.name}' must cover ACTIVE, ISSUED, "
                     "and PENDING, and must not cancel COMPLETE",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -244,6 +254,7 @@ def validate_invalidation_contracts(
                     f"cancellation for demand '{demand.name}' must transition to CANCELLED, "
                     f"not {cancellation.to_state.value}",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -254,6 +265,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.CONFLICTING,
                     f"cancellation for demand '{demand.name}' does not reference its invalidation contract",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
@@ -264,6 +276,7 @@ def validate_invalidation_contracts(
                     InvalidationStatus.ORDER_VIOLATION,
                     f"cancellation for demand '{demand.name}' must precede release",
                     demand.identity,
+                    location=invalidation.location or demand.location,
                 )
             )
 
