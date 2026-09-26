@@ -86,8 +86,8 @@ class BindingHardeningTests(unittest.TestCase):
         )
 
     def test_existing_bindings_are_self_consistent(self):
-        request_a = self._request("z.basilisk", "late")
-        request_b = self._request("a.basilisk", "early")
+        request_a = self._request("z.perdsl", "late")
+        request_b = self._request("a.perdsl", "early")
         with self.assertRaisesRegex(ValueError, "duplicate existing binding GoalId"):
             RuntimeBinder().bind(
                 (request_a, request_b),
@@ -106,8 +106,8 @@ class BindingHardeningTests(unittest.TestCase):
             )
 
     def test_new_binding_never_collides_with_existing_manifest(self):
-        existing_request = self._request("z.basilisk", "late")
-        new_request = self._request("a.basilisk", "early")
+        existing_request = self._request("z.perdsl", "late")
+        new_request = self._request("a.perdsl", "early")
         result = RuntimeBinder(base_goal=41).bind(
             (existing_request, new_request),
             BindingContext(
@@ -133,7 +133,7 @@ class BindingHardeningTests(unittest.TestCase):
         )
 
     def test_binding_manifest_round_trip_is_deterministic(self):
-        request = self._request("main.basilisk", "castle")
+        request = self._request("main.perdsl", "castle")
         result = RuntimeBinder(base_goal=41).bind((request,))
         manifest = result.to_manifest(package_inventory_sha="abc123")
         text = manifest.to_json()
@@ -260,7 +260,7 @@ class NativeStorageContractCatalogTests(unittest.TestCase):
         request = goal_span_request(
             contract,
             StorageRequestId(
-                SemanticId("native.basilisk", "search-state"),
+                SemanticId("native.compiler", "search-state"),
                 "search-state",
             ),
         )
