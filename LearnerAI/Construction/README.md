@@ -24,7 +24,9 @@ It must support conditional capability for:
 - Bombard Towers;
 - other ordinary infrastructure when the strategic position requires it.
 
-## Required lifecycle
+## Arabia timing-window reactions
+
+`LearnerAI/ARABIA_ECONOMIC_REACTIONS.md` defines the worker/builder reactions for short walls, defensive towers, and first-Castle construction under Arabia timing windows.
 
     demand
       -> prerequisites
