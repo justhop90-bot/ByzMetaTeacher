@@ -24,6 +24,49 @@ The semantic contribution is different:
       -> release / invalidation
       -> reassess
 
+## Deep cross-check and implementation record (2026-09-26)
+
+This pass was explicitly adversarial: the compiler contracts were checked against the live
+Basilisk controller, the checked-in AIRef command schema, current AIRef engine limits,
+native/community .per examples, and the CI test runner.
+
+### Evidence established
+
+- AIRef documents 10,000 rules, 32 DE elements per rule, and 255 characters per source line. Nested logical operators count as rule elements and have exact operand counts. citeturn347585search1turn347585search0
+- Community .per examples use explicit goals, pending-object facts, can-build/can-* feasibility checks, and direct build actions rather than an opaque manager layer. citeturn347585search2turn347585search4turn347585search5
+- The checked-in repository AIRef schema is the compiler's native command-signature authority; semantic adapters remain a smaller Basilisk-owned layer.
+- The current Basilisk package already owns a large numeric Goal namespace, so a compiler-local base Goal guess is not a package-level contract.
+- The native runtime therefore remains responsible for raw .per legality, while the compiler adds typed semantics that native parsing cannot infer.
+
+### Implemented in this pass
+
+- [x] recursive logical-operator arity validation;
+- [x] explicit single-native-command action roots;
+- [x] native command arity sourced from the checked-in AIRef schema;
+- [x] explicit rejection of native commands without a Basilisk semantic adapter;
+- [x] stable reservation of existing runtime bindings;
+- [x] duplicate existing-binding detection;
+- [x] persistent binding-manifest data model with deterministic JSON round trip;
+- [x] compiler-side rule, element, and line-length budgets;
+- [x] one-shot initialization chunking under the 32-element DE limit;
+- [x] per-pass build arbitration for the native one-build-per-pass constraint;
+- [x] regression tests for each hardening edge;
+- [x] CI-driven repair of serializer, nested-arity, and initialization lifecycle defects found during implementation.
+
+### Still required before full-player compilation
+
+- [ ] command-specific GoalSpan allocation from native storage contracts;
+- [ ] StrategicNumberSlot and TimerSlot allocation;
+- [ ] explicit package-wide occupancy manifest consumed by the binder;
+- [ ] automatic binding-manifest write-back as an end-to-end compiler artifact;
+- [ ] capability-provider graph;
+- [ ] demand ownership and writer/consumer contracts;
+- [ ] prerequisite dependency graph and cycle/dead-end diagnostics;
+- [ ] resource/conflict semantics matching Basilisk's transient arbitration;
+- [ ] first-writer/first-consumer and source-order analysis;
+- [ ] action-issuance failure versus pending-state distinction;
+- [ ] Castle vertical slice compiled against actual Basilisk semantics.
+
 ## Implemented compiler foundation
 
 - [x] semantic primitive profile;
