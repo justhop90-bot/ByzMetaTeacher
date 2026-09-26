@@ -193,9 +193,6 @@ _ACTION_SPECS = (
     ("research", "execution.research.request"),
 )
 
-_EXPLICIT_SPECS = (
-    ("up-pending-objects", "execution.pending-objects"),
-)
 
 
 def _fact_mapping(command: str, identity: str, category: str) -> EngineSemanticMapping:
@@ -308,6 +305,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         mappings.append(_fact_mapping(command, identity, "FEASIBILITY"))
     for command, identity in _WITNESS_SPECS:
         mappings.append(_fact_mapping(command, identity, "WITNESS"))
+    mappings.append(_pending_mapping())
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
         (
