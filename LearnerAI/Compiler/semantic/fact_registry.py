@@ -22,6 +22,7 @@ from .fact_values import (
     FactDomain,
     NormalizedFact,
     IdentifierForm,
+    StaticTruth,
     canonicalize_value,
 )
 
