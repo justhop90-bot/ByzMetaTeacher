@@ -116,7 +116,7 @@ Do not remove useful generic contracts. Do not let Byzantine policy define their
 
 ### P0 — generic correctness/reproducibility
 
-1. Native support-status model for all checked-in commands.
+1. Native support-status model for all checked-in commands. **Implemented and CI-verified.**
    Files: `primitives/native_schema.py`, `primitives/registry.py`, `semantic/analyzer.py`, diagnostics/tests.
    Goal: make native-known/native-typed/semantic-adapted/executable-safe/unsupported explicit.
    No source-language expansion required.
@@ -229,3 +229,18 @@ GitHub Actions compiler run on final code head 8bec6c7c38d2c42926ed64adcc3659042
 - Full compiler unittest suite: Ran 258 tests in 1.264s, OK.
 
 The separate Basilisk Validator workflow is intentionally not part of this generic compiler repair gate. At the time of this record it was still executing independently.
+
+## Native support-state verification
+
+Final compiler head for this slice: 010b0b63a7f4eeb5acc464fbb226dcc072b7014e.
+
+The support model is deterministic and monotonic:
+
+    NATIVE_KNOWN
+      -> NATIVE_TYPED
+      -> SEMANTICALLY_ADAPTED
+      -> EXECUTABLE_SAFE
+
+with `UNSUPPORTED` as the terminal rejection state whenever a command is absent, malformed, lacks a semantic adapter, or has an adapter contract that cannot be proven executable-safe.
+
+Focused tests cover each state, deterministic diagnostic chains, unknown commands, malformed metadata, adapter-contract mismatch, the real checked-in AIRef `current-age` operator placeholder, and compiler rejection of known-but-unadapted native commands.
