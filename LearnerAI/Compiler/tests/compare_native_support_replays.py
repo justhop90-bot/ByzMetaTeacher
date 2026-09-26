@@ -32,11 +32,11 @@ def main() -> None:
         raise AssertionError(f"expected 9 cross-platform snapshots, found {len(snapshots)}")
     reference_path, reference = snapshots[0]
     reference_fixtures = reference["fixtures"]
-    reference_artifact_hash = reference["persistent_artifact_sha256"]
+    reference_artifact_hashes = reference["persistent_artifacts"]
     for path, snapshot in snapshots[1:]:
-        if snapshot["persistent_artifact_sha256"] != reference_artifact_hash:
+        if snapshot["persistent_artifacts"] != reference_artifact_hashes:
             raise AssertionError(
-                f"persistent artifact annotation hash mismatch: "
+                f"persistent file/package artifact hash mismatch: "
                 f"{reference_path} != {path}"
             )
         if snapshot["fixtures"] != reference_fixtures:
