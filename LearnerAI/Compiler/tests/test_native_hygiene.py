@@ -6,6 +6,7 @@ from Compiler.primitives.native_hygiene import (
     CitationChangeKind,
     CitationRecord,
     CitationRecordCatalog,
+    CitationSemanticScope,
     CitationState,
     ConfidenceBasis,
     ConfidenceLevel,
@@ -13,6 +14,9 @@ from Compiler.primitives.native_hygiene import (
     ExcerptKind,
     ExcerptMatchKind,
     LocatorType,
+    NativeGoalParameterRangeContract,
+    NativeGoalSpanContract,
+    NativeGoalStorageContract,
     NativeStorageClass,
     NativeStorageKind,
     NativeStorageUse,
@@ -208,7 +212,24 @@ class NativeHygieneTests(unittest.TestCase):
     def test_goal_storage_citation_uses_exact_table_entry(self):
         record = default_native_citation_catalog().resolve("airef:goal-storage")
         self.assertIs(record.locator_type, LocatorType.TABLE_ENTRY)
-        self.assertEqual(record.locator, "Goals: 1 to 16,000")
+        self.assertIs(record.semantic_scope, CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE)
+        self.assertEqual(record.locator, "Goals: 1 to 512")
+
+    def test_extended_goal_span_citations_have_extended_scope(self):
+        catalog = default_native_citation_catalog()
+        self.assertIs(
+            catalog.resolve("airef:extended-goal-span-point").semantic_scope,
+            CitationSemanticScope.EXTENDED_GOAL_SPAN,
+        )
+        self.assertIs(
+            catalog.resolve("airef:extended-goal-span-4").semantic_scope,
+            CitationSemanticScope.EXTENDED_GOAL_SPAN,
+        )
+
+    def test_goal_id_parameter_citation_has_parameter_scope(self):
+        record = default_native_citation_catalog().resolve("airef:goal-id-parameter-range")
+        self.assertIs(record.semantic_scope, CitationSemanticScope.GOAL_ID_PARAMETER_RANGE)
+        self.assertEqual(record.locator, "goal GoalId: 1 to 16000")
 
 
     def test_citation_catalog_resolves_native_provenance(self):
@@ -282,6 +303,9 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:unit-type-count",
                 "airef:research-completed",
                 "airef:goal-storage",
+                "airef:extended-goal-span-point",
+                "airef:extended-goal-span-4",
+                "airef:goal-id-parameter-range",
                 "airef:build-pass-limit",
             },
         )
@@ -390,6 +414,7 @@ class NativeHygieneTests(unittest.TestCase):
                 NativeStorageKind.COST_DATA_GOAL_SPAN,
                 base=40,
                 span_length=4,
+                contract_id="cost-data-4-goal-span",
                 provenance=(provenance(),),
             )
 
@@ -400,6 +425,7 @@ class NativeHygieneTests(unittest.TestCase):
             NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
             base=15996,
             span_length=4,
+            contract_id="extended-4-goal-span",
             provenance=(provenance(),),
         )
 
@@ -410,6 +436,7 @@ class NativeHygieneTests(unittest.TestCase):
             NativeStorageKind.COST_DATA_GOAL_SPAN,
             base=100,
             span_length=4,
+            contract_id="cost-data-4-goal-span",
             provenance=(provenance(),),
         )
         right = NativeStorageUse(
@@ -418,10 +445,48 @@ class NativeHygieneTests(unittest.TestCase):
             NativeStorageKind.POINT_GOAL_SPAN,
             base=103,
             span_length=2,
+            contract_id="point-goal-span",
             provenance=(provenance(),),
         )
         with self.assertRaises(ValueError):
             validate_goal_span_non_overlap((left, right))
+
+    def test_goal_storage_contract_is_exactly_1_to_512(self):
+        contract = NativeGoalStorageContract(
+            "ordinary-persistent-goal-storage",
+            1,
+            512,
+            (provenance(),),
+        )
+        contract.validate_id(512)
+        with self.assertRaises(ValueError):
+            contract.validate_id(513)
+
+    def test_goal_span_contract_has_shape_specific_range(self):
+        contract = NativeGoalSpanContract(
+            "extended-4-goal-span",
+            NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
+            4,
+            41,
+            15996,
+            (provenance(),),
+        )
+        contract.validate_shape(15996, 15999)
+        with self.assertRaises(ValueError):
+            contract.validate_shape(15997, 16000)
+
+    def test_goal_id_parameter_range_is_independent_from_storage_range(self):
+        contract = NativeGoalParameterRangeContract(
+            "goal-id-parameter-range",
+            "GoalId",
+            1,
+            16000,
+            ("goal", "set-goal"),
+            (provenance(),),
+        )
+        contract.validate_value(16000)
+        with self.assertRaises(ValueError):
+            contract.validate_value(16001)
 
     def test_witness_keeps_total_pending_and_completion_distinct(self):
         NativeWitness(
