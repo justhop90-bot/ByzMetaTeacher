@@ -7,6 +7,7 @@ import sys
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 
+from Compiler.backends.errors import NativeBackendError
 from Compiler.backends.models import (
     ArtifactIdentity,
     BackendIdentity,
@@ -45,6 +46,38 @@ class FakeBackend:
         return self.result
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
+    def test_compile_to_file_requires_native_validation(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Path(tmp_dir) / "Basilisk.per"
+
+            with self.assertRaises(NativeBackendError):
+                compile_to_file(EXAMPLES, output)
+
+            self.assertFalse(output.exists())
+
+    def test_validated_backend_with_findings_never_promotes(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            output = tmp / "Basilisk.per"
+            output.write_text("KEEP THIS\n", encoding="utf-8")
+            result = fake_result(output, ValidationStatus.VALIDATED)
+            result = NativeValidationResult(
+                status=result.status,
+                failed=False,
+                backend=result.backend,
+                invocation=result.invocation,
+                artifact=result.artifact,
+                summary=ValidationSummary(1, 0, 1, 0, 0),
+                diagnostics=(),
+                stderr="",
+            )
+            fake = FakeBackend(result)
+
+            validation = compile_to_file(EXAMPLES, output, native_backend=fake)
+
+            self.assertEqual(validation.status, ValidationStatus.VALIDATED)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
+
     def test_validated_backend_promotes_staged_output(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)
