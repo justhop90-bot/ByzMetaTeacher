@@ -547,9 +547,33 @@ class CompilerTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[1] / "examples" / "basics.basilisk"
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "Basilisk.per"
+            backend_root = Path(tmp) / "native-backend"
+            backend_root.mkdir()
+            (backend_root / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "name": "aoe2-ai-parser",
+                        "project_version": "0.1.0",
+                        "commit_sha": "3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba",
+                    },
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
+            )
             run = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve().parents[1] / "compiler.py"), str(source), str(output)],
-                cwd=repo, capture_output=True, text=True,
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve().parents[1] / "compiler.py"),
+                    str(source),
+                    str(output),
+                    "--native-backend-root",
+                    str(backend_root),
+                    "--native-backend-python",
+                    sys.executable,
+                ],
+                cwd=repo,
+                capture_output=True,
+                text=True,
             )
             self.assertEqual(run.returncode, 0, run.stderr)
             self.assertTrue(output.exists())
