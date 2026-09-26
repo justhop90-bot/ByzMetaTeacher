@@ -792,19 +792,21 @@ def build_byzantine_castle_strategy(
         "Castle completion materially changes the strategic posture",
     }
 
+    def annotate_meta(evidence: StrategicEvidence) -> StrategicEvidence:
+        if evidence.label in meta_labels:
+            return replace(
+                evidence,
+                source=StrategicEvidenceSource.COMMUNITY_META,
+                provenance=meta_provenance,
+            )
+        return evidence
+
     demands = tuple(
         replace(
             demand,
-            reason=tuple(
-                replace(
-                    evidence,
-                    source=StrategicEvidenceSource.COMMUNITY_META,
-                    provenance=meta_provenance,
-                )
-                if evidence.label in meta_labels
-                else evidence
-                for evidence in demand.reason
-            ),
+            reason=tuple(annotate_meta(evidence) for evidence in demand.reason),
+            admissibility=tuple(annotate_meta(evidence) for evidence in demand.admissibility),
+            invalidation=tuple(annotate_meta(evidence) for evidence in demand.invalidation),
         )
         for demand in profile.demands
     )
