@@ -29,7 +29,7 @@ from ..ir import (
     SemanticRequirement,
     StorageRequestId,
 )
-from ..primitives import PrimitiveRegistry
+from ..primitives import NativeSupportState, PrimitiveRegistry
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -94,7 +94,7 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
             _validate_expression(child, registry)
         return None
     assessment = registry.assess_support(expr.head)
-    if assessment.state.value != "executable-safe":
+    if assessment.state is not NativeSupportState.EXECUTABLE_SAFE:
         raise CompileError(
             f"{assessment.diagnostics[-1].code}: native command '{expr.head}' "
             f"is {assessment.state.value}: {assessment.message}"
