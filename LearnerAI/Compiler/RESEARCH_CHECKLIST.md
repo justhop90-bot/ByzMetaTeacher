@@ -88,7 +88,7 @@ Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do
 - [x] actionable projected providers require a native FEASIBILITY predicate while preserving observation/timing semantics;
 - [x] demand ownership and writer/consumer contracts;
 - [x] prerequisite dependency graph, deterministic SCC cycle detection, and dead-end diagnostics;
-- [ ] resource/conflict semantics matching Basilisk's transient arbitration;
+- [x] resource/conflict semantics for the current transient action-exclusion arbitration layer;
 - [x] first-writer/first-consumer analysis for lifecycle state with emitter-aligned source order;
 - [ ] action-issuance failure versus pending-state distinction;
 - [ ] Castle vertical slice compiled against actual Basilisk semantics.
@@ -284,3 +284,16 @@ Compiler CI run 207 (36234240102) verified the authoritative demand-ownership tr
 - native generated Basilisk fixture: finding_count=0, failed=false;
 - full compiler unittest suite: 132 tests, OK;
 - ownership regression fixtures and compile-gate integration executed in the same suite.
+
+
+### Resource/conflict implementation record (2026-09-26)
+
+- [x] Add typed ResourceClaim, ConflictContract, ResourceClaimId, ResourceKind, and ResourceScope IR.
+- [x] Attach typed resource claims to capability providers while preserving compatibility with existing action conflict metadata.
+- [x] Materialize the existing build-pass singleton as a transient ACTION_EXCLUSION claim owned by the executing provider.
+- [x] Diagnose arbitration without a conflict class, conflict class without an arbitration owner, multiple arbitration owners, duplicate claims, incompatible conflict-group arbitrators, and invalid classes.
+- [x] Validate conflict groups deterministically before capability-provider validation, binding, and emission.
+- [x] Lock bridge materialization, exact diagnostics, deterministic ordering, and public compile-gate integration with focused fixtures.
+- [x] Compiler CI run 230 verified the final resource-conflict tree: native finding_count=0 and 140 tests passed.
+
+The model deliberately stops at transient action exclusion. Persistent resource reservations and scheduler/fairness semantics remain outside Basilisk's compiler boundary.
