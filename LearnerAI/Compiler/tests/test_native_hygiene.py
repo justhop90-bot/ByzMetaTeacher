@@ -146,6 +146,16 @@ class NativeHygieneTests(unittest.TestCase):
                 provenance=(provenance(),),
             )
 
+    def test_documented_goal_spans_use_the_full_goal_namespace(self):
+        NativeStorageUse(
+            "high-goal-span",
+            NativeStorageClass.GOAL_SPAN,
+            NativeStorageKind.SEARCH_STATE_GOAL_SPAN,
+            base=15996,
+            span_length=4,
+            provenance=(provenance(),),
+        )
+
     def test_goal_spans_cannot_overlap(self):
         left = NativeStorageUse(
             "cost-data",
