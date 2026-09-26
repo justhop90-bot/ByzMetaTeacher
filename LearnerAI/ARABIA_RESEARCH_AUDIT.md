@@ -279,3 +279,26 @@ The strongest cross-source convergence is:
 - current engine updates explicitly reward this kind of conditional, evidence-based behavior.
 
 The compiler should therefore become stricter about semantic boundaries, not larger.
+
+
+## MAA-path audit, September 26, 2026
+
+The MAA response path was re-audited after the timing, worker, production, wall, tower, and resource-allocation revisions.
+
+Result:
+
+- Timing remains interpretive. The 06:30-08:30 MAA band is a readiness window only; it cannot create Archer production without world-state evidence.
+- The first Archery Range is the protected response capability when MAA evidence appears. The worker packet temporarily favors wood until the Range and initial Archer queue are serviceable, while preserving the Castle gold floor.
+- One Range is the default provider for 3-6 defensive Archers. A second Range is conditional on persistent pressure plus insufficient replacement capacity, not on MAA count alone.
+- MAA do not automatically authorize towers. Tower admission remains an independent resource/position test. This prevents the MAA counter branch from turning into a static-defense branch.
+- Transitioning the opponent toward Castle does not release the MAA demand by itself. The surviving MAA must also fall below the active pressure threshold or lose access to the economy.
+- Timing-dependent release is now rejected by the compiler even when timing is combined with an observation predicate.
+- Timing-only composite requirements are rejected, preventing a hidden "time window" build-order rule disguised as a logical expression.
+
+Current external community evidence continues to describe MAA as a common Arabia opening and emphasizes early Range readiness and small resource walls as practical responses. Current official guidance and the September 22, 2026 update also reinforce conditional funnel walls, resource-aware worker behavior, and construction/pathing recovery rather than unconditional scripted reactions.
+
+References:
+
+- https://www.reddit.com/r/aoe2/comments/1w2ysg8/arabia_every_opening_is_maa/
+- https://www.reddit.com/r/aoe2/comments/1voyj53/what_to_do_vs_menatarms_rushes/
+- https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/
