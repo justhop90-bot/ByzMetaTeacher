@@ -167,14 +167,14 @@ Tower pressure is a structural threat. It therefore overrides ordinary Feudal un
 
 | Observed state | Override | Response |
 |---|---|---|
-| Enemy tower foundation >12 tiles from a critical resource and not advancing toward the economy | T0 | monitor; no automatic tower |
-| 1 foundation within ~12 tiles of critical resource | T1 | short emergency wall/funnel; mobilize available units |
-| 1 foundation within ~12 tiles + 2+ enemy builders | T2 | emergency defensive tower admissible + counter units |
-| Completed tower overlaps/controls critical resource | T3 | defensive tower or safe relocation path; suspend optional Castle spending |
-| 2+ forward tower foundations/completed towers threatening the same economy | T4 | defensive tower + wall/gate + relevant counter units; Castle bank suspended |
+| Foundation exists but does not materially threaten a critical resource | T0 | monitor; no automatic tower |
+| Foundation is spatially close enough to threaten a critical resource | T1 | short emergency wall/funnel; mobilize available units |
+| Threatening foundation + 2+ builders or military escort | T2 | emergency defensive tower admissible + relevant counter units |
+| Completed tower controls a critical resource or route | T3 | defensive tower or safe relocation path; suspend optional Castle spending |
+| 2+ forward towers or foundations threaten the same economic zone | T4 | defensive tower + wall/gate + relevant counter units; Castle bank suspended |
 | Tower + MAA/Archers at the same forward position | T5 | treat as full Feudal pressure; protect economy first |
 
-The approximate 12-tile test is a **strategic distance band**, not a claim about an individual tower's exact attack radius. The implementation should map it to the actual engine spatial predicate rather than pretending geometry is a constant because numbers make humans feel safe.
+The spatial test is deliberately qualitative at the strategy layer. Do not hard-code a universal "12 tiles" rule into the compiler. Map the threat to engine-native distance/targeting facts and tune the actual distance band from runtime evidence.
 
 ### Tower builder rule
 
