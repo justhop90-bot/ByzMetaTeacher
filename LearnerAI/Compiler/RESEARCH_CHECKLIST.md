@@ -53,6 +53,27 @@ native/community .per examples, and the CI test runner.
 - [x] regression tests for each hardening edge;
 - [x] CI-driven repair of serializer, nested-arity, and initialization lifecycle defects found during implementation.
 
+### GitHub prior-art cross-check (2026-09-26)
+
+The public prior art was compared directly against the current Basilisk compiler:
+
+- `01010100b/AgeScript`: adopt the typed Compilation -> Assembly -> Script separation, explicit intermediate instructions, Goal-backed memory discipline, deterministic lowering, and hard rule-budget enforcement. Do not copy its general-purpose programming language model.
+- `JOTworks/AgeOfPython`: adopt AIRef-derived native metadata, explicit parameter typing, compiler-owned Goal memory allocation, and strong separation between source variables and native storage. Do not copy its Python-like frontend or opaque memory conventions.
+- `lewisc64/aoe2ai`: adopt named Goal allocation, explicit volatile Goal/Point lifetimes, staged persistent state as a semantic concept, and rule-budget-aware lowering. Do not add its generalized strategy DSL constructs until Basilisk semantics require them.
+- `mboop127/AlphaScripter`: retain structured .per representation and game-facing validation ideas as reference only; its genetic optimization model is outside the Basilisk compiler boundary.
+- `teshiba/LibAoe2AISharp`: treat programmatic command construction as precedent for typed native wrappers, but keep AIRef as the command authority.
+
+Adoption rule: steal proven storage, IR, lowering, and validation mechanisms; do not steal architecture that turns Basilisk into a generic programming language or universal strategy scheduler.
+
+### Prior-art reuse tranche implemented / in progress
+
+- [x] prior-art decisions recorded in `docs/plans/2026-09-26-basilisk-prior-art-reuse.md`;
+- [ ] explicit GoalSpan request/allocation and interval occupancy;
+- [ ] deterministic volatile Goal scratch pool;
+- [ ] optional end-to-end binding-manifest artifact;
+- [ ] native storage contracts wired to actual command lowering;
+- [ ] capability-provider/dependency semantics remain the next strategy-facing tranche.
+
 ### Still required before full-player compilation
 
 - [ ] command-specific GoalSpan allocation from native storage contracts;
