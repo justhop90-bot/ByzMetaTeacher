@@ -497,12 +497,6 @@ class RuntimeBinder:
                 raise ValueError(f"existing binding role mismatch for {request.request_id}")
             return
 
-            if not isinstance(binding, GoalSlot):
-                raise ValueError(
-                    f"existing binding storage kind mismatch for {request.request_id}"
-                )
-            return
-
         if not isinstance(binding, GoalSpan):
             raise ValueError(
                 f"existing binding storage kind mismatch for {request.request_id}"
