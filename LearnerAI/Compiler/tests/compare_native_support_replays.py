@@ -4,10 +4,23 @@ import argparse
 import json
 from pathlib import Path
 
+from native_support_replay_schema import SnapshotSchemaError, validate_snapshot
+
 def load_snapshots(root: Path) -> list[tuple[Path, dict[str, object]]]:
     snapshots = []
     for path in sorted(root.rglob("native-support-replay.json")):
-        snapshots.append((path, json.loads(path.read_text(encoding="utf-8"))))
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            snapshots.append(
+                (
+                    path,
+                    validate_snapshot(payload, source=str(path)),
+                )
+            )
+        except (json.JSONDecodeError, SnapshotSchemaError) as exc:
+            raise AssertionError(
+                f"invalid replay snapshot {path}: {exc}"
+            ) from exc
     return snapshots
 
 def main() -> None:
