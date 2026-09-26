@@ -41,19 +41,19 @@ def _parse(tokens: list[str], index: int = 0):
             index += 1
     if index >= len(tokens):
         raise CompileError("unbalanced .per expression")
-    return head, tuple(args), index + 1
+    return Expression(source="", head=head, args=tuple(args)), index + 1
 
 
 def parse_expression(source: str) -> Expression:
     tokens = _tokens(source)
-    head, args, end = _parse(tokens)
+    expr, end = _parse(tokens)
     if end != len(tokens):
         raise CompileError("trailing tokens after .per expression")
-    if head in _LOGICAL_ARITY and len(args) != _LOGICAL_ARITY[head]:
+    if expr.head in _LOGICAL_ARITY and len(expr.args) != _LOGICAL_ARITY[expr.head]:
         raise CompileError(
-            f"logical operator '{head}' requires {_LOGICAL_ARITY[head]} operands"
+            f"logical operator '{expr.head}' requires {_LOGICAL_ARITY[expr.head]} operands"
         )
-    return Expression(source=source, head=head, args=args)
+    return Expression(source=source, head=expr.head, args=expr.args)
 
 
 def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
@@ -156,7 +156,7 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
             requirements.append(SemanticRequirement(expr, _stored_role(expr, registry)))
         action = parse_expression(demand.action)
         _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
-        if not demand.witness.strip():
+        if not demand.witness.strip() or demand.witness.strip() == "()":
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
