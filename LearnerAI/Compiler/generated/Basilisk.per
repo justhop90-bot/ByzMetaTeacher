@@ -6,12 +6,15 @@
 
 ; Demand goal constants
 (defconst demand-castle 1000)
+(defconst issued-castle 1003)
 (defconst pending-castle 1001)
 (defconst complete-castle 1002)
 (defconst demand-defensive-spearmen 1001)
+(defconst issued-defensive-spearmen 1004)
 (defconst pending-defensive-spearmen 1002)
 (defconst complete-defensive-spearmen 1003)
 (defconst demand-wheelbarrow 1002)
+(defconst issued-wheelbarrow 1005)
 (defconst pending-wheelbarrow 1003)
 (defconst complete-wheelbarrow 1004)
 (defconst action-claim-build-pass-singleton 1003)
@@ -39,6 +42,8 @@
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1002 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: castle | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle in ACTIVE; it is not PENDING.
 ; Release: castle | COMPLETE -> RELEASED
 (defrule
     (goal demand-castle 1002)
@@ -55,7 +60,14 @@
     (set-goal demand-castle 1002)
 )
 
-; Demand: castle | ACTIVE -> PENDING
+; Pending admission: castle | ISSUED -> PENDING
+(defrule
+    (goal demand-castle 1003)
+=>
+    (set-goal demand-castle 1001)
+)
+
+; Action issuance: castle | ACTIVE -> ISSUED
 (defrule
     (goal demand-castle 1)
     (not (building-type-count castle > 0))
@@ -68,7 +80,7 @@
 =>
     (build castle)
     (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-castle 1001)
+    (set-goal demand-castle 1003)
 )
 
 ; Pending diagnostics: defensive-spearmen
@@ -77,6 +89,8 @@
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1003 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: defensive-spearmen | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-defensive-spearmen in ACTIVE; it is not PENDING.
 ; Release: defensive-spearmen | COMPLETE -> RELEASED
 (defrule
     (goal demand-defensive-spearmen 1003)
@@ -93,7 +107,14 @@
     (set-goal demand-defensive-spearmen 1003)
 )
 
-; Demand: defensive-spearmen | ACTIVE -> PENDING
+; Pending admission: defensive-spearmen | ISSUED -> PENDING
+(defrule
+    (goal demand-defensive-spearmen 1004)
+=>
+    (set-goal demand-defensive-spearmen 1002)
+)
+
+; Action issuance: defensive-spearmen | ACTIVE -> ISSUED
 (defrule
     (goal demand-defensive-spearmen 1)
     (not (unit-type-count spearman >= 2))
@@ -103,7 +124,7 @@
     (can-train spearman)
 =>
     (train spearman)
-    (set-goal demand-defensive-spearmen 1002)
+    (set-goal demand-defensive-spearmen 1004)
 )
 
 ; Pending diagnostics: wheelbarrow
@@ -112,6 +133,8 @@
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 1004 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: wheelbarrow | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-wheelbarrow in ACTIVE; it is not PENDING.
 ; Release: wheelbarrow | COMPLETE -> RELEASED
 (defrule
     (goal demand-wheelbarrow 1004)
@@ -128,7 +151,14 @@
     (set-goal demand-wheelbarrow 1004)
 )
 
-; Demand: wheelbarrow | ACTIVE -> PENDING
+; Pending admission: wheelbarrow | ISSUED -> PENDING
+(defrule
+    (goal demand-wheelbarrow 1005)
+=>
+    (set-goal demand-wheelbarrow 1003)
+)
+
+; Action issuance: wheelbarrow | ACTIVE -> ISSUED
 (defrule
     (goal demand-wheelbarrow 1)
     (not (research-completed ri-wheelbarrow))
