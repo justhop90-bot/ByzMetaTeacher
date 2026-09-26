@@ -52,12 +52,12 @@
 - Produces: `GoalSpanRequest`, `GoalInterval`, generalized `BindingRecord`, interval-aware `BindingContext`, deterministic scalar/span allocation.
 
 - [ ] Add `GoalSpanRequest` with explicit width, shape, contract bounds, and symbolic provenance.
-- [ ] Represent occupied external Goal spans as intervals.
-- [ ] Reject scalar/span overlap, invalid contract ranges, zero-width spans, and duplicate storage identities.
-- [ ] Allocate scalar lifecycle state from the existing scalar pool and extended spans from their contract pool without aliasing.
-- [ ] Preserve existing scalar manifest bindings and existing span bindings across recompilation.
-- [ ] Round-trip both scalar and span bindings through deterministic JSON manifests.
-- [ ] Verify current lifecycle fixture still allocates exactly one GoalSlot per demand.
+- [x] Represent occupied external Goal spans as intervals.
+- [x] Reject scalar/span overlap, invalid contract ranges, zero-width spans, and duplicate storage identities.
+- [x] Allocate scalar lifecycle state from the existing scalar pool and extended spans from their contract pool without aliasing.
+- [x] Preserve existing scalar manifest bindings and existing span bindings across recompilation.
+- [x] Round-trip both scalar and span bindings through deterministic JSON manifests.
+- [x] Verify current lifecycle fixture still allocates exactly one GoalSlot per demand.
 
 ---
 
@@ -71,11 +71,11 @@
 - Consumes: a deterministic range of compiler-owned GoalIds.
 - Produces: `VolatileGoalPool.checkout()`, `release()`, and `using()` lifetime helper.
 
-- [ ] Allocate scratch Goals from a compiler-owned range disjoint from lifecycle/scalar persistent storage and GoalSpan ranges.
-- [ ] Reuse only explicitly released Goals.
-- [ ] Reject double release and release of foreign/unknown Goals.
-- [ ] Provide deterministic first-fit checkout.
-- [ ] Keep the pool independent of semantic truth and lifecycle witnesses.
+- [x] Allocate scratch Goals from a compiler-owned range disjoint from lifecycle/scalar persistent storage and GoalSpan ranges.
+- [x] Reuse only explicitly released Goals.
+- [x] Reject double release and release of foreign/unknown Goals.
+- [x] Provide deterministic first-fit checkout.
+- [x] Keep the pool independent of semantic truth and lifecycle witnesses.
 
 ---
 
@@ -90,11 +90,11 @@
 - Consumes: `BindingResult` produced by compilation.
 - Produces: optional manifest output alongside the .per artifact after semantic/native validation.
 
-- [ ] Add an internal compilation path that returns both emitted .per and `BindingResult`.
-- [ ] Add an optional `--binding-manifest PATH` CLI output.
-- [ ] Write the manifest only after semantic validation and, when enabled, native validation succeeds.
-- [ ] Preserve the existing output artifact if native validation rejects the staged .per.
-- [ ] Verify repeated compilation with the same inputs produces byte-identical .per and manifest output.
+- [x] Add an internal compilation path that returns both emitted .per and `BindingResult`.
+- [x] Add an optional `--binding-manifest PATH` CLI output.
+- [x] Write the manifest only after semantic validation and, when enabled, native validation succeeds.
+- [x] Preserve the existing output artifact if native validation rejects the staged .per.
+- [x] Verify repeated compilation with the same inputs produces byte-identical .per and manifest output.
 
 ---
 
@@ -108,3 +108,7 @@
 - [ ] Castle vertical slice using actual Basilisk capability and resource semantics.
 - [ ] Source-order analysis and same-pass visibility diagnostics.
 - [ ] StrategicNumberSlot and TimerSlot allocation after native contracts are catalogued.
+
+## Verification record
+
+The storage reuse tranche is implemented on `main`. The compiler workflow has passed native validation and the full unittest suite on the implementation head before documentation-only commits. The next verification cycle will re-run the same checks against the documentation-updated head.
