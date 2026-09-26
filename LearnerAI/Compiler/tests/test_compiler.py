@@ -314,7 +314,7 @@ class CompilerTests(unittest.TestCase):
             release (build castle)
         }
         """
-        with self.assertRaisesRegex(CompileError, "PENDING-RELEASE-PREMATURE"):
+        with self.assertRaisesRegex(CompileError, "REL-004: release for demand 'premature' reuses action primitive 'build'"):
             compile_source(source)
 
     def test_pending_negative_witness_cannot_fire_before_action(self):
@@ -449,7 +449,7 @@ class CompilerTests(unittest.TestCase):
             release (game-time >= 900)
         }
         """
-        with self.assertRaisesRegex(CompileError, "TIMING-RELEASE-WITHOUT-WORLD-EVIDENCE"):
+        with self.assertRaisesRegex(CompileError, "REL-002: release for demand 'timed-spears' contains timing evidence"):
             compile_source(source)
 
 
@@ -490,7 +490,7 @@ class CompilerTests(unittest.TestCase):
             release (and (game-time >= 750) (unit-type-count man-at-arms >= 2))
         }
         """
-        with self.assertRaisesRegex(CompileError, "TIMING.*release"):
+        with self.assertRaisesRegex(CompileError, "REL-002: release for demand 'maa-response' contains timing evidence"):
             compile_source(source)
 
 
