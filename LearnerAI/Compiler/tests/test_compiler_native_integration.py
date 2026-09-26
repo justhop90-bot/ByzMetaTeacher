@@ -17,6 +17,8 @@ from Compiler.backends.models import (
     ValidationSummary,
 )
 from Compiler.compiler import compile_source_with_report, compile_to_file
+from Compiler.primitives.native_schema import NativeCommandRegistry, NativeCommandSpec, NativeParameterSpec
+from Compiler.primitives.registry import NativeSupportState, Primitive, PrimitiveRegistry
 from Compiler.diagnostics import ReportStatus
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.basilisk").read_text(encoding="utf-8")
@@ -171,6 +173,123 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(result.status, ValidationStatus.REJECTED)
             self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
             self.assertEqual(manifest.read_text(encoding="utf-8"), "KEEP MANIFEST\n")
+
+    def test_native_support_state_fixtures_traverse_full_compiler_pipeline(self):
+        fixture_root = Path(__file__).parent / "fixtures" / "native_support_states"
+        cases = (
+            ("native-known", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("native-typed", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("semantically-adapted", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+            ("executable-safe", NativeSupportState.EXECUTABLE_SAFE, None),
+            ("unsupported", NativeSupportState.UNSUPPORTED, "NATIVE-SUPPORT-005"),
+        )
+
+        for name, expected_state, expected_code in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp_dir:
+                source = (fixture_root / f"{name}.basilisk").read_text(encoding="utf-8")
+                registry = self._native_support_fixture_registry(name)
+                output = Path(tmp_dir) / f"{name}.per"
+                backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+                report = compile_source_with_report(
+                    source,
+                    output,
+                    native_backend=backend,
+                    registry=registry,
+                    source_unit=f"native-support/{name}.basilisk",
+                )
+
+                if name == "executable-safe":
+                    self.assertEqual(report.status, ReportStatus.VALIDATED)
+                    self.assertIsNotNone(backend.seen_artifact)
+                    self.assertTrue(output.exists())
+                else:
+                    self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
+                    self.assertFalse(output.exists())
+                    self.assertEqual(report.diagnostics[0].code, expected_code)
+
+                assessment = registry.assess_support("fixture-command")
+                self.assertEqual(assessment.state, expected_state)
+
+                states = [diagnostic.state for diagnostic in assessment.diagnostics]
+                expected_states = {
+                    "native-known": [
+                        NativeSupportState.NATIVE_KNOWN,
+                        NativeSupportState.UNSUPPORTED,
+                    ],
+                    "native-typed": [
+                        NativeSupportState.NATIVE_KNOWN,
+                        NativeSupportState.NATIVE_TYPED,
+                        NativeSupportState.UNSUPPORTED,
+                    ],
+                    "semantically-adapted": [
+                        NativeSupportState.NATIVE_KNOWN,
+                        NativeSupportState.NATIVE_TYPED,
+                        NativeSupportState.SEMANTICALLY_ADAPTED,
+                        NativeSupportState.UNSUPPORTED,
+                    ],
+                    "executable-safe": [
+                        NativeSupportState.NATIVE_KNOWN,
+                        NativeSupportState.NATIVE_TYPED,
+                        NativeSupportState.SEMANTICALLY_ADAPTED,
+                        NativeSupportState.EXECUTABLE_SAFE,
+                    ],
+                    "unsupported": [NativeSupportState.UNSUPPORTED],
+                }
+                self.assertEqual(states, expected_states[name])
+
+    @staticmethod
+    def _native_support_fixture_registry(name):
+        parameter = NativeParameterSpec(
+            "Value",
+            "Const",
+            "in",
+            "fixture",
+            "fixture parameter",
+        )
+        if name == "native-known":
+            native = NativeCommandSpec(
+                "fixture-command",
+                "DE",
+                "Fact",
+                (NativeParameterSpec("", "", "", "", ""),),
+            )
+            primitive = None
+        elif name in {"native-typed", "unsupported"}:
+            native = NativeCommandSpec(
+                "fixture-command",
+                "DE",
+                "Fact",
+                (parameter,),
+            )
+            primitive = None
+        elif name == "semantically-adapted":
+            native = NativeCommandSpec(
+                "fixture-command",
+                "DE",
+                "Fact",
+                (parameter,),
+            )
+            primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 2, 2)
+        else:
+            native = NativeCommandSpec(
+                "fixture-command",
+                "DE",
+                "Fact",
+                (parameter,),
+            )
+            primitive = Primitive("fixture-command", "FACT", "OBSERVATION", 1, 1)
+
+        primitives = () if primitive is None else (primitive,)
+        return PrimitiveRegistry(
+            primitives,
+            NativeCommandRegistry(
+                (native,),
+                source_blob_sha=f"native-support-{name}",
+                command_count=1,
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
