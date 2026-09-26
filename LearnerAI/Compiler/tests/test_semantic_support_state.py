@@ -1,5 +1,11 @@
 import unittest
 
+from Compiler.primitives.engine_semantics import (
+    EngineSemanticMapping,
+    EngineSemanticMappingRegistry,
+    EngineSemanticMappingStatus,
+    default_engine_semantic_mapping_registry,
+)
 from Compiler.primitives.native_schema import (
     NativeCommandRegistry,
     NativeCommandSpec,
@@ -29,6 +35,80 @@ class SemanticSupportStateTests(unittest.TestCase):
                 for name in registry.names()
             )
         )
+
+
+    def test_default_semantic_mapping_catalog_is_exact_and_contracted(self):
+        mapping_registry = default_engine_semantic_mapping_registry()
+        self.assertEqual(
+            tuple(
+                sorted(
+                    item.native_command
+                    for item in mapping_registry.mappings
+                    if item.status is EngineSemanticMappingStatus.CONTRACTED
+                )
+            ),
+            tuple(sorted(default_de_registry().names())),
+        )
+        self.assertTrue(
+            all(
+                item.status is EngineSemanticMappingStatus.CONTRACTED
+                for item in mapping_registry.mappings
+                if item.native_command is not None
+            )
+        )
+
+    def test_open_engine_semantic_mapping_is_unsupported(self):
+        mapping_registry = EngineSemanticMappingRegistry(
+            (
+                EngineSemanticMapping(
+                    identity="open.synthetic",
+                    native_command="current-age",
+                    native_kind="Fact",
+                    status=EngineSemanticMappingStatus.OPEN,
+                    evidence_class="OPEN / UNKNOWN",
+                    evidence_sources=("test://open",),
+                    state_effects="unknown",
+                    lifetime="unknown",
+                    ordering="unknown",
+                    admission="unknown",
+                    completion="unknown",
+                    recovery="unknown",
+                ),
+            )
+        )
+        native = NativeCommandRegistry(
+            (
+                NativeCommandSpec(
+                    "current-age",
+                    "DE",
+                    "Fact",
+                    (
+                        NativeParameterSpec("Age", "Age", "in", "a valid age", "check age"),
+                        NativeParameterSpec("Compare", "compareOp", "in", "a comparison", "compare"),
+                    ),
+                ),
+            ),
+            source_blob_sha="test",
+            command_count=1,
+        )
+        registry = PrimitiveRegistry(
+            (
+                Primitive(
+                    "current-age",
+                    "FACT",
+                    "OBSERVATION",
+                    2,
+                    2,
+                    engine_semantics_id="open.synthetic",
+                ),
+            ),
+            native,
+            semantic_mappings=mapping_registry,
+        )
+        assessment = registry.assess_support("current-age")
+        self.assertEqual(assessment.state, NativeSupportState.UNSUPPORTED)
+        self.assertEqual(assessment.diagnostics[-1].code, "NATIVE-SUPPORT-006")
+        self.assertIn("open/unknown", assessment.message)
 
     def test_semantic_adapter_without_engine_mapping_is_blocked(self):
         native = NativeCommandRegistry(
