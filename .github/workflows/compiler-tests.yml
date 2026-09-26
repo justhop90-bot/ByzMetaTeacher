@@ -20,9 +20,9 @@ jobs:
           python-version: "3.12"
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-      - name: Native zero-findings acceptance: generated Basilisk fixture
+      - name: Native zero-findings acceptance - generated Basilisk fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py LearnerAI/Compiler/generated/Basilisk.per
-      - name: Native zero-findings acceptance: strategy vertical-slice fixture
+      - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -38,7 +38,7 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per
-      - name: Native zero-findings acceptance: strategy-runtime fixture
+      - name: Native zero-findings acceptance - strategy-runtime fixture
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -66,7 +66,7 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy-runtime.per
-      - name: Native zero-findings acceptance: explicit invalidation fixture
+      - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
           from pathlib import Path
