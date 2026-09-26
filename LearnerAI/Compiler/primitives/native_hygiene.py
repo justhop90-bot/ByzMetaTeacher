@@ -496,7 +496,6 @@ class NativeStorageUse:
     identity: str
     storage_class: NativeStorageClass
     kind: NativeStorageKind
-    contract_id: Optional[str] = None
     base: Optional[int] = None
     span_length: int = 1
     access: str = "READ"
@@ -505,6 +504,7 @@ class NativeStorageUse:
     request_purpose: Optional[str] = None
     symbolic: bool = False
     provenance: Tuple[AIRefProvenance, ...] = ()
+    contract_id: Optional[str] = None
 
 
     def validate_binding_shape(
@@ -743,29 +743,51 @@ class NativeContractCatalog:
         )
 
     def validate_all_provenance(self) -> None:
-        for owner, provenance in (
+        for owner, provenance, expected_scope in (
             *(
-                (witness.identity, witness.provenance)
+                (witness.identity, witness.provenance, CitationSemanticScope.GENERAL_NATIVE_FACT)
                 for witness in self.witnesses
             ),
             *(
-                (storage.identity, storage.provenance)
+                (
+                    storage.identity,
+                    storage.provenance,
+                    (
+                        CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE
+                        if storage.kind is NativeStorageKind.GOAL
+                        else CitationSemanticScope.EXTENDED_GOAL_SPAN
+                        if storage.storage_class is NativeStorageClass.GOAL_SPAN
+                        else CitationSemanticScope.GENERAL_NATIVE_FACT
+                    ),
+                )
                 for storage in self.storage_uses
             ),
             *(
-                (constraint.identity, constraint.provenance)
+                (constraint.identity, constraint.provenance, CitationSemanticScope.GENERAL_NATIVE_FACT)
                 for constraint in self.pass_constraints
             ),
             *(
-                (contract.identity, contract.provenance)
+                (
+                    contract.identity,
+                    contract.provenance,
+                    CitationSemanticScope.ORDINARY_PERSISTENT_GOAL_STORAGE,
+                )
                 for contract in self.goal_storage_contracts
             ),
             *(
-                (contract.identity, contract.provenance)
+                (
+                    contract.identity,
+                    contract.provenance,
+                    CitationSemanticScope.EXTENDED_GOAL_SPAN,
+                )
                 for contract in self.goal_span_contracts
             ),
             *(
-                (contract.identity, contract.provenance)
+                (
+                    contract.identity,
+                    contract.provenance,
+                    CitationSemanticScope.GOAL_ID_PARAMETER_RANGE,
+                )
                 for contract in self.parameter_ranges
             ),
         ):
@@ -773,6 +795,7 @@ class NativeContractCatalog:
                 self.citation_catalog.validate_provenance(
                     provenance,
                     require_promotable=True,
+                    expected_scope=expected_scope,
                 )
             except ValueError as exc:
                 raise ValueError(
@@ -891,9 +914,15 @@ class CitationRecordCatalog:
         provenance: Tuple[AIRefProvenance, ...],
         *,
         require_promotable: bool,
+        expected_scope: Optional[CitationSemanticScope] = None,
     ) -> None:
         for evidence in provenance:
             record = self.resolve(evidence.citation_id)
+            if expected_scope is not None and record.semantic_scope is not expected_scope:
+                raise ValueError(
+                    f"citation '{evidence.citation_id}' has scope "
+                    f"{record.semantic_scope.value}, expected {expected_scope.value}"
+                )
             if require_promotable:
                 state = promotion_state(record, already_promoted=False)
                 if state is not PromotionState.ELIGIBLE:
