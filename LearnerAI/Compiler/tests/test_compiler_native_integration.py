@@ -1,5 +1,6 @@
 import hashlib
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -315,6 +316,22 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                         expected_codes[name],
                     )
 
+                    cross_process_baseline = {
+                        "diagnostics": baseline_payload,
+                        "support_states": baseline_state_sequence,
+                        "artifact_hash": baseline_artifact_hash,
+                    }
+                    for process_number in range(1, 3):
+                        cross_process_payload = self._cross_process_replay(
+                            name,
+                            output,
+                        )
+                        self.assertEqual(
+                            cross_process_payload,
+                            cross_process_baseline,
+                            msg=f"cross-process replay {process_number} diverged",
+                        )
+
                     for run_number in range(2, 4):
                         replay_backend = FakeBackend(
                             fake_result(output, ValidationStatus.VALIDATED)
@@ -379,6 +396,65 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                             replay_backend.seen_artifact,
                             msg=f"native backend invoked on run {run_number}",
                         )
+
+    @staticmethod
+    def _cross_process_replay(
+        name,
+        output,
+    ):
+        script = r"""
+import hashlib
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+test_path = root / "Compiler" / "tests" / "test_compiler_native_integration.py"
+fixture_name = sys.argv[2]
+output = Path(sys.argv[3])
+
+sys.path.insert(0, str(root))
+spec = importlib.util.spec_from_file_location("native_support_integration", test_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+fixture_root = test_path.parent / "fixtures" / "native_support_states"
+source = (fixture_root / f"{fixture_name}.basilisk").read_text(encoding="utf-8")
+registry = module.CompilerNativeIntegrationTests._native_support_fixture_registry(fixture_name)
+backend = module.FakeBackend(
+    module.fake_result(output, module.ValidationStatus.VALIDATED)
+)
+report = module.compile_source_with_report(
+    source,
+    output,
+    native_backend=backend,
+    registry=registry,
+    source_unit=f"native-support/{fixture_name}.basilisk",
+)
+assessment = registry.assess_support("fixture-command")
+payload = {
+    "diagnostics": report.to_dict()["diagnostics"],
+    "support_states": [diagnostic.state.value for diagnostic in assessment.diagnostics],
+    "artifact_hash": hashlib.sha256(output.read_bytes()).hexdigest(),
+}
+print(json.dumps(payload, sort_keys=True))
+"""
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                script,
+                str(ROOT),
+                name,
+                str(output),
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return json.loads(completed.stdout)
 
     @staticmethod
     def _native_support_fixture_registry(name):
