@@ -8,7 +8,6 @@ from LearnerAI.Compiler.ir.civ_profile import (
 )
 from LearnerAI.Compiler.ir.game_data import (
     Age,
-    BuildingDef,
     BuildingId,
     ResourceCost,
     SelectorKind,
@@ -68,10 +67,9 @@ class GameDataTests(unittest.TestCase):
             train_time_seconds=None,
             prerequisites=(),
             classes=("INFANTRY",),
-            strategic_tags=(),
         )
 
-        self.assertEqual(unit.strategic_tags, ())
+        self.assertFalse(hasattr(unit, "strategic_tags"))
 
     def test_invalid_selector_kind_is_rejected(self):
         with self.assertRaises(ValueError):
