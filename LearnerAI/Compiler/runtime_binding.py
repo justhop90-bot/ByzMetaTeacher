@@ -13,7 +13,8 @@ from .ir import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest, Semant
 
 GOAL_ID_MIN = 1
 GOAL_ID_MAX = 16_000
-LIFECYCLE_GOAL_MAX = GOAL_ID_MAX - 4
+ORDINARY_GOAL_MAX = 512
+LIFECYCLE_GOAL_MAX = ORDINARY_GOAL_MAX
 SN_ID_MIN = 0
 SN_ID_MAX = 511
 TIMER_ID_MIN = 1
@@ -740,10 +741,10 @@ class BindingManifest:
 class RuntimeBinder:
     """Deterministically bind symbolic storage requests to native Goal storage."""
 
-    def __init__(self, base_goal: int = 1000) -> None:
-        if not GOAL_ID_MIN <= base_goal <= GOAL_ID_MAX:
+    def __init__(self, base_goal: int = 41) -> None:
+        if not 41 <= base_goal <= ORDINARY_GOAL_MAX:
             raise ValueError(
-                f"GoalId base must be in range {GOAL_ID_MIN}..{GOAL_ID_MAX}, got {base_goal}"
+                f"ordinary Goal storage base must be in range 41..{ORDINARY_GOAL_MAX}, got {base_goal}"
             )
         self._base_goal = base_goal
 
@@ -876,11 +877,7 @@ class RuntimeBinder:
             binding = existing.get(request.request_id)
             if binding is None:
                 if isinstance(request, GoalSlotRequest):
-                    max_goal = (
-                        LIFECYCLE_GOAL_MAX
-                        if request.role is GoalRole.LIFECYCLE_STATE
-                        else GOAL_ID_MAX
-                    )
+                    max_goal = ORDINARY_GOAL_MAX
                     goal_id = self._next_free_goal(
                         occupied_ids,
                         allocated_intervals,
