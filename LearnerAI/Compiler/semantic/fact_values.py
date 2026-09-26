@@ -568,7 +568,7 @@ def canonicalize_value(
 
         if isinstance(value, int):
             normalized = value
-        elif isinstance(value, str) and re.fullmatch(r"[+-]?\\d+", value.strip()):
+        elif isinstance(value, str) and re.fullmatch(r"[+-]?\d+", value.strip()):
             normalized = int(value.strip(), 10)
         else:
             raise ValueError(
