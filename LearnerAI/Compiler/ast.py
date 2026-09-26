@@ -16,6 +16,7 @@ class DemandNode:
     witness: str
     release: str
     location: SourceLocation
+    invalidate: str | None = None
 
 @dataclass(frozen=True)
 class Expression:
