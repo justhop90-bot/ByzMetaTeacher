@@ -151,6 +151,13 @@ class ByzantineProfile:
             "Byzantines",
             patch,
         )
+        community = EvidenceRef(
+            EvidenceKind.COMMUNITY_REFERENCE,
+            "https://liquipedia.net/ageofempires/Byzantines/Age_of_Empires_II",
+            "current",
+            "Byzantine civilization bonuses",
+            patch,
+        )
         return CivProfile(
             civ_id=cls.CIV_ID,
             name="Byzantines",
@@ -165,7 +172,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("skirmisher-line")),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
                     attribute="cost",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-counter-unit-discount-pike",
@@ -173,7 +180,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("pikeman-line")),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
                     attribute="cost",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-counter-unit-discount-halberdier",
@@ -181,7 +188,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("halberdier-line")),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
                     attribute="cost",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-counter-unit-discount-camel",
@@ -189,7 +196,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("camel-rider-line")),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 4), RoundingMode.ENGINE_NEAREST),
                     attribute="cost",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-imperial-discount",
@@ -197,7 +204,7 @@ class ByzantineProfile:
                     EntitySelector.age(Age.IMPERIAL),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(67, 100), RoundingMode.ENGINE_NEAREST),
                     attribute="cost",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-building-hp-dark",
@@ -205,7 +212,7 @@ class ByzantineProfile:
                     EntitySelector.age(Age.DARK),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(110, 100)),
                     attribute="hp",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-building-hp-feudal",
@@ -213,7 +220,7 @@ class ByzantineProfile:
                     EntitySelector.age(Age.FEUDAL),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(120, 100)),
                     attribute="hp",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-building-hp-castle",
@@ -221,7 +228,7 @@ class ByzantineProfile:
                     EntitySelector.age(Age.CASTLE),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(130, 100)),
                     attribute="hp",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-building-hp-imperial",
@@ -229,7 +236,7 @@ class ByzantineProfile:
                     EntitySelector.age(Age.IMPERIAL),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(140, 100)),
                     attribute="hp",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-fire-ship-speed",
@@ -237,7 +244,7 @@ class ByzantineProfile:
                     EntitySelector.unit_line(UnitLineId("fire-ship-line")),
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(5, 6)),
                     attribute="attack-interval",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
                 CivBonus(
                     "byz-team-monk-heal",
@@ -246,7 +253,7 @@ class ByzantineProfile:
                     NumericModifier(ModifierOperation.MULTIPLY, Rational(3, 2)),
                     attribute="heal-rate",
                     scope="TEAM",
-                    provenance=(official,),
+                    provenance=(community, official,),
                 ),
             ),
             interactions=(
@@ -275,7 +282,7 @@ class ByzantineProfile:
                     (official,),
                 ),
             ),
-            provenance=(manifest, official),
+            provenance=(manifest, community, official),
         )
 
 

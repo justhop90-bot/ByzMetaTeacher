@@ -348,3 +348,53 @@ Runtime limitation remains explicit: the native action command does not provide 
 - [x] Add deterministic multi-diagnostic regression coverage.
 - [x] CI run 345: native `Basilisk.per` `finding_count=0`; generated invalidation fixture `finding_count=0`; compiler suite `165 tests, OK`.
 - [x] Temporary verification PRs were closed unmerged; implementation remains on `main`.
+
+
+### GameData / CivProfile implementation record (2026-09-26)
+
+- [x] Add immutable PatchId, Validity, EvidenceRef, and typed PatchChange.
+- [x] Add typed BuildingId, UnitId, TechId, CivId, UnitLineId, Resource, and Age.
+- [x] Add deterministic ResourceCost arithmetic and explicit engine-rounding policy for civilization cost modifiers.
+- [x] Add typed building, unit, technology, provider, unit-line, prerequisite, selector, and technology-effect IR.
+- [x] Validate duplicate entities, provider references, upgrade links, unit-line references, and technology unlock references.
+- [x] Add typed CivProfile, availability hooks, civilization bonuses, and civilization-specific interactions.
+- [x] Add deterministic EffectiveCivData resolution and snapshot fingerprinting.
+- [x] Populate a verified Byzantine factual subset from docs/reference/BYZANTINES_manifest.txt.
+- [x] Encode Byzantine cost modifiers and other factual civilization modifiers separately from base GameData.
+- [x] Encode Update 185872 Byzantine patch facts: Varangian access, Cataphract bonus changes, and Logistica interaction expansion.
+- [x] Add a separate native metadata profile with explicit local-alias semantics for ri-logistica and ri-elite-varangian-guard.
+- [x] TDD red/green evidence recorded through CI runs 349/350/351/352; final native-data tree: 173 compiler tests passed, native fixtures clean.
+- [x] Cross-reference against AIRef, The Duke, Niek/Atilla, AgeScript, and AgeOfPython without importing their architectures.
+
+#### Remaining data work
+
+- [ ] Ingest the full Byzantine 145-node manifest into typed GameData.
+- [ ] Populate every verified research cost/research time and effect instead of leaving unresolved values where the source does not establish them.
+- [ ] Independently verify and then promote current-patch Varangian Guard unit numeric IDs.
+- [ ] Expand NativeEngineProfile from the two known site-specific aliases to the complete checked-in AIRef command/parameter inventory.
+- [ ] Add historical snapshot fixtures proving patch overlay replay across multiple DE revisions.
+- [ ] Add cross-civilization data fixtures before strategy semantics begin consuming the data layer broadly.
+
+### Cross-reference outcome
+
+AIRef supports the native type boundary and the separation of command/parameter semantics from game facts.
+
+The Duke and Niek/Atilla support first-class age, provider, research, resource, production, and strategic-state relationships in community-native .per, while keeping those concerns expressed as ordinary facts/goals/rules rather than a universal manager.
+
+AgeScript and AgeOfPython support typed metadata, source-to-native lowering, and compiler-owned storage discipline. Their general-purpose language designs remain out of scope.
+
+The compiler should therefore borrow the community's proven factual boundaries and execution idioms, then place Basilisk strategy above them rather than inside them.
+
+### Next compiler layer
+
+The next missing semantic layer is not another lifecycle primitive.
+
+It is StrategyProfile -> StrategicDemand -> CapabilityIntent:
+
+- [ ] typed strategic postures;
+- [ ] persistent strategic-demand specifications;
+- [ ] target/floor semantics distinct from execution witnesses;
+- [ ] opportunity-cost policy attached to strategic ownership;
+- [ ] strategic admissibility/invalidation evidence;
+- [ ] deterministic lowering into the existing SemanticDemand/capability pipeline;
+- [ ] first Dark -> Feudal -> Castle Byzantine vertical slice.

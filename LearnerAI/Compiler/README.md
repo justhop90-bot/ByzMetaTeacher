@@ -293,3 +293,23 @@ A `ReleaseStateContract` explicitly records release identity, world-state eviden
 ### Invalidation / cancellation boundary
 
 `invalidate` is an optional source statement because existing compiler fixtures remain compatible while strategy sources are migrated to explicit strategic-admissibility evidence. When present, the compiler materializes an `InvalidationContract` and a `CancellationStateContract`. Invalidation rejects timing-only evidence, action coupling, missing world-state evidence, wrong demand identity, unknown native primitives, and invalid source ordering. Cancellation is restricted to `ACTIVE`, `ISSUED`, and `PENDING` and always terminates in `CANCELLED`; completed work remains owned by the release path. Capability-loss recovery that preserves strategic demand remains a separate future contract.
+
+## Factual GameData / CivProfile layer
+
+The compiler now has a typed factual layer beneath strategy:
+
+    NativeEngineProfile
+          |
+    GameData + CivProfile
+          |
+    EffectiveCivData
+          |
+    StrategyProfile
+          |
+    SemanticDemand / Capability
+
+`LearnerAI/Compiler/ir/game_data.py` owns typed game entities, costs, prerequisites, providers, unit lines, selectors, technology effects, and deterministic structural validation. `civ_profile.py` applies civilization-specific facts and modifiers to produce a deterministic effective snapshot. `native_metadata.py` remains separate so a site-specific native alias such as `ri-logistica` cannot be mistaken for a built-in game symbol.
+
+The current Byzantine fixture is anchored to the repository manifest and Update 185872. It intentionally does not invent unverified current-patch Varangian numeric unit IDs or missing research-cost data. This is a verified factual subset, not yet the complete 145-node Byzantine database.
+
+The next semantic layer is `StrategyProfile`: strategic posture and persistent intent must consume `EffectiveCivData` and lower into the existing demand/capability lifecycle rather than bypassing it.
