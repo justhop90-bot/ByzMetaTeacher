@@ -20,7 +20,17 @@ Strategy owns why. Domain modules own how. The engine owns whether an operation 
 - Schemas: established
 - Curriculum: established
 - Gameplay code: intentionally absent
-- Validation implementation: intentionally absent
+- Semantic compiler validation: implemented for the current lifecycle slice
+- Native .per validation adapter: implemented with a pinned external aoe2-ai-parser backend
 - Runtime tuning: intentionally absent
 
 See MODULE_MAP.md, OWNERSHIP.md, INTERFACES.md, SCHEMAS.md, LIFECYCLE.md, and LEARNING_PATH.md before adding implementation.
+
+
+## Validation boundary
+
+LearnerAI deliberately does not rebuild AoE2's native parser/linter. The compiler validates its own lifecycle semantics, then stages generated .per and invokes the pinned external aoe2-ai-parser through a subprocess boundary.
+
+Native validation is evidence about the emitted .per artifact. It is not evidence that the AI has behaved correctly in the game. The runtime remains the final engine authority.
+
+See Compiler/backends/README.md for the backend research, pin, protocol, normalization rules, process isolation, failure taxonomy, and fixture matrix.
