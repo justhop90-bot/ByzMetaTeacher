@@ -39,8 +39,11 @@ demand castle {
 
 def build_registry(catalog):
     base = default_de_registry()
+    primitives = tuple(
+        base.require(name) for name in base.names()
+    )
     return PrimitiveRegistry(
-        (base.require("build"),),
+        primitives,
         native_registry=load_default_native_schema(),
         semantic_mappings=default_engine_semantic_mapping_registry(),
         native_contracts=catalog,
