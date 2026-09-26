@@ -142,6 +142,10 @@ class EffectiveCivData:
     coverage: FactualCoverage
     scope: GameDataScope
     scope_civ_id: CivId | None
+    verified_unavailable_buildings: frozenset[BuildingId] = frozenset()
+    verified_unavailable_units: frozenset[UnitId] = frozenset()
+    verified_unavailable_technologies: frozenset[TechId] = frozenset()
+    availability: tuple[CivAvailabilityRule, ...] = ()
 
     def building(self, building_id: int) -> BuildingDef:
         return next(item for item in self.buildings if item.id == BuildingId(building_id))
@@ -260,7 +264,33 @@ class ByzantineProfile:
             tech_tree_id=cls.TECH_TREE_ID,
             patch=patch,
             base_data=_byzantine_game_data(patch, manifest, community, controller),
-            availability=(),
+            availability=(
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(435)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(436)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(239)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.unit(UnitId(588)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.unit(UnitId(542)),
+                    provenance=(manifest,),
+                ),
+            ),
             bonuses=(
                 CivBonus(
                     "byz-counter-unit-discount",
@@ -358,6 +388,17 @@ class ByzantineProfile:
                     "byz-fire-ship-speed",
                     CivBonusKind.STAT,
                     EntitySelector.unit_line(UnitLineId("fire-ship-line")),
+                    NumericModifier(
+                        ModifierOperation.MULTIPLY,
+                        Rational(4, 5),
+                    ),
+                    attribute="attack-interval",
+                    provenance=(community, official),
+                ),
+                CivBonus(
+                    "byz-dromon-speed",
+                    CivBonusKind.STAT,
+                    EntitySelector.unit_line(UnitLineId("dromon-line")),
                     NumericModifier(
                         ModifierOperation.MULTIPLY,
                         Rational(4, 5),
@@ -475,8 +516,20 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         if item.validity is None or item.validity.contains(profile.patch)
     }
 
+    unavailable_buildings: set[BuildingId] = set()
+    unavailable_units: set[UnitId] = set()
+    unavailable_technologies: set[TechId] = set()
+
     for rule in profile.availability:
-        _apply_availability(rule, buildings, units, techs)
+        _apply_availability(
+            rule,
+            buildings,
+            units,
+            techs,
+            unavailable_buildings,
+            unavailable_units,
+            unavailable_technologies,
+        )
 
     fingerprint = canonical_fingerprint(
         {
@@ -495,6 +548,10 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
             "available_buildings": sorted(int(item) for item in buildings),
             "available_units": sorted(int(item) for item in units),
             "available_technologies": sorted(int(item) for item in techs),
+            "verified_unavailable_buildings": sorted(int(item) for item in unavailable_buildings),
+            "verified_unavailable_units": sorted(int(item) for item in unavailable_units),
+            "verified_unavailable_technologies": sorted(int(item) for item in unavailable_technologies),
+            "availability": profile.availability,
             "bonuses": profile.bonuses,
             "interactions": profile.interactions,
             "patch_changes": profile.patch_changes,
@@ -521,6 +578,10 @@ def resolve_effective_civ(profile: CivProfile) -> EffectiveCivData:
         coverage=profile.base_data.coverage,
         scope=profile.base_data.scope,
         scope_civ_id=profile.base_data.scope_civ_id,
+        verified_unavailable_buildings=frozenset(unavailable_buildings),
+        verified_unavailable_units=frozenset(unavailable_units),
+        verified_unavailable_technologies=frozenset(unavailable_technologies),
+        availability=profile.availability,
     )
 
 
@@ -593,22 +654,30 @@ def _apply_availability(
     buildings: set[BuildingId],
     units: set[UnitId],
     techs: set[TechId],
+    unavailable_buildings: set[BuildingId],
+    unavailable_units: set[UnitId],
+    unavailable_technologies: set[TechId],
 ) -> None:
     if rule.selector.kind is SelectorKind.BUILDING:
         target = buildings
+        unavailable = unavailable_buildings
         ids = {BuildingId(int(value)) for value in rule.selector.ids}
     elif rule.selector.kind is SelectorKind.UNIT:
         target = units
+        unavailable = unavailable_units
         ids = {UnitId(int(value)) for value in rule.selector.ids}
     elif rule.selector.kind is SelectorKind.TECHNOLOGY:
         target = techs
+        unavailable = unavailable_technologies
         ids = {TechId(int(value)) for value in rule.selector.ids}
     else:
         raise ValueError("availability rules require direct entity selectors")
     if rule.operation is AvailabilityOperation.ENABLE:
         target.update(ids)
+        unavailable.difference_update(ids)
     else:
         target.difference_update(ids)
+        unavailable.update(ids)
 
 
 def _unit(
