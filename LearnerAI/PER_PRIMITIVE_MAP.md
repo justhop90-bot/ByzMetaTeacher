@@ -3484,6 +3484,180 @@ Static validity does not prove engine behavior. Runtime verification remains emp
 
 ---
 
+## 28. Research and technology: community patterns
+
+Research rules should stay close to the engine primitives that already represent research availability, feasibility, pending state, and completion. Community scripts commonly use `can-research` or `can-research-with-escrow` followed by `research`, while larger upgrade systems add goals, technology categories, escrow release, and research-status checks. The strategic complexity belongs around the transaction, not inside a replacement research engine.
+
+### 28.1 Civilization-specific research: unique technologies and conditional availability
+
+#### Community pattern
+
+Civilization-specific technologies should be treated as ordinary research transactions with civilization-specific admissibility.
+
+The useful distinction is:
+
+```
+civilization-specific eligibility
++
+strategic demand
++
+generic research feasibility
+→ research
+```
+
+A unique technology being available does not make it automatically desirable. Civilization identity determines what is possible. Strategy determines what is wanted.
+
+Community-style research systems therefore benefit from keeping special technology selection separate from the generic execution rule. A civilization-specific rule can identify when a unique technology enters the admissible set, while the ordinary research machinery handles availability, feasibility, pending state, action, and completion.
+
+#### Engine primitives
+
+The generic research layer uses:
+
+```
+(research-available technology)
+(can-afford-research technology)
+(can-research technology)
+(can-research-with-escrow technology)
+(research technology)
+(research-completed technology)
+(up-research-status ...)
+```
+
+Civilization-specific conditions should sit around those primitives rather than replacing them.
+
+Conceptually:
+
+```
+civilization-specific condition
++
+strategic condition
++
+research availability
++
+research feasibility
+→ research
+```
+
+If the engine already exposes the civilization or technology restriction through its research predicates, the script should use that engine fact rather than reconstructing the restriction manually.
+
+#### Minimal valid pattern
+
+The generic executor can remain simple:
+
+```
+(defrule
+    (can-research ri-example-tech)
+=>
+    (research ri-example-tech)
+)
+```
+
+A civilization-specific rule can supply the additional admissibility:
+
+```
+(defrule
+    (goal civ-techs 1)
+    (research-available ri-example-tech)
+    (can-research ri-example-tech)
+=>
+    (research ri-example-tech)
+)
+```
+
+The important point is that `civ-techs` expresses strategic or civilization-specific admissibility. It does not replace `can-research`.
+
+#### Why it works
+
+This keeps generic research logic reusable.
+
+The generic research layer answers:
+
+**Can this technology be researched now?**
+
+The civilization-specific layer answers:
+
+**Is this technology part of this civilization's available and strategically relevant technology set?**
+
+The resulting chain is:
+
+```
+civilization knowledge
+→ strategic admissibility
+→ generic research feasibility
+→ research action
+→ completion witness
+```
+
+That separation makes failures easier to diagnose. If a unique technology is never researched, the learner can inspect independently whether it was available, whether the civilization-specific rule made it admissible, whether the strategic demand existed, whether `can-research` became true, whether `research` fired, and whether completion was witnessed.
+
+#### Common failure
+
+Do not put every civilization exception into the generic research executor:
+
+```
+generic conditions
++
+Byzantine exception
++
+another civilization exception
++
+another technology exception
+→ research
+```
+
+That eventually turns generic research into a collection of civilization-specific exceptions.
+
+Do not manually duplicate engine availability when the engine already provides it. For example, adding every possible age, building, prerequisite, and civilization test around a `can-research` predicate can create a second, potentially inconsistent feasibility system.
+
+Do not confuse unique with desirable. A unique technology can be available without being the current strategic priority.
+
+Do not use `research-available` as the completion witness. Availability is not completion.
+
+#### Basilisk-scale variant
+
+Basilisk should keep civilization-specific research in a thin admissibility layer above generic research execution:
+
+```
+CIVILIZATION KNOWLEDGE
+    identify unique or conditional technologies
+            ↓
+STRATEGIC ADMISSIBILITY
+    decide whether the technology is wanted now
+            ↓
+GENERIC RESEARCH EXECUTION
+    availability
+    pending state
+    resource arbitration
+    can-research / can-research-with-escrow
+            ↓
+ACTION
+    research technology
+            ↓
+WORLD-STATE WITNESS
+    research-completed / verified research status
+            ↓
+RELEASE / REASSESS
+```
+
+For Basilisk, Byzantine-specific technology rules should identify special demand, timing, or admissibility conditions. They should not duplicate generic research feasibility, escrow semantics, pending-state handling, completion witnesses, or release semantics.
+
+The ownership boundary is:
+
+```
+Civilization layer: WHAT IS SPECIAL?
+Strategy: WHY NOW?
+Economy: CAN RESOURCES BE COMMITTED?
+Research: HOW IS THE TRANSACTION REQUESTED?
+Engine: CAN IT HAPPEN?
+World state: DID IT HAPPEN?
+```
+
+The hard invariant is:
+
+**Civilization identity changes what can be relevant or available. It does not change what a research action, feasibility predicate, pending state, or completion witness means.**
+
+---
+
 ## 28. Anti-pattern catalogue
 
 ### Action-as-witness
