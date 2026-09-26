@@ -162,3 +162,11 @@ The implementation intentionally does not create persistent resource reservation
 - [x] `RETAIN_ACTIVE` models unsatisfied issuance guards as failure without falsely entering pending.
 - [x] Compiler gate validates issuance before resource/conflict and capability validation.
 - [x] Focused regressions and generated fixture updated; Compiler CI run 275 passed with 145 tests and native finding_count=0.
+
+
+### Completion-witness semantics implementation record (2026-09-26)
+
+- [x] Typed completion-witness contract in semantic IR.
+- [x] Deterministic validation of world-state evidence and causal ordering.
+- [x] Compile-gate integration before issuance/resource/capability layers.
+- [x] Focused regression fixtures and Compiler CI run 298: 151 tests, native finding_count=0.
