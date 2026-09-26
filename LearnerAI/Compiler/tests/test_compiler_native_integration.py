@@ -241,7 +241,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
 
         for name, expected_state, expected_code in cases:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp_dir:
-                source = (fixture_root / f"{name}.basilisk").read_text(encoding="utf-8")
+                source = (fixture_root / f"{name}.perdsl").read_text(encoding="utf-8")
                 registry = self._native_support_fixture_registry(name)
                 output = Path(tmp_dir) / f"{name}.per"
                 backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
@@ -257,7 +257,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     output,
                     native_backend=backend,
                     registry=registry,
-                    source_unit=f"native-support/{name}.basilisk",
+                    source_unit=f"native-support/{name}.perdsl",
                 )
 
                 expected_states = {
@@ -396,7 +396,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                             output,
                             native_backend=replay_backend,
                             registry=registry,
-                            source_unit=f"native-support/{name}.basilisk",
+                            source_unit=f"native-support/{name}.perdsl",
                         )
                         replay_assessment = registry.assess_support("fixture-command")
                         replay_payload = replay_report.to_dict()["diagnostics"]

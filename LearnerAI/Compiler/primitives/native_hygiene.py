@@ -1197,7 +1197,7 @@ class CitationRevalidationEvent:
             CitationChangeKind.URL_CHANGED: self.current_url is not None and self.current_url != self.previous_url,
             CitationChangeKind.LOCATOR_CHANGED: self.current_locator is not None and self.current_locator != self.previous_locator,
             CitationChangeKind.SOURCE_HASH_CHANGED: (self.source_available and self.current_source_hash != self.previous_source_hash),
-            CitationChangeKind.EXCERPT_CHANGED: self.current_excerpt_hash != self.previous_excerpt_hash,
+            CitationChangeKind.EXCERPT_CHANGED: (self.source_available and self.current_excerpt_hash != self.previous_excerpt_hash),
         }
         if CitationChangeKind.NONE in self.changes and any(actual_changes.values()):
             raise ValueError("NONE cannot accompany an actual citation change")
