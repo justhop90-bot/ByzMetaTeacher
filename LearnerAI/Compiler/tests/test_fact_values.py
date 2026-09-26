@@ -231,7 +231,12 @@ class CanonicalFactValueTests(unittest.TestCase):
         self.assertFalse(
             domain.contains(CanonicalEnum("AGE", "MYTHIC"))
         )
-        self.assertEqual(StaticTruth.UNKNOWN, StaticTruth.UNKNOWN)
+        self.assertEqual(
+            {StaticTruth.TRUE, StaticTruth.FALSE, StaticTruth.UNKNOWN},
+            set(StaticTruth),
+        )
+        self.assertNotEqual(StaticTruth.TRUE, True)
+        self.assertNotEqual(StaticTruth.FALSE, False)
         self.assertNotEqual(StaticTruth.UNKNOWN, True)
         self.assertNotEqual(StaticTruth.UNKNOWN, False)
 
