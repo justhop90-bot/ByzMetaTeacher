@@ -1,4 +1,9 @@
+import sys
 import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).parents[2]
+sys.path.insert(0, str(ROOT))
 
 from Compiler.ast import Expression
 from Compiler.ir import (
