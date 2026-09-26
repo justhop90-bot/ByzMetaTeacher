@@ -9,7 +9,6 @@ from LearnerAI.Compiler.ir.strategy import (
     CapabilityIntentKind,
     PostureTransition,
     StrategicCapabilityObservation,
-    StrategicEnemyCompositionObservation,
     StrategicEvidence,
     StrategicObservationSpec,
     StrategicEvidenceKind,
@@ -96,8 +95,9 @@ class StrategyRuntimeTests(unittest.TestCase):
                     evidence=(
                         StrategicEvidence(
                             StrategicEvidenceKind.TIMING,
-                            "(game-time >= 600)",
+                            None,
                             "timer-only",
+                            observation_ref="current-feudal-age",
                         ),
                     ),
                     label="timer-rush",
@@ -120,8 +120,9 @@ class StrategyRuntimeTests(unittest.TestCase):
                     priority=50,
                     evidence=(StrategicEvidence(
                         StrategicEvidenceKind.PERSISTENT,
-                        "(current-age >= feudal-age)",
+                        None,
                         "a",
+                        observation_ref="current-feudal-age",
                     ),),
                     label="a",
                 ),
@@ -131,8 +132,9 @@ class StrategyRuntimeTests(unittest.TestCase):
                     priority=50,
                     evidence=(StrategicEvidence(
                         StrategicEvidenceKind.PERSISTENT,
-                        "(current-age >= feudal-age)",
+                        None,
                         "b",
+                        observation_ref="current-feudal-age",
                     ),),
                     label="b",
                 ),
@@ -158,8 +160,9 @@ class StrategyRuntimeTests(unittest.TestCase):
                     priority=10,
                     evidence=(StrategicEvidence(
                         StrategicEvidenceKind.PERSISTENT,
-                        "(current-age >= feudal-age)",
+                        None,
                         "rush",
+                        observation_ref="current-feudal-age",
                     ),),
                     label="rush",
                 ),
@@ -169,8 +172,9 @@ class StrategyRuntimeTests(unittest.TestCase):
                     priority=20,
                     evidence=(StrategicEvidence(
                         StrategicEvidenceKind.PERSISTENT,
-                        "(current-age >= feudal-age)",
+                        None,
                         "flush",
+                        observation_ref="current-feudal-age",
                     ),),
                     label="flush",
                 ),
@@ -352,7 +356,7 @@ class StrategyRuntimeTests(unittest.TestCase):
 
     def test_meta_observation_preserves_source_and_provenance(self):
         evidence = self.profile.demand("castle-commitment").reason[0]
-        binding = bind_strategic_evidence(evidence, self.effective)
+        binding = bind_observation_reference(evidence, self.profile, self.effective)
         observation = binding.observations[0]
         self.assertEqual(observation.evidence_source, StrategicEvidenceSource.COMMUNITY_META)
         self.assertEqual(observation.provenance, evidence.provenance)
@@ -500,65 +504,6 @@ class StrategyRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(all(item.observation_ref for item in castle.reason))
         self.assertTrue(all(item.observation_ref for item in transition.evidence))
-
-    def test_byzantine_enemy_composition_observation_binds_to_enemy_unit_family(self):
-        observation = self.profile.enemy_composition_observations[0]
-        self.assertEqual(observation.unit_id, 38)
-        binding = bind_strategic_evidence(
-            StrategicEvidence(
-                StrategicEvidenceKind.PERSISTENT,
-                observation.expression,
-                observation.identity,
-            ),
-            self.effective,
-        )
-        self.assertEqual(
-            binding.observations[0].semantic_type,
-            StrategicObservationType.ENEMY_UNIT_COUNT,
-        )
-
-    def test_unknown_enemy_composition_unit_fails_closed(self):
-        bad = StrategicEnemyCompositionObservation(
-            identity="unknown-enemy-unit",
-            unit_id=999999,
-            expression="(players-unit-type-count any-enemy 999999 >= 1)",
-            provenance=(),
-        )
-        with self.assertRaisesRegex(ValueError, "status is UNKNOWN"):
-            evaluate_strategy_runtime(
-                replace(self.profile, enemy_composition_observations=(bad,)),
-                self.effective,
-                self.snapshot(),
-            )
-
-    def test_community_meta_cannot_define_enemy_composition_observation(self):
-        base = self.profile.enemy_composition_observations[0]
-        meta = replace(
-            base,
-            source=StrategicEvidenceSource.COMMUNITY_META,
-            provenance=self.profile.demand("castle-commitment").reason[0].provenance,
-        )
-        with self.assertRaisesRegex(ValueError, "community meta cannot define native enemy observation"):
-            evaluate_strategy_runtime(
-                replace(self.profile, enemy_composition_observations=(meta,)),
-                self.effective,
-                self.snapshot(),
-            )
-
-    def test_runtime_state_records_enemy_composition_observation_truth(self):
-        observation = self.profile.enemy_composition_observations[0]
-        runtime = evaluate_strategy_runtime(
-            self.profile,
-            self.effective,
-            self.snapshot(
-                facts=((observation.expression, True),),
-                previous=StrategyPosture.BOOM,
-            ),
-        )
-        self.assertEqual(
-            dict(runtime.evaluated_enemy_composition_observations),
-            {observation.identity: EvidenceTruth.TRUE},
-        )
 
     def test_byzantine_meta_scope_covers_counter_defense_and_castle_transitions(self):
         labels = {item.label for item in self.profile.community_meta_evidence}
