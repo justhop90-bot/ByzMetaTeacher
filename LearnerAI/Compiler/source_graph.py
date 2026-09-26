@@ -1,8 +1,8 @@
 """Effective native .per source graph resolution.
 
-The graph resolves native source assembly before the semantic demand parser.
-It owns effective source order, load reachability, conditional branches, and
-physical-source provenance. Native package legality remains a backend concern.
+The graph resolves source assembly before the semantic demand parser. It owns
+effective source order, load reachability, conditional branches, and physical
+source provenance. Native package legality remains a backend concern.
 """
 from __future__ import annotations
 
@@ -139,6 +139,7 @@ _CONDITIONAL_RE = re.compile(
 _ELSE_RE = re.compile(r"^\s*#else\s*$")
 _END_RE = re.compile(r"^\s*#end-if\s*$")
 _RAW_LOAD_RE = re.compile(r'^\s*#load\s+"(?P<target>(?:\\.|[^"\\])*)"\s*$')
+_RAW_RANDOM_RE = re.compile(r"^\s*#load-random(?:\s+.*)?$")
 
 
 def _diagnostic(
@@ -366,6 +367,7 @@ class SourceGraphResolver:
                 line=1,
                 column=1,
             )
+
         if physical.path in load_stack:
             cycle = " -> ".join(str(path) for path in (*load_stack, physical.path))
             raise SourceGraphError(
@@ -386,15 +388,13 @@ class SourceGraphResolver:
         )
         self._edges.extend(directive_edges)
 
-        occurrences = _scan_load_occurrences(
-            physical.text,
-            path=physical.path,
-        )
+        occurrences = _scan_load_occurrences(physical.text, path=physical.path)
         cursor = 0
 
         for occurrence in occurrences:
             context = condition_contexts[occurrence.line - 1]
             active = active_lines[occurrence.line - 1]
+
             self._append_slice(
                 instance,
                 physical.path,
@@ -433,17 +433,12 @@ class SourceGraphResolver:
                 continue
 
             if occurrence.kind is LoadKind.RANDOM:
-                if not allow_load_random:
-                    raise SourceGraphError(
-                        "SOURCE-GRAPH-007",
-                        "deterministic package compilation does not support load-random",
-                        path=physical.path,
-                        line=occurrence.line,
-                        column=occurrence.column,
-                    )
                 raise SourceGraphError(
                     "SOURCE-GRAPH-007",
-                    "load-random requires an explicit materialized selection policy",
+                    (
+                        "load-random requires an explicit materialized "
+                        "selection policy for deterministic compilation"
+                    ),
                     path=physical.path,
                     line=occurrence.line,
                     column=occurrence.column,
@@ -555,6 +550,7 @@ def _mask_conditionals(
                     line=index,
                     column=1,
                 )
+
             symbol = match.group("symbol")
             state = symbols.state(symbol)
             if state is None:
@@ -565,6 +561,7 @@ def _mask_conditionals(
                     line=index,
                     column=1,
                 )
+
             kind = (
                 LoadKind.CONDITIONAL_DEFINED
                 if match.group("kind") == "load-if-defined"
@@ -616,6 +613,7 @@ def _mask_conditionals(
                     line=index,
                     column=1,
                 )
+
             frames[-1] = _ConditionalFrame(
                 kind=frame.kind,
                 symbol=frame.symbol,
@@ -664,10 +662,7 @@ def _mask_conditionals(
             )
             continue
 
-        if (
-            stripped.startswith("#load-if-defined")
-            or stripped.startswith("#load-if-not-defined")
-        ):
+        if stripped.startswith("#load-if-defined") or stripped.startswith("#load-if-not-defined"):
             raise SourceGraphError(
                 "SOURCE-GRAPH-012",
                 "malformed preprocessor conditional directive",
@@ -716,7 +711,12 @@ def _mask_conditionals(
                     for char in raw_line
                 )
             )
-    return "".join(masked), tuple(active_flags), tuple(contexts), tuple(directive_edges)
+    return (
+        "".join(masked),
+        tuple(active_flags),
+        tuple(contexts),
+        tuple(directive_edges),
+    )
 
 
 def _scan_load_occurrences(
@@ -726,13 +726,17 @@ def _scan_load_occurrences(
 ) -> tuple[_LoadOccurrence, ...]:
     occurrences: list[_LoadOccurrence] = []
 
-    for match in re.finditer(r"(?m)^[ 	]*#load(?:-random)?(?:[ 	].*)?$", source):
+    for match in re.finditer(
+        r"(?m)^[ \t]*#load(?:-random)?(?:[ \t].*)?$",
+        source,
+    ):
         line = source.count("\n", 0, match.start()) + 1
         column = match.start() - source.rfind("\n", 0, match.start())
         stripped = match.group(0).strip()
+
         if stripped.startswith("#load-random"):
             body = stripped[len("#load-random"):].strip()
-            if not body or not re.search(r'"(?:\.|[^"\])*"', body):
+            if not body or not re.search(r'"(?:\\.|[^"\\])*"', body):
                 raise SourceGraphError(
                     "SOURCE-GRAPH-009",
                     "malformed #load-random directive",
@@ -762,6 +766,7 @@ def _scan_load_occurrences(
                 line=line,
                 column=column,
             )
+
         occurrences.append(
             _LoadOccurrence(
                 match.start(),
@@ -783,24 +788,23 @@ def _scan_load_occurrences(
 
     while index < length:
         char = source[index]
+
         if in_comment:
             if char == "\n":
                 in_comment = False
             index += 1
             continue
+
         if in_string:
             if escape:
                 escape = False
             elif char == "\\":
                 escape = True
-            elif char == "\\":
+            elif char == '"':
                 in_string = False
             index += 1
             continue
-        if char == "#":
-            in_comment = True
-            index += 1
-            continue
+
         if char == '"':
             in_string = True
             index += 1
@@ -815,13 +819,19 @@ def _scan_load_occurrences(
                 except ValueError as exc:
                     line = source.count("\n", 0, index) + 1
                     column = index - source.rfind("\n", 0, index)
+                    code = (
+                        "SOURCE-GRAPH-010"
+                        if "unterminated" in str(exc)
+                        else "SOURCE-GRAPH-009"
+                    )
                     raise SourceGraphError(
-                        "SOURCE-GRAPH-009" if "malformed" in str(exc) else "SOURCE-GRAPH-010",
+                        code,
                         str(exc),
                         path=path,
                         line=line,
                         column=column,
                     ) from exc
+
                 if parsed is not None:
                     head, target = parsed
                     line = source.count("\n", 0, index) + 1
@@ -839,9 +849,12 @@ def _scan_load_occurrences(
                     )
                     index = close
                     continue
+
             depth += 1
-            elif char == "\\":
-            depth -= 1
+        elif char == ")":
+            if depth > 0:
+                depth -= 1
+
         index += 1
 
     occurrences.sort(key=lambda item: (item.start, item.end))
@@ -852,6 +865,7 @@ def _find_balanced_form(source: str, start: int) -> int:
     depth = 0
     in_string = False
     escape = False
+
     for index in range(start, len(source)):
         char = source[index]
         if in_string:
@@ -859,17 +873,19 @@ def _find_balanced_form(source: str, start: int) -> int:
                 escape = False
             elif char == "\\":
                 escape = True
-            elif char == "\\":
+            elif char == '"':
                 in_string = False
             continue
+
         if char == '"':
             in_string = True
-            elif char == "\\":
+        elif char == "(":
             depth += 1
-            elif char == "\\":
+        elif char == ")":
             depth -= 1
             if depth == 0:
                 return index + 1
+
     raise ValueError("unterminated parenthesized load form")
 
 
@@ -882,12 +898,13 @@ def _parse_load_form(form: str) -> tuple[str, str | None] | None:
     random_match = re.fullmatch(r"load-random\b(.*)", body, re.DOTALL)
     if random_match:
         random_body = random_match.group(1).strip()
-        if not random_body or not re.search(r'"(?:\\.|[^"\\])*"', random_body)
+        if not random_body or not re.search(r'"(?:\\.|[^"\\])*"', random_body):
             raise ValueError("malformed load-random directive")
         return "load-random", None
 
     if body.startswith("load"):
         raise ValueError("malformed load directive")
+
     return None
 
 
