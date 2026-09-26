@@ -53,7 +53,7 @@ class NestedAndNativeContractTests(unittest.TestCase):
             release (building-type-count castle > 0)
         }
         """
-        with self.assertRaisesRegex(CompileError, "NATIVE-SUPPORT-005:.*known and typed but has no semantic adapter"):
+        with self.assertRaisesRegex(CompileError, "NATIVE-SUPPORT-006:.*known and typed but has no semantic adapter"):
             compile_source(source)
 
     def test_checked_in_ai_ref_schema_is_authoritative_for_native_arity(self):
