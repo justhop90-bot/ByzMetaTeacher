@@ -11,6 +11,7 @@ from ..ir.model import (
     SemanticDemand,
     SemanticId,
     StateAccess,
+    StorageRequestId,
 )
 
 
@@ -47,7 +48,7 @@ class OwnershipDiagnostic:
 
 @dataclass(frozen=True)
 class OwnershipBoundary:
-    state: object
+    state: StorageRequestId
     first_writer: StateAccess | None
     first_consumer: StateAccess | None
 
@@ -86,11 +87,11 @@ def _access_key(access: StateAccess) -> tuple[object, ...]:
     )
 
 
-def _state_key(state: object) -> tuple[str, str, str]:
+def _state_key(state: StorageRequestId) -> tuple[str, str, str]:
     return (
-        type(state).__name__,
-        getattr(state, "owner", getattr(state, "source_unit", "")),
-        getattr(state, "purpose", getattr(state, "local_name", "")),
+        state.owner.source_unit,
+        state.owner.local_name,
+        state.purpose,
     )
 
 
@@ -110,7 +111,7 @@ def _diag(
     *,
     status: OwnershipStatus,
     demand: SemanticId | None = None,
-    state: object | None = None,
+    state: StorageRequestId | None = None,
     access: StateAccess | None = None,
 ) -> OwnershipDiagnostic:
     return OwnershipDiagnostic(
