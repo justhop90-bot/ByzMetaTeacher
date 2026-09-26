@@ -91,6 +91,10 @@ def emit(
         out.append(f"(defconst issued-{demand.name} {lifecycle.issued.value})")
         out.append(f"(defconst pending-{demand.name} {lifecycle.pending.value})")
         out.append(f"(defconst complete-{demand.name} {lifecycle.complete.value})")
+        if demand.invalidation is not None:
+            out.append(
+                f"(defconst cancelled-{demand.name} {lifecycle.cancelled.value})"
+            )
 
     for request_id, _request in sorted(
         arbitration_requests.items(),
@@ -133,6 +137,24 @@ def emit(
     for demand in demands:
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = encoded[demand.name]
+        if demand.invalidation is not None:
+            out += [
+                f"; Invalidation: {demand.name} | ACTIVE / ISSUED / PENDING -> CANCELLED",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.active.value})",
+                "        (or",
+                f"            (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"            (goal demand-{demand.name} {lifecycle.pending.value})",
+                "        )",
+                "    )",
+                f"    {demand.invalidation.expression.source}",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.cancelled.value})",
+                ")",
+                "",
+            ]
+
         out += [
             f"; Pending diagnostics: {demand.name}",
         ]
