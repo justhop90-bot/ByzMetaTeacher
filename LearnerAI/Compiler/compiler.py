@@ -26,6 +26,7 @@ if __package__ in (None, ""):
         backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
+        semantic_diagnostic,
         semantic_diagnostic_from_validator,
         semantic_failure_report,
     )
@@ -54,6 +55,7 @@ else:
         backend_failure_report,
         exit_code_for_report,
         report_from_native_result,
+        semantic_diagnostic,
         semantic_diagnostic_from_validator,
         semantic_failure_report,
     )
@@ -113,7 +115,7 @@ def _semantic_compile_failure(
             position += f":{item.line}"
             if item.column is not None:
                 position += f":{item.column}"
-        lines.append(f"{position}: [{item.code}] {item.message}")
+        lines.append(f"{position}: {item.code}: {item.message}")
     return CompileError(
         "\n".join(lines),
         diagnostics=ordered,
@@ -144,19 +146,30 @@ def _compile_ir_parts(
     issuance_report = validate_action_issuance(ir, registry)
     reports.append(issuance_report)
 
-    capability_graph = project_capability_graph(ir, registry)
-    resource_report = validate_resource_conflicts(capability_graph, registry)
-    reports.append(resource_report)
+    graph_failure: SemanticDiagnostic | None = None
+    capability_graph = None
+    try:
+        capability_graph = project_capability_graph(ir, registry)
+    except CompileError as exc:
+        embedded = tuple(getattr(exc, "diagnostics", ()))
+        if embedded:
+            graph_failure = embedded[0]
+        else:
+            graph_failure = semantic_diagnostic(exc)
 
-    capability_report = validate_capability_graph(capability_graph, registry)
-    reports.append(capability_report)
+    if capability_graph is not None:
+        resource_report = validate_resource_conflicts(capability_graph, registry)
+        reports.append(resource_report)
+
+        capability_report = validate_capability_graph(capability_graph, registry)
+        reports.append(capability_report)
 
     fallback_source_unit = (
         ir[0].identity.source_unit
         if ir
         else "<source>"
     )
-    semantic_diagnostics = tuple(
+    semantic_diagnostics = list(
         semantic_diagnostic_from_validator(
             diagnostic,
             fallback_source_unit=fallback_source_unit,
@@ -164,6 +177,8 @@ def _compile_ir_parts(
         for report in reports
         for diagnostic in report.errors
     )
+    if graph_failure is not None:
+        semantic_diagnostics.append(graph_failure)
     if semantic_diagnostics:
         raise _semantic_compile_failure(semantic_diagnostics)
 
