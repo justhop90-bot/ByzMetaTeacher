@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from pathlib import Path
 import sys
 
@@ -14,6 +15,7 @@ from Compiler.ir.model import (
 )
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
+from Compiler.semantic.action_issuance import validate_action_issuance
 from Compiler.semantic import analyze
 
 
@@ -77,6 +79,50 @@ class ActionIssuanceTests(unittest.TestCase):
 
         self.assertIn("RETAIN-ACTIVE", failure_block)
         self.assertNotIn("(set-goal demand-castle", failure_block)
+
+    def test_issuance_collapse_diagnostic_is_exact_and_deterministic(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        registry = default_de_registry()
+        ir = analyze(parse(source), registry, source_unit="test")
+        issuance = ir[0].action_issuance
+        broken = replace(
+            ir[0],
+            action_issuance=replace(
+                issuance,
+                issued_state=LifecycleState.ISSUED,
+                pending_state=LifecycleState.ISSUED,
+            ),
+        )
+
+        first = validate_action_issuance((broken,), registry)
+        second = validate_action_issuance((broken,), registry)
+
+        expected = (
+            (
+                "ISS-003",
+                "error",
+                "CONFLICTING",
+                "action issuance for demand 'castle' collapses ISSUED and PENDING",
+            ),
+        )
+        actual = tuple(
+            (
+                item.code.value,
+                item.severity.value,
+                item.status.value,
+                item.message,
+            )
+            for item in first.diagnostics
+        )
+        self.assertEqual(actual, expected)
+        self.assertEqual(first.diagnostics, second.diagnostics)
 
     def test_invalid_issuance_contract_is_rejected_deterministically(self):
         with self.assertRaisesRegex(
