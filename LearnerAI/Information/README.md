@@ -13,6 +13,10 @@ Information turns engine observations into decision-useful interpretation.
 - observation freshness;
 - re-observation.
 
+## Map-profile responsibility
+
+Information produces the observations consumed by `LearnerAI/MAP_PRIORITY_RULES.md`: openness, enclosure, choke density, water value, disconnected destinations, resource exposure, landing viability, naval threat, and relic opportunity. It does not assign the strategic priority itself.
+
 ## Product role
 
 Information must answer decisions:
