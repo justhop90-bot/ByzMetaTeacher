@@ -11,6 +11,7 @@ from ..primitives.native_schema import NativeParameterSpec
 from .civ_profile import EffectiveCivData
 from .game_data import canonical_fingerprint
 from .strategy import (
+    StrategicCapabilityObservation,
     StrategicDemandSpec,
     StrategicEvidence,
     StrategicEvidenceKind,
@@ -35,6 +36,7 @@ class StrategicObservationType(str, Enum):
     OPENING_STATE = "OPENING_STATE"
     PRESSURE_STATE = "PRESSURE_STATE"
     CAPABILITY_STATE = "CAPABILITY_STATE"
+    UNIT_CAPABILITY = "UNIT_CAPABILITY"
     RESEARCH_STATE = "RESEARCH_STATE"
     TIMING = "TIMING"
 
@@ -134,6 +136,7 @@ class StrategyRuntimeState:
         tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]],
         ...
     ] = ()
+    evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -182,8 +185,8 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "can-afford-research-with-escrow": StrategicObservationType.CAPABILITY_STATE,
     "can-build": StrategicObservationType.CAPABILITY_STATE,
     "can-build-with-escrow": StrategicObservationType.CAPABILITY_STATE,
-    "can-train": StrategicObservationType.CAPABILITY_STATE,
-    "can-train-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-train": StrategicObservationType.UNIT_CAPABILITY,
+    "can-train-with-escrow": StrategicObservationType.UNIT_CAPABILITY,
     "can-research": StrategicObservationType.CAPABILITY_STATE,
     "can-research-with-escrow": StrategicObservationType.CAPABILITY_STATE,
     "dropsite-min-distance": StrategicObservationType.MAP_PROFILE,
@@ -616,6 +619,20 @@ def evaluate_strategy_runtime(
             )
         )
 
+    evaluated_capability_observations: list[tuple[str, EvidenceTruth]] = []
+    for capability_observation in profile.capability_observations:
+        binding = bind_strategic_capability_observation(
+            capability_observation,
+            effective,
+            registry,
+        )
+        evaluated_capability_observations.append(
+            (
+                capability_observation.identity,
+                evaluate_binding(binding, snapshot),
+            )
+        )
+
     owners: list[tuple[str, str]] = []
     active: list[str] = []
     blocked: list[str] = []
@@ -677,6 +694,7 @@ def evaluate_strategy_runtime(
             "complete": complete,
             "reassessment": sorted(reason.value for reason in reasons),
             "evaluated_meta_evidence": evaluated_meta_evidence,
+            "evaluated_capability_observations": evaluated_capability_observations,
         }
     )
 
@@ -699,5 +717,8 @@ def evaluate_strategy_runtime(
                 evaluated_meta_evidence,
                 key=lambda item: (item[0], item[2][0].stable_key() if item[2] else ""),
             )
+        ),
+        evaluated_capability_observations=tuple(
+            sorted(evaluated_capability_observations)
         ),
     )
