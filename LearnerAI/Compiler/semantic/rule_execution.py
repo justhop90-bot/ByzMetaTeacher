@@ -266,7 +266,7 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
 
     defrule_name_end = source.find("defrule") + len("defrule")
     body_start = defrule_name_end
-    facts, actions = _split_rule_body(source, slice_, start + body_start - 1)
+    facts, actions = _split_rule_body(source, slice_, start + body_start)
     disable_self_indices = [
         index
         for index, action in enumerate(actions)
