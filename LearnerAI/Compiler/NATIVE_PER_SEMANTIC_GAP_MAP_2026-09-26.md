@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document maps the gap between the native AoE2 .per engine and the current Basilisk generic compiler substrate.
+This document maps the gap between the native AoE2 .per engine and the current generic compiler substrate.
 
 It is an authority map, not a wish list. Each row answers four questions:
 
