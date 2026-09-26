@@ -184,7 +184,7 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
             raise CompileError(f"PENDING-WITNESS-MISSING: demand '{demand.name}' has no completion witness")
         witness = parse_expression(demand.witness)
         if "TIMING" in _context_roles(witness, registry):
-            raise CompileError("TIMING-CANNOT-WITNESS: demand " + demand.name + " cannot use timing as completion evidence")
+            raise CompileError("TIMING-CANNOT-WITNESS: demand " + demand.name + " cannot use timing as completion witness")
         _validate_context(witness, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' witness")
         _validate_completion_witness(witness, registry)
         release = parse_expression(demand.release)
