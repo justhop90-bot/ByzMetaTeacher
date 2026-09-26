@@ -168,7 +168,7 @@ def _python_version(executable: Path, runner: ProcessRunner, cwd: Path, timeout:
     )
     if result.returncode != 0:
         raise BackendUnavailableError(result.stderr.strip() or "unable to query backend Python version")
-    match = re.search(r"Python (\\d+\\.\\d+(?:\\.\\d+)?)", result.stdout + "\\n" + result.stderr)
+    match = re.search(r"Python (\d+\.\d+(?:\.\d+)?)", result.stdout + "\\n" + result.stderr)
     if not match:
         raise BackendProtocolError("backend Python --version output is not recognizable")
     return match.group(1)
