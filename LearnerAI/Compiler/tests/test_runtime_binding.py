@@ -1,13 +1,17 @@
 import unittest
 
 from Compiler.ast import DemandNode, SourceLocation
-from Compiler.ir import LifecycleState, SemanticDemand
+from Compiler.ir import (
+    GoalRole,
+    LifecycleState,
+    SemanticDemand,
+)
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
 from Compiler.runtime_binding import (
+    BindingContext,
     GoalId,
     GoalSlot,
-    GoalSlotRequest,
     GoalValue,
     LifecycleEncoding,
     NativeParameterContract,
@@ -84,14 +88,51 @@ class RuntimeBindingTests(unittest.TestCase):
             RuntimeBinder(base_goal=16000).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_respects_occupied_goal_ids(self):
-        result = RuntimeBinder(
-            base_goal=1000,
-            occupied_goal_ids=frozenset({1000}),
-        ).bind(tuple(d.lifecycle.slot for d in self._ir()))
+        result = RuntimeBinder(base_goal=1000).bind(
+            tuple(d.lifecycle.slot for d in self._ir()),
+            BindingContext(occupied_goal_ids=frozenset({1000})),
+        )
         self.assertEqual(
             [record.binding.id.value for record in result.records],
             [1001, 1002],
         )
+
+    def test_existing_binding_is_reused(self):
+        request = self._ir()[0].lifecycle.slot
+        existing = GoalSlot(
+            id=GoalId(1200),
+            role=GoalRole.LIFECYCLE_STATE,
+            provenance_id="existing",
+        )
+        result = RuntimeBinder(base_goal=1000).bind(
+            (request,),
+            BindingContext(existing_bindings=((request.request_id, existing),)),
+        )
+        self.assertEqual(result.binding_for(request.request_id), existing)
+
+    def test_native_four_goal_contract_uses_explicit_bounds(self):
+        contract = NativeStorageContract(
+            contract_id="up-get-search-state.start",
+            command="up-get-search-state",
+            parameters=(
+                NativeParameterContract(
+                    index=0,
+                    kind=NativeParameterKind.GOAL_SPAN_START,
+                    width=4,
+                    contiguous=True,
+                    writes=True,
+                ),
+            ),
+            shape=GoalStorageShape.EXTENDED_4,
+            start_min=41,
+            start_max=508,
+        )
+        contract.validate_start(41)
+        contract.validate_start(508)
+        with self.assertRaisesRegex(ValueError, "minimum 41"):
+            contract.validate_start(40)
+        with self.assertRaisesRegex(ValueError, "maximum 508"):
+            contract.validate_start(509)
 
     def test_same_requests_bind_deterministically(self):
         requests = tuple(d.lifecycle.slot for d in self._ir())

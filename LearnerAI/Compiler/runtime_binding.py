@@ -1,13 +1,11 @@
-"""Typed semantic-to-native runtime storage binding.
-
-The semantic compiler requests storage symbolically. This module is the only
-place in the compiler that resolves lifecycle storage to native GoalIds.
-"""
+"""Typed semantic-to-native runtime storage binding."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
 import hashlib
+
+from .ir import GoalRole, GoalSlotRequest, StorageRequestId
 
 
 GOAL_ID_MIN = 1
@@ -24,14 +22,6 @@ class GoalStorageShape(str, Enum):
     EXTENDED_4 = "EXTENDED_4"
 
 
-class GoalRole(str, Enum):
-    LIFECYCLE_STATE = "LIFECYCLE_STATE"
-    PERSISTENT_STATE = "PERSISTENT_STATE"
-    DERIVED_SCALAR = "DERIVED_SCALAR"
-    NATIVE_OUTPUT = "NATIVE_OUTPUT"
-    EXECUTION_MEMORY = "EXECUTION_MEMORY"
-
-
 class NativeParameterKind(str, Enum):
     CONSTANT = "CONSTANT"
     GOAL_ID = "GOAL_ID"
@@ -39,28 +29,6 @@ class NativeParameterKind(str, Enum):
     GOAL_SPAN_START = "GOAL_SPAN_START"
     SN_ID = "SN_ID"
     TIMER_ID = "TIMER_ID"
-
-
-@dataclass(frozen=True, order=True)
-class SemanticId:
-    source_unit: str
-    local_name: str
-
-
-@dataclass(frozen=True, order=True)
-class StorageRequestId:
-    owner: SemanticId
-    purpose: str
-
-
-@dataclass(frozen=True)
-class GoalSlotRequest:
-    request_id: StorageRequestId
-    role: GoalRole = GoalRole.LIFECYCLE_STATE
-
-    @property
-    def owner_id(self) -> SemanticId:
-        return self.request_id.owner
 
 
 @dataclass(frozen=True)
@@ -181,33 +149,32 @@ class BindingResult:
 
 
 class RuntimeBinder:
-    """Deterministically bind symbolic lifecycle storage to Goal slots."""
+    """Deterministically bind symbolic lifecycle storage to native Goal slots."""
 
-    def __init__(
-        self,
-        base_goal: int = 1000,
-        *,
-        occupied_goal_ids: frozenset[int] = frozenset(),
-        existing_bindings: tuple[tuple[StorageRequestId, GoalSlot], ...] = (),
-    ) -> None:
+    def __init__(self, base_goal: int = 1000) -> None:
         if not GOAL_ID_MIN <= base_goal <= GOAL_ID_MAX:
             raise ValueError(
                 f"GoalId base must be in range {GOAL_ID_MIN}..{GOAL_ID_MAX}, got {base_goal}"
             )
         self._base_goal = base_goal
-        self._occupied = set(occupied_goal_ids)
-        self._existing = dict(existing_bindings)
 
-        for value in self._occupied:
+    def bind(
+        self,
+        requests: tuple[GoalSlotRequest, ...],
+        context: BindingContext = BindingContext(),
+    ) -> BindingResult:
+        occupied = set(context.occupied_goal_ids)
+        for value in occupied:
             GoalId(value)
-        for request_id, slot in self._existing.items():
-            if slot.id.value in self._occupied:
+
+        existing = dict(context.existing_bindings)
+        for request_id, slot in existing.items():
+            if slot.id.value in occupied:
                 raise ValueError(
                     f"existing binding {request_id} conflicts with occupied GoalId "
                     f"{slot.id.value}"
                 )
 
-    def bind(self, requests: tuple[GoalSlotRequest, ...]) -> BindingResult:
         ordered = tuple(
             sorted(
                 requests,
@@ -224,39 +191,39 @@ class RuntimeBinder:
             raise ValueError("duplicate storage request identity")
 
         records: list[BindingRecord] = []
-        newly_bound_ids: set[int] = set()
+        allocated: set[int] = set()
 
         for request in ordered:
-            existing = self._existing.get(request.request_id)
-            if existing is not None:
-                if existing.role is not request.role:
-                    raise ValueError(
-                        f"existing binding role mismatch for {request.request_id}"
-                    )
-                if existing.id.value in newly_bound_ids:
-                    raise ValueError(
-                        f"existing binding collision on GoalId {existing.id.value}"
-                    )
-                records.append(BindingRecord(request.request_id, existing))
-                newly_bound_ids.add(existing.id.value)
-                continue
+            slot = existing.get(request.request_id)
+            if slot is None:
+                goal_id = self._next_free_goal(occupied, allocated)
+                slot = GoalSlot(
+                    id=GoalId(goal_id),
+                    role=request.role,
+                    provenance_id=_provenance_id(request.request_id, goal_id),
+                )
+            elif slot.role is not request.role:
+                raise ValueError(
+                    f"existing binding role mismatch for {request.request_id}"
+                )
 
-            goal_id = self._next_free_goal(newly_bound_ids)
-            provenance_id = _provenance_id(request.request_id, goal_id)
-            slot = GoalSlot(
-                id=GoalId(goal_id),
-                role=request.role,
-                provenance_id=provenance_id,
-            )
+            if slot.id.value in allocated:
+                raise ValueError(
+                    f"binding collision on GoalId {slot.id.value}"
+                )
+            allocated.add(slot.id.value)
             records.append(BindingRecord(request.request_id, slot))
-            newly_bound_ids.add(goal_id)
 
         return BindingResult(tuple(records))
 
-    def _next_free_goal(self, newly_bound_ids: set[int]) -> int:
+    def _next_free_goal(
+        self,
+        occupied: set[int],
+        allocated: set[int],
+    ) -> int:
         candidate = self._base_goal
         while candidate <= GOAL_ID_MAX:
-            if candidate not in self._occupied and candidate not in newly_bound_ids:
+            if candidate not in occupied and candidate not in allocated:
                 return candidate
             candidate += 1
         raise ValueError(

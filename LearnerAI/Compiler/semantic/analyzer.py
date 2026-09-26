@@ -4,15 +4,18 @@ import re
 from ..ast import DemandNode, Expression
 from ..errors import CompileError
 from ..ir import (
+    GoalRole,
+    GoalSlotRequest,
     LifecycleState,
     LifecycleStorage,
     PendingDiagnostic,
     SemanticAction,
     SemanticDemand,
+    SemanticId,
     SemanticRequirement,
+    StorageRequestId,
 )
 from ..primitives import PrimitiveRegistry
-from ..runtime_binding import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -174,7 +177,7 @@ def analyze(
     source_unit: str = "<source>",
 ) -> list[SemanticDemand]:
     result = []
-    for offset, demand in enumerate(demands):
+    for demand in demands:
         requirements = []
         for raw in demand.requirements:
             expr = parse_expression(raw)
