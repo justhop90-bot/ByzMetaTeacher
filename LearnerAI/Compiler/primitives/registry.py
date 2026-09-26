@@ -126,6 +126,9 @@ class PrimitiveRegistry:
                 "error",
                 "native metadata is not typed",
             )
+            diagnostics.append(diagnostic)
+            diagnostics.append(diagnostic)
+            diagnostics.append(diagnostic)
             return NativeSupportAssessment(
                 command=name,
                 state=NativeSupportState.UNSUPPORTED,
