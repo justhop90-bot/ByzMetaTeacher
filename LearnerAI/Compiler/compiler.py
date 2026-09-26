@@ -32,7 +32,9 @@ if __package__ in (None, ""):
     from Compiler.primitives import default_de_registry
     from Compiler.semantic import analyze
     from Compiler.semantic.demand_ownership import validate_demand_ownership
-    from Compiler.semantic.capability_bridge import validate_projected_capabilities
+    from Compiler.semantic.capability_bridge import project_capability_graph
+    from Compiler.semantic.capability_validation import validate_capability_graph
+    from Compiler.semantic.resource_conflicts import validate_resource_conflicts
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
 else:
@@ -51,7 +53,9 @@ else:
     from .primitives import default_de_registry
     from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
-    from .semantic.capability_bridge import validate_projected_capabilities
+    from .semantic.capability_bridge import project_capability_graph
+    from .semantic.capability_validation import validate_capability_graph
+    from .semantic.resource_conflicts import validate_resource_conflicts
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
 
@@ -86,7 +90,12 @@ def _compile_source_parts(
     if ownership_report.errors:
         diagnostic = ownership_report.errors[0]
         raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
-    capability_report = validate_projected_capabilities(ir, registry)
+    capability_graph = project_capability_graph(ir, registry)
+    resource_report = validate_resource_conflicts(capability_graph, registry)
+    if resource_report.errors:
+        diagnostic = resource_report.errors[0]
+        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    capability_report = validate_capability_graph(capability_graph, registry)
     if capability_report.errors:
         diagnostic = capability_report.errors[0]
         raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
