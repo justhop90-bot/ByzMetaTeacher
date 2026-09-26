@@ -467,7 +467,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             source=StrategicEvidenceSource.COMMUNITY_META,
             provenance=self.profile.demand("castle-commitment").reason[0].provenance,
         )
-        with self.assertRaisesRegex(ValueError, "community meta cannot define factual enemy observation"):
+        with self.assertRaisesRegex(ValueError, "community meta cannot define native enemy observation"):
             evaluate_strategy_runtime(
                 replace(self.profile, enemy_composition_observations=(meta,)),
                 self.effective,
