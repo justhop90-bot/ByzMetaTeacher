@@ -237,10 +237,18 @@ def report_from_native_result(
     output_path: Path,
     semantic: tuple[SemanticDiagnostic, ...] = (),
 ) -> CombinedValidationReport:
-    if native_result.status is ValidationStatus.VALIDATED:
+    clean = (
+        native_result.status is ValidationStatus.VALIDATED
+        and not native_result.failed
+        and native_result.summary.finding_count == 0
+        and not native_result.diagnostics
+    )
+    if clean:
         status = ReportStatus.VALIDATED
     elif native_result.status is ValidationStatus.REJECTED:
         status = ReportStatus.NATIVE_REJECTED
+    elif native_result.status is ValidationStatus.VALIDATED:
+        status = ReportStatus.BACKEND_FAILURE
     else:
         status = ReportStatus.BACKEND_FAILURE
     return CombinedValidationReport(
@@ -256,6 +264,33 @@ def semantic_failure_report(error: Exception, output_path: Path) -> CombinedVali
     return CombinedValidationReport(
         status=ReportStatus.SEMANTIC_REJECTED,
         diagnostics=order_diagnostics((diagnostic,), ()),
+        native_result=None,
+        output_path=output_path.resolve(),
+    )
+
+def backend_failure_report(
+    message: str,
+    output_path: Path,
+) -> CombinedValidationReport:
+    code = "NATIVE-VALIDATION-REQUIRED"
+    diagnostic = ReportDiagnostic(
+        id=_semantic_id(code, message),
+        source=DiagnosticSource.NATIVE,
+        code=code,
+        severity=DiagnosticSeverity.ERROR,
+        confidence=None,
+        message=message,
+        suggestion="Provide the pinned native aoe2-ai-parser backend before promoting an artifact.",
+        path=output_path.resolve(),
+        line=None,
+        column=None,
+        end_line=None,
+        end_column=None,
+        references=(),
+    )
+    return CombinedValidationReport(
+        status=ReportStatus.BACKEND_FAILURE,
+        diagnostics=(diagnostic,),
         native_result=None,
         output_path=output_path.resolve(),
     )
