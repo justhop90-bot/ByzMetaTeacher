@@ -75,12 +75,22 @@ def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     primitive = _validate_expression(expr, registry)
     return {primitive.role}
 
-def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
+def _context_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
     roles = _root_roles(expr, registry)
-    if not roles or not roles.issubset(allowed):
-        actual = ", ".join(sorted(roles)) or "UNKNOWN"
+    if not roles:
+        raise CompileError("expression has no semantic role")
+    return roles
+
+def _validate_context(expr: Expression, registry: PrimitiveRegistry, allowed: set[str], context: str):
+    roles = _context_roles(expr, registry)
+    if not roles.issubset(allowed):
+        actual = ", ".join(sorted(roles))
         expected = ", ".join(sorted(allowed))
         raise CompileError(f"{context}: expression has role {actual}; expected only {expected}")
+
+def _stored_role(expr: Expression, registry: PrimitiveRegistry) -> str:
+    roles = _context_roles(expr, registry)
+    return next(iter(roles)) if len(roles) == 1 else "COMPOSITE"
 
 def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: int = 1000) -> list[SemanticDemand]:
     if base_goal < 0:
@@ -90,11 +100,12 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
         requirements = []
         for raw in demand.requirements:
             expr = parse_expression(raw)
-            _validate_context(expr, registry,
-                              {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
-                              f"demand '{demand.name}' requirement")
-            role = next(iter(_root_roles(expr, registry)))
-            requirements.append(SemanticRequirement(expr, role))
+            _validate_context(
+                expr, registry,
+                {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
+                f"demand '{demand.name}' requirement",
+            )
+            requirements.append(SemanticRequirement(expr, _stored_role(expr, registry)))
         action = parse_expression(demand.action)
         _validate_context(action, registry, {"ACTION"}, f"demand '{demand.name}' action")
         witness = parse_expression(demand.witness)
