@@ -20,6 +20,13 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(compiler_dir.parent))
     from Compiler.backends.errors import NativeBackendError
     from Compiler.backends.models import NativeValidationResult, ValidationStatus
+    from Compiler.diagnostics import (
+        CombinedValidationReport,
+        ReportStatus,
+        exit_code_for_report,
+        report_from_native_result,
+        semantic_failure_report,
+    )
     from Compiler.backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
     from Compiler.errors import CompileError
     from Compiler.parser import parse
@@ -29,6 +36,13 @@ if __package__ in (None, ""):
 else:
     from .backends.errors import NativeBackendError
     from .backends.models import NativeValidationResult, ValidationStatus
+    from .diagnostics import (
+        CombinedValidationReport,
+        ReportStatus,
+        exit_code_for_report,
+        report_from_native_result,
+        semantic_failure_report,
+    )
     from .backends.native_aoe2 import Aoe2NativeBackend, BackendSpec
     from .errors import CompileError
     from .parser import parse
@@ -48,6 +62,49 @@ def compile_source(source: str, base_goal: int = 1000) -> str:
     return emit(ir)
 
 
+def compile_source_with_report(
+    source: str,
+    output: Path,
+    *,
+    base_goal: int = 1000,
+    native_backend: Aoe2NativeBackend | None = None,
+) -> CombinedValidationReport:
+    """Compile and return one deterministic semantic/native validation report."""
+    try:
+        result = compile_source(source, base_goal)
+    except (CompileError, OSError, ValueError) as exc:
+        return semantic_failure_report(exc, output)
+
+    output = output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    if native_backend is None:
+        output.write_text(result, encoding="utf-8")
+        return CombinedValidationReport(
+            status=ReportStatus.SEMANTIC_VALIDATED,
+            diagnostics=(),
+            native_result=None,
+            output_path=output,
+        )
+
+    fd, staged_name = tempfile.mkstemp(
+        prefix=f".{output.stem}.",
+        suffix=".per.stage",
+        dir=output.parent,
+    )
+    os.close(fd)
+    staged = Path(staged_name)
+    try:
+        staged.write_text(result, encoding="utf-8")
+        native_result = native_backend.validate(staged)
+        report = report_from_native_result(native_result, output)
+        if report.status is ReportStatus.VALIDATED:
+            os.replace(staged, output)
+        return report
+    finally:
+        staged.unlink(missing_ok=True)
+
+
 def compile_to_file(
     source: str,
     output: Path,
@@ -55,7 +112,7 @@ def compile_to_file(
     base_goal: int = 1000,
     native_backend: Aoe2NativeBackend | None = None,
 ) -> NativeValidationResult | None:
-    """Compile source and optionally promote it only after native validation passes."""
+    """Backward-compatible compile API; semantic errors still raise."""
     result = compile_source(source, base_goal)
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +136,6 @@ def compile_to_file(
         return validation
     finally:
         staged.unlink(missing_ok=True)
-
 
 def _default_backend_python(root: Path) -> Path:
     if os.name == "nt":
@@ -220,25 +276,37 @@ def main() -> int:
                 args.native_timeout,
                 args.native_profile,
             )
-        validation = compile_to_file(
+        report = compile_source_with_report(
             args.source.read_text(encoding="utf-8"),
             args.output,
             base_goal=args.base_goal,
             native_backend=native_backend,
         )
-    except (OSError, CompileError, NativeBackendError, ValueError) as exc:
+    except (OSError, NativeBackendError, ValueError) as exc:
         ap.error(str(exc))
 
-    if validation is None:
-        return 0
+    if args.native_json:
+        print(report.to_json())
+    else:
+        print(f"validation: {report.status.value}")
+        for diagnostic in report.diagnostics:
+            position = str(diagnostic.path) if diagnostic.path is not None else "<source>"
+            if diagnostic.line is not None:
+                position += f":{diagnostic.line}"
+                if diagnostic.column is not None:
+                    position += f":{diagnostic.column}"
+            print(
+                f"{position}: [{diagnostic.source.value}] "
+                f"{diagnostic.severity.value} {diagnostic.code}: {diagnostic.message}",
+                file=sys.stderr,
+            )
+        if report.native_result is not None and report.native_result.stderr:
+            print(
+                report.native_result.stderr,
+                file=sys.stderr,
+                end="" if report.native_result.stderr.endswith("\n") else "\n",
+            )
 
-    _print_native_result(validation, as_json=args.native_json)
-    if validation.status is ValidationStatus.VALIDATED:
-        return 0
-    if validation.status is ValidationStatus.REJECTED:
-        return 1
-    return 2
-
-
+    return exit_code_for_report(report)
 if __name__ == "__main__":
     raise SystemExit(main())
