@@ -1,6 +1,6 @@
 # Minimal compiler lifecycle examples.
 # These examples teach demand/pending/witness/release semantics.
-# They are not the complete Byzantine player.
+# They are compiler lifecycle fixtures, not a complete reference AI.
  
 demand castle {
     require (current-age >= castle)
