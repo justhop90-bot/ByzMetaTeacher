@@ -380,6 +380,8 @@ class NativeStorageUse:
     access: str = "READ"
     command_family: Optional[str] = None
     maximum_cardinality: Optional[int] = None
+    request_purpose: Optional[str] = None
+    symbolic: bool = False
     provenance: Tuple[AIRefProvenance, ...] = ()
 
     def __post_init__(self) -> None:
@@ -388,15 +390,18 @@ class NativeStorageUse:
         if self.span_length < 1 or self.access not in {"READ", "WRITE", "READ_WRITE"}:
             raise ValueError("invalid storage shape/access")
         if self.storage_class is NativeStorageClass.PERSISTENT_SCALAR:
-            if self.base is None or self.span_length != 1:
-                raise ValueError("persistent scalar requires one explicit slot")
-            bounds = {
-                NativeStorageKind.GOAL: (1, 16000),
-                NativeStorageKind.STRATEGIC_NUMBER: (0, 511),
-                NativeStorageKind.TIMER: (1, 50),
-            }
-            if self.kind in bounds and not bounds[self.kind][0] <= self.base <= bounds[self.kind][1]:
-                raise ValueError("storage slot is outside AIRef documented range")
+            if self.span_length != 1:
+                raise ValueError("persistent scalar requires one slot")
+            if self.base is None and not self.symbolic:
+                raise ValueError("persistent scalar requires an explicit slot unless symbolic")
+            if self.base is not None:
+                bounds = {
+                    NativeStorageKind.GOAL: (1, 16000),
+                    NativeStorageKind.STRATEGIC_NUMBER: (0, 511),
+                    NativeStorageKind.TIMER: (1, 50),
+                }
+                if self.kind in bounds and not bounds[self.kind][0] <= self.base <= bounds[self.kind][1]:
+                    raise ValueError("storage slot is outside AIRef documented range")
         elif self.storage_class is NativeStorageClass.GOAL_SPAN:
             if self.kind not in {
                 NativeStorageKind.POINT_GOAL_SPAN,
