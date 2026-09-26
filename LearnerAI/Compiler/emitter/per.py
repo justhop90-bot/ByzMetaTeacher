@@ -199,7 +199,7 @@ def emit(
             out.append(f"    (set-goal {_claim_name(conflict_class)} 1)")
 
         out += [
-            f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
+            f"    (set-goal demand-{demand.name} {lifecycle.issued.value})",
             ")",
             "",
         ]
