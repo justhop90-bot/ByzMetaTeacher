@@ -115,6 +115,17 @@ class CommunityEngineSemanticsRegistry:
                 raise ValueError(
                     f"lifecycle contract '{contract.action}' incorrectly treats pending as completion"
                 )
+            if contract.completion_witness == contract.feasibility_fact:
+                raise ValueError(
+                    f"lifecycle contract '{contract.action}' reuses feasibility as completion witness"
+                )
+            if (
+                contract.pending_fact is not None
+                and contract.completion_witness == contract.pending_fact
+            ):
+                raise ValueError(
+                    f"lifecycle contract '{contract.action}' reuses pending state as completion witness"
+                )
 
 
 def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
