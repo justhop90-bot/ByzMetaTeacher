@@ -339,7 +339,7 @@ class PackageStorageInventoryTests(unittest.TestCase):
             package_id="test-package",
             package_revision="r1",
             reservations=(
-                self._reservation(StorageKind.GOAL_SLOT, 41, 41, "goal"),
+                self._reservation(StorageKind.GOAL_SLOT, 40, 40, "goal"),
                 self._reservation(StorageKind.GOAL_SPAN, 41, 42, "point"),
                 self._reservation(StorageKind.STRATEGIC_NUMBER, 510, 510, "sn"),
                 self._reservation(StorageKind.TIMER, 1, 1, "timer"),
