@@ -98,3 +98,10 @@ from .versioning import (
     PatchOperationKind,
     Validity,
 )
+
+from .native_metadata import (
+    NativeEngineProfile,
+    NativeIdentifier,
+    NativeParameterContract,
+    default_de_native_profile,
+)
