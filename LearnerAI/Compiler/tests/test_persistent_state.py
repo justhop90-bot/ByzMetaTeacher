@@ -119,6 +119,28 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             2,
         )
 
+    def test_compiler_owned_state_identifiers_can_be_excluded_without_affecting_other_state(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal demand-castle 1) (set-goal 7 1))\\n"
+            "(defrule (true) => (set-goal demand-castle 2) (set-goal 7 2))\\n"
+        )
+
+        report = analyze_persistent_state(
+            analyze_effective_rules(graph),
+            ignored_state_identifiers={"demand-castle"},
+        )
+
+        self.assertEqual(
+            [boundary.state.identifier for boundary in report.boundaries],
+            ["7"],
+        )
+        self.assertTrue(
+            any(
+                item.code is PersistentStateDiagnosticCode.LATER_OVERWRITE
+                for item in report.diagnostics
+            )
+        )
+
     def test_cross_rule_multiple_writers_are_not_classified_as_same_rule_sequence(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\\n"
