@@ -26,6 +26,11 @@ from Compiler.runtime_binding import (
     RuntimeBinder,
     StorageRequestId,
     GoalStorageShape,
+    StrategicNumberInventory,
+    StrategicNumberRequest,
+    StrategicNumberSlot,
+    TimerRequest,
+    TimerSlot,
     VolatileGoalPool,
 )
 from Compiler.semantic import analyze
@@ -165,7 +170,7 @@ class RuntimeBindingTests(unittest.TestCase):
     def test_current_lifecycle_encoding_is_lowering_only(self):
         slot = GoalSlot(
             id=GoalId(1000),
-            role="LIFECYCLE_STATE",
+            role=GoalRole.LIFECYCLE_STATE,
             provenance_id="test",
         )
         encoded = LifecycleEncoding.for_goal_slot(slot)
