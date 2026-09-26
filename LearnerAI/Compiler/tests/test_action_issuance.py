@@ -1,0 +1,99 @@
+import unittest
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).parents[2]
+sys.path.insert(0, str(ROOT))
+
+from Compiler.compiler import compile_source
+from Compiler.errors import CompileError
+from Compiler.ir.model import (
+    ActionIssuanceFailure,
+    ActionIssuancePhase,
+    LifecycleState,
+)
+from Compiler.parser import parse
+from Compiler.primitives import default_de_registry
+from Compiler.semantic import analyze
+
+
+class ActionIssuanceTests(unittest.TestCase):
+    def test_semantic_demand_has_explicit_issuance_contract(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        ir = analyze(parse(source), default_de_registry(), source_unit="test")
+        issuance = ir[0].action_issuance
+
+        self.assertIsNotNone(issuance)
+        self.assertEqual(issuance.phase, ActionIssuancePhase.ATTEMPT)
+        self.assertEqual(issuance.issued_state, LifecycleState.ISSUED)
+        self.assertEqual(issuance.pending_state, LifecycleState.PENDING)
+        self.assertEqual(
+            issuance.failure,
+            ActionIssuanceFailure.RETAIN_ACTIVE,
+        )
+
+    def test_emitter_separates_issuance_from_pending_transition(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        action = output.index("; Action issuance: castle")
+        pending = output.index("; Pending admission: castle")
+        witness = output.index("; Completion witness: castle")
+        release = output.index("; Release: castle")
+
+        self.assertLess(release, witness)
+        self.assertLess(witness, pending)
+        self.assertLess(pending, action)
+        action_block = output[action:]
+        self.assertIn("(set-goal demand-castle 1003)", action_block)
+        self.assertIn("(set-goal demand-castle 1001)", output[pending:action])
+
+    def test_issuance_failure_does_not_enter_pending(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        failure_marker = output.index("; Issuance failure: castle")
+        action_marker = output.index("; Action issuance: castle")
+        failure_block = output[failure_marker:action_marker]
+
+        self.assertIn("RETAIN-ACTIVE", failure_block)
+        self.assertNotIn("(set-goal demand-castle 1001)", failure_block)
+
+    def test_invalid_issuance_contract_is_rejected_deterministically(self):
+        with self.assertRaisesRegex(
+            CompileError,
+            r"ISS-002: action issuance for demand 'castle' has no native feasibility guard",
+        ):
+            compile_source(
+                """
+                demand castle {
+                    require (building-available castle)
+                    action (build castle)
+                    witness (building-type-count castle > 0)
+                    release (building-type-count castle > 0)
+                }
+                """
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()
