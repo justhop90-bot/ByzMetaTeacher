@@ -345,6 +345,13 @@ class StrategyRuntimeTests(unittest.TestCase):
                 self.effective,
             )
 
+    def test_meta_observation_preserves_source_and_provenance(self):
+        evidence = self.profile.demand("castle-commitment").reason[0]
+        binding = bind_strategic_evidence(evidence, self.effective)
+        observation = binding.observations[0]
+        self.assertEqual(observation.evidence_source, StrategicEvidenceSource.COMMUNITY_META)
+        self.assertEqual(observation.provenance, evidence.provenance)
+
     def test_community_meta_evidence_requires_explicit_community_attribution(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
