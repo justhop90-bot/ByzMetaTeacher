@@ -79,6 +79,7 @@ else:
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
+    from .semantic.persistent_state import analyze_persistent_state
     from .semantic.rule_diagnostics import analyze_rule_diagnostics
     from .semantic.rule_execution import analyze_effective_rules
     from .emitter import emit
@@ -89,6 +90,30 @@ else:
 _DEFAULT_NATIVE_BACKEND_ROOT = (
     Path(__file__).resolve().parents[2] / "tools" / "native-backends" / "aoe2-ai-parser"
 )
+
+
+def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
+    ignored: set[str] = set()
+    for line in generated_source.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("(defconst "):
+            continue
+        fields = stripped.rstrip(")").split()
+        if len(fields) < 2:
+            continue
+        identifier = fields[1]
+        if identifier.startswith(
+            (
+                "demand-",
+                "issued-",
+                "pending-",
+                "complete-",
+                "cancelled-",
+                "action-claim-",
+            )
+        ):
+            ignored.add(identifier)
+    return frozenset(ignored)
 
 
 def _storage_requests(ir):
@@ -406,9 +431,15 @@ def compile_package_with_report(
         rule_graph = SourceGraphResolver().resolve(
             SourceGraphRequest(entrypoint=staged)
         )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
         rule_report = analyze_rule_diagnostics(
-            analyze_effective_rules(rule_graph),
+            effective_rules,
             registry,
+            persistent_state_report=persistent_state_report,
         )
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
@@ -488,9 +519,15 @@ def compile_source_with_report(
         rule_graph = SourceGraphResolver().resolve(
             SourceGraphRequest(entrypoint=staged)
         )
+        effective_rules = analyze_effective_rules(rule_graph)
+        persistent_state_report = analyze_persistent_state(
+            effective_rules,
+            ignored_state_identifiers=_compiler_owned_state_identifiers(result),
+        )
         rule_report = analyze_rule_diagnostics(
-            analyze_effective_rules(rule_graph),
+            effective_rules,
             registry,
+            persistent_state_report=persistent_state_report,
         )
         native_result = _normalize_native_validation(native_backend.validate(staged))
         report = report_from_native_result(
