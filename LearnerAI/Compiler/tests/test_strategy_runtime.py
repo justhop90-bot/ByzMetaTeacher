@@ -362,6 +362,15 @@ class StrategyRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "COMMUNITY_REFERENCE"):
             bind_strategic_evidence(evidence, self.effective)
 
+    def test_byzantine_meta_scope_covers_counter_defense_and_castle_transitions(self):
+        labels = {item.label for item in self.profile.community_meta_evidence}
+        self.assertIn("Maintain a minimum cheap defensive military floor", labels)
+        self.assertIn(
+            "Castle commitment is obsolete once Imperial Age is reached without the strategic Castle path",
+            labels,
+        )
+        self.assertIn("Castle completion materially changes the strategic posture", labels)
+
     def test_byzantine_strategy_contains_explicitly_attributed_meta_evidence(self):
         meta = self.profile.demand("castle-commitment").reason[0]
         self.assertEqual(meta.source, StrategicEvidenceSource.COMMUNITY_META)
