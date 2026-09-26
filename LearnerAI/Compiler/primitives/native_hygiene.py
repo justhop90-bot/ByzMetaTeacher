@@ -131,6 +131,18 @@ class PromotionState(str, Enum):
     PROMOTION_BLOCKED = "PROMOTION_BLOCKED"
 
 
+@dataclass(frozen=True)
+class CitationCatalogAudit:
+    unused: Tuple[str, ...] = ()
+    duplicates: Tuple[Tuple[str, ...], ...] = ()
+    stale: Tuple[str, ...] = ()
+    weak: Tuple[str, ...] = ()
+
+    @property
+    def clean(self) -> bool:
+        return not any((self.unused, self.duplicates, self.stale, self.weak))
+
+
 class ExcerptMatchKind(str, Enum):
     EXACT = "EXACT"
     NORMALIZED = "NORMALIZED"
@@ -672,6 +684,60 @@ class CitationRecordCatalog:
                         f"citation '{evidence.citation_id}' is not promotable "
                         f"(state={record.state.value})"
                     )
+
+    def audit(self, used_citation_ids: Tuple[str, ...]) -> CitationCatalogAudit:
+        used = set(used_citation_ids)
+        unused = tuple(
+            sorted(record.citation_id for record in self.records if record.citation_id not in used)
+        )
+
+        locations: dict[tuple[str, str, LocatorType, str], list[str]] = {}
+        for record in self.records:
+            key = (
+                record.canonical_url,
+                record.final_url,
+                record.locator_type,
+                record.locator,
+            )
+            locations.setdefault(key, []).append(record.citation_id)
+        duplicates = tuple(
+            sorted(tuple(sorted(ids)) for ids in locations.values() if len(ids) > 1)
+        )
+
+        stale_states = {
+            CitationState.CANDIDATE,
+            CitationState.REVIEW_REQUIRED,
+            CitationState.BROKEN,
+            CitationState.UNAVAILABLE,
+            CitationState.SUPERSEDED,
+        }
+        stale = tuple(
+            sorted(
+                record.citation_id
+                for record in self.records
+                if record.state in stale_states
+            )
+        )
+
+        weak: list[str] = []
+        for record in self.records:
+            if record.locator_type is LocatorType.COMMAND:
+                expected_suffix = f"#{record.locator}"
+                if not record.final_url.endswith(expected_suffix):
+                    weak.append(record.citation_id)
+            elif record.locator_type is LocatorType.HEADING:
+                if record.excerpt is None or not record.excerpt.heading_path:
+                    weak.append(record.citation_id)
+            elif record.locator_type is LocatorType.TABLE_ENTRY:
+                if record.excerpt is None or record.locator.strip() != record.excerpt.text.strip():
+                    weak.append(record.citation_id)
+
+        return CitationCatalogAudit(
+            unused=unused,
+            duplicates=duplicates,
+            stale=stale,
+            weak=tuple(sorted(weak)),
+        )
 
 @dataclass(frozen=True)
 class CitationRevalidationEvent:
