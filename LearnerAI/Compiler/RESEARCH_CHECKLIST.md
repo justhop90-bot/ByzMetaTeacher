@@ -323,3 +323,14 @@ Runtime limitation remains explicit: the native action command does not provide 
 - [x] Project the typed witness expression into the capability graph without bypassing the contract.
 - [x] Add focused typed-IR, causal-order, timing, action-coupling, non-completion-observation, identity-mismatch, deterministic-validator, and valid-witness regression fixtures.
 - [x] Compiler CI run 298 verified the final witness tree: native `finding_count=0`; full compiler suite `151 tests, OK`.
+
+
+### Release-state implementation record (2026-09-26)
+
+- [x] Add typed `ReleaseStateContract` and `ReleaseEvidenceKind.WORLD_STATE` to semantic IR.
+- [x] Attach release contracts to `SemanticDemand` without adding source syntax.
+- [x] Validate `COMPLETE -> RELEASED` explicitly and reject premature/invalid lifecycle exits.
+- [x] Add deterministic `REL-*` diagnostics for missing contract, timing evidence, missing world-state evidence, action coupling, identity mismatch, invalid from/to state, ordering, evidence kind, and native primitive.
+- [x] Preserve emitter ordering: RELEASE rule precedes COMPLETION-WITNESS rule but is guarded by COMPLETE.
+- [x] Migrate legacy release diagnostics to the typed release validator and add focused release-state regression fixtures.
+- [x] Compiler CI run 319 verified the final release-state tree: native `finding_count=0`; full compiler suite `158 tests, OK`.
