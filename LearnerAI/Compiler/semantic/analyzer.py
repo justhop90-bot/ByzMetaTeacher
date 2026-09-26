@@ -3,8 +3,16 @@ from __future__ import annotations
 import re
 from ..ast import DemandNode, Expression
 from ..errors import CompileError
-from ..ir import PendingDiagnostic, SemanticAction, SemanticDemand, SemanticRequirement
+from ..ir import (
+    LifecycleState,
+    LifecycleStorage,
+    PendingDiagnostic,
+    SemanticAction,
+    SemanticDemand,
+    SemanticRequirement,
+)
 from ..primitives import PrimitiveRegistry
+from ..runtime_binding import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -127,7 +135,7 @@ def _is_timing_only(expr: Expression, registry: PrimitiveRegistry) -> bool:
     return _context_roles(expr, registry) == {"TIMING"}
 
 
-def _pending_diagnostics(demand: DemandNode, goal: int, pending_goal: int, completed_goal: int):
+def _pending_diagnostics(demand: DemandNode):
     action = parse_expression(demand.action)
     witness = parse_expression(demand.witness)
     release = parse_expression(demand.release)
@@ -135,17 +143,17 @@ def _pending_diagnostics(demand: DemandNode, goal: int, pending_goal: int, compl
         PendingDiagnostic(
             "PENDING-ACTION-GUARD",
             "INFO",
-            f"action is gated by active goal {goal} and cannot reissue from pending goal {pending_goal}",
+            "action is gated by active goal {active_goal} and cannot reissue from pending goal {pending_goal}",
         ),
         PendingDiagnostic(
             "PENDING-WITNESS-GUARD",
             "INFO",
-            f"completion witness is evaluated only while pending goal {pending_goal} is active",
+            "completion witness is evaluated only while pending goal {pending_goal} is active",
         ),
         PendingDiagnostic(
             "PENDING-RELEASE-GUARD",
             "INFO",
-            f"release is evaluated only after completion goal {completed_goal} is reached",
+            "release is evaluated only after completion goal {completed_goal} is reached",
         ),
         PendingDiagnostic(
             "PENDING-ACTION-WITNESS-SEPARATE",
@@ -160,9 +168,11 @@ def _pending_diagnostics(demand: DemandNode, goal: int, pending_goal: int, compl
     )
 
 
-def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: int = 1000) -> list[SemanticDemand]:
-    if base_goal < 0:
-        raise CompileError("base goal must be non-negative")
+def analyze(
+    demands: list[DemandNode],
+    registry: PrimitiveRegistry,
+    source_unit: str = "<source>",
+) -> list[SemanticDemand]:
     result = []
     for offset, demand in enumerate(demands):
         requirements = []
@@ -195,20 +205,21 @@ def analyze(demands: list[DemandNode], registry: PrimitiveRegistry, base_goal: i
                 f"PENDING-RELEASE-PREMATURE: demand '{demand.name}' release cannot reuse action '{action.head}'"
             )
         _validate_context(release, registry, {"OBSERVATION", "WITNESS"}, f"demand '{demand.name}' release")
-        goal = base_goal + (offset * 3)
-        pending_goal = goal + 1
-        completed_goal = goal + 2
+        semantic_id = SemanticId(source_unit=source_unit, local_name=demand.name)
+        request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
+        lifecycle = LifecycleStorage(
+            slot=GoalSlotRequest(request_id=request_id, role=GoalRole.LIFECYCLE_STATE),
+            initial_state=LifecycleState.ACTIVE,
+        )
         result.append(
             SemanticDemand(
-                demand.name,
-                goal,
+                semantic_id,
+                lifecycle,
                 tuple(requirements),
                 SemanticAction(action, "ACTION"),
                 witness,
                 release,
-                pending_goal,
-                completed_goal,
-                _pending_diagnostics(demand, goal, pending_goal, completed_goal),
+                _pending_diagnostics(demand),
             )
         )
     return result

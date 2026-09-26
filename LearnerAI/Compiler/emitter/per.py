@@ -1,9 +1,15 @@
 """Deterministic semantic IR -> AoE2 .per emitter."""
 from __future__ import annotations
+
 from ..ir import SemanticDemand
+from ..runtime_binding import BindingResult, LifecycleEncoding
 
 
-def emit(demands: list[SemanticDemand], compiler_version: str = "0.4") -> str:
+def emit(
+    demands: list[SemanticDemand],
+    bindings: BindingResult,
+    compiler_version: str = "0.4",
+) -> str:
     out = [
         ";============================================================",
         "; BASILISK GENERATED .PER",
@@ -13,68 +19,66 @@ def emit(demands: list[SemanticDemand], compiler_version: str = "0.4") -> str:
         "",
         "; Demand goal constants",
     ]
-    for d in demands:
-        out.append(f"(defconst demand-{d.name} {d.goal})")
-        out.append(f"(defconst pending-{d.name} {d.pending_goal})")
-        out.append(f"(defconst complete-{d.name} {d.completed_goal})")
+    encoded: dict[str, LifecycleEncoding] = {}
+    for demand in demands:
+        slot = bindings.binding_for(demand.lifecycle.slot.request_id)
+        lifecycle = LifecycleEncoding.for_goal_slot(slot)
+        encoded[demand.name] = lifecycle
+        out.append(f"(defconst demand-{demand.name} {slot.id.value})")
+        out.append(f"(defconst pending-{demand.name} {lifecycle.pending.value})")
+        out.append(f"(defconst complete-{demand.name} {lifecycle.complete.value})")
     out += ["", "; Demand initialization", "(defrule", "    =>"]
-    for d in demands:
-        out.append(f"    (set-goal demand-{d.name} 1)")
+    for demand in demands:
+        out.append(f"    (set-goal demand-{demand.name} {encoded[demand.name].active.value})")
     out += ["    (disable-self)", ")", ""]
-    for d in demands:
+    for demand in demands:
+        lifecycle = encoded[demand.name]
         out += [
-            f"; Pending diagnostics: {d.name}",
+            f"; Pending diagnostics: {demand.name}",
         ]
-        for diagnostic in d.pending_diagnostics:
+        for diagnostic in demand.pending_diagnostics:
+            message = diagnostic.message.format(
+                active_goal=encoded[demand.name].active.value,
+                pending_goal=lifecycle.pending.value,
+                completed_goal=lifecycle.complete.value,
+            )
             out.append(
                 f"; PENDING-DIAGNOSTIC [{diagnostic.severity}] "
-                f"{diagnostic.code}: {diagnostic.message}"
+                f"{diagnostic.code}: {message}"
             )
 
         # AoE2 goals update immediately, while many world facts are only
-        # refreshed on the next script pass. Rule order must therefore place
-        # later lifecycle transitions before earlier ones. This makes each
-        # transition require a fresh pass:
-        #   pass N:   ACTIVE -> PENDING
-        #   pass N+1: PENDING -> COMPLETE
-        #   pass N+2: COMPLETE -> RELEASED
-        #
-        # Reversing this order would allow an already-true witness/release
-        # to collapse the entire lifecycle in one pass.
-        #
-        # The action also requires both completion and release predicates to be
-        # false before entering pending. This is the stale-fact barrier:
-        # a world fact that was already true before the action cannot later
-        # masquerade as evidence that the action completed or that the demand
-        # became releasable.
+        # refreshed on the next script pass. Rule order therefore places later
+        # lifecycle transitions before earlier ones, forcing each transition
+        # to require a fresh script pass.
         out += [
-            f"; Release: {d.name} | COMPLETE -> RELEASED",
+            f"; Release: {demand.name} | COMPLETE -> RELEASED",
             "(defrule",
-            f"    (goal demand-{d.name} {d.completed_goal})",
-            f"    {d.release.source}",
+            f"    (goal demand-{demand.name} {lifecycle.complete.value})",
+            f"    {demand.release.source}",
             "=>",
-            f"    (set-goal demand-{d.name} 0)",
+            f"    (set-goal demand-{demand.name} {lifecycle.released.value})",
             ")",
             "",
-            f"; Completion witness: {d.name} | PENDING -> COMPLETE",
+            f"; Completion witness: {demand.name} | PENDING -> COMPLETE",
             "(defrule",
-            f"    (goal demand-{d.name} {d.pending_goal})",
-            f"    {d.witness.source}",
+            f"    (goal demand-{demand.name} {lifecycle.pending.value})",
+            f"    {demand.witness.source}",
             "=>",
-            f"    (set-goal demand-{d.name} {d.completed_goal})",
+            f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
             ")",
             "",
-            f"; Demand: {d.name} | ACTIVE -> PENDING",
+            f"; Demand: {demand.name} | ACTIVE -> PENDING",
             "(defrule",
-            f"    (goal demand-{d.name} 1)",
-            f"    (not {d.witness.source})",
-            f"    (not {d.release.source})",
+            f"    (goal demand-{demand.name} {lifecycle.active.value})",
+            f"    (not {demand.witness.source})",
+            f"    (not {demand.release.source})",
         ]
-        out.extend(f"    {r.expression.source}" for r in d.requirements)
+        out.extend(f"    {requirement.expression.source}" for requirement in demand.requirements)
         out += [
             "=>",
-            f"    {d.action.expression.source}",
-            f"    (set-goal demand-{d.name} {d.pending_goal})",
+            f"    {demand.action.expression.source}",
+            f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
             ")",
             "",
         ]

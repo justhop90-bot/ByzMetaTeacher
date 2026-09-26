@@ -32,6 +32,7 @@ if __package__ in (None, ""):
     from Compiler.primitives import default_de_registry
     from Compiler.semantic import analyze
     from Compiler.emitter import emit
+    from Compiler.runtime_binding import RuntimeBinder
 else:
     from .backends.errors import NativeBackendError
     from .backends.models import NativeValidationResult, ValidationStatus
@@ -48,6 +49,7 @@ else:
     from .primitives import default_de_registry
     from .semantic import analyze
     from .emitter import emit
+    from .runtime_binding import RuntimeBinder
 
 
 _DEFAULT_NATIVE_BACKEND_ROOT = (
@@ -55,10 +57,18 @@ _DEFAULT_NATIVE_BACKEND_ROOT = (
 )
 
 
-def compile_source(source: str, base_goal: int = 1000) -> str:
+def compile_source(
+    source: str,
+    base_goal: int = 1000,
+    *,
+    source_unit: str = "<source>",
+) -> str:
     ast = parse(source)
-    ir = analyze(ast, default_de_registry(), base_goal)
-    return emit(ir)
+    ir = analyze(ast, default_de_registry(), source_unit=source_unit)
+    bindings = RuntimeBinder(base_goal=base_goal).bind(
+        tuple(demand.lifecycle.slot for demand in ir)
+    )
+    return emit(ir, bindings)
 
 
 def compile_source_with_report(
@@ -67,10 +77,11 @@ def compile_source_with_report(
     *,
     base_goal: int = 1000,
     native_backend: Aoe2NativeBackend | None = None,
+    source_unit: str = "<source>",
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     try:
-        result = compile_source(source, base_goal)
+        result = compile_source(source, base_goal, source_unit=source_unit)
     except (CompileError, OSError, ValueError) as exc:
         return semantic_failure_report(exc, output)
 
@@ -110,9 +121,10 @@ def compile_to_file(
     *,
     base_goal: int = 1000,
     native_backend: Aoe2NativeBackend | None = None,
+    source_unit: str = "<source>",
 ) -> NativeValidationResult | None:
     """Backward-compatible compile API; semantic errors still raise."""
-    result = compile_source(source, base_goal)
+    result = compile_source(source, base_goal, source_unit=source_unit)
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -213,6 +225,7 @@ def main() -> int:
             args.output,
             base_goal=args.base_goal,
             native_backend=native_backend,
+            source_unit=str(args.source.resolve()),
         )
     except (OSError, NativeBackendError, ValueError) as exc:
         ap.error(str(exc))
