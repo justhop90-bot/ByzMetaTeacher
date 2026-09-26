@@ -202,14 +202,28 @@ class AIRefProvenance:
     def __post_init__(self) -> None:
         if not self.citation_id:
             raise ValueError("citation_id is required")
+        allowed_bases = {
+            EvidenceKind.DOCUMENTED_FACT: {
+                ConfidenceBasis.EXPLICIT_AIREf_TEXT,
+                ConfidenceBasis.EXPLICIT_AIREf_TABLE,
+                ConfidenceBasis.EXPLICIT_AIREf_PATCH_NOTE,
+            },
+            EvidenceKind.INFERRED_MAPPING: {
+                ConfidenceBasis.MECHANICAL_DERIVATION,
+            },
+            EvidenceKind.BENCHMARK_OBSERVATION: {
+                ConfidenceBasis.CONTEXTUAL_BENCHMARK,
+            },
+        }
+        if self.confidence_basis not in allowed_bases[self.evidence_kind]:
+            raise ValueError(
+                f"{self.evidence_kind.value} requires an appropriate confidence basis"
+            )
         if self.evidence_kind is EvidenceKind.INFERRED_MAPPING:
             if not self.parent_evidence or not self.derivation:
                 raise ValueError("inferred mappings require parents and derivation")
-        if (
-            self.evidence_kind is EvidenceKind.BENCHMARK_OBSERVATION
-            and self.confidence_basis is not ConfidenceBasis.CONTEXTUAL_BENCHMARK
-        ):
-            raise ValueError("benchmark observations require contextual benchmark basis")
+        if self.evidence_kind is EvidenceKind.BENCHMARK_OBSERVATION and self.parent_evidence:
+            raise ValueError("benchmark observations cannot claim derivation parents")
 
 
 @dataclass(frozen=True)
@@ -546,7 +560,10 @@ def classify_revalidation(
     return RevalidationResult.VERIFIED_UNCHANGED
 
 
-def next_citation_state(current: CitationState, result: RevalidationResult) -> CitationState:
+def next_citation_state(
+    current: CitationState,
+    result: RevalidationResult,
+) -> CitationState:
     verified = {
         CitationState.VERIFIED,
         CitationState.PINNED,
@@ -554,30 +571,46 @@ def next_citation_state(current: CitationState, result: RevalidationResult) -> C
         CitationState.VERIFIED_LOCATOR_CHANGED,
         CitationState.VERIFIED_URL_CHANGED,
     }
-    if result is RevalidationResult.VERIFIED_UNCHANGED:
-        return CitationState.PINNED if current is CitationState.PINNED else CitationState.VERIFIED
-    if result is RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED:
-        if current not in verified | {CitationState.CANDIDATE}:
-            raise ValueError("invalid source-change transition")
-        return CitationState.VERIFIED_SOURCE_CHANGED
-    if result is RevalidationResult.LOCATOR_CHANGED_EXCERPT_MATCHED:
-        if current not in verified:
-            raise ValueError("invalid locator-change transition")
-        return CitationState.VERIFIED_LOCATOR_CHANGED
-    if result in {RevalidationResult.URL_CHANGED_EXCERPT_MATCHED, RevalidationResult.REDIRECTED_AND_VERIFIED}:
-        if current not in verified:
-            raise ValueError("invalid URL-change transition")
-        return CitationState.VERIFIED_URL_CHANGED
-    if result in {
-        RevalidationResult.EXCERPT_CHANGED,
-        RevalidationResult.SOURCE_CHANGED_EXCERPT_BROKEN,
-        RevalidationResult.AMBIGUOUS_MATCH,
-    }:
-        if current not in verified | {CitationState.CANDIDATE}:
-            raise ValueError("invalid review transition")
-        return CitationState.REVIEW_REQUIRED
+
+    if current is CitationState.SUPERSEDED:
+        raise ValueError("superseded citations are terminal")
+
     if result is RevalidationResult.SOURCE_UNAVAILABLE:
         return CitationState.UNAVAILABLE
+
+    if result is RevalidationResult.VERIFIED_UNCHANGED:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified}:
+            return CitationState.PINNED if current is CitationState.PINNED else CitationState.VERIFIED
+        raise ValueError(f"cannot verify unchanged citation from {current.value}")
+
+    if result is RevalidationResult.SOURCE_CHANGED_EXCERPT_MATCHED:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified}:
+            return CitationState.VERIFIED_SOURCE_CHANGED
+        raise ValueError(f"invalid source-change transition from {current.value}")
+
+    if result is RevalidationResult.LOCATOR_CHANGED_EXCERPT_MATCHED:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified}:
+            return CitationState.VERIFIED_LOCATOR_CHANGED
+        raise ValueError(f"invalid locator-change transition from {current.value}")
+
+    if result in {
+        RevalidationResult.URL_CHANGED_EXCERPT_MATCHED,
+        RevalidationResult.REDIRECTED_AND_VERIFIED,
+    }:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified}:
+            return CitationState.VERIFIED_URL_CHANGED
+        raise ValueError(f"invalid URL-change transition from {current.value}")
+
+    if result in {RevalidationResult.AMBIGUOUS_MATCH, RevalidationResult.EXCERPT_CHANGED}:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified, CitationState.REVIEW_REQUIRED}:
+            return CitationState.REVIEW_REQUIRED
+        raise ValueError(f"invalid review transition from {current.value}")
+
+    if result is RevalidationResult.SOURCE_CHANGED_EXCERPT_BROKEN:
+        if current in {CitationState.CANDIDATE, CitationState.UNAVAILABLE, *verified, CitationState.REVIEW_REQUIRED}:
+            return CitationState.BROKEN
+        raise ValueError(f"invalid broken-citation transition from {current.value}")
+
     raise ValueError(f"unsupported revalidation result: {result}")
 
 
