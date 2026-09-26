@@ -9,6 +9,9 @@ from LearnerAI.Compiler.ir.civ_profile import (
 from LearnerAI.Compiler.ir.game_data import (
     Age,
     BuildingId,
+    CoverageStatus,
+    Prerequisite,
+    PrerequisiteKind,
     ResourceCost,
     SelectorKind,
     UnitDef,
@@ -28,6 +31,7 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(data.unit(358).name, "Pikeman")
         self.assertEqual(data.unit(358).base_cost, ResourceCost(food=35, wood=25))
         self.assertEqual(data.tech(61).name, "Logistica")
+        self.assertEqual(data.coverage.status, CoverageStatus.FACTUAL_SUBSET)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
         profile = ByzantineProfile.for_update_185872()
@@ -70,6 +74,12 @@ class GameDataTests(unittest.TestCase):
         )
 
         self.assertFalse(hasattr(unit, "strategic_tags"))
+
+    def test_n_of_prerequisite_rejects_invalid_shape(self):
+        with self.assertRaises(ValueError):
+            Prerequisite(PrerequisiteKind.N_OF, count=0, children=(Prerequisite(PrerequisiteKind.AGE, age=Age.DARK),))
+        with self.assertRaises(ValueError):
+            Prerequisite(PrerequisiteKind.N_OF, count=2, children=(Prerequisite(PrerequisiteKind.AGE, age=Age.DARK),))
 
     def test_invalid_selector_kind_is_rejected(self):
         with self.assertRaises(ValueError):
