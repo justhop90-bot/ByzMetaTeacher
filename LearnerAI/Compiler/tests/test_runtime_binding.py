@@ -3,6 +3,7 @@ import unittest
 from Compiler.ast import DemandNode, SourceLocation
 from Compiler.ir import (
     GoalRole,
+    GoalSlotRequest,
     LifecycleState,
     SemanticDemand,
 )
@@ -80,11 +81,11 @@ class RuntimeBindingTests(unittest.TestCase):
         )
 
     def test_binder_rejects_goal_zero(self):
-        with self.assertRaisesRegex(ValueError, "unable to allocate lifecycle GoalId"):
+        with self.assertRaisesRegex(ValueError, "GoalId base must be in range 1..16000"):
             RuntimeBinder(base_goal=0).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_rejects_goal_overflow(self):
-        with self.assertRaisesRegex(ValueError, "GoalId.*1..16000"):
+        with self.assertRaisesRegex(ValueError, "unable to allocate lifecycle GoalId"):
             RuntimeBinder(base_goal=16000).bind(tuple(d.lifecycle.slot for d in self._ir()))
 
     def test_binder_respects_occupied_goal_ids(self):
