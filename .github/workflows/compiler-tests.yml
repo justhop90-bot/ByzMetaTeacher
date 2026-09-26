@@ -38,6 +38,34 @@ jobs:
           )
           PY
           python -m aoe2_ai_lab lint /tmp/basilisk-strategy.per --profile default --json
+      - name: Native-validate strategy-runtime fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.compiler import compile_strategy_runtime_profile
+          from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+          from LearnerAI.Compiler.ir.strategy import build_byzantine_castle_strategy, StrategyPosture
+          from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
+
+          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+          profile = build_byzantine_castle_strategy(effective)
+          snapshot = RuntimeObservationSnapshot(
+              fact_results=(
+                  ("(current-age >= feudal-age)", True),
+                  ("(building-available castle)", True),
+                  ("(can-afford-building castle)", False),
+                  ("(can-build castle)", False),
+                  ("(current-age >= imperial-age)", False),
+                  ("(players-unit-type-count any-enemy knight >= 3)", False),
+              ),
+              previous_posture=StrategyPosture.BOOM,
+          )
+          Path("/tmp/basilisk-strategy-runtime.per").write_text(
+              compile_strategy_runtime_profile(profile, effective, snapshot),
+              encoding="utf-8",
+          )
+          PY
+          python -m aoe2_ai_lab lint /tmp/basilisk-strategy-runtime.per --profile default --json
       - name: Native-validate explicit invalidation fixture
         run: |
           python - <<'PY'

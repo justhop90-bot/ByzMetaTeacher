@@ -163,6 +163,13 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
+    "building-available": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-building": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-building-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-unit": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-unit-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-research": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-research-with-escrow": StrategicObservationType.CAPABILITY_STATE,
     "can-build": StrategicObservationType.CAPABILITY_STATE,
     "can-build-with-escrow": StrategicObservationType.CAPABILITY_STATE,
     "can-train": StrategicObservationType.CAPABILITY_STATE,
@@ -237,7 +244,7 @@ def _validate_native_operand(
         return
     if family == "age":
         if value not in {"dark-age", "feudal-age", "castle-age", "imperial-age"}:
-            raise ValueError(f"native parameter family Age does not accept '{token}'")
+            raise ValueError(f"unresolved Age '{token}'")
         return
     if family == "buildingid":
         if not _lookup_token(token, _building_tokens(effective)):
