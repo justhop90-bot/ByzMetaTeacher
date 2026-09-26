@@ -9,6 +9,7 @@ from LearnerAI.Compiler.ir.strategy import (
     CapabilityIntentKind,
     PostureTransition,
     StrategicCapabilityObservation,
+    StrategicCapabilityObservationKind,
     StrategicEvidence,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
@@ -19,10 +20,13 @@ from LearnerAI.Compiler.ir.strategy import (
 from LearnerAI.Compiler.ir.strategy_runtime import (
     EvidenceTruth,
     OpportunityCostRuntimeState,
+
     RuntimeObservationSnapshot,
     StrategicDemandRuntimeState,
     StrategicObservationType,
     StrategyRuntimeState,
+    CapabilityTransition,
+    ReassessmentReason,
     bind_observation_reference,
     bind_strategic_capability_observation,
     bind_strategic_evidence,
@@ -35,11 +39,19 @@ class StrategyRuntimeTests(unittest.TestCase):
         self.effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
         self.profile = build_byzantine_castle_strategy(self.effective)
 
-    def snapshot(self, facts=(), completed=(), previous=None, signals=()):
+    def snapshot(
+        self,
+        facts=(),
+        completed=(),
+        previous=None,
+        signals=(),
+        previous_capabilities=(),
+    ):
         return RuntimeObservationSnapshot(
             fact_results=tuple(facts),
             completed_demands=frozenset(completed),
             previous_posture=previous,
+            previous_capability_observations=tuple(previous_capabilities),
             reassessment_signals=frozenset(signals),
         )
 
@@ -616,6 +628,75 @@ class StrategyRuntimeTests(unittest.TestCase):
         )
         self.assertIn("BASILISK GENERATED .PER", artifact)
         self.assertIn("(build castle)", artifact)
+
+
+    def test_feasibility_false_is_not_capability_loss(self):
+        observation = self.profile.capability_observations[0]
+        runtime = evaluate_strategy_runtime(
+            self.profile,
+            self.effective,
+            self.snapshot(
+                facts=(
+                    ("(current-age >= feudal-age)", True),
+                    (observation.expression, False),
+                ),
+                previous=StrategyPosture.BOOM,
+                previous_capabilities=((observation.identity, True),),
+            ),
+        )
+        self.assertEqual(runtime.capability_transitions, ())
+
+    def test_provider_loss_is_detected_from_previous_world_state(self):
+        base = self.profile.capability_observations[0]
+        provider = replace(
+            base,
+            observation_kind=StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE,
+            expression="(building-type-count castle > 0)",
+        )
+        profile = replace(self.profile, capability_observations=(provider,))
+        runtime = evaluate_strategy_runtime(
+            profile,
+            self.effective,
+            self.snapshot(
+                facts=(
+                    ("(current-age >= feudal-age)", True),
+                    ("(building-type-count castle > 0)", False),
+                ),
+                previous=StrategyPosture.BOOM,
+                previous_capabilities=((provider.identity, True),),
+            ),
+        )
+        self.assertEqual(
+            runtime.capability_transitions,
+            ((provider.identity, CapabilityTransition.LOST),),
+        )
+        self.assertIn(ReassessmentReason.CAPABILITY_LOSS, runtime.reassessment_reasons)
+
+    def test_provider_recovery_is_detected_without_creating_new_demand_identity(self):
+        base = self.profile.capability_observations[0]
+        provider = replace(
+            base,
+            observation_kind=StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE,
+            expression="(building-type-count castle > 0)",
+        )
+        profile = replace(self.profile, capability_observations=(provider,))
+        runtime = evaluate_strategy_runtime(
+            profile,
+            self.effective,
+            self.snapshot(
+                facts=(
+                    ("(current-age >= feudal-age)", True),
+                    ("(building-type-count castle > 0)", True),
+                ),
+                previous=StrategyPosture.BOOM,
+                previous_capabilities=((provider.identity, False),),
+            ),
+        )
+        self.assertEqual(
+            runtime.capability_transitions,
+            ((provider.identity, CapabilityTransition.RECOVERED),),
+        )
+        self.assertEqual(runtime.demand_states, tuple(sorted(runtime.demand_states)))
 
 
 if __name__ == "__main__":
