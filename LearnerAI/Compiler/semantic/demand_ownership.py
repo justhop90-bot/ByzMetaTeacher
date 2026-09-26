@@ -168,7 +168,6 @@ def analyze_demand_ownership(
                     demand=demand.identity,
                     state=state,
                     location=demand.location,
-                    location=state_locations.get(state),
                 )
             )
             continue
@@ -208,6 +207,7 @@ def analyze_demand_ownership(
                     status=OwnershipStatus.BLOCKED,
                     demand=demand.identity,
                     state=state,
+                    location=state_locations.get(state),
                 )
             )
             continue
