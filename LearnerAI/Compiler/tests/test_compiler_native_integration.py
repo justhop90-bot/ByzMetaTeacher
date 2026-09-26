@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -282,6 +283,102 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     self.assertIsNone(backend.seen_artifact)
                     self.assertTrue(output.exists())
                     self.assertEqual(output.read_text(encoding="utf-8"), before)
+
+                    expected_support_payload = [
+                        {
+                            "command": diagnostic.command,
+                            "state": diagnostic.state.value,
+                            "code": diagnostic.code,
+                            "severity": diagnostic.severity,
+                            "message": diagnostic.message,
+                        }
+                        for diagnostic in assessment.diagnostics
+                    ]
+                    baseline_payload = report.to_dict()["diagnostics"]
+                    baseline_state_sequence = [
+                        diagnostic.state.value for diagnostic in assessment.diagnostics
+                    ]
+                    baseline_artifact_hash = hashlib.sha256(
+                        output.read_bytes()
+                    ).hexdigest()
+
+                    self.assertEqual(
+                        [item["code"] for item in baseline_payload],
+                        ["NATIVE-SUPPORT-005"],
+                    )
+                    self.assertEqual(
+                        baseline_state_sequence,
+                        [state.value for state in expected_states[name]],
+                    )
+                    self.assertEqual(
+                        [item["code"] for item in expected_support_payload],
+                        expected_codes[name],
+                    )
+
+                    for run_number in range(2, 4):
+                        replay_backend = FakeBackend(
+                            fake_result(output, ValidationStatus.VALIDATED)
+                        )
+                        replay_report = compile_source_with_report(
+                            source,
+                            output,
+                            native_backend=replay_backend,
+                            registry=registry,
+                            source_unit=f"native-support/{name}.basilisk",
+                        )
+                        replay_assessment = registry.assess_support("fixture-command")
+                        replay_payload = replay_report.to_dict()["diagnostics"]
+                        replay_state_sequence = [
+                            diagnostic.state.value
+                            for diagnostic in replay_assessment.diagnostics
+                        ]
+                        replay_artifact_hash = hashlib.sha256(
+                            output.read_bytes()
+                        ).hexdigest()
+
+                        self.assertEqual(
+                            replay_report.status,
+                            ReportStatus.SEMANTIC_REJECTED,
+                            msg=f"run {run_number}",
+                        )
+                        self.assertEqual(
+                            replay_payload,
+                            baseline_payload,
+                            msg=f"diagnostic payload changed on run {run_number}",
+                        )
+                        self.assertEqual(
+                            replay_state_sequence,
+                            baseline_state_sequence,
+                            msg=f"support-state sequence changed on run {run_number}",
+                        )
+                        self.assertEqual(
+                            [
+                                {
+                                    "command": diagnostic.command,
+                                    "state": diagnostic.state.value,
+                                    "code": diagnostic.code,
+                                    "severity": diagnostic.severity,
+                                    "message": diagnostic.message,
+                                }
+                                for diagnostic in replay_assessment.diagnostics
+                            ],
+                            expected_support_payload,
+                            msg=f"support diagnostic payload changed on run {run_number}",
+                        )
+                        self.assertEqual(
+                            replay_artifact_hash,
+                            baseline_artifact_hash,
+                            msg=f"artifact hash changed on run {run_number}",
+                        )
+                        self.assertEqual(
+                            output.read_text(encoding="utf-8"),
+                            before,
+                            msg=f"artifact content changed on run {run_number}",
+                        )
+                        self.assertIsNone(
+                            replay_backend.seen_artifact,
+                            msg=f"native backend invoked on run {run_number}",
+                        )
 
     @staticmethod
     def _native_support_fixture_registry(name):
