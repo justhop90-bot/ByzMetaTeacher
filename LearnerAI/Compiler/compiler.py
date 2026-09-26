@@ -53,6 +53,7 @@ else:
     from .primitives import default_de_registry
     from .semantic import analyze
     from .semantic.demand_ownership import validate_demand_ownership
+    from .semantic.action_issuance import validate_action_issuance
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
@@ -89,6 +90,10 @@ def _compile_source_parts(
     ownership_report = validate_demand_ownership(ir)
     if ownership_report.errors:
         diagnostic = ownership_report.errors[0]
+        raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
+    issuance_report = validate_action_issuance(ir, registry)
+    if issuance_report.errors:
+        diagnostic = issuance_report.errors[0]
         raise CompileError(f"{diagnostic.code.value}: {diagnostic.message}")
     capability_graph = project_capability_graph(ir, registry)
     resource_report = validate_resource_conflicts(capability_graph, registry)
