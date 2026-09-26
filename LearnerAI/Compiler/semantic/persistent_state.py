@@ -371,6 +371,7 @@ def analyze_persistent_state(
             first_writer is not None
             and first_consumer is None
             and len(writers) > 1
+            and len({writer.rule_order for writer in writers}) == 1
         ):
             visibility = PersistentStateVisibility.SAME_RULE_ACTION_SEQUENCE
 
