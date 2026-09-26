@@ -14,6 +14,7 @@ from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
 from Compiler.runtime_binding import (
     BindingContext,
+    BindingManifest,
     GoalId,
     GoalSlot,
     GoalSpan,
@@ -27,7 +28,6 @@ from Compiler.runtime_binding import (
     GoalStorageShape,
     VolatileGoalPool,
 )
-from Compiler.ir import GoalSpanRequest, GoalSpanKind, SemanticId
 from Compiler.semantic import analyze
 
 
