@@ -536,3 +536,39 @@ The compiler now describes static strategy intent, evaluates typed runtime strat
 - [ ] Add replayable historical patch overlays.
 - [ ] Add broader cross-civilization factual fixtures.
 - [ ] Replace the toy strategy fixture with compilation of actual Basilisk strategic modules without moving gameplay policy into GameData.
+
+## Community engine semantics / recovery tranche (2026-09-26)
+
+The generic compiler frontier has now been revised against AIRef limits/engine documentation and repeated community .per practice from Niek/Atilla/The Duke-style scripts, aoe2ai, scripting references, attack-loop examples, and AIRef performance material.
+
+The key correction is that the missing layer is not another abstract lifecycle. It is the engine-semantic contract between native commands and strategic intent.
+
+Implemented:
+- [x] Machine-readable evidence classes: ENGINE FACT, COMMUNITY PRACTICE, COMPILER POLICY, OPEN / UNKNOWN.
+- [x] CommunityEngineSemanticsRegistry with source-backed practice records.
+- [x] Explicit Goal persistence semantics.
+- [x] Explicit Strategic Number control-surface semantics; full SN coverage remains partial.
+- [x] Explicit Timer enable/rearm/disable semantics; timer is never strategic truth.
+- [x] Explicit recurrent rule/pass and same-rule sequencing contract.
+- [x] Explicit pending/work-queue versus completion distinction.
+- [x] Build/train/research feasibility + pending/queue + world-witness lifecycle contracts.
+- [x] Explicit transient resource-arbitration contract; persistent scheduler semantics remain out of scope.
+- [x] DUC/search, attack machinery, load/preprocessor, and performance practices captured as evidence-backed but non-enforcing frontiers.
+- [x] Capability-loss/recovery transition classifier.
+- [x] StrategyRuntimeState records previous capability truth and detects true->false loss and false->true recovery.
+- [x] Recovery keeps the original strategic demand and execution mapping.
+- [x] Strategic invalidation suppresses recovery signaling for that demand.
+- [x] Deterministic transition state participates in the runtime fingerprint.
+
+Still open:
+- [ ] Recurrent rule eligibility and disable-self lifetime.
+- [ ] Later persistent-state overwrites/preemption/starvation.
+- [ ] Effective #load/#load-if program graph.
+- [ ] Complete SN semantic inventory.
+- [ ] DUC retained-search/list/filter/target state.
+- [ ] Attack-group/target lifecycle and release.
+- [ ] Provider-loss recovery for generic BUILD/TRAIN/RESEARCH capabilities.
+- [ ] DUC/performance cardinality diagnostics.
+- [ ] Golden native fixtures for the newly promoted contracts.
+
+Authoritative checklist: LearnerAI/Compiler/COMMUNITY_ENGINE_SEMANTICS_CHECKLIST_2026-09-26.md.
