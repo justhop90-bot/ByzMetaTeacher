@@ -168,6 +168,7 @@ def _from_semantic(item: SemanticDiagnostic) -> ReportDiagnostic:
         column=item.column,
         end_line=item.end_line,
         end_column=item.end_column,
+        references=(),
     )
 
 
