@@ -21,6 +21,8 @@ Its job is to turn explicit player semantics into auditable .per while rejecting
 
 The capability graph is currently a semantic validation projection of the existing demand IR. It is not yet the source language for strategy composition, and the emitter still lowers the validated demand IR rather than the capability graph.
 
+Demand ownership is currently derived from the semantic demand identity because the small source language has no separate owner declaration. The typed IR is ready for strategy/domain owner identities later; no new source syntax is introduced just to exercise this layer.
+
 The runtime remains the final authority.
 
 ## Current language
@@ -145,22 +147,26 @@ When native validation is enabled, the .per artifact and manifest are staged tog
 
 Implemented and connected to the compile gate:
 
-1. typed capability/provider/witness graph;
-2. provider contract validation;
-3. feasibility and admissibility validation;
-4. prerequisite dependency closure;
-5. deterministic SCC cycle detection;
-6. dead-end, unrooted, open-loop, blocked, and disconnected diagnostics;
-7. deterministic capability diagnostics;
-8. projection of the current demand language into that graph without adding source syntax.
+1. typed demand ownership contract;
+2. typed lifecycle state read/write accesses;
+3. deterministic first-writer and first-consumer analysis aligned with emitter order;
+4. owner mismatch, missing-owner, conflicting-writer, duplicate-writer, consumer-before-writer, and unconsumed-state diagnostics;
+5. typed capability/provider/witness graph;
+6. provider contract validation;
+7. feasibility and admissibility validation;
+8. prerequisite dependency closure;
+9. deterministic SCC cycle detection;
+10. dead-end, unrooted, open-loop, blocked, and disconnected diagnostics;
+11. deterministic capability and ownership diagnostics;
+12. projection of the current demand language into these semantic layers without adding source syntax.
 
 Still required for a full player compiler:
 
-1. demand ownership and first-writer/first-consumer contracts;
+1. richer owner boundaries once strategy/domain owner declarations exist;
 2. resource/conflict relations beyond the existing build-pass singleton;
 3. explicit action-issuance failure versus pending-state semantics;
 4. cancellation/obsolescence and capability-loss closure;
-5. source-order and same-pass visibility analysis;
+5. broader source-order and same-pass visibility analysis across non-lifecycle state;
 6. StrategicNumberSlot and TimerSlot allocation;
 7. Castle vertical-slice compilation against actual Basilisk strategy/economy semantics.
 
@@ -220,25 +226,28 @@ small lifecycle fixtures only. They are not the full Basilisk controller.
 ## Current implementation boundary
 
 Implemented now:
+- explicit typed demand ownership contracts;
+- typed lifecycle read/write accesses with deterministic emitter-aligned source order;
+- deterministic first-writer/first-consumer analysis;
+- ownership mismatch, missing-owner, conflicting-writer, duplicate-writer, consumer-before-writer, and unconsumed-state diagnostics;
+- compiler-gate integration before capability validation, runtime binding, and emission;
 - one symbolic lifecycle GoalSlot request per demand;
 - typed GoalId and GoalValue wrappers;
 - deterministic GoalSlot and GoalSpan binding with occupied-ID/interval and existing-binding support;
 - native parameter/storage contract types;
 - deterministic binding manifests and staged promotion;
-- lifecycle lowering isolated from semantic analysis;
 - typed capability-provider/witness IR;
 - provider, witness, admissibility, feasibility, dependency, and lifecycle-closure validation;
-- compiler-gate integration of capability validation before runtime binding/emission;
 - deterministic SCC and dead-end diagnostics;
-- regression tests for lifecycle, binding, capability validation, and compiler/native integration.
+- regression coverage for ownership, access order, capability validation, lifecycle, binding, and native integration.
 
 Still open:
 - package-wide occupancy discovery from an explicit package inventory;
 - StrategicNumberSlot and TimerSlot allocators;
-- demand ownership and writer/consumer contracts;
+- richer owner boundaries once strategy/domain owner declarations exist;
 - resource/conflict semantics beyond the build-pass singleton;
 - action-issuance failure versus pending-state distinction;
-- source-order/first-writer/first-consumer analysis;
+- broader source-order and same-pass visibility analysis across non-lifecycle state;
 - Castle vertical slice compiled against actual Basilisk strategy/economy semantics.
 
 ## Verification
