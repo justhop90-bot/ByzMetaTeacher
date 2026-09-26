@@ -170,3 +170,11 @@ The implementation intentionally does not create persistent resource reservation
 - [x] Deterministic validation of world-state evidence and causal ordering.
 - [x] Compile-gate integration before issuance/resource/capability layers.
 - [x] Focused regression fixtures and Compiler CI run 298: 151 tests, native finding_count=0.
+
+
+### Release-state semantics implementation record (2026-09-26)
+
+- [x] Typed release-state contract and lifecycle transition validation.
+- [x] Deterministic release diagnostics and focused regressions.
+- [x] Compile-gate integration before issuance/resource/capability layers.
+- [x] Compiler CI run 319: 158 tests, native finding_count=0.
