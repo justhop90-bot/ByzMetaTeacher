@@ -19,15 +19,19 @@ def emit(demands: list[SemanticDemand], compiler_version: str = "0.2") -> str:
         out.append(f"    (set-goal demand-{d.name} 1)")
     out += ["    (disable-self)", ")", ""]
     for d in demands:
-        out += [f"; Demand: {d.name}", "(defrule", f"    (goal demand-{d.name} 1)"]
+        out += [
+            f"; Demand: {d.name}", "(defrule", f"    (goal demand-{d.name} 1)"
+        ]
         out.extend(f"    {r.expression.source}" for r in d.requirements)
         out += ["=>", f"    {d.action.expression.source}", ")", ""]
-        out += [f"; Completion witness: {d.name}", "(defrule",
-                f"    (goal demand-{d.name} 1)",
-                f"    {d.witness.source}",
-                "=>", f"    (set-goal demand-{d.name} 2)", ")", ""]
-        out += [f"; Release: {d.name}", "(defrule",
-                f"    (goal demand-{d.name} 2)",
-                f"    {d.release.source}",
-                "=>", f"    (set-goal demand-{d.name} 0)", ")", ""]
+        out += [
+            f"; Completion witness: {d.name}", "(defrule",
+            f"    (goal demand-{d.name} 1)", f"    {d.witness.source}",
+            "=>", f"    (set-goal demand-{d.name} 2)", ")", ""
+        ]
+        out += [
+            f"; Release: {d.name}", "(defrule",
+            f"    (goal demand-{d.name} 2)", f"    {d.release.source}",
+            "=>", f"    (set-goal demand-{d.name} 0)", ")", ""
+        ]
     return "\n".join(out).rstrip() + "\n"
