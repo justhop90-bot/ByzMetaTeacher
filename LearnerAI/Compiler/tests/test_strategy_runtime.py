@@ -9,6 +9,7 @@ from LearnerAI.Compiler.ir.strategy import (
     CapabilityIntentKind,
     PostureTransition,
     StrategicCapabilityObservation,
+    StrategicEnemyCompositionObservation,
     StrategicEvidence,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
@@ -428,6 +429,65 @@ class StrategyRuntimeTests(unittest.TestCase):
         profile = replace(self.profile, capability_observations=(meta,))
         with self.assertRaisesRegex(ValueError, "community meta cannot define factual capability"):
             evaluate_strategy_runtime(profile, self.effective, self.snapshot())
+
+    def test_byzantine_enemy_composition_observation_binds_to_enemy_unit_family(self):
+        observation = self.profile.enemy_composition_observations[0]
+        self.assertEqual(observation.unit_id, 38)
+        binding = bind_strategic_evidence(
+            StrategicEvidence(
+                StrategicEvidenceKind.PERSISTENT,
+                observation.expression,
+                observation.identity,
+            ),
+            self.effective,
+        )
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.ENEMY_UNIT_COUNT,
+        )
+
+    def test_unknown_enemy_composition_unit_fails_closed(self):
+        bad = StrategicEnemyCompositionObservation(
+            identity="unknown-enemy-unit",
+            unit_id=999999,
+            expression="(players-unit-type-count any-enemy 999999 >= 1)",
+            provenance=(),
+        )
+        with self.assertRaisesRegex(ValueError, "status is UNKNOWN"):
+            evaluate_strategy_runtime(
+                replace(self.profile, enemy_composition_observations=(bad,)),
+                self.effective,
+                self.snapshot(),
+            )
+
+    def test_community_meta_cannot_define_enemy_composition_observation(self):
+        base = self.profile.enemy_composition_observations[0]
+        meta = replace(
+            base,
+            source=StrategicEvidenceSource.COMMUNITY_META,
+            provenance=self.profile.demand("castle-commitment").reason[0].provenance,
+        )
+        with self.assertRaisesRegex(ValueError, "community meta cannot define factual enemy observation"):
+            evaluate_strategy_runtime(
+                replace(self.profile, enemy_composition_observations=(meta,)),
+                self.effective,
+                self.snapshot(),
+            )
+
+    def test_runtime_state_records_enemy_composition_observation_truth(self):
+        observation = self.profile.enemy_composition_observations[0]
+        runtime = evaluate_strategy_runtime(
+            self.profile,
+            self.effective,
+            self.snapshot(
+                facts=((observation.expression, True),),
+                previous=StrategyPosture.BOOM,
+            ),
+        )
+        self.assertEqual(
+            dict(runtime.evaluated_enemy_composition_observations),
+            {observation.identity: EvidenceTruth.TRUE},
+        )
 
     def test_byzantine_meta_scope_covers_counter_defense_and_castle_transitions(self):
         labels = {item.label for item in self.profile.community_meta_evidence}
