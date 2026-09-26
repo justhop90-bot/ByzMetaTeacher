@@ -283,16 +283,19 @@ class CapabilityGraphBuilder:
                     )
                 )
 
-        for capability in self._capabilities:
-            for provider_id in capability.providers:
-                edges.append(
-                    GraphEdge(
-                        capability.identity,
-                        provider_id,
-                        EdgeKind.CAPABILITY_PROVIDED_BY,
-                        capability.location,
-                    )
+        capability_locations = {
+            capability.identity: capability.location
+            for capability in self._capabilities
+        }
+        for provider in self._providers:
+            edges.append(
+                GraphEdge(
+                    provider.capability,
+                    provider.identity,
+                    EdgeKind.CAPABILITY_PROVIDED_BY,
+                    capability_locations.get(provider.capability),
                 )
+            )
 
         for provider in self._providers:
             for prerequisite in provider.prerequisites:
