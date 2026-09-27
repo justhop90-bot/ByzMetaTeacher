@@ -13,6 +13,7 @@ from ..ast import Expression
 from ..diagnostics import DiagnosticSeverity
 from ..ir.duc import (
     DucAnalysisReport,
+    DucBranchMerge,
     DucDiagnostic,
     DucExecutionEffect,
     DucFilterPredicate,
