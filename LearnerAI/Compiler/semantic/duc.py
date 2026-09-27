@@ -964,8 +964,6 @@ def _widen_list_state(
     previous: DucSearchListState,
     current: DucSearchListState,
 ) -> DucSearchListState:
-    if previous.path_ambiguous:
-        return previous
     if _list_semantic_key(previous) == _list_semantic_key(current):
         return previous
     candidates: dict[tuple[object, ...], DucListGeneration] = {}
@@ -1007,8 +1005,6 @@ def _widen_filter_state(
     previous: DucFilterState,
     current: DucFilterState,
 ) -> DucFilterState:
-    if previous.path_ambiguous:
-        return previous
     if _filter_key(previous) == _filter_key(current):
         return previous
     return DucFilterState(
