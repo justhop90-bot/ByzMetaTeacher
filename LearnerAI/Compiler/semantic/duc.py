@@ -290,7 +290,7 @@ def _list_state(
         list_kind=kind,
         current_generation=generation,
         next_generation=state.next_generation if next_generation is None else next_generation,
-        initialized=generation is not None or state.initialized,
+        initialized=generation is not None,
         path_ambiguous=path_ambiguous,
         generation_variants=generation_variants,
     )
