@@ -198,6 +198,24 @@ class SourceGraphValidationTests(unittest.TestCase):
             {item.code for item in report.errors},
         )
 
+    def test_diagnostics_are_deterministically_ordered(self):
+        graph = self._resolve("linear/root.perdsl")
+        target = next(
+            edge
+            for edge in graph.edges
+            if edge.active and edge.target_path is not None
+        )
+        forged_edges = tuple(
+            replace(edge, target_path=None)
+            if edge is target
+            else edge
+            for edge in graph.edges
+        )
+        forged = replace(graph, edges=forged_edges, fingerprint="0" * 64)
+        first = validate_effective_source_graph(forged)
+        second = validate_effective_source_graph(forged)
+        self.assertEqual(first.diagnostics, second.diagnostics)
+
     def test_validation_error_exposes_semantic_diagnostics(self):
         graph = self._resolve("linear/root.perdsl")
         forged = replace(graph, fingerprint="0" * 64)
