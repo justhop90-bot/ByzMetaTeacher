@@ -97,27 +97,6 @@ class SourceAssemblyEventTests(unittest.TestCase):
                 for event in graph.events
                 if event.source_instance == graph.root.identity
             ]
-            import Compiler.source_graph as _loaded_source_graph
-            print(
-                "EVENT-FUNC-LINE",
-                _loaded_source_graph._parse_assembly_events.__code__.co_firstlineno,
-            )
-            print(
-                "EVENT-FUNC-SNIP",
-                open(_loaded_source_graph.__file__, encoding="utf-8").read().splitlines()[585:600],
-            )
-            print(
-                "EVENT-DEBUG",
-                _loaded_source_graph.__file__,
-                [
-                    (
-                        item.kind.value,
-                        item.condition_before.fingerprint_payload(),
-                        item.condition_after.fingerprint_payload(),
-                    )
-                    for item in events
-                ],
-            )
             opened, defined_load, else_event, undefined_load, ended, tail = events
 
             self.assertIsInstance(opened.payload, ConditionalOpenPayload)
