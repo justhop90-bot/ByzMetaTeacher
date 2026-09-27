@@ -470,7 +470,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
 
     def test_prior_rule_consumer_can_observe_a_persisted_writer_on_a_later_pass(self):
         graph = self._graph(
-            "(defrule (goal loop-consumer 1) => (set-goal observed 1) (disable-self))\n"
+            "(defrule (goal loop-consumer 1) => (disable-self))\n"
             "(defrule (true) => (set-goal loop-consumer 1) (disable-self))\n"
         )
         report = analyze_persistent_state(analyze_effective_rules(graph))
