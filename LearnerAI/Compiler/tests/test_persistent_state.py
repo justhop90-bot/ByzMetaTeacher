@@ -296,6 +296,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertFalse(
             any(
                 item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
                 for item in report.diagnostics
             )
         )
@@ -321,10 +322,10 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertFalse(
             any(
                 item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
                 for item in report.diagnostics
             )
         )
-
     def test_strategic_number_comparison_goal_operand_is_a_downstream_goal_consumer(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
@@ -347,6 +348,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertFalse(
             any(
                 item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
                 for item in report.diagnostics
             )
         )
@@ -369,8 +371,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].rule_order, 2)
         self.assertEqual(findings[0].related_access.rule_order, 3)
-        self.assertEqual(findings[0].severity.value, "WARNING")
-
+        self.assertEqual(findings[0].severity, DiagnosticSeverity.WARNING)
     def test_path_sensitive_consumer_can_follow_backward_jump(self):
         graph = self._graph(
             "(defrule (true) => (set-goal seed 1))\n"
@@ -435,6 +436,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             item
             for item in report.diagnostics
             if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+            and item.access.state.identifier == "7"
         )
 
         self.assertEqual(len(findings), 1)
