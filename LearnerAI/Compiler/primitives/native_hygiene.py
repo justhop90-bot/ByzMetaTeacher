@@ -1202,6 +1202,12 @@ class NativeContractCatalog:
             )
             for evidence_id in contract.evidence_ids
         )
+        ids.update(
+            evidence_id
+            for contract in self.duc_groups
+            if contract.output_width
+            for evidence_id in contract.output_evidence_ids
+        )
         return tuple(sorted(ids))
 
     def goal_storage_contract(self, identity: str) -> NativeGoalStorageContract:
