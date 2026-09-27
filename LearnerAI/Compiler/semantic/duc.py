@@ -34,6 +34,7 @@ from ..ir.duc import (
     DucSemanticState,
     DucStateKind,
     DucTargetKind,
+    DucTargetProof,
     DucTargetState,
     DucTargetStatus,
     DucVisibility,
@@ -262,6 +263,7 @@ def _provenance(
     *,
     visibility: DucVisibility,
     state_revision: int,
+    pass_id: int,
     inputs: tuple[int, ...] = (),
     contract_id: str,
     evidence_ids: tuple[str, ...],
@@ -276,6 +278,7 @@ def _provenance(
         pass_behavior=rule.pass_behavior,
         visible_as=visibility,
         state_revision=state_revision,
+        pass_id=pass_id,
         input_state_generations=inputs,
         semantic_contract_id=contract_id,
         evidence_ids=evidence_ids,
@@ -305,7 +308,7 @@ def _list_state(
     )
 
 
-def _empty_state() -> DucSemanticState:
+def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
         remote_list=DucSearchListState(DucListKind.REMOTE, None, 1, False),
@@ -313,6 +316,7 @@ def _empty_state() -> DucSemanticState:
         target=None,
         point_target=None,
         state_revision=0,
+        pass_id=pass_id,
     )
 
 
@@ -401,6 +405,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=visible,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=list_generation_inputs + (state.filters.generation,),
                     contract_id=f"duc.search.{command}",
                     evidence_ids=search_contract.evidence_ids,
@@ -432,6 +437,7 @@ def _analyze_duc_linear(
                         state.target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                 else:
                     state = DucSemanticState(
@@ -441,6 +447,7 @@ def _analyze_duc_linear(
                         state.target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                 searches.append(
                     DucSearchOperation(
@@ -476,6 +483,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(state.filters.generation,),
                     contract_id=f"duc.filter.{command}",
                     evidence_ids=filter_contract.evidence_ids,
@@ -495,6 +503,7 @@ def _analyze_duc_linear(
                     state.target,
                     state.point_target,
                     state_revision,
+                    state.pass_id,
                 )
                 rule_writes.add(DucStateKind.FILTER)
                 continue
@@ -506,6 +515,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(
                         state.local_list.current_generation.generation
                         if state.local_list.current_generation else 0,
@@ -538,7 +548,7 @@ def _analyze_duc_linear(
                         and target.object_refs[0].list_kind is DucListKind.LOCAL
                     ):
                         target = DucTargetState(
-                            **{**target.__dict__, "validity": DucTargetStatus.STALE}
+                            **{**target.__dict__, "validity": DucTargetStatus.STALE, "proof": DucTargetProof.UNKNOWN}
                         )
                 if resolution.invalidates_remote_list:
                     remote = _list_state(
@@ -556,7 +566,7 @@ def _analyze_duc_linear(
                         and target.object_refs[0].list_kind is DucListKind.REMOTE
                     ):
                         target = DucTargetState(
-                            **{**target.__dict__, "validity": DucTargetStatus.STALE}
+                            **{**target.__dict__, "validity": DucTargetStatus.STALE, "proof": DucTargetProof.UNKNOWN}
                         )
                 if resolution.invalidates_filters:
                     next_filter_generation = (
@@ -583,6 +593,7 @@ def _analyze_duc_linear(
                     target,
                     point_target,
                     state_revision,
+                    state.pass_id,
                 )
                 reset = DucResetEffect(
                     command,
@@ -628,6 +639,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=generations,
                     contract_id="duc.output.search-state",
                     evidence_ids=("airef:duc:get-search-state",),
@@ -718,12 +730,28 @@ def _analyze_duc_linear(
                         action,
                         visibility=DucVisibility.SAME_RULE,
                         state_revision=state_revision,
+                    pass_id=state.pass_id,
                         inputs=tuple(
                             sorted(set(generation_candidates))
                         ) + (state.filters.generation,),
                         contract_id="duc.target.object",
                         evidence_ids=target_contract.evidence_ids,
                     )
+                    source_generation_pass_id = (
+                        current_generation.produced_by.pass_id
+                        if current_generation is not None
+                        else None
+                    )
+                    if current.path_ambiguous or state.filters.path_ambiguous:
+                        target_validity = DucTargetStatus.UNKNOWN
+                        target_proof = DucTargetProof.UNKNOWN
+                    elif source_generation_pass_id == state.pass_id:
+                        target_validity = DucTargetStatus.VALID
+                        target_proof = DucTargetProof.CURRENT_PASS_PROOF
+                    else:
+                        target_validity = DucTargetStatus.VALID
+                        target_proof = DucTargetProof.PRESERVED_PROOF
+
                     target = DucTargetState(
                         kind=DucTargetKind.OBJECT,
                         generation=state_revision,
@@ -743,11 +771,9 @@ def _analyze_duc_linear(
                         ),
                         source_filter_generation=state.filters.generation,
                         provenance=provenance,
-                        validity=(
-                            DucTargetStatus.UNKNOWN
-                            if current.path_ambiguous or state.filters.path_ambiguous
-                            else DucTargetStatus.VALID
-                        ),
+                        validity=target_validity,
+                        pass_id=state.pass_id,
+                        proof=target_proof,
                     )
                     state = DucSemanticState(
                         state.local_list,
@@ -756,6 +782,7 @@ def _analyze_duc_linear(
                         target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                     targets.append(target)
                     rule_reads.add(DucStateKind.LIST)
@@ -768,6 +795,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(state.filters.generation,),
                     contract_id="duc.target.point",
                     evidence_ids=target_contract.evidence_ids,
@@ -786,6 +814,7 @@ def _analyze_duc_linear(
                     state.target,
                     point,
                     state_revision,
+                    state.pass_id,
                 )
                 rule_writes.add(DucStateKind.TARGET)
                 continue
@@ -796,6 +825,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     contract_id=f"duc.list.mutator.{command}",
                     evidence_ids=("airef:duc:list-mutation",),
                 )
@@ -805,10 +835,11 @@ def _analyze_duc_linear(
                         state.remote_list,
                         state.filters,
                         DucTargetState(
-                            **{**state.target.__dict__, "validity": DucTargetStatus.UNKNOWN}
+                            **{**state.target.__dict__, "validity": DucTargetStatus.UNKNOWN, "proof": DucTargetProof.UNKNOWN}
                         ),
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                     diagnostics.append(
                         DucDiagnostic(
@@ -845,12 +876,18 @@ def _analyze_duc_linear(
                         )
                     )
                 elif target.validity is DucTargetStatus.UNKNOWN:
+                    message = (
+                        "up-target-objects consumes an object target retained across a pass "
+                        "without a current-pass re-establishment; target lifetime is unknown"
+                        if target.proof is DucTargetProof.SYNTACTIC_RETENTION
+                        else "up-target-objects consumes an object target whose source-list identity is no longer provable"
+                    )
                     diagnostics.append(
                         DucDiagnostic(
                             "DUC-007",
                             DiagnosticSeverity.WARNING.value,
                             rule.rule_order,
-                            "up-target-objects consumes an object target whose source-list identity is no longer provable",
+                            message,
                             _location(action, rule.source_location),
                         )
                     )
@@ -944,6 +981,8 @@ def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
         target.point_ref,
         target.source_list_generation,
         target.source_filter_generation,
+        target.pass_id,
+        target.proof,
     )
 
 
@@ -1025,9 +1064,13 @@ def _widen_target_state(
     if _target_key(previous) == _target_key(current):
         if previous is None:
             return None
-        if previous.validity is current.validity:
+        if previous.validity is current.validity and previous.proof is current.proof:
             return previous
-        return replace(previous, validity=DucTargetStatus.UNKNOWN)
+        return replace(
+            previous,
+            validity=DucTargetStatus.UNKNOWN,
+            proof=DucTargetProof.UNKNOWN,
+        )
     representative = previous if previous is not None else current
     if representative is None:
         return None
@@ -1069,6 +1112,7 @@ def _widen_loop_state(
             target,
             point_target,
             max(previous.state_revision, current.state_revision),
+            max(previous.pass_id, current.pass_id),
         ),
         tuple(widened_fields),
     )
@@ -1134,17 +1178,31 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
     if all(_target_key(state) == _target_key(first) for state in states):
         if first is None:
             return None
-        if all(state is not None and state.validity is first.validity for state in states):
+        if all(
+            state is not None
+            and state.validity is first.validity
+            and state.proof is first.proof
+            for state in states
+        ):
             return first
-        return replace(first, validity=DucTargetStatus.UNKNOWN)
+        return replace(
+            first,
+            validity=DucTargetStatus.UNKNOWN,
+            proof=DucTargetProof.UNKNOWN,
+        )
     representatives = [state for state in states if state is not None]
     if not representatives:
         return None
-    return replace(representatives[0], validity=DucTargetStatus.UNKNOWN)
+    return replace(
+        representatives[0],
+        validity=DucTargetStatus.UNKNOWN,
+        proof=DucTargetProof.UNKNOWN,
+    )
 
 
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
+        state.pass_id,
         (
             _generation_key(state.local_list.current_generation),
             state.local_list.path_ambiguous,
@@ -1180,22 +1238,22 @@ def _join_states(
     target = _join_targets(tuple(state.target for state in variants))
     fields: list[str] = []
     if any(
-        _state_key(state)[0] != _state_key(variants[0])[0]
+        _state_key(state)[1] != _state_key(variants[0])[1]
         for state in variants[1:]
     ):
         fields.append("LOCAL_LIST")
     if any(
-        _state_key(state)[1] != _state_key(variants[0])[1]
+        _state_key(state)[2] != _state_key(variants[0])[2]
         for state in variants[1:]
     ):
         fields.append("REMOTE_LIST")
     if any(
-        _state_key(state)[2] != _state_key(variants[0])[2]
+        _state_key(state)[3] != _state_key(variants[0])[3]
         for state in variants[1:]
     ):
         fields.append("FILTERS")
     if any(
-        _state_key(state)[3] != _state_key(variants[0])[3]
+        _state_key(state)[4] != _state_key(variants[0])[4]
         for state in variants[1:]
     ):
         fields.append("TARGET")
@@ -1211,6 +1269,7 @@ def _join_states(
                 state.point_target == variants[0].point_target for state in variants
             ) else None,
             max(state.state_revision for state in variants),
+            max(state.pass_id for state in variants),
         ),
         tuple(fields),
     )
@@ -1221,10 +1280,17 @@ def analyze_duc(
     contracts: NativeDucContractCatalog | None = None,
     *,
     loop_widening_limit: int = DUC_LOOP_WIDENING_LIMIT,
+    initial_state: DucSemanticState | None = None,
 ) -> DucAnalysisReport:
     contracts = contracts or default_native_duc_contract_catalog()
+    seed_state = initial_state or _empty_state()
     if not isinstance(execution, RuleExecutionReport):
-        return _analyze_duc_linear(tuple(execution), contracts)
+        report = _analyze_duc_linear(
+            tuple(execution),
+            contracts,
+            initial_state=seed_state,
+        )
+        return replace(report, next_pass_state=advance_duc_pass(report.final_state))
 
     if loop_widening_limit < 1:
         raise ValueError("loop_widening_limit must be >= 1")
@@ -1232,11 +1298,16 @@ def analyze_duc(
     rules_by_order = {rule.rule_order: rule for rule in execution.rules}
     reachability = execution.reachability
     if reachability is None:
-        return _analyze_duc_linear(execution.rules, contracts)
+        report = _analyze_duc_linear(
+            execution.rules,
+            contracts,
+            initial_state=seed_state,
+        )
+        return replace(report, next_pass_state=advance_duc_pass(report.final_state))
 
     outgoing = dict(reachability.outgoing_rule_orders)
     incoming_states: dict[int, dict[int, DucSemanticState]] = {
-        1: {0: _empty_state()}
+        1: {0: seed_state}
     }
     last_entry_keys: dict[int, tuple[object, ...]] = {}
     rule_reports: dict[int, DucAnalysisReport] = {}
@@ -1392,7 +1463,7 @@ def analyze_duc(
         )
 
     return DucAnalysisReport(
-        initial_state=_empty_state(),
+        initial_state=seed_state,
         final_state=final_state,
         states=states,
         searches=searches,
@@ -1403,6 +1474,37 @@ def analyze_duc(
         diagnostics=tuple(diagnostics),
         branch_merges=tuple(branch_merges[order] for order in sorted(branch_merges)),
         loop_widenings=tuple(loop_widenings[key] for key in sorted(loop_widenings)),
+        next_pass_state=advance_duc_pass(final_state),
+    )
+
+
+def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
+    """Advance persistent DUC state to the next engine pass.
+
+    Search/filter state persists, but an object target established on an earlier
+    pass cannot remain a current-pass proof merely because the syntax still
+    contains it. Without a fresh target establishment or native object-lifetime
+    witness, its status becomes UNKNOWN and is marked as SYNTACTIC_RETENTION.
+    Explicit reset invalidation remains STALE and is never weakened to UNKNOWN.
+    """
+    target = state.target
+    if target is not None:
+        if target.validity is DucTargetStatus.STALE:
+            target = replace(target, proof=DucTargetProof.UNKNOWN)
+        else:
+            target = replace(
+                target,
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.SYNTACTIC_RETENTION,
+            )
+    return DucSemanticState(
+        state.local_list,
+        state.remote_list,
+        state.filters,
+        target,
+        state.point_target,
+        0,
+        state.pass_id + 1,
     )
 
 
@@ -1414,4 +1516,5 @@ __all__ = [
     "NativeDucTargetContract",
     "analyze_duc",
     "default_native_duc_contract_catalog",
+    "advance_duc_pass",
 ]

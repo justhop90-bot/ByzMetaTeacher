@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetStatus
+from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetProof, DucTargetStatus
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -385,6 +385,110 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
         self.assertEqual(report.targets[-1].source_list_generation, 1)
         self.assertEqual(report.searches[0].consumed_filter.generation, 0)
+
+    def test_target_proof_records_explicit_current_pass_identity(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(getattr(report.final_state, "pass_id", None), 0)
+        self.assertEqual(getattr(target, "pass_id", None), 0)
+        self.assertEqual(
+            getattr(getattr(target, "proof", None), "value", None),
+            "CURRENT_PASS_PROOF",
+        )
+
+    def test_cross_pass_target_reuse_becomes_syntactic_retention(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+        ))
+
+        second = analyze_duc((
+            _rule(1, (
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        target = second.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(second.final_state.pass_id, 1)
+        self.assertEqual(target.pass_id, 0)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.SYNTACTIC_RETENTION)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "retained across a pass" in item.message
+            for item in second.diagnostics
+        ))
+
+
+    def test_cross_pass_target_reestablishment_preserves_source_proof(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+        ))
+
+        second = analyze_duc((
+            _rule(1, (
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        target = second.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.pass_id, 1)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.PRESERVED_PROOF)
+        self.assertFalse(any(item.code == "DUC-007" for item in second.diagnostics))
+
+
+    def test_cross_pass_stale_target_is_not_weakened_to_unknown(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-reset-search", ("0", "0", "0", "1")),
+            )),
+        ))
+
+        self.assertEqual(first.final_state.target.validity, DucTargetStatus.STALE)
+        self.assertEqual(first.final_state.target.proof, DucTargetProof.UNKNOWN)
+
+        second = analyze_duc((
+            _rule(1, (
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        target = second.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.STALE)
+        self.assertNotIn("retained across a pass", "\n".join(item.message for item in second.diagnostics))
+        self.assertTrue(any(item.code == "DUC-006" for item in second.diagnostics))
+
+
+    def test_list_mutation_forces_unknown_target_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-remove-objects", ("search-remote", "-1", "c:", "1")),
+            )),
+        ))
+
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(report.final_state.target.proof, DucTargetProof.UNKNOWN)
 
 
 if __name__ == "__main__":
