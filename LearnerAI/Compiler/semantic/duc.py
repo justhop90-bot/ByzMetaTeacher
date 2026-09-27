@@ -733,6 +733,21 @@ def _analyze_duc_linear(
                         contract_id="duc.target.object",
                         evidence_ids=target_contract.evidence_ids,
                     )
+                    source_generation_pass_id = (
+                        current_generation.produced_by.pass_id
+                        if current_generation is not None
+                        else None
+                    )
+                    if current.path_ambiguous or state.filters.path_ambiguous:
+                        target_validity = DucTargetStatus.UNKNOWN
+                        target_proof = DucTargetProof.UNKNOWN
+                    elif source_generation_pass_id == state.pass_id:
+                        target_validity = DucTargetStatus.VALID
+                        target_proof = DucTargetProof.CURRENT_PASS_PROOF
+                    else:
+                        target_validity = DucTargetStatus.VALID
+                        target_proof = DucTargetProof.PRESERVED_PROOF
+
                     target = DucTargetState(
                         kind=DucTargetKind.OBJECT,
                         generation=state_revision,
