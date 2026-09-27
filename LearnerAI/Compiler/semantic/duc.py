@@ -21,6 +21,7 @@ from ..ir.duc import (
     DucFilterPredicate,
     DucFilterSnapshot,
     DucFilterState,
+    DucGoalOutputSpan,
     DucGroupFlagState,
     DucGroupOperation,
     DucGroupSizeObservation,
@@ -429,16 +430,53 @@ def _replace_group(state: DucSemanticState, group: DucGroupState) -> DucSemantic
     return replace(state, groups=tuple(groups))
 
 
-def _group_id_from_args(args: tuple[str, ...], *, command: str) -> int | None:
+def _group_id_from_args(
+    args: tuple[str, ...],
+    *,
+    command: str,
+    index: int = -1,
+) -> int | None:
     if not args:
         return None
     try:
-        group_id = int(args[-1], 10)
-    except ValueError:
+        group_id = int(args[index], 10)
+    except (IndexError, ValueError):
         return None
     if not 0 <= group_id < DUC_GROUP_COUNT:
         raise ValueError(f"{command} group id must be within 0..19")
     return group_id
+
+
+def _write_goal_output_span(
+    state: DucSemanticState,
+    *,
+    goal_id: int,
+    cardinality: DucCardinalityRange,
+    provenance: DucProvenance,
+) -> tuple[DucGoalOutputSpan, tuple[DucGoalOutputSpan, ...]]:
+    previous = next(
+        (
+            span
+            for span in state.goal_output_spans
+            if span.start_goal_id == goal_id
+        ),
+        None,
+    )
+    span = DucGoalOutputSpan(
+        start_goal_id=goal_id,
+        width=1,
+        generation=(previous.generation + 1 if previous is not None else 1),
+        overwritten_generation=(previous.generation if previous is not None else None),
+        provenance=provenance,
+        cardinality=cardinality,
+        pass_id=state.pass_id,
+    )
+    remaining = tuple(
+        existing
+        for existing in state.goal_output_spans
+        if existing.start_goal_id != goal_id
+    )
+    return span, tuple(sorted((*remaining, span), key=lambda item: item.start_goal_id))
 
 
 def _group_create_bounds(args: tuple[str, ...]) -> tuple[int | None, int | None]:
