@@ -13,6 +13,11 @@ from ..ir.recurrent import (
     read_timer_triggered,
 )
 from .rule_execution import EffectiveRule
+from .strategic_number_semantics import (
+    StrategicNumberSemanticError,
+    evaluate_strategic_number_mutation,
+    parse_strategic_number_mutation,
+)
 
 
 class SchedulerSemanticError(ValueError):
