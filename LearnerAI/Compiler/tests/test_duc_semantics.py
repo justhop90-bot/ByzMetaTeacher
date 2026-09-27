@@ -138,9 +138,61 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(first.output_span.generation, 1)
         self.assertEqual(second.output_span.generation, 2)
         self.assertEqual(second.output_span.overwritten_generation, 1)
+        self.assertEqual(
+            second.output_span.overwritten_provenance.command,
+            "up-get-group-size",
+        )
         self.assertEqual(second.output_span.provenance.command, "up-get-group-size")
         self.assertEqual(second.output_span.provenance.input_group_generations, ((4, 1),))
         self.assertEqual(report.final_state.goal_output_spans, (second.output_span,))
+
+    def test_group_size_goal_output_persists_across_pass_and_overwrites_previous_writer(self):
+        first_report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-get-group-size", ("c:", "3", "41")),
+            )),
+        ))
+        first_span = first_report.final_state.goal_output_spans[0]
+
+        second_report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-get-group-size", ("c:", "3", "41")),
+                )),
+            ),
+            initial_state=first_report.next_pass_state,
+        )
+        second_span = second_report.final_state.goal_output_spans[0]
+
+        self.assertEqual(
+            first_report.next_pass_state.goal_output_spans,
+            (first_span,),
+        )
+        self.assertEqual(second_span.generation, 2)
+        self.assertEqual(second_span.overwritten_generation, 1)
+        self.assertEqual(second_span.overwritten_provenance, first_span.provenance)
+        self.assertEqual(second_span.pass_id, 1)
+
+    def test_group_size_goal_output_join_is_zero_to_max_when_one_path_does_not_write(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-get-group-size", ("c:", "3", "41")),
+            )),
+            _rule(3, (("up-do-nothing", ()),)),
+            _rule(4, (("up-group-size", ("c:", "3", ">=", "0")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        span = report.final_state.goal_output_spans[0]
+        self.assertTrue(span.path_ambiguous)
+        self.assertIsNone(span.provenance)
+        self.assertEqual(span.cardinality.minimum, 0)
+        self.assertGreaterEqual(span.cardinality.maximum, 0)
 
     def test_group_size_output_goal_out_of_native_range_is_diagnostic(self):
         report = analyze_duc((
