@@ -402,11 +402,6 @@ def _same_pass_consumer_reachable(
 
     outgoing = dict(reachability.outgoing_rule_orders)
     transfers = _control_transfer_by_rule(report)
-    writer_rule = next(
-        rule
-        for rule in report.rules
-        if rule.rule_order == writer.rule_order
-    )
     final_transfer = transfers.get(writer.rule_order)
 
     if final_transfer is not None and final_transfer.target_rule_order is not None:
