@@ -99,6 +99,14 @@ class SourceAssemblyEventTests(unittest.TestCase):
             ]
             import Compiler.source_graph as _loaded_source_graph
             print(
+                "EVENT-FUNC-LINE",
+                _loaded_source_graph._parse_assembly_events.__code__.co_firstlineno,
+            )
+            print(
+                "EVENT-FUNC-SNIP",
+                open(_loaded_source_graph.__file__, encoding="utf-8").read().splitlines()[585:600],
+            )
+            print(
                 "EVENT-DEBUG",
                 _loaded_source_graph.__file__,
                 [
