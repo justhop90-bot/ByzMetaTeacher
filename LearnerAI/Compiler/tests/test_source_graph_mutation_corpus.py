@@ -18,6 +18,8 @@ from Compiler.ir.source_graph import (
     LoadKind,
     LoadSymbolEnvironment,
     LoadSymbolState,
+    SourceAssemblyEvent,
+    SourceAssemblyEventId,
     SourceEdge,
     SourceEdgeId,
     SourceFile,
@@ -30,7 +32,7 @@ from Compiler.semantic.source_graph_validation import (
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
-MutationScope = Literal["graph", "file", "instance", "edge", "slice"]
+MutationScope = Literal["graph", "file", "instance", "event", "edge", "slice"]
 
 _SUBPROCESS_HASH_SEEDS = (1, 7, 42, 2026, 99991)
 
@@ -71,6 +73,17 @@ def _replace_instance(
     instances = list(graph.instances)
     instances[index] = _forge_field(instances[index], field, value)
     return replace(graph, instances=tuple(instances))
+
+
+def _replace_event(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    events = list(graph.events)
+    events[index] = _forge_field(events[index], field, value)
+    return replace(graph, events=tuple(events))
 
 
 def _replace_edge(
@@ -133,6 +146,23 @@ def _index_of_active_conditional_load(graph: EffectiveSourceGraph) -> int:
     )
 
 
+def _index_of_first_load_event(graph: EffectiveSourceGraph) -> int:
+    return next(
+        index
+        for index, item in enumerate(graph.events)
+        if item.kind.value == "LOAD"
+    )
+
+
+def _index_of_second_load_event(graph: EffectiveSourceGraph) -> int:
+    load_indices = [
+        index
+        for index, item in enumerate(graph.events)
+        if item.kind.value in {"LOAD", "LOAD_RANDOM"}
+    ]
+    return load_indices[1]
+
+
 def _index_of_second_load(graph: EffectiveSourceGraph) -> int:
     load_indices = [
         index
@@ -170,6 +200,11 @@ def _mutate_field(
         if scope == "instance":
             target = graph.instances[index]
             return _replace_instance(
+                graph, index, field, value_factory(graph, target)
+            )
+        if scope == "event":
+            target = graph.events[index]
+            return _replace_event(
                 graph, index, field, value_factory(graph, target)
             )
         if scope == "edge":
@@ -369,6 +404,118 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         "occurrence",
         _mutate_field("instance", "occurrence", 1, _constant(99)),
         Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+    ),
+    MutationCase(
+        "event-identity",
+        "linear/root.perdsl",
+        "event",
+        "identity",
+        _mutate_field(
+            "event",
+            "identity",
+            _index_of_first_load_event,
+            lambda _graph, _target: SourceAssemblyEventId("forged-event"),
+        ),
+        Code.EVENT_IDENTITY_INVALID,
+    ),
+    MutationCase(
+        "event-ordinal",
+        "linear/root.perdsl",
+        "event",
+        "lexical_ordinal",
+        _mutate_field(
+            "event",
+            "lexical_ordinal",
+            _index_of_first_load_event,
+            _constant(99),
+        ),
+        Code.EVENT_ORDINAL_GAP,
+    ),
+    MutationCase(
+        "event-condition-after",
+        "conditional-defined/root.perdsl",
+        "event",
+        "condition_after",
+        _mutate_field(
+            "event",
+            "condition_after",
+            0,
+            lambda _graph, target: target.condition_before,
+        ),
+        Code.EVENT_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "event-payload",
+        "linear/root.perdsl",
+        "event",
+        "payload",
+        _mutate_field(
+            "event",
+            "payload",
+            _index_of_first_load_event,
+            lambda _graph, target: _forge_field(
+                target.payload,
+                "target_text",
+                "",
+            ),
+        ),
+        Code.EVENT_KIND_PAYLOAD_MISMATCH,
+    ),
+    MutationCase(
+        "event-edge-back-reference",
+        "linear/root.perdsl",
+        "event",
+        "edge",
+        _mutate_field(
+            "event",
+            "edge",
+            _index_of_first_load_event,
+            _constant(None),
+        ),
+        Code.EVENT_EDGE_MISMATCH,
+    ),
+    MutationCase(
+        "event-span",
+        "linear/root.perdsl",
+        "event",
+        "span",
+        _mutate_field(
+            "event",
+            "span",
+            _index_of_first_load_event,
+            lambda _graph, target: _forge_field(
+                target.span,
+                "start_line",
+                target.span.start_line + 1,
+            ),
+        ),
+        Code.EVENT_RANGE_INVALID,
+    ),
+    MutationCase(
+        "edge-event-back-reference",
+        "linear/root.perdsl",
+        "edge",
+        "event",
+        _mutate_field(
+            "edge",
+            "event",
+            _index_of_active_load,
+            lambda _graph, _target: SourceAssemblyEventId("missing-event"),
+        ),
+        Code.EDGE_EVENT_MISSING,
+    ),
+    MutationCase(
+        "edge-event-condition",
+        "conditional-defined/root.perdsl",
+        "edge",
+        "condition",
+        _mutate_field(
+            "edge",
+            "condition",
+            _index_of_active_conditional_load,
+            _constant(ConditionContext()),
+        ),
+        Code.EDGE_EVENT_PAYLOAD_MISMATCH,
     ),
     MutationCase(
         "edge-identity",
@@ -702,6 +849,8 @@ class SourceGraphMutationCorpusTests(unittest.TestCase):
             self._assert_collection_mutation(
                 before.instances, after.instances, case, "instance"
             )
+        elif case.scope == "event":
+            self._assert_collection_mutation(before.events, after.events, case, "event")
         elif case.scope == "edge":
             self._assert_collection_mutation(before.edges, after.edges, case, "edge")
         elif case.scope == "slice":
@@ -897,7 +1046,7 @@ print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
 
     def test_corpus_spans_all_declared_mutation_scopes(self):
         self.assertEqual(
-            {"graph", "file", "instance", "edge", "slice"},
+            {"graph", "file", "instance", "event", "edge", "slice"},
             {item.scope for item in MUTATION_CORPUS},
         )
 
