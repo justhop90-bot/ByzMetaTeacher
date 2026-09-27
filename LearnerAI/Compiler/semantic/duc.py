@@ -405,6 +405,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=visible,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=list_generation_inputs + (state.filters.generation,),
                     contract_id=f"duc.search.{command}",
                     evidence_ids=search_contract.evidence_ids,
@@ -480,6 +481,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(state.filters.generation,),
                     contract_id=f"duc.filter.{command}",
                     evidence_ids=filter_contract.evidence_ids,
@@ -510,6 +512,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(
                         state.local_list.current_generation.generation
                         if state.local_list.current_generation else 0,
@@ -632,6 +635,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=generations,
                     contract_id="duc.output.search-state",
                     evidence_ids=("airef:duc:get-search-state",),
@@ -722,6 +726,7 @@ def _analyze_duc_linear(
                         action,
                         visibility=DucVisibility.SAME_RULE,
                         state_revision=state_revision,
+                    pass_id=state.pass_id,
                         inputs=tuple(
                             sorted(set(generation_candidates))
                         ) + (state.filters.generation,),
@@ -772,6 +777,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     inputs=(state.filters.generation,),
                     contract_id="duc.target.point",
                     evidence_ids=target_contract.evidence_ids,
@@ -800,6 +806,7 @@ def _analyze_duc_linear(
                     action,
                     visibility=DucVisibility.SAME_RULE,
                     state_revision=state_revision,
+                    pass_id=state.pass_id,
                     contract_id=f"duc.list.mutator.{command}",
                     evidence_ids=("airef:duc:list-mutation",),
                 )
