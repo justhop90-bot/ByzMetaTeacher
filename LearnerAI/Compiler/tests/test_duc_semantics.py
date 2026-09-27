@@ -386,6 +386,23 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.targets[-1].source_list_generation, 1)
         self.assertEqual(report.searches[0].consumed_filter.generation, 0)
 
+    def test_target_proof_records_explicit_current_pass_identity(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(getattr(report.final_state, "pass_id", None), 0)
+        self.assertEqual(getattr(target, "pass_id", None), 0)
+        self.assertEqual(
+            getattr(getattr(target, "proof", None), "value", None),
+            "CURRENT_PASS_PROOF",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
