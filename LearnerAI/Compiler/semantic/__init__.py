@@ -160,3 +160,13 @@ from .fact_values import (
     SymbolNormalization,
     canonicalize_value,
 )
+
+from .strategic_number_semantics import (
+    StrategicNumberDiagnostic,
+    StrategicNumberDiagnosticCode,
+    StrategicNumberSemanticError,
+    StrategicNumberSemanticReport,
+    analyze_strategic_number_expressions,
+    evaluate_strategic_number_mutation,
+    parse_strategic_number_mutation,
+)
