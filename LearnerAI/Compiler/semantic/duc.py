@@ -83,6 +83,17 @@ class NativeDucFilterContract:
 
 
 @dataclass(frozen=True)
+class NativeDucResetResolution:
+    invalidates_local_list: bool
+    invalidates_remote_list: bool
+    invalidates_filters: bool
+    invalidates_object_target: bool
+    invalidates_point_target: bool
+    invalidates_local_index: bool
+    invalidates_remote_index: bool
+
+
+@dataclass(frozen=True)
 class NativeDucResetContract:
     command: str
     reset_kind: DucResetKind
@@ -92,6 +103,31 @@ class NativeDucResetContract:
     invalidates_object_target: bool
     invalidates_point_target: bool
     evidence_ids: tuple[str, ...]
+
+    def resolve(self, arguments: tuple[str, ...]) -> NativeDucResetResolution:
+        if self.reset_kind is DucResetKind.SEARCH_BOTH:
+            if len(arguments) != 4:
+                raise ValueError(
+                    "up-reset-search requires LocalIndex, LocalList, RemoteIndex, RemoteList"
+                )
+            return NativeDucResetResolution(
+                invalidates_local_list=arguments[1] == "1",
+                invalidates_remote_list=arguments[3] == "1",
+                invalidates_filters=False,
+                invalidates_object_target=False,
+                invalidates_point_target=False,
+                invalidates_local_index=arguments[0] == "1",
+                invalidates_remote_index=arguments[2] == "1",
+            )
+        return NativeDucResetResolution(
+            invalidates_local_list=self.invalidates_local_list,
+            invalidates_remote_list=self.invalidates_remote_list,
+            invalidates_filters=self.invalidates_filters,
+            invalidates_object_target=self.invalidates_object_target,
+            invalidates_point_target=self.invalidates_point_target,
+            invalidates_local_index=False,
+            invalidates_remote_index=False,
+        )
 
 
 @dataclass(frozen=True)
@@ -156,8 +192,8 @@ def default_native_duc_contract_catalog() -> NativeDucContractCatalog:
             NativeDucResetContract(
                 "up-reset-search",
                 DucResetKind.SEARCH_BOTH,
-                True,
-                True,
+                False,
+                False,
                 False,
                 False,
                 False,
