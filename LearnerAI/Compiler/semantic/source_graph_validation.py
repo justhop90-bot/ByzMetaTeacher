@@ -664,17 +664,6 @@ def _validate_slices(
                 )
             )
 
-        text_hash = hashlib.sha256(slice_.text.encode("utf-8")).hexdigest()
-        if not slice_.text:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.SLICE_TEXT_HASH_MISMATCH,
-                    f"slice {slice_.ordinal} contains empty effective text",
-                    path=slice_.path,
-                    instance_id=slice_.instance_id,
-                )
-            )
-
         if slice_.start_line < 1 or slice_.end_line < slice_.start_line:
             diagnostics.append(
                 _diagnostic(
