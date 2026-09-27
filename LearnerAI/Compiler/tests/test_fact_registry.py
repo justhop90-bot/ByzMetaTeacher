@@ -139,7 +139,10 @@ class NativeFactRegistryTests(unittest.TestCase):
             fact.canonical_args[1],
             CanonicalEnum("COMPARE_OP", ">="),
         )
-        self.assertEqual(fact.canonical_args[2].namespace, "GOAL")
+        self.assertEqual(
+            fact.canonical_args[2].namespace,
+            "STRATEGIC_NUMBER_COMPARE_VALUE",
+        )
 
 if __name__ == "__main__":
     unittest.main()
