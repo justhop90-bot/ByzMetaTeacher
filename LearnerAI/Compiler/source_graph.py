@@ -36,6 +36,14 @@ from .ir.source_graph import (
 
 
 @dataclass(frozen=True)
+class SourceGraphRequest:
+    entrypoint: Path
+    search_roots: tuple[Path, ...] = ()
+    load_symbols: LoadSymbolEnvironment = field(default_factory=LoadSymbolEnvironment)
+    allow_load_random: bool = False
+
+
+@dataclass(frozen=True)
 class _ConditionalFrame:
     predicate: ConditionPredicate
     parent_active: bool
@@ -415,28 +423,66 @@ class SourceGraphResolver:
             )
         )
 
+def _segment_range(source: SourceFile, start: int, end: int) -> SourceRange:
+    text = source.text
+    prefix = text[:start]
+    segment = text[start:end]
+    start_line = prefix.count("\n") + 1
+    previous_newline = prefix.rfind("\n")
+    start_column = start + 1 if previous_newline < 0 else start - previous_newline
+    if not segment:
+        end_line = start_line
+        end_column = start_column
+    else:
+        end_line = start_line + segment.count("\n")
+        if "\n" in segment:
+            end_column = len(segment.rsplit("\n", 1)[-1]) + 1
+        else:
+            end_column = start_column + len(segment) - 1
+    return SourceRange(
+        source=source.identity,
+        start_offset=start,
+        end_offset=end,
+        start_line=start_line,
+        start_column=start_column,
+        end_line=end_line,
+        end_column=max(1, end_column),
+    )
+
+
+def _line_range(source: SourceFile, line: int) -> SourceRange:
+    lines = source.text.splitlines(keepends=True)
+    if line < 1 or line > len(lines):
+        raise ValueError("line outside source")
+    start = sum(len(item) for item in lines[: line - 1])
+    end = start + len(lines[line - 1])
+    return _segment_range(source, start, end)
+
+
 def _mask_conditionals(
-    source: str,
-    path: Path,
+    source: SourceFile,
     symbols: LoadSymbolEnvironment,
     max_depth: int,
-    source_instance: str,
+    source_instance: SourceInstanceId,
 ) -> tuple[
     str,
     tuple[bool, ...],
-    tuple[tuple[LoadKind, str] | None, ...],
+    tuple[ConditionContext | None, ...],
     tuple[SourceEdge, ...],
 ]:
-    lines = source.splitlines(keepends=True)
+    lines = source.text.splitlines(keepends=True)
     active_flags: list[bool] = []
-    contexts: list[tuple[LoadKind, str] | None] = []
+    contexts: list[ConditionContext | None] = []
     frames: list[_ConditionalFrame] = []
     directive_edges: list[SourceEdge] = []
 
+    def context_now() -> ConditionContext:
+        return ConditionContext(tuple(frame.predicate for frame in frames))
+
     for index, raw_line in enumerate(lines, 1):
         stripped = raw_line.strip()
-        current_active = frames[-1].branch_active if frames else True
-        context = (frames[-1].kind, frames[-1].symbol) if frames else None
+        before = context_now()
+        current_active = before.evaluate(symbols)
 
         match = _CONDITIONAL_RE.fullmatch(stripped)
         if match:
@@ -444,53 +490,63 @@ def _mask_conditionals(
                 raise SourceGraphError(
                     "SOURCE-GRAPH-005",
                     f"conditional nesting exceeds {max_depth}",
-                    path=path,
+                    path=source.path,
                     line=index,
                     column=1,
                 )
-
             symbol = match.group("symbol")
-            state = symbols.state(symbol)
-            if state is None:
+            if symbols.state(symbol) is None:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-006",
                     f"conditional load symbol '{symbol}' is unresolved",
-                    path=path,
+                    path=source.path,
                     line=index,
                     column=1,
                 )
-
-            kind = (
-                LoadKind.CONDITIONAL_DEFINED
+            expected = (
+                LoadSymbolState.DEFINED
                 if match.group("kind") == "load-if-defined"
-                else LoadKind.CONDITIONAL_NOT_DEFINED
+                else LoadSymbolState.UNDEFINED
             )
-            condition = (
-                state is LoadSymbolState.DEFINED
-                if kind is LoadKind.CONDITIONAL_DEFINED
-                else state is LoadSymbolState.UNDEFINED
-            )
-            frame = _ConditionalFrame(
-                kind=kind,
-                symbol=symbol,
-                parent_active=current_active,
-                branch_active=current_active and condition,
-                else_seen=False,
-                line=index,
-            )
-            frames.append(frame)
-            active_flags.append(False)
-            contexts.append((kind, symbol))
-            directive_edges.append(
-                SourceEdge(
-                    source_instance=source_instance,
-                    target_path=None,
-                    kind=kind,
-                    location=SourceLocation(index, 1, str(path)),
-                    condition_symbol=symbol,
-                    active=frame.branch_active,
+            predicate = ConditionPredicate(symbol, expected)
+            frames.append(
+                _ConditionalFrame(
+                    predicate=predicate,
+                    parent_active=current_active,
+                    else_seen=False,
+                    line=index,
                 )
             )
+            context = context_now()
+            active = context.evaluate(symbols)
+            kind = (
+                LoadKind.CONDITIONAL_DEFINED
+                if expected is LoadSymbolState.DEFINED
+                else LoadKind.CONDITIONAL_NOT_DEFINED
+            )
+            span = _line_range(source, index)
+            directive_edges.append(
+                SourceEdge(
+                    identity=structural_edge_id(
+                        source=source_instance,
+                        span=span,
+                        kind=kind,
+                        condition=context,
+                        target_text=symbol,
+                    ),
+                    source=source_instance,
+                    target=None,
+                    child=None,
+                    kind=kind,
+                    span=span,
+                    condition=context,
+                    active=active,
+                    lexical_order=index,
+                    target_text=symbol,
+                )
+            )
+            active_flags.append(False)
+            contexts.append(context)
             continue
 
         if _ELSE_RE.fullmatch(stripped):
@@ -498,7 +554,7 @@ def _mask_conditionals(
                 raise SourceGraphError(
                     "SOURCE-GRAPH-013",
                     "#else appears without an active conditional",
-                    path=path,
+                    path=source.path,
                     line=index,
                     column=1,
                 )
@@ -507,32 +563,46 @@ def _mask_conditionals(
                 raise SourceGraphError(
                     "SOURCE-GRAPH-014",
                     "duplicate #else in conditional block",
-                    path=path,
+                    path=source.path,
                     line=index,
                     column=1,
                 )
-
             frames[-1] = _ConditionalFrame(
-                kind=frame.kind,
-                symbol=frame.symbol,
+                predicate=ConditionPredicate(
+                    frame.predicate.symbol,
+                    LoadSymbolState.UNDEFINED
+                    if frame.predicate.expected is LoadSymbolState.DEFINED
+                    else LoadSymbolState.DEFINED,
+                ),
                 parent_active=frame.parent_active,
-                branch_active=frame.parent_active and not frame.branch_active,
                 else_seen=True,
                 line=frame.line,
             )
-            active_flags.append(False)
-            contexts.append((frame.kind, frame.symbol))
+            context = context_now()
+            active = context.evaluate(symbols)
+            span = _line_range(source, index)
             directive_edges.append(
                 SourceEdge(
-                    source_instance=source_instance,
-                    target_path=None,
+                    identity=structural_edge_id(
+                        source=source_instance,
+                        span=span,
+                        kind=LoadKind.CONDITIONAL_ELSE,
+                        condition=context,
+                        target_text=frame.predicate.symbol,
+                    ),
+                    source=source_instance,
+                    target=None,
+                    child=None,
                     kind=LoadKind.CONDITIONAL_ELSE,
-                    location=SourceLocation(index, 1, str(path)),
-                    condition_symbol=frame.symbol,
-                    active=frames[-1].branch_active,
-                    condition_kind=frame.kind,
+                    span=span,
+                    condition=context,
+                    active=active,
+                    lexical_order=index,
+                    target_text=frame.predicate.symbol,
                 )
             )
+            active_flags.append(False)
+            contexts.append(context)
             continue
 
         if _END_RE.fullmatch(stripped):
@@ -540,31 +610,44 @@ def _mask_conditionals(
                 raise SourceGraphError(
                     "SOURCE-GRAPH-015",
                     "#end-if appears without an active conditional",
-                    path=path,
+                    path=source.path,
                     line=index,
                     column=1,
                 )
-            frame = frames.pop()
-            active_flags.append(False)
-            contexts.append((frame.kind, frame.symbol))
+            frame = frames[-1]
+            context = context_now()
+            active = context.evaluate(symbols)
+            frames.pop()
+            span = _line_range(source, index)
             directive_edges.append(
                 SourceEdge(
-                    source_instance=source_instance,
-                    target_path=None,
+                    identity=structural_edge_id(
+                        source=source_instance,
+                        span=span,
+                        kind=LoadKind.CONDITIONAL_ELSE,
+                        condition=context,
+                        target_text=frame.predicate.symbol,
+                    ),
+                    source=source_instance,
+                    target=None,
+                    child=None,
                     kind=LoadKind.CONDITIONAL_ELSE,
-                    location=SourceLocation(index, 1, str(path)),
-                    condition_symbol=frame.symbol,
-                    active=True,
-                    condition_kind=frame.kind,
+                    span=span,
+                    condition=context,
+                    active=active,
+                    lexical_order=index,
+                    target_text=frame.predicate.symbol,
                 )
             )
+            active_flags.append(False)
+            contexts.append(context)
             continue
 
         if stripped.startswith("#load-if-defined") or stripped.startswith("#load-if-not-defined"):
             raise SourceGraphError(
                 "SOURCE-GRAPH-012",
                 "malformed preprocessor conditional directive",
-                path=path,
+                path=source.path,
                 line=index,
                 column=1,
             )
@@ -572,7 +655,7 @@ def _mask_conditionals(
             raise SourceGraphError(
                 "SOURCE-GRAPH-012",
                 "malformed #else directive",
-                path=path,
+                path=source.path,
                 line=index,
                 column=1,
             )
@@ -580,25 +663,25 @@ def _mask_conditionals(
             raise SourceGraphError(
                 "SOURCE-GRAPH-012",
                 "malformed #end-if directive",
-                path=path,
+                path=source.path,
                 line=index,
                 column=1,
             )
 
         active_flags.append(current_active)
-        contexts.append(context)
+        contexts.append(before if frames else None)
 
     if frames:
         frame = frames[-1]
         raise SourceGraphError(
             "SOURCE-GRAPH-016",
             f"unterminated conditional started on line {frame.line}",
-            path=path,
+            path=source.path,
             line=frame.line,
             column=1,
         )
 
-    masked = []
+    masked: list[str] = []
     for raw_line, active in zip(lines, active_flags):
         if active:
             masked.append(raw_line)
