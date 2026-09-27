@@ -17,6 +17,9 @@ class StrategicNumberNativeFixtureTests(unittest.TestCase):
             ":min", ":max", ":neg", ":%*", ":%/",
         ):
             self.assertIn(operator, text)
+        for operator in (":>", ":>=", ":<", ":<=", ":==", ":!="):
+            self.assertIn(operator, text)
+        self.assertIn("(up-compare-sn sn-test-a", text)
 
     def test_fixture_rules_stay_within_32_element_limit(self):
         text = FIXTURE.read_text(encoding="utf-8")
