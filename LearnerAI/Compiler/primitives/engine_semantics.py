@@ -185,6 +185,11 @@ _AOERF_PER = "https://airef.github.io/resources/articles/intro-to-commands.html"
 _AOE2AI = "https://github.com/lewisc64/aoe2ai"
 _DUKE = "https://github.com/niektb/AI"
 
+_PERSISTENT_STATE_SPECS = (
+    ("up-compare-sn", "state.compare.strategic-number"),
+)
+
+
 _OBSERVATION_SPECS = (
     ("current-age", "observation.age.current"),
     ("food-amount", "observation.resource.food"),
@@ -330,6 +335,23 @@ def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
     )
 
 
+def _persistent_state_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Fact",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER),
+        state_effects="reads persistent Strategic Number control state without mutating it",
+        lifetime="persists as engine state until another native write changes the Strategic Number",
+        ordering="guard evaluation observes the current stored Strategic Number before the rule action list executes",
+        admission="native persistent-state comparison fact",
+        completion="does not prove world-state completion and is not a completion witness",
+        recovery="re-evaluate the comparison after the underlying Goal or Strategic Number state changes",
+        practice_references=(),
+    )
+
 def _pending_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
         identity="execution.pending-objects",
@@ -350,6 +372,8 @@ def _pending_mapping() -> EngineSemanticMapping:
 
 def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings: list[EngineSemanticMapping] = []
+    for command, identity in _PERSISTENT_STATE_SPECS:
+        mappings.append(_persistent_state_mapping(command, identity))
     for command, identity in _OBSERVATION_SPECS:
         mappings.append(_fact_mapping(command, identity, "OBSERVATION"))
     for command, identity in _ADMISSIBILITY_SPECS:
@@ -404,7 +428,8 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     }
     registry.validate_practice_references(practice_ids)
     registry.validate_exact_executable_commands(
-        tuple(command for command, _identity in _OBSERVATION_SPECS)
+        tuple(command for command, _identity in _PERSISTENT_STATE_SPECS)
+        + tuple(command for command, _identity in _OBSERVATION_SPECS)
         + tuple(command for command, _identity in _ADMISSIBILITY_SPECS)
         + tuple(command for command, _identity in _ARBITRATION_SPECS)
         + tuple(command for command, _identity in _FEASIBILITY_SPECS)
