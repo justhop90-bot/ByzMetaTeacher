@@ -46,7 +46,7 @@
 - [ ] **Step 3: Implement the minimum behavior**
   - Define the enums/dataclasses.
   - Parse native `up-modify-sn` and `set-strategic-number`.
-  - Validate signed 32-bit constant bounds.
+  - Validate 16-bit literal/defconst operand bounds; Goal/SN state values remain signed 32-bit.
   - Map all 12 native math operators.
   - Implement engine-compatible evaluator using integer arithmetic and explicit zero-divisor handling.
   - Keep dynamic Goal/SN divisors runtime-valid but statically unknown.
@@ -132,6 +132,7 @@
   - Run `python -m aoe2_ai_lab lint <fixture> --profile default --json`.
   - Fail on nonzero exit, malformed JSON, or nonzero finding count.
   - Add one compiler workflow step after the existing generic fixture native gate.
+  - Generate the fixture deterministically and reject stale checked-in fixture content.
   - Upload the fixture and report with existing native evidence.
 
 - [ ] **Step 4: Verify the native pass**
