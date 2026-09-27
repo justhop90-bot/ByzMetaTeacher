@@ -34,6 +34,7 @@ from ..ir.duc import (
     DucSemanticState,
     DucStateKind,
     DucTargetKind,
+    DucTargetProof,
     DucTargetState,
     DucTargetStatus,
     DucVisibility,
@@ -262,6 +263,7 @@ def _provenance(
     *,
     visibility: DucVisibility,
     state_revision: int,
+    pass_id: int,
     inputs: tuple[int, ...] = (),
     contract_id: str,
     evidence_ids: tuple[str, ...],
@@ -276,6 +278,7 @@ def _provenance(
         pass_behavior=rule.pass_behavior,
         visible_as=visibility,
         state_revision=state_revision,
+        pass_id=pass_id,
         input_state_generations=inputs,
         semantic_contract_id=contract_id,
         evidence_ids=evidence_ids,
@@ -305,7 +308,7 @@ def _list_state(
     )
 
 
-def _empty_state() -> DucSemanticState:
+def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
         remote_list=DucSearchListState(DucListKind.REMOTE, None, 1, False),
@@ -313,6 +316,7 @@ def _empty_state() -> DucSemanticState:
         target=None,
         point_target=None,
         state_revision=0,
+        pass_id=pass_id,
     )
 
 
