@@ -41,6 +41,18 @@ def build_fixture() -> str:
                 f"    (up-modify-sn sn-test-a {prefix}:{operator} {value})"
             )
         lines.extend(["    (disable-self)", ")", ""])
+    compare_domains = (
+        ("c", "3"),
+        ("g", "goal-test-a"),
+        ("s", "sn-test-b"),
+    )
+    for prefix, value in compare_domains:
+        lines.extend(["(defrule", "    (true)", "=>"])
+        for operator in (">", ">=", "<", "<=", "==", "!="):
+            lines.append(
+                f"    (up-compare-sn sn-test-a {prefix}:{operator} {value})"
+            )
+        lines.extend(["    (disable-self)", ")", ""])
     return "\n".join(lines)
 
 EXPECTED_TEXT = build_fixture()
