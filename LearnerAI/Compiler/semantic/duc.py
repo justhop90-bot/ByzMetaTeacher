@@ -974,6 +974,8 @@ def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
         target.point_ref,
         target.source_list_generation,
         target.source_filter_generation,
+        target.pass_id,
+        target.proof,
     )
 
 
@@ -1055,9 +1057,13 @@ def _widen_target_state(
     if _target_key(previous) == _target_key(current):
         if previous is None:
             return None
-        if previous.validity is current.validity:
+        if previous.validity is current.validity and previous.proof is current.proof:
             return previous
-        return replace(previous, validity=DucTargetStatus.UNKNOWN)
+        return replace(
+            previous,
+            validity=DucTargetStatus.UNKNOWN,
+            proof=DucTargetProof.UNKNOWN,
+        )
     representative = previous if previous is not None else current
     if representative is None:
         return None
@@ -1164,17 +1170,31 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
     if all(_target_key(state) == _target_key(first) for state in states):
         if first is None:
             return None
-        if all(state is not None and state.validity is first.validity for state in states):
+        if all(
+            state is not None
+            and state.validity is first.validity
+            and state.proof is first.proof
+            for state in states
+        ):
             return first
-        return replace(first, validity=DucTargetStatus.UNKNOWN)
+        return replace(
+            first,
+            validity=DucTargetStatus.UNKNOWN,
+            proof=DucTargetProof.UNKNOWN,
+        )
     representatives = [state for state in states if state is not None]
     if not representatives:
         return None
-    return replace(representatives[0], validity=DucTargetStatus.UNKNOWN)
+    return replace(
+        representatives[0],
+        validity=DucTargetStatus.UNKNOWN,
+        proof=DucTargetProof.UNKNOWN,
+    )
 
 
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
+        state.pass_id,
         (
             _generation_key(state.local_list.current_generation),
             state.local_list.path_ambiguous,
