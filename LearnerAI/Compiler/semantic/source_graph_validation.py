@@ -1,29 +1,27 @@
-"""Structural validation for the effective AoE2 .per source graph.
-
-The resolver constructs candidate source graphs. This module independently
-proves that the constructed graph is internally coherent before downstream
-parsing or semantic compilation trusts it.
-
-The validator deliberately does not read the filesystem, resolve paths, or
-interpret arbitrary .per semantics.
-"""
+"""Structural validation for the typed effective AoE2 .per source graph."""
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
 from ..diagnostics import DiagnosticSeverity, DiagnosticSource, SemanticDiagnostic
 from ..errors import CompileError
-from ..source_graph import (
+from ..ir.source_graph import (
+    ConditionContext,
     EffectiveSourceGraph,
     EffectiveSourceSlice,
     LoadKind,
-    LoadSymbolState,
+    LoadSymbolEnvironment,
     SourceEdge,
+    SourceEdgeId,
+    SourceFile,
+    SourceFileId,
     SourceInstance,
+    SourceInstanceId,
+    structural_edge_id,
+    structural_instance_id,
 )
 
 
@@ -119,15 +117,13 @@ class SourceGraphValidationReport:
     @property
     def errors(self) -> tuple[SourceGraphDiagnostic, ...]:
         return tuple(
-            diagnostic
-            for diagnostic in self.diagnostics
-            if diagnostic.severity is SourceGraphValidationSeverity.ERROR
+            item
+            for item in self.diagnostics
+            if item.severity is SourceGraphValidationSeverity.ERROR
         )
 
 
 class SourceGraphValidationError(CompileError):
-    """Compiler-owned failure for an internally invalid source graph."""
-
     def __init__(self, report: SourceGraphValidationReport) -> None:
         self.report = report
         diagnostics = tuple(_to_semantic_diagnostic(item) for item in report.errors)
@@ -138,17 +134,18 @@ class SourceGraphValidationError(CompileError):
 
 
 def _semantic_id(item: SourceGraphDiagnostic) -> str:
-    payload = (
-        item.code.value,
-        item.message,
-        str(item.path) if item.path is not None else "",
-        item.line,
-        item.column,
-        item.instance_id or "",
-        item.edge_id or "",
-    )
     return hashlib.sha256(
-        "\x00".join(str(value) for value in payload).encode("utf-8")
+        "\x00".join(
+            (
+                item.code.value,
+                item.message,
+                str(item.path or ""),
+                str(item.line or ""),
+                str(item.column or ""),
+                item.instance_id or "",
+                item.edge_id or "",
+            )
+        ).encode("utf-8")
     ).hexdigest()
 
 
@@ -165,17 +162,7 @@ def _to_semantic_diagnostic(item: SourceGraphDiagnostic) -> SemanticDiagnostic:
     )
 
 
-def _path_of(instance: SourceInstance | None) -> Path | None:
-    return instance.physical.path if instance is not None else None
-
-
-def _location_for_edge(edge: SourceEdge) -> tuple[Path | None, int | None, int | None]:
-    location = edge.location
-    path = Path(location.source_unit) if location.source_unit else None
-    return path, location.line, location.column
-
-
-def _diagnostic(
+def _diag(
     code: SourceGraphDiagnosticCode,
     message: str,
     *,
@@ -197,11 +184,11 @@ def _diagnostic(
     )
 
 
-def _sort_key(item: SourceGraphDiagnostic) -> tuple[object, ...]:
+def _diag_key(item: SourceGraphDiagnostic) -> tuple[object, ...]:
     return (
         str(item.path or ""),
-        item.line if item.line is not None else 0,
-        item.column if item.column is not None else 0,
+        item.line or 0,
+        item.column or 0,
         item.code.value,
         item.instance_id or "",
         item.edge_id or "",
@@ -209,542 +196,739 @@ def _sort_key(item: SourceGraphDiagnostic) -> tuple[object, ...]:
     )
 
 
-def _fingerprint_payload(graph: EffectiveSourceGraph) -> dict[str, object]:
-    return {
-        "root": graph.root.instance_id,
-        "symbols": graph.symbol_environment.fingerprint_payload(),
-        "instances": [
-            {
-                "id": item.instance_id,
-                "path": str(item.physical.path),
-                "sha256": item.physical.sha256,
-                "stack": [str(path) for path in item.load_stack],
-                "occurrence": item.occurrence,
-            }
-            for item in graph.instances
-        ],
-        "edges": [
-            {
-                "source": item.source_instance,
-                "target": str(item.target_path) if item.target_path else None,
-                "kind": item.kind.value,
-                "condition_kind": (
-                    item.condition_kind.value if item.condition_kind else None
-                ),
-                "line": item.location.line,
-                "column": item.location.column,
-                "condition_symbol": item.condition_symbol,
-                "active": item.active,
-            }
-            for item in graph.edges
-        ],
-        "slices": [
-            {
-                "ordinal": item.ordinal,
-                "instance": item.instance_id,
-                "path": str(item.path),
-                "start_line": item.start_line,
-                "end_line": item.end_line,
-                "start_column": item.start_column,
-                "sha256": hashlib.sha256(item.text.encode("utf-8")).hexdigest(),
-            }
-            for item in graph.slices
-        ],
-    }
+def _instance_path(instance: SourceInstance | None) -> Path | None:
+    return instance.physical.path if instance is not None else None
 
 
-def _recompute_fingerprint(graph: EffectiveSourceGraph) -> str:
-    payload = _fingerprint_payload(graph)
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8"),
-    ).hexdigest()
-
-
-def _effective_fingerprint(graph: EffectiveSourceGraph) -> str:
-    payload = {
-        "root": graph.root.instance_id,
-        "slices": [
-            {
-                "ordinal": item.ordinal,
-                "instance": item.instance_id,
-                "path": str(item.path),
-                "sha256": hashlib.sha256(item.text.encode("utf-8")).hexdigest(),
-            }
-            for item in sorted(graph.slices, key=lambda item: item.ordinal)
-        ],
-    }
-    return hashlib.sha256(
-        json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8"),
-    ).hexdigest()
-
-
-def _instance_depth(instance: SourceInstance) -> int:
-    return max(0, len(instance.load_stack) - 1)
-
-
-def _edge_sort_key(edge: SourceEdge) -> tuple[object, ...]:
+def _edge_location(edge: SourceEdge) -> tuple[Path, int, int]:
     return (
-        edge.location.line,
-        edge.location.column,
-        edge.kind.value,
-        edge.condition_symbol or "",
-        str(edge.target_path or ""),
+        edge.span.source.path,
+        edge.span.start_line,
+        edge.span.start_column,
     )
 
 
-def _expected_children(
+def _index_instances(
     graph: EffectiveSourceGraph,
-    instances_by_id: dict[str, SourceInstance],
-) -> tuple[
-    dict[str, str],
-    tuple[SourceGraphDiagnostic, ...],
-]:
-    diagnostics: list[SourceGraphDiagnostic] = []
-    children: dict[str, str] = {}
-    graph_instance_order = {
-        instance.instance_id: index
-        for index, instance in enumerate(graph.instances)
-    }
-    consumed: set[str] = set()
-
-    for source_id, source in sorted(instances_by_id.items()):
-        edges = sorted(
-            (
-                edge
-                for edge in graph.edges
-                if edge.source_instance == source_id
-                and edge.active
-                and edge.kind is not LoadKind.RANDOM
-                and edge.target_path is not None
-            ),
-            key=_edge_sort_key,
-        )
-        for edge in edges:
-            candidates = [
-                instance
-                for instance in graph.instances
-                if instance.instance_id not in consumed
-                and instance.physical.path == edge.target_path
-                and instance.load_stack[:-1] == source.load_stack
-            ]
-            candidates.sort(key=lambda item: graph_instance_order[item.instance_id])
-            path, line, column = _location_for_edge(edge)
-            if not candidates:
-                diagnostics.append(
-                    _diagnostic(
-                        SourceGraphDiagnosticCode.ACTIVE_EDGE_MISSING_CHILD,
-                        (
-                            f"active load edge from '{source_id}' to "
-                            f"'{edge.target_path}' has no corresponding child instance"
-                        ),
-                        path=path,
-                        line=line,
-                        column=column,
-                        instance_id=source_id,
-                    )
-                )
-                continue
-            child = candidates[0]
-            children[edge_key(edge)] = child.instance_id
-            consumed.add(child.instance_id)
-
-    root_id = graph.root.instance_id
+    diagnostics: list[SourceGraphDiagnostic],
+) -> dict[SourceInstanceId, SourceInstance]:
+    result: dict[SourceInstanceId, SourceInstance] = {}
     for instance in graph.instances:
-        if instance.instance_id == root_id:
-            continue
-        if instance.instance_id not in consumed:
+        if instance.identity in result:
             diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.ORPHAN_INSTANCE,
-                    f"instance '{instance.instance_id}' has no corresponding active load edge",
-                    path=_path_of(instance),
+                _diag(
+                    SourceGraphDiagnosticCode.DUPLICATE_INSTANCE_ID,
+                    f"duplicate source instance identity '{instance.identity.value}'",
+                    path=_instance_path(instance),
                     instance_id=instance.instance_id,
                 )
             )
-
-    return children, tuple(diagnostics)
-
-
-def edge_key(edge: SourceEdge) -> str:
-    path = str(edge.target_path or "")
-    return "|".join(
-        (
-            edge.source_instance,
-            str(edge.location.line),
-            str(edge.location.column),
-            edge.kind.value,
-            edge.condition_symbol or "",
-            edge.condition_kind.value if edge.condition_kind else "",
-            path,
-        )
-    )
+        else:
+            result[instance.identity] = instance
+    return result
 
 
-def _validate_parentage(
+def _index_files(
     graph: EffectiveSourceGraph,
-    instances_by_id: dict[str, SourceInstance],
-    children: dict[str, str],
-    policy: SourceGraphValidationPolicy,
-) -> list[SourceGraphDiagnostic]:
-    diagnostics: list[SourceGraphDiagnostic] = []
-    root_id = graph.root.instance_id
-
-    for instance in graph.instances:
-        if not instance.load_stack:
+    diagnostics: list[SourceGraphDiagnostic],
+) -> dict[SourceFileId, SourceFile]:
+    result: dict[SourceFileId, SourceFile] = {}
+    for source in graph.files:
+        if source.identity in result:
             diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.INSTANCE_MISSING_PARENT,
-                    f"instance '{instance.instance_id}' has an empty load stack",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
+                _diag(
+                    SourceGraphDiagnosticCode.DUPLICATE_FILE_ID,
+                    f"duplicate source file identity '{source.identity.canonical_path}'",
+                    path=source.path,
                 )
             )
-            continue
-
-        if instance.instance_id != graph.root.instance_id and len(instance.load_stack) < 2:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.INSTANCE_MISSING_PARENT,
-                    f"non-root instance '{instance.instance_id}' has no parent in its load stack",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-
-        if instance.load_stack[-1] != instance.physical.path:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.LOAD_EDGE_INSTANCE_MISMATCH,
-                    f"instance '{instance.instance_id}' load stack does not terminate at its physical source",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-
-        if len(instance.load_stack) != len(set(instance.load_stack)):
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.INSTANCE_CYCLE,
-                    f"instance '{instance.instance_id}' contains a repeated physical path in its load stack",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-
-        expected_depth = _instance_depth(instance)
-        if expected_depth != len(instance.load_stack) - 1:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.DEPTH_MISMATCH,
-                    f"instance '{instance.instance_id}' has inconsistent structural depth",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-        if expected_depth > policy.max_load_depth:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.LOAD_DEPTH_EXCEEDED,
-                    f"instance '{instance.instance_id}' exceeds configured load depth",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-
-    if graph.root.instance_id not in instances_by_id:
-        return diagnostics
-
-    if graph.root.load_stack != (graph.root.physical.path,):
-        diagnostics.append(
-            _diagnostic(
-                SourceGraphDiagnosticCode.ROOT_HAS_PARENT,
-                "root instance has a non-root load stack",
-                path=_path_of(graph.root),
-                instance_id=root_id,
-            )
-        )
-
-    return diagnostics
+        else:
+            result[source.identity] = source
+    return result
 
 
-def _validate_edges(
+def _index_edges(
     graph: EffectiveSourceGraph,
-    instances_by_id: dict[str, SourceInstance],
-    children: dict[str, str],
-) -> list[SourceGraphDiagnostic]:
-    diagnostics: list[SourceGraphDiagnostic] = []
-    seen_edge_ids: set[str] = set()
-
-    grouped: dict[str, list[SourceEdge]] = {}
+    diagnostics: list[SourceGraphDiagnostic],
+) -> dict[SourceEdgeId, SourceEdge]:
+    result: dict[SourceEdgeId, SourceEdge] = {}
     for edge in graph.edges:
-        identifier = edge_key(edge)
-        if identifier in seen_edge_ids:
+        if edge.identity in result:
+            path, line, column = _edge_location(edge)
             diagnostics.append(
-                _diagnostic(
+                _diag(
                     SourceGraphDiagnosticCode.DUPLICATE_EDGE_ID,
-                    f"duplicate source edge identity '{identifier}'",
-                    path=Path(edge.location.source_unit)
-                    if edge.location.source_unit
-                    else None,
-                    line=edge.location.line,
-                    column=edge.location.column,
-                    edge_id=identifier,
-                )
-            )
-        seen_edge_ids.add(identifier)
-        grouped.setdefault(edge.source_instance, []).append(edge)
-
-        if edge.source_instance not in instances_by_id:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.LOAD_EDGE_SOURCE_MISSING,
-                    f"source edge references unknown instance '{edge.source_instance}'",
-                    edge_id=identifier,
-                )
-            )
-            continue
-
-        path, line, column = _location_for_edge(edge)
-        if edge.condition_symbol is None and edge.condition_kind is not None:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.EDGE_CONDITION_INVALID,
-                    "conditional edge has a condition kind without a symbol",
+                    f"duplicate source edge identity '{edge.edge_id}'",
                     path=path,
                     line=line,
                     column=column,
-                    edge_id=identifier,
+                    edge_id=edge.edge_id,
                 )
             )
-        if edge.condition_symbol is not None:
-            state = graph.symbol_environment.state(edge.condition_symbol)
-            if state is None:
-                diagnostics.append(
-                    _diagnostic(
-                        SourceGraphDiagnosticCode.MISSING_CONDITION_SYMBOL,
-                        (
-                            f"source edge references unresolved load symbol "
-                            f"'{edge.condition_symbol}'"
-                        ),
-                        path=path,
-                        line=line,
-                        column=column,
-                        edge_id=identifier,
-                    )
-                )
-            if edge.condition_kind not in {
-                LoadKind.CONDITIONAL_DEFINED,
-                LoadKind.CONDITIONAL_NOT_DEFINED,
-                LoadKind.CONDITIONAL_ELSE,
-            }:
-                diagnostics.append(
-                    _diagnostic(
-                        SourceGraphDiagnosticCode.EDGE_CONDITION_INVALID,
-                        (
-                            f"source edge carries symbol '{edge.condition_symbol}' "
-                            "with an invalid condition kind"
-                        ),
-                        path=path,
-                        line=line,
-                        column=column,
-                        edge_id=identifier,
-                    )
-                )
-
-        if edge.kind is LoadKind.RANDOM:
-            if edge.active:
-                diagnostics.append(
-                    _diagnostic(
-                        SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
-                        "random load is active without deterministic materialization",
-                        path=path,
-                        line=line,
-                        column=column,
-                        edge_id=identifier,
-                    )
-                )
-            continue
-
-        if edge.active and edge.target_path is None:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.ACTIVE_UNRESOLVED_EDGE,
-                    "active load edge has no resolved target path",
-                    path=path,
-                    line=line,
-                    column=column,
-                    edge_id=identifier,
-                )
-            )
-
-        child_id = children.get(identifier)
-        if edge.active and edge.target_path is not None and child_id is None:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.ACTIVE_EDGE_MISSING_CHILD,
-                    "active load edge has no corresponding instantiated child",
-                    path=path,
-                    line=line,
-                    column=column,
-                    edge_id=identifier,
-                )
-            )
-        if not edge.active and child_id is not None:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.INACTIVE_HAS_CHILD,
-                    "inactive load edge has a corresponding child instance",
-                    path=path,
-                    line=line,
-                    column=column,
-                    edge_id=identifier,
-                )
-            )
-
-    # The compatibility graph stores conditional directive edges in a separate
-    # append batch, so graph.edges itself is not a lexical-order proof. The
-    # typed source-graph IR will promote directive spans and make this invariant
-    # enforceable independently.
-    return diagnostics
+        else:
+            result[edge.identity] = edge
+    return result
 
 
-def _validate_slices(
+def _validate_files(
     graph: EffectiveSourceGraph,
-    instances_by_id: dict[str, SourceInstance],
-    policy: SourceGraphValidationPolicy,
-) -> list[SourceGraphDiagnostic]:
-    diagnostics: list[SourceGraphDiagnostic] = []
-    expected_ordinals = list(range(len(graph.slices)))
-    actual_ordinals = [item.ordinal for item in graph.slices]
-
-    if any(item < 0 for item in actual_ordinals):
-        diagnostics.append(
-            _diagnostic(
-                SourceGraphDiagnosticCode.SLICE_ORDINAL_INVALID,
-                "source slice ordinal must be non-negative",
-            )
-        )
-
-    if policy.require_contiguous_slice_ordinals and actual_ordinals != expected_ordinals:
-        diagnostics.append(
-            _diagnostic(
-                SourceGraphDiagnosticCode.SLICE_ORDINAL_GAP,
-                "source slice ordinals must be contiguous starting at zero",
-            )
-        )
-
-    by_instance: dict[str, list[EffectiveSourceSlice]] = {}
-    for slice_ in graph.slices:
-        if slice_.instance_id not in instances_by_id:
+    files: dict[SourceFileId, SourceFile],
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    for source in graph.files:
+        if source.identity.path != source.path:
             diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.SLICE_INSTANCE_MISSING,
-                    f"slice {slice_.ordinal} references unknown instance '{slice_.instance_id}'",
-                    path=slice_.path,
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_SOURCE,
+                    "source file identity path does not match the physical path",
+                    path=source.path,
                 )
             )
-            continue
-
-        instance = instances_by_id[slice_.instance_id]
-        if slice_.path != instance.physical.path:
+        if source.identity.content_sha256 != hashlib.sha256(
+            source.text.encode("utf-8")
+        ).hexdigest():
             diagnostics.append(
-                _diagnostic(
+                _diag(
                     SourceGraphDiagnosticCode.SLICE_SOURCE_HASH_MISMATCH,
-                    f"slice {slice_.ordinal} path does not match its source instance",
-                    path=slice_.path,
-                    instance_id=slice_.instance_id,
+                    "source file content does not match its identity hash",
+                    path=source.path,
                 )
             )
-
-        if slice_.start_line < 1 or slice_.end_line < slice_.start_line:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.SLICE_RANGE_INVALID,
-                    f"slice {slice_.ordinal} has invalid line range",
-                    path=slice_.path,
-                    instance_id=slice_.instance_id,
-                )
-            )
-
-        if slice_.start_column < 1:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.SLICE_RANGE_INVALID,
-                    f"slice {slice_.ordinal} has invalid start column",
-                    path=slice_.path,
-                    instance_id=slice_.instance_id,
-                )
-            )
-
-        by_instance.setdefault(slice_.instance_id, []).append(slice_)
-
-    for instance_id, slices in by_instance.items():
-        ordered = sorted(slices, key=lambda item: item.ordinal)
-        for previous, current in zip(ordered, ordered[1:]):
-            if current.ordinal <= previous.ordinal:
-                diagnostics.append(
-                    _diagnostic(
-                        SourceGraphDiagnosticCode.SLICE_INSTANCE_ORDER_INVALID,
-                        f"slice order is not monotonic for instance '{instance_id}'",
-                        path=current.path,
-                        instance_id=instance_id,
-                    )
-                )
-
-    return diagnostics
 
 
 def _validate_instances(
     graph: EffectiveSourceGraph,
-) -> tuple[dict[str, SourceInstance], list[SourceGraphDiagnostic]]:
-    diagnostics: list[SourceGraphDiagnostic] = []
-    instances_by_id: dict[str, SourceInstance] = {}
-    seen_files: set[tuple[str, str]] = set()
-
-    for instance in graph.instances:
-        if instance.instance_id in instances_by_id:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.DUPLICATE_INSTANCE_ID,
-                    f"duplicate source instance ID '{instance.instance_id}'",
-                    path=_path_of(instance),
-                    instance_id=instance.instance_id,
-                )
-            )
-        instances_by_id.setdefault(instance.instance_id, instance)
-
-        file_key = (str(instance.physical.path), instance.physical.sha256)
-        seen_files.add(file_key)
-
-        if not instance.physical.path.is_absolute():
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.INSTANCE_MISSING_SOURCE,
-                    f"instance '{instance.instance_id}' uses a non-canonical relative source path",
-                    path=instance.physical.path,
-                    instance_id=instance.instance_id,
-                )
-            )
-
-    if graph.root.instance_id not in instances_by_id:
+    files: dict[SourceFileId, SourceFile],
+    instances: dict[SourceInstanceId, SourceInstance],
+    edges: dict[SourceEdgeId, SourceEdge],
+    policy: SourceGraphValidationPolicy,
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    roots = [item for item in graph.instances if item.parent is None]
+    if not roots:
         diagnostics.append(
-            _diagnostic(
+            _diag(
                 SourceGraphDiagnosticCode.ROOT_MISSING,
-                f"graph root '{graph.root.instance_id}' is not present in instance inventory",
-                path=_path_of(graph.root),
+                "source graph has no root instance",
+            )
+        )
+    elif len(roots) != 1:
+        diagnostics.append(
+            _diag(
+                SourceGraphDiagnosticCode.MULTIPLE_ROOTS,
+                "source graph has multiple root instances",
+            )
+        )
+
+    if graph.root.identity not in instances:
+        diagnostics.append(
+            _diag(
+                SourceGraphDiagnosticCode.ROOT_MISSING,
+                f"declared root '{graph.root.instance_id}' is not in instance inventory",
+                path=_instance_path(graph.root),
                 instance_id=graph.root.instance_id,
             )
         )
 
-    return instances_by_id, diagnostics
+    for instance in graph.instances:
+        if instance.source not in files:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_SOURCE,
+                    f"instance '{instance.instance_id}' references unknown source file",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.instance_id != graph.root.instance_id and instance.parent is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_PARENT,
+                    f"non-root instance '{instance.instance_id}' has no parent",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.parent is not None and instance.parent not in instances:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_PARENT,
+                    f"instance '{instance.instance_id}' references unknown parent '{instance.parent.value}'",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.via_edge is None and instance.identity != graph.root.identity:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_LOAD_EDGE,
+                    f"instance '{instance.instance_id}' has no incoming load edge",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.via_edge is not None and instance.via_edge not in edges:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_LOAD_EDGE,
+                    f"instance '{instance.instance_id}' references unknown load edge '{instance.via_edge.value}'",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+
+        expected_identity = structural_instance_id(
+            source=instance.source,
+            parent=instance.parent,
+            via_edge=instance.via_edge,
+        )
+        if expected_identity != instance.identity:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.LOAD_EDGE_INSTANCE_MISMATCH,
+                    f"instance '{instance.instance_id}' is not the structural identity of its source and ancestry",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+
+        expected_depth = 0 if instance.parent is None else instances.get(
+            instance.parent
+        ).depth + 1 if instances.get(instance.parent) else -1
+        if expected_depth != instance.depth:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.DEPTH_MISMATCH,
+                    f"instance '{instance.instance_id}' has depth {instance.depth}, expected {expected_depth}",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.depth > policy.max_load_depth:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.LOAD_DEPTH_EXCEEDED,
+                    f"instance '{instance.instance_id}' exceeds load depth {policy.max_load_depth}",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+
+        if not instance.ancestry or instance.ancestry[-1] != instance.source:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.LOAD_EDGE_INSTANCE_MISMATCH,
+                    f"instance '{instance.instance_id}' ancestry does not terminate at its source",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        if instance.parent is None:
+            if instance.ancestry != (instance.source,):
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.ROOT_HAS_PARENT,
+                        f"root instance '{instance.instance_id}' has non-root ancestry",
+                        path=_instance_path(instance),
+                        instance_id=instance.instance_id,
+                    )
+                )
+        elif instance.parent in instances:
+            parent = instances[instance.parent]
+            if instance.ancestry != parent.ancestry + (instance.source,):
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.LOAD_EDGE_INSTANCE_MISMATCH,
+                        f"instance '{instance.instance_id}' ancestry does not match its parent",
+                        path=_instance_path(instance),
+                        instance_id=instance.instance_id,
+                    )
+                )
+
+    state: dict[SourceInstanceId, int] = {}
+
+    def visit(instance_id: SourceInstanceId) -> None:
+        marker = state.get(instance_id, 0)
+        if marker == 1:
+            instance = instances.get(instance_id)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_CYCLE,
+                    f"source instance parent cycle reaches '{instance_id.value}'",
+                    path=_instance_path(instance),
+                    instance_id=instance_id.value,
+                )
+            )
+            return
+        if marker == 2 or instance_id not in instances:
+            return
+        state[instance_id] = 1
+        parent = instances[instance_id].parent
+        if parent is not None:
+            visit(parent)
+        state[instance_id] = 2
+
+    for instance in graph.instances:
+        visit(instance.identity)
+
+
+def _validate_edges(
+    graph: EffectiveSourceGraph,
+    instances: dict[SourceInstanceId, SourceInstance],
+    edges: dict[SourceEdgeId, SourceEdge],
+    symbols: LoadSymbolEnvironment,
+    policy: SourceGraphValidationPolicy,
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    incoming: dict[SourceInstanceId, list[SourceEdge]] = {}
+    outgoing: dict[SourceInstanceId, list[SourceEdge]] = {}
+
+    for edge in graph.edges:
+        path, line, column = _edge_location(edge)
+        if edge.source not in instances:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.LOAD_EDGE_SOURCE_MISSING,
+                    f"edge '{edge.edge_id}' references unknown source instance",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+            continue
+
+        outgoing.setdefault(edge.source, []).append(edge)
+
+        if edge.condition.depth > policy.max_conditional_depth:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.CONDITION_DEPTH_EXCEEDED,
+                    f"edge '{edge.edge_id}' exceeds conditional depth {policy.max_conditional_depth}",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+        names: set[str] = set()
+        for predicate in edge.condition.predicates:
+            if predicate.symbol in names:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.INVALID_CONDITION_CONTEXT,
+                        f"edge '{edge.edge_id}' contains duplicate condition symbol '{predicate.symbol}'",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            names.add(predicate.symbol)
+            if symbols.state(predicate.symbol) is None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.MISSING_CONDITION_SYMBOL,
+                        f"edge '{edge.edge_id}' references unresolved load symbol '{predicate.symbol}'",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+        if edge.active != edge.condition.evaluate(symbols):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EDGE_CONDITION_INVALID,
+                    f"edge '{edge.edge_id}' active state disagrees with its condition context",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+        expected_edge_id = structural_edge_id(
+            source=edge.source,
+            span=edge.span,
+            kind=edge.kind,
+            condition=edge.condition,
+            target_text=edge.target_text,
+        )
+        if expected_edge_id != edge.identity:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EDGE_CONDITION_INVALID,
+                    f"edge '{edge.edge_id}' is not the structural identity of its source span",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+        if edge.kind is LoadKind.RANDOM:
+            if edge.active and policy.reject_random_loads:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
+                        f"random load edge '{edge.edge_id}' has no deterministic materialization",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            continue
+
+        if edge.target is None and edge.kind not in {
+            LoadKind.CONDITIONAL_DEFINED,
+            LoadKind.CONDITIONAL_NOT_DEFINED,
+            LoadKind.CONDITIONAL_ELSE,
+        }:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.ACTIVE_UNRESOLVED_EDGE,
+                    f"load edge '{edge.edge_id}' has no target source",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+        if edge.kind in {
+            LoadKind.CONDITIONAL_DEFINED,
+            LoadKind.CONDITIONAL_NOT_DEFINED,
+            LoadKind.CONDITIONAL_ELSE,
+        }:
+            if edge.child is not None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.INACTIVE_HAS_CHILD,
+                        f"conditional directive edge '{edge.edge_id}' cannot own a child instance",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            continue
+
+        if edge.active:
+            if edge.target is None:
+                continue
+            if edge.child is None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.ACTIVE_EDGE_MISSING_CHILD,
+                        f"active load edge '{edge.edge_id}' has no child instance",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+                continue
+            child = instances.get(edge.child)
+            if child is None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.ACTIVE_EDGE_MISSING_CHILD,
+                        f"active load edge '{edge.edge_id}' references unknown child '{edge.child.value}'",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+                continue
+            incoming.setdefault(child.identity, []).append(edge)
+            if child.parent != edge.source or child.via_edge != edge.identity:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EDGE_PARENTAGE_MISMATCH,
+                        f"edge '{edge.edge_id}' does not agree with child '{child.instance_id}' parentage",
+                        path=path,
+                        line=line,
+                        column=column,
+                        instance_id=child.instance_id,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            if child.source != edge.target:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.LOAD_EDGE_INSTANCE_MISMATCH,
+                        f"edge '{edge.edge_id}' target does not match child '{child.instance_id}' source",
+                        path=path,
+                        line=line,
+                        column=column,
+                        instance_id=child.instance_id,
+                        edge_id=edge.edge_id,
+                    )
+                )
+        elif edge.child is not None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INACTIVE_HAS_CHILD,
+                    f"inactive load edge '{edge.edge_id}' has child instance '{edge.child.value}'",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+    for instance in graph.instances:
+        if instance.identity == graph.root.identity:
+            continue
+        links = incoming.get(instance.identity, [])
+        if len(links) == 0:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.ORPHAN_INSTANCE,
+                    f"instance '{instance.instance_id}' has no incoming active load edge",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        elif len(links) > 1:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.MULTIPLE_PARENT_EDGES,
+                    f"instance '{instance.instance_id}' has {len(links)} incoming active load edges",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+
+    for source_id, source_edges in outgoing.items():
+        loads = [
+            edge
+            for edge in source_edges
+            if edge.kind in {LoadKind.FILE, LoadKind.RAW_LOAD, LoadKind.RANDOM}
+        ]
+        orders = [edge.lexical_order for edge in sorted(loads, key=lambda item: item.lexical_order)]
+        if orders != sorted(orders) or len(orders) != len(set(orders)):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EDGE_ORDER_NOT_MONOTONIC,
+                    f"load edge lexical order is not strictly increasing for instance '{source_id.value}'",
+                    instance_id=source_id.value,
+                )
+            )
+
+
+def _validate_slices(
+    graph: EffectiveSourceGraph,
+    instances: dict[SourceInstanceId, SourceInstance],
+    files: dict[SourceFileId, SourceFile],
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    ordinals = [item.ordinal for item in graph.slices]
+    if ordinals != list(range(len(graph.slices))):
+        diagnostics.append(
+            _diag(
+                SourceGraphDiagnosticCode.SLICE_ORDINAL_GAP,
+                "effective source slice ordinals must be contiguous starting at zero",
+            )
+        )
+
+    by_instance: dict[SourceInstanceId, list[EffectiveSourceSlice]] = {}
+    for slice_ in graph.slices:
+        instance = instances.get(slice_.instance)
+        if instance is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.SLICE_INSTANCE_MISSING,
+                    f"slice {slice_.ordinal} references unknown instance '{slice_.instance.value}'",
+                    path=slice_.path,
+                )
+            )
+            continue
+        if slice_.physical_range.source != instance.source:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.SLICE_SOURCE_HASH_MISMATCH,
+                    f"slice {slice_.ordinal} source identity does not match its instance",
+                    path=slice_.path,
+                    instance_id=instance.instance_id,
+                )
+            )
+        source = files.get(slice_.physical_range.source)
+        if source is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.SLICE_SOURCE_HASH_MISMATCH,
+                    f"slice {slice_.ordinal} references unknown source file",
+                    path=slice_.path,
+                    instance_id=instance.instance_id,
+                )
+            )
+            continue
+        if slice_.physical_range.end_offset > len(source.text):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.SLICE_RANGE_INVALID,
+                    f"slice {slice_.ordinal} ends beyond source length",
+                    path=slice_.path,
+                    instance_id=instance.instance_id,
+                )
+            )
+        by_instance.setdefault(slice_.instance, []).append(slice_)
+
+    for instance_id, slices in by_instance.items():
+        ordered = sorted(slices, key=lambda item: item.physical_range.start_offset)
+        previous_end = -1
+        for item in ordered:
+            if item.physical_range.start_offset < previous_end:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.SLICE_OVERLAP,
+                        f"slice {item.ordinal} overlaps another slice for instance '{instance_id.value}'",
+                        path=item.path,
+                        instance_id=instance_id.value,
+                    )
+                )
+            previous_end = max(previous_end, item.physical_range.end_offset)
+        ords = [item.ordinal for item in ordered]
+        if ords != sorted(ords):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.SLICE_INSTANCE_ORDER_INVALID,
+                    f"slice ordinals are not physical-source ordered for instance '{instance_id.value}'",
+                    path=ordered[0].path if ordered else None,
+                    instance_id=instance_id.value,
+                )
+            )
+
+
+def _validate_effective_splicing(
+    graph: EffectiveSourceGraph,
+    instances: dict[SourceInstanceId, SourceInstance],
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    slices_by_instance: dict[SourceInstanceId, list[EffectiveSourceSlice]] = {}
+    for slice_ in graph.slices:
+        slices_by_instance.setdefault(slice_.instance, []).append(slice_)
+
+    descendants_cache: dict[SourceInstanceId, set[SourceInstanceId]] = {}
+
+    def descendants(root: SourceInstanceId) -> set[SourceInstanceId]:
+        if root in descendants_cache:
+            return descendants_cache[root]
+        result: set[SourceInstanceId] = {root}
+        changed = True
+        while changed:
+            changed = False
+            for instance in graph.instances:
+                if instance.parent in result and instance.identity not in result:
+                    result.add(instance.identity)
+                    changed = True
+        descendants_cache[root] = result
+        return result
+
+    for edge in graph.edges:
+        if not edge.active or edge.kind not in {LoadKind.FILE, LoadKind.RAW_LOAD}:
+            continue
+        if edge.child is None:
+            continue
+        child_slices = [
+            slice_
+            for instance_id in descendants(edge.child)
+            for slice_ in slices_by_instance.get(instance_id, ())
+        ]
+        if not child_slices:
+            continue
+        child_min = min(item.ordinal for item in child_slices)
+        child_max = max(item.ordinal for item in child_slices)
+        parent_slices = slices_by_instance.get(edge.source, ())
+        before = [
+            item
+            for item in parent_slices
+            if item.physical_range.end_offset <= edge.span.start_offset
+        ]
+        after = [
+            item
+            for item in parent_slices
+            if item.physical_range.start_offset >= edge.span.end_offset
+        ]
+        lower = max((item.ordinal for item in before), default=-1)
+        upper = min((item.ordinal for item in after), default=len(graph.slices))
+        if not (lower < child_min <= child_max < upper):
+            path, line, column = _edge_location(edge)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.LOAD_SPLICE_ORDER_INVALID,
+                    f"load edge '{edge.edge_id}' does not bracket its child subtree in effective order",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+            continue
+        subtree_ids = descendants(edge.child)
+        interleaved = [
+            item
+            for item in graph.slices
+            if child_min <= item.ordinal <= child_max
+            and item.instance not in subtree_ids
+        ]
+        if interleaved:
+            path, line, column = _edge_location(edge)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.CHILD_SUBTREE_ORDER_INVALID,
+                    f"load edge '{edge.edge_id}' has an unrelated slice interleaved with its child subtree",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+
+
+def _validate_fingerprints(
+    graph: EffectiveSourceGraph,
+    policy: SourceGraphValidationPolicy,
+    diagnostics: list[SourceGraphDiagnostic],
+) -> tuple[bool, bool]:
+    if not policy.require_fingerprint_match:
+        return True, True
+    assembly = EffectiveSourceGraph.compute_assembly_fingerprint(
+        root=graph.root,
+        files=graph.files,
+        instances=graph.instances,
+        edges=graph.edges,
+        slices=graph.slices,
+        symbols=graph.symbol_environment,
+    )
+    effective = EffectiveSourceGraph.compute_effective_fingerprint(
+        root=graph.root,
+        slices=graph.slices,
+    )
+    if assembly != graph.assembly_fingerprint:
+        diagnostics.append(
+            _diag(
+                SourceGraphDiagnosticCode.ASSEMBLY_FINGERPRINT_MISMATCH,
+                "stored assembly fingerprint does not match canonical graph content",
+                path=_instance_path(graph.root),
+                instance_id=graph.root.instance_id,
+            )
+        )
+    if effective != graph.effective_fingerprint:
+        diagnostics.append(
+            _diag(
+                SourceGraphDiagnosticCode.EFFECTIVE_FINGERPRINT_MISMATCH,
+                "stored effective fingerprint does not match effective source content",
+                path=_instance_path(graph.root),
+                instance_id=graph.root.instance_id,
+            )
+        )
+    return assembly == graph.assembly_fingerprint, effective == graph.effective_fingerprint
 
 
 def validate_effective_source_graph(
@@ -755,131 +939,33 @@ def validate_effective_source_graph(
     policy = policy or SourceGraphValidationPolicy()
     diagnostics: list[SourceGraphDiagnostic] = []
 
-    instances_by_id, instance_diagnostics = _validate_instances(graph)
-    diagnostics.extend(instance_diagnostics)
+    files = _index_files(graph, diagnostics)
+    instances = _index_instances(graph, diagnostics)
+    edges = _index_edges(graph, diagnostics)
 
-    children, child_diagnostics = _expected_children(graph, instances_by_id)
-    diagnostics.extend(child_diagnostics)
-
-    diagnostics.extend(
-        _validate_parentage(
-            graph,
-            instances_by_id,
-            children,
-            policy,
-        )
+    _validate_files(graph, files, diagnostics)
+    _validate_instances(graph, files, instances, edges, policy, diagnostics)
+    _validate_edges(
+        graph,
+        instances,
+        edges,
+        graph.symbol_environment,
+        policy,
+        diagnostics,
     )
-    diagnostics.extend(
-        _validate_edges(
-            graph,
-            instances_by_id,
-            children,
-        )
-    )
-    diagnostics.extend(
-        _validate_slices(
-            graph,
-            instances_by_id,
-            policy,
-        )
+    _validate_slices(graph, instances, files, diagnostics)
+    _validate_effective_splicing(graph, instances, diagnostics)
+    assembly_valid, effective_valid = _validate_fingerprints(
+        graph,
+        policy,
+        diagnostics,
     )
 
-    root_candidates = [
-        instance
-        for instance in graph.instances
-        if len(instance.load_stack) == 1
-    ]
-    if len(root_candidates) > 1:
-        diagnostics.append(
-            _diagnostic(
-                SourceGraphDiagnosticCode.MULTIPLE_ROOTS,
-                "source graph contains multiple root-like instances",
-            )
-        )
-
-    if graph.root.instance_id in instances_by_id:
-        expected_instance_order: list[str] = []
-
-        def visit(instance_id: str) -> None:
-            expected_instance_order.append(instance_id)
-            outgoing = [
-                edge
-                for edge in graph.edges
-                if edge.source_instance == instance_id
-                and edge.active
-                and edge.kind is not LoadKind.RANDOM
-                and edge.target_path is not None
-                and edge_key(edge) in children
-            ]
-            for edge in sorted(outgoing, key=_edge_sort_key):
-                child_id = children[edge_key(edge)]
-                if child_id in expected_instance_order:
-                    diagnostics.append(
-                        _diagnostic(
-                            SourceGraphDiagnosticCode.INSTANCE_CYCLE,
-                            f"effective source traversal revisits instance '{child_id}'",
-                            path=_path_of(instances_by_id.get(child_id)),
-                            instance_id=child_id,
-                        )
-                    )
-                    continue
-                visit(child_id)
-
-        visit(graph.root.instance_id)
-        actual_order = [instance.instance_id for instance in graph.instances]
-        if expected_instance_order != actual_order:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.CHILD_SUBTREE_ORDER_INVALID,
-                    "source instances are not in deterministic depth-first load order",
-                )
-            )
-
-    if policy.require_fingerprint_match:
-        recomputed = _recompute_fingerprint(graph)
-        assembly_valid = recomputed == graph.fingerprint
-        if not assembly_valid:
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.ASSEMBLY_FINGERPRINT_MISMATCH,
-                    "stored source graph fingerprint does not match canonical graph content",
-                    path=_path_of(graph.root),
-                )
-            )
-    else:
-        assembly_valid = True
-
-    # The current EffectiveSourceGraph predates a separately stored
-    # effective_fingerprint. Keep this proof internal so the typed IR migration
-    # can promote it to a first-class field without changing this validator's
-    # trust contract.
-    effective_valid = True
-
-    diagnostics = sorted(
-        {
-            (
-                item.code.value,
-                item.message,
-                str(item.path or ""),
-                item.line or 0,
-                item.column or 0,
-                item.instance_id or "",
-                item.edge_id or "",
-            ): item
-            for item in diagnostics
-        }.values(),
-        key=_sort_key,
-    )
+    ordered = tuple(sorted(diagnostics, key=_diag_key))
     return SourceGraphValidationReport(
-        valid=not any(
-            item.severity is SourceGraphValidationSeverity.ERROR
-            for item in diagnostics
-        ),
-        diagnostics=tuple(diagnostics),
-        files_checked=len({
-            (str(item.physical.path), item.physical.sha256)
-            for item in graph.instances
-        }),
+        valid=not ordered,
+        diagnostics=ordered,
+        files_checked=len(graph.files),
         instances_checked=len(graph.instances),
         edges_checked=len(graph.edges),
         slices_checked=len(graph.slices),
