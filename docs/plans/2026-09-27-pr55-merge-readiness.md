@@ -1,106 +1,47 @@
-# PR #55 Merge-Readiness Cross-Reference — 2026-09-27
+# Recurrent Execution Merge Readiness — Current Compiler State
 
-PR: #55 — `feat(compiler): add path-sensitive recurrent .per execution semantics`
+Date: 2026-09-27
 
-Current branch: `compiler/recurrent-execution-semantics`
+This record supersedes the stale PR #55 merge narrative. The recurrent execution implementation has been ported onto the current compiler head rather than carrying the old branch history forward.
 
-## Merge gate
+## Scope
 
-| Gate | Evidence | Status |
-|---|---|---|
-| Implementation boundary | `LearnerAI/Compiler/semantic/recurrent_execution.py`, `compiler.py`, `rule_diagnostics.py`, `semantic/__init__.py` | IMPLEMENTED |
-| Recurrent regression coverage | `LearnerAI/Compiler/tests/test_recurrent_execution.py` | IMPLEMENTED |
-| Diagnostic integration | `LearnerAI/Compiler/tests/test_rule_diagnostics.py` | IMPLEMENTED |
-| Full compiler suite | CI run `36295625929`: 630/630 | GREEN at pre-CI-fix head |
-| Focused semantic suites | CI run `36295625929`: 22 + 25 + 15 passed | GREEN at pre-CI-fix head |
-| Native parser / zero-findings gates | CI run `36295625929` | GREEN at pre-CI-fix head |
-| Determinism matrix | CI run `36295625929`: all configured jobs + comparison | GREEN at pre-CI-fix head |
-| Compiler verification gate | CI run `36295625929` | GREEN at pre-CI-fix head |
-| Validator profile contract | `validation/basilisk-validator-profile-selftest.js`; commits `6030dc3`, `903b19e` | CONFIRMED |
-| Validator baseline semantics | Commit `6030dc3` explicitly requires `8596a45` to fail on an engine-limit violation | CONFIRMED |
-| Validator workflow behavior | `.github/workflows/basilisk-validator.yml` treats the full validator failure as a negative control and checks the known `[Ranged] Crossbow action boundary...` assertion | IMPLEMENTED; FRESH CI REQUIRED |
-| Documentation | recurrent execution plan, native gap map, research checklist, this cross-reference | IMPLEMENTED |
-| PR description | States implementation boundary, evidence, and validator negative-control disposition | IMPLEMENTED |
-| Review state | PR approval / unresolved threads | REQUIRED |
-| Final merge state | final head green, base not behind, required checks green | REQUIRED |
+Implemented:
+- bounded path-sensitive recurrent execution analysis;
+- recurrent versus one-shot lifetime through existing rule-pass behavior and `disable-self`;
+- exact literal Goal/SN/Timer state effects;
+- conservative unknown-guard handling;
+- native `up-jump-rule` control-transfer modeling;
+- deterministic REX-001 through REX-004 diagnostics;
+- integration into the shared RuleDiagnostic surface;
+- compiler wiring for source, package, and staged-file report paths;
+- focused recurrent regression coverage;
+- current project documentation updates.
 
-## Cross-reference: implementation
+Explicitly excluded:
+- runtime simulation;
+- arbitrary world-state proof;
+- generic scheduler construction;
+- DUC semantics;
+- strategy policy.
 
-1. `LearnerAI/Compiler/semantic/recurrent_execution.py`
-   - bounded path-sensitive abstract interpreter
-   - recurrent/one-shot lifetime
-   - Goal/SN/Timer state
-   - jump semantics
-   - conservative unknown guards
-   - REX-001 through REX-004 findings
+## Port audit
 
-2. `LearnerAI/Compiler/semantic/rule_diagnostics.py`
-   - recurrent diagnostic category and codes
-   - integration into the existing diagnostic surface
+The stale PR branch was 54 commits behind current `main` and therefore was not merged directly.
 
-3. `LearnerAI/Compiler/compiler.py`
-   - recurrent analysis invoked from source/package/staged-file compilation paths
+The implementation was re-applied from its merge-base patch onto the current compiler state after the Effective Source Graph repair. Only compiler/recurrent files and their documentation were ported.
 
-4. `LearnerAI/Compiler/semantic/__init__.py`
-   - public semantic exports
+The old Basilisk Validator workflow/self-test edits were deliberately excluded from this compiler tranche.
 
-## Cross-reference: tests
+## Required verification
 
-1. `LearnerAI/Compiler/tests/test_recurrent_execution.py`
-   - persistent starvation
-   - successful state establishment
-   - disable-self
-   - guaranteed recurrent jump preemption
-   - one-shot jump recovery
+- [ ] Fresh Compiler Tests workflow green on the final ported head.
+- [ ] Native zero-findings acceptance green.
+- [ ] All nine OS/Python determinism jobs green.
+- [ ] Cross-platform snapshot comparison green.
+- [ ] Compiler verification gate green.
+- [ ] Current main contains the merged Effective Source Graph repair before recurrent execution is merged.
 
-2. `LearnerAI/Compiler/tests/test_rule_diagnostics.py`
-   - recurrent findings compile into RuleDiagnostics
+## Known semantic boundary
 
-3. Existing `pass_scheduler` tests remain the runtime semantic authority for pass execution behavior; this tranche does not replace that scheduler.
-
-## Cross-reference: documentation
-
-1. `docs/plans/2026-09-27-recurrent-execution-semantics.md`
-2. `docs/plans/2026-09-27-pr55-merge-readiness.md`
-3. `LearnerAI/Compiler/NATIVE_PER_SEMANTIC_GAP_MAP_2026-09-26.md`
-4. `LearnerAI/Compiler/RESEARCH_CHECKLIST.md`
-
-These documents preserve the boundary: bounded static analysis, not a second runtime scheduler or arbitrary world-state simulator.
-
-## Basilisk Validator disposition
-
-The earlier validator run `36295625907` was red at `validation/basilisk-validator.js:5153` with:
-
-`[Ranged] Crossbow action boundary must re-check its live role demand`
-
-This was not evidence that PR #55 broke the validator.
-
-The historical validator contract proves that the `8596a45` compatibility profile is a negative control:
-
-- commit `6030dc3` adds a profile self-test explicitly requiring the `8596a45` profile to exit nonzero on a real engine-limit violation and to report `[Rule too long]` under `--contract-only`;
-- commit `903b19e` introduces that compatibility profile;
-- commit `d2678dc` changes the workflow to execute the `8596a45` profile as a baseline validator.
-
-The full validator path reaches a different deterministic assertion first: `[Ranged] Crossbow action boundary must re-check its live role demand`. The profile self-test separately covers the `[Rule too long]` engine-limit condition under contract-only validation.
-
-The workflow was therefore incorrectly treating the expected full-validator negative-control failure as a failed CI job.
-
-PR #55 now changes the workflow so the baseline command is an explicit negative-control test:
-
-- nonzero exit is required;
-- the known full-run Ranged/Crossbow assertion must be present;
-- an unexpected failure is rejected;
-- an unexpected success is rejected.
-
-The fresh Basilisk Validator workflow must therefore be green after this CI correction. A green result means the negative control passed, not that the historical 8596a45 controller is itself clean under current compiler limits.
-
-## Final merge conditions
-
-- [ ] Fresh compiler workflow green on the final PR head.
-- [ ] Fresh Basilisk Validator workflow green on the final PR head.
-- [ ] No new compiler or native-validation findings.
-- [ ] PR description matches this evidence.
-- [ ] Required review approval present.
-- [ ] No unresolved review threads.
-- [ ] Final head is not behind `main`.
-- [ ] Merge only after all required repository checks are green.
+The recurrent analyzer is conservative. A runtime-dependent predicate must not be promoted into an engine fact. State-space exhaustion is reported as runtime-dependent rather than as a proof of non-runnability.
