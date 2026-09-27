@@ -21,6 +21,7 @@ from .strategic_number_semantics import (
     StrategicNumberSemanticReport,
 )
 from .rule_execution import EffectiveRule, RuleExecutionReport, analyze_rule_reachability
+from .recurrent_execution import RecurrentExecutionReport
 
 
 class RuleDiagnosticCategory(str, Enum):
@@ -28,6 +29,7 @@ class RuleDiagnosticCategory(str, Enum):
     PERSISTENT_STATE = "PERSISTENT_STATE"
     STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
     CONTROL_FLOW = "CONTROL_FLOW"
+    RECURRENT_EXECUTION = "RECURRENT_EXECUTION"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -54,6 +56,10 @@ class RuleDiagnosticCode(str, Enum):
     CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
     CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
     CONTROL_TRANSFER_UNREACHABLE_RULE = "RULE-CF-004"
+    RECURRENT_NEVER_RUNNABLE = "REX-001"
+    RECURRENT_RUNTIME_DEPENDENT = "REX-002"
+    RECURRENT_GUARANTEED_PREEMPTION = "REX-003"
+    RECURRENT_STATE_STARVATION = "REX-004"
 
 
 @dataclass(frozen=True)
@@ -206,6 +212,36 @@ def _persistent_diagnostic_for(
     )
 
 
+def _recurrent_diagnostic_for(
+    item,
+) -> RuleDiagnostic:
+    code_map = {
+        "REX-001": RuleDiagnosticCode.RECURRENT_NEVER_RUNNABLE,
+        "REX-002": RuleDiagnosticCode.RECURRENT_RUNTIME_DEPENDENT,
+        "REX-003": RuleDiagnosticCode.RECURRENT_GUARANTEED_PREEMPTION,
+        "REX-004": RuleDiagnosticCode.RECURRENT_STATE_STARVATION,
+    }
+    severity = (
+        DiagnosticSeverity.INFO
+        if item.code == "REX-002"
+        else DiagnosticSeverity.ERROR
+    )
+    return RuleDiagnostic(
+        rule_order=item.rule_order,
+        code=code_map[item.code],
+        severity=severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location,
+        category=RuleDiagnosticCategory.RECURRENT_EXECUTION,
+        source_code=item.code,
+        state_kind=item.state_kind,
+        state_identifier=item.state_identifier,
+        related_rule_order=item.related_rule_order,
+        related_operation="recurrent-execution",
+    )
+
+
 def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
     related_rule = item.related_rule_order if item.related_rule_order is not None else -1
     category_order = {
@@ -213,6 +249,7 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         RuleDiagnosticCategory.PERSISTENT_STATE: 1,
         RuleDiagnosticCategory.STRATEGIC_NUMBER: 1,
         RuleDiagnosticCategory.CONTROL_FLOW: 2,
+        RuleDiagnosticCategory.RECURRENT_EXECUTION: 3,
     }
     return (
         item.rule_order,
@@ -399,6 +436,7 @@ def analyze_rule_diagnostics(
     completion_witnesses: Mapping[int, object] | None = None,
     persistent_state_report: PersistentStateReport | None = None,
     strategic_number_report: StrategicNumberSemanticReport | None = None,
+    recurrent_execution_report: RecurrentExecutionReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -424,6 +462,12 @@ def analyze_rule_diagnostics(
     ):
         raise TypeError(
             "strategic_number_report must be a StrategicNumberSemanticReport"
+        )
+    if recurrent_execution_report is not None and not isinstance(
+        recurrent_execution_report, RecurrentExecutionReport
+    ):
+        raise TypeError(
+            "recurrent_execution_report must be a RecurrentExecutionReport"
         )
 
     diagnostics: list[RuleDiagnostic] = []
@@ -464,6 +508,12 @@ def analyze_rule_diagnostics(
     diagnostics.extend(_unreachable_rule_diagnostics(report))
 
     diagnostics.extend(_control_flow_diagnostics(report))
+
+    if recurrent_execution_report is not None:
+        diagnostics.extend(
+            _recurrent_diagnostic_for(item)
+            for item in recurrent_execution_report.diagnostics
+        )
 
     return RuleDiagnosticReport(
         tuple(sorted(diagnostics, key=_diagnostic_sort_key))
