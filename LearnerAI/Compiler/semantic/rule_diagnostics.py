@@ -16,6 +16,7 @@ from .persistent_state import (
     PersistentStateDiagnosticCode,
     PersistentStateReport,
 )
+from .duc import DucAnalysisReport, DucDiagnostic
 from .strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticReport,
@@ -28,6 +29,7 @@ class RuleDiagnosticCategory(str, Enum):
     PERSISTENT_STATE = "PERSISTENT_STATE"
     STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
     CONTROL_FLOW = "CONTROL_FLOW"
+    DUC = "DUC"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -54,6 +56,21 @@ class RuleDiagnosticCode(str, Enum):
     CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
     CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
     CONTROL_TRANSFER_UNREACHABLE_RULE = "RULE-CF-004"
+    DUC_LIST_UNINITIALIZED = "DUC-001"
+    DUC_FILTER_UNINITIALIZED = "DUC-002"
+    DUC_FILTER_RETAINED = "DUC-003"
+    DUC_FILTER_STALE = "DUC-004"
+    DUC_TARGET_UNSCOPED = "DUC-005"
+    DUC_TARGET_STALE = "DUC-006"
+    DUC_TARGET_UNKNOWN = "DUC-007"
+    DUC_SEARCH_ACCUMULATION = "DUC-008"
+    DUC_SEARCH_STARVED = "DUC-009"
+    DUC_RESET_INVALIDATION = "DUC-010"
+    DUC_OUTPUT_STALE = "DUC-011"
+    DUC_FILTER_PATH_DEPENDENCY = "DUC-012"
+    DUC_RECURRENT_TARGET_REUSE = "DUC-013"
+    DUC_CARDINALITY = "DUC-014"
+    DUC_COST = "DUC-015"
 
 
 @dataclass(frozen=True)
@@ -213,6 +230,7 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         RuleDiagnosticCategory.PERSISTENT_STATE: 1,
         RuleDiagnosticCategory.STRATEGIC_NUMBER: 1,
         RuleDiagnosticCategory.CONTROL_FLOW: 2,
+        RuleDiagnosticCategory.DUC: 3,
     }
     return (
         item.rule_order,
@@ -363,6 +381,27 @@ def _control_flow_diagnostics(
 
     return tuple(diagnostics)
 
+def _duc_diagnostic_for(item: DucDiagnostic) -> RuleDiagnostic:
+    try:
+        code = RuleDiagnosticCode(item.code)
+    except ValueError as exc:
+        raise ValueError(f"unknown DUC diagnostic code '{item.code}'") from exc
+    try:
+        severity = DiagnosticSeverity(item.severity)
+    except ValueError as exc:
+        raise ValueError(f"unknown DUC diagnostic severity '{item.severity}'") from exc
+    return RuleDiagnostic(
+        rule_order=item.rule_order,
+        code=code,
+        severity=severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location,
+        category=RuleDiagnosticCategory.DUC,
+        source_code=item.code,
+    )
+
+
 def _strategic_number_diagnostic_for(
     item,
     report: RuleExecutionReport,
@@ -399,6 +438,7 @@ def analyze_rule_diagnostics(
     completion_witnesses: Mapping[int, object] | None = None,
     persistent_state_report: PersistentStateReport | None = None,
     strategic_number_report: StrategicNumberSemanticReport | None = None,
+    duc_report: DucAnalysisReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -459,6 +499,14 @@ def analyze_rule_diagnostics(
         diagnostics.extend(
             _strategic_number_diagnostic_for(item, report)
             for item in strategic_number_report.diagnostics
+        )
+
+    if duc_report is not None:
+        if not isinstance(duc_report, DucAnalysisReport):
+            raise TypeError("duc_report must be a DucAnalysisReport")
+        diagnostics.extend(
+            _duc_diagnostic_for(item)
+            for item in duc_report.diagnostics
         )
 
     diagnostics.extend(_unreachable_rule_diagnostics(report))
