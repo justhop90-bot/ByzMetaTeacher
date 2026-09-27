@@ -211,5 +211,51 @@ class StrategicNumberSemanticsTests(unittest.TestCase):
         )
         self.assertEqual(comparison.operand.kind.value, "CONSTANT")
 
+    def test_up_compare_sn_all_comparison_operators(self):
+        cases = (
+            ("c:==", 8, 8, True),
+            ("c:!=", 8, 7, True),
+            ("c:<", 8, 9, True),
+            ("c:<=", 8, 8, True),
+            ("c:>", 8, 7, True),
+            ("c:>=", 8, 8, True),
+        )
+        for operator, current, operand, expected in cases:
+            with self.subTest(operator=operator):
+                comparison = parse_strategic_number_comparison(
+                    Expression(
+                        "(up-compare-sn ...)",
+                        "up-compare-sn",
+                        ("510", operator, str(operand)),
+                        location=SourceLocation(1, 1, "sn-test"),
+                    )
+                )
+                self.assertEqual(
+                    evaluate_strategic_number_comparison(
+                        comparison,
+                        current_value=current,
+                        goals={},
+                        strategic_numbers={},
+                    ),
+                    expected,
+                )
+
+    def test_up_compare_sn_missing_dynamic_dependency_fails_closed(self):
+        comparison = parse_strategic_number_comparison(
+            Expression(
+                "(up-compare-sn ...)",
+                "up-compare-sn",
+                ("510", "s:>=", "511"),
+                location=SourceLocation(1, 1, "sn-test"),
+            )
+        )
+        with self.assertRaises(StrategicNumberSemanticError):
+            evaluate_strategic_number_comparison(
+                comparison,
+                current_value=8,
+                goals={},
+                strategic_numbers={},
+            )
+
 if __name__ == "__main__":
     unittest.main()
