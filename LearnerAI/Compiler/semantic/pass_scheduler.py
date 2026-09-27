@@ -268,6 +268,25 @@ class PassScheduler:
         head = expression.head
         if head == "true":
             return True
+        if head in {"strategic-number", "up-compare-sn"}:
+            return self._evaluate_strategic_number_fact(expression)
+        if head == "up-modify-sn":
+            self._apply_strategic_number_mutation(
+                expression,
+                None,
+                -1,
+                section="GUARD",
+            )
+            return True
+        if head == "goal":
+            if len(expression.args) != 2:
+                raise SchedulerSemanticError(
+                    "goal requires GoalId and expected value"
+                )
+            return self._goals.get(str(expression.args[0]), 0) == self._parse_int(
+                expression.args[1],
+                "goal value",
+            )
         if head == "timer-triggered":
             timer_id = self._timer_id_arg(expression, 0)
             return read_timer_triggered(self._timers[timer_id])
@@ -309,6 +328,100 @@ class PassScheduler:
             return not self._evaluate_fact(expression.args[0])
         raise SchedulerSemanticError(
             f"unsupported scheduler fact '{head}'"
+        )
+
+    def _set_goal_action(self, expression: Expression) -> None:
+        if len(expression.args) != 2:
+            raise SchedulerSemanticError("set-goal requires GoalId and Value")
+        self._goals[str(expression.args[0])] = self._parse_int(
+            expression.args[1],
+            "goal value",
+        )
+
+    def _set_strategic_number_action(self, expression: Expression) -> None:
+        if len(expression.args) != 2:
+            raise SchedulerSemanticError(
+                "set-strategic-number requires SnId and Value"
+            )
+        self._strategic_numbers[str(expression.args[0])] = self._parse_int(
+            expression.args[1],
+            "strategic number value",
+        )
+
+    def _apply_strategic_number_mutation(
+        self,
+        expression: Expression,
+        rule_order: int | None,
+        within_rule_order: int,
+        *,
+        section: str = "ACTION",
+    ) -> None:
+        try:
+            mutation = parse_strategic_number_mutation(
+                expression,
+                rule_order=rule_order,
+                within_rule_order=within_rule_order,
+                section=section,
+            )
+            result = evaluate_strategic_number_mutation(
+                mutation,
+                current_value=self._strategic_numbers.get(mutation.target, 0),
+                goals=self._goals,
+                strategic_numbers=self._strategic_numbers,
+            )
+        except StrategicNumberSemanticError as exc:
+            raise SchedulerSemanticError(str(exc)) from exc
+        self._strategic_numbers[mutation.target] = result
+
+    def _evaluate_strategic_number_fact(self, expression: Expression) -> bool:
+        if len(expression.args) != 3:
+            raise SchedulerSemanticError(
+                f"{expression.head} requires SnId, compareOp, and Value"
+            )
+        sn_id = str(expression.args[0])
+        actual = self._strategic_numbers.get(sn_id, 0)
+        operator = str(expression.args[1])
+        value_token = expression.args[2]
+        prefix = ""
+        raw_operator = operator
+        if ":" in operator:
+            prefix, raw_operator = operator.split(":", 1)
+        if prefix not in {"", "c", "g", "s"}:
+            raise SchedulerSemanticError(
+                f"unsupported Strategic Number compare operand prefix '{prefix}:'"
+            )
+        expected = self._resolve_compare_value(prefix, value_token, expression.head)
+        if raw_operator in {"=", "=="}:
+            return actual == expected
+        if raw_operator == "!=":
+            return actual != expected
+        if raw_operator == "<":
+            return actual < expected
+        if raw_operator == "<=":
+            return actual <= expected
+        if raw_operator == ">":
+            return actual > expected
+        if raw_operator == ">=":
+            return actual >= expected
+        raise SchedulerSemanticError(
+            f"unsupported Strategic Number comparison operator '{operator}'"
+        )
+
+    def _resolve_compare_value(
+        self,
+        prefix: str,
+        value: object,
+        command: str,
+    ) -> int:
+        identifier = str(value)
+        if prefix in {"", "c"}:
+            return self._parse_int(value, f"{command} compare value")
+        if prefix == "g":
+            return int(self._goals.get(identifier, 0))
+        if prefix == "s":
+            return int(self._strategic_numbers.get(identifier, 0))
+        raise SchedulerSemanticError(
+            f"unsupported Strategic Number comparison prefix '{prefix}:'"
         )
 
     def _timer_id_arg(self, expression: Expression, index: int) -> str:
