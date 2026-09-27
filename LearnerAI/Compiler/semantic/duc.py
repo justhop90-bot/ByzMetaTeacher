@@ -1356,11 +1356,11 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for effect in rule_reports[rule_order].effects
     )
-    diagnostics = tuple(
+    diagnostics = [
         diagnostic
         for rule_order in sorted(rule_reports)
         for diagnostic in rule_reports[rule_order].diagnostics
-    )
+    ]
     terminal_states = [
         rule_outputs[rule_order]
         for rule_order in sorted(rule_outputs)
@@ -1373,7 +1373,8 @@ def analyze_duc(
         if terminal_states
         else _empty_state()
     )
-    for widening in loop_widenings.values():
+    for edge in sorted(loop_widenings):
+        widening = loop_widenings[edge]
         widened_fields = ", ".join(widening.widened_fields) or "NONE"
         diagnostics.append(
             DucDiagnostic(
@@ -1399,7 +1400,7 @@ def analyze_duc(
         targets=targets,
         observations=observations,
         effects=effects,
-        diagnostics=diagnostics,
+        diagnostics=tuple(diagnostics),
         branch_merges=tuple(branch_merges[order] for order in sorted(branch_merges)),
         loop_widenings=tuple(loop_widenings[key] for key in sorted(loop_widenings)),
     )
