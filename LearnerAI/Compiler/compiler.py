@@ -47,7 +47,10 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
     from Compiler.semantic.persistent_state import analyze_persistent_state
-    from Compiler.semantic.strategic_number_semantics import analyze_strategic_number_expressions
+    from Compiler.semantic.strategic_number_semantics import (
+        StrategicNumberCompilationError,
+        analyze_strategic_number_expressions,
+    )
     from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.emitter import emit
@@ -88,7 +91,10 @@ else:
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
     from .semantic.persistent_state import analyze_persistent_state
-    from .semantic.strategic_number_semantics import analyze_strategic_number_expressions
+    from .semantic.strategic_number_semantics import (
+        StrategicNumberCompilationError,
+        analyze_strategic_number_expressions,
+    )
     from .semantic.rule_diagnostics import analyze_rule_diagnostics
     from .semantic.rule_execution import analyze_effective_rules
     from .emitter import emit
@@ -459,6 +465,12 @@ def compile_package_with_report(
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
         )
+        if strategic_number_report.errors:
+            return semantic_failure_report(
+                StrategicNumberCompilationError(strategic_number_report.errors),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         artifact_result = append_persistent_rule_diagnostics(
             result,
             rule_report.diagnostics,
@@ -554,6 +566,12 @@ def compile_source_with_report(
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
         )
+        if strategic_number_report.errors:
+            return semantic_failure_report(
+                StrategicNumberCompilationError(strategic_number_report.errors),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         artifact_result = append_persistent_rule_diagnostics(
             result,
             rule_report.diagnostics,
@@ -645,6 +663,12 @@ def compile_to_file(
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
         )
+        if strategic_number_report.errors:
+            return semantic_failure_report(
+                StrategicNumberCompilationError(strategic_number_report.errors),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         artifact_result = append_persistent_rule_diagnostics(
             result,
             rule_report.diagnostics,
