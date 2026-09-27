@@ -44,6 +44,10 @@ class SourceGraphRequest:
 
 
 @dataclass(frozen=True)
+SourceUnit = SourceFile
+
+
+@dataclass(frozen=True)
 class _ConditionalFrame:
     predicate: ConditionPredicate
     parent_active: bool
