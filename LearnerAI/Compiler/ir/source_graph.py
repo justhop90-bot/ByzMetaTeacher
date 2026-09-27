@@ -218,12 +218,16 @@ class LoadSymbolEnvironment:
 @dataclass(frozen=True)
 class SourceInstance:
     identity: SourceInstanceId
-    source: SourceFileId
+    physical: SourceFile
     parent: SourceInstanceId | None
     via_edge: SourceEdgeId | None
     ancestry: tuple[SourceFileId, ...]
     depth: int
     occurrence: int
+
+    @property
+    def source(self) -> SourceFileId:
+        return self.physical.identity
 
     @property
     def instance_id(self) -> str:
@@ -232,14 +236,6 @@ class SourceInstance:
     @property
     def load_stack(self) -> tuple[Path, ...]:
         return tuple(item.path for item in self.ancestry)
-
-    @property
-    def physical(self) -> SourceFile:
-        # Compatibility object for existing consumers. The graph-level files
-        # table is authoritative; this lightweight projection carries identity.
-        raise AttributeError(
-            "SourceInstance.physical is graph-scoped; use EffectiveSourceGraph.files_by_id"
-        )
 
     def fingerprint_payload(self) -> dict[str, object]:
         return {
@@ -251,7 +247,6 @@ class SourceInstance:
             "depth": self.depth,
             "occurrence": self.occurrence,
         }
-
 
 @dataclass(frozen=True)
 class SourceEdge:
