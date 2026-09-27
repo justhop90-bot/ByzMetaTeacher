@@ -549,6 +549,112 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
 )
 
 
+@dataclass(frozen=True)
+class MultiFailureCase:
+    name: str
+    fixture: str
+    mutate: Callable[[EffectiveSourceGraph], EffectiveSourceGraph]
+    expected_codes: tuple[SourceGraphDiagnosticCode, ...]
+    primary: SourceGraphDiagnosticCode
+
+
+def _multi_instance_parentless(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_child(graph)
+    instances = list(graph.instances)
+    instances[index] = _forge_field(instances[index], "parent", None)
+    return replace(graph, instances=tuple(instances))
+
+
+def _multi_edge_childless(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_active_load(graph)
+    edges = list(graph.edges)
+    edges[index] = _forge_field(edges[index], "child", None)
+    return replace(graph, edges=tuple(edges))
+
+
+def _multi_edge_inactive(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_active_load(graph)
+    edges = list(graph.edges)
+    edges[index] = _forge_field(edges[index], "active", False)
+    return replace(graph, edges=tuple(edges))
+
+
+def _multi_slice_text(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    slices = list(graph.slices)
+    slices[0] = _forge_field(slices[0], "text", slices[0].text + "; forged\n")
+    return replace(graph, slices=tuple(slices))
+
+
+def _duplicate_malformed_instance_diagnostics(
+    graph: EffectiveSourceGraph,
+) -> EffectiveSourceGraph:
+    index = _index_of_child(graph)
+    child = _forge_field(graph.instances[index], "parent", None)
+    return replace(
+        graph,
+        instances=(graph.instances[0], child, child, *graph.instances[2:]),
+    )
+
+
+MULTI_FAILURE_CORPUS: tuple[MultiFailureCase, ...] = (
+    MultiFailureCase(
+        "parentless-child-produces-multiple-structural-failures",
+        "linear/root.perdsl",
+        _multi_instance_parentless,
+        (
+            Code.MULTIPLE_ROOTS,
+            Code.INSTANCE_MISSING_PARENT,
+            Code.LOAD_EDGE_INSTANCE_MISMATCH,
+            Code.DEPTH_MISMATCH,
+            Code.ROOT_HAS_PARENT,
+        ),
+        Code.MULTIPLE_ROOTS,
+    ),
+    MultiFailureCase(
+        "childless-active-edge-produces-edge-and-orphan-failures",
+        "linear/root.perdsl",
+        _multi_edge_childless,
+        (Code.ORPHAN_INSTANCE, Code.ACTIVE_EDGE_MISSING_CHILD),
+        Code.ORPHAN_INSTANCE,
+    ),
+    MultiFailureCase(
+        "inactive-edge-produces-condition-child-and-orphan-failures",
+        "linear/root.perdsl",
+        _multi_edge_inactive,
+        (
+            Code.ORPHAN_INSTANCE,
+            Code.INACTIVE_HAS_CHILD,
+            Code.EDGE_CONDITION_INVALID,
+        ),
+        Code.ORPHAN_INSTANCE,
+    ),
+    MultiFailureCase(
+        "slice-text-breaks-both-fingerprint-contracts",
+        "linear/root.perdsl",
+        _multi_slice_text,
+        (
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.EFFECTIVE_FINGERPRINT_MISMATCH,
+        ),
+        Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+    ),
+    MultiFailureCase(
+        "duplicate-malformed-instance-diagnostics-are-deduplicated",
+        "linear/root.perdsl",
+        _duplicate_malformed_instance_diagnostics,
+        (
+            Code.MULTIPLE_ROOTS,
+            Code.INSTANCE_MISSING_PARENT,
+            Code.LOAD_EDGE_INSTANCE_MISMATCH,
+            Code.DEPTH_MISMATCH,
+            Code.ROOT_HAS_PARENT,
+            Code.DUPLICATE_INSTANCE_ID,
+            Code.ORPHAN_INSTANCE,
+        ),
+        Code.MULTIPLE_ROOTS,
+    ),
+)
+
 class SourceGraphMutationCorpusTests(unittest.TestCase):
     FIXTURES = Path(__file__).parent / "fixtures" / "source_graph"
 
@@ -657,6 +763,34 @@ class SourceGraphMutationCorpusTests(unittest.TestCase):
                     codes,
                     f"{case.name}: expected {case.expected}, got {sorted(c.value for c in codes)}",
                 )
+
+    def test_multi_failure_corpus_has_documented_primary_codes(self):
+        for case in MULTI_FAILURE_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                self.assertTrue(validate_effective_source_graph(baseline).valid)
+                report = validate_effective_source_graph(case.mutate(baseline))
+                actual = tuple(item.code for item in report.errors)
+                self.assertEqual(actual, case.expected_codes)
+                self.assertEqual(report.primary_code, case.primary)
+
+    def test_multi_failure_diagnostics_are_stably_deduplicated_and_ordered(self):
+        for case in MULTI_FAILURE_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                mutated = case.mutate(baseline)
+                first = validate_effective_source_graph(mutated)
+                second = validate_effective_source_graph(mutated)
+                self.assertEqual(first.diagnostics, second.diagnostics)
+                self.assertEqual(len(first.diagnostics), len(set(first.diagnostics)))
+                self.assertEqual(tuple(item.code for item in first.diagnostics), case.expected_codes)
+                self.assertEqual(first.primary_code, case.primary)
+
+    def test_primary_code_is_empty_for_valid_graphs(self):
+        graph = self._resolve("linear/root.perdsl")
+        report = validate_effective_source_graph(graph)
+        self.assertTrue(report.valid)
+        self.assertIsNone(report.primary_code)
 
     def test_corpus_spans_all_declared_mutation_scopes(self):
         self.assertEqual(
