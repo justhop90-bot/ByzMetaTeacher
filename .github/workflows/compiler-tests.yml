@@ -169,9 +169,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m unittest discover -s LearnerAI/Compiler/tests -t LearnerAI/Compiler -p "test_persistent_state.py" 2>&1 | tee focused-persistent-state-tests.log
-          python -m unittest discover -s LearnerAI/Compiler/tests -t LearnerAI/Compiler -p "test_rule_diagnostics.py" 2>&1 | tee -a focused-persistent-state-tests.log
-          python -m unittest discover -s LearnerAI/Compiler/tests -t LearnerAI/Compiler -p "test_rule_execution.py" 2>&1 | tee -a focused-persistent-state-tests.log
+          export PYTHONPATH="$PWD/LearnerAI/Compiler${PYTHONPATH:+:$PYTHONPATH}"
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_persistent_state.py" 2>&1 | tee focused-persistent-state-tests.log
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_rule_diagnostics.py" 2>&1 | tee -a focused-persistent-state-tests.log
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_rule_execution.py" 2>&1 | tee -a focused-persistent-state-tests.log
       - name: Upload focused persistent-state verification log
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
