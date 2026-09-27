@@ -3889,13 +3889,6 @@
     (goal bt-mill-project-goal 1)
     (goal bt-mill-backoff-goal 0)
     (strategic-number sn-resource-control == 0)
-    (not (and
-        (current-age == feudal-age)
-        (or
-            (can-research-with-escrow castle-age)
-            (goal bt-castle-commitment-goal 1)
-        )
-    ))
     (up-pending-objects c: mill == 0)
     (civilian-population >= 10)
     (can-build-with-escrow mill)
@@ -3903,6 +3896,7 @@
     (set-strategic-number sn-resource-control bt-mill-claim)
     (release-escrow wood)
     (enable-timer bt-mill-watchdog-timer bt-mill-watchdog-seconds)
+    (up-assign-builders c: mill c: 1)
     (build mill)
 )
 
