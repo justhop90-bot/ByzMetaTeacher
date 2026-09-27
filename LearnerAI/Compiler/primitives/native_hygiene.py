@@ -904,6 +904,11 @@ def default_native_duc_group_contracts() -> Tuple["NativeDucGroupContract", ...]
             False,
             True,
             ("airef:duc:get-group-size",),
+            output_width=1,
+            output_goal_min=1,
+            output_goal_max=16000,
+            output_contract_id="up-get-group-size.output-goal",
+            output_evidence_ids=("airef:duc:get-group-size",),
         ),
         NativeDucGroupContract(
             "up-modify-group-flag",
@@ -952,6 +957,29 @@ class NativeDucGroupContract:
     invalidates_group: bool
     requires_group: bool
     evidence_ids: Tuple[str, ...]
+    output_width: int = 0
+    output_goal_min: int = 1
+    output_goal_max: int = 16000
+    output_contract_id: Optional[str] = None
+    output_evidence_ids: Tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.group_id_min <= self.group_id_max <= 19:
+            raise ValueError("DUC group contract must use group ids 0..19")
+        if self.capacity != 40:
+            raise ValueError("DUC group contract capacity must be 40")
+        if self.output_width == 0:
+            if self.output_contract_id is not None or self.output_evidence_ids:
+                raise ValueError("DUC group output metadata requires a positive output width")
+            return
+        if self.output_width != 1:
+            raise ValueError("DUC group-size Goal output width must be 1")
+        if not 1 <= self.output_goal_min <= self.output_goal_max <= 16000:
+            raise ValueError("DUC Goal output range must be within 1..16000")
+        if not self.output_contract_id:
+            raise ValueError("DUC Goal output contract requires an identity")
+        if not self.output_evidence_ids:
+            raise ValueError("DUC Goal output contract requires evidence")
 
 
 @dataclass(frozen=True)
@@ -1304,6 +1332,11 @@ class NativeContractCatalog:
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_groups
+            ),
+            *(
+                (contract.output_contract_id or f"{contract.command}.output", contract.output_evidence_ids)
+                for contract in self.duc_groups
+                if contract.output_width
             ),
         ):
             for evidence_id in evidence_ids:
