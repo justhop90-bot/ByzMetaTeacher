@@ -14,6 +14,8 @@ The compiler models the native UserPatch/DE contract, not a host-language approx
 - Strategic Numbers use IDs 0-511 and persistent integer values.
 - `set-strategic-number <SnId> <Value>` is direct assignment.
 - `up-modify-sn <SnId> <mathOp> <Value>` mutates only the target SN.
+- `up-compare-sn <SnId> <compareOp> <Value>` is a native UserPatch fact over persistent Strategic Number state. It uses typed `c:`, `g:`, and `s:` operand domains, with optional `c:` and required dynamic prefixes, and supports `>`, `>=`, `<`, `<=`, `==`, and `!=`.
+- `up-compare-sn` is a typed persistent-state read, not a mutation. Its target Strategic Number is a persistent read; `g:` and `s:` operands create explicit Goal/SN dependencies; later same-rule writers are rejected.
 - The operand domain is selected by the operator prefix: `c:` constant, `g:` Goal, `s:` Strategic Number.
 - Supported `mathOp` values are `=`, `+`, `-`, `*`, `/`, `z/`, `mod`, `min`, `max`, `neg`, `%*`, `%/`.
 - `min` stores the lesser value; `max` stores the greater value.
@@ -32,11 +34,13 @@ The compiler models the native UserPatch/DE contract, not a host-language approx
 - `StrategicNumberOperandKind`
 - `StrategicNumberOperand`
 - `StrategicNumberMutation`
+- `StrategicNumberComparison`
+- `StrategicNumberCompareOp`
 - `StrategicNumberDependency`
 - `StrategicNumberExpression`
 - diagnostic enums/classes for structural and semantic rejection.
 
-The typed mutation retains the target SN, operator, operand domain/value, source location, rule order, and action order. It never collapses `c:`, `g:`, and `s:` into an untyped string.
+The typed mutation retains the target SN, operator, operand domain/value, source location, rule order, and action order. Strategic Number comparisons retain the target, typed comparison operator, operand domain/value, source location, and rule order. Neither form collapses `c:`, `g:`, and `s:` into an untyped string.
 
 ## Semantic lowering
 
@@ -74,7 +78,8 @@ A dedicated CI fixture generator emits representative native rules covering ever
 
 The suite covers:
 
-- all operators and all operand domains;
+- all mutation operators and all mutation operand domains;
+- all six `up-compare-sn` comparison operators across constant, Goal, and Strategic Number operands;
 - same-rule sequential mutations;
 - cross-rule same-pass visibility;
 - Goal-to-SN and SN-to-SN dependency edges;
