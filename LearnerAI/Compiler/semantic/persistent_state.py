@@ -129,6 +129,24 @@ _STATE_SPECS = {
         0,
         None,
     ),
+    "enable-timer": (
+        PersistentStateKind.TIMER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
+    "disable-timer": (
+        PersistentStateKind.TIMER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
+    "timer-triggered": (
+        PersistentStateKind.TIMER,
+        PersistentStateAccessKind.READ,
+        0,
+        None,
+    ),
     "up-set-timer": (
         PersistentStateKind.TIMER,
         PersistentStateAccessKind.WRITE,
