@@ -168,7 +168,6 @@ from .strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticError,
     StrategicNumberSemanticReport,
-    analyze_strategic_number_comparison,
     analyze_strategic_number_expressions,
     evaluate_strategic_number_comparison,
     evaluate_strategic_number_mutation,
