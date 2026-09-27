@@ -160,9 +160,6 @@ class ConditionContext:
     predicates: tuple[ConditionPredicate, ...] = ()
 
     def __post_init__(self) -> None:
-        names = [item.symbol for item in self.predicates]
-        if len(names) != len(set(names)):
-            raise ValueError("duplicate condition predicate")
         if any(not item.symbol for item in self.predicates):
             raise ValueError("condition predicate symbol cannot be empty")
 
