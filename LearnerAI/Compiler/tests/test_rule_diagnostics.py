@@ -330,7 +330,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertEqual(finding.source_code, "PSTATE-005")
         self.assertEqual(finding.category.value, "PERSISTENT_STATE")
 
-    def test_open_loop_diagnostic_does_not_fire_when_reachable_consumer_exists(self):
+    def test_path_sensitive_persistent_diagnostic_maps_to_rule_diagnostic(self):,        report = analyze_effective_rules(,            self._graph(,                "(defrule (true) => (set-goal seed 1))\n",                "(defrule (current-age >= castle-age) => (set-goal gate 1) (up-jump-rule 1))\n",                "(defrule (goal gate 1) => (set-goal observed 1))\n",                "(defrule (true) => (set-goal tail 1))\n",            ),        ),        persistent_state = analyze_persistent_state(report),,        diagnostics = analyze_rule_diagnostics(,            report,,            persistent_state_report=persistent_state,,        ),,        finding = next(,            item,            for item in diagnostics.diagnostics,            if item.code is RuleDiagnosticCode.PERSISTENT_SAME_PASS_CONSUMER_PATH_BLOCKED,        ),        self.assertEqual(finding.rule_order, 2),        self.assertEqual(finding.related_rule_order, 3),        self.assertEqual(finding.severity, DiagnosticSeverity.WARNING),        self.assertEqual(finding.state_kind, "GOAL"),        self.assertEqual(finding.state_identifier, "gate"),        self.assertEqual(finding.source_code, "PSTATE-006"),        self.assertEqual(finding.category.value, "PERSISTENT_STATE"),    def test_open_loop_diagnostic_does_not_fire_when_reachable_consumer_exists(self):
         report = analyze_effective_rules(
             self._graph(
                 "(defrule (true) => (set-goal open-loop 1))\n"
