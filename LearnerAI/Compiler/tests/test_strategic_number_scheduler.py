@@ -111,5 +111,33 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
         trace = scheduler.run_pass()
         self.assertEqual(trace.fired_rule_orders, (1, 2))
 
+    def test_up_compare_sn_future_goal_writer_is_rejected(self):
+        report = self._rules(
+            "(defrule (true) => "
+            "(up-compare-sn 510 g:>= goal-x) "
+            "(set-goal goal-x 5))\n"
+        )
+        semantic = analyze_strategic_number_expressions(report)
+
+        self.assertTrue(semantic.errors)
+        self.assertEqual(
+            semantic.errors[0].code.value,
+            "SNSEM-009",
+        )
+
+    def test_up_compare_sn_future_sn_writer_is_rejected(self):
+        report = self._rules(
+            "(defrule (true) => "
+            "(up-compare-sn 510 s:>= 511) "
+            "(set-strategic-number 511 5))\n"
+        )
+        semantic = analyze_strategic_number_expressions(report)
+
+        self.assertTrue(semantic.errors)
+        self.assertEqual(
+            semantic.errors[0].code.value,
+            "SNSEM-009",
+        )
+
 if __name__ == "__main__":
     unittest.main()
