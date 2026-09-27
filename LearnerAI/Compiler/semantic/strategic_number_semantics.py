@@ -337,14 +337,18 @@ def _writers_in_rule(rule: EffectiveRule) -> tuple[StrategicNumberAccess, ...]:
                     location=expression.location or rule.source_location,
                 )
             )
-        elif expression.head == "up-modify-sn" and len(expression.args) == 3:
-            mutation = parse_strategic_number_mutation(
-                expression,
-                rule_order=rule.rule_order,
-                within_rule_order=index,
-                section="GUARD",
+        elif expression.head == "up-modify-sn" and expression.args:
+            accesses.append(
+                StrategicNumberAccess(
+                    identifier=str(expression.args[0]),
+                    kind=StrategicNumberAccessKind.WRITE,
+                    rule_order=rule.rule_order,
+                    within_rule_order=index,
+                    section="GUARD",
+                    command=expression.head,
+                    location=expression.location or rule.source_location,
+                )
             )
-            accesses.append(mutation.target_access)
     for action in rule.actions:
         expression = action.expression
         if expression.head == "set-strategic-number" and len(expression.args) >= 1:
@@ -359,14 +363,18 @@ def _writers_in_rule(rule: EffectiveRule) -> tuple[StrategicNumberAccess, ...]:
                     location=expression.location or rule.source_location,
                 )
             )
-        elif expression.head == "up-modify-sn" and len(expression.args) == 3:
-            mutation = parse_strategic_number_mutation(
-                expression,
-                rule_order=rule.rule_order,
-                within_rule_order=action.within_rule_order,
-                section="ACTION",
+        elif expression.head == "up-modify-sn" and expression.args:
+            accesses.append(
+                StrategicNumberAccess(
+                    identifier=str(expression.args[0]),
+                    kind=StrategicNumberAccessKind.WRITE,
+                    rule_order=rule.rule_order,
+                    within_rule_order=action.within_rule_order,
+                    section="ACTION",
+                    command=expression.head,
+                    location=expression.location or rule.source_location,
+                )
             )
-            accesses.append(mutation.target_access)
     return tuple(accesses)
 
 
