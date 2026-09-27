@@ -45,8 +45,8 @@ Community references:
 | Native semantic family | Native/community knowledge | Current compiler coverage | Gap | Required owner |
 |---|---|---|---|---|
 | Command syntax/parameter typing | Native command and parameter contracts | CONNECTED | Full generic command coverage remains broader than semantic adapters | Native schema / support-state registry |
-| Rule recurrence | Facts/actions are repeatedly evaluated as rules; firing depends on current facts and rule state | PARTIAL | No explicit recurrent eligibility model; no complete firing/preemption reasoning | Rule Execution Semantics |
-| Rule source order | Emitted rule order matters to first visibility and persistent state interactions | PARTIAL/IMPLEMENTED | Does not yet model later overwrite, starvation, or unreachable rules | Rule Execution Semantics |
+| Rule recurrence | Facts/actions are repeatedly evaluated as rules; firing depends on current facts and rule state | PARTIAL / IMPLEMENTED CORE | Explicit recurrent/one-shot rule behavior, self-disable, same-pass visibility, and timer/pass scheduling are modeled; complete runtime firing and predicate satisfiability reasoning remains outside this tranche | Rule Execution Semantics |
+| Rule source order | Emitted rule order matters to first visibility and persistent state interactions | STRONG CORE / PARTIAL | Later overwrite, recurrent-writer starvation, global static reachability, and same-pass consumer-path blocking are modeled; arbitrary runtime predicate satisfiability remains outside scope | Rule Execution Semantics |
 | Same-rule sequencing | Commands in one rule execute in emitted sequence | IMPLEMENTED | Need broader command-specific sequencing contracts | Rule Execution Semantics |
 | disable-self | A rule can permanently disable itself after firing | EVIDENCE-ONLY | Lifetime and downstream reachability are not modeled | Rule Execution Semantics |
 | Goal state | Persistent integer state; many commands read/write Goal operands; some commands write consecutive Goal spans | STRONG STORAGE / PARTIAL SEMANTICS | Command-specific mutation/output behavior and scratch-vs-persistent roles are not fully modeled | Engine State Semantics |
