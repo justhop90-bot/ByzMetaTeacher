@@ -13,7 +13,13 @@ from enum import Enum
 
 from ..ast import Expression, SourceLocation
 from ..diagnostics import DiagnosticSeverity
-from .rule_execution import EffectiveRule, RuleExecutionReport, RulePassBehavior
+from .rule_execution import (
+    EffectiveRule,
+    RuleExecutionReport,
+    RulePassBehavior,
+    StaticControlTransfer,
+    analyze_rule_reachability,
+)
 
 
 class PersistentStateKind(str, Enum):
@@ -41,6 +47,7 @@ class PersistentStateDiagnosticCode(str, Enum):
     CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
     CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
     OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
+    SAME_PASS_CONSUMER_PATH_BLOCKED = "PSTATE-006"
 
 
 @dataclass(frozen=True)
@@ -362,6 +369,69 @@ def _guard_is_guaranteed(rule: EffectiveRule) -> bool:
     return len(rule.facts) == 1 and rule.facts[0].head == "true"
 
 
+def _control_transfer_by_rule(
+    report: RuleExecutionReport,
+) -> dict[int, StaticControlTransfer]:
+    transfers: dict[int, StaticControlTransfer] = {}
+    for transfer in report.control_transfers:
+        current = transfers.get(transfer.rule_order)
+        if current is None or transfer.within_rule_order > current.within_rule_order:
+            transfers[transfer.rule_order] = transfer
+    return transfers
+
+
+def _same_pass_consumer_reachable(
+    report: RuleExecutionReport,
+    writer: PersistentStateAccess,
+    reader: PersistentStateAccess,
+) -> bool:
+    if writer.rule_order == reader.rule_order:
+        return (
+            reader.section == "ACTION"
+            and writer.section == "ACTION"
+            and reader.within_rule_order > writer.within_rule_order
+        )
+
+    if report.reachability is None:
+        reachability = analyze_rule_reachability(
+            report.rules,
+            report.control_transfers,
+        )
+    else:
+        reachability = report.reachability
+
+    outgoing = dict(reachability.outgoing_rule_orders)
+    transfers = _control_transfer_by_rule(report)
+    writer_rule = next(
+        rule
+        for rule in report.rules
+        if rule.rule_order == writer.rule_order
+    )
+    final_transfer = transfers.get(writer.rule_order)
+
+    if final_transfer is not None and final_transfer.target_rule_order is not None:
+        initial_successors = (final_transfer.target_rule_order,)
+    elif writer.rule_order < len(report.rules):
+        initial_successors = (writer.rule_order + 1,)
+    else:
+        initial_successors = ()
+
+    seen: set[int] = set()
+    worklist = list(initial_successors)
+    while worklist:
+        rule_order = worklist.pop()
+        if rule_order in seen:
+            continue
+        seen.add(rule_order)
+        if rule_order == reader.rule_order:
+            return True
+        for target in outgoing.get(rule_order, ()):
+            if target not in seen:
+                worklist.append(target)
+
+    return False
+
+
 def _diagnostic_key(item: PersistentStateDiagnostic) -> tuple[object, ...]:
     related = item.related_access
     return (
@@ -532,6 +602,51 @@ def analyze_persistent_state(
                             location=reader.location,
                         )
                     )
+
+        downstream_readers_by_writer = {
+            writer: tuple(
+                reader
+                for reader in readers
+                if reader.sort_key > writer.sort_key
+                and (
+                    writer.rule_order != reader.rule_order
+                    or (
+                        writer.section == "ACTION"
+                        and reader.section == "ACTION"
+                        and reader.within_rule_order > writer.within_rule_order
+                    )
+                )
+            )
+            for writer in writers
+        }
+        for writer, downstream_readers in downstream_readers_by_writer.items():
+            if (
+                writer.pass_behavior is not RulePassBehavior.RECURRENT
+                or not downstream_readers
+            ):
+                continue
+            if any(
+                _same_pass_consumer_reachable(report, writer, reader)
+                for reader in downstream_readers
+            ):
+                continue
+            diagnostics.append(
+                PersistentStateDiagnostic(
+                    code=PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED,
+                    severity=DiagnosticSeverity.WARNING,
+                    message=(
+                        f"rule {writer.rule_order} writes "
+                        f"{state.kind.value.lower()} state '{state.identifier}', "
+                        "but no same-pass control-flow path from that firing "
+                        "reaches any downstream consumer; later-pass consumption "
+                        "is not ruled out"
+                    ),
+                    rule_order=writer.rule_order,
+                    access=writer,
+                    related_access=downstream_readers[0],
+                    location=writer.location,
+                )
+            )
 
         reachable_orders = (
             set(report.reachability.reachable_rule_orders)
