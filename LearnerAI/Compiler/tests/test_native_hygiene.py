@@ -488,6 +488,12 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:duc:set-target-object",
                 "airef:duc:set-target-point",
                 "airef:duc:get-search-state",
+                "airef:duc:create-group",
+                "airef:duc:reset-group",
+                "airef:duc:set-group",
+                "airef:duc:group-size",
+                "airef:duc:get-group-size",
+                "airef:duc:modify-group-flag",
             },
         )
         self.assertTrue(
