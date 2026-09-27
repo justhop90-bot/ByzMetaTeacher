@@ -201,10 +201,8 @@ def _search_cardinality(
         if current is not None and current.cardinality is not None
         else DucCardinalityRange(0, 0)
     )
-    last_search = DucCardinalityRange(0, capacity)
-    if previous.maximum >= capacity:
-        last_search = DucCardinalityRange(0, 0)
     maximum_added = max(0, capacity - previous.minimum)
+    last_search = DucCardinalityRange(0, maximum_added)
     total = DucCardinalityRange(
         previous.minimum,
         min(capacity, previous.maximum + maximum_added),
