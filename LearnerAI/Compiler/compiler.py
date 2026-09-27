@@ -52,6 +52,10 @@ if __package__ in (None, ""):
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
+    from Compiler.semantic.source_graph_validation import (
+        SourceGraphValidationError,
+        validate_effective_source_graph,
+    )
 else:
     from dataclasses import replace
     from .backends.errors import NativeBackendError
@@ -88,6 +92,10 @@ else:
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
+    from .semantic.source_graph_validation import (
+        SourceGraphValidationError,
+        validate_effective_source_graph,
+    )
 
 
 _DEFAULT_NATIVE_BACKEND_ROOT = (
@@ -283,6 +291,9 @@ def _compile_package_parts(
     registry: PrimitiveRegistry | None = None,
 ):
     graph = SourceGraphResolver().resolve(request)
+    graph_report = validate_effective_source_graph(graph)
+    if not graph_report.valid:
+        raise SourceGraphValidationError(graph_report)
     ast = _parse_source_slices(graph.slices)
     registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=None)
