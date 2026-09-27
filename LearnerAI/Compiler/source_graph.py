@@ -10,112 +10,35 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 
 from .ast import SourceLocation
 from .diagnostics import DiagnosticSeverity, DiagnosticSource, SemanticDiagnostic
 from .errors import CompileError
-
-
-class LoadKind(str, Enum):
-    FILE = "FILE"
-    RAW_LOAD = "RAW_LOAD"
-    CONDITIONAL_DEFINED = "CONDITIONAL_DEFINED"
-    CONDITIONAL_NOT_DEFINED = "CONDITIONAL_NOT_DEFINED"
-    CONDITIONAL_ELSE = "CONDITIONAL_ELSE"
-    RANDOM = "RANDOM"
-
-
-class LoadSymbolState(str, Enum):
-    DEFINED = "DEFINED"
-    UNDEFINED = "UNDEFINED"
-
-
-@dataclass(frozen=True)
-class LoadSymbolEnvironment:
-    values: tuple[tuple[str, LoadSymbolState], ...] = ()
-
-    def __post_init__(self) -> None:
-        normalized = tuple(sorted(self.values, key=lambda item: item[0]))
-        names = [name for name, _state in normalized]
-        if len(names) != len(set(names)):
-            raise ValueError("duplicate load-symbol definition")
-        if any(not name or _SYMBOL_RE.fullmatch(name) is None for name in names):
-            raise ValueError("invalid load-symbol name")
-        object.__setattr__(self, "values", normalized)
-
-    def state(self, name: str) -> LoadSymbolState | None:
-        for candidate, state in self.values:
-            if candidate == name:
-                return state
-        return None
-
-    def fingerprint_payload(self) -> tuple[tuple[str, str], ...]:
-        return tuple((name, state.value) for name, state in self.values)
-
-
-@dataclass(frozen=True)
-class SourceGraphRequest:
-    entrypoint: Path
-    search_roots: tuple[Path, ...] = ()
-    load_symbols: LoadSymbolEnvironment = field(default_factory=LoadSymbolEnvironment)
-    allow_load_random: bool = False
-
-
-@dataclass(frozen=True)
-class SourceUnit:
-    path: Path
-    sha256: str
-    text: str
-
-
-@dataclass(frozen=True)
-class SourceInstance:
-    instance_id: str
-    physical: SourceUnit
-    load_stack: tuple[Path, ...]
-    occurrence: int
-
-
-@dataclass(frozen=True)
-class SourceEdge:
-    source_instance: str
-    target_path: Path | None
-    kind: LoadKind
-    location: SourceLocation
-    condition_symbol: str | None
-    active: bool
-    condition_kind: LoadKind | None = None
-
-
-@dataclass(frozen=True)
-class EffectiveSourceSlice:
-    ordinal: int
-    instance_id: str
-    path: Path
-    start_line: int
-    end_line: int
-    start_column: int
-    text: str
-
-
-@dataclass(frozen=True)
-class EffectiveSourceGraph:
-    root: SourceInstance
-    instances: tuple[SourceInstance, ...]
-    edges: tuple[SourceEdge, ...]
-    slices: tuple[EffectiveSourceSlice, ...]
-    symbol_environment: LoadSymbolEnvironment
-    fingerprint: str
+from .ir.source_graph import (
+    ConditionContext,
+    ConditionPredicate,
+    EffectiveSourceGraph,
+    EffectiveSourceSlice,
+    LoadKind,
+    LoadSymbolEnvironment,
+    LoadSymbolState,
+    SourceEdge,
+    SourceEdgeId,
+    SourceFile,
+    SourceFileId,
+    SourceInstance,
+    SourceInstanceId,
+    SourceRange,
+    structural_edge_id,
+    structural_instance_id,
+)
 
 
 @dataclass(frozen=True)
 class _ConditionalFrame:
-    kind: LoadKind
-    symbol: str
+    predicate: ConditionPredicate
     parent_active: bool
-    branch_active: bool
     else_seen: bool
     line: int
 
@@ -196,24 +119,20 @@ class SourceGraphResolver:
     MAX_CONDITIONAL_DEPTH = 50
 
     def __init__(self) -> None:
-        self._instance_counter = 0
-        self._slice_counter = 0
-        self._occurrences_by_path: dict[Path, int] = {}
         self._instances: list[SourceInstance] = []
         self._edges: list[SourceEdge] = []
         self._slices: list[EffectiveSourceSlice] = []
+        self._files_by_id: dict[SourceFileId, SourceFile] = {}
 
     def resolve(self, request: SourceGraphRequest) -> EffectiveSourceGraph:
-        self._instance_counter = 0
-        self._slice_counter = 0
-        self._occurrences_by_path = {}
         self._instances = []
         self._edges = []
         self._slices = []
+        self._files_by_id = {}
 
         search_roots = tuple(path.resolve() for path in request.search_roots)
         entrypoint = request.entrypoint.resolve()
-        root_unit = self._load_unit(
+        root_file = self._load_unit(
             entrypoint,
             containing_source=entrypoint,
             search_roots=search_roots,
@@ -221,67 +140,21 @@ class SourceGraphResolver:
             error_column=1,
         )
         root = self._expand_instance(
-            root_unit,
-            load_stack=(),
+            root_file,
+            parent=None,
+            via_edge=None,
             search_roots=search_roots,
             symbols=request.load_symbols,
             allow_load_random=request.allow_load_random,
         )
 
-        fingerprint_payload = {
-            "root": root.instance_id,
-            "symbols": request.load_symbols.fingerprint_payload(),
-            "instances": [
-                {
-                    "id": item.instance_id,
-                    "path": str(item.physical.path),
-                    "sha256": item.physical.sha256,
-                    "stack": [str(path) for path in item.load_stack],
-                    "occurrence": item.occurrence,
-                }
-                for item in self._instances
-            ],
-            "edges": [
-                {
-                    "source": item.source_instance,
-                    "target": str(item.target_path) if item.target_path else None,
-                    "kind": item.kind.value,
-                    "condition_kind": item.condition_kind.value if item.condition_kind else None,
-                    "line": item.location.line,
-                    "column": item.location.column,
-                    "condition_symbol": item.condition_symbol,
-                    "active": item.active,
-                }
-                for item in self._edges
-            ],
-            "slices": [
-                {
-                    "ordinal": item.ordinal,
-                    "instance": item.instance_id,
-                    "path": str(item.path),
-                    "start_line": item.start_line,
-                    "end_line": item.end_line,
-                    "start_column": item.start_column,
-                    "sha256": hashlib.sha256(item.text.encode("utf-8")).hexdigest(),
-                }
-                for item in self._slices
-            ],
-        }
-        fingerprint = hashlib.sha256(
-            json.dumps(
-                fingerprint_payload,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8"),
-        ).hexdigest()
-
-        return EffectiveSourceGraph(
+        return EffectiveSourceGraph.build(
             root=root,
+            files=tuple(self._files_by_id.values()),
             instances=tuple(self._instances),
             edges=tuple(self._edges),
             slices=tuple(self._slices),
-            symbol_environment=request.load_symbols,
-            fingerprint=fingerprint,
+            symbols=request.load_symbols,
         )
 
     def _load_unit(
@@ -292,7 +165,7 @@ class SourceGraphResolver:
         search_roots: tuple[Path, ...],
         error_line: int,
         error_column: int,
-    ) -> SourceUnit:
+    ) -> SourceFile:
         resolved = self._resolve_path(
             target,
             containing_source.parent,
@@ -306,12 +179,19 @@ class SourceGraphResolver:
                 line=error_line,
                 column=error_column,
             )
-        text = resolved.read_text(encoding="utf-8")
-        return SourceUnit(
-            path=resolved,
-            sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
-            text=text,
-        )
+        try:
+            text = resolved.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise SourceGraphError(
+                "SOURCE-GRAPH-001",
+                f"unable to read load target '{target}': {exc}",
+                path=containing_source,
+                line=error_line,
+                column=error_column,
+            ) from exc
+        source = SourceFile.from_path_text(resolved, text)
+        self._files_by_id[source.identity] = source
+        return source
 
     @staticmethod
     def _resolve_path(
@@ -322,11 +202,9 @@ class SourceGraphResolver:
         if target.is_absolute():
             candidate = target.resolve()
             return candidate if candidate.exists() else None
-
         local = (containing_directory / target).resolve()
         if local.exists():
             return local
-
         for root in search_roots:
             candidate = (root / target).resolve()
             if candidate.exists():
@@ -335,31 +213,61 @@ class SourceGraphResolver:
 
     def _new_instance(
         self,
-        physical: SourceUnit,
-        load_stack: tuple[Path, ...],
+        physical: SourceFile,
+        *,
+        parent: SourceInstance | None,
+        via_edge: SourceEdgeId | None,
     ) -> SourceInstance:
-        occurrence = self._occurrences_by_path.get(physical.path, 0)
-        self._occurrences_by_path[physical.path] = occurrence + 1
+        occurrence = sum(
+            1 for item in self._instances if item.source == physical.identity
+        )
+        identity = structural_instance_id(
+            source=physical.identity,
+            parent=parent.identity if parent else None,
+            via_edge=via_edge,
+        )
+        ancestry = (
+            (physical.identity,)
+            if parent is None
+            else parent.ancestry + (physical.identity,)
+        )
         instance = SourceInstance(
-            instance_id=f"{physical.path.as_posix()}@{self._instance_counter}",
+            identity=identity,
             physical=physical,
-            load_stack=load_stack + (physical.path,),
+            parent=parent.identity if parent else None,
+            via_edge=via_edge,
+            ancestry=ancestry,
+            depth=0 if parent is None else parent.depth + 1,
             occurrence=occurrence,
         )
-        self._instance_counter += 1
         self._instances.append(instance)
         return instance
 
     def _expand_instance(
         self,
-        physical: SourceUnit,
+        physical: SourceFile,
         *,
-        load_stack: tuple[Path, ...],
+        parent: SourceInstance | None,
+        via_edge: SourceEdgeId | None,
         search_roots: tuple[Path, ...],
         symbols: LoadSymbolEnvironment,
         allow_load_random: bool,
     ) -> SourceInstance:
-        if len(load_stack) > self.MAX_LOAD_DEPTH:
+        if parent is not None and physical.path in {
+            source.path for source in parent.ancestry
+        }:
+            cycle = " -> ".join(
+                str(source.path)
+                for source in (*parent.ancestry, physical.identity)
+            )
+            raise SourceGraphError(
+                "SOURCE-GRAPH-002",
+                f"load cycle detected: {cycle}",
+                path=physical.path,
+                line=1,
+                column=1,
+            )
+        if parent is not None and parent.depth + 1 > self.MAX_LOAD_DEPTH:
             raise SourceGraphError(
                 "SOURCE-GRAPH-003",
                 f"nested load depth exceeds {self.MAX_LOAD_DEPTH}",
@@ -368,68 +276,72 @@ class SourceGraphResolver:
                 column=1,
             )
 
-        if physical.path in load_stack:
-            cycle = " -> ".join(str(path) for path in (*load_stack, physical.path))
-            raise SourceGraphError(
-                "SOURCE-GRAPH-002",
-                f"load cycle detected: {cycle}",
-                path=physical.path,
-                line=1,
-                column=1,
-            )
-
-        instance = self._new_instance(physical, load_stack)
+        instance = self._new_instance(
+            physical,
+            parent=parent,
+            via_edge=via_edge,
+        )
         masked, active_lines, condition_contexts, directive_edges = _mask_conditionals(
-            physical.text,
-            physical.path,
+            physical,
             symbols,
             self.MAX_CONDITIONAL_DEPTH,
-            instance.instance_id,
+            instance.identity,
         )
         self._edges.extend(directive_edges)
 
         occurrences = _scan_load_occurrences(physical.text, path=physical.path)
         cursor = 0
 
-        for occurrence in occurrences:
+        for lexical_order, occurrence in enumerate(occurrences):
             context = condition_contexts[occurrence.line - 1]
             active = active_lines[occurrence.line - 1]
-
+            physical_range = _segment_range(
+                physical,
+                occurrence.start,
+                occurrence.end,
+            )
             self._append_slice(
                 instance,
-                physical.path,
                 masked[cursor:occurrence.start],
                 cursor,
-                physical.text,
+                physical,
             )
             cursor = occurrence.end
 
-            target_path = None
+            target_source = None
             if occurrence.target is not None:
-                target_path = self._resolve_path(
+                target_source = self._load_unit(
                     Path(occurrence.target),
-                    physical.path.parent,
-                    search_roots,
+                    containing_source=physical.path,
+                    search_roots=search_roots,
+                    error_line=occurrence.line,
+                    error_column=occurrence.column,
                 )
 
-            location = SourceLocation(
-                occurrence.line,
-                occurrence.column,
-                str(physical.path),
-            )
-            self._edges.append(
-                SourceEdge(
-                    source_instance=instance.instance_id,
-                    target_path=target_path,
-                    kind=occurrence.kind,
-                    location=location,
-                    condition_symbol=context[1] if context else None,
-                    active=active,
-                    condition_kind=context[0] if context else None,
-                )
+            condition = context or ConditionContext()
+            edge_id = structural_edge_id(
+                source=instance.identity,
+                span=physical_range,
+                kind=occurrence.kind,
+                condition=condition,
+                target_text=occurrence.target,
             )
 
             if not active:
+                self._edges.append(
+                    SourceEdge(
+                        identity=edge_id,
+                        source=instance.identity,
+                        target=target_source.identity if target_source else None,
+                        child=None,
+                        kind=occurrence.kind,
+                        span=physical_range,
+                        condition=condition,
+                        active=False,
+                        lexical_order=lexical_order,
+                        target_text=occurrence.target,
+                    )
+                )
                 continue
 
             if occurrence.kind is LoadKind.RANDOM:
@@ -444,7 +356,7 @@ class SourceGraphResolver:
                     column=occurrence.column,
                 )
 
-            if target_path is None:
+            if target_source is None:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-001",
                     f"missing load target '{occurrence.target}'",
@@ -453,69 +365,55 @@ class SourceGraphResolver:
                     column=occurrence.column,
                 )
 
-            child = self._load_unit(
-                target_path,
-                containing_source=physical.path,
-                search_roots=search_roots,
-                error_line=occurrence.line,
-                error_column=occurrence.column,
-            )
-            if child.path in (*load_stack, physical.path):
-                cycle = " -> ".join(
-                    str(path) for path in (*load_stack, physical.path, child.path)
-                )
-                raise SourceGraphError(
-                    "SOURCE-GRAPH-002",
-                    f"load cycle detected: {cycle}",
-                    path=physical.path,
-                    line=occurrence.line,
-                    column=occurrence.column,
-                )
-
-            self._expand_instance(
-                child,
-                load_stack=(*load_stack, physical.path),
+            child = self._expand_instance(
+                target_source,
+                parent=instance,
+                via_edge=edge_id,
                 search_roots=search_roots,
                 symbols=symbols,
                 allow_load_random=allow_load_random,
             )
+            self._edges.append(
+                SourceEdge(
+                    identity=edge_id,
+                    source=instance.identity,
+                    target=target_source.identity,
+                    child=child.identity,
+                    kind=occurrence.kind,
+                    span=physical_range,
+                    condition=condition,
+                    active=True,
+                    lexical_order=lexical_order,
+                    target_text=occurrence.target,
+                )
+            )
 
         self._append_slice(
             instance,
-            physical.path,
             masked[cursor:],
             cursor,
-            physical.text,
+            physical,
         )
         return instance
 
     def _append_slice(
         self,
         instance: SourceInstance,
-        path: Path,
         text: str,
         start_offset: int,
-        physical_text: str,
+        physical: SourceFile,
     ) -> None:
         if not text.strip():
             return
-        start_line = physical_text.count("\n", 0, start_offset) + 1
-        last_newline = physical_text.rfind("\n", 0, start_offset)
-        start_column = start_offset - last_newline
-        end_line = start_line + text.count("\n")
+        end_offset = start_offset + len(text)
         self._slices.append(
             EffectiveSourceSlice(
-                ordinal=self._slice_counter,
-                instance_id=instance.instance_id,
-                path=path,
-                start_line=start_line,
-                end_line=end_line,
-                start_column=start_column,
+                ordinal=len(self._slices),
+                instance=instance.identity,
+                physical_range=_segment_range(physical, start_offset, end_offset),
                 text=text,
             )
         )
-        self._slice_counter += 1
-
 
 def _mask_conditionals(
     source: str,
