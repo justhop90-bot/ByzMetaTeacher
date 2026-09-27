@@ -3,6 +3,7 @@ from dataclasses import replace
 
 from Compiler.ir.duc import (
     DucCardinalityRange,
+    DucGoalOutputSpan,
     DucGroupStatus,
     DucListKind,
     DucListMutationKind,
@@ -102,6 +103,21 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(observation.remote_total_cardinality, DucCardinalityRange(0, 0))
         self.assertEqual(observation.local_last_search_cardinality, DucCardinalityRange(0, 0))
         self.assertEqual(observation.remote_last_search_cardinality, DucCardinalityRange(0, 0))
+
+    def test_goal_output_span_rejects_incoherent_overwrite_provenance(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "without an overwritten generation",
+        ):
+            DucGoalOutputSpan(
+                start_goal_id=41,
+                width=1,
+                generation=1,
+                overwritten_generation=None,
+                overwritten_provenance=object(),
+                provenance=None,
+                cardinality=DucCardinalityRange(0, 0),
+            )
 
     def test_group_size_writes_a_concrete_width_one_goal_output_span(self):
         report = analyze_duc((
