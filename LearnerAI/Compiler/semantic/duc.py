@@ -1373,6 +1373,23 @@ def analyze_duc(
         if terminal_states
         else _empty_state()
     )
+    for widening in loop_widenings.values():
+        widened_fields = ", ".join(widening.widened_fields) or "NONE"
+        diagnostics.append(
+            DucDiagnostic(
+                "DUC-016",
+                DiagnosticSeverity.WARNING.value,
+                widening.back_edge_source_rule_order,
+                (
+                    f"DUC loop widening: loop head {widening.loop_head_rule_order}, "
+                    f"back-edge source {widening.back_edge_source_rule_order}, "
+                    f"iteration bound {widening.iteration_limit}, "
+                    f"widened fields: {widened_fields}"
+                ),
+                rules_by_order[widening.back_edge_source_rule_order].source_location,
+            )
+        )
+
     return DucAnalysisReport(
         initial_state=_empty_state(),
         final_state=final_state,
