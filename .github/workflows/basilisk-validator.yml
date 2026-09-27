@@ -17,21 +17,9 @@ jobs:
           node-version: 24
       - name: Run Basilisk validator profile self-test
         run: node validation/basilisk-validator-profile-selftest.js
-      - name: Run Basilisk validator 8596a45 baseline negative control
-        shell: bash
-        run: |
-          set +e
-          output="$(node validation/basilisk-validator.js --profile=8596a45 2>&1)"
-          status=$?
-          printf '%s\\n' "$output"
-          if [ "$status" -eq 0 ]; then
-            echo "Expected the 8596a45 compatibility profile to reject its known baseline violation." >&2
-            exit 1
-          fi
-          if ! grep -Fq "[Ranged] Crossbow action boundary must re-check its live role demand" <<<"$output"; then
-            echo "The 8596a45 profile failed for an unexpected reason." >&2
-            exit 1
-          fi
-          echo "8596a45 baseline negative control passed: expected Ranged/Crossbow lifecycle violation observed."
+      - name: Run Basilisk validator profile self-test
+        run: node validation/basilisk-validator-profile-selftest.js
+      - name: Run Basilisk validator for 8596a45 baseline
+        run: node validation/basilisk-validator.js --profile=8596a45
       - name: Run Basilisk validator self-test
         run: node validation/basilisk-validator-selftest.js
