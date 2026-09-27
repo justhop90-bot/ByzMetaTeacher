@@ -612,7 +612,7 @@ class SourceGraphMutationCorpusTests(unittest.TestCase):
             [case.target_index],
             f"{case.name} changed {label} indices {changed_indices}",
         )
-        index = case.target_index
+        index = changed_indices[0]
         original = before[index]
         mutated = after[index]
         changed_fields = [
