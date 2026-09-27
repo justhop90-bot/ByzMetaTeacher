@@ -26,8 +26,9 @@
 
 - [ ] Model search-index offsets and filter-triggered index resets explicitly.
 - [ ] Model exact query/focus-player search cursor semantics where AIRef evidence permits it.
-- [ ] Add first-class DUC group state and `up-create-group`/`up-set-group` semantics.
+- [x] Add first-class DUC group state and `up-create-group`/`up-reset-group`/`up-set-group`/`up-group-size`/`up-get-group-size`/`up-modify-group-flag` semantics.
 - [ ] Bind `up-get-search-state` to concrete four-Goal output-span allocation and Goal overwrite provenance.
 - [ ] Strengthen target identity beyond list-generation/index proofs.
+- [x] Add DUC group provenance/lifetime, pass persistence, overwrite generation, and branch-widening rules.
 - [ ] Add cardinality-aware DUC performance diagnostics using evidence-backed bounds.
 - [ ] Add composite recurrent + mutation + branch + target fixtures.
