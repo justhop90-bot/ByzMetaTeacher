@@ -66,7 +66,7 @@ Evidence classes are intentionally separate:
 - [x] Diagnose persistent-state consumers starved by guaranteed recurrent writers; retain later-overwrite diagnostics separately.
 - [x] Diagnose globally unreachable rules caused by recurrent control-flow convergence; persistent-state never-runnable cases remain covered separately by PSTATE-004.
 - [x] Diagnose guaranteed recurrent forward jumps that preempt intervening rules without claiming alternate paths are unreachable.
-- [ ] Detect rules that are syntactically valid but behaviorally open-loop because no later rule can observe their state transition.
+- [x] Diagnose persistent writes with no later reachable rule consuming the state; include Goal/SN operands in `up-modify-sn` and `up-compare-sn` as downstream consumers.
 - [x] Track action sequencing inside one emitted rule without inventing a false pass boundary.
 - [x] Represent statically parseable `up-jump-rule` control transfers against effective rule order.
 - [x] Diagnose out-of-range control transfers and informational forward bypasses.
@@ -241,7 +241,7 @@ Cross-reference against the current recurrent compiler implementation and PR #54
 - [x] Diagnose preemption/starvation and global control-flow reachability; persistent-state starvation is represented by PSTATE-004.
 - [ ] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer.
 
-M1 now includes focused starvation, preemption, and global control-flow reachability diagnostics. It still does not claim open-loop-state analysis or global never-runnable proof from arbitrary runtime predicates.
+M1 now includes focused starvation, preemption, global control-flow reachability, and open-loop persistent-state diagnostics. It still does not claim global never-runnable proof from arbitrary runtime predicates.
 
 ## Current implementation tranche
 
@@ -278,6 +278,6 @@ Implemented in this pass:
 
 The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them. Native primitive support now also has an explicit engine-semantics-mapped gate, so a syntactically typed adapter cannot silently jump directly to executable-safe.
 
-In particular, DUC, attack machinery, complete Strategic Number inventory/patch semantics, open-loop-state analysis, and broader runtime predicate reachability remain evidence-backed frontiers until their native syntax/IR support is implemented.
+In particular, DUC, attack machinery, complete Strategic Number inventory/patch semantics, and broader runtime predicate reachability remain evidence-backed frontiers until their native syntax/IR support is implemented.
 
 The correct milestone is therefore: community engine semantics are now explicit and typed, with the recovery slice actually enforced; the remaining frontier is native execution coverage, not more abstract lifecycle vocabulary.
