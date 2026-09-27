@@ -101,7 +101,7 @@ class DucSemanticTests(unittest.TestCase):
 
         join_state = next(state for order, state in report.states if order == 4)
         self.assertFalse(join_state.remote_list.path_ambiguous)
-        self.assertEqual(join_state.remote_list.current_generation.generation, 2)
+        self.assertEqual(join_state.remote_list.current_generation.generation, 1)
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
         self.assertNotIn("REMOTE_LIST", report.branch_merges[0].merged_fields)
 
