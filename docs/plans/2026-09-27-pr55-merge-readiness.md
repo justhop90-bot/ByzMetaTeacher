@@ -18,9 +18,9 @@ Current branch: `compiler/recurrent-execution-semantics`
 | Compiler verification gate | CI run `36295625929` | GREEN at pre-CI-fix head |
 | Validator profile contract | `validation/basilisk-validator-profile-selftest.js`; commits `6030dc3`, `903b19e` | CONFIRMED |
 | Validator baseline semantics | Commit `6030dc3` explicitly requires `8596a45` to fail on an engine-limit violation | CONFIRMED |
-| Validator workflow behavior | `.github/workflows/basilisk-validator.yml` now treats that expected failure as a negative control and checks for `[Rule too long]` | IMPLEMENTED; FRESH CI REQUIRED |
-| Documentation | recurrent execution plan, native gap map, research checklist | IMPLEMENTED |
-| PR description | Must state implementation boundary, evidence, and validator negative-control disposition | REVISE BEFORE MERGE |
+| Validator workflow behavior | `.github/workflows/basilisk-validator.yml` treats the full validator failure as a negative control and checks the known `[Ranged] Crossbow action boundary...` assertion | IMPLEMENTED; FRESH CI REQUIRED |
+| Documentation | recurrent execution plan, native gap map, research checklist, this cross-reference | IMPLEMENTED |
+| PR description | States implementation boundary, evidence, and validator negative-control disposition | IMPLEMENTED |
 | Review state | PR approval / unresolved threads | REQUIRED |
 | Final merge state | final head green, base not behind, required checks green | REQUIRED |
 
@@ -61,14 +61,15 @@ Current branch: `compiler/recurrent-execution-semantics`
 ## Cross-reference: documentation
 
 1. `docs/plans/2026-09-27-recurrent-execution-semantics.md`
-2. `LearnerAI/Compiler/NATIVE_PER_SEMANTIC_GAP_MAP_2026-09-26.md`
-3. `LearnerAI/Compiler/RESEARCH_CHECKLIST.md`
+2. `docs/plans/2026-09-27-pr55-merge-readiness.md`
+3. `LearnerAI/Compiler/NATIVE_PER_SEMANTIC_GAP_MAP_2026-09-26.md`
+4. `LearnerAI/Compiler/RESEARCH_CHECKLIST.md`
 
-These documents must preserve the boundary: bounded static analysis, not a second runtime scheduler or arbitrary world-state simulator.
+These documents preserve the boundary: bounded static analysis, not a second runtime scheduler or arbitrary world-state simulator.
 
 ## Basilisk Validator disposition
 
-The prior validator run `36295625907` was red at `validation/basilisk-validator.js:5153` with:
+The earlier validator run `36295625907` was red at `validation/basilisk-validator.js:5153` with:
 
 `[Ranged] Crossbow action boundary must re-check its live role demand`
 
@@ -76,16 +77,18 @@ This was not evidence that PR #55 broke the validator.
 
 The historical validator contract proves that the `8596a45` compatibility profile is a negative control:
 
-- commit `6030dc3` adds a red test explicitly requiring the `8596a45` profile to exit nonzero on a real engine-limit violation and specifically to report `[Rule too long]`;
+- commit `6030dc3` adds a profile self-test explicitly requiring the `8596a45` profile to exit nonzero on a real engine-limit violation and to report `[Rule too long]` under `--contract-only`;
 - commit `903b19e` introduces that compatibility profile;
 - commit `d2678dc` changes the workflow to execute the `8596a45` profile as a baseline validator.
 
-The old workflow nevertheless invoked that expected-failing validator command as a normal shell step, so CI correctly reported failure even though the negative control was behaving as designed.
+The full validator path reaches a different deterministic assertion first: `[Ranged] Crossbow action boundary must re-check its live role demand`. The profile self-test separately covers the `[Rule too long]` engine-limit condition under contract-only validation.
+
+The workflow was therefore incorrectly treating the expected full-validator negative-control failure as a failed CI job.
 
 PR #55 now changes the workflow so the baseline command is an explicit negative-control test:
 
 - nonzero exit is required;
-- `[Rule too long]` must be present;
+- the known full-run Ranged/Crossbow assertion must be present;
 - an unexpected failure is rejected;
 - an unexpected success is rejected.
 
