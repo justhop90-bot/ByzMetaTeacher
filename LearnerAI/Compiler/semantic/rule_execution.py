@@ -335,7 +335,7 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
     )
 
 
-def _analyze_rule_reachability(
+def analyze_rule_reachability(
     rules: tuple[EffectiveRule, ...],
     control_transfers: tuple[StaticControlTransfer, ...],
 ) -> RuleReachabilityReport:
@@ -358,7 +358,6 @@ def _analyze_rule_reachability(
         if current is None or transfer.within_rule_order > current.within_rule_order:
             transfers_by_rule[transfer.rule_order] = transfer
 
-    rule_by_order = {rule.rule_order: rule for rule in rules}
     edges: dict[int, set[int]] = {
         rule.rule_order: set() for rule in rules
     }
@@ -474,7 +473,7 @@ def analyze_effective_rules(graph: EffectiveSourceGraph) -> RuleExecutionReport:
             ),
         )
     )
-    reachability = _analyze_rule_reachability(effective_rules, ordered_transfers)
+    reachability = analyze_rule_reachability(effective_rules, ordered_transfers)
     return RuleExecutionReport(
         effective_rules,
         ordered_transfers,
@@ -487,6 +486,7 @@ __all__ = [
     "RuleAction",
     "RuleExecutionReport",
     "RuleReachabilityReport",
+    "analyze_rule_reachability",
     "StaticControlTransfer",
     "RulePassBehavior",
     "analyze_effective_rules",
