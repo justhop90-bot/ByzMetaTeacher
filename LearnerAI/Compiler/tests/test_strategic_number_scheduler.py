@@ -23,10 +23,8 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
 
     def test_same_pass_write_is_visible_to_later_rule(self):
         report = self._rules(
-            "(defrule (true) => (set-strategic-number 510 7) (disable-self))
-"
-            "(defrule (strategic-number 510 >= 7) => (disable-self))
-"
+            "(defrule (true) => (set-strategic-number 510 7) (disable-self))\n"
+            "(defrule (strategic-number 510 >= 7) => (disable-self))\n"
         )
         scheduler = PassScheduler(report.rules)
         trace = scheduler.run_pass()
