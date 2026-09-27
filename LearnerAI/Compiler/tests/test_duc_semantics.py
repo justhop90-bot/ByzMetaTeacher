@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucTargetStatus
+from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetStatus
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -198,6 +198,108 @@ class DucSemanticTests(unittest.TestCase):
             any(item.code == "DUC-007" and item.rule_order in {4, 5}
                 for item in report.diagnostics)
         )
+
+    def test_backward_jump_uses_finite_loop_widening(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(3, (("up-find-remote", ("c:", "town-center", "c:", "1")), ("up-jump-rule", ("-2",)))),
+            _rule(4, (("up-set-target-object", ("search-remote", "c:", "0")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=(
+                    (1, ()),
+                    (2, (1, 3)),
+                    (3, (2,)),
+                    (4, (3,)),
+                ),
+                outgoing_rule_orders=(
+                    (1, (2,)),
+                    (2, (3,)),
+                    (3, (2, 4)),
+                    (4, ()),
+                ),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        self.assertFalse(any(item.code == "DUC-013" for item in report.diagnostics))
+        loop_state = next(state for order, state in report.states if order == 2)
+        self.assertTrue(loop_state.remote_list.path_ambiguous)
+        self.assertIsNotNone(loop_state.remote_list.current_generation)
+        self.assertEqual(loop_state.remote_list.current_generation.generation, 2)
+        self.assertEqual(len(report.states), 4)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(len(report.loop_widenings), 1)
+        widening = report.loop_widenings[0]
+        self.assertIsInstance(widening, DucLoopWidening)
+        self.assertEqual(widening.loop_head_rule_order, 2)
+        self.assertEqual(widening.back_edge_source_rule_order, 3)
+        self.assertEqual(widening.iteration_limit, 3)
+        self.assertEqual(widening.iterations, 3)
+        self.assertIn("REMOTE_LIST", widening.widened_fields)
+
+    def test_loop_widening_is_field_local_for_local_search_state(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(3, (("up-jump-rule", ("-2",)),)),
+            _rule(4, (("up-target-objects", ("1", "action-default", "-1", "-1")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1, 3)), (3, (2,)), (4, (3,))),
+                outgoing_rule_orders=((1, (2,)), (2, (3,)), (3, (2, 4)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        loop_state = next(state for order, state in report.states if order == 2)
+        self.assertTrue(loop_state.local_list.path_ambiguous)
+        self.assertFalse(loop_state.remote_list.path_ambiguous)
+        self.assertEqual(
+            report.loop_widenings[0].widened_fields,
+            ("LOCAL_LIST",),
+        )
+
+    def test_loop_widening_abstracts_retained_filter_lineage(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (
+                ("up-filter-distance", ("c:", "0", "c:", "100")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+            _rule(3, (("up-jump-rule", ("-2",)),)),
+            _rule(4, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1, 3)), (3, (2,)), (4, (3,))),
+                outgoing_rule_orders=((1, (2,)), (2, (3,)), (3, (2, 4)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        self.assertTrue(report.final_state.filters.path_ambiguous)
+        self.assertTrue(report.final_state.remote_list.path_ambiguous)
+        self.assertTrue(
+            any(item.code == "DUC-012" and item.rule_order == 4 for item in report.diagnostics)
+        )
+        widening = report.loop_widenings[0]
+        self.assertEqual(widening.widened_fields, ("REMOTE_LIST", "FILTERS"))
 
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((

@@ -182,6 +182,15 @@ class DucSearchStateObservation:
 
 
 @dataclass(frozen=True)
+class DucLoopWidening:
+    loop_head_rule_order: int
+    back_edge_source_rule_order: int
+    iteration_limit: int
+    iterations: int
+    widened_fields: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DucBranchMerge:
     rule_order: int
     predecessor_rule_orders: tuple[int, ...]
@@ -232,6 +241,7 @@ class DucAnalysisReport:
     effects: tuple[DucExecutionEffect, ...] = ()
     diagnostics: tuple[DucDiagnostic, ...] = ()
     branch_merges: tuple[DucBranchMerge, ...] = ()
+    loop_widenings: tuple[DucLoopWidening, ...] = ()
 
 
 __all__ = [
@@ -243,6 +253,7 @@ __all__ = [
     "DucFilterSnapshot",
     "DucFilterState",
     "DucListGeneration",
+    "DucLoopWidening",
     "DucListKind",
     "DucObjectRef",
     "DucPointRef",

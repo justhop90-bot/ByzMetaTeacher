@@ -6,6 +6,7 @@ target lifetime cannot be established.
 """
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, replace
 from hashlib import sha256
 
@@ -20,6 +21,7 @@ from ..ir.duc import (
     DucFilterSnapshot,
     DucFilterState,
     DucListGeneration,
+    DucLoopWidening,
     DucListKind,
     DucObjectRef,
     DucPointRef,
@@ -67,6 +69,7 @@ SET_POINT_TARGET = "up-set-target-point"
 OBJECT_TARGET_CONSUMERS = frozenset({"up-target-objects"})
 POINT_TARGET_CONSUMERS = frozenset({"up-target-point"})
 OBJECT_LIST_MUTATORS = frozenset({"up-clean-search", "up-remove-objects"})
+DUC_LOOP_WIDENING_LIMIT = 3
 
 
 @dataclass(frozen=True)
@@ -944,6 +947,133 @@ def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
     )
 
 
+def _list_semantic_key(state: DucSearchListState) -> tuple[object, ...]:
+    if state.current_generation is not None:
+        return (
+            _generation_key(state.current_generation),
+            state.path_ambiguous,
+        )
+    return (
+        "AMBIGUOUS",
+        state.path_ambiguous,
+        tuple(_generation_key(item) for item in state.generation_variants),
+    )
+
+
+def _widen_list_state(
+    previous: DucSearchListState,
+    current: DucSearchListState,
+) -> DucSearchListState:
+    if _list_semantic_key(previous) == _list_semantic_key(current):
+        return previous
+    candidates: dict[tuple[object, ...], DucListGeneration] = {}
+    for generation in (
+        *previous.generation_variants,
+        *current.generation_variants,
+        *(
+            (previous.current_generation,)
+            if previous.current_generation is not None
+            else ()
+        ),
+        *(
+            (current.current_generation,)
+            if current.current_generation is not None
+            else ()
+        ),
+    ):
+        candidates[_generation_key(generation)] = generation
+    representative = min(
+        candidates.values(),
+        key=lambda generation: (
+            generation.generation,
+            generation.content_fingerprint or "",
+        ),
+        default=None,
+    )
+    next_generation = representative.generation + 1 if representative is not None else 1
+    return DucSearchListState(
+        list_kind=previous.list_kind,
+        current_generation=None,
+        next_generation=next_generation,
+        initialized=previous.initialized or current.initialized,
+        path_ambiguous=True,
+        generation_variants=(representative,) if representative is not None else (),
+    )
+
+
+def _widen_filter_state(
+    previous: DucFilterState,
+    current: DucFilterState,
+) -> DucFilterState:
+    if _filter_key(previous) == _filter_key(current):
+        return previous
+    return DucFilterState(
+        generation=0,
+        predicates=(),
+        fingerprint="AMBIGUOUS",
+        initialized=previous.initialized or current.initialized,
+        retained=previous.retained or current.retained,
+        last_mutation=None,
+        path_ambiguous=True,
+    )
+
+
+def _widen_target_state(
+    previous: DucTargetState | None,
+    current: DucTargetState | None,
+) -> DucTargetState | None:
+    if _target_key(previous) == _target_key(current):
+        if previous is None:
+            return None
+        if previous.validity is current.validity:
+            return previous
+        return replace(previous, validity=DucTargetStatus.UNKNOWN)
+    representative = previous if previous is not None else current
+    if representative is None:
+        return None
+    return replace(representative, validity=DucTargetStatus.UNKNOWN)
+
+
+def _widen_loop_state(
+    previous: DucSemanticState,
+    current: DucSemanticState,
+) -> tuple[DucSemanticState, tuple[str, ...]]:
+    local = _widen_list_state(previous.local_list, current.local_list)
+    remote = _widen_list_state(previous.remote_list, current.remote_list)
+    filters = _widen_filter_state(previous.filters, current.filters)
+    target = _widen_target_state(previous.target, current.target)
+    if previous.point_target == current.point_target:
+        point_target = previous.point_target
+    else:
+        point_target = None
+    widened_fields: list[str] = []
+    if _list_semantic_key(previous.local_list) != _list_semantic_key(current.local_list):
+        widened_fields.append("LOCAL_LIST")
+    if _list_semantic_key(previous.remote_list) != _list_semantic_key(current.remote_list):
+        widened_fields.append("REMOTE_LIST")
+    if _filter_key(previous.filters) != _filter_key(current.filters):
+        widened_fields.append("FILTERS")
+    if _target_key(previous.target) != _target_key(current.target) or (
+        previous.target is not None
+        and current.target is not None
+        and previous.target.validity is not current.target.validity
+    ):
+        widened_fields.append("TARGET")
+    if point_target != previous.point_target:
+        widened_fields.append("POINT_TARGET")
+    return (
+        DucSemanticState(
+            local,
+            remote,
+            filters,
+            target,
+            point_target,
+            max(previous.state_revision, current.state_revision),
+        ),
+        tuple(widened_fields),
+    )
+
+
 def _join_list_states(states: tuple[DucSearchListState, ...]) -> DucSearchListState:
     first = states[0]
     unique_generations: dict[tuple[object, ...], DucListGeneration] = {}
@@ -1089,10 +1219,15 @@ def _join_states(
 def analyze_duc(
     execution: RuleExecutionReport | tuple[EffectiveRule, ...],
     contracts: NativeDucContractCatalog | None = None,
+    *,
+    loop_widening_limit: int = DUC_LOOP_WIDENING_LIMIT,
 ) -> DucAnalysisReport:
     contracts = contracts or default_native_duc_contract_catalog()
     if not isinstance(execution, RuleExecutionReport):
         return _analyze_duc_linear(tuple(execution), contracts)
+
+    if loop_widening_limit < 1:
+        raise ValueError("loop_widening_limit must be >= 1")
 
     rules_by_order = {rule.rule_order: rule for rule in execution.rules}
     reachability = execution.reachability
@@ -1100,77 +1235,135 @@ def analyze_duc(
         return _analyze_duc_linear(execution.rules, contracts)
 
     outgoing = dict(reachability.outgoing_rule_orders)
-    incoming_states: dict[int, list[tuple[int, DucSemanticState]]] = {1: [(0, _empty_state())]}
-    states: list[tuple[int, DucSemanticState]] = []
-    searches: list[DucSearchOperation] = []
-    resets: list[DucResetEffect] = []
-    targets: list[DucTargetState] = []
-    observations: list[DucSearchStateObservation] = []
-    effects: list[DucExecutionEffect] = []
-    diagnostics: list[DucDiagnostic] = []
-    branch_merges: list[DucBranchMerge] = []
+    incoming_states: dict[int, dict[int, DucSemanticState]] = {
+        1: {0: _empty_state()}
+    }
+    last_entry_keys: dict[int, tuple[object, ...]] = {}
+    rule_reports: dict[int, DucAnalysisReport] = {}
+    rule_outputs: dict[int, DucSemanticState] = {}
+    branch_merges: dict[int, DucBranchMerge] = {}
+    back_edge_iterations: dict[tuple[int, int], int] = {}
+    loop_widenings: dict[tuple[int, int], DucLoopWidening] = {}
+    pending = deque([1])
 
-    for rule_order in sorted(rules_by_order):
-        entries = incoming_states.get(rule_order, [])
-        if not entries:
+    while pending:
+        rule_order = pending.popleft()
+        entries_by_predecessor = incoming_states.get(rule_order, {})
+        if not entries_by_predecessor:
             continue
+        entries = tuple(entries_by_predecessor.values())
         distinct: list[DucSemanticState] = []
         seen: set[tuple[object, ...]] = set()
-        for _, state in entries:
+        for state in entries:
             key = _state_key(state)
             if key in seen:
                 continue
             seen.add(key)
             distinct.append(state)
         variants = tuple(distinct)
-        predecessor_orders = tuple(sorted({source for source, _ in entries if source != 0}))
         if len(variants) == 1:
             entry_state = variants[0]
             merged_fields = ()
         else:
             entry_state, merged_fields = _join_states(variants)
-        if len(entries) > 1:
-            branch_merges.append(
-                DucBranchMerge(
-                    rule_order=rule_order,
-                    predecessor_rule_orders=predecessor_orders,
-                    merged_fields=merged_fields,
-                    state_variants=len(variants),
-                )
+        predecessor_orders = tuple(sorted(source for source in entries_by_predecessor if source != 0))
+        if len(entries_by_predecessor) > 1:
+            branch_merges[rule_order] = DucBranchMerge(
+                rule_order=rule_order,
+                predecessor_rule_orders=predecessor_orders,
+                merged_fields=merged_fields,
+                state_variants=len(variants),
             )
+
+        entry_key = _state_key(entry_state)
+        if last_entry_keys.get(rule_order) == entry_key:
+            continue
+        last_entry_keys[rule_order] = entry_key
+
         rule_report = _analyze_duc_linear(
             (rules_by_order[rule_order],),
             contracts,
             initial_state=entry_state,
         )
-        states.extend(rule_report.states)
-        searches.extend(rule_report.searches)
-        resets.extend(rule_report.resets)
-        targets.extend(rule_report.targets)
-        observations.extend(rule_report.observations)
-        effects.extend(rule_report.effects)
-        diagnostics.extend(rule_report.diagnostics)
-
+        rule_reports[rule_order] = rule_report
         current_state = rule_report.final_state
+        rule_outputs[rule_order] = current_state
+
         for target_order in outgoing.get(rule_order, ()):
             if target_order <= rule_order:
-                diagnostics.append(
-                    DucDiagnostic(
-                        "DUC-013",
-                        DiagnosticSeverity.WARNING.value,
-                        rule_order,
-                        f"control transfer from rule {rule_order} loops to rule {target_order}; DUC state is not propagated across the back-edge in this forward branch analysis",
-                        rules_by_order[rule_order].source_location,
-                    )
+                edge = (rule_order, target_order)
+                back_edge_iterations[edge] = min(
+                    back_edge_iterations.get(edge, 0) + 1,
+                    loop_widening_limit,
                 )
-                continue
-            incoming_states.setdefault(target_order, []).append(
-                (rule_order, current_state)
-            )
+                iteration = back_edge_iterations[edge]
+                if iteration < loop_widening_limit:
+                    propagated_state = current_state
+                else:
+                    previous_target_state = _join_states(
+                        tuple(incoming_states.get(target_order, {}).values())
+                    )[0] if incoming_states.get(target_order) else _empty_state()
+                    propagated_state, widened_fields = _widen_loop_state(
+                        previous_target_state,
+                        current_state,
+                    )
+                    loop_widenings.setdefault(
+                        edge,
+                        DucLoopWidening(
+                            loop_head_rule_order=target_order,
+                            back_edge_source_rule_order=rule_order,
+                            iteration_limit=loop_widening_limit,
+                            iterations=iteration,
+                            widened_fields=widened_fields,
+                        ),
+                    )
+            else:
+                propagated_state = current_state
+            prior = incoming_states.setdefault(target_order, {}).get(rule_order)
+            propagated_key = _state_key(propagated_state)
+            prior_key = _state_key(prior) if prior is not None else None
+            if prior is None or propagated_key != prior_key:
+                incoming_states[target_order][rule_order] = propagated_state
+                if target_order not in pending:
+                    pending.append(target_order)
 
+    states = tuple(
+        (rule_order, rule_outputs[rule_order])
+        for rule_order in sorted(rule_outputs)
+    )
+    searches = tuple(
+        operation
+        for rule_order in sorted(rule_reports)
+        for operation in rule_reports[rule_order].searches
+    )
+    resets = tuple(
+        effect
+        for rule_order in sorted(rule_reports)
+        for effect in rule_reports[rule_order].resets
+    )
+    targets = tuple(
+        target
+        for rule_order in sorted(rule_reports)
+        for target in rule_reports[rule_order].targets
+    )
+    observations = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].observations
+    )
+    effects = tuple(
+        effect
+        for rule_order in sorted(rule_reports)
+        for effect in rule_reports[rule_order].effects
+    )
+    diagnostics = tuple(
+        diagnostic
+        for rule_order in sorted(rule_reports)
+        for diagnostic in rule_reports[rule_order].diagnostics
+    )
     terminal_states = [
-        state
-        for rule_order, state in states
+        rule_outputs[rule_order]
+        for rule_order in sorted(rule_outputs)
         if not outgoing.get(rule_order)
     ]
     final_state = (
@@ -1183,14 +1376,15 @@ def analyze_duc(
     return DucAnalysisReport(
         initial_state=_empty_state(),
         final_state=final_state,
-        states=tuple(states),
-        searches=tuple(searches),
-        resets=tuple(resets),
-        targets=tuple(targets),
-        observations=tuple(observations),
-        effects=tuple(effects),
-        diagnostics=tuple(diagnostics),
-        branch_merges=tuple(branch_merges),
+        states=states,
+        searches=searches,
+        resets=resets,
+        targets=targets,
+        observations=observations,
+        effects=effects,
+        diagnostics=diagnostics,
+        branch_merges=tuple(branch_merges[order] for order in sorted(branch_merges)),
+        loop_widenings=tuple(loop_widenings[key] for key in sorted(loop_widenings)),
     )
 
 

@@ -78,7 +78,7 @@ Next consolidation:
 - [x] Record branch predecessors and merged DUC fields in typed `DucBranchMerge` metadata.
 - [x] Preserve compiler/native source provenance through the joined state.
 - [ ] model cross-pass target reuse as a distinct proof state rather than a static final-state reuse.
-- [ ] integrate backward-jump recurrence with a finite loop-widening model rather than conservatively stopping propagation at the back-edge.
+- [x] integrate backward-jump recurrence with finite loop widening: bounded three-edge iterations, field-local canonicalization, and stable recurrent state convergence without linearizing the loop.
 
 ## Vertical slice D: reset and invalidation semantics
 
@@ -124,6 +124,8 @@ Still required:
 ## Vertical slice G: hostile tests
 
 - [x] same-rule search -> search-state -> target -> action provenance
+- [x] backward up-jump-rule loop converges without DUC-013 and records finite widening metadata.
+- [x] loop widening is field-local for local search lineage and abstracts retained filter lineage.
 - [ ] retained filter crosses rule boundary and is consumed by later search
 - [ ] filter reset removes retained predicate
 - [ ] partial search reset invalidates only selected list
