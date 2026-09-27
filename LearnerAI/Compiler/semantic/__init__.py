@@ -122,6 +122,13 @@ from .persistent_state import (
     analyze_persistent_state,
 )
 
+from .pass_scheduler import (
+    ControlTransfer,
+    PassScheduler,
+    PassTrace,
+    SchedulerSemanticError,
+)
+
 from .fact_evaluation import evaluate_static_truth
 from .fact_registry import FactSemanticAdapter, NativeFactRegistry
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
