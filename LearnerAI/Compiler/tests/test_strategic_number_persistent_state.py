@@ -40,8 +40,7 @@ class PersistentStateStrategicNumberTests(unittest.TestCase):
 
     def test_guard_up_modify_sn_is_visible_as_a_write_access(self):
         report = self._report(
-            "(defrule (up-modify-sn 510 c:+ 1) => (disable-self))
-"
+            "(defrule (up-modify-sn 510 c:+ 1) => (disable-self))\n"
         )
 
         writes = [
