@@ -276,6 +276,57 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             )
         )
 
+    def test_strategic_number_goal_operand_is_a_downstream_goal_consumer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (up-modify-sn 510 g:+ 7))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.state.identifier == "7"
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(len(goal_reads), 1)
+        self.assertEqual(goal_reads[0].rule_order, 2)
+        self.assertEqual(goal_reads[0].command, "up-modify-sn")
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                for item in report.diagnostics
+            )
+        )
+
+    def test_strategic_number_comparison_goal_operand_is_a_downstream_goal_consumer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (up-compare-sn 510 g:== 7) => (set-goal 8 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.state.identifier == "7"
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(len(goal_reads), 1)
+        self.assertEqual(goal_reads[0].rule_order, 2)
+        self.assertEqual(goal_reads[0].command, "up-compare-sn")
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                for item in report.diagnostics
+            )
+        )
     def test_only_terminal_reachable_writer_is_checked_for_open_loop_state(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
