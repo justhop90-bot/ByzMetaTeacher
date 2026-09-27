@@ -135,6 +135,15 @@ class NativeContractIntegrationTests(unittest.TestCase):
         ):
             self.assertIn(citation_id, set(catalog.citation_ids()))
 
+    def test_group_size_contract_has_concrete_goal_output_span_shape(self):
+        catalog = default_native_contract_catalog()
+        group_size = catalog.duc_group("up-get-group-size")
+
+        self.assertEqual(group_size.output_width, 1)
+        self.assertEqual((group_size.output_goal_min, group_size.output_goal_max), (1, 16000))
+        self.assertEqual(group_size.output_contract_id, "up-get-group-size.output-goal")
+        self.assertEqual(group_size.output_evidence_ids, ("airef:duc:get-group-size",))
+
     def test_missing_duc_evidence_blocks_shared_native_catalog(self):
         base = default_native_contract_catalog()
         bad_search = replace(

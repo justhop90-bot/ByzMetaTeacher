@@ -21,6 +21,7 @@ from ..ir.duc import (
     DucFilterPredicate,
     DucFilterSnapshot,
     DucFilterState,
+    DucGoalOutputSpan,
     DucGroupFlagState,
     DucGroupOperation,
     DucGroupSizeObservation,
@@ -429,16 +430,54 @@ def _replace_group(state: DucSemanticState, group: DucGroupState) -> DucSemantic
     return replace(state, groups=tuple(groups))
 
 
-def _group_id_from_args(args: tuple[str, ...], *, command: str) -> int | None:
+def _group_id_from_args(
+    args: tuple[str, ...],
+    *,
+    command: str,
+    index: int = -1,
+) -> int | None:
     if not args:
         return None
     try:
-        group_id = int(args[-1], 10)
-    except ValueError:
+        group_id = int(args[index], 10)
+    except (IndexError, ValueError):
         return None
     if not 0 <= group_id < DUC_GROUP_COUNT:
         raise ValueError(f"{command} group id must be within 0..19")
     return group_id
+
+
+def _write_goal_output_span(
+    state: DucSemanticState,
+    *,
+    goal_id: int,
+    cardinality: DucCardinalityRange,
+    provenance: DucProvenance,
+) -> tuple[DucGoalOutputSpan, tuple[DucGoalOutputSpan, ...]]:
+    previous = next(
+        (
+            span
+            for span in state.goal_output_spans
+            if span.start_goal_id == goal_id
+        ),
+        None,
+    )
+    span = DucGoalOutputSpan(
+        start_goal_id=goal_id,
+        width=1,
+        generation=(previous.generation + 1 if previous is not None else 1),
+        overwritten_generation=(previous.generation if previous is not None else None),
+        overwritten_provenance=(previous.provenance if previous is not None else None),
+        provenance=provenance,
+        cardinality=cardinality,
+        pass_id=state.pass_id,
+    )
+    remaining = tuple(
+        existing
+        for existing in state.goal_output_spans
+        if existing.start_goal_id != goal_id
+    )
+    return span, tuple(sorted((*remaining, span), key=lambda item: item.start_goal_id))
 
 
 def _group_create_bounds(args: tuple[str, ...]) -> tuple[int | None, int | None]:
@@ -495,6 +534,7 @@ def _empty_state(pass_id: int = 0) -> DucSemanticState:
         state_revision=0,
         pass_id=pass_id,
         groups=_empty_groups(),
+        goal_output_spans=(),
     )
 
 
@@ -538,7 +578,19 @@ def _analyze_duc_linear(
             if group_contract is not None:
                 operation = group_contract.operation
                 try:
-                    group_id = _group_id_from_args(args, command=command)
+                    group_id_index = {
+                        "CREATE": 3,
+                        "RESET": 1,
+                        "SET": 2,
+                        "MODIFY_FLAG": 2,
+                        "SIZE_FACT": 1,
+                        "SIZE_OUTPUT": 1,
+                    }.get(operation, -1)
+                    group_id = _group_id_from_args(
+                        args,
+                        command=command,
+                        index=group_id_index,
+                    )
                     if group_id is None:
                         raise ValueError(f"{command} requires a constant GroupId")
 
@@ -775,12 +827,53 @@ def _analyze_duc_linear(
                             raise ValueError(
                                 f"{command} requires {expected_arity} arguments"
                             )
+                        output_span = None
+                        if operation == "SIZE_OUTPUT":
+                            if group_contract.output_width != 1:
+                                raise ValueError(
+                                    f"{command} requires a width-1 Goal output contract"
+                                )
+                            output_goal_id = _int_or_none(args[2])
+                            if (
+                                output_goal_id is None
+                                or not group_contract.output_goal_min
+                                <= output_goal_id
+                                <= group_contract.output_goal_max
+                            ):
+                                raise ValueError(
+                                    f"{command} OutputGoalId must be within "
+                                    f"{group_contract.output_goal_min}..{group_contract.output_goal_max}"
+                                )
+                            output_provenance = _provenance(
+                                rule,
+                                action,
+                                visibility=DucVisibility.SAME_RULE,
+                                state_revision=state_revision,
+                                pass_id=state.pass_id,
+                                inputs=(current_group.generation,),
+                                input_group_generations=((group_id, current_group.generation),),
+                                contract_id=group_contract.output_contract_id
+                                or f"{command}.output-goal",
+                                evidence_ids=group_contract.output_evidence_ids
+                                or group_contract.evidence_ids,
+                            )
+                            output_span, output_spans = _write_goal_output_span(
+                                state,
+                                goal_id=output_goal_id,
+                                cardinality=current_group.cardinality,
+                                provenance=output_provenance,
+                            )
+                            state = replace(
+                                state,
+                                goal_output_spans=output_spans,
+                            )
                         group_observations.append(
                             DucGroupSizeObservation(
                                 command,
                                 group_id,
                                 current_group.cardinality,
                                 provenance,
+                                output_span,
                             )
                         )
                         rule_reads.add(DucStateKind.GROUP)
@@ -903,6 +996,7 @@ def _analyze_duc_linear(
                         state_revision,
                         state.pass_id,
                         groups=state.groups,
+                        goal_output_spans=state.goal_output_spans,
                     )
                 else:
                     state = DucSemanticState(
@@ -914,6 +1008,7 @@ def _analyze_duc_linear(
                         state_revision,
                         state.pass_id,
                         groups=state.groups,
+                        goal_output_spans=state.goal_output_spans,
                     )
                 searches.append(
                     DucSearchOperation(
@@ -971,6 +1066,7 @@ def _analyze_duc_linear(
                     state_revision,
                     state.pass_id,
                     groups=state.groups,
+                    goal_output_spans=state.goal_output_spans,
                 )
                 rule_writes.add(DucStateKind.FILTER)
                 continue
@@ -1062,6 +1158,7 @@ def _analyze_duc_linear(
                     state_revision,
                     state.pass_id,
                     groups=state.groups,
+                    goal_output_spans=state.goal_output_spans,
                 )
                 reset = DucResetEffect(
                     command,
@@ -1278,6 +1375,7 @@ def _analyze_duc_linear(
                         state_revision,
                         state.pass_id,
                         groups=state.groups,
+                        goal_output_spans=state.goal_output_spans,
                     )
                     targets.append(target)
                     rule_reads.add(DucStateKind.LIST)
@@ -1311,6 +1409,7 @@ def _analyze_duc_linear(
                     state_revision,
                     state.pass_id,
                     groups=state.groups,
+                    goal_output_spans=state.goal_output_spans,
                 )
                 rule_writes.add(DucStateKind.TARGET)
                 continue
@@ -1389,6 +1488,7 @@ def _analyze_duc_linear(
                     state_revision,
                     state.pass_id,
                     groups=state.groups,
+                    goal_output_spans=state.goal_output_spans,
                 )
                 mutations.append(
                     DucListMutationEffect(
@@ -1656,6 +1756,9 @@ def _widen_loop_state(
     filters = _widen_filter_state(previous.filters, current.filters)
     target = _widen_target_state(previous.target, current.target)
     groups = _join_groups((previous.groups, current.groups))
+    goal_output_spans = _join_goal_output_spans(
+        (previous.goal_output_spans, current.goal_output_spans)
+    )
     if previous.point_target == current.point_target:
         point_target = previous.point_target
     else:
@@ -1679,6 +1782,10 @@ def _widen_loop_state(
         _group_key(group) for group in current.groups
     ):
         widened_fields.append("GROUPS")
+    if tuple(_goal_output_key(span) for span in previous.goal_output_spans) != tuple(
+        _goal_output_key(span) for span in current.goal_output_spans
+    ):
+        widened_fields.append("GOAL_OUTPUTS")
     return (
         DucSemanticState(
             local,
@@ -1689,6 +1796,7 @@ def _widen_loop_state(
             max(previous.state_revision, current.state_revision),
             max(previous.pass_id, current.pass_id),
             groups=groups,
+            goal_output_spans=goal_output_spans,
         ),
         tuple(widened_fields),
     )
@@ -1861,6 +1969,67 @@ def _join_groups(
     return tuple(merged)
 
 
+def _goal_output_key(span: DucGoalOutputSpan) -> tuple[object, ...]:
+    return (
+        span.start_goal_id,
+        span.width,
+        span.generation,
+        span.overwritten_generation,
+        span.overwritten_provenance,
+        span.cardinality,
+        span.pass_id,
+        span.path_ambiguous,
+        span.provenance,
+    )
+
+
+def _join_goal_output_spans(
+    variants: tuple[tuple[DucGoalOutputSpan, ...], ...],
+) -> tuple[DucGoalOutputSpan, ...]:
+    starts = sorted({
+        span.start_goal_id
+        for spans in variants
+        for span in spans
+    })
+    merged: list[DucGoalOutputSpan] = []
+    for start in starts:
+        candidates = tuple(
+            next((span for span in spans if span.start_goal_id == start), None)
+            for spans in variants
+        )
+        present = tuple(span for span in candidates if span is not None)
+        if not present:
+            continue
+        first = present[0]
+        if len(present) == len(candidates) and all(
+            _goal_output_key(span) == _goal_output_key(first)
+            for span in present[1:]
+        ):
+            merged.append(first)
+            continue
+        minimum = (
+            0
+            if len(present) < len(candidates)
+            else min(span.cardinality.minimum for span in present)
+        )
+        maximum = max(span.cardinality.maximum for span in present)
+        generation = max(span.generation for span in present)
+        merged.append(
+            DucGoalOutputSpan(
+                start_goal_id=start,
+                width=1,
+                generation=generation,
+                overwritten_generation=None,
+                overwritten_provenance=None,
+                provenance=None,
+                cardinality=DucCardinalityRange(minimum, maximum),
+                path_ambiguous=True,
+                pass_id=max(span.pass_id for span in present),
+            )
+        )
+    return tuple(merged)
+
+
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
         state.pass_id,
@@ -1888,6 +2057,7 @@ def _state_key(state: DucSemanticState) -> tuple[object, ...]:
         _target_key(state.target),
         state.point_target,
         tuple(_group_key(group) for group in state.groups),
+        tuple(_goal_output_key(span) for span in state.goal_output_spans),
     )
 
 
@@ -1899,6 +2069,9 @@ def _join_states(
     filters = _join_filters(tuple(state.filters for state in variants))
     target = _join_targets(tuple(state.target for state in variants))
     groups = _join_groups(tuple(state.groups for state in variants))
+    goal_output_spans = _join_goal_output_spans(
+        tuple(state.goal_output_spans for state in variants)
+    )
     fields: list[str] = []
     if any(
         _state_key(state)[1] != _state_key(variants[0])[1]
@@ -1928,6 +2101,12 @@ def _join_states(
         for state in variants[1:]
     ):
         fields.append("GROUPS")
+    if any(
+        tuple(_goal_output_key(span) for span in state.goal_output_spans)
+        != tuple(_goal_output_key(span) for span in variants[0].goal_output_spans)
+        for state in variants[1:]
+    ):
+        fields.append("GOAL_OUTPUTS")
     return (
         DucSemanticState(
             local,
@@ -1940,6 +2119,7 @@ def _join_states(
             max(state.state_revision for state in variants),
             max(state.pass_id for state in variants),
             groups=groups,
+            goal_output_spans=goal_output_spans,
         ),
         tuple(fields),
     )
@@ -2194,6 +2374,7 @@ def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
         0,
         state.pass_id + 1,
         groups=state.groups,
+        goal_output_spans=state.goal_output_spans,
     )
 
 
