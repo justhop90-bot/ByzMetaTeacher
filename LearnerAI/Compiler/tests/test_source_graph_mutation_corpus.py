@@ -15,12 +15,13 @@ from Compiler.ir.source_graph import (
     LoadSymbolEnvironment,
     LoadSymbolState,
     SourceEdge,
+    SourceEdgeId,
     SourceFile,
     SourceInstance,
+    SourceInstanceId,
     SourceRange,
 )
 from Compiler.semantic.source_graph_validation import (
-    SourceGraphDiagnosticCode,
     SourceGraphDiagnosticCode as Code,
     SourceGraphValidationReport,
     validate_effective_source_graph,
@@ -131,10 +132,17 @@ def _index_of_second_load(graph: EffectiveSourceGraph) -> int:
     return load_indices[1]
 
 
+def _resolve_index(
+    graph: EffectiveSourceGraph,
+    selector: int | Callable[[EffectiveSourceGraph], int],
+) -> int:
+    return selector(graph) if callable(selector) else selector
+
+
 def _mutate_field(
     scope: MutationScope,
     field: str,
-    target_index: int | None,
+    target_index: int | Callable[[EffectiveSourceGraph], int] | None,
     value_factory: Callable[[EffectiveSourceGraph, object], object],
 ):
     def mutate(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
@@ -143,25 +151,26 @@ def _mutate_field(
             return replace(graph, **{field: value_factory(graph, current)})
         if target_index is None:
             raise AssertionError(f"{scope} mutation requires a target index")
+        index = _resolve_index(graph, target_index)
         if scope == "file":
-            target = graph.files[target_index]
+            target = graph.files[index]
             return _replace_file(
-                graph, target_index, field, value_factory(graph, target)
+                graph, index, field, value_factory(graph, target)
             )
         if scope == "instance":
-            target = graph.instances[target_index]
+            target = graph.instances[index]
             return _replace_instance(
-                graph, target_index, field, value_factory(graph, target)
+                graph, index, field, value_factory(graph, target)
             )
         if scope == "edge":
-            target = graph.edges[target_index]
+            target = graph.edges[index]
             return _replace_edge(
-                graph, target_index, field, value_factory(graph, target)
+                graph, index, field, value_factory(graph, target)
             )
         if scope == "slice":
-            target = graph.slices[target_index]
+            target = graph.slices[index]
             return _replace_slice(
-                graph, target_index, field, value_factory(graph, target)
+                graph, index, field, value_factory(graph, target)
             )
         raise AssertionError(f"unknown mutation scope {scope}")
 
@@ -363,13 +372,7 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
             "edge",
             "identity",
             _index_of_active_load,
-            lambda _graph, _target: _forge_field(
-                SourceEdge.__dataclass_fields__["identity"].default
-                if SourceEdge.__dataclass_fields__["identity"].default
-                else None,
-                "__dummy__",
-                None,
-            ),
+            lambda _graph, _target: SourceEdgeId("forged-edge"),
         ),
         Code.EDGE_CONDITION_INVALID,
     ),
