@@ -1793,9 +1793,25 @@ def _join_groups(
         ):
             merged.append(first)
             continue
+        minimum = min(candidate.cardinality.minimum for candidate in candidates)
+        maximum = max(candidate.cardinality.maximum for candidate in candidates)
         merged.append(
             replace(
                 first,
+                cardinality=DucCardinalityRange(minimum, maximum),
+                source_list=(
+                    first.source_list
+                    if all(candidate.source_list == first.source_list for candidate in candidates)
+                    else None
+                ),
+                source_list_generation=(
+                    first.source_list_generation
+                    if all(
+                        candidate.source_list_generation == first.source_list_generation
+                        for candidate in candidates
+                    )
+                    else None
+                ),
                 validity=DucGroupStatus.UNKNOWN,
                 path_ambiguous=True,
             )
