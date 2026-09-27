@@ -107,7 +107,9 @@ from .rule_execution import (
     RuleExecutionReport,
     RulePassBehavior,
     StaticControlTransfer,
+    RuleReachabilityReport,
     analyze_effective_rules,
+    analyze_rule_reachability,
 )
 
 from .persistent_state import (
