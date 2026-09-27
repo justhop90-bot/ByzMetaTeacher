@@ -503,6 +503,7 @@ def _analyze_duc_linear(
                     state.target,
                     state.point_target,
                     state_revision,
+                    state.pass_id,
                 )
                 rule_writes.add(DucStateKind.FILTER)
                 continue
@@ -592,6 +593,7 @@ def _analyze_duc_linear(
                     target,
                     point_target,
                     state_revision,
+                    state.pass_id,
                 )
                 reset = DucResetEffect(
                     command,
