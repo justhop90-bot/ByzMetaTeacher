@@ -240,7 +240,7 @@ Cross-reference against the current recurrent compiler implementation and PR #54
 - [x] up-jump-rule forward skip, backward revisit, and out-of-range rejection are covered by scheduler tests.
 - [x] Build a static control-transfer graph alongside the runtime ControlTransfer trace.
 - [x] Diagnose preemption/starvation, global control-flow reachability, and path-sensitive persistent-state consumer reachability; persistent-state starvation is represented by PSTATE-004 and same-pass path blocking by PSTATE-006.
-- [ ] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer.
+- [x] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer. Implemented as PSTATE-005 and exercised by persistent-state/rule-diagnostic regressions.
 
 M1 now includes focused starvation, preemption, global control-flow reachability, and open-loop persistent-state diagnostics. It still does not claim global never-runnable proof from arbitrary runtime predicates.
 
