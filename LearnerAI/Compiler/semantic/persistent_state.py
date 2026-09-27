@@ -452,21 +452,7 @@ def analyze_persistent_state(
                 )
             )
         elif first_consumer.rule_order == first_writer.rule_order:
-            visibility = PersistentStateVisibility.CONSUMER_BEFORE_WRITER
-            diagnostics.append(
-                PersistentStateDiagnostic(
-                    code=PersistentStateDiagnosticCode.CONSUMER_BEFORE_WRITER,
-                    severity=DiagnosticSeverity.ERROR,
-                    message=(
-                        f"{state.kind.value.lower()} state '{state.identifier}' is read "
-                        "by a rule guard before that rule's action list executes its writer"
-                    ),
-                    rule_order=first_consumer.rule_order,
-                    access=first_consumer,
-                    related_access=first_writer,
-                    location=first_consumer.location,
-                )
-            )
+            visibility = PersistentStateVisibility.SAME_RULE_ACTION_SEQUENCE
         else:
             visibility = PersistentStateVisibility.CROSS_RULE_PERSISTED
 
@@ -573,7 +559,7 @@ def analyze_persistent_state(
                         message=(
                             f"rule {terminal_writer.rule_order} writes "
                             f"{state.kind.value.lower()} state '{state.identifier}', "
-                            "but no later reachable rule reads that state; "
+                            "but no downstream reachable consumer reads that state; "
                             "the persistent mutation is behaviorally open-loop"
                         ),
                         rule_order=terminal_writer.rule_order,
