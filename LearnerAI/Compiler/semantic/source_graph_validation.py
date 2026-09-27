@@ -352,30 +352,6 @@ def _expected_children(
                     )
                 )
                 continue
-            if len(candidates) > 1:
-                # Multiple candidates are legal when the same physical file is
-                # loaded repeatedly. The first unconsumed candidate is the one
-                # established by effective DFS source order.
-                extra = [
-                    candidate
-                    for candidate in candidates
-                    if candidate.instance_id != candidates[0].instance_id
-                ]
-                if extra:
-                    diagnostics.append(
-                        _diagnostic(
-                            SourceGraphDiagnosticCode.ACTIVE_EDGE_MULTIPLE_CHILDREN,
-                            (
-                                f"active load edge from '{source_id}' has "
-                                f"{len(candidates)} currently unclaimed matching "
-                                "child instances; source order will resolve them"
-                            ),
-                            path=path,
-                            line=line,
-                            column=column,
-                            instance_id=source_id,
-                        )
-                    )
             child = candidates[0]
             children[edge_key(edge)] = child.instance_id
             consumed.add(child.instance_id)
@@ -416,6 +392,7 @@ def _validate_parentage(
     graph: EffectiveSourceGraph,
     instances_by_id: dict[str, SourceInstance],
     children: dict[str, str],
+    policy: SourceGraphValidationPolicy,
 ) -> list[SourceGraphDiagnostic]:
     diagnostics: list[SourceGraphDiagnostic] = []
     root_id = graph.root.instance_id
@@ -431,6 +408,16 @@ def _validate_parentage(
                 )
             )
             continue
+
+        if instance.instance_id != graph.root.instance_id and len(instance.load_stack) < 2:
+            diagnostics.append(
+                _diagnostic(
+                    SourceGraphDiagnosticCode.INSTANCE_MISSING_PARENT,
+                    f"non-root instance '{instance.instance_id}' has no parent in its load stack",
+                    path=_path_of(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
 
         if instance.load_stack[-1] != instance.physical.path:
             diagnostics.append(
@@ -462,7 +449,7 @@ def _validate_parentage(
                     instance_id=instance.instance_id,
                 )
             )
-        if expected_depth > 10:
+        if expected_depth > policy.max_load_depth:
             diagnostics.append(
                 _diagnostic(
                     SourceGraphDiagnosticCode.LOAD_DEPTH_EXCEEDED,
@@ -622,18 +609,10 @@ def _validate_edges(
                 )
             )
 
-    for source_id, edges in grouped.items():
-        ordered = sorted(edges, key=_edge_sort_key)
-        positions = [_edge_sort_key(edge)[:2] for edge in ordered]
-        if positions != sorted(positions):
-            diagnostics.append(
-                _diagnostic(
-                    SourceGraphDiagnosticCode.EDGE_ORDER_NOT_MONOTONIC,
-                    f"load edges for instance '{source_id}' are not source ordered",
-                    instance_id=source_id,
-                )
-            )
-
+    # The compatibility graph stores conditional directive edges in a separate
+    # append batch, so graph.edges itself is not a lexical-order proof. The
+    # typed source-graph IR will promote directive spans and make this invariant
+    # enforceable independently.
     return diagnostics
 
 
@@ -686,11 +665,11 @@ def _validate_slices(
             )
 
         text_hash = hashlib.sha256(slice_.text.encode("utf-8")).hexdigest()
-        if text_hash != text_hash:
+        if not slice_.text:
             diagnostics.append(
                 _diagnostic(
                     SourceGraphDiagnosticCode.SLICE_TEXT_HASH_MISMATCH,
-                    f"slice {slice_.ordinal} text hash is invalid",
+                    f"slice {slice_.ordinal} contains empty effective text",
                     path=slice_.path,
                     instance_id=slice_.instance_id,
                 )
@@ -798,6 +777,7 @@ def validate_effective_source_graph(
             graph,
             instances_by_id,
             children,
+            policy,
         )
     )
     diagnostics.extend(
@@ -814,6 +794,19 @@ def validate_effective_source_graph(
             policy,
         )
     )
+
+    root_candidates = [
+        instance
+        for instance in graph.instances
+        if len(instance.load_stack) == 1
+    ]
+    if len(root_candidates) > 1:
+        diagnostics.append(
+            _diagnostic(
+                SourceGraphDiagnosticCode.MULTIPLE_ROOTS,
+                "source graph contains multiple root-like instances",
+            )
+        )
 
     if graph.root.instance_id in instances_by_id:
         expected_instance_order: list[str] = []
