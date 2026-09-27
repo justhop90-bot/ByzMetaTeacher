@@ -970,11 +970,11 @@
     (set-strategic-number sn-resource-control 0)
     (set-strategic-number sn-enable-new-building-system 1)
     (set-strategic-number sn-cap-civilian-builders 200)
-    (up-assign-builders c: house c: 1)
-    (up-assign-builders c: lumber-camp c: 1)
-    (up-assign-builders c: mining-camp c: 1)
-    (up-assign-builders c: mill c: 1)
-    (up-assign-builders c: barracks c: 1)
+
+
+
+
+
     (set-strategic-number sn-defer-dropsite-update 1)
     (set-strategic-number sn-dropsite-separation-distance bt-dropsite-normal-separation)
     (set-strategic-number sn-allow-adjacent-dropsites 0)
@@ -999,6 +999,27 @@
     (set-goal bt-debug-last-tc-complete-goal 1)
     (disable-self)
 )
+(defrule
+    (game-time > 0)
+=>
+    (up-assign-builders c: farm c: 1)
+    (up-assign-builders c: house c: 1)
+    (up-assign-builders c: town-center-foundation c: 1)
+    (up-assign-builders c: mill c: 1)
+    (up-assign-builders c: mining-camp c: 1)
+    (up-assign-builders c: lumber-camp c: 1)
+    (up-assign-builders c: barracks c: 1)
+    (up-assign-builders c: archery-range c: 1)
+    (up-assign-builders c: stable c: 1)
+    (up-assign-builders c: blacksmith c: 1)
+    (up-assign-builders c: market c: 1)
+    (up-assign-builders c: monastery c: 1)
+    (up-assign-builders c: university c: 1)
+    (up-assign-builders c: siege-workshop c: 1)
+    (up-assign-builders c: castle c: 1)
+    (disable-self)
+)
+
 (defrule
     (true)
 =>
