@@ -119,7 +119,7 @@ class DucSearchListState:
 @dataclass(frozen=True)
 class DucObjectRef:
     list_kind: DucListKind
-    list_generation: int
+    list_generation: Optional[int]
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
