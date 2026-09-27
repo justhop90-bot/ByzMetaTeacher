@@ -1277,7 +1277,7 @@ def _validate_edges(
                 )
             continue
 
-        if edge.active and edge.target is None and edge.kind not in {
+        if edge.target is None and edge.kind not in {
             LoadKind.CONDITIONAL_DEFINED,
             LoadKind.CONDITIONAL_NOT_DEFINED,
             LoadKind.CONDITIONAL_ELSE,
