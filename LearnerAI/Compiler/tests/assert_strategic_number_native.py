@@ -13,7 +13,46 @@ import sys
 ROOT = Path(__file__).parents[2]
 FIXTURE = ROOT / "Compiler" / "tests" / "fixtures" / "strategic_number.per"
 
-${generatedBuilder}
+def build_fixture() -> str:
+    lines = [
+        "(defconst sn-test-a 510)",
+        "(defconst sn-test-b 509)",
+        "(defconst goal-test-a 500)",
+        "",
+        "(defrule",
+        "    (true)",
+        "=>",
+        "    (set-goal goal-test-a 3)",
+        "    (set-strategic-number sn-test-a 8)",
+        "    (set-strategic-number sn-test-b 3)",
+        "    (disable-self)",
+        ")",
+        "",
+    ]
+    domains = (
+        ("c", "3"),
+        ("g", "goal-test-a"),
+        ("s", "sn-test-b"),
+    )
+    for prefix, value in domains:
+        lines.extend(["(defrule", "    (true)", "=>"])
+        for operator in ("=", "+", "-", "*", "/", "z/", "mod", "min", "max", "neg", "%*", "%/"):
+            lines.append(
+                f"    (up-modify-sn sn-test-a {prefix}:{operator} {value})"
+            )
+        lines.extend(["    (disable-self)", ")", ""])
+    lines.extend([
+        "(defrule",
+        "    (strategic-number sn-test-a >= 0)",
+        "    (up-compare-sn sn-test-a >= c:0)",
+        "=>",
+        "    (disable-self)",
+        ")",
+        "",
+    ])
+    return "
+".join(lines)
+
 EXPECTED_TEXT = build_fixture()
 
 
