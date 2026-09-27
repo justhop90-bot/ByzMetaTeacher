@@ -78,6 +78,7 @@ class RuleDiagnosticCode(str, Enum):
     DUC_CARDINALITY = "DUC-014"
     DUC_COST = "DUC-015"
     DUC_LOOP_WIDENING = "DUC-016"
+    DUC_GROUP_INVALID_STATE = "DUC-017"
 
 
 @dataclass(frozen=True)
