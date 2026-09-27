@@ -412,6 +412,7 @@ def compile_package_with_report(
             "native validation backend is required before artifact promotion",
             output,
         )
+    registry = registry or default_de_registry()
     try:
         result, bindings, context, _graph = _compile_package_parts(
             request,
@@ -514,6 +515,7 @@ def compile_source_with_report(
             "native validation backend is required before artifact promotion",
             output,
         )
+    registry = registry or default_de_registry()
     try:
         result, bindings, context = _compile_source_parts(
             source,
@@ -564,7 +566,7 @@ def compile_source_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
-        duc_report = analyze_duc(effective_rules)
+        duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
@@ -616,6 +618,7 @@ def compile_to_file(
         raise NativeBackendError(
             "native validation backend is required before artifact promotion"
         )
+    registry = registry or default_de_registry()
     result, bindings, context = _compile_source_parts(
         source,
         base_goal,
@@ -663,7 +666,7 @@ def compile_to_file(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
-        duc_report = analyze_duc(effective_rules)
+        duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
