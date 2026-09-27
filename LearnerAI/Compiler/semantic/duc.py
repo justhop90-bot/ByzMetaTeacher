@@ -1230,22 +1230,22 @@ def _join_states(
     target = _join_targets(tuple(state.target for state in variants))
     fields: list[str] = []
     if any(
-        _state_key(state)[0] != _state_key(variants[0])[0]
+        _state_key(state)[1] != _state_key(variants[0])[1]
         for state in variants[1:]
     ):
         fields.append("LOCAL_LIST")
     if any(
-        _state_key(state)[1] != _state_key(variants[0])[1]
+        _state_key(state)[2] != _state_key(variants[0])[2]
         for state in variants[1:]
     ):
         fields.append("REMOTE_LIST")
     if any(
-        _state_key(state)[2] != _state_key(variants[0])[2]
+        _state_key(state)[3] != _state_key(variants[0])[3]
         for state in variants[1:]
     ):
         fields.append("FILTERS")
     if any(
-        _state_key(state)[3] != _state_key(variants[0])[3]
+        _state_key(state)[4] != _state_key(variants[0])[4]
         for state in variants[1:]
     ):
         fields.append("TARGET")
