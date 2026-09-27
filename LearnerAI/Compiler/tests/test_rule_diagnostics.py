@@ -240,6 +240,67 @@ class RuleDiagnosticsTests(unittest.TestCase):
             StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY.value,
         )
 
+    def test_globally_unreachable_rule_gets_control_flow_error(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1))\n"
+                "(defrule (true) => (set-goal unreachable 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+        )
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
+        self.assertEqual(finding.related_operation, "control-flow")
+
+    def test_one_shot_jump_does_not_create_global_unreachable_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1) (disable-self))\n"
+                "(defrule (true) => (set-goal successor 1))\n"
+                "(defrule (true) => (set-goal target 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+
+    def test_alternate_backward_path_prevents_false_global_unreachable_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2))\n"
+                "(defrule (true) => (set-goal second 1))\n"
+                "(defrule (true) => (set-goal third 1))\n"
+                "(defrule (true) => (up-jump-rule -3))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+
     def test_recurrent_guaranteed_writer_is_reported_as_persistent_starvation(self):
         report = analyze_effective_rules(
             self._graph(
