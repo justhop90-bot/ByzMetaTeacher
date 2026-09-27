@@ -15,6 +15,7 @@ from ..diagnostics import DiagnosticSeverity
 from ..ir.duc import (
     DucAnalysisReport,
     DucBranchMerge,
+    DucCardinalityRange,
     DucDiagnostic,
     DucExecutionEffect,
     DucFilterPredicate,
@@ -187,6 +188,30 @@ def _int_or_none(value: str) -> int | None:
         return int(value, 10)
     except ValueError:
         return None
+
+
+def _search_cardinality(
+    current: DucListGeneration | None,
+    *,
+    capacity: int,
+) -> tuple[DucCardinalityRange, DucCardinalityRange]:
+    """Conservatively model retained-list append and the most recent search delta."""
+    previous = (
+        current.cardinality
+        if current is not None and current.cardinality is not None
+        else DucCardinalityRange(0, 0)
+    )
+    maximum_added = max(0, capacity - previous.minimum)
+    last_search = DucCardinalityRange(0, maximum_added)
+    total = DucCardinalityRange(
+        previous.minimum,
+        min(capacity, previous.maximum + maximum_added),
+    )
+    return total, last_search
+
+
+def _zero_cardinality() -> DucCardinalityRange:
+    return DucCardinalityRange(0, 0)
 
 
 def _preceding_index_can_match(
@@ -477,15 +502,32 @@ def _analyze_duc_linear(
                     evidence_ids=search_contract.evidence_ids,
                 )
                 generation_number = current.next_generation
+                total_cardinality, last_search_cardinality = _search_cardinality(
+                    current.current_generation,
+                    capacity=search_contract.capacity,
+                )
+                previous_fingerprint = (
+                    current.current_generation.content_fingerprint
+                    if current.current_generation is not None
+                    else ""
+                )
                 output_generation = DucListGeneration(
                     list_kind=kind,
                     generation=generation_number,
                     produced_by=provenance,
-                    cardinality=None,
+                    cardinality=total_cardinality,
                     capacity=search_contract.capacity,
                     content_fingerprint=_fingerprint(
-                        (kind.value, command, *args, filter_snapshot.fingerprint)
+                        (
+                            "append-search",
+                            previous_fingerprint,
+                            kind.value,
+                            command,
+                            *args,
+                            filter_snapshot.fingerprint,
+                        )
                     ),
+                    last_search_cardinality=last_search_cardinality,
                 )
                 updated_list = _list_state(
                     kind,
@@ -710,10 +752,12 @@ def _analyze_duc_linear(
                     contract_id="duc.output.search-state",
                     evidence_ids=contracts.duc_output_evidence_ids,
                 )
+                local_generation = state.local_list.current_generation
+                remote_generation = state.remote_list.current_generation
                 observations.append(
                     DucSearchStateObservation(
                         DucListKind.LOCAL,
-                        state.local_list.current_generation.generation if state.local_list.current_generation else None,
+                        local_generation.generation if local_generation else None,
                         args[0] if args else "",
                         (
                             "local_search_count",
@@ -721,8 +765,32 @@ def _analyze_duc_linear(
                             "remote_search_count",
                             "remote_list_count",
                         ),
-                        _fingerprint(("search-state", *(str(item) for item in generations))),
+                        _fingerprint(
+                            (
+                                "search-state",
+                                str(local_generation.cardinality if local_generation else _zero_cardinality()),
+                                str(local_generation.last_search_cardinality if local_generation and local_generation.last_search_cardinality else _zero_cardinality()),
+                                str(remote_generation.cardinality if remote_generation else _zero_cardinality()),
+                                str(remote_generation.last_search_cardinality if remote_generation and remote_generation.last_search_cardinality else _zero_cardinality()),
+                            )
+                        ),
                         provenance,
+                        local_total_cardinality=(
+                            local_generation.cardinality if local_generation else _zero_cardinality()
+                        ),
+                        local_last_search_cardinality=(
+                            local_generation.last_search_cardinality
+                            if local_generation and local_generation.last_search_cardinality
+                            else _zero_cardinality()
+                        ),
+                        remote_total_cardinality=(
+                            remote_generation.cardinality if remote_generation else _zero_cardinality()
+                        ),
+                        remote_last_search_cardinality=(
+                            remote_generation.last_search_cardinality
+                            if remote_generation and remote_generation.last_search_cardinality
+                            else _zero_cardinality()
+                        ),
                     )
                 )
                 rule_reads.add(DucStateKind.LIST)
@@ -1094,6 +1162,8 @@ def _generation_key(generation: DucListGeneration) -> tuple[object, ...]:
         generation.generation,
         generation.capacity,
         generation.content_fingerprint,
+        generation.cardinality,
+        generation.last_search_cardinality,
     )
 
 
