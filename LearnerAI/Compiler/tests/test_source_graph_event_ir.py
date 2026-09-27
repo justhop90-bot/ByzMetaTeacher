@@ -193,6 +193,68 @@ class SourceAssemblyEventTests(unittest.TestCase):
                     ].strip().splitlines()[0],
                 )
 
+    def test_inactive_load_does_not_resolve_or_materialize_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text(
+                "#load-if-defined NEVER\\n"
+                '(load "missing.perdsl")\\n'
+                "#end-if\\n"
+                "root-body\\n",
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=entry,
+                    load_symbols=LoadSymbolEnvironment(
+                        (("NEVER", LoadSymbolState.UNDEFINED),)
+                    ),
+                )
+            )
+            load_event = next(
+                event
+                for event in graph.events
+                if event.kind is SourceAssemblyEventKind.LOAD
+            )
+            load_edge = next(
+                edge
+                for edge in graph.edges
+                if edge.event == load_event.identity
+            )
+            self.assertFalse(load_edge.active)
+            self.assertIsNone(load_edge.target)
+            self.assertIsNone(load_edge.child)
+            self.assertEqual(
+                tuple(item.path for item in graph.files),
+                (entry.resolve(),),
+            )
+            report = validate_effective_source_graph(graph)
+            self.assertTrue(report.valid, report.errors)
+
+    def test_comment_parenthesized_load_is_not_treated_as_assembly(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '; (load "missing.perdsl")\\n'
+                "body\\n",
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(entrypoint=entry)
+            )
+            self.assertFalse(
+                any(
+                    event.kind is SourceAssemblyEventKind.LOAD
+                    for event in graph.events
+                )
+            )
+            self.assertEqual(
+                tuple(item.path for item in graph.files),
+                (entry.resolve(),),
+            )
+
     def test_random_load_payload_preserves_entries_without_materializing(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
