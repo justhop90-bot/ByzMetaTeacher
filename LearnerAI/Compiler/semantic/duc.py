@@ -576,7 +576,19 @@ def _analyze_duc_linear(
             if group_contract is not None:
                 operation = group_contract.operation
                 try:
-                    group_id = _group_id_from_args(args, command=command)
+                    group_id_index = {
+                        "CREATE": 3,
+                        "RESET": 1,
+                        "SET": 2,
+                        "MODIFY_FLAG": 2,
+                        "SIZE_FACT": 1,
+                        "SIZE_OUTPUT": 1,
+                    }.get(operation, -1)
+                    group_id = _group_id_from_args(
+                        args,
+                        command=command,
+                        index=group_id_index,
+                    )
                     if group_id is None:
                         raise ValueError(f"{command} requires a constant GroupId")
 
@@ -813,12 +825,53 @@ def _analyze_duc_linear(
                             raise ValueError(
                                 f"{command} requires {expected_arity} arguments"
                             )
+                        output_span = None
+                        if operation == "SIZE_OUTPUT":
+                            if group_contract.output_width != 1:
+                                raise ValueError(
+                                    f"{command} requires a width-1 Goal output contract"
+                                )
+                            output_goal_id = _int_or_none(args[2])
+                            if (
+                                output_goal_id is None
+                                or not group_contract.output_goal_min
+                                <= output_goal_id
+                                <= group_contract.output_goal_max
+                            ):
+                                raise ValueError(
+                                    f"{command} OutputGoalId must be within "
+                                    f"{group_contract.output_goal_min}..{group_contract.output_goal_max}"
+                                )
+                            output_provenance = _provenance(
+                                rule,
+                                action,
+                                visibility=DucVisibility.SAME_RULE,
+                                state_revision=state_revision,
+                                pass_id=state.pass_id,
+                                inputs=(current_group.generation,),
+                                input_group_generations=((group_id, current_group.generation),),
+                                contract_id=group_contract.output_contract_id
+                                or f"{command}.output-goal",
+                                evidence_ids=group_contract.output_evidence_ids
+                                or group_contract.evidence_ids,
+                            )
+                            output_span, output_spans = _write_goal_output_span(
+                                state,
+                                goal_id=output_goal_id,
+                                cardinality=current_group.cardinality,
+                                provenance=output_provenance,
+                            )
+                            state = replace(
+                                state,
+                                goal_output_spans=output_spans,
+                            )
                         group_observations.append(
                             DucGroupSizeObservation(
                                 command,
                                 group_id,
                                 current_group.cardinality,
                                 provenance,
+                                output_span,
                             )
                         )
                         rule_reads.add(DucStateKind.GROUP)
