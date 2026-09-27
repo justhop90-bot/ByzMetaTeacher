@@ -512,20 +512,7 @@ def _validate_edges(
                 )
             )
 
-        names: set[str] = set()
         for predicate in edge.condition.predicates:
-            if predicate.symbol in names:
-                diagnostics.append(
-                    _diag(
-                        SourceGraphDiagnosticCode.INVALID_CONDITION_CONTEXT,
-                        f"edge '{edge.edge_id}' contains duplicate condition symbol '{predicate.symbol}'",
-                        path=path,
-                        line=line,
-                        column=column,
-                        edge_id=edge.edge_id,
-                    )
-                )
-            names.add(predicate.symbol)
             if symbols.state(predicate.symbol) is None:
                 diagnostics.append(
                     _diag(
