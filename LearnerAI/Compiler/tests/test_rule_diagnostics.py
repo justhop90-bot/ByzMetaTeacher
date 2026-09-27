@@ -18,6 +18,7 @@ from Compiler.semantic.persistent_state import (
     PersistentStateDiagnosticCode,
     analyze_persistent_state,
 )
+from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
 from Compiler.semantic.strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     analyze_strategic_number_expressions,
@@ -524,6 +525,33 @@ class RuleDiagnosticsTests(unittest.TestCase):
                 for item in preemptions
             )
         )
+
+    def test_recurrent_execution_findings_compile_into_rule_diagnostics(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal gate 0))\\n"
+                "(defrule (goal gate 1) => (set-goal observed 1))\\n"
+            )
+        )
+        recurrent = analyze_recurrent_execution(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            recurrent_execution_report=recurrent,
+        )
+
+        finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.RECURRENT_STATE_STARVATION
+        )
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.related_rule_order, 1)
+        self.assertEqual(finding.state_kind, "GOAL")
+        self.assertEqual(finding.state_identifier, "gate")
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(finding.category.value, "RECURRENT_EXECUTION")
+        self.assertEqual(finding.source_code, "REX-004")
 
     def test_persistent_state_findings_compile_into_rule_diagnostics(self):
         report = analyze_effective_rules(
