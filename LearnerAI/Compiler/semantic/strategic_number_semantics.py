@@ -358,6 +358,37 @@ def _writers_in_rule(rule: EffectiveRule) -> tuple[StrategicNumberAccess, ...]:
     return tuple(accesses)
 
 
+def _all_same_rule_writers(
+    rule: EffectiveRule,
+) -> tuple[tuple[str, str, str, int], ...]:
+    writers: list[tuple[str, str, str, int]] = []
+    for index, expression in enumerate(_walk(rule.facts)):
+        if expression.head in {"set-goal", "set-strategic-number"} and expression.args:
+            state_kind = "GOAL" if expression.head == "set-goal" else "STRATEGIC_NUMBER"
+            writers.append((state_kind, str(expression.args[0]), "GUARD", index))
+        elif expression.head == "up-modify-sn" and len(expression.args) == 3:
+            writers.append(("STRATEGIC_NUMBER", str(expression.args[0]), "GUARD", index))
+    for action in rule.actions:
+        expression = action.expression
+        if expression.head in {"set-goal", "set-strategic-number"} and expression.args:
+            state_kind = "GOAL" if expression.head == "set-goal" else "STRATEGIC_NUMBER"
+            writers.append((state_kind, str(expression.args[0]), "ACTION", action.within_rule_order))
+        elif expression.head == "up-modify-sn" and len(expression.args) == 3:
+            writers.append(("STRATEGIC_NUMBER", str(expression.args[0]), "ACTION", action.within_rule_order))
+    return tuple(writers)
+
+
+def _is_after(
+    dependency_section: str,
+    dependency_order: int,
+    writer_section: str,
+    writer_order: int,
+) -> bool:
+    dependency_key = (0 if dependency_section == "GUARD" else 1, dependency_order)
+    writer_key = (0 if writer_section == "GUARD" else 1, writer_order)
+    return writer_key > dependency_key
+
+
 def analyze_strategic_number_expressions(
     report: RuleExecutionReport,
 ) -> StrategicNumberSemanticReport:
@@ -422,12 +453,10 @@ def analyze_strategic_number_expressions(
                 ]
                 future_writes = [
                     writer
-                    for writer in rule_writers
-                    if writer.identifier == dependency.identifier
-                    and (
-                        writer.section == section
-                        and writer.within_rule_order > within_rule_order
-                    )
+                    for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
+                    if kind == "STRATEGIC_NUMBER"
+                    and identifier == dependency.identifier
+                    and _is_after(section, within_rule_order, writer_section, writer_order)
                 ]
                 if future_writes:
                     diagnostics.append(
@@ -437,6 +466,28 @@ def analyze_strategic_number_expressions(
                             message=(
                                 f"Strategic Number '{dependency.identifier}' is read by "
                                 f"rule {rule.rule_order} before a later same-rule writer"
+                            ),
+                            rule_order=rule.rule_order,
+                            within_rule_order=within_rule_order,
+                            location=dependency.location,
+                        )
+                    )
+            elif dependency.kind is StrategicNumberOperandKind.GOAL:
+                future_writes = [
+                    writer
+                    for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
+                    if kind == "GOAL"
+                    and identifier == dependency.identifier
+                    and _is_after(section, within_rule_order, writer_section, writer_order)
+                ]
+                if future_writes:
+                    diagnostics.append(
+                        StrategicNumberDiagnostic(
+                            code=StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY,
+                            severity=DiagnosticSeverity.ERROR,
+                            message=(
+                                f"Goal '{dependency.identifier}' is read by rule "
+                                f"{rule.rule_order} before a later same-rule writer"
                             ),
                             rule_order=rule.rule_order,
                             within_rule_order=within_rule_order,
