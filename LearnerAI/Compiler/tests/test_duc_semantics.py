@@ -58,6 +58,8 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(second.output_generation.produced_by.input_state_generations[0], 1)
         self.assertEqual(third.output_generation.produced_by.input_state_generations[0], 2)
         self.assertEqual(third.output_generation.capacity, 240)
+        self.assertEqual(second.output_generation.last_search_cardinality, DucCardinalityRange(0, 240))
+        self.assertEqual(third.output_generation.last_search_cardinality, DucCardinalityRange(0, 240))
         self.assertEqual(third.output_generation.cardinality.maximum, 240)
         self.assertNotEqual(first.output_generation.content_fingerprint, third.output_generation.content_fingerprint)
 
