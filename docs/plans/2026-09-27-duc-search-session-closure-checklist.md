@@ -30,5 +30,6 @@
 - [ ] Bind `up-get-search-state` to concrete four-Goal output-span allocation and Goal overwrite provenance.
 - [ ] Strengthen target identity beyond list-generation/index proofs.
 - [x] Add DUC group provenance/lifetime, pass persistence, overwrite generation, and branch-widening rules.
+- [x] Model `up-get-group-size` as a width-1 Goal output with concrete GoalId bounds, writer provenance, overwrite provenance, pass persistence, and path-ambiguous joins.
 - [ ] Add cardinality-aware DUC performance diagnostics using evidence-backed bounds.
 - [ ] Add composite recurrent + mutation + branch + target fixtures.
