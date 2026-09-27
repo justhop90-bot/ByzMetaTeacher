@@ -32,6 +32,25 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+
+    def test_partial_search_reset_does_not_invalidate_remote_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+            _rule(2, (
+                ("up-reset-search", ("1", "1", "0", "0")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
+        reset = report.resets[-1]
+        self.assertEqual(reset.invalidates_lists, (DucListKind.LOCAL,))
+        self.assertFalse(reset.invalidates_remote_index)
+
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
             _rule(1, (
