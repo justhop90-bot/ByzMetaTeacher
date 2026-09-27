@@ -27,6 +27,18 @@ class StrategicNumberSemanticError(ValueError):
     """Raised when native Strategic Number syntax or evaluation is invalid."""
 
 
+class StrategicNumberCompilationError(StrategicNumberSemanticError):
+    """Raised when SN semantic diagnostics must block artifact promotion."""
+
+    def __init__(
+        self,
+        diagnostics: tuple["StrategicNumberDiagnostic", ...],
+    ) -> None:
+        self.diagnostics = tuple(diagnostics)
+        message = "; ".join(item.message for item in diagnostics)
+        super().__init__(message or "Strategic Number semantic validation failed")
+
+
 class StrategicNumberDiagnosticCode(str, Enum):
     INVALID_ARITY = "SNSEM-001"
     INVALID_OPERATOR = "SNSEM-002"
@@ -557,6 +569,7 @@ def analyze_strategic_number_expressions(
 
 
 __all__ = [
+    "StrategicNumberCompilationError",
     "StrategicNumberDiagnostic",
     "StrategicNumberDiagnosticCode",
     "StrategicNumberSemanticError",
