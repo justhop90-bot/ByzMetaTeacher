@@ -598,52 +598,58 @@ def analyze_persistent_state(
                         )
                     )
 
+        if any(
+            transfer.target_rule_order is None
+            for transfer in report.control_transfers
+        ):
+            downstream_readers_by_writer = {}
+        else:
         downstream_readers_by_writer = {
-            writer: tuple(
-                reader
-                for reader in readers
-                if reader.sort_key > writer.sort_key
-                and (
-                    writer.rule_order != reader.rule_order
-                    or (
-                        writer.section == "ACTION"
-                        and reader.section == "ACTION"
-                        and reader.within_rule_order > writer.within_rule_order
+                writer: tuple(
+                    reader
+                    for reader in readers
+                    if reader.sort_key > writer.sort_key
+                    and (
+                        writer.rule_order != reader.rule_order
+                        or (
+                            writer.section == "ACTION"
+                            and reader.section == "ACTION"
+                            and reader.within_rule_order > writer.within_rule_order
+                        )
                     )
                 )
-            )
-            for writer in writers
-        }
-        for writer, downstream_readers in downstream_readers_by_writer.items():
-            if (
-                writer.pass_behavior is not RulePassBehavior.RECURRENT
-                or not downstream_readers
-            ):
-                continue
-            if any(
-                _same_pass_consumer_reachable(report, writer, reader)
-                for reader in downstream_readers
-            ):
-                continue
-            diagnostics.append(
-                PersistentStateDiagnostic(
-                    code=PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED,
-                    severity=DiagnosticSeverity.WARNING,
-                    message=(
-                        f"rule {writer.rule_order} writes "
-                        f"{state.kind.value.lower()} state '{state.identifier}', "
-                        "but no same-pass control-flow path from that firing "
-                        "reaches any downstream consumer; later-pass consumption "
-                        "is not ruled out"
-                    ),
-                    rule_order=writer.rule_order,
-                    access=writer,
-                    related_access=downstream_readers[0],
-                    location=writer.location,
+                for writer in writers
+            }
+            for writer, downstream_readers in downstream_readers_by_writer.items():
+                if (
+                    writer.pass_behavior is not RulePassBehavior.RECURRENT
+                    or not downstream_readers
+                ):
+                    continue
+                if any(
+                    _same_pass_consumer_reachable(report, writer, reader)
+                    for reader in downstream_readers
+                ):
+                    continue
+                diagnostics.append(
+                    PersistentStateDiagnostic(
+                        code=PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED,
+                        severity=DiagnosticSeverity.WARNING,
+                        message=(
+                            f"rule {writer.rule_order} writes "
+                            f"{state.kind.value.lower()} state '{state.identifier}', "
+                            "but no same-pass control-flow path from that firing "
+                            "reaches any downstream consumer; later-pass consumption "
+                            "is not ruled out"
+                        ),
+                        rule_order=writer.rule_order,
+                        access=writer,
+                        related_access=downstream_readers[0],
+                        location=writer.location,
+                    )
                 )
-            )
-
-        reachable_orders = (
+    
+            reachable_orders = (
             set(report.reachability.reachable_rule_orders)
             if report.reachability is not None
             else {rule.rule_order for rule in report.rules}
