@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 import copy
+import json
+import os
+import subprocess
+import sys
 import unittest
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
@@ -27,6 +31,8 @@ from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
 MutationScope = Literal["graph", "file", "instance", "edge", "slice"]
+
+_SUBPROCESS_HASH_SEEDS = (1, 7, 42, 2026, 99991)
 
 
 @dataclass(frozen=True)
@@ -793,6 +799,108 @@ class SourceGraphMutationCorpusTests(unittest.TestCase):
                 self.assertEqual(len(first.diagnostics), len(set(first.diagnostics)))
                 self.assertEqual(tuple(item.code for item in first.diagnostics), case.expected_codes)
                 self.assertEqual(first.primary_code, case.primary)
+
+    def test_multi_failure_diagnostics_are_stable_across_hash_seeds(self):
+        child_code = """
+import json
+
+from Compiler.semantic.source_graph_validation import validate_effective_source_graph
+from test_source_graph_mutation_corpus import (
+    MULTI_FAILURE_CORPUS,
+    SourceGraphMutationCorpusTests,
+)
+
+helper = SourceGraphMutationCorpusTests()
+payload = []
+for case in MULTI_FAILURE_CORPUS:
+    graph = helper._resolve(case.fixture)
+    report = validate_effective_source_graph(case.mutate(graph))
+    diagnostics = []
+    for item in report.diagnostics:
+        diagnostics.append(
+            {
+                "code": item.code.value,
+                "severity": item.severity.value,
+                "message": item.message,
+                "path": str(item.path) if item.path is not None else None,
+                "line": item.line,
+                "column": item.column,
+                "instance_id": item.instance_id,
+                "edge_id": item.edge_id,
+            }
+        )
+    if len(diagnostics) != len(
+        {json.dumps(item, sort_keys=True) for item in diagnostics}
+    ):
+        raise AssertionError(f"{case.name}: duplicate diagnostics survived")
+    payload.append(
+        {
+            "name": case.name,
+            "diagnostics": diagnostics,
+            "primary_code": (
+                report.primary_code.value if report.primary_code is not None else None
+            ),
+        }
+    )
+
+print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+"""
+        repo_root = Path(__file__).resolve().parents[3]
+        compiler_root = repo_root / "LearnerAI"
+        tests_root = compiler_root / "Compiler" / "tests"
+        base_env = os.environ.copy()
+        base_pythonpath = os.pathsep.join(
+            item
+            for item in (
+                str(compiler_root),
+                str(tests_root),
+                base_env.get("PYTHONPATH", ""),
+            )
+            if item
+        )
+        outputs = {}
+        for seed in _SUBPROCESS_HASH_SEEDS:
+            env = base_env.copy()
+            env["PYTHONHASHSEED"] = str(seed)
+            env["PYTHONPATH"] = base_pythonpath
+            result = subprocess.run(
+                [sys.executable, "-c", child_code],
+                cwd=repo_root,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+                timeout=30,
+            )
+            self.assertEqual(
+                result.returncode,
+                0,
+                f"hash seed {seed} failed: {result.stderr}",
+            )
+            self.assertTrue(result.stdout.strip(), f"hash seed {seed} emitted no JSON")
+            outputs[seed] = json.loads(result.stdout)
+
+        baseline = outputs[_SUBPROCESS_HASH_SEEDS[0]]
+        for seed, output in outputs.items():
+            with self.subTest(seed=seed):
+                self.assertEqual(output, baseline)
+                for case in output:
+                    diagnostics = case["diagnostics"]
+                    self.assertEqual(
+                        len(diagnostics),
+                        len(
+                            {
+                                json.dumps(item, sort_keys=True)
+                                for item in diagnostics
+                            }
+                        ),
+                        case["name"],
+                    )
+                    self.assertEqual(
+                        case["primary_code"],
+                        diagnostics[0]["code"] if diagnostics else None,
+                        case["name"],
+                    )
 
     def test_primary_code_is_empty_for_valid_graphs(self):
         graph = self._resolve("linear/root.perdsl")
