@@ -223,6 +223,31 @@ class DucGroupState:
 
 
 @dataclass(frozen=True)
+class DucGoalOutputSpan:
+    start_goal_id: int
+    width: int
+    generation: int
+    overwritten_generation: Optional[int]
+    provenance: Optional[DucProvenance]
+    cardinality: DucCardinalityRange
+    path_ambiguous: bool = False
+    pass_id: int = 0
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.start_goal_id <= 16000:
+            raise ValueError("DUC Goal output must use GoalId range 1..16000")
+        if self.width != 1:
+            raise ValueError("DUC group-size Goal output span must have width 1")
+        if self.generation < 1:
+            raise ValueError("DUC Goal output generation must be positive")
+        if self.overwritten_generation is not None:
+            if self.overwritten_generation < 1 or self.overwritten_generation >= self.generation:
+                raise ValueError("DUC Goal output overwrite generation must precede its writer generation")
+        if self.path_ambiguous and self.provenance is not None:
+            raise ValueError("ambiguous DUC Goal output cannot retain a unique provenance")
+
+
+@dataclass(frozen=True)
 class DucGroupOperation:
     command: str
     group_id: int
@@ -237,6 +262,7 @@ class DucGroupSizeObservation:
     group_id: int
     cardinality: DucCardinalityRange
     provenance: DucProvenance
+    output_span: Optional[DucGoalOutputSpan] = None
 
 
 @dataclass(frozen=True)
@@ -329,6 +355,7 @@ class DucSemanticState:
     state_revision: int
     pass_id: int = 0
     groups: tuple[DucGroupState, ...] = ()
+    goal_output_spans: tuple[DucGoalOutputSpan, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.groups:
@@ -349,6 +376,9 @@ class DucSemanticState:
             raise ValueError("DUC semantic state requires exactly 20 groups")
         if tuple(group.group_id for group in self.groups) != tuple(range(20)):
             raise ValueError("DUC group state must be ordered by group id")
+        starts = tuple(span.start_goal_id for span in self.goal_output_spans)
+        if starts != tuple(sorted(starts)) or len(starts) != len(set(starts)):
+            raise ValueError("DUC Goal output spans must be uniquely ordered by start GoalId")
 
 
 @dataclass(frozen=True)
@@ -382,6 +412,7 @@ class DucAnalysisReport:
 __all__ = [
     "DucAnalysisReport",
     "DucCardinalityRange",
+    "DucGoalOutputSpan",
     "DucGroupFlagState",
     "DucGroupOperation",
     "DucGroupSizeObservation",
