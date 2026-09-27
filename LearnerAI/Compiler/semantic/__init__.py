@@ -91,6 +91,16 @@ from .community_engine import (
     default_community_engine_registry,
 )
 
+from .source_graph_validation import (
+    SourceGraphDiagnostic,
+    SourceGraphDiagnosticCode,
+    SourceGraphValidationError,
+    SourceGraphValidationPolicy,
+    SourceGraphValidationReport,
+    SourceGraphValidationSeverity,
+    validate_effective_source_graph,
+)
+
 from .rule_execution import (
     EffectiveRule,
     RuleAction,
