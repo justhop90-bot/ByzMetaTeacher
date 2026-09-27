@@ -16,12 +16,18 @@ from .persistent_state import (
     PersistentStateDiagnosticCode,
     PersistentStateReport,
 )
-from .rule_execution import EffectiveRule, RuleExecutionReport
+from .strategic_number_semantics import (
+    StrategicNumberDiagnosticCode,
+    StrategicNumberSemanticReport,
+)
+from .rule_execution import EffectiveRule, RuleExecutionReport, analyze_rule_reachability
 
 
 class RuleDiagnosticCategory(str, Enum):
     FIRING_ELIGIBILITY = "FIRING_ELIGIBILITY"
     PERSISTENT_STATE = "PERSISTENT_STATE"
+    STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
+    CONTROL_FLOW = "CONTROL_FLOW"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -32,6 +38,22 @@ class RuleDiagnosticCode(str, Enum):
     PERSISTENT_CONSUMER_BEFORE_WRITER = "PSTATE-001"
     PERSISTENT_LATER_OVERWRITE = "PSTATE-002"
     PERSISTENT_CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
+    PERSISTENT_CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
+    PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
+    PERSISTENT_SAME_PASS_CONSUMER_PATH_BLOCKED = "PSTATE-006"
+    STRATEGIC_NUMBER_INVALID_ARITY = "SNSEM-001"
+    STRATEGIC_NUMBER_INVALID_OPERATOR = "SNSEM-002"
+    STRATEGIC_NUMBER_INVALID_OPERAND_PREFIX = "SNSEM-003"
+    STRATEGIC_NUMBER_INVALID_LITERAL = "SNSEM-004"
+    STRATEGIC_NUMBER_OUT_OF_RANGE_LITERAL = "SNSEM-005"
+    STRATEGIC_NUMBER_CONSTANT_ZERO_DIVISOR = "SNSEM-006"
+    STRATEGIC_NUMBER_MISSING_DEPENDENCY = "SNSEM-007"
+    STRATEGIC_NUMBER_INVALID_TARGET = "SNSEM-008"
+    STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY = "SNSEM-009"
+    CONTROL_TRANSFER_OUT_OF_RANGE = "RULE-CF-001"
+    CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
+    CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
+    CONTROL_TRANSFER_UNREACHABLE_RULE = "RULE-CF-004"
 
 
 @dataclass(frozen=True)
@@ -136,6 +158,12 @@ _PERSISTENT_RULE_CODES = {
         RuleDiagnosticCode.PERSISTENT_LATER_OVERWRITE,
     PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER:
         RuleDiagnosticCode.PERSISTENT_CONSUMER_SHADOWED_BY_WRITER,
+    PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER:
+        RuleDiagnosticCode.PERSISTENT_CONSUMER_STARVED_BY_RECURRENT_WRITER,
+    PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER:
+        RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
+    PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED:
+        RuleDiagnosticCode.PERSISTENT_SAME_PASS_CONSUMER_PATH_BLOCKED,
 }
 
 
@@ -180,15 +208,186 @@ def _persistent_diagnostic_for(
 
 def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
     related_rule = item.related_rule_order if item.related_rule_order is not None else -1
+    category_order = {
+        RuleDiagnosticCategory.FIRING_ELIGIBILITY: 0,
+        RuleDiagnosticCategory.PERSISTENT_STATE: 1,
+        RuleDiagnosticCategory.STRATEGIC_NUMBER: 1,
+        RuleDiagnosticCategory.CONTROL_FLOW: 2,
+    }
     return (
         item.rule_order,
-        0 if item.category is RuleDiagnosticCategory.FIRING_ELIGIBILITY else 1,
+        category_order[item.category],
         item.code.value,
         item.state_kind or "",
         item.state_identifier or "",
         related_rule,
         item.related_operation or "",
         item.message,
+    )
+
+
+def _unreachable_rule_diagnostics(
+    report: RuleExecutionReport,
+) -> tuple[RuleDiagnostic, ...]:
+    reachability = report.reachability
+    if reachability is None:
+        reachability = analyze_rule_reachability(
+            report.rules,
+            report.control_transfers,
+        )
+
+    diagnostics: list[RuleDiagnostic] = []
+    for rule_order in reachability.unreachable_rule_orders:
+        rule = report.rules[rule_order - 1]
+        diagnostics.append(
+            RuleDiagnostic(
+                rule_order=rule_order,
+                code=RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE,
+                severity=DiagnosticSeverity.ERROR,
+                eligibility=None,
+                message=(
+                    f"rule {rule_order} has no reachable control-flow path "
+                    "from the start of a pass across recurrent rule execution"
+                ),
+                location=rule.source_location,
+                category=RuleDiagnosticCategory.CONTROL_FLOW,
+                source_code=RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE.value,
+                related_rule_order=None,
+                related_operation="control-flow",
+            )
+        )
+    return tuple(diagnostics)
+
+
+def _control_flow_diagnostics(
+    report: RuleExecutionReport,
+) -> tuple[RuleDiagnostic, ...]:
+    diagnostics: list[RuleDiagnostic] = []
+    rules_by_order = {rule.rule_order: rule for rule in report.rules}
+    for transfer in report.control_transfers:
+        if transfer.target_rule_order is None:
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE,
+                    severity=DiagnosticSeverity.ERROR,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " with delta "
+                        + str(transfer.delta)
+                        + " resolves outside the effective rule set"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE.value,
+                    related_rule_order=None,
+                    related_operation="up-jump-rule",
+                )
+            )
+            continue
+
+        if transfer.target_rule_order > transfer.rule_order + 1:
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE,
+                    severity=DiagnosticSeverity.INFO,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " can bypass rules "
+                        + str(transfer.rule_order + 1)
+                        + " through "
+                        + str(transfer.target_rule_order - 1)
+                        + " in the current pass"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE.value,
+                    related_rule_order=transfer.target_rule_order,
+                    related_operation="up-jump-rule",
+                )
+            )
+            skipped = range(
+                transfer.rule_order + 1,
+                transfer.target_rule_order,
+            )
+            source_rule = rules_by_order[transfer.rule_order]
+            source_guard_guaranteed = (
+                len(source_rule.facts) == 1
+                and source_rule.facts[0].head == "true"
+            )
+            for skipped_rule_order in skipped:
+                severity = (
+                    DiagnosticSeverity.WARNING
+                    if source_rule.pass_behavior.value == "RECURRENT"
+                    and source_guard_guaranteed
+                    else DiagnosticSeverity.INFO
+                )
+                code = (
+                    RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+                    if severity is DiagnosticSeverity.WARNING
+                    else RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+                )
+                diagnostics.append(
+                    RuleDiagnostic(
+                        rule_order=transfer.rule_order,
+                        code=code,
+                        severity=severity,
+                        eligibility=None,
+                        message=(
+                            "recurrent guaranteed up-jump-rule in rule "
+                            + str(transfer.rule_order)
+                            + " preempts rule "
+                            + str(skipped_rule_order)
+                            + " on each firing of the source rule; "
+                            + "alternate control paths are not ruled out"
+                            if severity is DiagnosticSeverity.WARNING
+                            else
+                            "up-jump-rule in rule "
+                            + str(transfer.rule_order)
+                            + " can bypass rule "
+                            + str(skipped_rule_order)
+                            + " in the current pass"
+                        ),
+                        location=transfer.location,
+                        category=RuleDiagnosticCategory.CONTROL_FLOW,
+                        source_code=code.value,
+                        related_rule_order=skipped_rule_order,
+                        related_operation="up-jump-rule",
+                    )
+                )
+
+    return tuple(diagnostics)
+
+def _strategic_number_diagnostic_for(
+    item,
+    report: RuleExecutionReport,
+) -> RuleDiagnostic:
+    rule = report.rules[item.rule_order - 1]
+    code_map = {
+        StrategicNumberDiagnosticCode.INVALID_ARITY: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_ARITY,
+        StrategicNumberDiagnosticCode.INVALID_OPERATOR: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_OPERATOR,
+        StrategicNumberDiagnosticCode.INVALID_OPERAND_PREFIX: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_OPERAND_PREFIX,
+        StrategicNumberDiagnosticCode.INVALID_LITERAL: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_LITERAL,
+        StrategicNumberDiagnosticCode.OUT_OF_RANGE_LITERAL: RuleDiagnosticCode.STRATEGIC_NUMBER_OUT_OF_RANGE_LITERAL,
+        StrategicNumberDiagnosticCode.CONSTANT_ZERO_DIVISOR: RuleDiagnosticCode.STRATEGIC_NUMBER_CONSTANT_ZERO_DIVISOR,
+        StrategicNumberDiagnosticCode.MISSING_DEPENDENCY: RuleDiagnosticCode.STRATEGIC_NUMBER_MISSING_DEPENDENCY,
+        StrategicNumberDiagnosticCode.INVALID_TARGET: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_TARGET,
+        StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY: RuleDiagnosticCode.STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY,
+    }
+    return RuleDiagnostic(
+        rule_order=item.rule_order,
+        code=code_map[item.code],
+        severity=item.severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location or rule.source_location,
+        category=RuleDiagnosticCategory.STRATEGIC_NUMBER,
+        source_code=item.code.value,
     )
 
 
@@ -199,6 +398,7 @@ def analyze_rule_diagnostics(
     runtime_demand_states: Mapping[int, object] | None = None,
     completion_witnesses: Mapping[int, object] | None = None,
     persistent_state_report: PersistentStateReport | None = None,
+    strategic_number_report: StrategicNumberSemanticReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -218,6 +418,12 @@ def analyze_rule_diagnostics(
     ):
         raise TypeError(
             "persistent_state_report must be a PersistentStateReport"
+        )
+    if strategic_number_report is not None and not isinstance(
+        strategic_number_report, StrategicNumberSemanticReport
+    ):
+        raise TypeError(
+            "strategic_number_report must be a StrategicNumberSemanticReport"
         )
 
     diagnostics: list[RuleDiagnostic] = []
@@ -248,6 +454,16 @@ def analyze_rule_diagnostics(
             _persistent_diagnostic_for(item)
             for item in persistent_state_report.diagnostics
         )
+
+    if strategic_number_report is not None:
+        diagnostics.extend(
+            _strategic_number_diagnostic_for(item, report)
+            for item in strategic_number_report.diagnostics
+        )
+
+    diagnostics.extend(_unreachable_rule_diagnostics(report))
+
+    diagnostics.extend(_control_flow_diagnostics(report))
 
     return RuleDiagnosticReport(
         tuple(sorted(diagnostics, key=_diagnostic_sort_key))

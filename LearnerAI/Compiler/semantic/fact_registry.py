@@ -91,6 +91,26 @@ def _parameter_context(
     parameter: NativeParameterSpec,
 ) -> CanonicalizationContext:
     name = parameter.name
+    if command == "up-compare-sn" and name == "compareOp":
+        return CanonicalizationContext.enum(
+            parameter_name=name,
+            domain="SN_COMPARE_OP",
+            members=(
+                *_COMPARE_OPS,
+                *(f"c:{op}" for op in _COMPARE_OPS),
+                *(f"g:{op}" for op in _COMPARE_OPS),
+                *(f"s:{op}" for op in _COMPARE_OPS),
+            ),
+            case_sensitive=True,
+        )
+
+    if command == "up-compare-sn" and name == "Value":
+        return CanonicalizationContext.symbol(
+            parameter_name=name,
+            namespace="STRATEGIC_NUMBER_COMPARE_VALUE",
+            case_sensitive=True,
+        )
+
     if name == "compareOp":
         return CanonicalizationContext.enum(
             parameter_name=name,
@@ -123,6 +143,9 @@ def _parameter_context(
             members=_RESOURCE_VALUES,
             case_sensitive=False,
         )
+
+    if command == "up-compare-sn" and name == "GoalId":
+        return _identifier_context(parameter, namespace="STRATEGIC_NUMBER")
 
     if name == "PlayerNumber":
         return CanonicalizationContext.integer(parameter_name=name)

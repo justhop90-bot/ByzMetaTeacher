@@ -188,7 +188,7 @@ def _stored_role(expr: Expression, registry: PrimitiveRegistry) -> str:
 
 def _has_non_timing_evidence(expr: Expression, registry: PrimitiveRegistry) -> bool:
     roles = _context_roles(expr, registry)
-    return bool(roles & {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"})
+    return bool(roles & {"OBSERVATION", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION", "PERSISTENT_STATE"})
 
 
 def _is_timing_only(expr: Expression, registry: PrimitiveRegistry) -> bool:
@@ -247,7 +247,7 @@ def analyze(
             _validate_context(
                 expr,
                 registry,
-                {"OBSERVATION", "TIMING", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION"},
+                {"OBSERVATION", "TIMING", "ADMISSIBILITY", "FEASIBILITY", "RESOURCE_ARBITRATION", "PERSISTENT_STATE"},
                 f"demand '{demand.name}' requirement",
             )
             requirements.append(

@@ -9,11 +9,13 @@ from Compiler.semantic.persistent_state import (
     PersistentStateVisibility,
     analyze_persistent_state,
 )
+from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.semantic.rule_execution import RulePassBehavior, analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
 class PersistentStateSemanticsTests(unittest.TestCase):
+    # Path-sensitive fixtures assert on the specific state under analysis.
     def _graph(self, source: str, child: str | None = None):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -180,10 +182,10 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             [0, 1],
         )
 
-    def test_incompatible_later_writer_shadows_exact_goal_consumer(self):
+    def test_incompatible_later_one_shot_writer_shadows_exact_goal_consumer(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
-            "(defrule (true) => (set-goal 7 2))\n"
+            "(defrule (true) => (set-goal 7 2) (disable-self))\n"
             "(defrule (goal 7 1) => (set-goal 9 1))\n"
         )
 
@@ -242,6 +244,204 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             ["1", "3", "2"],
         )
 
+    def test_open_loop_write_without_downstream_consumer_gets_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 1)
+        self.assertEqual(findings[0].access.command, "set-goal")
+        self.assertEqual(findings[0].severity, DiagnosticSeverity.WARNING)
+        self.assertIsNone(findings[0].related_access)
+
+    def test_downstream_consumer_prevents_open_loop_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (goal 7 1) => (set-goal 8 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
+                for item in report.diagnostics
+            )
+        )
+
+    def test_same_rule_action_operand_consumer_prevents_open_loop_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1) (up-modify-sn 510 g:+ 7))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_boundary = next(
+            item for item in report.boundaries
+            if item.state.identifier == "7"
+        )
+        self.assertEqual(
+            goal_boundary.visibility,
+            PersistentStateVisibility.SAME_RULE_ACTION_SEQUENCE,
+        )
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
+                for item in report.diagnostics
+            )
+        )
+    def test_strategic_number_goal_operand_is_a_downstream_goal_consumer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (up-modify-sn 510 g:+ 7))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.state.identifier == "7"
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(len(goal_reads), 1)
+        self.assertEqual(goal_reads[0].rule_order, 2)
+        self.assertEqual(goal_reads[0].command, "up-modify-sn")
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
+                for item in report.diagnostics
+            )
+        )
+    def test_strategic_number_comparison_goal_operand_is_a_downstream_goal_consumer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (up-compare-sn 510 g:== 7) => (set-goal 8 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.state.identifier == "7"
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(len(goal_reads), 1)
+        self.assertEqual(goal_reads[0].rule_order, 2)
+        self.assertEqual(goal_reads[0].command, "up-compare-sn")
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
+                for item in report.diagnostics
+            )
+        )
+    def test_path_sensitive_consumer_is_blocked_by_writer_jump(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal seed 1))\n"
+            "(defrule (current-age >= castle-age) => (set-goal gate 1) (up-jump-rule 1))\n"
+            "(defrule (goal gate 1) => (set-goal observed 1))\n"
+            "(defrule (true) => (set-goal tail 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 2)
+        self.assertEqual(findings[0].related_access.rule_order, 3)
+        self.assertEqual(findings[0].severity, DiagnosticSeverity.WARNING)
+    def test_path_sensitive_consumer_can_follow_backward_jump(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal seed 1))\n"
+            "(defrule (current-age >= castle-age) => (set-goal gate 1) (up-jump-rule 1))\n"
+            "(defrule (goal gate 1) => (set-goal observed 1))\n"
+            "(defrule (true) => (up-jump-rule -2))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED
+                for item in report.diagnostics
+            )
+        )
+
+    def test_one_shot_jump_is_not_reported_as_path_blocked(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal seed 1))\n"
+            "(defrule (current-age >= castle-age) => (set-goal gate 1) (up-jump-rule 1) (disable-self))\n"
+            "(defrule (goal gate 1) => (set-goal observed 1))\n"
+            "(defrule (true) => (set-goal tail 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED
+                for item in report.diagnostics
+            )
+        )
+    def test_only_terminal_reachable_writer_is_checked_for_open_loop_state(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (set-goal 7 2))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 2)
+
+    def test_unreachable_downstream_reader_does_not_hide_open_loop_writer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (up-jump-rule 1))\n"
+            "(defrule (goal 7 1) => (set-goal 8 1))\n"
+            "(defrule (true) => (set-goal 9 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+            and item.access.state.identifier == "7"
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 1)
     def test_analysis_is_deterministic(self):
         source = (
             "(defrule (true) => (set-goal 7 1) (set-goal 7 2))\n"
@@ -267,6 +467,18 @@ class PersistentStateSemanticsTests(unittest.TestCase):
              for item in report_b.diagnostics],
         )
 
+
+    def test_prior_rule_consumer_can_observe_a_persisted_writer_on_a_later_pass(self):
+        graph = self._graph(
+            "(defrule (goal loop-consumer 1) => (disable-self))\n"
+            "(defrule (true) => (set-goal loop-consumer 1) (disable-self))\n"
+        )
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+        codes = {item.code for item in report.diagnostics}
+        self.assertNotIn(
+            PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
+            codes,
+        )
 
 if __name__ == "__main__":
     unittest.main()

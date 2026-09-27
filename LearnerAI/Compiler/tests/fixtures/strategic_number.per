@@ -1,0 +1,102 @@
+(defconst sn-test-a 510)
+(defconst sn-test-b 509)
+(defconst goal-test-a 500)
+
+(defrule
+    (true)
+=>
+    (set-goal goal-test-a 3)
+    (set-strategic-number sn-test-a 8)
+    (set-strategic-number sn-test-b 3)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-modify-sn sn-test-a c:= 3)
+    (up-modify-sn sn-test-a c:+ 3)
+    (up-modify-sn sn-test-a c:- 3)
+    (up-modify-sn sn-test-a c:* 3)
+    (up-modify-sn sn-test-a c:/ 3)
+    (up-modify-sn sn-test-a c:z/ 3)
+    (up-modify-sn sn-test-a c:mod 3)
+    (up-modify-sn sn-test-a c:min 3)
+    (up-modify-sn sn-test-a c:max 3)
+    (up-modify-sn sn-test-a c:neg 3)
+    (up-modify-sn sn-test-a c:%* 3)
+    (up-modify-sn sn-test-a c:%/ 3)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-modify-sn sn-test-a g:= goal-test-a)
+    (up-modify-sn sn-test-a g:+ goal-test-a)
+    (up-modify-sn sn-test-a g:- goal-test-a)
+    (up-modify-sn sn-test-a g:* goal-test-a)
+    (up-modify-sn sn-test-a g:/ goal-test-a)
+    (up-modify-sn sn-test-a g:z/ goal-test-a)
+    (up-modify-sn sn-test-a g:mod goal-test-a)
+    (up-modify-sn sn-test-a g:min goal-test-a)
+    (up-modify-sn sn-test-a g:max goal-test-a)
+    (up-modify-sn sn-test-a g:neg goal-test-a)
+    (up-modify-sn sn-test-a g:%* goal-test-a)
+    (up-modify-sn sn-test-a g:%/ goal-test-a)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-modify-sn sn-test-a s:= sn-test-b)
+    (up-modify-sn sn-test-a s:+ sn-test-b)
+    (up-modify-sn sn-test-a s:- sn-test-b)
+    (up-modify-sn sn-test-a s:* sn-test-b)
+    (up-modify-sn sn-test-a s:/ sn-test-b)
+    (up-modify-sn sn-test-a s:z/ sn-test-b)
+    (up-modify-sn sn-test-a s:mod sn-test-b)
+    (up-modify-sn sn-test-a s:min sn-test-b)
+    (up-modify-sn sn-test-a s:max sn-test-b)
+    (up-modify-sn sn-test-a s:neg sn-test-b)
+    (up-modify-sn sn-test-a s:%* sn-test-b)
+    (up-modify-sn sn-test-a s:%/ sn-test-b)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a c:> 3)
+    (up-compare-sn sn-test-a c:>= 3)
+    (up-compare-sn sn-test-a c:< 3)
+    (up-compare-sn sn-test-a c:<= 3)
+    (up-compare-sn sn-test-a c:== 3)
+    (up-compare-sn sn-test-a c:!= 3)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a g:> goal-test-a)
+    (up-compare-sn sn-test-a g:>= goal-test-a)
+    (up-compare-sn sn-test-a g:< goal-test-a)
+    (up-compare-sn sn-test-a g:<= goal-test-a)
+    (up-compare-sn sn-test-a g:== goal-test-a)
+    (up-compare-sn sn-test-a g:!= goal-test-a)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a s:> sn-test-b)
+    (up-compare-sn sn-test-a s:>= sn-test-b)
+    (up-compare-sn sn-test-a s:< sn-test-b)
+    (up-compare-sn sn-test-a s:<= sn-test-b)
+    (up-compare-sn sn-test-a s:== sn-test-b)
+    (up-compare-sn sn-test-a s:!= sn-test-b)
+    (disable-self)
+)

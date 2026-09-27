@@ -13,7 +13,13 @@ from enum import Enum
 
 from ..ast import Expression, SourceLocation
 from ..diagnostics import DiagnosticSeverity
-from .rule_execution import EffectiveRule, RuleExecutionReport, RulePassBehavior
+from .rule_execution import (
+    EffectiveRule,
+    RuleExecutionReport,
+    RulePassBehavior,
+    StaticControlTransfer,
+    analyze_rule_reachability,
+)
 
 
 class PersistentStateKind(str, Enum):
@@ -39,6 +45,9 @@ class PersistentStateDiagnosticCode(str, Enum):
     CONSUMER_BEFORE_WRITER = "PSTATE-001"
     LATER_OVERWRITE = "PSTATE-002"
     CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
+    CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
+    OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
+    SAME_PASS_CONSUMER_PATH_BLOCKED = "PSTATE-006"
 
 
 @dataclass(frozen=True)
@@ -123,8 +132,38 @@ _STATE_SPECS = {
         0,
         None,
     ),
+    "up-modify-sn": (
+        PersistentStateKind.STRATEGIC_NUMBER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
     "strategic-number": (
         PersistentStateKind.STRATEGIC_NUMBER,
+        PersistentStateAccessKind.READ,
+        0,
+        None,
+    ),
+    "up-compare-sn": (
+        PersistentStateKind.STRATEGIC_NUMBER,
+        PersistentStateAccessKind.READ,
+        0,
+        None,
+    ),
+    "enable-timer": (
+        PersistentStateKind.TIMER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
+    "disable-timer": (
+        PersistentStateKind.TIMER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
+    "timer-triggered": (
+        PersistentStateKind.TIMER,
         PersistentStateAccessKind.READ,
         0,
         None,
@@ -184,6 +223,46 @@ def _state_access(
     )
 
 
+def _operand_state_accesses(
+    expression: Expression,
+    *,
+    rule: EffectiveRule,
+    section: str,
+    within_rule_order: int,
+) -> tuple[PersistentStateAccess, ...]:
+    if expression.head not in {"up-modify-sn", "up-compare-sn"}:
+        return ()
+    if len(expression.args) != 3:
+        return ()
+    operator = str(expression.args[1])
+    value = str(expression.args[2])
+    if len(operator) < 3 or operator[1] != ":":
+        return ()
+    prefix = operator[:2].lower()
+    if prefix == "g:":
+        kind = PersistentStateKind.GOAL
+    elif prefix == "s:":
+        kind = PersistentStateKind.STRATEGIC_NUMBER
+    else:
+        return ()
+    identifier = value
+    if not identifier:
+        return ()
+    return (
+        PersistentStateAccess(
+            state=PersistentStateRef(kind=kind, identifier=identifier),
+            effect=PersistentStateAccessKind.READ,
+            rule_order=rule.rule_order,
+            within_rule_order=within_rule_order,
+            section=section,
+            command=expression.head,
+            expression=expression,
+            pass_behavior=rule.pass_behavior,
+            location=expression.location or rule.source_location,
+        ),
+    )
+
+
 def _guard_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
     accesses: list[PersistentStateAccess] = []
     for index, expression in enumerate(_walk(rule.facts)):
@@ -193,8 +272,16 @@ def _guard_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
             section="GUARD",
             within_rule_order=index,
         )
-        if access is not None and access.effect is PersistentStateAccessKind.READ:
+        if access is not None:
             accesses.append(access)
+        accesses.extend(
+            _operand_state_accesses(
+                expression,
+                rule=rule,
+                section="GUARD",
+                within_rule_order=index,
+            )
+        )
     return tuple(accesses)
 
 
@@ -208,8 +295,16 @@ def _action_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
             section="ACTION",
             within_rule_order=action.within_rule_order,
         )
-        if access is not None and access.effect is PersistentStateAccessKind.WRITE:
+        if access is not None:
             accesses.append(access)
+        accesses.extend(
+            _operand_state_accesses(
+                expression,
+                rule=rule,
+                section="ACTION",
+                within_rule_order=action.within_rule_order,
+            )
+        )
     return tuple(accesses)
 
 
@@ -228,7 +323,7 @@ def _reader_predicate(
     args = access.expression.args
     if access.command == "goal" and len(args) >= 2:
         return "=", str(args[1])
-    if access.command in {"up-compare-goal", "strategic-number"} and len(args) >= 3:
+    if access.command in {"up-compare-goal", "strategic-number", "up-compare-sn"} and len(args) >= 3:
         return str(args[1]), str(args[2])
     if access.command == "up-timer-status" and len(args) >= 3:
         return str(args[1]), str(args[2])
@@ -272,6 +367,64 @@ def _predicate_is_false_after_write(
 
 def _guard_is_guaranteed(rule: EffectiveRule) -> bool:
     return len(rule.facts) == 1 and rule.facts[0].head == "true"
+
+
+def _control_transfer_by_rule(
+    report: RuleExecutionReport,
+) -> dict[int, StaticControlTransfer]:
+    transfers: dict[int, StaticControlTransfer] = {}
+    for transfer in report.control_transfers:
+        current = transfers.get(transfer.rule_order)
+        if current is None or transfer.within_rule_order > current.within_rule_order:
+            transfers[transfer.rule_order] = transfer
+    return transfers
+
+
+def _same_pass_consumer_reachable(
+    report: RuleExecutionReport,
+    writer: PersistentStateAccess,
+    reader: PersistentStateAccess,
+) -> bool:
+    if writer.rule_order == reader.rule_order:
+        return (
+            reader.section == "ACTION"
+            and writer.section == "ACTION"
+            and reader.within_rule_order > writer.within_rule_order
+        )
+
+    if report.reachability is None:
+        reachability = analyze_rule_reachability(
+            report.rules,
+            report.control_transfers,
+        )
+    else:
+        reachability = report.reachability
+
+    outgoing = dict(reachability.outgoing_rule_orders)
+    transfers = _control_transfer_by_rule(report)
+    final_transfer = transfers.get(writer.rule_order)
+
+    if final_transfer is not None and final_transfer.target_rule_order is not None:
+        initial_successors = (final_transfer.target_rule_order,)
+    elif writer.rule_order < len(report.rules):
+        initial_successors = (writer.rule_order + 1,)
+    else:
+        initial_successors = ()
+
+    seen: set[int] = set()
+    worklist = list(initial_successors)
+    while worklist:
+        rule_order = worklist.pop()
+        if rule_order in seen:
+            continue
+        seen.add(rule_order)
+        if rule_order == reader.rule_order:
+            return True
+        for target in outgoing.get(rule_order, ()):
+            if target not in seen:
+                worklist.append(target)
+
+    return False
 
 
 def _diagnostic_key(item: PersistentStateDiagnostic) -> tuple[object, ...]:
@@ -364,21 +517,7 @@ def analyze_persistent_state(
                 )
             )
         elif first_consumer.rule_order == first_writer.rule_order:
-            visibility = PersistentStateVisibility.CONSUMER_BEFORE_WRITER
-            diagnostics.append(
-                PersistentStateDiagnostic(
-                    code=PersistentStateDiagnosticCode.CONSUMER_BEFORE_WRITER,
-                    severity=DiagnosticSeverity.ERROR,
-                    message=(
-                        f"{state.kind.value.lower()} state '{state.identifier}' is read "
-                        "by a rule guard before that rule's action list executes its writer"
-                    ),
-                    rule_order=first_consumer.rule_order,
-                    access=first_consumer,
-                    related_access=first_writer,
-                    location=first_consumer.location,
-                )
-            )
+            visibility = PersistentStateVisibility.SAME_RULE_ACTION_SEQUENCE
         else:
             visibility = PersistentStateVisibility.CROSS_RULE_PERSISTED
 
@@ -423,22 +562,127 @@ def analyze_persistent_state(
                     continue
                 if not _predicate_is_false_after_write(reader, candidate):
                     continue
-                diagnostics.append(
-                    PersistentStateDiagnostic(
-                        code=PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER,
-                        severity=DiagnosticSeverity.ERROR,
-                        message=(
-                            f"rule {reader.rule_order} reads {state.kind.value.lower()} "
-                            f"state '{state.identifier}' with a predicate contradicted by "
-                            f"the preceding guaranteed writer in rule {candidate.rule_order}"
-                        ),
-                        rule_order=reader.rule_order,
-                        access=reader,
-                        related_access=candidate,
-                        location=reader.location,
+                if source_rule.pass_behavior is RulePassBehavior.RECURRENT:
+                    diagnostics.append(
+                        PersistentStateDiagnostic(
+                            code=PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER,
+                            severity=DiagnosticSeverity.ERROR,
+                            message=(
+                                f"rule {reader.rule_order} reads {state.kind.value.lower()} "
+                                f"state '{state.identifier}', but recurrent guaranteed writer "
+                                f"rule {candidate.rule_order} establishes a value that "
+                                "contradicts the consumer before every subsequent pass"
+                            ),
+                            rule_order=reader.rule_order,
+                            access=reader,
+                            related_access=candidate,
+                            location=reader.location,
+                        )
+                    )
+                else:
+                    diagnostics.append(
+                        PersistentStateDiagnostic(
+                            code=PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER,
+                            severity=DiagnosticSeverity.WARNING,
+                            message=(
+                                f"rule {reader.rule_order} reads {state.kind.value.lower()} "
+                                f"state '{state.identifier}' with a predicate contradicted by "
+                                f"the preceding guaranteed one-shot writer in rule "
+                                f"{candidate.rule_order}; the consumer may be shadowed "
+                                "for the current pass but is not statically starved"
+                            ),
+                            rule_order=reader.rule_order,
+                            access=reader,
+                            related_access=candidate,
+                            location=reader.location,
+                        )
+                    )
+
+        reachable_orders = (
+            set(report.reachability.reachable_rule_orders)
+            if report.reachability is not None
+            else {rule.rule_order for rule in report.rules}
+        )
+        if any(
+            transfer.target_rule_order is None
+            for transfer in report.control_transfers
+        ):
+            downstream_readers_by_writer = {}
+        else:
+            downstream_readers_by_writer = {
+                writer: tuple(
+                    reader
+                    for reader in readers
+                    if reader.rule_order in reachable_orders
+                    and reader.sort_key > writer.sort_key
+                    and (
+                        writer.rule_order != reader.rule_order
+                        or (
+                            writer.section == "ACTION"
+                            and reader.section == "ACTION"
+                            and reader.within_rule_order > writer.within_rule_order
+                        )
                     )
                 )
-
+                for writer in writers
+                if writer.rule_order in reachable_orders
+            }
+            for writer, downstream_readers in downstream_readers_by_writer.items():
+                if (
+                    writer.pass_behavior is not RulePassBehavior.RECURRENT
+                    or not downstream_readers
+                ):
+                    continue
+                if any(
+                    _same_pass_consumer_reachable(report, writer, reader)
+                    for reader in downstream_readers
+                ):
+                    continue
+                diagnostics.append(
+                    PersistentStateDiagnostic(
+                        code=PersistentStateDiagnosticCode.SAME_PASS_CONSUMER_PATH_BLOCKED,
+                        severity=DiagnosticSeverity.WARNING,
+                        message=(
+                            f"rule {writer.rule_order} writes "
+                            f"{state.kind.value.lower()} state '{state.identifier}', "
+                            "but no same-pass control-flow path from that firing "
+                            "reaches any downstream consumer; later-pass consumption "
+                            "is not ruled out"
+                        ),
+                        rule_order=writer.rule_order,
+                        access=writer,
+                        related_access=downstream_readers[0],
+                        location=writer.location,
+                    )
+                )
+        reachable_writers = tuple(
+            writer
+            for writer in writers
+            if writer.rule_order in reachable_orders
+        )
+        reachable_readers = tuple(
+            reader
+            for reader in readers
+            if reader.rule_order in reachable_orders
+        )
+        if reachable_writers and not reachable_readers:
+            terminal_writer = reachable_writers[-1]
+            diagnostics.append(
+                PersistentStateDiagnostic(
+                    code=PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
+                    severity=DiagnosticSeverity.WARNING,
+                    message=(
+                        f"rule {terminal_writer.rule_order} writes "
+                        f"{state.kind.value.lower()} state '{state.identifier}', "
+                        "but no globally reachable consumer reads that state; "
+                        "the persistent mutation is behaviorally open-loop"
+                    ),
+                    rule_order=terminal_writer.rule_order,
+                    access=terminal_writer,
+                    related_access=None,
+                    location=terminal_writer.location,
+                )
+            )
         boundaries.append(
             PersistentStateBoundary(
                 state=state,

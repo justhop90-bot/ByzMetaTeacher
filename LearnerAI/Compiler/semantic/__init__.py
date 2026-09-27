@@ -106,7 +106,10 @@ from .rule_execution import (
     RuleAction,
     RuleExecutionReport,
     RulePassBehavior,
+    StaticControlTransfer,
+    RuleReachabilityReport,
     analyze_effective_rules,
+    analyze_rule_reachability,
 )
 
 from .persistent_state import (
@@ -120,6 +123,13 @@ from .persistent_state import (
     PersistentStateReport,
     PersistentStateVisibility,
     analyze_persistent_state,
+)
+
+from .pass_scheduler import (
+    ControlTransfer,
+    PassScheduler,
+    PassTrace,
+    SchedulerSemanticError,
 )
 
 from .fact_evaluation import evaluate_static_truth
@@ -152,4 +162,18 @@ from .fact_values import (
     StaticTruth,
     SymbolNormalization,
     canonicalize_value,
+)
+
+from .strategic_number_semantics import (
+    StrategicNumberCompilationError,
+    StrategicNumberDiagnostic,
+    StrategicNumberCompareOp,
+    StrategicNumberDiagnosticCode,
+    StrategicNumberSemanticError,
+    StrategicNumberSemanticReport,
+    analyze_strategic_number_expressions,
+    evaluate_strategic_number_comparison,
+    evaluate_strategic_number_mutation,
+    parse_strategic_number_comparison,
+    parse_strategic_number_mutation,
 )

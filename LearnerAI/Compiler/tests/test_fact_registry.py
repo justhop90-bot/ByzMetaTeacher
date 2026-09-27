@@ -122,5 +122,27 @@ class NativeFactRegistryTests(unittest.TestCase):
         self.assertEqual(first.names(), tuple(sorted(first.names())))
 
 
+    def test_up_compare_sn_ai_ref_goalid_parameter_is_normalized_as_sn(self):
+        fact = default_de_registry().normalize_fact(
+            "up-compare-sn",
+            ("511", "g:>=", "1"),
+        )
+        self.assertEqual(
+            fact.canonical_args[0],
+            CanonicalIdentifier(
+                namespace="STRATEGIC_NUMBER",
+                form=IdentifierForm.NUMERIC_ID,
+                value=511,
+            ),
+        )
+        self.assertEqual(
+            fact.canonical_args[1],
+            CanonicalEnum("SN_COMPARE_OP", "g:>="),
+        )
+        self.assertEqual(
+            fact.canonical_args[2].namespace,
+            "STRATEGIC_NUMBER_COMPARE_VALUE",
+        )
+
 if __name__ == "__main__":
     unittest.main()

@@ -40,8 +40,27 @@ class EffectiveRule:
 
 
 @dataclass(frozen=True)
+class StaticControlTransfer:
+    rule_order: int
+    within_rule_order: int
+    delta: int
+    target_rule_order: int | None
+    location: SourceLocation
+
+
+@dataclass(frozen=True)
+class RuleReachabilityReport:
+    reachable_rule_orders: tuple[int, ...]
+    unreachable_rule_orders: tuple[int, ...]
+    incoming_rule_orders: tuple[tuple[int, tuple[int, ...]], ...]
+    outgoing_rule_orders: tuple[tuple[int, tuple[int, ...]], ...] = ()
+
+
+@dataclass(frozen=True)
 class RuleExecutionReport:
     rules: tuple[EffectiveRule, ...]
+    control_transfers: tuple[StaticControlTransfer, ...] = ()
+    reachability: RuleReachabilityReport | None = None
 
 
 def _line_column(slice_: EffectiveSourceSlice, offset: int) -> SourceLocation:
@@ -317,6 +336,97 @@ def _parse_rule(slice_: EffectiveSourceSlice, start: int, end: int) -> Effective
     )
 
 
+def analyze_rule_reachability(
+    rules: tuple[EffectiveRule, ...],
+    control_transfers: tuple[StaticControlTransfer, ...],
+) -> RuleReachabilityReport:
+    if not rules:
+        return RuleReachabilityReport((), (), ())
+
+    # An invalid literal jump already has a dedicated hard diagnostic. Do not
+    # derive false reachability claims from an invalid control-flow graph.
+    if any(transfer.target_rule_order is None for transfer in control_transfers):
+        reachable = tuple(rule.rule_order for rule in rules)
+        return RuleReachabilityReport(
+            reachable,
+            (),
+            tuple((rule.rule_order, ()) for rule in rules),
+            tuple(
+                (rule.rule_order, ())
+                for rule in rules
+            ),
+        )
+
+    transfers_by_rule: dict[int, StaticControlTransfer] = {}
+    for transfer in control_transfers:
+        current = transfers_by_rule.get(transfer.rule_order)
+        if current is None or transfer.within_rule_order > current.within_rule_order:
+            transfers_by_rule[transfer.rule_order] = transfer
+
+    edges: dict[int, set[int]] = {
+        rule.rule_order: set() for rule in rules
+    }
+
+    for rule in rules:
+        transfer = transfers_by_rule.get(rule.rule_order)
+        if transfer is None:
+            if rule.rule_order < len(rules):
+                edges[rule.rule_order].add(rule.rule_order + 1)
+            continue
+
+        target_rule_order = transfer.target_rule_order
+        if target_rule_order is not None:
+            edges[rule.rule_order].add(target_rule_order)
+
+        # A one-shot rule is disabled after firing, so a later pass can
+        # traverse its successor even when its first firing jumps elsewhere.
+        # A non-guaranteed recurrent rule may fail its guard and therefore
+        # also has a fallthrough path.
+        guard_is_guaranteed = (
+            len(rule.facts) == 1 and rule.facts[0].head == "true"
+        )
+        if (
+            rule.pass_behavior is RulePassBehavior.ONE_SHOT
+            or not guard_is_guaranteed
+        ) and rule.rule_order < len(rules):
+            edges[rule.rule_order].add(rule.rule_order + 1)
+
+    reachable: set[int] = set()
+    worklist = [1]
+    while worklist:
+        rule_order = worklist.pop()
+        if rule_order in reachable:
+            continue
+        reachable.add(rule_order)
+        for target in sorted(edges[rule_order], reverse=True):
+            if target not in reachable:
+                worklist.append(target)
+
+    incoming = {
+        rule.rule_order: tuple(
+            sorted(
+                source
+                for source, targets in edges.items()
+                if rule.rule_order in targets
+            )
+        )
+        for rule in rules
+    }
+    reachable_orders = tuple(rule.rule_order for rule in rules if rule.rule_order in reachable)
+    unreachable_orders = tuple(rule.rule_order for rule in rules if rule.rule_order not in reachable)
+    incoming_orders = tuple(sorted(incoming.items()))
+    outgoing_orders = tuple(
+        (source, tuple(sorted(targets)))
+        for source, targets in sorted(edges.items())
+    )
+    return RuleReachabilityReport(
+        reachable_rule_orders=reachable_orders,
+        unreachable_rule_orders=unreachable_orders,
+        incoming_rule_orders=incoming_orders,
+        outgoing_rule_orders=outgoing_orders,
+    )
+
+
 def analyze_effective_rules(graph: EffectiveSourceGraph) -> RuleExecutionReport:
     rules: list[EffectiveRule] = []
     for slice_ in sorted(graph.slices, key=lambda item: item.ordinal):
@@ -337,13 +447,59 @@ def analyze_effective_rules(graph: EffectiveSourceGraph) -> RuleExecutionReport:
                     fires_guaranteed=False,
                 )
                 rules.append(rule)
-    return RuleExecutionReport(tuple(rules))
+
+    rule_count = len(rules)
+    control_transfers: list[StaticControlTransfer] = []
+    for rule in rules:
+        for action in rule.actions:
+            if action.expression.head != "up-jump-rule":
+                continue
+            if len(action.expression.args) != 1:
+                continue
+            try:
+                delta = int(str(action.expression.args[0]), 10)
+            except (TypeError, ValueError):
+                continue
+            target_order = rule.rule_order + delta + 1
+            if not 1 <= target_order <= rule_count:
+                target_order = None
+            control_transfers.append(
+                StaticControlTransfer(
+                    rule_order=rule.rule_order,
+                    within_rule_order=action.within_rule_order,
+                    delta=delta,
+                    target_rule_order=target_order,
+                    location=action.expression.location,
+                )
+            )
+
+    effective_rules = tuple(rules)
+    ordered_transfers = tuple(
+        sorted(
+            control_transfers,
+            key=lambda item: (
+                item.rule_order,
+                item.within_rule_order,
+                item.delta,
+                item.target_rule_order if item.target_rule_order is not None else -1,
+            ),
+        )
+    )
+    reachability = analyze_rule_reachability(effective_rules, ordered_transfers)
+    return RuleExecutionReport(
+        effective_rules,
+        ordered_transfers,
+        reachability,
+    )
 
 
 __all__ = [
     "EffectiveRule",
     "RuleAction",
     "RuleExecutionReport",
+    "RuleReachabilityReport",
+    "analyze_rule_reachability",
+    "StaticControlTransfer",
     "RulePassBehavior",
     "analyze_effective_rules",
 ]

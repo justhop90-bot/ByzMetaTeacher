@@ -127,6 +127,9 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy-runtime.per --report /tmp/native-reports/strategy-runtime.json
+      - name: Native zero-findings acceptance - strategic number semantics fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_strategic_number_native.py             --output /tmp/strategic-number.per             --report /tmp/native-reports/strategic-number.json
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -158,9 +161,25 @@ jobs:
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/basilisk-invalidation.per
+            /tmp/strategic-number.per
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Run focused persistent-state regression suite
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "PersistentStateSemanticsTests" 2>&1 | tee focused-persistent-state-tests.log
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "RuleDiagnosticsTests" 2>&1 | tee -a focused-persistent-state-tests.log
+          python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "RuleExecutionSemanticsTests" 2>&1 | tee -a focused-persistent-state-tests.log
+      - name: Upload focused persistent-state verification log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: focused-persistent-state-verification-log
+          path: focused-persistent-state-tests.log
+          if-no-files-found: error
+          retention-days: 14
       - name: Run compiler regression suite
         shell: bash
         run: |

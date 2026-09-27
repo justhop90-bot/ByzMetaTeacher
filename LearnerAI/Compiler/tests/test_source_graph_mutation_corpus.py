@@ -1,0 +1,1056 @@
+"""Adversarial one-field mutations for the typed Effective Source Graph IR."""
+from __future__ import annotations
+
+import copy
+import json
+import os
+import subprocess
+import sys
+import unittest
+from dataclasses import dataclass, fields, replace
+from pathlib import Path
+from typing import Callable, Literal
+
+from Compiler.ir.source_graph import (
+    ConditionContext,
+    ConditionPredicate,
+    EffectiveSourceGraph,
+    LoadKind,
+    LoadSymbolEnvironment,
+    LoadSymbolState,
+    SourceAssemblyEvent,
+    SourceAssemblyEventId,
+    SourceEdge,
+    SourceEdgeId,
+    SourceFile,
+)
+from Compiler.semantic.source_graph_validation import (
+    SourceGraphDiagnosticCode as Code,
+    SourceGraphValidationReport,
+    validate_effective_source_graph,
+)
+from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
+
+
+MutationScope = Literal["graph", "file", "instance", "event", "edge", "slice"]
+
+_SUBPROCESS_HASH_SEEDS = (1, 7, 42, 2026, 99991)
+
+
+@dataclass(frozen=True)
+class MutationCase:
+    name: str
+    fixture: str
+    scope: MutationScope
+    field: str
+    mutate: Callable[[EffectiveSourceGraph], EffectiveSourceGraph]
+    expected: SourceGraphDiagnosticCode
+
+
+def _forge_field(obj, field: str, value):
+    clone = copy.copy(obj)
+    object.__setattr__(clone, field, value)
+    return clone
+
+
+def _replace_file(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    files = list(graph.files)
+    files[index] = _forge_field(files[index], field, value)
+    return replace(graph, files=tuple(files))
+
+
+def _replace_instance(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    instances = list(graph.instances)
+    instances[index] = _forge_field(instances[index], field, value)
+    return replace(graph, instances=tuple(instances))
+
+
+def _replace_event(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    events = list(graph.events)
+    events[index] = _forge_field(events[index], field, value)
+    return replace(graph, events=tuple(events))
+
+
+def _replace_edge(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    edges = list(graph.edges)
+    edges[index] = _forge_field(edges[index], field, value)
+    return replace(graph, edges=tuple(edges))
+
+
+def _replace_slice(
+    graph: EffectiveSourceGraph,
+    index: int,
+    field: str,
+    value,
+) -> EffectiveSourceGraph:
+    slices = list(graph.slices)
+    slices[index] = _forge_field(slices[index], field, value)
+    return replace(graph, slices=tuple(slices))
+
+
+def _mutate_graph(
+    field: str,
+    value_factory: Callable[[EffectiveSourceGraph, object], object],
+):
+    def mutate(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+        current = getattr(graph, field)
+        return replace(
+            graph,
+            **{field: value_factory(graph, current)},
+        )
+
+    return mutate
+
+
+def _index_of_child(graph: EffectiveSourceGraph) -> int:
+    return next(
+        index
+        for index, item in enumerate(graph.instances)
+        if item.identity != graph.root.identity
+    )
+
+
+def _index_of_active_load(graph: EffectiveSourceGraph) -> int:
+    return next(
+        index
+        for index, item in enumerate(graph.edges)
+        if item.active and item.target is not None
+    )
+
+
+def _index_of_active_conditional_load(graph: EffectiveSourceGraph) -> int:
+    return next(
+        index
+        for index, item in enumerate(graph.edges)
+        if item.target is not None and item.condition.predicates
+    )
+
+
+def _index_of_first_load_event(graph: EffectiveSourceGraph) -> int:
+    return next(
+        index
+        for index, item in enumerate(graph.events)
+        if item.kind.value == "LOAD"
+    )
+
+
+def _index_of_second_load_event(graph: EffectiveSourceGraph) -> int:
+    load_indices = [
+        index
+        for index, item in enumerate(graph.events)
+        if item.kind.value in {"LOAD", "LOAD_RANDOM"}
+    ]
+    return load_indices[1]
+
+
+def _index_of_second_load(graph: EffectiveSourceGraph) -> int:
+    load_indices = [
+        index
+        for index, item in enumerate(graph.edges)
+        if item.kind in {LoadKind.FILE, LoadKind.RAW_LOAD, LoadKind.RANDOM}
+    ]
+    return load_indices[1]
+
+
+def _resolve_index(
+    graph: EffectiveSourceGraph,
+    selector: int | Callable[[EffectiveSourceGraph], int],
+) -> int:
+    return selector(graph) if callable(selector) else selector
+
+
+def _mutate_field(
+    scope: MutationScope,
+    field: str,
+    target_index: int | Callable[[EffectiveSourceGraph], int] | None,
+    value_factory: Callable[[EffectiveSourceGraph, object], object],
+):
+    def mutate(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+        if scope == "graph":
+            current = getattr(graph, field)
+            return replace(graph, **{field: value_factory(graph, current)})
+        if target_index is None:
+            raise AssertionError(f"{scope} mutation requires a target index")
+        index = _resolve_index(graph, target_index)
+        if scope == "file":
+            target = graph.files[index]
+            return _replace_file(
+                graph, index, field, value_factory(graph, target)
+            )
+        if scope == "instance":
+            target = graph.instances[index]
+            return _replace_instance(
+                graph, index, field, value_factory(graph, target)
+            )
+        if scope == "event":
+            target = graph.events[index]
+            return _replace_event(
+                graph, index, field, value_factory(graph, target)
+            )
+        if scope == "edge":
+            target = graph.edges[index]
+            return _replace_edge(
+                graph, index, field, value_factory(graph, target)
+            )
+        if scope == "slice":
+            target = graph.slices[index]
+            return _replace_slice(
+                graph, index, field, value_factory(graph, target)
+            )
+        raise AssertionError(f"unknown mutation scope {scope}")
+
+    return mutate
+
+
+def _constant(value):
+    return lambda _graph, _target: value
+
+
+# The corpus deliberately covers every typed field that has a directly
+# observable validation contract in this tranche.
+MUTATION_CORPUS: tuple[MutationCase, ...] = (
+    MutationCase(
+        "graph-root-reference",
+        "linear/root.perdsl",
+        "graph",
+        "root",
+        _mutate_graph(
+            "root",
+            lambda graph, _current: graph.instances[_index_of_child(graph)],
+        ),
+        Code.INSTANCE_MISSING_PARENT,
+    ),
+    MutationCase(
+        "graph-instance-inventory",
+        "linear/root.perdsl",
+        "graph",
+        "instances",
+        _mutate_graph("instances", lambda graph, _current: (graph.instances[0],)),
+        Code.ACTIVE_EDGE_MISSING_CHILD,
+    ),
+    MutationCase(
+        "graph-edge-inventory",
+        "linear/root.perdsl",
+        "graph",
+        "edges",
+        _mutate_graph("edges", lambda _graph, _current: ()),
+        Code.ORPHAN_INSTANCE,
+    ),
+    MutationCase(
+        "graph-slice-inventory",
+        "linear/root.perdsl",
+        "graph",
+        "slices",
+        _mutate_graph(
+            "slices",
+            lambda graph, _current: tuple(reversed(graph.slices)),
+        ),
+        Code.SLICE_ORDINAL_GAP,
+    ),
+    MutationCase(
+        "graph-symbol-environment",
+        "conditional-defined/root.perdsl",
+        "graph",
+        "symbol_environment",
+        _mutate_graph("symbol_environment", _constant(LoadSymbolEnvironment(()))),
+        Code.MISSING_CONDITION_SYMBOL,
+    ),
+    MutationCase(
+        "graph-assembly-fingerprint",
+        "linear/root.perdsl",
+        "graph",
+        "assembly_fingerprint",
+        _mutate_graph("assembly_fingerprint", _constant("0" * 64)),
+        Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+    ),
+    MutationCase(
+        "graph-effective-fingerprint",
+        "linear/root.perdsl",
+        "graph",
+        "effective_fingerprint",
+        _mutate_graph("effective_fingerprint", _constant("0" * 64)),
+        Code.EFFECTIVE_FINGERPRINT_MISMATCH,
+    ),
+    MutationCase(
+        "source-file-identity",
+        "linear/root.perdsl",
+        "file",
+        "identity",
+        _mutate_field(
+            "file",
+            "identity",
+            0,
+            lambda _graph, target: _forge_field(
+                target.identity,
+                "content_sha256",
+                "0" * 64,
+            ),
+        ),
+        Code.SLICE_SOURCE_HASH_MISMATCH,
+    ),
+    MutationCase(
+        "source-file-path",
+        "linear/root.perdsl",
+        "file",
+        "path",
+        _mutate_field(
+            "file",
+            "path",
+            0,
+            lambda _graph, _target: Path("/forged/source.perdsl"),
+        ),
+        Code.INSTANCE_MISSING_SOURCE,
+    ),
+    MutationCase(
+        "source-file-text",
+        "linear/root.perdsl",
+        "file",
+        "text",
+        _mutate_field(
+            "file",
+            "text",
+            0,
+            lambda _graph, target: target.text + "; forged\n",
+        ),
+        Code.SLICE_SOURCE_HASH_MISMATCH,
+    ),
+    MutationCase(
+        "instance-identity",
+        "duplicate/root.perdsl",
+        "instance",
+        "identity",
+        _mutate_field(
+            "instance",
+            "identity",
+            1,
+            lambda graph, _target: graph.instances[0].identity,
+        ),
+        Code.DUPLICATE_INSTANCE_ID,
+    ),
+    MutationCase(
+        "instance-physical-source",
+        "linear/root.perdsl",
+        "instance",
+        "physical",
+        _mutate_field(
+            "instance",
+            "physical",
+            1,
+            lambda graph, _target: graph.files[0],
+        ),
+        Code.LOAD_EDGE_INSTANCE_MISMATCH,
+    ),
+    MutationCase(
+        "instance-parent",
+        "linear/root.perdsl",
+        "instance",
+        "parent",
+        _mutate_field("instance", "parent", 1, _constant(None)),
+        Code.MULTIPLE_ROOTS,
+    ),
+    MutationCase(
+        "instance-via-edge",
+        "linear/root.perdsl",
+        "instance",
+        "via_edge",
+        _mutate_field("instance", "via_edge", 1, _constant(None)),
+        Code.INSTANCE_MISSING_LOAD_EDGE,
+    ),
+    MutationCase(
+        "instance-ancestry",
+        "linear/root.perdsl",
+        "instance",
+        "ancestry",
+        _mutate_field(
+            "instance",
+            "ancestry",
+            1,
+            lambda _graph, target: target.ancestry + (target.source,),
+        ),
+        Code.INSTANCE_CYCLE,
+    ),
+    MutationCase(
+        "instance-depth",
+        "linear/root.perdsl",
+        "instance",
+        "depth",
+        _mutate_field("instance", "depth", 1, _constant(0)),
+        Code.DEPTH_MISMATCH,
+    ),
+    MutationCase(
+        "instance-occurrence",
+        "linear/root.perdsl",
+        "instance",
+        "occurrence",
+        _mutate_field("instance", "occurrence", 1, _constant(99)),
+        Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+    ),
+    MutationCase(
+        "event-identity",
+        "linear/root.perdsl",
+        "event",
+        "identity",
+        _mutate_field(
+            "event",
+            "identity",
+            _index_of_first_load_event,
+            lambda _graph, _target: SourceAssemblyEventId("forged-event"),
+        ),
+        Code.EVENT_IDENTITY_INVALID,
+    ),
+    MutationCase(
+        "event-ordinal",
+        "linear/root.perdsl",
+        "event",
+        "lexical_ordinal",
+        _mutate_field(
+            "event",
+            "lexical_ordinal",
+            _index_of_first_load_event,
+            _constant(99),
+        ),
+        Code.EVENT_ORDINAL_GAP,
+    ),
+    MutationCase(
+        "event-condition-after",
+        "conditional-defined/root.perdsl",
+        "event",
+        "condition_after",
+        _mutate_field(
+            "event",
+            "condition_after",
+            0,
+            lambda _graph, target: target.condition_before,
+        ),
+        Code.EVENT_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "event-payload",
+        "linear/root.perdsl",
+        "event",
+        "payload",
+        _mutate_field(
+            "event",
+            "payload",
+            _index_of_first_load_event,
+            lambda _graph, target: _forge_field(
+                target.payload,
+                "target_text",
+                "",
+            ),
+        ),
+        Code.EVENT_KIND_PAYLOAD_MISMATCH,
+    ),
+    MutationCase(
+        "event-edge-back-reference",
+        "linear/root.perdsl",
+        "event",
+        "edge",
+        _mutate_field(
+            "event",
+            "edge",
+            _index_of_first_load_event,
+            _constant(None),
+        ),
+        Code.EVENT_EDGE_MISMATCH,
+    ),
+    MutationCase(
+        "event-span",
+        "linear/root.perdsl",
+        "event",
+        "span",
+        _mutate_field(
+            "event",
+            "span",
+            _index_of_first_load_event,
+            lambda _graph, target: _forge_field(
+                target.span,
+                "start_line",
+                target.span.start_line + 1,
+            ),
+        ),
+        Code.EVENT_RANGE_INVALID,
+    ),
+    MutationCase(
+        "edge-event-back-reference",
+        "linear/root.perdsl",
+        "edge",
+        "event",
+        _mutate_field(
+            "edge",
+            "event",
+            _index_of_active_load,
+            lambda _graph, _target: SourceAssemblyEventId("missing-event"),
+        ),
+        Code.EDGE_EVENT_MISSING,
+    ),
+    MutationCase(
+        "edge-event-condition",
+        "conditional-defined/root.perdsl",
+        "edge",
+        "condition",
+        _mutate_field(
+            "edge",
+            "condition",
+            _index_of_active_conditional_load,
+            _constant(ConditionContext()),
+        ),
+        Code.EDGE_EVENT_PAYLOAD_MISMATCH,
+    ),
+    MutationCase(
+        "edge-identity",
+        "linear/root.perdsl",
+        "edge",
+        "identity",
+        _mutate_field(
+            "edge",
+            "identity",
+            _index_of_active_load,
+            lambda _graph, _target: SourceEdgeId("forged-edge"),
+        ),
+        Code.EDGE_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "edge-source",
+        "linear/root.perdsl",
+        "edge",
+        "source",
+        _mutate_field(
+            "edge",
+            "source",
+            _index_of_active_load,
+            lambda _graph, _target: type(_target.source)("unknown-source"),
+        ),
+        Code.LOAD_EDGE_SOURCE_MISSING,
+    ),
+    MutationCase(
+        "edge-target",
+        "linear/root.perdsl",
+        "edge",
+        "target",
+        _mutate_field("edge", "target", _index_of_active_load, _constant(None)),
+        Code.ACTIVE_UNRESOLVED_EDGE,
+    ),
+    MutationCase(
+        "edge-child",
+        "linear/root.perdsl",
+        "edge",
+        "child",
+        _mutate_field("edge", "child", _index_of_active_load, _constant(None)),
+        Code.ACTIVE_EDGE_MISSING_CHILD,
+    ),
+    MutationCase(
+        "edge-kind-random",
+        "linear/root.perdsl",
+        "edge",
+        "kind",
+        _mutate_field("edge", "kind", _index_of_active_load, _constant(LoadKind.RANDOM)),
+        Code.RANDOM_LOAD_UNMATERIALIZED,
+    ),
+    MutationCase(
+        "edge-condition",
+        "conditional-defined/root.perdsl",
+        "edge",
+        "condition",
+        _mutate_field("edge", "condition", _index_of_active_conditional_load, _constant(ConditionContext())),
+        Code.EDGE_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "edge-active",
+        "linear/root.perdsl",
+        "edge",
+        "active",
+        _mutate_field("edge", "active", _index_of_active_load, _constant(False)),
+        Code.INACTIVE_HAS_CHILD,
+    ),
+    MutationCase(
+        "edge-target-text",
+        "linear/root.perdsl",
+        "edge",
+        "target_text",
+        _mutate_field(
+            "edge",
+            "target_text",
+            _index_of_active_load,
+            _constant("forged-child.perdsl"),
+        ),
+        Code.EDGE_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "edge-span",
+        "linear/root.perdsl",
+        "edge",
+        "span",
+        _mutate_field(
+            "edge",
+            "span",
+            _index_of_active_load,
+            lambda _graph, target: _forge_field(
+                target.span,
+                "start_line",
+                target.span.start_line + 1,
+            ),
+        ),
+        Code.EDGE_CONDITION_INVALID,
+    ),
+    MutationCase(
+        "edge-condition-predicate-symbol",
+        "conditional-defined/root.perdsl",
+        "edge",
+        "condition",
+        _mutate_field(
+            "edge",
+            "condition",
+            _index_of_active_conditional_load,
+            lambda _graph, target: ConditionContext(
+                (
+                    _forge_field(
+                        target.condition.predicates[0],
+                        "symbol",
+                        "UNKNOWN_SYMBOL",
+                    ),
+                    *target.condition.predicates[1:],
+                )
+            ),
+        ),
+        Code.MISSING_CONDITION_SYMBOL,
+    ),
+    MutationCase(
+        "slice-ordinal",
+        "linear/root.perdsl",
+        "slice",
+        "ordinal",
+        _mutate_field("slice", "ordinal", 0, _constant(1)),
+        Code.SLICE_ORDINAL_GAP,
+    ),
+    MutationCase(
+        "slice-instance",
+        "linear/root.perdsl",
+        "slice",
+        "instance",
+        _mutate_field(
+            "slice",
+            "instance",
+            0,
+            lambda graph, _target: graph.instances[_index_of_child(graph)].identity,
+        ),
+        Code.SLICE_SOURCE_HASH_MISMATCH,
+    ),
+    MutationCase(
+        "slice-physical-range",
+        "linear/root.perdsl",
+        "slice",
+        "physical_range",
+        _mutate_field(
+            "slice",
+            "physical_range",
+            0,
+            lambda _graph, target: _forge_field(
+                target.physical_range,
+                "end_offset",
+                target.physical_range.end_offset + 1000,
+            ),
+        ),
+        Code.SLICE_RANGE_INVALID,
+    ),
+    MutationCase(
+        "slice-text",
+        "linear/root.perdsl",
+        "slice",
+        "text",
+        _mutate_field(
+            "slice",
+            "text",
+            0,
+            lambda _graph, target: target.text + "; forged\n",
+        ),
+        Code.EFFECTIVE_FINGERPRINT_MISMATCH,
+    ),
+)
+
+
+@dataclass(frozen=True)
+class MultiFailureCase:
+    name: str
+    fixture: str
+    mutate: Callable[[EffectiveSourceGraph], EffectiveSourceGraph]
+    expected_codes: tuple[SourceGraphDiagnosticCode, ...]
+    primary: SourceGraphDiagnosticCode
+
+
+def _multi_instance_parentless(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_child(graph)
+    instances = list(graph.instances)
+    instances[index] = _forge_field(instances[index], "parent", None)
+    return replace(graph, instances=tuple(instances))
+
+
+def _multi_edge_childless(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_active_load(graph)
+    edges = list(graph.edges)
+    edges[index] = _forge_field(edges[index], "child", None)
+    return replace(graph, edges=tuple(edges))
+
+
+def _multi_edge_inactive(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    index = _index_of_active_load(graph)
+    edges = list(graph.edges)
+    edges[index] = _forge_field(edges[index], "active", False)
+    return replace(graph, edges=tuple(edges))
+
+
+def _multi_slice_text(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
+    slices = list(graph.slices)
+    slices[0] = _forge_field(slices[0], "text", slices[0].text + "; forged\n")
+    return replace(graph, slices=tuple(slices))
+
+
+def _duplicate_malformed_instance_diagnostics(
+    graph: EffectiveSourceGraph,
+) -> EffectiveSourceGraph:
+    index = _index_of_child(graph)
+    child = _forge_field(graph.instances[index], "parent", None)
+    return replace(
+        graph,
+        instances=(graph.instances[0], child, child, *graph.instances[2:]),
+    )
+
+
+MULTI_FAILURE_CORPUS: tuple[MultiFailureCase, ...] = (
+    MultiFailureCase(
+        "parentless-child-produces-multiple-structural-failures",
+        "linear/root.perdsl",
+        _multi_instance_parentless,
+        (
+            Code.MULTIPLE_ROOTS,
+            Code.ROOT_HAS_PARENT,
+            Code.INSTANCE_MISSING_PARENT,
+            Code.LOAD_EDGE_INSTANCE_MISMATCH,
+            Code.DEPTH_MISMATCH,
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.EDGE_PARENTAGE_MISMATCH,
+        ),
+        Code.MULTIPLE_ROOTS,
+    ),
+    MultiFailureCase(
+        "childless-active-edge-produces-edge-and-orphan-failures",
+        "linear/root.perdsl",
+        _multi_edge_childless,
+        (
+            Code.ORPHAN_INSTANCE,
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.ACTIVE_EDGE_MISSING_CHILD,
+        ),
+        Code.ORPHAN_INSTANCE,
+    ),
+    MultiFailureCase(
+        "inactive-edge-produces-condition-child-and-orphan-failures",
+        "linear/root.perdsl",
+        _multi_edge_inactive,
+        (
+            Code.ORPHAN_INSTANCE,
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.INACTIVE_HAS_CHILD,
+            Code.EDGE_CONDITION_INVALID,
+            Code.EDGE_EVENT_PAYLOAD_MISMATCH,
+        ),
+        Code.ORPHAN_INSTANCE,
+    ),
+    MultiFailureCase(
+        "slice-text-breaks-both-fingerprint-contracts",
+        "linear/root.perdsl",
+        _multi_slice_text,
+        (
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.EFFECTIVE_FINGERPRINT_MISMATCH,
+        ),
+        Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+    ),
+    MultiFailureCase(
+        "duplicate-malformed-instance-diagnostics-are-deduplicated",
+        "linear/root.perdsl",
+        _duplicate_malformed_instance_diagnostics,
+        (
+            Code.MULTIPLE_ROOTS,
+            Code.DUPLICATE_INSTANCE_ID,
+            Code.ROOT_HAS_PARENT,
+            Code.INSTANCE_MISSING_PARENT,
+            Code.LOAD_EDGE_INSTANCE_MISMATCH,
+            Code.DEPTH_MISMATCH,
+            Code.ASSEMBLY_FINGERPRINT_MISMATCH,
+            Code.EDGE_PARENTAGE_MISMATCH,
+        ),
+        Code.MULTIPLE_ROOTS,
+    ),
+)
+
+class SourceGraphMutationCorpusTests(unittest.TestCase):
+    FIXTURES = Path(__file__).parent / "fixtures" / "source_graph"
+
+    def _resolve(self, relative: str) -> EffectiveSourceGraph:
+        symbols = ()
+        if relative == "conditional-defined/root.perdsl":
+            symbols = (("TEST", LoadSymbolState.DEFINED),)
+        return SourceGraphResolver().resolve(
+            SourceGraphRequest(
+                entrypoint=self.FIXTURES / relative,
+                load_symbols=LoadSymbolEnvironment(symbols),
+            )
+        )
+
+    @staticmethod
+    def _field_names(value) -> tuple[str, ...]:
+        return tuple(item.name for item in fields(value))
+
+    def _assert_single_field_change(
+        self,
+        before: EffectiveSourceGraph,
+        after: EffectiveSourceGraph,
+        case: MutationCase,
+    ) -> None:
+        if case.scope == "graph":
+            before_names = self._field_names(before)
+            after_names = self._field_names(after)
+            self.assertEqual(before_names, after_names)
+            changed = [
+                name
+                for name in before_names
+                if getattr(before, name) != getattr(after, name)
+            ]
+            self.assertEqual(
+                changed,
+                [case.field],
+                f"{case.name} changed fields {changed}",
+            )
+            return
+
+        if case.scope == "file":
+            self._assert_collection_mutation(before.files, after.files, case, "file")
+        elif case.scope == "instance":
+            self._assert_collection_mutation(
+                before.instances, after.instances, case, "instance"
+            )
+        elif case.scope == "event":
+            self._assert_collection_mutation(before.events, after.events, case, "event")
+        elif case.scope == "edge":
+            self._assert_collection_mutation(before.edges, after.edges, case, "edge")
+        elif case.scope == "slice":
+            self._assert_collection_mutation(
+                before.slices, after.slices, case, "slice"
+            )
+
+    def _assert_collection_mutation(self, before, after, case, label):
+        self.assertEqual(len(before), len(after))
+        changed_indices = [
+            index for index, (left, right) in enumerate(zip(before, after))
+            if left != right
+        ]
+        self.assertEqual(
+            len(changed_indices),
+            1,
+            f"{case.name} changed {label} indices {changed_indices}",
+        )
+        index = changed_indices[0]
+        original = before[index]
+        mutated = after[index]
+        changed_fields = [
+            item.name
+            for item in fields(original)
+            if getattr(original, item.name) != getattr(mutated, item.name)
+        ]
+        self.assertEqual(
+            changed_fields,
+            [case.field],
+            f"{case.name} changed {label} fields {changed_fields}",
+        )
+
+    def test_corpus_cases_are_unique_and_nonempty(self):
+        self.assertEqual(len(MUTATION_CORPUS), len({item.name for item in MUTATION_CORPUS}))
+        self.assertGreaterEqual(len(MUTATION_CORPUS), 25)
+
+    def test_every_corpus_mutation_is_exactly_one_field(self):
+        for case in MUTATION_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                self.assertTrue(
+                    validate_effective_source_graph(baseline).valid,
+                    case.name,
+                )
+                mutated = case.mutate(baseline)
+                self._assert_single_field_change(baseline, mutated, case)
+
+    def test_every_corpus_mutation_produces_expected_diagnostic(self):
+        for case in MUTATION_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                mutated = case.mutate(baseline)
+                report: SourceGraphValidationReport = validate_effective_source_graph(
+                    mutated
+                )
+                self.assertFalse(report.valid)
+                codes = {item.code for item in report.errors}
+                self.assertIn(
+                    case.expected,
+                    codes,
+                    f"{case.name}: expected {case.expected}, got {sorted(c.value for c in codes)}",
+                )
+
+    def test_multi_failure_corpus_has_documented_primary_codes(self):
+        for case in MULTI_FAILURE_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                self.assertTrue(validate_effective_source_graph(baseline).valid)
+                report = validate_effective_source_graph(case.mutate(baseline))
+                actual = tuple(item.code for item in report.errors)
+                self.assertEqual(actual, case.expected_codes)
+                self.assertEqual(report.primary_code, case.primary)
+
+    def test_multi_failure_diagnostics_are_stably_deduplicated_and_ordered(self):
+        for case in MULTI_FAILURE_CORPUS:
+            with self.subTest(case=case.name):
+                baseline = self._resolve(case.fixture)
+                mutated = case.mutate(baseline)
+                first = validate_effective_source_graph(mutated)
+                second = validate_effective_source_graph(mutated)
+                self.assertEqual(first.diagnostics, second.diagnostics)
+                self.assertEqual(len(first.diagnostics), len(set(first.diagnostics)))
+                self.assertEqual(tuple(item.code for item in first.diagnostics), case.expected_codes)
+                self.assertEqual(first.primary_code, case.primary)
+
+    def test_multi_failure_diagnostics_are_stable_across_hash_seeds(self):
+        child_code = """
+import json
+
+from Compiler.semantic.source_graph_validation import validate_effective_source_graph
+from test_source_graph_mutation_corpus import (
+    MULTI_FAILURE_CORPUS,
+    SourceGraphMutationCorpusTests,
+)
+
+helper = SourceGraphMutationCorpusTests()
+payload = []
+for case in MULTI_FAILURE_CORPUS:
+    graph = helper._resolve(case.fixture)
+    report = validate_effective_source_graph(case.mutate(graph))
+    diagnostics = []
+    for item in report.diagnostics:
+        diagnostics.append(
+            {
+                "code": item.code.value,
+                "severity": item.severity.value,
+                "message": item.message,
+                "path": str(item.path) if item.path is not None else None,
+                "line": item.line,
+                "column": item.column,
+                "instance_id": item.instance_id,
+                "edge_id": item.edge_id,
+            }
+        )
+    if len(diagnostics) != len(
+        {json.dumps(item, sort_keys=True) for item in diagnostics}
+    ):
+        raise AssertionError(f"{case.name}: duplicate diagnostics survived")
+    payload.append(
+        {
+            "name": case.name,
+            "diagnostics": diagnostics,
+            "primary_code": (
+                report.primary_code.value if report.primary_code is not None else None
+            ),
+        }
+    )
+
+print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+"""
+        repo_root = Path(__file__).resolve().parents[3]
+        compiler_root = repo_root / "LearnerAI"
+        tests_root = compiler_root / "Compiler" / "tests"
+        base_env = os.environ.copy()
+        base_pythonpath = os.pathsep.join(
+            item
+            for item in (
+                str(compiler_root),
+                str(tests_root),
+                base_env.get("PYTHONPATH", ""),
+            )
+            if item
+        )
+        outputs = {}
+        for seed in _SUBPROCESS_HASH_SEEDS:
+            env = base_env.copy()
+            env["PYTHONHASHSEED"] = str(seed)
+            env["PYTHONPATH"] = base_pythonpath
+            result = subprocess.run(
+                [sys.executable, "-c", child_code],
+                cwd=repo_root,
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+                timeout=30,
+            )
+            self.assertEqual(
+                result.returncode,
+                0,
+                f"hash seed {seed} failed: {result.stderr}",
+            )
+            self.assertTrue(result.stdout.strip(), f"hash seed {seed} emitted no JSON")
+            outputs[seed] = json.loads(result.stdout)
+
+        baseline = outputs[_SUBPROCESS_HASH_SEEDS[0]]
+        for seed, output in outputs.items():
+            with self.subTest(seed=seed):
+                self.assertEqual(output, baseline)
+                for case in output:
+                    diagnostics = case["diagnostics"]
+                    self.assertEqual(
+                        len(diagnostics),
+                        len(
+                            {
+                                json.dumps(item, sort_keys=True)
+                                for item in diagnostics
+                            }
+                        ),
+                        case["name"],
+                    )
+                    self.assertEqual(
+                        case["primary_code"],
+                        diagnostics[0]["code"] if diagnostics else None,
+                        case["name"],
+                    )
+
+    def test_primary_code_is_empty_for_valid_graphs(self):
+        graph = self._resolve("linear/root.perdsl")
+        report = validate_effective_source_graph(graph)
+        self.assertTrue(report.valid)
+        self.assertIsNone(report.primary_code)
+
+    def test_corpus_spans_all_declared_mutation_scopes(self):
+        self.assertEqual(
+            {"graph", "file", "instance", "event", "edge", "slice"},
+            {item.scope for item in MUTATION_CORPUS},
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

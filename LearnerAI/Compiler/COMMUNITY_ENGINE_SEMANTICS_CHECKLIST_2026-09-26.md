@@ -40,6 +40,7 @@ Evidence classes are intentionally separate:
 - [x] Treat SNs as a persistent engine control namespace, not as generic integers.
 - [x] Bind SN storage explicitly and collision-safely.
 - [x] Record that an SN may change built-in engine behavior.
+- [x] Implement typed `up-compare-sn` semantics for all six comparison operators and c/g/s operands.
 - [ ] Complete native SN semantic metadata for all checked-in SNs that the compiler exposes.
 - [ ] Distinguish native behavior-changing SNs from genuinely unused/custom-safe SNs.
 - [ ] Add provenance/version checks when a strategy relies on an SN whose semantics changed across patches.
@@ -60,13 +61,17 @@ Evidence classes are intentionally separate:
 - [x] Classify later-rule writer -> reader as persisted engine state.
 - [x] Reject reader-before-first-writer dependencies.
 - [x] Preserve source attribution through the ordering analysis.
-- [ ] Model repeated pass eligibility as a first-class semantic concept rather than assuming one-shot rule execution.
-- [ ] Model disable-self lifetime explicitly.
-- [ ] Detect later overwrites of persistent Goal/SN state when earlier consumers can be preempted or starved.
-- [ ] Detect unreachable/never-runnable rules caused by earlier persistent state, mutually exclusive guards, or terminal disable-self.
-- [ ] Detect rules that are syntactically valid but behaviorally open-loop because no later rule can observe their state transition.
+- [x] Model repeated pass eligibility at runtime and static eligibility (RulePassBehavior, FiringEligibility, PassScheduler).
+- [x] Model disable-self lifetime explicitly in EffectiveRule and PassScheduler.
+- [x] Diagnose persistent-state consumers starved by guaranteed recurrent writers; retain later-overwrite diagnostics separately.
+- [x] Diagnose globally unreachable rules caused by recurrent control-flow convergence; persistent-state never-runnable cases remain covered separately by PSTATE-004.
+- [x] Diagnose guaranteed recurrent forward jumps that preempt intervening rules without claiming alternate paths are unreachable.
+- [x] Diagnose persistent writes with no later reachable rule consuming the state; include Goal/SN operands in `up-modify-sn` and `up-compare-sn` as downstream consumers.
+- [x] Diagnose recurrent writer executions whose downstream consumers exist globally but are unreachable from the writer's actual firing path in the same pass; do not treat one-shot writers as path-blocked because later-pass consumption remains possible.
 - [x] Track action sequencing inside one emitted rule without inventing a false pass boundary.
-- [ ] Track the effective source graph before claiming global rule order once load/load-if-* is supported.
+- [x] Represent statically parseable `up-jump-rule` control transfers against effective rule order.
+- [x] Diagnose out-of-range control transfers and informational forward bypasses.
+- [x] Track the effective source graph before claiming global rule order once load/load-if-* is supported.
 
 ## Gate 3 — asynchronous build/train/research lifecycles
 
@@ -183,13 +188,14 @@ Evidence classes are intentionally separate:
 
 ## Gate 9 — load/preprocessor program graph
 
-- [ ] Parse and resolve load reachability.
-- [ ] Parse and resolve load-if-defined and related conditional loading.
-- [ ] Preserve physical source locations through the expanded graph.
-- [ ] Detect duplicate inclusion and conditional shadowing.
-- [ ] Compute effective rule/source order across loaded files.
+- [x] Parse and resolve load reachability.
+- [x] Parse and resolve load-if-defined and related conditional loading.
+- [x] Preserve physical source locations through the expanded graph.
+- [x] Detect malformed conditional structure and load cycles/depth violations.
+- [x] Compute effective source slices and rule/source order across loaded files.
+- [x] Resolve package compilation from the effective source graph before semantic analysis.
 - [ ] Include loaded storage consumers in Goal/SN/Timer occupancy analysis.
-- [ ] Refuse to claim whole-program completeness while the effective source graph is unresolved.
+- [ ] Detect every duplicate-inclusion/shadowing pattern that requires package-specific policy.
 
 ## Gate 10 — performance as behavioral semantics
 
@@ -217,10 +223,26 @@ Evidence classes are intentionally separate:
 - [x] Unit-test community practice registry consistency.
 - [ ] Add native zero-findings fixtures for each new promoted semantic contract.
 - [ ] Add negative fixtures for pending-as-completion, timing-as-completion, missing can-* feasibility, stale DUC targets, and open-loop attack state.
-- [ ] Add source-order fixtures for later overwrite, disable-self, and loaded-file precedence.
+- [x] Add source-order fixtures for later overwrite, disable-self, and loaded-file precedence.
 - [ ] Add recovery fixtures proving identity preservation across capability loss/recovery.
 - [ ] Keep full compiler unittest count and native acceptance fixtures as release gates.
 - [ ] Keep the runtime game as the authority for gameplay quality, never as proof that malformed/compiler-incorrect code is acceptable.
+
+## M1 characterization tranche — 2026-09-27
+
+Cross-reference against the current recurrent compiler implementation and PR #54 (effective-source-graph-typed-ir):
+
+- [x] Recurrent rule remains eligible and fires again on a later pass when its guard remains true. Implemented by RulePassBehavior.RECURRENT and exercised in test_pass_scheduler.py.
+- [x] One-shot rule is disabled after disable-self and does not fire on the following pass. Implemented by disable_self_action_index plus PassScheduler._enabled and explicitly characterized by tests.
+- [x] Same-pass persistent Goal write is visible to a later rule in the same pass. Existing timer/SN coverage and new Goal coverage exercise current-pass mutation visibility.
+- [x] Persistent Goal value survives the writer rule becoming one-shot and remains observable on the next pass.
+- [x] disable-self does not abort later actions in the same rule or later rules in the same pass.
+- [x] up-jump-rule forward skip, backward revisit, and out-of-range rejection are covered by scheduler tests.
+- [x] Build a static control-transfer graph alongside the runtime ControlTransfer trace.
+- [x] Diagnose preemption/starvation, global control-flow reachability, and path-sensitive persistent-state consumer reachability; persistent-state starvation is represented by PSTATE-004 and same-pass path blocking by PSTATE-006.
+- [x] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer. Implemented as PSTATE-005 and exercised by persistent-state/rule-diagnostic regressions.
+
+M1 now includes focused starvation, preemption, global control-flow reachability, and open-loop persistent-state diagnostics. It still does not claim global never-runnable proof from arbitrary runtime predicates.
 
 ## Current implementation tranche
 
@@ -257,6 +279,6 @@ Implemented in this pass:
 
 The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them. Native primitive support now also has an explicit engine-semantics-mapped gate, so a syntactically typed adapter cannot silently jump directly to executable-safe.
 
-In particular, DUC, attack machinery, complete Strategic Number semantics, recurrent rule eligibility, disable-self, later-overwrite/preemption analysis, and the load graph remain evidence-backed frontiers until their native syntax/IR support is implemented.
+In particular, DUC, attack machinery, complete Strategic Number inventory/patch semantics, and broader runtime predicate reachability remain evidence-backed frontiers until their native syntax/IR support is implemented.
 
 The correct milestone is therefore: community engine semantics are now explicit and typed, with the recovery slice actually enforced; the remaining frontier is native execution coverage, not more abstract lifecycle vocabulary.

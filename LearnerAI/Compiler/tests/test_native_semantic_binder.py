@@ -87,5 +87,10 @@ class NativeSemanticBinderTests(unittest.TestCase):
             binder.bind("current-age")
 
 
+
+    def test_up_compare_sn_has_executable_native_semantic_contract(self):
+        assessment = self.binder.assess("up-compare-sn")
+        self.assertEqual(assessment.state.value, "executable-safe")
+
 if __name__ == "__main__":
     unittest.main()

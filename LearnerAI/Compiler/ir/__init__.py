@@ -111,9 +111,53 @@ from .versioning import (
     Validity,
 )
 
+from .source_graph import (
+    ConditionContext,
+    ConditionPredicate,
+    EffectiveSourceGraph,
+    EffectiveSourceSlice,
+    LoadKind,
+    LoadSymbolEnvironment,
+    LoadSymbolState,
+    SourceEdge,
+    SourceEdgeId,
+    SourceFile,
+    SourceFileId,
+    SourceInstance,
+    SourceInstanceId,
+    SourceRange,
+    structural_edge_id,
+    structural_instance_id,
+)
+
 from .native_metadata import (
     NativeEngineProfile,
     NativeIdentifier,
     NativeParameterContract,
     default_de_native_profile,
+)
+
+from .recurrent import (
+    PendingTimerExpiry,
+    TimerReadKind,
+    TimerRuntimeState,
+    TimerStatus,
+    create_initialized_timer,
+    read_timer_triggered,
+)
+
+from .strategic_number import (
+    CONSTANT_OPERAND_MAX,
+    CONSTANT_OPERAND_MIN,
+    STRATEGIC_NUMBER_MAX,
+    STRATEGIC_NUMBER_MIN,
+    StrategicNumberAccess,
+    StrategicNumberAccessKind,
+    StrategicNumberComparison,
+    StrategicNumberCompareOp,
+    StrategicNumberDependency,
+    StrategicNumberMathOp,
+    StrategicNumberMutation,
+    StrategicNumberOperand,
+    StrategicNumberOperandKind,
 )

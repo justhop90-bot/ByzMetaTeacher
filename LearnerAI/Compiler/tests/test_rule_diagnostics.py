@@ -18,6 +18,10 @@ from Compiler.semantic.persistent_state import (
     PersistentStateDiagnosticCode,
     analyze_persistent_state,
 )
+from Compiler.semantic.strategic_number_semantics import (
+    StrategicNumberDiagnosticCode,
+    analyze_strategic_number_expressions,
+)
 from Compiler.semantic.rule_execution import analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
@@ -48,6 +52,45 @@ class RuleDiagnosticsTests(unittest.TestCase):
             location=SourceLocation(2, 1, "<test>"),
         )
 
+    def test_forward_control_transfer_gets_bypass_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1))\n"
+                "(defrule (true) => (set-goal skipped 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+        )
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.INFO)
+        self.assertEqual(finding.related_rule_order, 3)
+        self.assertEqual(finding.related_operation, "up-jump-rule")
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
+
+    def test_out_of_range_control_transfer_gets_error_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 3))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertEqual(len(diagnostics.errors), 1)
+        finding = diagnostics.errors[0]
+        self.assertEqual(finding.code, RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE)
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertIsNone(finding.related_rule_order)
+        self.assertEqual(finding.related_operation, "up-jump-rule")
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
     def test_never_eligible_rule_gets_error_diagnostic(self):
         report = analyze_effective_rules(
             self._graph(
@@ -166,6 +209,295 @@ class RuleDiagnosticsTests(unittest.TestCase):
             RuleDiagnosticCode.NEVER_ELIGIBLE,
         )
 
+    def test_strategic_number_dependency_findings_compile_into_rule_diagnostics(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => "
+                "(up-modify-sn 510 s:+ 511) "
+                "(set-strategic-number 511 4))\n"
+            )
+        )
+        strategic_numbers = analyze_strategic_number_expressions(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            strategic_number_report=strategic_numbers,
+        )
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY
+        )
+        self.assertEqual(len(findings), 1)
+        diagnostic = findings[0]
+        self.assertEqual(diagnostic.rule_order, 1)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.ERROR)
+        self.assertIsNone(diagnostic.eligibility)
+        self.assertEqual(diagnostic.category.value, "STRATEGIC_NUMBER")
+        self.assertEqual(
+            diagnostic.source_code,
+            StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY.value,
+        )
+
+    def test_globally_unreachable_rule_gets_control_flow_error(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1))\n"
+                "(defrule (true) => (set-goal unreachable 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+        )
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
+        self.assertEqual(finding.related_operation, "control-flow")
+
+    def test_one_shot_jump_does_not_create_global_unreachable_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1) (disable-self))\n"
+                "(defrule (true) => (set-goal successor 1))\n"
+                "(defrule (true) => (set-goal target 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+
+    def test_alternate_backward_path_prevents_false_global_unreachable_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2))\n"
+                "(defrule (true) => (set-goal second 1))\n"
+                "(defrule (true) => (set-goal third 1))\n"
+                "(defrule (true) => (up-jump-rule -3))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+
+    def test_open_loop_persistent_write_compiles_to_warning(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal open-loop 1))\n"
+            )
+        )
+        persistent_state = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent_state,
+        )
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.WARNING)
+        self.assertIsNone(finding.related_rule_order)
+        self.assertEqual(finding.state_kind, "GOAL")
+        self.assertEqual(finding.state_identifier, "open-loop")
+        self.assertEqual(finding.source_code, "PSTATE-005")
+        self.assertEqual(finding.category.value, "PERSISTENT_STATE")
+
+    def test_path_sensitive_persistent_diagnostic_maps_to_rule_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal seed 1))\n"
+                "(defrule (current-age >= castle-age) => (set-goal gate 1) (up-jump-rule 1))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1))\n"
+                "(defrule (true) => (set-goal tail 1))\n"
+            )
+        )
+        persistent_state = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent_state,
+        )
+
+        finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_SAME_PASS_CONSUMER_PATH_BLOCKED
+        )
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.related_rule_order, 3)
+        self.assertEqual(finding.severity, DiagnosticSeverity.WARNING)
+        self.assertEqual(finding.state_kind, "GOAL")
+        self.assertEqual(finding.state_identifier, "gate")
+        self.assertEqual(finding.source_code, "PSTATE-006")
+        self.assertEqual(finding.category.value, "PERSISTENT_STATE")
+    def test_open_loop_diagnostic_does_not_fire_when_reachable_consumer_exists(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal open-loop 1))\n"
+                "(defrule (goal open-loop 1) => (set-goal sink 1))\n"
+            )
+        )
+        persistent_state = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent_state,
+        )
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.state_identifier == "open-loop"
+                for item in diagnostics.diagnostics
+            )
+        )
+    def test_recurrent_guaranteed_writer_is_reported_as_persistent_starvation(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal gate 0))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1))\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        finding = next(
+            item
+            for item in persistent.diagnostics
+            if item.code
+            is PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER
+        )
+
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(finding.related_access.rule_order, 1)
+        self.assertEqual(finding.related_access.command, "set-goal")
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent,
+        )
+        rule_finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_CONSUMER_STARVED_BY_RECURRENT_WRITER
+        )
+        self.assertEqual(rule_finding.rule_order, 2)
+        self.assertEqual(rule_finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(rule_finding.related_rule_order, 1)
+        self.assertEqual(rule_finding.state_identifier, "gate")
+
+    def test_one_shot_shadowing_is_warning_not_persistent_starvation(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal gate 0) (disable-self))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1) (disable-self))\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        shadow = next(
+            item
+            for item in persistent.diagnostics
+            if item.code
+            is PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER
+        )
+        self.assertEqual(shadow.severity, DiagnosticSeverity.WARNING)
+        self.assertEqual(shadow.rule_order, 2)
+        self.assertEqual(shadow.related_access.rule_order, 1)
+        self.assertFalse(
+            any(
+                item.code
+                is PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER
+                for item in persistent.diagnostics
+            )
+        )
+
+    def test_one_shot_jump_has_bypass_info_but_no_recurrent_preemption_warning(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2) (disable-self))\n"
+                "(defrule (true) => (set-goal skipped-a 1))\n"
+                "(defrule (true) => (set-goal skipped-b 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+        self.assertTrue(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+                and item.severity is DiagnosticSeverity.INFO
+                for item in diagnostics.diagnostics
+            )
+        )
+
+    def test_recurrent_guaranteed_jump_gets_preemption_diagnostics_for_each_bypassed_rule(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2))\n"
+                "(defrule (true) => (set-goal skipped-a 1))\n"
+                "(defrule (true) => (set-goal skipped-b 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        preemptions = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+        )
+
+        self.assertEqual(
+            [(item.rule_order, item.related_rule_order, item.severity) for item in preemptions],
+            [
+                (1, 2, DiagnosticSeverity.WARNING),
+                (1, 3, DiagnosticSeverity.WARNING),
+            ],
+        )
+        self.assertTrue(
+            all(
+                "alternate control paths are not ruled out" in item.message
+                for item in preemptions
+            )
+        )
+
     def test_persistent_state_findings_compile_into_rule_diagnostics(self):
         report = analyze_effective_rules(
             self._graph(
@@ -246,6 +578,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
                 (1, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
                 (2, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
                 (2, "PERSISTENT_STATE", "PSTATE-002"),
+                (2, "PERSISTENT_STATE", "PSTATE-005"),
             ],
         )
 
@@ -265,6 +598,20 @@ class RuleDiagnosticsTests(unittest.TestCase):
             [1, 2, 3],
         )
 
+
+
+    def test_up_compare_sn_goal_dependency_is_tracked(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal goal-x 1) (set-strategic-number 510 7))\n"
+                "(defrule (up-compare-sn 510 g:>= goal-x) => (disable-self))\n"
+            )
+        )
+        strategic_numbers = analyze_strategic_number_expressions(report)
+        self.assertEqual(len(strategic_numbers.dependencies), 1)
+        dependency = strategic_numbers.dependencies[0]
+        self.assertEqual(dependency.kind.value, "GOAL")
+        self.assertEqual(dependency.identifier, "goal-x")
 
 if __name__ == "__main__":
     unittest.main()
