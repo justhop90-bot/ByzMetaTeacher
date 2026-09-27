@@ -1503,6 +1503,8 @@ def _analyze_duc_linear(
         final_state=state,
         states=tuple(states),
         searches=tuple(searches),
+        group_operations=tuple(groups),
+        group_observations=tuple(group_observations),
         resets=tuple(resets),
         mutations=tuple(mutations),
         targets=tuple(targets),
@@ -2017,6 +2019,16 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for operation in rule_reports[rule_order].searches
     )
+    group_operations = tuple(
+        operation
+        for rule_order in sorted(rule_reports)
+        for operation in rule_reports[rule_order].group_operations
+    )
+    group_observations = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].group_observations
+    )
     resets = tuple(
         effect
         for rule_order in sorted(rule_reports)
@@ -2082,6 +2094,8 @@ def analyze_duc(
         final_state=final_state,
         states=states,
         searches=searches,
+        group_operations=group_operations,
+        group_observations=group_observations,
         resets=resets,
         mutations=mutations,
         targets=targets,
@@ -2121,6 +2135,7 @@ def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
         state.point_target,
         0,
         state.pass_id + 1,
+        groups=state.groups,
     )
 
 
