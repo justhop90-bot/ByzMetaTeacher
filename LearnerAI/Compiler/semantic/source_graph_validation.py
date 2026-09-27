@@ -111,6 +111,9 @@ class SourceGraphDiagnosticCode(str, Enum):
     EVENT_PAIRING_INVALID = "SOURCE-GRAPH-VAL-104"
     EVENT_EDGE_MISMATCH = "SOURCE-GRAPH-VAL-105"
     CONDITIONAL_EDGE_FORBIDDEN = "SOURCE-GRAPH-VAL-106"
+    EDGE_EVENT_MISSING = "SOURCE-GRAPH-VAL-107"
+    EDGE_EVENT_KIND_MISMATCH = "SOURCE-GRAPH-VAL-108"
+    EDGE_EVENT_PAYLOAD_MISMATCH = "SOURCE-GRAPH-VAL-109"
 
 
 @dataclass(frozen=True)
@@ -587,6 +590,54 @@ def _validate_events(
             )
             continue
 
+        if event.kind is SourceAssemblyEventKind.LOAD:
+            payload = event.payload
+            assert isinstance(payload, LoadEventPayload)
+            if not payload.target_text:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_KIND_PAYLOAD_MISMATCH,
+                        f"load event '{event.identity.value}' has an empty target",
+                        path=path,
+                        line=line,
+                        column=column,
+                    )
+                )
+        elif event.kind is SourceAssemblyEventKind.LOAD_RANDOM:
+            payload = event.payload
+            assert isinstance(payload, LoadRandomEventPayload)
+            if not payload.entries:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_KIND_PAYLOAD_MISMATCH,
+                        f"load-random event '{event.identity.value}' has no entries",
+                        path=path,
+                        line=line,
+                        column=column,
+                    )
+                )
+            for entry in payload.entries:
+                if not entry.target_text:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_KIND_PAYLOAD_MISMATCH,
+                            f"load-random event '{event.identity.value}' has an empty target entry",
+                            path=path,
+                            line=line,
+                            column=column,
+                        )
+                    )
+                if entry.weight is not None and entry.weight < 0:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_KIND_PAYLOAD_MISMATCH,
+                            f"load-random event '{event.identity.value}' has a negative entry weight",
+                            path=path,
+                            line=line,
+                            column=column,
+                        )
+                    )
+
         try:
             if event.kind in {
                 SourceAssemblyEventKind.LOAD,
@@ -1050,6 +1101,112 @@ def _validate_edges(
             continue
 
         outgoing.setdefault(edge.source, []).append(edge)
+
+        event = graph.events_by_id.get(edge.event)
+        if event is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EDGE_EVENT_MISSING,
+                    f"edge '{edge.edge_id}' references unknown assembly event '{edge.event.value}'",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+        else:
+            if event.edge != edge.identity:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                        f"edge '{edge.edge_id}' and event '{event.identity.value}' disagree on back-reference",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            if event.source_instance != edge.source or event.span != edge.span:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EDGE_EVENT_MISMATCH,
+                        f"edge '{edge.edge_id}' does not match its assembly event source or span",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            if event.kind not in {
+                SourceAssemblyEventKind.LOAD,
+                SourceAssemblyEventKind.LOAD_RANDOM,
+            }:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EDGE_EVENT_KIND_MISMATCH,
+                        f"edge '{edge.edge_id}' references non-load assembly event '{event.identity.value}'",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            elif event.kind is SourceAssemblyEventKind.LOAD:
+                payload = event.payload
+                if isinstance(payload, LoadEventPayload):
+                    expected_kind = (
+                        LoadKind.RAW_LOAD
+                        if payload.syntax is SourceLoadSyntax.RAW_LOAD
+                        else LoadKind.FILE
+                    )
+                    if (
+                        edge.kind is not expected_kind
+                        or edge.target_text != payload.target_text
+                    ):
+                        diagnostics.append(
+                            _diag(
+                                SourceGraphDiagnosticCode.EDGE_EVENT_PAYLOAD_MISMATCH,
+                                f"edge '{edge.edge_id}' does not agree with its load event payload",
+                                path=path,
+                                line=line,
+                                column=column,
+                                edge_id=edge.edge_id,
+                            )
+                        )
+            elif event.kind is SourceAssemblyEventKind.LOAD_RANDOM:
+                if edge.kind is not LoadKind.RANDOM:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EDGE_EVENT_PAYLOAD_MISMATCH,
+                            f"edge '{edge.edge_id}' is not RANDOM for its load-random event",
+                            path=path,
+                            line=line,
+                            column=column,
+                            edge_id=edge.edge_id,
+                        )
+                    )
+            if edge.condition != event.condition_before:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EDGE_EVENT_PAYLOAD_MISMATCH,
+                        f"edge '{edge.edge_id}' condition does not match its assembly event context",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+            if edge.active != event.condition_before.evaluate(symbols):
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EDGE_EVENT_PAYLOAD_MISMATCH,
+                        f"edge '{edge.edge_id}' active state does not match its assembly event context",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
 
         if edge.condition.depth > policy.max_conditional_depth:
             diagnostics.append(
