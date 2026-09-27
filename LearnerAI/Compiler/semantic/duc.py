@@ -545,7 +545,7 @@ def _analyze_duc_linear(
                         and target.object_refs[0].list_kind is DucListKind.LOCAL
                     ):
                         target = DucTargetState(
-                            **{**target.__dict__, "validity": DucTargetStatus.STALE}
+                            **{**target.__dict__, "validity": DucTargetStatus.STALE, "proof": DucTargetProof.UNKNOWN}
                         )
                 if resolution.invalidates_remote_list:
                     remote = _list_state(
@@ -829,7 +829,7 @@ def _analyze_duc_linear(
                         state.remote_list,
                         state.filters,
                         DucTargetState(
-                            **{**state.target.__dict__, "validity": DucTargetStatus.UNKNOWN}
+                            **{**state.target.__dict__, "validity": DucTargetStatus.UNKNOWN, "proof": DucTargetProof.UNKNOWN}
                         ),
                         state.point_target,
                         state_revision,
