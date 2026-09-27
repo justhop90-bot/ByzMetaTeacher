@@ -364,6 +364,26 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIn("iteration bound 3", diagnostic.message)
         self.assertIn("widened fields: REMOTE_LIST, FILTERS", diagnostic.message)
 
+    def test_search_state_provenance_uses_shared_output_evidence(self):
+        base = default_native_contract_catalog()
+        shared = NativeContractCatalog(
+            duc_output_evidence_ids=("airef:duc:get-search-state",),
+        )
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                    ("up-get-search-state", ("100",)),
+                )),
+            ),
+            contracts=shared,
+        )
+
+        self.assertEqual(
+            report.observations[-1].provenance.evidence_ids,
+            ("airef:duc:get-search-state",),
+        )
+
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
             _rule(1, (
