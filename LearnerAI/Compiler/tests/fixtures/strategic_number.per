@@ -61,8 +61,3 @@
     (up-modify-sn sn-test-a s:%/ sn-test-b)
     (disable-self))
 
-(defrule
-    (strategic-number sn-test-a >= 0)
-    (up-compare-sn sn-test-a >= c:0)
-=>
-    (disable-self))
