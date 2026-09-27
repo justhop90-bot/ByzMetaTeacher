@@ -378,12 +378,27 @@ def _analyze_duc_linear(
                         )
                     )
                 visible = DucVisibility.SAME_RULE
+                list_generation_inputs = tuple(
+                    sorted(
+                        {
+                            generation.generation
+                            for generation in (
+                                *current.generation_variants,
+                                *(
+                                    (current.current_generation,)
+                                    if current.current_generation is not None
+                                    else ()
+                                ),
+                            )
+                        }
+                    )
+                )
                 provenance = _provenance(
                     rule,
                     action,
                     visibility=visible,
                     state_revision=state_revision,
-                    inputs=(state.filters.generation,),
+                    inputs=list_generation_inputs + (state.filters.generation,),
                     contract_id=f"duc.search.{command}",
                     evidence_ids=search_contract.evidence_ids,
                 )
@@ -1142,7 +1157,7 @@ def analyze_duc(
                         "DUC-013",
                         DiagnosticSeverity.WARNING.value,
                         rule_order,
-                        f"control transfer from rule {rule_order} loops to rule {target_order}; DUC state is widened at the back-edge boundary",
+                        f"control transfer from rule {rule_order} loops to rule {target_order}; DUC state is not propagated across the back-edge in this forward branch analysis",
                         rules_by_order[rule_order].source_location,
                     )
                 )
