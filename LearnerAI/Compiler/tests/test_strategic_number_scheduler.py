@@ -53,8 +53,7 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
         report = self._rules(
             "(defrule (true) => "
             "(up-modify-sn 510 s:+ 511) "
-            "(set-strategic-number 511 4))
-"
+            "(set-strategic-number 511 4))\n"
         )
         semantic = analyze_strategic_number_expressions(report)
 
