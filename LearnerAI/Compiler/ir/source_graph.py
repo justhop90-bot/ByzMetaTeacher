@@ -1,9 +1,12 @@
 """Typed effective-source-graph intermediate representation.
 
-This module contains compiler-owned source identity, source-instance identity,
-explicit load topology, conditional predicates, effective slices, and canonical
-assembly/effective fingerprints. The resolver is responsible for constructing
-these values; validators are responsible for proving their consistency.
+This module contains compiler-owned source identity, authoritative lexical
+assembly events, explicit load topology, conditional predicates, effective
+slices, and canonical assembly/effective fingerprints.
+
+Events describe source-language truth. Edges describe resolved topology.
+Instances describe recursive source context. Slices describe the effective
+source projection consumed by later compiler stages.
 """
 from __future__ import annotations
 
@@ -16,12 +19,32 @@ from typing import Iterable
 
 
 class LoadKind(str, Enum):
+    """Resolved load/topology kinds.
+
+    The conditional members remain for source-compatibility with older
+    consumers. New authoritative graph edges never use them; conditional
+    directives are represented by SourceAssemblyEventKind.
+    """
+
     FILE = "FILE"
     RAW_LOAD = "RAW_LOAD"
     CONDITIONAL_DEFINED = "CONDITIONAL_DEFINED"
     CONDITIONAL_NOT_DEFINED = "CONDITIONAL_NOT_DEFINED"
     CONDITIONAL_ELSE = "CONDITIONAL_ELSE"
     RANDOM = "RANDOM"
+
+
+class SourceAssemblyEventKind(str, Enum):
+    LOAD = "LOAD"
+    LOAD_RANDOM = "LOAD_RANDOM"
+    CONDITIONAL_OPEN = "CONDITIONAL_OPEN"
+    CONDITIONAL_ELSE = "CONDITIONAL_ELSE"
+    CONDITIONAL_END = "CONDITIONAL_END"
+
+
+class SourceLoadSyntax(str, Enum):
+    PAREN_LOAD = "PAREN_LOAD"
+    RAW_LOAD = "RAW_LOAD"
 
 
 class LoadSymbolState(str, Enum):
@@ -105,6 +128,18 @@ class SourceEdgeId:
         return self.value
 
 
+@dataclass(frozen=True, order=True)
+class SourceAssemblyEventId:
+    value: str
+
+    def __post_init__(self) -> None:
+        if not self.value:
+            raise ValueError("source assembly event identity cannot be empty")
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass(frozen=True)
 class SourceRange:
     source: SourceFileId
@@ -126,6 +161,7 @@ class SourceRange:
     @property
     def location(self):
         from ..ast import SourceLocation
+
         return SourceLocation(
             self.start_line,
             self.start_column,
@@ -173,6 +209,14 @@ class ConditionContext:
     def evaluate(self, environment: "LoadSymbolEnvironment") -> bool:
         return all(predicate.evaluate(environment) for predicate in self.predicates)
 
+    def append(self, predicate: ConditionPredicate) -> "ConditionContext":
+        return ConditionContext(self.predicates + (predicate,))
+
+    def pop_last(self) -> "ConditionContext":
+        if not self.predicates:
+            raise ValueError("cannot pop an empty condition context")
+        return ConditionContext(self.predicates[:-1])
+
     def complement_last(self) -> "ConditionContext":
         if not self.predicates:
             raise ValueError("cannot complement an empty condition context")
@@ -183,9 +227,8 @@ class ConditionContext:
             else LoadSymbolState.DEFINED
         )
         return ConditionContext(
-            self.predicates[:-1] + (
-                ConditionPredicate(last.symbol, expected),
-            )
+            self.predicates[:-1]
+            + (ConditionPredicate(last.symbol, expected),)
         )
 
     def fingerprint_payload(self) -> tuple[tuple[str, str], ...]:
@@ -216,6 +259,122 @@ class LoadSymbolEnvironment:
 
 
 @dataclass(frozen=True)
+class LoadEventPayload:
+    syntax: SourceLoadSyntax
+    target_text: str
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {
+            "syntax": self.syntax.value,
+            "target_text": self.target_text,
+        }
+
+
+@dataclass(frozen=True)
+class LoadRandomEntry:
+    target_text: str
+    weight: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.target_text:
+            raise ValueError("random-load target cannot be empty")
+        if self.weight is not None and self.weight < 0:
+            raise ValueError("random-load weight cannot be negative")
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {
+            "target_text": self.target_text,
+            "weight": self.weight,
+        }
+
+
+@dataclass(frozen=True)
+class LoadRandomEventPayload:
+    syntax: SourceLoadSyntax
+    entries: tuple[LoadRandomEntry, ...]
+
+    def __post_init__(self) -> None:
+        if not self.entries:
+            raise ValueError("random-load event requires at least one entry")
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {
+            "syntax": self.syntax.value,
+            "entries": [
+                item.fingerprint_payload() for item in self.entries
+            ],
+        }
+
+
+@dataclass(frozen=True)
+class ConditionalOpenPayload:
+    predicate: ConditionPredicate
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {"predicate": self.predicate.fingerprint_payload()}
+
+
+@dataclass(frozen=True)
+class ConditionalElsePayload:
+    open_event: SourceAssemblyEventId
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {"open_event": self.open_event.value}
+
+
+@dataclass(frozen=True)
+class ConditionalEndPayload:
+    open_event: SourceAssemblyEventId
+    else_event: SourceAssemblyEventId | None
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {
+            "open_event": self.open_event.value,
+            "else_event": self.else_event.value
+            if self.else_event is not None
+            else None,
+        }
+
+
+SourceAssemblyEventPayload = (
+    LoadEventPayload
+    | LoadRandomEventPayload
+    | ConditionalOpenPayload
+    | ConditionalElsePayload
+    | ConditionalEndPayload
+)
+
+
+@dataclass(frozen=True)
+class SourceAssemblyEvent:
+    identity: SourceAssemblyEventId
+    source_instance: SourceInstanceId
+    kind: SourceAssemblyEventKind
+    span: SourceRange
+    lexical_ordinal: int
+    condition_before: ConditionContext
+    condition_after: ConditionContext
+    payload: SourceAssemblyEventPayload
+    edge: SourceEdgeId | None = None
+
+    def fingerprint_payload(self) -> dict[str, object]:
+        return {
+            "id": self.identity.value,
+            "source_instance": self.source_instance.value,
+            "kind": self.kind.value,
+            "span": self.span.fingerprint_payload(),
+            "lexical_ordinal": self.lexical_ordinal,
+            "condition_before": self.condition_before.fingerprint_payload(),
+            "condition_after": self.condition_after.fingerprint_payload(),
+            "payload": self.payload_fingerprint_payload(),
+            "edge": self.edge.value if self.edge is not None else None,
+        }
+
+    def payload_fingerprint_payload(self) -> dict[str, object]:
+        return self.payload.fingerprint_payload()
+
+
+@dataclass(frozen=True)
 class SourceInstance:
     identity: SourceInstanceId
     physical: SourceFile
@@ -224,6 +383,7 @@ class SourceInstance:
     ancestry: tuple[SourceFileId, ...]
     depth: int
     occurrence: int
+    events: tuple[SourceAssemblyEventId, ...] = ()
 
     @property
     def source(self) -> SourceFileId:
@@ -246,7 +406,9 @@ class SourceInstance:
             "ancestry": [item.fingerprint_payload() for item in self.ancestry],
             "depth": self.depth,
             "occurrence": self.occurrence,
+            "events": [item.value for item in self.events],
         }
+
 
 @dataclass(frozen=True)
 class SourceEdge:
@@ -258,7 +420,7 @@ class SourceEdge:
     span: SourceRange
     condition: ConditionContext
     active: bool
-    lexical_order: int
+    event: SourceAssemblyEventId
     target_text: str | None = None
 
     @property
@@ -304,7 +466,7 @@ class SourceEdge:
             "span": self.span.fingerprint_payload(),
             "condition": self.condition.fingerprint_payload(),
             "active": self.active,
-            "lexical_order": self.lexical_order,
+            "event": self.event.value,
             "target_text": self.target_text,
         }
 
@@ -354,6 +516,7 @@ class EffectiveSourceGraph:
     root: SourceInstance
     files: tuple[SourceFile, ...]
     instances: tuple[SourceInstance, ...]
+    events: tuple[SourceAssemblyEvent, ...]
     edges: tuple[SourceEdge, ...]
     slices: tuple[EffectiveSourceSlice, ...]
     symbol_environment: LoadSymbolEnvironment
@@ -374,6 +537,10 @@ class EffectiveSourceGraph:
         return {item.identity: item for item in self.instances}
 
     @property
+    def events_by_id(self) -> dict[SourceAssemblyEventId, SourceAssemblyEvent]:
+        return {item.identity: item for item in self.events}
+
+    @property
     def edges_by_id(self) -> dict[SourceEdgeId, SourceEdge]:
         return {item.identity: item for item in self.edges}
 
@@ -387,6 +554,16 @@ class EffectiveSourceGraph:
             "instances": [
                 item.fingerprint_payload()
                 for item in sorted(self.instances, key=lambda value: value.identity)
+            ],
+            "events": [
+                item.fingerprint_payload()
+                for item in sorted(
+                    self.events,
+                    key=lambda value: (
+                        value.source_instance,
+                        value.lexical_ordinal,
+                    ),
+                )
             ],
             "edges": [
                 item.fingerprint_payload()
@@ -405,6 +582,7 @@ class EffectiveSourceGraph:
         root: SourceInstance,
         files: Iterable[SourceFile],
         instances: Iterable[SourceInstance],
+        events: Iterable[SourceAssemblyEvent],
         edges: Iterable[SourceEdge],
         slices: Iterable[EffectiveSourceSlice],
         symbols: LoadSymbolEnvironment,
@@ -419,6 +597,16 @@ class EffectiveSourceGraph:
                 item.fingerprint_payload()
                 for item in sorted(instances, key=lambda value: value.identity)
             ],
+            "events": [
+                item.fingerprint_payload()
+                for item in sorted(
+                    events,
+                    key=lambda value: (
+                        value.source_instance,
+                        value.lexical_ordinal,
+                    ),
+                )
+            ],
             "edges": [
                 item.fingerprint_payload()
                 for item in sorted(edges, key=lambda value: value.identity)
@@ -430,7 +618,11 @@ class EffectiveSourceGraph:
             "symbols": symbols.fingerprint_payload(),
         }
         return hashlib.sha256(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
         ).hexdigest()
 
     @staticmethod
@@ -451,7 +643,11 @@ class EffectiveSourceGraph:
             ],
         }
         return hashlib.sha256(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
         ).hexdigest()
 
     @classmethod
@@ -461,18 +657,21 @@ class EffectiveSourceGraph:
         root: SourceInstance,
         files: Iterable[SourceFile],
         instances: Iterable[SourceInstance],
+        events: Iterable[SourceAssemblyEvent],
         edges: Iterable[SourceEdge],
         slices: Iterable[EffectiveSourceSlice],
         symbols: LoadSymbolEnvironment,
     ) -> "EffectiveSourceGraph":
         files_tuple = tuple(files)
         instances_tuple = tuple(instances)
+        events_tuple = tuple(events)
         edges_tuple = tuple(edges)
         slices_tuple = tuple(slices)
         return cls(
             root=root,
             files=files_tuple,
             instances=instances_tuple,
+            events=events_tuple,
             edges=edges_tuple,
             slices=slices_tuple,
             symbol_environment=symbols,
@@ -480,6 +679,7 @@ class EffectiveSourceGraph:
                 root=root,
                 files=files_tuple,
                 instances=instances_tuple,
+                events=events_tuple,
                 edges=edges_tuple,
                 slices=slices_tuple,
                 symbols=symbols,
@@ -503,9 +703,40 @@ def structural_instance_id(
         "via_edge": via_edge.value if via_edge else None,
     }
     digest = hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     ).hexdigest()
     return SourceInstanceId(digest)
+
+
+def structural_event_id(
+    *,
+    source_instance: SourceInstanceId,
+    span: SourceRange,
+    kind: SourceAssemblyEventKind,
+    condition_before: ConditionContext,
+    condition_after: ConditionContext,
+    payload: SourceAssemblyEventPayload,
+) -> SourceAssemblyEventId:
+    data = {
+        "source_instance": source_instance.value,
+        "span": span.fingerprint_payload(),
+        "kind": kind.value,
+        "condition_before": condition_before.fingerprint_payload(),
+        "condition_after": condition_after.fingerprint_payload(),
+        "payload": payload.fingerprint_payload(),
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            data,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return SourceAssemblyEventId(digest)
 
 
 def structural_edge_id(
@@ -524,7 +755,11 @@ def structural_edge_id(
         "target_text": target_text,
     }
     digest = hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     ).hexdigest()
     return SourceEdgeId(digest)
 
@@ -532,18 +767,30 @@ def structural_edge_id(
 __all__ = [
     "ConditionContext",
     "ConditionPredicate",
+    "ConditionalElsePayload",
+    "ConditionalEndPayload",
+    "ConditionalOpenPayload",
     "EffectiveSourceGraph",
     "EffectiveSourceSlice",
+    "LoadEventPayload",
     "LoadKind",
+    "LoadRandomEntry",
+    "LoadRandomEventPayload",
     "LoadSymbolEnvironment",
     "LoadSymbolState",
+    "SourceAssemblyEvent",
+    "SourceAssemblyEventId",
+    "SourceAssemblyEventKind",
+    "SourceAssemblyEventPayload",
     "SourceEdge",
     "SourceEdgeId",
     "SourceFile",
     "SourceFileId",
     "SourceInstance",
     "SourceInstanceId",
+    "SourceLoadSyntax",
     "SourceRange",
     "structural_edge_id",
+    "structural_event_id",
     "structural_instance_id",
 ]

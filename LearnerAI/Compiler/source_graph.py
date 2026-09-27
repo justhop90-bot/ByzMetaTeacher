@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from .ast import SourceLocation
@@ -24,13 +24,25 @@ from .ir.source_graph import (
     LoadSymbolEnvironment,
     LoadSymbolState,
     SourceEdge,
+    ConditionalElsePayload,
+    ConditionalEndPayload,
+    ConditionalOpenPayload,
+    LoadEventPayload,
+    LoadRandomEntry,
+    LoadRandomEventPayload,
+    SourceAssemblyEvent,
+    SourceAssemblyEventId,
+    SourceAssemblyEventKind,
+    SourceAssemblyEventPayload,
     SourceEdgeId,
     SourceFile,
     SourceFileId,
     SourceInstance,
     SourceInstanceId,
+    SourceLoadSyntax,
     SourceRange,
     structural_edge_id,
+    structural_event_id,
     structural_instance_id,
 )
 
@@ -47,33 +59,20 @@ SourceUnit = SourceFile
 
 
 @dataclass(frozen=True)
-class _ConditionalFrame:
-    predicate: ConditionPredicate
-    parent_active: bool
-    else_seen: bool
-    line: int
-
-
-@dataclass(frozen=True)
-class _LoadOccurrence:
+class _LexicalOccurrence:
     start: int
     end: int
-    line: int
-    column: int
-    kind: LoadKind
-    target: str | None
-    raw: str
+    kind: SourceAssemblyEventKind
+    payload: SourceAssemblyEventPayload
 
 
-_SYMBOL_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 _CONDITIONAL_RE = re.compile(
-    r"^\s*#(?P<kind>load-if-defined|load-if-not-defined)\s+"
-    r"(?P<symbol>[A-Za-z_][A-Za-z0-9_-]*)\s*$"
+    r"^\\s*#(?P<kind>load-if-defined|load-if-not-defined)\\s+"
+    r"(?P<symbol>[A-Za-z_][A-Za-z0-9_-]*)\\s*$"
 )
-_ELSE_RE = re.compile(r"^\s*#else\s*$")
-_END_RE = re.compile(r"^\s*#end-if\s*$")
-_RAW_LOAD_RE = re.compile(r'^\s*#load\s+"(?P<target>(?:\\.|[^"\\])*)"\s*$')
-_RAW_RANDOM_RE = re.compile(r"^\s*#load-random(?:\s+.*)?$")
+_ELSE_RE = re.compile(r"^\\s*#else\\s*$")
+_END_RE = re.compile(r"^\\s*#end-if\\s*$")
+_RAW_LOAD_RE = re.compile(r'^\\s*#load\\s+"(?P<target>(?:\\\\.|[^"\\\\])*)"\\s*$')
 
 
 def _diagnostic(
@@ -131,12 +130,14 @@ class SourceGraphResolver:
 
     def __init__(self) -> None:
         self._instances: list[SourceInstance] = []
+        self._events: list[SourceAssemblyEvent] = []
         self._edges: list[SourceEdge] = []
         self._slices: list[EffectiveSourceSlice] = []
         self._files_by_id: dict[SourceFileId, SourceFile] = {}
 
     def resolve(self, request: SourceGraphRequest) -> EffectiveSourceGraph:
         self._instances = []
+        self._events = []
         self._edges = []
         self._slices = []
         self._files_by_id = {}
@@ -163,6 +164,7 @@ class SourceGraphResolver:
             root=root,
             files=tuple(self._files_by_id.values()),
             instances=tuple(self._instances),
+            events=tuple(self._events),
             edges=tuple(self._edges),
             slices=tuple(self._slices),
             symbols=request.load_symbols,
@@ -292,112 +294,133 @@ class SourceGraphResolver:
             parent=parent,
             via_edge=via_edge,
         )
-        masked, active_lines, condition_contexts, directive_edges = _mask_conditionals(
+        events, masked = _parse_assembly_events(
             physical,
             symbols,
             self.MAX_CONDITIONAL_DEPTH,
             instance.identity,
         )
-        self._edges.extend(directive_edges)
+        self._events.extend(events)
 
-        occurrences = _scan_load_occurrences(physical.text, path=physical.path)
+        event_ids: list[SourceAssemblyEventId] = []
         cursor = 0
 
-        for lexical_order, occurrence in enumerate(occurrences):
-            context = condition_contexts[occurrence.line - 1]
-            active = active_lines[occurrence.line - 1]
-            physical_range = _segment_range(
-                physical,
-                occurrence.start,
-                occurrence.end,
-            )
+        for event in events:
+            event_ids.append(event.identity)
+            if event.kind not in {
+                SourceAssemblyEventKind.LOAD,
+                SourceAssemblyEventKind.LOAD_RANDOM,
+            }:
+                continue
+
             self._append_slice(
                 instance,
-                masked[cursor:occurrence.start],
+                masked[cursor:event.span.start_offset],
                 cursor,
                 physical,
             )
-            cursor = occurrence.end
+            cursor = event.span.end_offset
 
-            target_source = None
-            if occurrence.target is not None:
+            active = event.condition_before.evaluate(symbols)
+            target_source: SourceFile | None = None
+            target_text: str | None = None
+            load_kind: LoadKind
+
+            if event.kind is SourceAssemblyEventKind.LOAD:
+                payload = event.payload
+                assert isinstance(payload, LoadEventPayload)
+                target_text = payload.target_text
+                load_kind = (
+                    LoadKind.RAW_LOAD
+                    if payload.syntax is SourceLoadSyntax.RAW_LOAD
+                    else LoadKind.FILE
+                )
+            else:
+                payload = event.payload
+                assert isinstance(payload, LoadRandomEventPayload)
+                target_text = None
+                load_kind = LoadKind.RANDOM
+
+            if event.kind is SourceAssemblyEventKind.LOAD:
                 target_source = self._load_unit(
-                    Path(occurrence.target),
+                    Path(target_text),
                     containing_source=physical.path,
                     search_roots=search_roots,
-                    error_line=occurrence.line,
-                    error_column=occurrence.column,
+                    error_line=event.span.start_line,
+                    error_column=event.span.start_column,
                 )
-
-            condition = context or ConditionContext()
-            edge_id = structural_edge_id(
-                source=instance.identity,
-                span=physical_range,
-                kind=occurrence.kind,
-                condition=condition,
-                target_text=occurrence.target,
-            )
-
-            if not active:
-                self._edges.append(
-                    SourceEdge(
-                        identity=edge_id,
-                        source=instance.identity,
-                        target=target_source.identity if target_source else None,
-                        child=None,
-                        kind=occurrence.kind,
-                        span=physical_range,
-                        condition=condition,
-                        active=False,
-                        lexical_order=lexical_order,
-                        target_text=occurrence.target,
+            elif active:
+                if not allow_load_random:
+                    raise SourceGraphError(
+                        "SOURCE-GRAPH-007",
+                        (
+                            "load-random requires an explicit materialized "
+                            "selection policy for deterministic compilation"
+                        ),
+                        path=physical.path,
+                        line=event.span.start_line,
+                        column=event.span.start_column,
                     )
-                )
-                continue
-
-            if occurrence.kind is LoadKind.RANDOM:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-007",
                     (
-                        "load-random requires an explicit materialized "
-                        "selection policy for deterministic compilation"
+                        "load-random materialization is not implemented; "
+                        "deterministic compilation requires an explicit "
+                        "selection policy"
                     ),
                     path=physical.path,
-                    line=occurrence.line,
-                    column=occurrence.column,
+                    line=event.span.start_line,
+                    column=event.span.start_column,
                 )
 
-            if target_source is None:
-                raise SourceGraphError(
-                    "SOURCE-GRAPH-001",
-                    f"missing load target '{occurrence.target}'",
-                    path=physical.path,
-                    line=occurrence.line,
-                    column=occurrence.column,
+            condition = event.condition_before
+            edge_id = structural_edge_id(
+                source=instance.identity,
+                span=event.span,
+                kind=load_kind,
+                condition=condition,
+                target_text=target_text,
+            )
+            child: SourceInstance | None = None
+
+            if active and event.kind is SourceAssemblyEventKind.LOAD:
+                if target_source is None:
+                    raise SourceGraphError(
+                        "SOURCE-GRAPH-001",
+                        f"missing load target '{target_text}'",
+                        path=physical.path,
+                        line=event.span.start_line,
+                        column=event.span.start_column,
+                    )
+                child = self._expand_instance(
+                    target_source,
+                    parent=instance,
+                    via_edge=edge_id,
+                    search_roots=search_roots,
+                    symbols=symbols,
+                    allow_load_random=allow_load_random,
                 )
 
-            child = self._expand_instance(
-                target_source,
-                parent=instance,
-                via_edge=edge_id,
-                search_roots=search_roots,
-                symbols=symbols,
-                allow_load_random=allow_load_random,
+            edge = SourceEdge(
+                identity=edge_id,
+                source=instance.identity,
+                target=(
+                    target_source.identity
+                    if target_source is not None
+                    else None
+                ),
+                child=child.identity if child is not None else None,
+                kind=load_kind,
+                span=event.span,
+                condition=condition,
+                active=active,
+                event=event.identity,
+                target_text=target_text,
             )
-            self._edges.append(
-                SourceEdge(
-                    identity=edge_id,
-                    source=instance.identity,
-                    target=target_source.identity,
-                    child=child.identity,
-                    kind=occurrence.kind,
-                    span=physical_range,
-                    condition=condition,
-                    active=True,
-                    lexical_order=lexical_order,
-                    target_text=occurrence.target,
-                )
-            )
+            self._edges.append(edge)
+
+            event_index = self._events.index(event)
+            self._events[event_index] = replace(event, edge=edge.identity)
 
         self._append_slice(
             instance,
@@ -405,7 +428,11 @@ class SourceGraphResolver:
             cursor,
             physical,
         )
-        return instance
+        self._instances[self._instances.index(instance)] = replace(
+            instance,
+            events=tuple(event_ids),
+        )
+        return replace(instance, events=tuple(event_ids))
 
     def _append_slice(
         self,
@@ -462,281 +489,271 @@ def _line_range(source: SourceFile, line: int) -> SourceRange:
     return _segment_range(source, start, end)
 
 
-def _mask_conditionals(
+def _parse_assembly_events(
     source: SourceFile,
     symbols: LoadSymbolEnvironment,
     max_depth: int,
     source_instance: SourceInstanceId,
-) -> tuple[
-    str,
-    tuple[bool, ...],
-    tuple[ConditionContext | None, ...],
-    tuple[SourceEdge, ...],
-]:
-    lines = source.text.splitlines(keepends=True)
-    active_flags: list[bool] = []
-    contexts: list[ConditionContext | None] = []
-    frames: list[_ConditionalFrame] = []
-    directive_edges: list[SourceEdge] = []
+) -> tuple[tuple[SourceAssemblyEvent, ...], str]:
+    occurrences = _scan_assembly_occurrences(source.text, path=source.path)
+    frames: list[
+        tuple[
+            SourceAssemblyEventId,
+            ConditionPredicate,
+            SourceAssemblyEventId | None,
+        ]
+    ] = []
+    events: list[SourceAssemblyEvent] = []
 
-    def context_now() -> ConditionContext:
-        return ConditionContext(tuple(frame.predicate for frame in frames))
+    for ordinal, occurrence in enumerate(occurrences):
+        span = _segment_range(source, occurrence.start, occurrence.end)
+        before = (
+            ConditionContext(tuple(frame[1] for frame in frames))
+        )
+        after = before
+        payload = occurrence.payload
 
-    for index, raw_line in enumerate(lines, 1):
-        stripped = raw_line.strip()
-        before = context_now()
-        current_active = before.evaluate(symbols)
-
-        match = _CONDITIONAL_RE.fullmatch(stripped)
-        if match:
-            if len(frames) >= max_depth:
+        if occurrence.kind is SourceAssemblyEventKind.CONDITIONAL_OPEN:
+            assert isinstance(payload, ConditionalOpenPayload)
+            if before.depth >= max_depth:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-005",
                     f"conditional nesting exceeds {max_depth}",
                     path=source.path,
-                    line=index,
-                    column=1,
+                    line=span.start_line,
+                    column=span.start_column,
                 )
-            symbol = match.group("symbol")
-            if symbols.state(symbol) is None:
+            if symbols.state(payload.predicate.symbol) is None:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-006",
-                    f"conditional load symbol '{symbol}' is unresolved",
-                    path=source.path,
-                    line=index,
-                    column=1,
-                )
-            expected = (
-                LoadSymbolState.DEFINED
-                if match.group("kind") == "load-if-defined"
-                else LoadSymbolState.UNDEFINED
-            )
-            predicate = ConditionPredicate(symbol, expected)
-            frames.append(
-                _ConditionalFrame(
-                    predicate=predicate,
-                    parent_active=current_active,
-                    else_seen=False,
-                    line=index,
-                )
-            )
-            context = context_now()
-            active = context.evaluate(symbols)
-            kind = (
-                LoadKind.CONDITIONAL_DEFINED
-                if expected is LoadSymbolState.DEFINED
-                else LoadKind.CONDITIONAL_NOT_DEFINED
-            )
-            span = _line_range(source, index)
-            directive_edges.append(
-                SourceEdge(
-                    identity=structural_edge_id(
-                        source=source_instance,
-                        span=span,
-                        kind=kind,
-                        condition=context,
-                        target_text=symbol,
+                    (
+                        f"conditional load symbol "
+                        f"'{payload.predicate.symbol}' is unresolved"
                     ),
-                    source=source_instance,
-                    target=None,
-                    child=None,
-                    kind=kind,
-                    span=span,
-                    condition=context,
-                    active=active,
-                    lexical_order=index,
-                    target_text=symbol,
+                    path=source.path,
+                    line=span.start_line,
+                    column=span.start_column,
                 )
+            after = before.append(payload.predicate)
+            event_id = structural_event_id(
+                source_instance=source_instance,
+                span=span,
+                kind=occurrence.kind,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
             )
-            active_flags.append(False)
-            contexts.append(context)
+            event = SourceAssemblyEvent(
+                identity=event_id,
+                source_instance=source_instance,
+                kind=occurrence.kind,
+                span=span,
+                lexical_ordinal=ordinal,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
+            )
+            events.append(event)
+            frames.append((event_id, payload.predicate, None))
             continue
 
-        if _ELSE_RE.fullmatch(stripped):
+        if occurrence.kind is SourceAssemblyEventKind.CONDITIONAL_ELSE:
             if not frames:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-013",
                     "#else appears without an active conditional",
                     path=source.path,
-                    line=index,
-                    column=1,
+                    line=span.start_line,
+                    column=span.start_column,
                 )
-            frame = frames[-1]
-            if frame.else_seen:
+            open_event, predicate, else_event = frames[-1]
+            if else_event is not None:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-014",
                     "duplicate #else in conditional block",
                     path=source.path,
-                    line=index,
-                    column=1,
+                    line=span.start_line,
+                    column=span.start_column,
                 )
-            frames[-1] = _ConditionalFrame(
-                predicate=ConditionPredicate(
-                    frame.predicate.symbol,
-                    LoadSymbolState.UNDEFINED
-                    if frame.predicate.expected is LoadSymbolState.DEFINED
-                    else LoadSymbolState.DEFINED,
-                ),
-                parent_active=frame.parent_active,
-                else_seen=True,
-                line=frame.line,
+            payload = ConditionalElsePayload(open_event=open_event)
+            after = before.complement_last()
+            event_id = structural_event_id(
+                source_instance=source_instance,
+                span=span,
+                kind=occurrence.kind,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
             )
-            context = context_now()
-            active = context.evaluate(symbols)
-            span = _line_range(source, index)
-            directive_edges.append(
-                SourceEdge(
-                    identity=structural_edge_id(
-                        source=source_instance,
-                        span=span,
-                        kind=LoadKind.CONDITIONAL_ELSE,
-                        condition=context,
-                        target_text=frame.predicate.symbol,
-                    ),
-                    source=source_instance,
-                    target=None,
-                    child=None,
-                    kind=LoadKind.CONDITIONAL_ELSE,
-                    span=span,
-                    condition=context,
-                    active=active,
-                    lexical_order=index,
-                    target_text=frame.predicate.symbol,
-                )
+            event = SourceAssemblyEvent(
+                identity=event_id,
+                source_instance=source_instance,
+                kind=occurrence.kind,
+                span=span,
+                lexical_ordinal=ordinal,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
             )
-            active_flags.append(False)
-            contexts.append(context)
+            events.append(event)
+            frames[-1] = (open_event, predicate, event_id)
             continue
 
-        if _END_RE.fullmatch(stripped):
+        if occurrence.kind is SourceAssemblyEventKind.CONDITIONAL_END:
             if not frames:
                 raise SourceGraphError(
                     "SOURCE-GRAPH-015",
                     "#end-if appears without an active conditional",
                     path=source.path,
-                    line=index,
-                    column=1,
+                    line=span.start_line,
+                    column=span.start_column,
                 )
-            frame = frames[-1]
-            context = context_now()
-            active = context.evaluate(symbols)
-            frames.pop()
-            span = _line_range(source, index)
-            directive_edges.append(
-                SourceEdge(
-                    identity=structural_edge_id(
-                        source=source_instance,
-                        span=span,
-                        kind=LoadKind.CONDITIONAL_ELSE,
-                        condition=context,
-                        target_text=frame.predicate.symbol,
-                    ),
-                    source=source_instance,
-                    target=None,
-                    child=None,
-                    kind=LoadKind.CONDITIONAL_ELSE,
-                    span=span,
-                    condition=context,
-                    active=active,
-                    lexical_order=index,
-                    target_text=frame.predicate.symbol,
-                )
+            open_event, _predicate, else_event = frames[-1]
+            payload = ConditionalEndPayload(
+                open_event=open_event,
+                else_event=else_event,
             )
-            active_flags.append(False)
-            contexts.append(context)
+            after = before.pop_last()
+            event_id = structural_event_id(
+                source_instance=source_instance,
+                span=span,
+                kind=occurrence.kind,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
+            )
+            event = SourceAssemblyEvent(
+                identity=event_id,
+                source_instance=source_instance,
+                kind=occurrence.kind,
+                span=span,
+                lexical_ordinal=ordinal,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
+            )
+            events.append(event)
+            frames.pop()
             continue
 
-        if stripped.startswith("#load-if-defined") or stripped.startswith("#load-if-not-defined"):
-            raise SourceGraphError(
-                "SOURCE-GRAPH-012",
-                "malformed preprocessor conditional directive",
-                path=source.path,
-                line=index,
-                column=1,
+        event_id = structural_event_id(
+            source_instance=source_instance,
+            span=span,
+            kind=occurrence.kind,
+            condition_before=before,
+            condition_after=after,
+            payload=payload,
+        )
+        events.append(
+            SourceAssemblyEvent(
+                identity=event_id,
+                source_instance=source_instance,
+                kind=occurrence.kind,
+                span=span,
+                lexical_ordinal=ordinal,
+                condition_before=before,
+                condition_after=after,
+                payload=payload,
             )
-        if stripped.startswith("#else"):
-            raise SourceGraphError(
-                "SOURCE-GRAPH-012",
-                "malformed #else directive",
-                path=source.path,
-                line=index,
-                column=1,
-            )
-        if stripped.startswith("#end-if"):
-            raise SourceGraphError(
-                "SOURCE-GRAPH-012",
-                "malformed #end-if directive",
-                path=source.path,
-                line=index,
-                column=1,
-            )
-
-        active_flags.append(current_active)
-        contexts.append(before if frames else None)
+        )
 
     if frames:
         frame = frames[-1]
         raise SourceGraphError(
             "SOURCE-GRAPH-016",
-            f"unterminated conditional started on line {frame.line}",
+            "unterminated conditional block",
             path=source.path,
-            line=frame.line,
+            line=next(
+                (
+                    item.span.start_line
+                    for item in events
+                    if item.identity == frame[0]
+                ),
+                1,
+            ),
             column=1,
         )
 
-    masked: list[str] = []
-    for raw_line, active in zip(lines, active_flags):
-        if active:
-            masked.append(raw_line)
-        else:
-            masked.append(
-                "".join(
-                    "\n" if char == "\n" else "\r" if char == "\r" else " "
-                    for char in raw_line
-                )
-            )
-    return (
-        "".join(masked),
-        tuple(active_flags),
-        tuple(contexts),
-        tuple(directive_edges),
-    )
+    masked = _mask_inactive_lines(source, events, symbols)
+    return tuple(events), masked
 
 
-def _scan_load_occurrences(
+def _scan_assembly_occurrences(
     source: str,
     *,
     path: Path,
-) -> tuple[_LoadOccurrence, ...]:
-    occurrences: list[_LoadOccurrence] = []
+) -> tuple[_LexicalOccurrence, ...]:
+    occurrences: list[_LexicalOccurrence] = []
 
     for match in re.finditer(
-        r"(?m)^[ \t]*#load(?:-random)?(?:[ \t].*)?$",
+        r"(?m)^[ 	]*#(?:load-if-defined|load-if-not-defined|else|end-if|load-random|load)(?:[ 	].*)?$",
         source,
     ):
         line = source.count("\n", 0, match.start()) + 1
         column = match.start() - source.rfind("\n", 0, match.start())
         stripped = match.group(0).strip()
 
+        conditional = _CONDITIONAL_RE.fullmatch(stripped)
+        if conditional:
+            expected = (
+                LoadSymbolState.DEFINED
+                if conditional.group("kind") == "load-if-defined"
+                else LoadSymbolState.UNDEFINED
+            )
+            occurrences.append(
+                _LexicalOccurrence(
+                    start=match.start(),
+                    end=match.end(),
+                    kind=SourceAssemblyEventKind.CONDITIONAL_OPEN,
+                    payload=ConditionalOpenPayload(
+                        predicate=ConditionPredicate(
+                            conditional.group("symbol"),
+                            expected,
+                        )
+                    ),
+                )
+            )
+            continue
+
+        if _ELSE_RE.fullmatch(stripped):
+            occurrences.append(
+                _LexicalOccurrence(
+                    start=match.start(),
+                    end=match.end(),
+                    kind=SourceAssemblyEventKind.CONDITIONAL_ELSE,
+                    payload=ConditionalElsePayload(
+                        open_event=SourceAssemblyEventId("__parser_pending__"),
+                    ),
+                )
+            )
+            continue
+
+        if _END_RE.fullmatch(stripped):
+            occurrences.append(
+                _LexicalOccurrence(
+                    start=match.start(),
+                    end=match.end(),
+                    kind=SourceAssemblyEventKind.CONDITIONAL_END,
+                    payload=ConditionalEndPayload(
+                        open_event=SourceAssemblyEventId("__parser_pending__"),
+                        else_event=None,
+                    ),
+                )
+            )
+            continue
+
         if stripped.startswith("#load-random"):
             body = stripped[len("#load-random"):].strip()
-            if not body or not re.search(r'"(?:\\.|[^"\\])*"', body):
-                raise SourceGraphError(
-                    "SOURCE-GRAPH-009",
-                    "malformed #load-random directive",
-                    path=path,
-                    line=line,
-                    column=column,
-                )
+            entries = _parse_random_entries(body, path=path, line=line, column=column)
             occurrences.append(
-                _LoadOccurrence(
-                    match.start(),
-                    match.end(),
-                    line,
-                    column,
-                    LoadKind.RANDOM,
-                    None,
-                    match.group(0),
+                _LexicalOccurrence(
+                    start=match.start(),
+                    end=match.end(),
+                    kind=SourceAssemblyEventKind.LOAD_RANDOM,
+                    payload=LoadRandomEventPayload(
+                        syntax=SourceLoadSyntax.RAW_LOAD,
+                        entries=entries,
+                    ),
                 )
             )
             continue
@@ -750,16 +767,15 @@ def _scan_load_occurrences(
                 line=line,
                 column=column,
             )
-
         occurrences.append(
-            _LoadOccurrence(
-                match.start(),
-                match.end(),
-                line,
-                column,
-                LoadKind.RAW_LOAD,
-                _decode_string(raw_match.group("target")),
-                match.group(0),
+            _LexicalOccurrence(
+                start=match.start(),
+                end=match.end(),
+                kind=SourceAssemblyEventKind.LOAD,
+                payload=LoadEventPayload(
+                    syntax=SourceLoadSyntax.RAW_LOAD,
+                    target_text=_decode_string(raw_match.group("target")),
+                ),
             )
         )
 
@@ -767,18 +783,10 @@ def _scan_load_occurrences(
     index = 0
     depth = 0
     in_string = False
-    in_comment = False
     escape = False
 
     while index < length:
         char = source[index]
-
-        if in_comment:
-            if char == "\n":
-                in_comment = False
-            index += 1
-            continue
-
         if in_string:
             if escape:
                 escape = False
@@ -799,7 +807,7 @@ def _scan_load_occurrences(
                 try:
                     close = _find_balanced_form(source, index)
                     form = source[index:close]
-                    parsed = _parse_load_form(form)
+                    parsed = _parse_load_form(form, path=path)
                 except ValueError as exc:
                     line = source.count("\n", 0, index) + 1
                     column = index - source.rfind("\n", 0, index)
@@ -817,23 +825,17 @@ def _scan_load_occurrences(
                     ) from exc
 
                 if parsed is not None:
-                    head, target = parsed
-                    line = source.count("\n", 0, index) + 1
-                    column = index - source.rfind("\n", 0, index)
+                    kind, payload = parsed
                     occurrences.append(
-                        _LoadOccurrence(
-                            index,
-                            close,
-                            line,
-                            column,
-                            LoadKind.RANDOM if head == "load-random" else LoadKind.FILE,
-                            target,
-                            form,
+                        _LexicalOccurrence(
+                            start=index,
+                            end=close,
+                            kind=kind,
+                            payload=payload,
                         )
                     )
                     index = close
                     continue
-
             depth += 1
         elif char == ")":
             if depth > 0:
@@ -842,7 +844,157 @@ def _scan_load_occurrences(
         index += 1
 
     occurrences.sort(key=lambda item: (item.start, item.end))
-    return tuple(occurrences)
+    seen_spans: set[tuple[int, int]] = set()
+    unique: list[_LexicalOccurrence] = []
+    for occurrence in occurrences:
+        key = (occurrence.start, occurrence.end)
+        if key in seen_spans:
+            continue
+        seen_spans.add(key)
+        unique.append(occurrence)
+    return tuple(unique)
+
+
+def _parse_load_form(
+    form: str,
+    *,
+    path: Path,
+) -> tuple[SourceAssemblyEventKind, SourceAssemblyEventPayload] | None:
+    body = form[1:-1].strip()
+    match = re.fullmatch(r'load\s+"((?:\\.|[^"\\])*)"', body)
+    if match:
+        return (
+            SourceAssemblyEventKind.LOAD,
+            LoadEventPayload(
+                syntax=SourceLoadSyntax.PAREN_LOAD,
+                target_text=_decode_string(match.group(1)),
+            ),
+        )
+
+    random_match = re.fullmatch(r"load-random\b(.*)", body, re.DOTALL)
+    if random_match:
+        entries = _parse_random_entries(
+            random_match.group(1).strip(),
+            path=path,
+            line=1,
+            column=1,
+        )
+        return (
+            SourceAssemblyEventKind.LOAD_RANDOM,
+            LoadRandomEventPayload(
+                syntax=SourceLoadSyntax.PAREN_LOAD,
+                entries=entries,
+            ),
+        )
+
+    if body.startswith("load"):
+        raise ValueError("malformed load directive")
+
+    return None
+
+
+def _parse_random_entries(
+    body: str,
+    *,
+    path: Path,
+    line: int,
+    column: int,
+) -> tuple[LoadRandomEntry, ...]:
+    if not body:
+        raise SourceGraphError(
+            "SOURCE-GRAPH-009",
+            "malformed load-random directive",
+            path=path,
+            line=line,
+            column=column,
+        )
+
+    entries: list[LoadRandomEntry] = []
+    index = 0
+    token_re = re.compile(
+        r"[ \t]*"
+        r"(?:(?P<weight>[0-9]+)[ \t]+)?"
+        r'"(?P<target>(?:\\.|[^"\\])*)"'
+    )
+    while index < len(body):
+        match = token_re.match(body, index)
+        if match is None:
+            raise SourceGraphError(
+                "SOURCE-GRAPH-009",
+                "malformed load-random directive; entries require an optional weight and quoted target",
+                path=path,
+                line=line,
+                column=column,
+            )
+        entries.append(
+            LoadRandomEntry(
+                target_text=_decode_string(match.group("target")),
+                weight=(
+                    int(match.group("weight"))
+                    if match.group("weight") is not None
+                    else None
+                ),
+            )
+        )
+        index = match.end()
+
+    if not entries:
+        raise SourceGraphError(
+            "SOURCE-GRAPH-009",
+            "malformed load-random directive",
+            path=path,
+            line=line,
+            column=column,
+        )
+    return tuple(entries)
+
+
+def _mask_inactive_lines(
+    source: SourceFile,
+    events: tuple[SourceAssemblyEvent, ...],
+    symbols: LoadSymbolEnvironment,
+) -> str:
+    lines = source.text.splitlines(keepends=True)
+    conditional_by_line = {
+        event.span.start_line: event
+        for event in events
+        if event.kind
+        in {
+            SourceAssemblyEventKind.CONDITIONAL_OPEN,
+            SourceAssemblyEventKind.CONDITIONAL_ELSE,
+            SourceAssemblyEventKind.CONDITIONAL_END,
+        }
+    }
+
+    context = ConditionContext()
+    masked: list[str] = []
+    for number, raw_line in enumerate(lines, 1):
+        event = conditional_by_line.get(number)
+        if event is not None:
+            masked.append(
+                "".join(
+                    "\n" if char == "\n"
+                    else "\r" if char == "\r"
+                    else " "
+                    for char in raw_line
+                )
+            )
+            context = event.condition_after
+            continue
+
+        active = context.evaluate(symbols)
+        if active:
+            masked.append(raw_line)
+        else:
+            masked.append(
+                "".join(
+                    "\n" if char == "\n"
+                    else "\r" if char == "\r"
+                    else " "
+                    for char in raw_line
+                )
+            )
+    return "".join(masked)
 
 
 def _find_balanced_form(source: str, start: int) -> int:
@@ -871,26 +1023,6 @@ def _find_balanced_form(source: str, start: int) -> int:
                 return index + 1
 
     raise ValueError("unterminated parenthesized load form")
-
-
-def _parse_load_form(form: str) -> tuple[str, str | None] | None:
-    body = form[1:-1].strip()
-    match = re.fullmatch(r'load\s+"((?:\\.|[^"\\])*)"', body)
-    if match:
-        return "load", _decode_string(match.group(1))
-
-    random_match = re.fullmatch(r"load-random\b(.*)", body, re.DOTALL)
-    if random_match:
-        random_body = random_match.group(1).strip()
-        if not random_body or not re.search(r'"(?:\\.|[^"\\])*"', random_body):
-            raise ValueError("malformed load-random directive")
-        return "load-random", None
-
-    if body.startswith("load"):
-        raise ValueError("malformed load directive")
-
-    return None
-
 
 def _decode_string(body: str) -> str:
     result: list[str] = []

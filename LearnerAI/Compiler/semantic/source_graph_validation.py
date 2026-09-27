@@ -10,17 +10,27 @@ from ..diagnostics import DiagnosticSeverity, DiagnosticSource, SemanticDiagnost
 from ..errors import CompileError
 from ..ir.source_graph import (
     ConditionContext,
+    ConditionalElsePayload,
+    ConditionalEndPayload,
+    ConditionalOpenPayload,
     EffectiveSourceGraph,
     EffectiveSourceSlice,
+    LoadEventPayload,
     LoadKind,
+    LoadRandomEventPayload,
     LoadSymbolEnvironment,
+    SourceAssemblyEvent,
+    SourceAssemblyEventId,
+    SourceAssemblyEventKind,
     SourceEdge,
     SourceEdgeId,
     SourceFile,
     SourceFileId,
     SourceInstance,
     SourceInstanceId,
+    SourceLoadSyntax,
     structural_edge_id,
+    structural_event_id,
     structural_instance_id,
 )
 
@@ -84,6 +94,24 @@ class SourceGraphDiagnosticCode(str, Enum):
 
     RANDOM_LOAD_UNMATERIALIZED = "SOURCE-GRAPH-VAL-080"
 
+    DUPLICATE_EVENT_ID = "SOURCE-GRAPH-VAL-090"
+    EVENT_INSTANCE_MISSING = "SOURCE-GRAPH-VAL-091"
+    EVENT_INSTANCE_MEMBERSHIP_INVALID = "SOURCE-GRAPH-VAL-092"
+    EVENT_ORDINAL_INVALID = "SOURCE-GRAPH-VAL-093"
+    EVENT_ORDINAL_GAP = "SOURCE-GRAPH-VAL-094"
+    EVENT_RANGE_INVALID = "SOURCE-GRAPH-VAL-095"
+    EVENT_RANGE_SOURCE_MISMATCH = "SOURCE-GRAPH-VAL-096"
+    EVENT_RANGE_OVERLAP = "SOURCE-GRAPH-VAL-097"
+    EVENT_RANGE_ORDER_INVALID = "SOURCE-GRAPH-VAL-098"
+    EVENT_IDENTITY_INVALID = "SOURCE-GRAPH-VAL-099"
+    EVENT_KIND_PAYLOAD_MISMATCH = "SOURCE-GRAPH-VAL-100"
+    EVENT_CONDITION_INVALID = "SOURCE-GRAPH-VAL-101"
+    EVENT_CONDITION_SYMBOL_MISSING = "SOURCE-GRAPH-VAL-102"
+    EVENT_CONDITION_DEPTH_EXCEEDED = "SOURCE-GRAPH-VAL-103"
+    EVENT_PAIRING_INVALID = "SOURCE-GRAPH-VAL-104"
+    EVENT_EDGE_MISMATCH = "SOURCE-GRAPH-VAL-105"
+    CONDITIONAL_EDGE_FORBIDDEN = "SOURCE-GRAPH-VAL-106"
+
 
 @dataclass(frozen=True)
 class SourceGraphValidationPolicy:
@@ -116,6 +144,7 @@ class SourceGraphValidationReport:
     slices_checked: int
     assembly_fingerprint_valid: bool
     effective_fingerprint_valid: bool
+    events_checked: int = 0
 
     @property
     def errors(self) -> tuple[SourceGraphDiagnostic, ...]:
@@ -324,6 +353,489 @@ def _validate_files(
                     path=source.path,
                 )
             )
+
+
+
+
+def _event_path(event: SourceAssemblyEvent, instances: dict[SourceInstanceId, SourceInstance]) -> Path | None:
+    instance = instances.get(event.source_instance)
+    return instance.physical.path if instance is not None else event.span.source.path
+
+
+def _event_location(event: SourceAssemblyEvent, instances: dict[SourceInstanceId, SourceInstance]) -> tuple[Path, int, int]:
+    return (
+        _event_path(event, instances),
+        event.span.start_line,
+        event.span.start_column,
+    )
+
+
+def _expected_range_fields(source: SourceFile, start: int, end: int) -> tuple[int, int, int, int]:
+    prefix = source.text[:start]
+    segment = source.text[start:end]
+    start_line = prefix.count("\n") + 1
+    previous_newline = prefix.rfind("\n")
+    start_column = start + 1 if previous_newline < 0 else start - previous_newline
+    if not segment:
+        return (start_line, start_column, start_line, start_column)
+    end_line = start_line + segment.count("\n")
+    if "\n" in segment:
+        end_column = len(segment.rsplit("\n", 1)[-1]) + 1
+    else:
+        end_column = start_column + len(segment) - 1
+    return (start_line, start_column, end_line, max(1, end_column))
+
+
+def _index_events(
+    graph: EffectiveSourceGraph,
+    diagnostics: list[SourceGraphDiagnostic],
+) -> dict[SourceAssemblyEventId, SourceAssemblyEvent]:
+    result: dict[SourceAssemblyEventId, SourceAssemblyEvent] = {}
+    for event in graph.events:
+        if event.identity in result:
+            path, line, column = _event_location(event, graph.instances_by_id)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.DUPLICATE_EVENT_ID,
+                    f"duplicate source assembly event identity '{event.identity.value}'",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+        else:
+            result[event.identity] = event
+    return result
+
+
+def _validate_events(
+    graph: EffectiveSourceGraph,
+    files: dict[SourceFileId, SourceFile],
+    instances: dict[SourceInstanceId, SourceInstance],
+    events: dict[SourceAssemblyEventId, SourceAssemblyEvent],
+    edges: dict[SourceEdgeId, SourceEdge],
+    symbols: LoadSymbolEnvironment,
+    policy: SourceGraphValidationPolicy,
+    diagnostics: list[SourceGraphDiagnostic],
+) -> None:
+    events_by_instance: dict[SourceInstanceId, list[SourceAssemblyEvent]] = {}
+    for event in graph.events:
+        path, line, column = _event_location(event, instances)
+        instance = instances.get(event.source_instance)
+        if instance is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_INSTANCE_MISSING,
+                    f"event '{event.identity.value}' references unknown source instance",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+            continue
+
+        events_by_instance.setdefault(instance.identity, []).append(event)
+        if event.identity not in instance.events:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_INSTANCE_MEMBERSHIP_INVALID,
+                    f"event '{event.identity.value}' is missing from instance event inventory",
+                    path=path,
+                    line=line,
+                    column=column,
+                    instance_id=instance.instance_id,
+                )
+            )
+        if event.span.source != instance.source:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_RANGE_SOURCE_MISMATCH,
+                    f"event '{event.identity.value}' source range belongs to a different physical source",
+                    path=path,
+                    line=line,
+                    column=column,
+                    instance_id=instance.instance_id,
+                )
+            )
+
+        source = files.get(event.span.source)
+        if source is None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_RANGE_INVALID,
+                    f"event '{event.identity.value}' references unknown source file",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+            continue
+
+        if not (0 <= event.span.start_offset < event.span.end_offset <= len(source.text)):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_RANGE_INVALID,
+                    f"event '{event.identity.value}' has an invalid source range",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+        else:
+            expected = _expected_range_fields(
+                source,
+                event.span.start_offset,
+                event.span.end_offset,
+            )
+            actual = (
+                event.span.start_line,
+                event.span.start_column,
+                event.span.end_line,
+                event.span.end_column,
+            )
+            if actual != expected:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_RANGE_INVALID,
+                        f"event '{event.identity.value}' has inconsistent line/column coordinates",
+                        path=path,
+                        line=line,
+                        column=column,
+                    )
+                )
+
+        if event.lexical_ordinal < 0:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_ORDINAL_INVALID,
+                    f"event '{event.identity.value}' has a negative lexical ordinal",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+
+        for predicate in (*event.condition_before.predicates, *event.condition_after.predicates):
+            if symbols.state(predicate.symbol) is None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_CONDITION_SYMBOL_MISSING,
+                        f"event '{event.identity.value}' references unresolved load symbol '{predicate.symbol}'",
+                        path=path,
+                        line=line,
+                        column=column,
+                    )
+                )
+        if max(event.condition_before.depth, event.condition_after.depth) > policy.max_conditional_depth:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_CONDITION_DEPTH_EXCEEDED,
+                    f"event '{event.identity.value}' exceeds conditional depth {policy.max_conditional_depth}",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+
+        expected_identity = structural_event_id(
+            source_instance=event.source_instance,
+            span=event.span,
+            kind=event.kind,
+            condition_before=event.condition_before,
+            condition_after=event.condition_after,
+            payload=event.payload,
+        )
+        if expected_identity != event.identity:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_IDENTITY_INVALID,
+                    f"event '{event.identity.value}' is not its structural event identity",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+
+        payload_ok = (
+            (event.kind is SourceAssemblyEventKind.LOAD and isinstance(event.payload, LoadEventPayload))
+            or (
+                event.kind is SourceAssemblyEventKind.LOAD_RANDOM
+                and isinstance(event.payload, LoadRandomEventPayload)
+            )
+            or (
+                event.kind is SourceAssemblyEventKind.CONDITIONAL_OPEN
+                and isinstance(event.payload, ConditionalOpenPayload)
+            )
+            or (
+                event.kind is SourceAssemblyEventKind.CONDITIONAL_ELSE
+                and isinstance(event.payload, ConditionalElsePayload)
+            )
+            or (
+                event.kind is SourceAssemblyEventKind.CONDITIONAL_END
+                and isinstance(event.payload, ConditionalEndPayload)
+            )
+        )
+        if not payload_ok:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_KIND_PAYLOAD_MISMATCH,
+                    f"event '{event.identity.value}' kind and payload type disagree",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+            continue
+
+        try:
+            if event.kind in {
+                SourceAssemblyEventKind.LOAD,
+                SourceAssemblyEventKind.LOAD_RANDOM,
+            }:
+                if event.condition_after != event.condition_before:
+                    raise ValueError("load events must preserve condition context")
+            elif event.kind is SourceAssemblyEventKind.CONDITIONAL_OPEN:
+                payload = event.payload
+                assert isinstance(payload, ConditionalOpenPayload)
+                if event.condition_after != event.condition_before.append(payload.predicate):
+                    raise ValueError("conditional open does not append its predicate")
+            elif event.kind is SourceAssemblyEventKind.CONDITIONAL_ELSE:
+                if not event.condition_before.predicates:
+                    raise ValueError("conditional else has no open context")
+                if event.condition_after != event.condition_before.complement_last():
+                    raise ValueError("conditional else does not complement the active predicate")
+                payload = event.payload
+                assert isinstance(payload, ConditionalElsePayload)
+                opened = events.get(payload.open_event)
+                if opened is None or opened.kind is not SourceAssemblyEventKind.CONDITIONAL_OPEN:
+                    raise ValueError("conditional else references an invalid open event")
+            elif event.kind is SourceAssemblyEventKind.CONDITIONAL_END:
+                if not event.condition_before.predicates:
+                    raise ValueError("conditional end has no open context")
+                if event.condition_after != event.condition_before.pop_last():
+                    raise ValueError("conditional end does not pop the active predicate")
+                payload = event.payload
+                assert isinstance(payload, ConditionalEndPayload)
+                opened = events.get(payload.open_event)
+                if opened is None or opened.kind is not SourceAssemblyEventKind.CONDITIONAL_OPEN:
+                    raise ValueError("conditional end references an invalid open event")
+                if payload.else_event is not None:
+                    else_event = events.get(payload.else_event)
+                    if else_event is None or else_event.kind is not SourceAssemblyEventKind.CONDITIONAL_ELSE:
+                        raise ValueError("conditional end references an invalid else event")
+        except ValueError as exc:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_CONDITION_INVALID,
+                    f"event '{event.identity.value}' has invalid condition transition: {exc}",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+
+        if event.kind in {
+            SourceAssemblyEventKind.CONDITIONAL_OPEN,
+            SourceAssemblyEventKind.CONDITIONAL_ELSE,
+            SourceAssemblyEventKind.CONDITIONAL_END,
+        } and event.edge is not None:
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                    f"conditional event '{event.identity.value}' must not reference an assembly edge",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+
+        if event.kind in {
+            SourceAssemblyEventKind.LOAD,
+            SourceAssemblyEventKind.LOAD_RANDOM,
+        }:
+            if event.edge is None:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                        f"load event '{event.identity.value}' is missing its assembly-edge back-reference",
+                        path=path,
+                        line=line,
+                        column=column,
+                    )
+                )
+            else:
+                edge = edges.get(event.edge)
+                if edge is None:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                            f"load event '{event.identity.value}' references unknown edge '{event.edge.value}'",
+                            path=path,
+                            line=line,
+                            column=column,
+                        )
+                    )
+
+    for instance_id, instance in instances.items():
+        member_ids = list(instance.events)
+        if len(member_ids) != len(set(member_ids)):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_INSTANCE_MEMBERSHIP_INVALID,
+                    f"source instance '{instance.instance_id}' contains duplicate event references",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        ordered = sorted(events_by_instance.get(instance_id, ()), key=lambda item: item.lexical_ordinal)
+        ordinals = [item.lexical_ordinal for item in ordered]
+        if ordinals != list(range(len(ordered))):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_ORDINAL_GAP,
+                    f"event ordinals are not contiguous for source instance '{instance.instance_id}'",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
+        for left, right in zip(ordered, ordered[1:]):
+            if left.span.end_offset > right.span.start_offset:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_RANGE_OVERLAP,
+                        f"events '{left.identity.value}' and '{right.identity.value}' overlap",
+                        path=_instance_path(instance),
+                        instance_id=instance.instance_id,
+                    )
+                )
+            if left.span.start_offset >= right.span.start_offset:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_RANGE_ORDER_INVALID,
+                        f"event source order is not strictly increasing for instance '{instance.instance_id}'",
+                        path=_instance_path(instance),
+                        instance_id=instance.instance_id,
+                    )
+                )
+
+        stack: list[tuple[SourceAssemblyEventId, SourceAssemblyEventId | None]] = []
+        for event in ordered:
+            if event.kind is SourceAssemblyEventKind.CONDITIONAL_OPEN:
+                stack.append((event.identity, None))
+            elif event.kind is SourceAssemblyEventKind.CONDITIONAL_ELSE:
+                if not stack:
+                    continue
+                payload = event.payload
+                if not isinstance(payload, ConditionalElsePayload):
+                    continue
+                open_id, else_id = stack[-1]
+                if else_id is not None or payload.open_event != open_id:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_PAIRING_INVALID,
+                            f"conditional else event '{event.identity.value}' is not paired with the nearest open event",
+                            path=event.span.source.path,
+                            line=event.span.start_line,
+                            column=event.span.start_column,
+                            instance_id=instance.instance_id,
+                        )
+                    )
+                else:
+                    stack[-1] = (open_id, event.identity)
+            elif event.kind is SourceAssemblyEventKind.CONDITIONAL_END:
+                if not stack:
+                    continue
+                payload = event.payload
+                if not isinstance(payload, ConditionalEndPayload):
+                    continue
+                open_id, else_id = stack.pop()
+                if payload.open_event != open_id or payload.else_event != else_id:
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_PAIRING_INVALID,
+                            f"conditional end event '{event.identity.value}' does not close the nearest conditional block",
+                            path=event.span.source.path,
+                            line=event.span.start_line,
+                            column=event.span.start_column,
+                            instance_id=instance.instance_id,
+                        )
+                    )
+        if stack:
+            for open_id, else_id in stack:
+                event = events.get(open_id)
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_PAIRING_INVALID,
+                        f"conditional open event '{open_id.value}' is not closed",
+                        path=_event_path(event, instances) if event else _instance_path(instance),
+                        line=event.span.start_line if event else None,
+                        column=event.span.start_column if event else None,
+                        instance_id=instance.instance_id,
+                    )
+                )
+
+    for event in graph.events:
+        if event.edge is None:
+            continue
+        edge = edges.get(event.edge)
+        if edge is None:
+            continue
+        if edge.event != event.identity:
+            path, line, column = _event_location(event, instances)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                    f"event '{event.identity.value}' and edge '{edge.edge_id}' disagree on back-reference",
+                    path=path,
+                    line=line,
+                    column=column,
+                )
+            )
+        if edge.source != event.source_instance or edge.span != event.span:
+            path, line, column = _event_location(event, instances)
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                    f"edge '{edge.edge_id}' does not match event '{event.identity.value}' source or span",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
+        if event.kind is SourceAssemblyEventKind.LOAD:
+            payload = event.payload
+            if isinstance(payload, LoadEventPayload):
+                expected_kind = (
+                    LoadKind.RAW_LOAD
+                    if payload.syntax is SourceLoadSyntax.RAW_LOAD
+                    else LoadKind.FILE
+                )
+                if edge.kind is not expected_kind or edge.target_text != payload.target_text:
+                    path, line, column = _event_location(event, instances)
+                    diagnostics.append(
+                        _diag(
+                            SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                            f"edge '{edge.edge_id}' does not match load event payload",
+                            path=path,
+                            line=line,
+                            column=column,
+                            edge_id=edge.edge_id,
+                        )
+                    )
+        elif event.kind is SourceAssemblyEventKind.LOAD_RANDOM:
+            if edge.kind is not LoadKind.RANDOM:
+                path, line, column = _event_location(event, instances)
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
+                        f"edge '{edge.edge_id}' is not RANDOM for a load-random event",
+                        path=path,
+                        line=line,
+                        column=column,
+                        edge_id=edge.edge_id,
+                    )
+                )
 
 
 def _validate_instances(
@@ -731,17 +1243,39 @@ def _validate_edges(
             )
 
     for source_id, source_edges in outgoing.items():
-        loads = [
-            edge
-            for edge in source_edges
-            if edge.kind in {LoadKind.FILE, LoadKind.RAW_LOAD, LoadKind.RANDOM}
-        ]
-        orders = [edge.lexical_order for edge in sorted(loads, key=lambda item: item.lexical_order)]
-        if orders != sorted(orders) or len(orders) != len(set(orders)):
+        load_events = []
+        for edge in source_edges:
+            if edge.kind not in {LoadKind.FILE, LoadKind.RAW_LOAD, LoadKind.RANDOM}:
+                diagnostics.append(
+                    _diag(
+                        SourceGraphDiagnosticCode.CONDITIONAL_EDGE_FORBIDDEN,
+                        f"edge '{edge.edge_id}' uses a conditional directive kind; directives belong to the event stream",
+                        path=edge.span.source.path,
+                        line=edge.span.start_line,
+                        column=edge.span.start_column,
+                        edge_id=edge.edge_id,
+                    )
+                )
+                continue
+            load_events.append(edge.event)
+        if len(load_events) != len(set(load_events)):
             diagnostics.append(
                 _diag(
                     SourceGraphDiagnosticCode.EDGE_ORDER_NOT_MONOTONIC,
-                    f"load edge lexical order is not strictly increasing for instance '{source_id.value}'",
+                    f"multiple load edges reference the same assembly event for instance '{source_id.value}'",
+                    instance_id=source_id.value,
+                )
+            )
+        event_ordinals = [
+            graph.events_by_id[event_id].lexical_ordinal
+            for event_id in load_events
+            if event_id in graph.events_by_id
+        ]
+        if event_ordinals != sorted(event_ordinals):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.EDGE_ORDER_NOT_MONOTONIC,
+                    f"load edge event order is not monotonic for instance '{source_id.value}'",
                     instance_id=source_id.value,
                 )
             )
@@ -928,6 +1462,7 @@ def _validate_fingerprints(
         root=graph.root,
         files=graph.files,
         instances=graph.instances,
+        events=graph.events,
         edges=graph.edges,
         slices=graph.slices,
         symbols=graph.symbol_environment,
@@ -967,9 +1502,20 @@ def validate_effective_source_graph(
 
     files = _index_files(graph, diagnostics)
     instances = _index_instances(graph, diagnostics)
+    events = _index_events(graph, diagnostics)
     edges = _index_edges(graph, diagnostics)
 
     _validate_files(graph, files, diagnostics)
+    _validate_events(
+        graph,
+        files,
+        instances,
+        events,
+        edges,
+        graph.symbol_environment,
+        policy,
+        diagnostics,
+    )
     _validate_instances(graph, files, instances, edges, policy, diagnostics)
     _validate_edges(
         graph,
@@ -995,6 +1541,7 @@ def validate_effective_source_graph(
         instances_checked=len(graph.instances),
         edges_checked=len(graph.edges),
         slices_checked=len(graph.slices),
+        events_checked=len(graph.events),
         assembly_fingerprint_valid=assembly_valid,
         effective_fingerprint_valid=effective_valid,
     )

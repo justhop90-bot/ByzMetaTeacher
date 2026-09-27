@@ -437,19 +437,6 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         Code.INACTIVE_HAS_CHILD,
     ),
     MutationCase(
-        "edge-lexical-order",
-        "duplicate/root.perdsl",
-        "edge",
-        "lexical_order",
-        _mutate_field(
-            "edge",
-            "lexical_order",
-            _index_of_second_load,
-            _constant(0),
-        ),
-        Code.EDGE_ORDER_NOT_MONOTONIC,
-    ),
-    MutationCase(
         "edge-target-text",
         "linear/root.perdsl",
         "edge",
