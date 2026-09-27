@@ -63,8 +63,9 @@ Evidence classes are intentionally separate:
 - [x] Preserve source attribution through the ordering analysis.
 - [x] Model repeated pass eligibility at runtime and static eligibility (RulePassBehavior, FiringEligibility, PassScheduler).
 - [x] Model disable-self lifetime explicitly in EffectiveRule and PassScheduler.
-- [ ] Detect later overwrites of persistent Goal/SN state when earlier consumers can be preempted or starved.
+- [x] Diagnose persistent-state consumers starved by guaranteed recurrent writers; retain later-overwrite diagnostics separately.
 - [ ] Detect unreachable/never-runnable rules caused by earlier persistent state, mutually exclusive guards, or terminal disable-self.
+- [x] Diagnose guaranteed recurrent forward jumps that preempt intervening rules without claiming alternate paths are unreachable.
 - [ ] Detect rules that are syntactically valid but behaviorally open-loop because no later rule can observe their state transition.
 - [x] Track action sequencing inside one emitted rule without inventing a false pass boundary.
 - [x] Represent statically parseable `up-jump-rule` control transfers against effective rule order.
@@ -240,7 +241,7 @@ Cross-reference against the current recurrent compiler implementation and PR #54
 - [ ] Diagnose preemption/starvation and globally unreachable rules caused by control flow or persistent state.
 - [ ] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer.
 
-M1 therefore closes the characterization gap first. It does not yet claim complete static recurrent/preemption semantics.
+M1 now includes focused starvation and preemption diagnostics. It still does not claim global unreachable-rule proof or open-loop-state analysis.
 
 ## Current implementation tranche
 
