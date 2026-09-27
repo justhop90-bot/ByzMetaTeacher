@@ -164,6 +164,7 @@ class PassScheduler:
                         action.within_rule_order,
                     )
                 elif head == "disable-timer":
+                    self._require_exact_arity(expression, 1)
                     timer_id = self._timer_id_arg(expression, 0)
                     self._timers[timer_id] = self._timers[timer_id].disable()
                 elif head == "up-set-timer":
@@ -290,6 +291,7 @@ class PassScheduler:
                 "goal value",
             )
         if head == "timer-triggered":
+            self._require_exact_arity(expression, 1)
             timer_id = self._timer_id_arg(expression, 0)
             return read_timer_triggered(self._timers[timer_id])
         if head == "up-timer-status":
@@ -298,30 +300,46 @@ class PassScheduler:
                     "up-timer-status requires TimerId, compareOp, and TimerState"
                 )
             timer_id = self._timer_id_arg(expression, 0)
-            operator = str(expression.args[1]).lstrip("c:")
-            expected = str(expression.args[2]).lstrip("c:")
-            actual = self._timers[timer_id].status.value.lower()
-            expected = expected.replace("timer-", "")
+            operator_token = str(expression.args[1])
+            if operator_token.startswith("c:"):
+                operator = operator_token[2:]
+            elif ":" in operator_token:
+                raise SchedulerSemanticError(
+                    "up-timer-status compareOp only permits an optional c: prefix"
+                )
+            else:
+                operator = operator_token
+
+            expected = str(expression.args[2]).lower()
+            valid_states = {
+                "timer-disabled",
+                "timer-running",
+                "timer-triggered",
+            }
+            if expected not in valid_states:
+                raise SchedulerSemanticError(
+                    f"up-timer-status TimerState '{expected}' is not a valid timer state"
+                )
+            actual = f"timer-{self._timers[timer_id].status.value.lower()}"
             if operator in {"=", "=="}:
-                return actual == expected.upper() or actual == expected
+                return actual == expected
             if operator == "!=":
-                return actual != expected.upper() and actual != expected
+                return actual != expected
             raise SchedulerSemanticError(
                 f"up-timer-status operator '{operator}' is outside the scheduler's "
                 "minimum equality contract"
             )
-        if head == "and":
-            return all(
+        if head in {"and", "or"}:
+            self._require_exact_arity(expression, 2)
+            if any(not isinstance(argument, Expression) for argument in expression.args):
+                raise SchedulerSemanticError(
+                    f"{head} requires exactly two nested facts"
+                )
+            results = tuple(
                 self._evaluate_fact(argument)
                 for argument in expression.args
-                if isinstance(argument, Expression)
             )
-        if head == "or":
-            return any(
-                self._evaluate_fact(argument)
-                for argument in expression.args
-                if isinstance(argument, Expression)
-            )
+            return all(results) if head == "and" else any(results)
         if head == "not":
             if len(expression.args) != 1 or not isinstance(
                 expression.args[0], Expression
@@ -413,13 +431,22 @@ class PassScheduler:
         return timer_id, duration
 
     def _up_set_timer_args(self, expression: Expression) -> tuple[str, int]:
-        if len(expression.args) < 4:
+        if len(expression.args) != 4:
             raise SchedulerSemanticError(
-                "up-set-timer requires typeOp, TimerId, typeOp, and interval"
+                "up-set-timer requires exactly four arguments: typeOp, TimerId, typeOp, and interval"
             )
         timer_id = self._timer_id_arg(expression, 1)
         interval = self._parse_int(expression.args[3], "up-set-timer interval")
         return timer_id, interval
+
+    @staticmethod
+    def _require_exact_arity(expression: Expression, expected: int) -> None:
+        actual = len(expression.args)
+        if actual != expected:
+            noun = "argument" if expected == 1 else "arguments"
+            raise SchedulerSemanticError(
+                f"{expression.head} requires exactly {expected} {noun}; got {actual}"
+            )
 
     @staticmethod
     def _parse_int(value: object, label: str) -> int:
