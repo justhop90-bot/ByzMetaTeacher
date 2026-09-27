@@ -23,10 +23,8 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_same_pass_timer_write_is_visible_to_later_rule(self):
         rules = self._rules(
-            '(defrule (true) => (enable-timer 1 60))
-'
-            '(defrule (up-timer-status 1 = timer-running) => (disable-timer 1))
-'
+            '(defrule (true) => (enable-timer 1 60))\n'
+            '(defrule (up-timer-status 1 = timer-running) => (disable-timer 1))\n'
         )
 
         scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
@@ -39,10 +37,8 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_trigger_created_at_pass_end_is_visible_only_on_next_pass(self):
         rules = self._rules(
-            '(defrule (true) => (enable-timer 1 0))
-'
-            '(defrule (timer-triggered 1) => (disable-timer 1))
-'
+            '(defrule (true) => (enable-timer 1 0) (disable-self))\n'
+            '(defrule (timer-triggered 1) => (disable-timer 1))\n'
         )
 
         scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
@@ -61,10 +57,8 @@ class PassSchedulerTests(unittest.TestCase):
     def test_disable_self_does_not_abort_remaining_actions_or_later_rules(self):
         rules = self._rules(
             '(defrule (true) => '
-            '(enable-timer 1 30) (disable-self) (enable-timer 1 60))
-'
-            '(defrule (up-timer-status 1 = timer-running) => (disable-self))
-'
+            '(enable-timer 1 30) (disable-self) (enable-timer 1 60))\n'
+            '(defrule (up-timer-status 1 = timer-running) => (disable-self))\n'
         )
 
         scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
@@ -76,12 +70,9 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_up_jump_rule_plus_one_skips_one_rule(self):
         rules = self._rules(
-            '(defrule (true) => (up-jump-rule 1))
-'
-            '(defrule (true) => (disable-self))
-'
-            '(defrule (true) => (disable-self))
-'
+            '(defrule (true) => (up-jump-rule 1))\n'
+            '(defrule (true) => (disable-self))\n'
+            '(defrule (true) => (disable-self))\n'
         )
 
         scheduler = PassScheduler(tuple(rules))
@@ -95,10 +86,8 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_up_jump_rule_minus_one_revisits_current_rule(self):
         rules = self._rules(
-            '(defrule (true) => (disable-self) (up-jump-rule -1))
-'
-            '(defrule (true) => (disable-self))
-'
+            '(defrule (true) => (disable-self) (up-jump-rule -1))\n'
+            '(defrule (true) => (disable-self))\n'
         )
 
         scheduler = PassScheduler(tuple(rules))
@@ -112,8 +101,7 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_out_of_range_jump_is_rejected(self):
         rules = self._rules(
-            '(defrule (true) => (up-jump-rule 3))
-'
+            '(defrule (true) => (up-jump-rule 3))\n'
         )
 
         scheduler = PassScheduler(tuple(rules))
@@ -123,12 +111,9 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_negative_up_set_timer_disables_current_generation(self):
         rules = self._rules(
-            '(defrule (true) => (up-set-timer c: 1 c: -1))
-'
+            '(defrule (true) => (up-set-timer c: 1 c: -1))\n'
         )
 
-        # up-set-timer is represented by the native four-operand shape in the
-        # parser fixture; timer id is the second operand.
         scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
         trace = scheduler.run_pass()
 
@@ -138,12 +123,9 @@ class PassSchedulerTests(unittest.TestCase):
 
     def test_timer_does_not_advance_inside_same_pass(self):
         rules = self._rules(
-            '(defrule (true) => (enable-timer 1 10) (up-jump-rule 1))
-'
-            '(defrule (timer-triggered 1) => (disable-self))
-'
-            '(defrule (true) => (disable-self))
-'
+            '(defrule (true) => (enable-timer 1 10) (up-jump-rule 1))\n'
+            '(defrule (timer-triggered 1) => (disable-self))\n'
+            '(defrule (true) => (disable-self))\n'
         )
 
         scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
