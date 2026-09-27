@@ -1123,11 +1123,13 @@ def analyze_duc(
             seen.add(key)
             distinct.append(state)
         variants = tuple(distinct)
+        predecessor_orders = tuple(sorted({source for source, _ in entries if source != 0}))
         if len(variants) == 1:
             entry_state = variants[0]
+            merged_fields = ()
         else:
             entry_state, merged_fields = _join_states(variants)
-            predecessor_orders = tuple(sorted({source for source, _ in entries if source != 0}))
+        if len(entries) > 1:
             branch_merges.append(
                 DucBranchMerge(
                     rule_order=rule_order,
