@@ -344,6 +344,73 @@ def _int_or_none(value: str) -> int | None:
         return None
 
 
+def _preceding_index_can_match(
+    target_index: int | None,
+    operator: str,
+    compare_value: int | None,
+) -> bool | None:
+    if target_index is None or compare_value is None:
+        return None
+    operator = operator.removeprefix("c:")
+    if target_index <= 0:
+        return False
+    last_preceding = target_index - 1
+    if operator in {"=", "=="}:
+        return 0 <= compare_value <= last_preceding
+    if operator == "!=":
+        if target_index == 1:
+            return compare_value != 0
+        return True
+    if operator == ">":
+        return last_preceding > compare_value
+    if operator == ">=":
+        return last_preceding >= compare_value
+    if operator == "<":
+        return compare_value > 0
+    if operator == "<=":
+        return compare_value >= 0
+    return None
+
+
+def _mutate_list_generation(
+    state: DucSearchListState,
+    *,
+    command: str,
+    arguments: tuple[str, ...],
+    mutation_kind: DucListMutationKind,
+) -> DucSearchListState:
+    generation = state.current_generation
+    if generation is None:
+        return state
+    previous_fingerprint = generation.content_fingerprint or ""
+    fingerprint = _fingerprint(
+        (
+            "mutation",
+            previous_fingerprint,
+            command,
+            *arguments,
+        )
+    )
+    cardinality = (
+        generation.cardinality
+        if mutation_kind is DucListMutationKind.SORT
+        else None
+    )
+    updated = replace(
+        generation,
+        cardinality=cardinality,
+        content_fingerprint=fingerprint,
+    )
+    return _list_state(
+        state.list_kind,
+        state,
+        updated,
+        next_generation=state.next_generation,
+        path_ambiguous=state.path_ambiguous,
+        generation_variants=(),
+    )
+
+
 def _target_with_unstable_index(target: DucTargetState) -> DucTargetState:
     return replace(
         target,
@@ -414,7 +481,23 @@ def _target_after_list_mutation(
             DucTargetTransition.STALE,
         )
     if result is False:
-        return _target_with_unstable_index(target), DucTargetTransition.UNCHANGED
+        preceding_matches = _preceding_index_can_match(
+            target_index,
+            compare_operator or "",
+            _int_or_none(compare_value),
+        )
+        if preceding_matches is True:
+            return _target_with_unstable_index(target), DucTargetTransition.UNCHANGED
+        if preceding_matches is False:
+            return target, DucTargetTransition.UNCHANGED
+        return (
+            replace(
+                _target_with_unstable_index(target),
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.UNKNOWN,
+            ),
+            DucTargetTransition.UNKNOWN,
+        )
 
     return (
         replace(
@@ -1001,9 +1084,30 @@ def _analyze_duc_linear(
                     compare_operator=compare_operator,
                     compare_value=compare_value,
                 )
+                current_list = (
+                    state.local_list
+                    if source is DucListKind.LOCAL
+                    else state.remote_list
+                )
+                updated_list = _mutate_list_generation(
+                    current_list,
+                    command=command,
+                    arguments=args,
+                    mutation_kind=mutation_kind,
+                )
+                local_list = (
+                    updated_list
+                    if source is DucListKind.LOCAL
+                    else state.local_list
+                )
+                remote_list = (
+                    updated_list
+                    if source is DucListKind.REMOTE
+                    else state.remote_list
+                )
                 state = DucSemanticState(
-                    state.local_list,
-                    state.remote_list,
+                    local_list,
+                    remote_list,
                     state.filters,
                     target,
                     state.point_target,
