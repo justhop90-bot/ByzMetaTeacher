@@ -660,31 +660,29 @@ def analyze_persistent_state(
             for writer in writers
             if writer.rule_order in reachable_orders
         )
-        if reachable_writers:
+        reachable_readers = tuple(
+            reader
+            for reader in readers
+            if reader.rule_order in reachable_orders
+        )
+        if reachable_writers and not reachable_readers:
             terminal_writer = reachable_writers[-1]
-            downstream_consumers = tuple(
-                reader
-                for reader in readers
-                if reader.rule_order in reachable_orders
-                and reader.sort_key > terminal_writer.sort_key
-            )
-            if not downstream_consumers:
-                diagnostics.append(
-                    PersistentStateDiagnostic(
-                        code=PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
-                        severity=DiagnosticSeverity.WARNING,
-                        message=(
-                            f"rule {terminal_writer.rule_order} writes "
-                            f"{state.kind.value.lower()} state '{state.identifier}', "
-                            "but no downstream reachable consumer reads that state; "
-                            "the persistent mutation is behaviorally open-loop"
-                        ),
-                        rule_order=terminal_writer.rule_order,
-                        access=terminal_writer,
-                        related_access=None,
-                        location=terminal_writer.location,
-                    )
+            diagnostics.append(
+                PersistentStateDiagnostic(
+                    code=PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
+                    severity=DiagnosticSeverity.WARNING,
+                    message=(
+                        f"rule {terminal_writer.rule_order} writes "
+                        f"{state.kind.value.lower()} state '{state.identifier}', "
+                        "but no globally reachable consumer reads that state; "
+                        "the persistent mutation is behaviorally open-loop"
+                    ),
+                    rule_order=terminal_writer.rule_order,
+                    access=terminal_writer,
+                    related_access=None,
+                    location=terminal_writer.location,
                 )
+            )
         boundaries.append(
             PersistentStateBoundary(
                 state=state,
