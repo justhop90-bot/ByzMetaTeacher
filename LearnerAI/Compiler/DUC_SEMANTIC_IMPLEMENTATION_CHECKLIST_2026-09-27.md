@@ -150,7 +150,7 @@ Primary test file:
 1. [x] Create typed DUC IR.
 2. [x] Implement first abstract-state interpreter.
 3. [ ] Finish hostile state-transition fixtures.
-4. [ ] Move native DUC contracts into the shared native registry.
+4. [x] Move native DUC contracts into the shared native registry.
 5. [ ] Integrate DUC into rule diagnostics.
 6. [ ] Run generic compiler native-zero acceptance with DUC-bearing .per fixtures.
 7. [ ] Add effective-source-graph provenance fixtures.
