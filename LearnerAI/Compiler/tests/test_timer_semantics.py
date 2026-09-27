@@ -65,11 +65,9 @@ class TimerGenerationIRTests(unittest.TestCase):
 
         self.assertEqual(pending.generation, 1)
         self.assertEqual(restarted.generation, 3)
-        self.assertFalse(
-            restarted.can_commit_pending_expiry(pending)
-        )
+        self.assertFalse(restarted.can_commit_pending_expiry(pending))
 
-    def test_runtime_state_is_not_constructed_as_a_stale_trigger(self):
+    def test_runtime_state_does_not_expose_mismatched_trigger_generation(self):
         timer = TimerRuntimeState(
             timer_id="7",
             initialized=True,
