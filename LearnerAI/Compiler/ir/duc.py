@@ -330,6 +330,26 @@ class DucSemanticState:
     pass_id: int = 0
     groups: tuple[DucGroupState, ...] = ()
 
+    def __post_init__(self) -> None:
+        if not self.groups:
+            object.__setattr__(
+                self,
+                "groups",
+                tuple(
+                    DucGroupState(
+                        group_id=group_id,
+                        generation=0,
+                        cardinality=DucCardinalityRange(0, 0),
+                        validity=DucGroupStatus.EMPTY,
+                    )
+                    for group_id in range(20)
+                ),
+            )
+        elif len(self.groups) != 20:
+            raise ValueError("DUC semantic state requires exactly 20 groups")
+        if tuple(group.group_id for group in self.groups) != tuple(range(20)):
+            raise ValueError("DUC group state must be ordered by group id")
+
 
 @dataclass(frozen=True)
 class DucDiagnostic:
