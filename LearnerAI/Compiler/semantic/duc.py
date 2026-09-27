@@ -461,6 +461,7 @@ def analyze_duc(
                 continue
 
             if reset_contract is not None:
+                resolution = reset_contract.resolve(args)
                 provenance = _provenance(
                     rule,
                     action,
@@ -482,22 +483,43 @@ def analyze_duc(
                 target = state.target
                 point_target = state.point_target
                 filters = state.filters
-                if reset_contract.invalidates_local_list:
-                    local = _list_state(DucListKind.LOCAL, local, None, next_generation=local.next_generation + 1 if local.current_generation else local.next_generation)
+                if resolution.invalidates_local_list:
+                    local = _list_state(
+                        DucListKind.LOCAL,
+                        local,
+                        None,
+                        next_generation=local.next_generation + 1
+                        if local.current_generation else local.next_generation,
+                    )
                     invalidated.append(DucListKind.LOCAL)
-                    if target is not None and target.kind is DucTargetKind.OBJECT and target.source_list_generation is not None:
-                        if target.provenance and target.provenance.command != command:
-                            target = DucTargetState(
-                                **{**target.__dict__, "validity": DucTargetStatus.STALE}
-                            )
-                if reset_contract.invalidates_remote_list:
-                    remote = _list_state(DucListKind.REMOTE, remote, None, next_generation=remote.next_generation + 1 if remote.current_generation else remote.next_generation)
-                    invalidated.append(DucListKind.REMOTE)
-                    if target is not None and target.kind is DucTargetKind.OBJECT and target.source_list_generation is not None:
+                    if (
+                        target is not None
+                        and target.kind is DucTargetKind.OBJECT
+                        and target.object_refs
+                        and target.object_refs[0].list_kind is DucListKind.LOCAL
+                    ):
                         target = DucTargetState(
                             **{**target.__dict__, "validity": DucTargetStatus.STALE}
                         )
-                if reset_contract.invalidates_filters:
+                if resolution.invalidates_remote_list:
+                    remote = _list_state(
+                        DucListKind.REMOTE,
+                        remote,
+                        None,
+                        next_generation=remote.next_generation + 1
+                        if remote.current_generation else remote.next_generation,
+                    )
+                    invalidated.append(DucListKind.REMOTE)
+                    if (
+                        target is not None
+                        and target.kind is DucTargetKind.OBJECT
+                        and target.object_refs
+                        and target.object_refs[0].list_kind is DucListKind.REMOTE
+                    ):
+                        target = DucTargetState(
+                            **{**target.__dict__, "validity": DucTargetStatus.STALE}
+                        )
+                if resolution.invalidates_filters:
                     next_filter_generation = (
                         filters.generation + 1
                         if filters.predicates or filters.retained
@@ -511,9 +533,9 @@ def analyze_duc(
                         False,
                         provenance,
                     )
-                if reset_contract.invalidates_object_target:
+                if resolution.invalidates_object_target:
                     target = None
-                if reset_contract.invalidates_point_target:
+                if resolution.invalidates_point_target:
                     point_target = None
                 state = DucSemanticState(
                     local,
@@ -527,16 +549,20 @@ def analyze_duc(
                     command,
                     reset_contract.reset_kind,
                     tuple(invalidated),
-                    reset_contract.invalidates_filters,
-                    reset_contract.invalidates_object_target,
-                    reset_contract.invalidates_point_target,
+                    resolution.invalidates_filters,
+                    resolution.invalidates_object_target,
+                    resolution.invalidates_point_target,
                     provenance,
+                    resolution.invalidates_local_index,
+                    resolution.invalidates_remote_index,
                 )
                 resets.append(reset)
                 rule_reset_lists.update(invalidated)
-                rule_writes.update({DucStateKind.LIST, DucStateKind.FILTER, DucStateKind.TARGET} & set(
-                    kind for kind in DucStateKind
-                ))
+                rule_writes.update({
+                    DucStateKind.LIST,
+                    DucStateKind.FILTER,
+                    DucStateKind.TARGET,
+                })
                 continue
 
             if command == SEARCH_STATE_COMMAND:
