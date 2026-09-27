@@ -264,6 +264,24 @@ class SourceGraphTests(unittest.TestCase):
             graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
             self.assertEqual(len(graph.edges), 0)
 
+    def test_conditional_depth_boundary_is_valid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "deep.perdsl"
+            lines = ["#load-if-defined TEST\\n"] * 50
+            lines += ["true\\n"]
+            lines += ["#end-if\\n"] * 50
+            entry.write_text("".join(lines), encoding="utf-8")
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=entry,
+                    load_symbols=LoadSymbolEnvironment(
+                        (("TEST", LoadSymbolState.DEFINED),),
+                    ),
+                )
+            )
+            self.assertEqual(graph.root.depth, 0)
+
     def test_conditional_depth_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
