@@ -117,13 +117,24 @@ class DucFilterSnapshot:
 
 
 @dataclass(frozen=True)
+class DucCardinalityRange:
+    minimum: int
+    maximum: int
+
+    def __post_init__(self) -> None:
+        if self.minimum < 0 or self.maximum < self.minimum:
+            raise ValueError("invalid DUC cardinality range")
+
+
+@dataclass(frozen=True)
 class DucListGeneration:
     list_kind: DucListKind
     generation: int
     produced_by: DucProvenance
-    cardinality: Optional[int]
+    cardinality: Optional[DucCardinalityRange]
     capacity: int
     content_fingerprint: Optional[str]
+    last_search_cardinality: Optional[DucCardinalityRange] = None
 
 
 @dataclass(frozen=True)
@@ -214,6 +225,10 @@ class DucSearchStateObservation:
     state_fields: tuple[str, ...]
     observation_fingerprint: str
     provenance: DucProvenance
+    local_total_cardinality: Optional[DucCardinalityRange] = None
+    local_last_search_cardinality: Optional[DucCardinalityRange] = None
+    remote_total_cardinality: Optional[DucCardinalityRange] = None
+    remote_last_search_cardinality: Optional[DucCardinalityRange] = None
 
 
 @dataclass(frozen=True)
@@ -284,6 +299,7 @@ class DucAnalysisReport:
 
 __all__ = [
     "DucAnalysisReport",
+    "DucCardinalityRange",
     "DucBranchMerge",
     "DucDiagnostic",
     "DucExecutionEffect",
