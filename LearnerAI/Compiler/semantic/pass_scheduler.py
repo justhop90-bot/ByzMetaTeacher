@@ -53,6 +53,8 @@ class PassScheduler:
         rules: tuple[EffectiveRule, ...],
         *,
         timer_ids: tuple[str, ...] = (),
+        goal_values: dict[str, int] | None = None,
+        strategic_number_values: dict[str, int] | None = None,
         action_handler: ActionHandler | None = None,
     ) -> None:
         self.rules = tuple(rules)
@@ -68,6 +70,14 @@ class PassScheduler:
         self._timers = {
             timer_id: create_initialized_timer(timer_id)
             for timer_id in timer_ids
+        }
+        self._goals = {
+            str(identifier): int(value)
+            for identifier, value in (goal_values or {}).items()
+        }
+        self._strategic_numbers = {
+            str(identifier): int(value)
+            for identifier, value in (strategic_number_values or {}).items()
         }
         self._pending_expiries: list[PendingTimerExpiry] = []
         self._pass_id = 0
@@ -92,6 +102,14 @@ class PassScheduler:
     @property
     def pending_expiries(self) -> tuple[PendingTimerExpiry, ...]:
         return tuple(self._pending_expiries)
+
+    @property
+    def goals(self) -> dict[str, int]:
+        return dict(self._goals)
+
+    @property
+    def strategic_numbers(self) -> dict[str, int]:
+        return dict(self._strategic_numbers)
 
     def run_pass(self, *, elapsed_seconds: float = 0.0) -> PassTrace:
         if elapsed_seconds < 0:
