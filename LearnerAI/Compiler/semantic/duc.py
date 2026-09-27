@@ -767,11 +767,9 @@ def _analyze_duc_linear(
                         ),
                         source_filter_generation=state.filters.generation,
                         provenance=provenance,
-                        validity=(
-                            DucTargetStatus.UNKNOWN
-                            if current.path_ambiguous or state.filters.path_ambiguous
-                            else DucTargetStatus.VALID
-                        ),
+                        validity=target_validity,
+                        pass_id=state.pass_id,
+                        proof=target_proof,
                     )
                     state = DucSemanticState(
                         state.local_list,
