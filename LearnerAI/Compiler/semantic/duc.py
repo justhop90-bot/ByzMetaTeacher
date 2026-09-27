@@ -869,12 +869,18 @@ def _analyze_duc_linear(
                         )
                     )
                 elif target.validity is DucTargetStatus.UNKNOWN:
+                    message = (
+                        "up-target-objects consumes an object target retained across a pass "
+                        "without a current-pass re-establishment; target lifetime is unknown"
+                        if target.proof is DucTargetProof.SYNTACTIC_RETENTION
+                        else "up-target-objects consumes an object target whose source-list identity is no longer provable"
+                    )
                     diagnostics.append(
                         DucDiagnostic(
                             "DUC-007",
                             DiagnosticSeverity.WARNING.value,
                             rule.rule_order,
-                            "up-target-objects consumes an object target whose source-list identity is no longer provable",
+                            message,
                             _location(action, rule.source_location),
                         )
                     )
