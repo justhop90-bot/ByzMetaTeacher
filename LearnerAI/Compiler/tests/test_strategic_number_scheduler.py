@@ -37,8 +37,7 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
             "(defrule (true) => "
             "(set-goal goal-x 4) "
             "(up-modify-sn 510 g:+ goal-x) "
-            "(disable-self))
-"
+            "(disable-self))\n"
         )
         semantic = analyze_strategic_number_expressions(report)
 
