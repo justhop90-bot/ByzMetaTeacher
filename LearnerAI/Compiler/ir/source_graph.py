@@ -44,6 +44,9 @@ class SourceFileId:
     def path(self) -> Path:
         return Path(self.canonical_path)
 
+    def fingerprint_payload(self) -> tuple[str, str]:
+        return (self.canonical_path, self.content_sha256)
+
 
 @dataclass(frozen=True)
 class SourceFile:
