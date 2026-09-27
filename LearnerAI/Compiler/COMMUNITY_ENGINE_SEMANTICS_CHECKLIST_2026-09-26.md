@@ -241,7 +241,7 @@ Cross-reference against the current recurrent compiler implementation and PR #54
 - [ ] Diagnose preemption/starvation and globally unreachable rules caused by control flow or persistent state.
 - [ ] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer.
 
-M1 now includes focused starvation and preemption diagnostics. It still does not claim global unreachable-rule proof or open-loop-state analysis.
+M1 now includes focused starvation, preemption, and global control-flow reachability diagnostics. It still does not claim open-loop-state analysis or global never-runnable proof from arbitrary runtime predicates.
 
 ## Current implementation tranche
 
