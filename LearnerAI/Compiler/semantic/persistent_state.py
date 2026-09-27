@@ -135,6 +135,12 @@ _STATE_SPECS = {
         0,
         None,
     ),
+    "up-compare-sn": (
+        PersistentStateKind.STRATEGIC_NUMBER,
+        PersistentStateAccessKind.READ,
+        0,
+        None,
+    ),
     "enable-timer": (
         PersistentStateKind.TIMER,
         PersistentStateAccessKind.WRITE,
@@ -252,7 +258,7 @@ def _reader_predicate(
     args = access.expression.args
     if access.command == "goal" and len(args) >= 2:
         return "=", str(args[1])
-    if access.command in {"up-compare-goal", "strategic-number"} and len(args) >= 3:
+    if access.command in {"up-compare-goal", "strategic-number", "up-compare-sn"} and len(args) >= 3:
         return str(args[1]), str(args[2])
     if access.command == "up-timer-status" and len(args) >= 3:
         return str(args[1]), str(args[2])
