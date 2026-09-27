@@ -58,6 +58,97 @@ class DucSemanticTests(unittest.TestCase):
         self.assertFalse(reset.invalidates_remote_index)
 
 
+
+    def _branched_execution(self, rules):
+        return RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=tuple(range(1, len(rules) + 1)),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=(
+                    (1, ()),
+                    (2, (1,)),
+                    (3, (1,)),
+                    (4, (2, 3)),
+                    *(
+                        (order, (order - 1,))
+                        for order in range(5, len(rules) + 1)
+                    ),
+                ),
+                outgoing_rule_orders=(
+                    (1, (2, 3)),
+                    (2, (4,)),
+                    (3, (4,)),
+                    *(
+                        (order, (order + 1,))
+                        for order in range(4, len(rules))
+                    ),
+                    (len(rules), ()),
+                ),
+            ),
+        )
+
+    def test_branch_join_preserves_identical_remote_generation(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(3, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(4, (("up-set-target-object", ("search-remote", "c:", "0")),)),
+            _rule(5, (("up-target-objects", ("1", "action-default", "-1", "-1")),)),
+        )
+
+        report = analyze_duc(self._branched_execution(rules))
+
+        join_state = next(state for order, state in report.states if order == 4)
+        self.assertFalse(join_state.remote_list.path_ambiguous)
+        self.assertEqual(join_state.remote_list.current_generation.generation, 2)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
+        self.assertNotIn("REMOTE_LIST", report.branch_merges[0].merged_fields)
+
+    def test_branch_join_marks_retained_filter_divergence(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-filter-distance", ("c:", "0", "c:", "100")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+            _rule(3, (
+                ("up-filter-range", ("0", "100", "0", "100")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+            _rule(4, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+        )
+
+        report = analyze_duc(self._branched_execution(rules))
+
+        merge = next(item for item in report.branch_merges if item.rule_order == 4)
+        self.assertIn("FILTERS", merge.merged_fields)
+        self.assertTrue(report.final_state.remote_list.path_ambiguous)
+        self.assertTrue(report.searches[-1].consumed_filter.path_ambiguous)
+        self.assertTrue(
+            any(item.code == "DUC-012" and item.rule_order == 4
+                for item in report.diagnostics)
+        )
+
+    def test_branch_join_merges_preexisting_target_to_unknown(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+            _rule(3, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(4, (("up-target-objects", ("1", "action-default", "-1", "-1")),)),
+        )
+
+        report = analyze_duc(self._branched_execution(rules))
+
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertTrue(
+            any(item.code == "DUC-007" and item.rule_order == 4
+                for item in report.diagnostics)
+        )
+
     def test_branch_join_marks_divergent_local_generation_and_target_unknown(self):
         rules = (
             _rule(1, (("up-jump-rule", ("1",)),)),
