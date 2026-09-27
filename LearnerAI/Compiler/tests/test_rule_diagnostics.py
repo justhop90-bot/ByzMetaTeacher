@@ -52,6 +52,45 @@ class RuleDiagnosticsTests(unittest.TestCase):
             location=SourceLocation(2, 1, "<test>"),
         )
 
+    def test_forward_control_transfer_gets_bypass_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 1))\n"
+                "(defrule (true) => (set-goal skipped 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+        )
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.INFO)
+        self.assertEqual(finding.related_rule_order, 3)
+        self.assertEqual(finding.related_operation, "up-jump-rule")
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
+
+    def test_out_of_range_control_transfer_gets_error_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 3))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertEqual(len(diagnostics.errors), 1)
+        finding = diagnostics.errors[0]
+        self.assertEqual(finding.code, RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE)
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertIsNone(finding.related_rule_order)
+        self.assertEqual(finding.related_operation, "up-jump-rule")
+        self.assertEqual(finding.category.value, "CONTROL_FLOW")
     def test_never_eligible_rule_gets_error_diagnostic(self):
         report = analyze_effective_rules(
             self._graph(
