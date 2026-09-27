@@ -104,6 +104,37 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:set-target-object", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
 
+    def test_shared_catalog_exposes_first_class_duc_group_contracts(self):
+        catalog = default_native_contract_catalog()
+
+        create = catalog.duc_group("up-create-group")
+        reset = catalog.duc_group("up-reset-group")
+        set_group = catalog.duc_group("up-set-group")
+        size = catalog.duc_group("up-group-size")
+        get_size = catalog.duc_group("up-get-group-size")
+        flag = catalog.duc_group("up-modify-group-flag")
+
+        self.assertEqual((create.group_id_min, create.group_id_max), (0, 19))
+        self.assertEqual(create.capacity, 40)
+        self.assertEqual(create.list_kinds, ("LOCAL",))
+        self.assertEqual(reset.operation, "RESET")
+        self.assertEqual(set_group.list_kinds, ("LOCAL", "REMOTE"))
+        self.assertTrue(set_group.replaces_search_list)
+        self.assertTrue(set_group.requires_group)
+        self.assertEqual(size.operation, "SIZE_FACT")
+        self.assertEqual(get_size.operation, "SIZE_OUTPUT")
+        self.assertEqual(flag.operation, "MODIFY_FLAG")
+
+        for citation_id in (
+            "airef:duc:create-group",
+            "airef:duc:reset-group",
+            "airef:duc:set-group",
+            "airef:duc:group-size",
+            "airef:duc:get-group-size",
+            "airef:duc:modify-group-flag",
+        ):
+            self.assertIn(citation_id, set(catalog.citation_ids()))
+
     def test_missing_duc_evidence_blocks_shared_native_catalog(self):
         base = default_native_contract_catalog()
         bad_search = replace(
