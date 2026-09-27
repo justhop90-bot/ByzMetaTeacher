@@ -342,7 +342,7 @@ class SourceGraphResolver:
                 target_text = None
                 load_kind = LoadKind.RANDOM
 
-            if event.kind is SourceAssemblyEventKind.LOAD:
+            if active and event.kind is SourceAssemblyEventKind.LOAD:
                 target_source = self._load_unit(
                     Path(target_text),
                     containing_source=physical.path,
