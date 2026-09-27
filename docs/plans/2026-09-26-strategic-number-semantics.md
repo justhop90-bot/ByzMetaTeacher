@@ -2,9 +2,9 @@
 
 > **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a typed, source-ordered Strategic Number mutation model with faithful UserPatch arithmetic, recurrent same-pass visibility, dependency diagnostics, hostile tests, and native-parser acceptance.
+**Goal:** Add a typed, source-ordered Strategic Number mutation and comparison model with faithful UserPatch arithmetic, recurrent same-pass visibility, dependency diagnostics, hostile tests, and native-parser acceptance.
 
-**Architecture:** Keep the new semantics in two focused layers. The IR module represents native SN mutations and operand dependencies; the semantic module parses/validates expressions and evaluates them. Existing persistent-state analysis consumes the semantic access view, while the recurrent scheduler reuses the same evaluator for runtime visibility tests.
+**Architecture:** Keep the new semantics in two focused layers. The IR module represents native SN mutations/comparisons and operand dependencies; the semantic module parses/validates expressions and evaluates them. Existing persistent-state analysis consumes the semantic access view, while the recurrent scheduler reuses the same evaluator for runtime visibility tests.
 
 **Tech Stack:** Python 3.11+, unittest, existing Compiler IR/semantic modules, pinned `aoe2-ai-parser` native lint in GitHub Actions.
 
@@ -31,19 +31,19 @@
 
 **Interfaces:**
 - Consumes: `Expression`, `EffectiveRule`, native operator text.
-- Produces: `StrategicNumberMutation`, `StrategicNumberOperand`, `StrategicNumberDependency`, `parse_strategic_number_mutation()`, `analyze_strategic_number_expressions()`, `evaluate_strategic_number_mutation()`.
+- Produces: `StrategicNumberMutation`, `StrategicNumberComparison`, typed operands/dependencies, `parse_strategic_number_mutation()`, `parse_strategic_number_comparison()`, `analyze_strategic_number_expressions()`, and the shared mutation/comparison evaluators.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
   - Parse assignment, arithmetic, min/max, negation, percentage operators.
   - Assert `c:` yields CONSTANT, `g:` yields GOAL, `s:` yields STRATEGIC_NUMBER.
   - Reject bad arity, unknown operator, malformed numeric constant, invalid prefix, and constant zero divisor.
   - Assert dependency records for Goal/SN operands.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
   - Run: `python -m unittest LearnerAI.Compiler.tests.test_strategic_number_semantics`
   - Expected: import/attribute failures proving the new typed interface is absent.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
   - Define the enums/dataclasses.
   - Parse native `up-modify-sn` and `set-strategic-number`.
   - Validate 16-bit literal/defconst operand bounds; Goal/SN state values remain signed 32-bit.
@@ -59,7 +59,7 @@
   - Run: `python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"`
   - Expected: existing suite plus new SN tests pass.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
   - Commit: `feat(compiler): add typed strategic number semantics`
 
 ---
@@ -75,17 +75,17 @@
 - Consumes: `StrategicNumberMutation` and existing `PersistentStateAccess`.
 - Produces: same-pass SN state mutation and explicit target/dependency access records.
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
   - Rule 1 modifies SN; Rule 2 reads SN and fires in the same pass.
   - `min/max`, `/`, `z/`, `%*`, `%/` operate through the scheduler using the same evaluator.
   - Goal-to-SN and SN-to-SN dependencies are visible at action execution time.
   - A modification with a source state written later in the same rule is rejected by semantic ordering.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
   - Run the focused scheduler unittest.
   - Expected: unsupported scheduler fact/action errors or missing typed dependencies.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
   - Add SN/Goal stores to `PassScheduler`.
   - Evaluate `strategic-number` and `up-compare-sn`.
   - Apply `set-strategic-number` and `up-modify-sn` sequentially.
@@ -118,16 +118,16 @@
 - Consumes: checked-in SN fixture and pinned `aoe2_ai_lab` validator.
 - Produces: deterministic `.per` fixture and zero-findings native validation report.
 
-- [ ] **Step 1: Add the failing native acceptance test**
-  - Generate rules covering all operators, c/g/s operands, negative values, sequential mutations, and guarded reads.
+- [x] **Step 1: Add the failing native acceptance test**
+  - Generate rules covering all mutation operators, all `up-compare-sn` comparison operators, c/g/s operands, sequential mutations, dynamic dependencies, and guarded reads.
   - Assert the fixture is deterministic.
   - Assert the native validator reports zero findings when the pinned parser is installed.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
   - Run the fixture/unit test before workflow integration.
   - Expected: missing fixture/semantic support failures identify unsupported constructs.
 
-- [ ] **Step 3: Implement the native gate**
+- [x] **Step 3: Implement the native gate**
   - Generate the fixture from checked-in source text.
   - Run `python -m aoe2_ai_lab lint <fixture> --profile default --json`.
   - Fail on nonzero exit, malformed JSON, or nonzero finding count.
