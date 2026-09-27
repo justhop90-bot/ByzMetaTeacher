@@ -423,6 +423,15 @@ def _validate_instances(
                     instance_id=instance.instance_id,
                 )
             )
+        if len(instance.ancestry) != len(set(instance.ancestry)):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.INSTANCE_CYCLE,
+                    f"instance '{instance.instance_id}' ancestry contains a repeated source file",
+                    path=_instance_path(instance),
+                    instance_id=instance.instance_id,
+                )
+            )
         if instance.parent is None:
             if instance.ancestry != (instance.source,):
                 diagnostics.append(
