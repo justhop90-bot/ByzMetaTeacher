@@ -39,6 +39,7 @@ class PersistentStateDiagnosticCode(str, Enum):
     CONSUMER_BEFORE_WRITER = "PSTATE-001"
     LATER_OVERWRITE = "PSTATE-002"
     CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
+    CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
 
 
 @dataclass(frozen=True)
@@ -453,21 +454,41 @@ def analyze_persistent_state(
                     continue
                 if not _predicate_is_false_after_write(reader, candidate):
                     continue
-                diagnostics.append(
-                    PersistentStateDiagnostic(
-                        code=PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER,
-                        severity=DiagnosticSeverity.ERROR,
-                        message=(
-                            f"rule {reader.rule_order} reads {state.kind.value.lower()} "
-                            f"state '{state.identifier}' with a predicate contradicted by "
-                            f"the preceding guaranteed writer in rule {candidate.rule_order}"
-                        ),
-                        rule_order=reader.rule_order,
-                        access=reader,
-                        related_access=candidate,
-                        location=reader.location,
+                if source_rule.pass_behavior is RulePassBehavior.RECURRENT:
+                    diagnostics.append(
+                        PersistentStateDiagnostic(
+                            code=PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER,
+                            severity=DiagnosticSeverity.ERROR,
+                            message=(
+                                f"rule {reader.rule_order} reads {state.kind.value.lower()} "
+                                f"state '{state.identifier}', but recurrent guaranteed writer "
+                                f"rule {candidate.rule_order} establishes a value that "
+                                "contradicts the consumer before every subsequent pass"
+                            ),
+                            rule_order=reader.rule_order,
+                            access=reader,
+                            related_access=candidate,
+                            location=reader.location,
+                        )
                     )
-                )
+                else:
+                    diagnostics.append(
+                        PersistentStateDiagnostic(
+                            code=PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER,
+                            severity=DiagnosticSeverity.WARNING,
+                            message=(
+                                f"rule {reader.rule_order} reads {state.kind.value.lower()} "
+                                f"state '{state.identifier}' with a predicate contradicted by "
+                                f"the preceding guaranteed one-shot writer in rule "
+                                f"{candidate.rule_order}; the consumer may be shadowed "
+                                "for the current pass but is not statically starved"
+                            ),
+                            rule_order=reader.rule_order,
+                            access=reader,
+                            related_access=candidate,
+                            location=reader.location,
+                        )
+                    )
 
         boundaries.append(
             PersistentStateBoundary(
