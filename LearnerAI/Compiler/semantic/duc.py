@@ -902,6 +902,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                 else:
                     state = DucSemanticState(
@@ -912,6 +913,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                 searches.append(
                     DucSearchOperation(
@@ -968,6 +970,7 @@ def _analyze_duc_linear(
                     state.point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 rule_writes.add(DucStateKind.FILTER)
                 continue
@@ -1382,6 +1385,7 @@ def _analyze_duc_linear(
                     state.point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 mutations.append(
                     DucListMutationEffect(
@@ -1648,6 +1652,7 @@ def _widen_loop_state(
     remote = _widen_list_state(previous.remote_list, current.remote_list)
     filters = _widen_filter_state(previous.filters, current.filters)
     target = _widen_target_state(previous.target, current.target)
+    groups = _join_groups((previous.groups, current.groups))
     if previous.point_target == current.point_target:
         point_target = previous.point_target
     else:
@@ -1667,6 +1672,10 @@ def _widen_loop_state(
         widened_fields.append("TARGET")
     if point_target != previous.point_target:
         widened_fields.append("POINT_TARGET")
+    if tuple(_group_key(group) for group in previous.groups) != tuple(
+        _group_key(group) for group in current.groups
+    ):
+        widened_fields.append("GROUPS")
     return (
         DucSemanticState(
             local,
@@ -1676,6 +1685,7 @@ def _widen_loop_state(
             point_target,
             max(previous.state_revision, current.state_revision),
             max(previous.pass_id, current.pass_id),
+            groups=groups,
         ),
         tuple(widened_fields),
     )
