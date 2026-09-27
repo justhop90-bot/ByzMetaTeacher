@@ -40,6 +40,7 @@ class PersistentStateDiagnosticCode(str, Enum):
     LATER_OVERWRITE = "PSTATE-002"
     CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
     CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
+    OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
 
 
 @dataclass(frozen=True)
@@ -490,6 +491,41 @@ def analyze_persistent_state(
                         )
                     )
 
+        reachable_orders = (
+            set(report.reachability.reachable_rule_orders)
+            if report.reachability is not None
+            else {rule.rule_order for rule in report.rules}
+        )
+        reachable_writers = tuple(
+            writer
+            for writer in writers
+            if writer.rule_order in reachable_orders
+        )
+        if reachable_writers:
+            terminal_writer = reachable_writers[-1]
+            downstream_consumers = tuple(
+                reader
+                for reader in readers
+                if reader.rule_order in reachable_orders
+                and reader.sort_key > terminal_writer.sort_key
+            )
+            if not downstream_consumers:
+                diagnostics.append(
+                    PersistentStateDiagnostic(
+                        code=PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER,
+                        severity=DiagnosticSeverity.WARNING,
+                        message=(
+                            f"rule {terminal_writer.rule_order} writes "
+                            f"{state.kind.value.lower()} state '{state.identifier}', "
+                            "but no later reachable rule reads that state; "
+                            "the persistent mutation is behaviorally open-loop"
+                        ),
+                        rule_order=terminal_writer.rule_order,
+                        access=terminal_writer,
+                        related_access=None,
+                        location=terminal_writer.location,
+                    )
+                )
         boundaries.append(
             PersistentStateBoundary(
                 state=state,
