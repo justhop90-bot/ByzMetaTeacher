@@ -1061,6 +1061,7 @@ def _analyze_duc_linear(
                     point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 reset = DucResetEffect(
                     command,
@@ -1276,6 +1277,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                     targets.append(target)
                     rule_reads.add(DucStateKind.LIST)
