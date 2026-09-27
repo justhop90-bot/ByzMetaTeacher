@@ -240,6 +240,99 @@ class RuleDiagnosticsTests(unittest.TestCase):
             StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY.value,
         )
 
+    def test_recurrent_guaranteed_writer_is_reported_as_persistent_starvation(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal gate 0))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1))\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        finding = next(
+            item
+            for item in persistent.diagnostics
+            if item.code
+            is PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER
+        )
+
+        self.assertEqual(finding.rule_order, 2)
+        self.assertEqual(finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(finding.related_access.rule_order, 1)
+        self.assertEqual(finding.related_access.command, "set-goal")
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent,
+        )
+        rule_finding = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_CONSUMER_STARVED_BY_RECURRENT_WRITER
+        )
+        self.assertEqual(rule_finding.rule_order, 2)
+        self.assertEqual(rule_finding.severity, DiagnosticSeverity.ERROR)
+        self.assertEqual(rule_finding.related_rule_order, 1)
+        self.assertEqual(rule_finding.state_identifier, "gate")
+
+    def test_one_shot_shadowing_is_warning_not_persistent_starvation(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal gate 0) (disable-self))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1) (disable-self))\n"
+            )
+        )
+        persistent = analyze_persistent_state(report)
+
+        shadow = next(
+            item
+            for item in persistent.diagnostics
+            if item.code
+            is PersistentStateDiagnosticCode.CONSUMER_SHADOWED_BY_WRITER
+        )
+        self.assertEqual(shadow.severity, DiagnosticSeverity.WARNING)
+        self.assertEqual(shadow.rule_order, 2)
+        self.assertEqual(shadow.related_access.rule_order, 1)
+        self.assertFalse(
+            any(
+                item.code
+                is PersistentStateDiagnosticCode.CONSUMER_STARVED_BY_RECURRENT_WRITER
+                for item in persistent.diagnostics
+            )
+        )
+
+    def test_recurrent_guaranteed_jump_gets_preemption_diagnostics_for_each_bypassed_rule(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2))\n"
+                "(defrule (true) => (set-goal skipped-a 1))\n"
+                "(defrule (true) => (set-goal skipped-b 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        preemptions = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+        )
+
+        self.assertEqual(
+            [(item.rule_order, item.related_rule_order, item.severity) for item in preemptions],
+            [
+                (1, 2, DiagnosticSeverity.WARNING),
+                (1, 3, DiagnosticSeverity.WARNING),
+            ],
+        )
+        self.assertTrue(
+            all(
+                "alternate control paths are not ruled out" in item.message
+                for item in preemptions
+            )
+        )
+
     def test_persistent_state_findings_compile_into_rule_diagnostics(self):
         report = analyze_effective_rules(
             self._graph(
