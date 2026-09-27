@@ -598,6 +598,11 @@ def analyze_persistent_state(
                         )
                     )
 
+        reachable_orders = (
+            set(report.reachability.reachable_rule_orders)
+            if report.reachability is not None
+            else {rule.rule_order for rule in report.rules}
+        )
         if any(
             transfer.target_rule_order is None
             for transfer in report.control_transfers
@@ -608,7 +613,8 @@ def analyze_persistent_state(
                 writer: tuple(
                     reader
                     for reader in readers
-                    if reader.sort_key > writer.sort_key
+                    if reader.rule_order in reachable_orders
+                    and reader.sort_key > writer.sort_key
                     and (
                         writer.rule_order != reader.rule_order
                         or (
@@ -619,6 +625,7 @@ def analyze_persistent_state(
                     )
                 )
                 for writer in writers
+                if writer.rule_order in reachable_orders
             }
             for writer, downstream_readers in downstream_readers_by_writer.items():
                 if (
@@ -648,11 +655,6 @@ def analyze_persistent_state(
                         location=writer.location,
                     )
                 )
-        reachable_orders = (
-            set(report.reachability.reachable_rule_orders)
-            if report.reachability is not None
-            else {rule.rule_order for rule in report.rules}
-        )
         reachable_writers = tuple(
             writer
             for writer in writers
