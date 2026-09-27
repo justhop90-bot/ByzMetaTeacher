@@ -772,6 +772,7 @@ MULTI_FAILURE_CORPUS: tuple[MultiFailureCase, ...] = (
             Code.ASSEMBLY_FINGERPRINT_MISMATCH,
             Code.INACTIVE_HAS_CHILD,
             Code.EDGE_CONDITION_INVALID,
+            Code.EDGE_EVENT_PAYLOAD_MISMATCH,
         ),
         Code.ORPHAN_INSTANCE,
     ),
