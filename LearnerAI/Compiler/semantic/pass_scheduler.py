@@ -151,6 +151,16 @@ class PassScheduler:
                         duration,
                         self._now_seconds,
                     )
+                elif head == "set-goal":
+                    self._set_goal_action(expression)
+                elif head == "set-strategic-number":
+                    self._set_strategic_number_action(expression)
+                elif head == "up-modify-sn":
+                    self._apply_strategic_number_mutation(
+                        expression,
+                        rule.rule_order,
+                        action.within_rule_order,
+                    )
                 elif head == "disable-timer":
                     timer_id = self._timer_id_arg(expression, 0)
                     self._timers[timer_id] = self._timers[timer_id].disable()
