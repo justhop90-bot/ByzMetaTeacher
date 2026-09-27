@@ -79,10 +79,10 @@ class SourceGraphTests(unittest.TestCase):
             root = Path(tmp)
             entry = root / "root.perdsl"
             entry.write_text(
-                "#load-if-defined NEVER\\n"
-                '(load "does-not-exist.perdsl")\\n'
-                "#end-if\\n"
-                "true\\n",
+                "#load-if-defined NEVER\n"
+                '(load "does-not-exist.perdsl")\n'
+                "#end-if\n"
+                "true\n",
                 encoding="utf-8",
             )
             graph = SourceGraphResolver().resolve(
@@ -105,12 +105,12 @@ class SourceGraphTests(unittest.TestCase):
             entry = root / "root.perdsl"
             child = root / "child.perdsl"
             entry.write_text(
-                "#load-if-defined NEVER\\n"
-                '(load "child.perdsl")\\n'
-                "#end-if\\n",
+                "#load-if-defined NEVER\n"
+                '(load "child.perdsl")\n'
+                "#end-if\n",
                 encoding="utf-8",
             )
-            child.write_text('(load "root.perdsl")\\n', encoding="utf-8")
+            child.write_text('(load "root.perdsl")\n', encoding="utf-8")
             graph = SourceGraphResolver().resolve(
                 SourceGraphRequest(
                     entrypoint=entry,
@@ -288,9 +288,9 @@ class SourceGraphTests(unittest.TestCase):
             for index in range(11):
                 next_name = f"node-{index + 1}.perdsl"
                 content = (
-                    f'(load "{next_name}")\\n'
+                    f'(load "{next_name}")\n'
                     if index < 10
-                    else "; terminal node\\n"
+                    else "; terminal node\n"
                 )
                 (root / f"node-{index}.perdsl").write_text(
                     content,
@@ -325,11 +325,11 @@ class SourceGraphTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             child = root / "child.perdsl"
-            child.write_text("; child\\n", encoding="utf-8")
+            child.write_text("; child\n", encoding="utf-8")
             entry = root / "root.perdsl"
             entry.write_text(
-                '(load "./child.perdsl")\\n'
-                '(load "sub/../child.perdsl")\\n',
+                '(load "./child.perdsl")\n'
+                '(load "sub/../child.perdsl")\n',
                 encoding="utf-8",
             )
             graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
