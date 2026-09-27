@@ -403,12 +403,12 @@ def analyze_recurrent_execution(
                     elif fact.head in {"strategic-number", "up-compare-sn"} and len(fact.args) == 3:
                         ident = str(fact.args[0])
                         blocked.setdefault(rule.rule_order, set()).add(
-                            ("SN", ident, values.get(("SN", ident))
-                        ))
+                            ("SN", ident, values.get(("SN", ident)))
+                        )
                     elif fact.head == "up-timer-status" and len(fact.args) == 3:
                         ident = str(fact.args[0])
                         blocked.setdefault(rule.rule_order, set()).add(
-                            ("TIMER", ident, values.get(("TIMER", ident))
+                            ("TIMER", ident, values.get(("TIMER", ident)))
                         )
 
             successor = _MachineState(index + 1, state.disabled, state.values)
