@@ -53,6 +53,7 @@ class RuleReachabilityReport:
     reachable_rule_orders: tuple[int, ...]
     unreachable_rule_orders: tuple[int, ...]
     incoming_rule_orders: tuple[tuple[int, tuple[int, ...]], ...]
+    outgoing_rule_orders: tuple[tuple[int, tuple[int, ...]], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -350,6 +351,10 @@ def analyze_rule_reachability(
             reachable,
             (),
             tuple((rule.rule_order, ()) for rule in rules),
+            tuple(
+                (rule.rule_order, ())
+                for rule in rules
+            ),
         )
 
     transfers_by_rule: dict[int, StaticControlTransfer] = {}
@@ -410,10 +415,15 @@ def analyze_rule_reachability(
     reachable_orders = tuple(rule.rule_order for rule in rules if rule.rule_order in reachable)
     unreachable_orders = tuple(rule.rule_order for rule in rules if rule.rule_order not in reachable)
     incoming_orders = tuple(sorted(incoming.items()))
+    outgoing_orders = tuple(
+        (source, tuple(sorted(targets)))
+        for source, targets in sorted(edges.items())
+    )
     return RuleReachabilityReport(
         reachable_rule_orders=reachable_orders,
         unreachable_rule_orders=unreachable_orders,
         incoming_rule_orders=incoming_orders,
+        outgoing_rule_orders=outgoing_orders,
     )
 
 
