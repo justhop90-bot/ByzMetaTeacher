@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucListMutationKind, DucTargetProof, DucTargetStatus, DucTargetTransition
+from Compiler.ir.duc import DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
