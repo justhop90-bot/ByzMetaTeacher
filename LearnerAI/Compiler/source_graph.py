@@ -758,6 +758,33 @@ def _scan_assembly_occurrences(
             )
             continue
 
+        if stripped.startswith("#load-if-defined") or stripped.startswith(
+            "#load-if-not-defined"
+        ):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed preprocessor conditional directive",
+                path=path,
+                line=line,
+                column=column,
+            )
+        if stripped.startswith("#else"):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed #else directive",
+                path=path,
+                line=line,
+                column=column,
+            )
+        if stripped.startswith("#end-if"):
+            raise SourceGraphError(
+                "SOURCE-GRAPH-012",
+                "malformed #end-if directive",
+                path=path,
+                line=line,
+                column=column,
+            )
+
         raw_match = _RAW_LOAD_RE.fullmatch(stripped)
         if raw_match is None:
             raise SourceGraphError(
