@@ -40,6 +40,7 @@ Evidence classes are intentionally separate:
 - [x] Treat SNs as a persistent engine control namespace, not as generic integers.
 - [x] Bind SN storage explicitly and collision-safely.
 - [x] Record that an SN may change built-in engine behavior.
+- [x] Implement typed `up-compare-sn` semantics for all six comparison operators and c/g/s operands.
 - [ ] Complete native SN semantic metadata for all checked-in SNs that the compiler exposes.
 - [ ] Distinguish native behavior-changing SNs from genuinely unused/custom-safe SNs.
 - [ ] Add provenance/version checks when a strategy relies on an SN whose semantics changed across patches.
@@ -183,13 +184,14 @@ Evidence classes are intentionally separate:
 
 ## Gate 9 — load/preprocessor program graph
 
-- [ ] Parse and resolve load reachability.
-- [ ] Parse and resolve load-if-defined and related conditional loading.
-- [ ] Preserve physical source locations through the expanded graph.
-- [ ] Detect duplicate inclusion and conditional shadowing.
-- [ ] Compute effective rule/source order across loaded files.
+- [x] Parse and resolve load reachability.
+- [x] Parse and resolve load-if-defined and related conditional loading.
+- [x] Preserve physical source locations through the expanded graph.
+- [x] Detect malformed conditional structure and load cycles/depth violations.
+- [x] Compute effective source slices and rule/source order across loaded files.
+- [x] Resolve package compilation from the effective source graph before semantic analysis.
 - [ ] Include loaded storage consumers in Goal/SN/Timer occupancy analysis.
-- [ ] Refuse to claim whole-program completeness while the effective source graph is unresolved.
+- [ ] Detect every duplicate-inclusion/shadowing pattern that requires package-specific policy.
 
 ## Gate 10 — performance as behavioral semantics
 
@@ -257,6 +259,6 @@ Implemented in this pass:
 
 The compiler now knows the documented/community contracts above, but it is not yet a general .per frontend for all of them. Native primitive support now also has an explicit engine-semantics-mapped gate, so a syntactically typed adapter cannot silently jump directly to executable-safe.
 
-In particular, DUC, attack machinery, complete Strategic Number semantics, recurrent rule eligibility, disable-self, later-overwrite/preemption analysis, and the load graph remain evidence-backed frontiers until their native syntax/IR support is implemented.
+In particular, DUC, attack machinery, complete Strategic Number inventory/patch semantics, recurrent rule eligibility, disable-self, later-overwrite/preemption analysis, and the broader DUC/attack surfaces remain evidence-backed frontiers until their native syntax/IR support is implemented.
 
 The correct milestone is therefore: community engine semantics are now explicit and typed, with the recovery slice actually enforced; the remaining frontier is native execution coverage, not more abstract lifecycle vocabulary.
