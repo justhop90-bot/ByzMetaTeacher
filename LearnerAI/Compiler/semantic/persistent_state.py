@@ -216,6 +216,45 @@ def _state_access(
     )
 
 
+def _operand_state_accesses(
+    expression: Expression,
+    *,
+    rule: EffectiveRule,
+    section: str,
+    within_rule_order: int,
+) -> tuple[PersistentStateAccess, ...]:
+    if expression.head not in {"up-modify-sn", "up-compare-sn"}:
+        return ()
+    if len(expression.args) < 3:
+        return ()
+    operand = str(expression.args[2])
+    if len(operand) < 3 or operand[1] != ":":
+        return ()
+    prefix = operand[:2].lower()
+    if prefix == "g:":
+        kind = PersistentStateKind.GOAL
+    elif prefix == "s:":
+        kind = PersistentStateKind.STRATEGIC_NUMBER
+    else:
+        return ()
+    identifier = operand[2:]
+    if not identifier:
+        return ()
+    return (
+        PersistentStateAccess(
+            state=PersistentStateRef(kind=kind, identifier=identifier),
+            effect=PersistentStateAccessKind.READ,
+            rule_order=rule.rule_order,
+            within_rule_order=within_rule_order,
+            section=section,
+            command=expression.head,
+            expression=expression,
+            pass_behavior=rule.pass_behavior,
+            location=expression.location or rule.source_location,
+        ),
+    )
+
+
 def _guard_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
     accesses: list[PersistentStateAccess] = []
     for index, expression in enumerate(_walk(rule.facts)):
@@ -227,6 +266,14 @@ def _guard_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
         )
         if access is not None:
             accesses.append(access)
+        accesses.extend(
+            _operand_state_accesses(
+                expression,
+                rule=rule,
+                section="GUARD",
+                within_rule_order=index,
+            )
+        )
     return tuple(accesses)
 
 
@@ -240,8 +287,16 @@ def _action_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
             section="ACTION",
             within_rule_order=action.within_rule_order,
         )
-        if access is not None and access.effect is PersistentStateAccessKind.WRITE:
+        if access is not None:
             accesses.append(access)
+        accesses.extend(
+            _operand_state_accesses(
+                expression,
+                rule=rule,
+                section="ACTION",
+                within_rule_order=action.within_rule_order,
+            )
+        )
     return tuple(accesses)
 
 
