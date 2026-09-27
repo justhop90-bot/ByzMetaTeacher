@@ -58,7 +58,7 @@ class NativeFactRegistryTests(unittest.TestCase):
         self.assertEqual(
             fact.canonical_args,
             (
-                CanonicalEnum("SN_COMPARE_OP", "g:>="),
+                CanonicalEnum("COMPARE_OP", ">="),
                 CanonicalEnum("AGE", "CASTLE"),
             ),
         )
@@ -137,7 +137,7 @@ class NativeFactRegistryTests(unittest.TestCase):
         )
         self.assertEqual(
             fact.canonical_args[1],
-            CanonicalEnum("COMPARE_OP", ">="),
+            CanonicalEnum("SN_COMPARE_OP", "g:>="),
         )
         self.assertEqual(
             fact.canonical_args[2].namespace,
