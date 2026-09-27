@@ -268,9 +268,9 @@ class SourceGraphTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             entry = root / "deep.perdsl"
-            lines = ["#load-if-defined TEST\\n"] * 50
-            lines += ["true\\n"]
-            lines += ["#end-if\\n"] * 50
+            lines = ["#load-if-defined TEST\n"] * 50
+            lines += ["true\n"]
+            lines += ["#end-if\n"] * 50
             entry.write_text("".join(lines), encoding="utf-8")
             graph = SourceGraphResolver().resolve(
                 SourceGraphRequest(
