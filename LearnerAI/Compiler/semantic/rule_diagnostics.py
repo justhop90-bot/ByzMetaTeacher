@@ -290,13 +290,6 @@ def _unreachable_rule_diagnostics(
             report.control_transfers,
         )
 
-    if recurrent_execution_report is not None and not isinstance(
-        recurrent_execution_report, RecurrentExecutionReport
-    ):
-        raise TypeError(
-            "recurrent_execution_report must be a RecurrentExecutionReport"
-        )
-
     diagnostics: list[RuleDiagnostic] = []
     for rule_order in reachability.unreachable_rule_orders:
         rule = report.rules[rule_order - 1]
@@ -481,6 +474,7 @@ def analyze_rule_diagnostics(
     completion_witnesses: Mapping[int, object] | None = None,
     persistent_state_report: PersistentStateReport | None = None,
     strategic_number_report: StrategicNumberSemanticReport | None = None,
+    recurrent_execution_report: RecurrentExecutionReport | None = None,
     duc_report: DucAnalysisReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
@@ -507,6 +501,13 @@ def analyze_rule_diagnostics(
     ):
         raise TypeError(
             "strategic_number_report must be a StrategicNumberSemanticReport"
+        )
+
+    if recurrent_execution_report is not None and not isinstance(
+        recurrent_execution_report, RecurrentExecutionReport
+    ):
+        raise TypeError(
+            "recurrent_execution_report must be a RecurrentExecutionReport"
         )
 
     diagnostics: list[RuleDiagnostic] = []
