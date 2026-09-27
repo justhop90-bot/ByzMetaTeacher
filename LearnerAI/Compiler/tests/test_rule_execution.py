@@ -159,6 +159,59 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
         self.assertEqual(transfer.within_rule_order, 0)
         self.assertEqual(transfer.delta, -1)
         self.assertEqual(transfer.target_rule_order, 2)
+    def test_global_reachability_marks_recurrent_jump_target_gap_unreachable(self):
+        graph = self._graph(
+            '(defrule (true) => (up-jump-rule 1))\n'
+            '(defrule (true) => (set-goal unreachable 1))\n'
+            '(defrule (true) => (set-goal reached 1))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(
+            report.reachability.unreachable_rule_orders,
+            (2,),
+        )
+        self.assertEqual(
+            report.reachability.reachable_rule_orders,
+            (1, 3),
+        )
+        self.assertEqual(
+            dict(report.reachability.incoming_rule_orders)[2],
+            (),
+        )
+
+    def test_global_reachability_keeps_one_shot_jump_successor_reachable_on_later_pass(self):
+        graph = self._graph(
+            '(defrule (true) => (up-jump-rule 1) (disable-self))\n'
+            '(defrule (true) => (set-goal successor 1))\n'
+            '(defrule (true) => (set-goal target 1))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(report.reachability.unreachable_rule_orders, ())
+        self.assertEqual(
+            report.reachability.reachable_rule_orders,
+            (1, 2, 3),
+        )
+
+    def test_global_reachability_accepts_alternate_backward_path(self):
+        graph = self._graph(
+            '(defrule (true) => (up-jump-rule 2))\n'
+            '(defrule (true) => (set-goal second 1))\n'
+            '(defrule (true) => (set-goal third 1))\n'
+            '(defrule (true) => (up-jump-rule -3))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(report.reachability.unreachable_rule_orders, ())
+        self.assertEqual(
+            report.reachability.reachable_rule_orders,
+            (1, 2, 3, 4),
+        )
+
     def test_source_order_does_not_claim_firing(self):
         graph = self._graph(
             '(defrule (current-age >= castle-age) => (set-goal castle-ready 1))\n',
