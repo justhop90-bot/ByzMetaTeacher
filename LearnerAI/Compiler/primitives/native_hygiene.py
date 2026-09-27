@@ -1170,6 +1170,7 @@ class NativeContractCatalog:
                 *self.duc_resets,
                 *self.duc_mutations,
                 *self.duc_targets,
+                *self.duc_groups,
             )
             for evidence_id in contract.evidence_ids
         )
