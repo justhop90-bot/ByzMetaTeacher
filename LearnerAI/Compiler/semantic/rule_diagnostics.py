@@ -16,12 +16,17 @@ from .persistent_state import (
     PersistentStateDiagnosticCode,
     PersistentStateReport,
 )
+from .strategic_number_semantics import (
+    StrategicNumberDiagnosticCode,
+    StrategicNumberSemanticReport,
+)
 from .rule_execution import EffectiveRule, RuleExecutionReport
 
 
 class RuleDiagnosticCategory(str, Enum):
     FIRING_ELIGIBILITY = "FIRING_ELIGIBILITY"
     PERSISTENT_STATE = "PERSISTENT_STATE"
+    STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -32,6 +37,15 @@ class RuleDiagnosticCode(str, Enum):
     PERSISTENT_CONSUMER_BEFORE_WRITER = "PSTATE-001"
     PERSISTENT_LATER_OVERWRITE = "PSTATE-002"
     PERSISTENT_CONSUMER_SHADOWED_BY_WRITER = "PSTATE-003"
+    STRATEGIC_NUMBER_INVALID_ARITY = "SNSEM-001"
+    STRATEGIC_NUMBER_INVALID_OPERATOR = "SNSEM-002"
+    STRATEGIC_NUMBER_INVALID_OPERAND_PREFIX = "SNSEM-003"
+    STRATEGIC_NUMBER_INVALID_LITERAL = "SNSEM-004"
+    STRATEGIC_NUMBER_OUT_OF_RANGE_LITERAL = "SNSEM-005"
+    STRATEGIC_NUMBER_CONSTANT_ZERO_DIVISOR = "SNSEM-006"
+    STRATEGIC_NUMBER_MISSING_DEPENDENCY = "SNSEM-007"
+    STRATEGIC_NUMBER_INVALID_TARGET = "SNSEM-008"
+    STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY = "SNSEM-009"
 
 
 @dataclass(frozen=True)
@@ -192,6 +206,34 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
     )
 
 
+def _strategic_number_diagnostic_for(
+    item,
+    report: RuleExecutionReport,
+) -> RuleDiagnostic:
+    rule = report.rules[item.rule_order - 1]
+    code_map = {
+        StrategicNumberDiagnosticCode.INVALID_ARITY: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_ARITY,
+        StrategicNumberDiagnosticCode.INVALID_OPERATOR: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_OPERATOR,
+        StrategicNumberDiagnosticCode.INVALID_OPERAND_PREFIX: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_OPERAND_PREFIX,
+        StrategicNumberDiagnosticCode.INVALID_LITERAL: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_LITERAL,
+        StrategicNumberDiagnosticCode.OUT_OF_RANGE_LITERAL: RuleDiagnosticCode.STRATEGIC_NUMBER_OUT_OF_RANGE_LITERAL,
+        StrategicNumberDiagnosticCode.CONSTANT_ZERO_DIVISOR: RuleDiagnosticCode.STRATEGIC_NUMBER_CONSTANT_ZERO_DIVISOR,
+        StrategicNumberDiagnosticCode.MISSING_DEPENDENCY: RuleDiagnosticCode.STRATEGIC_NUMBER_MISSING_DEPENDENCY,
+        StrategicNumberDiagnosticCode.INVALID_TARGET: RuleDiagnosticCode.STRATEGIC_NUMBER_INVALID_TARGET,
+        StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY: RuleDiagnosticCode.STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY,
+    }
+    return RuleDiagnostic(
+        rule_order=item.rule_order,
+        code=code_map[item.code],
+        severity=item.severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location or rule.source_location,
+        category=RuleDiagnosticCategory.STRATEGIC_NUMBER,
+        source_code=item.code.value,
+    )
+
+
 def analyze_rule_diagnostics(
     report: RuleExecutionReport,
     registry: PrimitiveRegistry | None = None,
@@ -199,6 +241,7 @@ def analyze_rule_diagnostics(
     runtime_demand_states: Mapping[int, object] | None = None,
     completion_witnesses: Mapping[int, object] | None = None,
     persistent_state_report: PersistentStateReport | None = None,
+    strategic_number_report: StrategicNumberSemanticReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -218,6 +261,12 @@ def analyze_rule_diagnostics(
     ):
         raise TypeError(
             "persistent_state_report must be a PersistentStateReport"
+        )
+    if strategic_number_report is not None and not isinstance(
+        strategic_number_report, StrategicNumberSemanticReport
+    ):
+        raise TypeError(
+            "strategic_number_report must be a StrategicNumberSemanticReport"
         )
 
     diagnostics: list[RuleDiagnostic] = []
@@ -247,6 +296,12 @@ def analyze_rule_diagnostics(
         diagnostics.extend(
             _persistent_diagnostic_for(item)
             for item in persistent_state_report.diagnostics
+        )
+
+    if strategic_number_report is not None:
+        diagnostics.extend(
+            _strategic_number_diagnostic_for(item, report)
+            for item in strategic_number_report.diagnostics
         )
 
     return RuleDiagnosticReport(
