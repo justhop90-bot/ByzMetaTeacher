@@ -276,6 +276,27 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             )
         )
 
+    def test_same_rule_action_operand_consumer_prevents_open_loop_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1) (up-modify-sn 510 g:+ 7))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        goal_boundary = next(
+            item for item in report.boundaries
+            if item.state.identifier == "7"
+        )
+        self.assertEqual(
+            goal_boundary.visibility,
+            PersistentStateVisibility.SAME_RULE_ACTION_SEQUENCE,
+        )
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                for item in report.diagnostics
+            )
+        )
     def test_strategic_number_goal_operand_is_a_downstream_goal_consumer(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
