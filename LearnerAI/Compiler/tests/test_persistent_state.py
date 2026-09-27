@@ -242,6 +242,75 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             ["1", "3", "2"],
         )
 
+    def test_open_loop_write_without_downstream_consumer_gets_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 1)
+        self.assertEqual(findings[0].access.command, "set-goal")
+        self.assertEqual(findings[0].severity.value, "WARNING")
+        self.assertIsNone(findings[0].related_access)
+
+    def test_downstream_consumer_prevents_open_loop_warning(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (goal 7 1) => (set-goal 8 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                for item in report.diagnostics
+            )
+        )
+
+    def test_only_terminal_reachable_writer_is_checked_for_open_loop_state(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (set-goal 7 2))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 2)
+
+    def test_unreachable_downstream_reader_does_not_hide_open_loop_writer(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (up-jump-rule 1))\n"
+            "(defrule (goal 7 1) => (set-goal 8 1))\n"
+            "(defrule (true) => (set-goal 9 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 1)
     def test_analysis_is_deterministic(self):
         source = (
             "(defrule (true) => (set-goal 7 1) (set-goal 7 2))\n"
