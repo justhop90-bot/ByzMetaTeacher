@@ -369,7 +369,9 @@ def analyze_rule_reachability(
                 edges[rule.rule_order].add(rule.rule_order + 1)
             continue
 
-        edges[rule.rule_order].add(transfer.target_rule_order)  # type: ignore[arg-type]
+        target_rule_order = transfer.target_rule_order
+        if target_rule_order is not None:
+            edges[rule.rule_order].add(target_rule_order)
 
         # A one-shot rule is disabled after firing, so a later pass can
         # traverse its successor even when its first firing jumps elsewhere.
