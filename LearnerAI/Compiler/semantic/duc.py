@@ -1310,6 +1310,7 @@ def _analyze_duc_linear(
                     point,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 rule_writes.add(DucStateKind.TARGET)
                 continue
