@@ -994,10 +994,14 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
 
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
-        _generation_key(state.local_list.current_generation)
+        (
+            _generation_key(state.local_list.current_generation),
+            state.local_list.path_ambiguous,
+        )
         if state.local_list.current_generation is not None
         else (
             "AMBIGUOUS",
+            state.local_list.path_ambiguous,
             tuple(_generation_key(item) for item in state.local_list.generation_variants),
         ),
         _generation_key(state.remote_list.current_generation)
