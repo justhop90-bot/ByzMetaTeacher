@@ -53,6 +53,13 @@ class DucTargetStatus(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class DucTargetProof(str, Enum):
+    CURRENT_PASS_PROOF = "CURRENT_PASS_PROOF"
+    PRESERVED_PROOF = "PRESERVED_PROOF"
+    SYNTACTIC_RETENTION = "SYNTACTIC_RETENTION"
+    UNKNOWN = "UNKNOWN"
+
+
 @dataclass(frozen=True)
 class DucProvenance:
     command: str
@@ -64,6 +71,7 @@ class DucProvenance:
     pass_behavior: RulePassBehavior
     visible_as: DucVisibility
     state_revision: int
+    pass_id: int = 0
     input_state_generations: tuple[int, ...] = ()
     semantic_contract_id: str = ""
     evidence_ids: tuple[str, ...] = ()
@@ -144,6 +152,8 @@ class DucTargetState:
     source_filter_generation: Optional[int] = None
     provenance: Optional[DucProvenance] = None
     validity: DucTargetStatus = DucTargetStatus.UNKNOWN
+    pass_id: int = 0
+    proof: DucTargetProof = DucTargetProof.UNKNOWN
 
 
 @dataclass(frozen=True)
@@ -218,6 +228,7 @@ class DucSemanticState:
     target: Optional[DucTargetState]
     point_target: Optional[DucPointRef]
     state_revision: int
+    pass_id: int = 0
 
 
 @dataclass(frozen=True)
@@ -242,6 +253,7 @@ class DucAnalysisReport:
     diagnostics: tuple[DucDiagnostic, ...] = ()
     branch_merges: tuple[DucBranchMerge, ...] = ()
     loop_widenings: tuple[DucLoopWidening, ...] = ()
+    next_pass_state: Optional[DucSemanticState] = None
 
 
 __all__ = [
@@ -266,6 +278,7 @@ __all__ = [
     "DucSemanticState",
     "DucStateKind",
     "DucTargetKind",
+    "DucTargetProof",
     "DucTargetState",
     "DucTargetStatus",
     "DucVisibility",
