@@ -3,7 +3,13 @@ import unittest
 from Compiler.ir.duc import DucListKind, DucTargetStatus
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
-from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePassBehavior
+from Compiler.semantic.rule_execution import (
+    EffectiveRule,
+    RuleAction,
+    RuleExecutionReport,
+    RulePassBehavior,
+    RuleReachabilityReport,
+)
 
 
 def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
@@ -50,6 +56,52 @@ class DucSemanticTests(unittest.TestCase):
         reset = report.resets[-1]
         self.assertEqual(reset.invalidates_lists, (DucListKind.LOCAL,))
         self.assertFalse(reset.invalidates_remote_index)
+
+
+    def test_branch_join_marks_divergent_local_generation_and_target_unknown(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(3, (("up-find-local", ("c:", "monk", "c:", "1")),)),
+            _rule(4, (("up-set-target-object", ("search-local", "c:", "0")),)),
+            _rule(5, (("up-target-objects", ("1", "action-default", "-1", "-1")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4, 5),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=(
+                    (1, ()),
+                    (2, (1,)),
+                    (3, (1,)),
+                    (4, (2, 3)),
+                    (5, (4,)),
+                ),
+                outgoing_rule_orders=(
+                    (1, (2, 3)),
+                    (2, (4,)),
+                    (3, (4,)),
+                    (4, (5,)),
+                    (5, ()),
+                ),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        merge = report.branch_merges[0]
+        self.assertEqual(merge.rule_order, 4)
+        self.assertEqual(merge.predecessor_rule_orders, (2, 3))
+        self.assertIn("LOCAL_LIST", merge.merged_fields)
+        self.assertTrue(report.states[2][1].local_list.path_ambiguous)
+        self.assertTrue(report.states[2][1].local_list.initialized)
+        self.assertIsNone(report.states[2][1].local_list.current_generation)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertTrue(
+            any(item.code == "DUC-007" and item.rule_order in {4, 5}
+                for item in report.diagnostics)
+        )
 
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
