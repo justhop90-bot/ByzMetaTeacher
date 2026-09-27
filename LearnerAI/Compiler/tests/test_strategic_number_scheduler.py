@@ -78,8 +78,7 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
             "(defrule (true) => "
             "(set-strategic-number 510 8) "
             "(up-modify-sn 510 c:/ 3) "
-            "(disable-self))
-"
+            "(disable-self))\n"
         )
         scheduler = PassScheduler(report.rules)
         scheduler.run_pass()
