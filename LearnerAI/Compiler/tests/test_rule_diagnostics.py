@@ -301,6 +301,55 @@ class RuleDiagnosticsTests(unittest.TestCase):
             )
         )
 
+    def test_open_loop_persistent_write_compiles_to_warning(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal open-loop 1))\n"
+            )
+        )
+        persistent_state = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent_state,
+        )
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+        )
+
+        self.assertEqual(len(findings), 1)
+        finding = findings[0]
+        self.assertEqual(finding.rule_order, 1)
+        self.assertEqual(finding.severity, DiagnosticSeverity.WARNING)
+        self.assertIsNone(finding.related_rule_order)
+        self.assertEqual(finding.state_kind, "GOAL")
+        self.assertEqual(finding.state_identifier, "open-loop")
+        self.assertEqual(finding.source_code, "PSTATE-005")
+        self.assertEqual(finding.category.value, "PERSISTENT_STATE")
+
+    def test_open_loop_diagnostic_does_not_fire_when_reachable_consumer_exists(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal open-loop 1))\n"
+                "(defrule (goal open-loop 1) => (set-goal sink 1))\n"
+            )
+        )
+        persistent_state = analyze_persistent_state(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            persistent_state_report=persistent_state,
+        )
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                for item in diagnostics.diagnostics
+            )
+        )
     def test_recurrent_guaranteed_writer_is_reported_as_persistent_starvation(self):
         report = analyze_effective_rules(
             self._graph(
