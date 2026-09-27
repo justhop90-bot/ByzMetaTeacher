@@ -1728,8 +1728,6 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
 
     return CitationRecordCatalog(
         records=(
-    return CitationRecordCatalog(
-        records=(
             CitationRecord(
                 "airef:building-type-count",
                 "https://airef.github.io/commands/commands-details.html#building-type-count",
