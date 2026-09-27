@@ -3940,8 +3940,10 @@
 (defrule
     (building-type-count-total barracks == 0)
     (civilian-population >= 12)
-    (can-build barracks)
+    (can-build-with-escrow barracks)
 =>
+    (release-escrow wood)
+    (up-assign-builders c: barracks c: 1)
     (build barracks)
 )
 
