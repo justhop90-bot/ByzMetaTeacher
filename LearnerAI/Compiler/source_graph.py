@@ -342,7 +342,7 @@ class SourceGraphResolver:
                 target_text = None
                 load_kind = LoadKind.RANDOM
 
-            if event.kind is SourceAssemblyEventKind.LOAD and active:
+            if event.kind is SourceAssemblyEventKind.LOAD:
                 target_source = self._load_unit(
                     Path(target_text),
                     containing_source=physical.path,
@@ -350,7 +350,7 @@ class SourceGraphResolver:
                     error_line=event.span.start_line,
                     error_column=event.span.start_column,
                 )
-            elif event.kind is SourceAssemblyEventKind.LOAD_RANDOM and active:
+            elif active:
                 if not allow_load_random:
                     raise SourceGraphError(
                         "SOURCE-GRAPH-007",
