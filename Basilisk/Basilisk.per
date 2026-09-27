@@ -189,6 +189,8 @@
 (defconst bt-tc2-claim 510)
 (defconst bt-tc3-claim 509)
 
+(defconst bt-two-man-saw-demand-goal 52)
+
 ; Castle -> Imperial prerequisite build claims.
 (defconst bt-imperial-siege-claim 512)
 (defconst bt-imperial-university-claim 511)
@@ -7510,22 +7512,43 @@ sn-stone-gatherer-percentage == 0)))))
 ; Imperial BOOM is the strategic owner, but the upgrade also waits for a
 ; mature villager economy and a real lumberjack base so the 300F/200W,
 ; 100-second investment has time to pay back.
-
-
-; Withdraw only a pending demand when Imperial power demand takes
-; priority or the technology is no longer available. An active
-; Two-Man Saw claim remains protected by sn-resource-control.
-
-
-; Demand -> claim -> release Food + Wood escrow -> research.
 (defrule
     (current-age >= imperial-age)
     (unit-type-count villager >= bt-two-man-saw-villagers)
     (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)
     (goal strategy-goal bt-strategy-boom)
     (not (goal bt-cataphract-demand-goal 1))
+    (research-available ri-two-man-saw)
+=>
+    (set-goal bt-two-man-saw-demand-goal 1)
+)
+
+; Withdraw only a pending demand when Imperial power demand takes
+; priority or the technology is no longer available. An active
+; Two-Man Saw claim remains protected by sn-resource-control.
+(defrule
+    (goal bt-two-man-saw-demand-goal 1)
+    (goal bt-research-lumber-camp-claim-goal 0)
+    (or
+        (goal bt-cataphract-demand-goal 1)
+        (not
+            (and (current-age >= imperial-age) (and (goal strategy-goal bt-strategy-boom) (and (not (goal bt-cataphract-demand-goal 1)) (research-available ri-two-man-saw))))
+        )
+    )
+=>
+    (set-goal bt-two-man-saw-demand-goal 0)
+)
+
+; Demand -> claim -> release Food + Wood escrow -> research.
+(defrule
+    (goal bt-two-man-saw-demand-goal 1)
+    (current-age >= imperial-age)
+    (unit-type-count villager >= bt-two-man-saw-villagers)
+    (unit-type-count villager-wood >= bt-two-man-saw-lumberjacks)
+    (goal strategy-goal bt-strategy-boom)
     (up-compare-goal bt-research-lumber-camp-failure-backoff-goal != ri-two-man-saw)
     (strategic-number sn-resource-control == 0)
+    (not (goal bt-cataphract-demand-goal 1))
     (building-type-count lumber-camp >= 1)
     (can-research-with-escrow ri-two-man-saw)
     (goal bt-research-lumber-camp-claim-goal 0)
@@ -7533,6 +7556,7 @@ sn-stone-gatherer-percentage == 0)))))
     (goal bt-research-ranged-counter-package-goal 0)
     (goal bt-research-cataphract-package-goal 0)
     (goal bt-research-siege-package-goal 0)
+    (goal bt-research-monk-package-goal 0)
 =>
     (set-strategic-number sn-resource-control ri-two-man-saw)
     (release-escrow food)
@@ -7543,7 +7567,13 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 ; research-complete is the terminal witness for the Two-Man Saw claim.
-
+(defrule
+    (goal bt-research-lumber-camp-claim-goal ri-two-man-saw)
+    (up-research-status c: ri-two-man-saw == research-complete)
+=>
+    (set-goal bt-research-lumber-camp-claim-goal 0)
+    (set-goal bt-two-man-saw-demand-goal 0)
+)
 
 ;----------------------------------------------------------------
 ; TWO-MAN SAW WATCHDOG EXPIRY
