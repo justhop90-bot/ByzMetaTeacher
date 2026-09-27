@@ -64,6 +64,20 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
         self.assertTrue(semantic.errors)
         self.assertEqual(semantic.errors[0].code.value, "SNSEM-009")
 
+    def test_same_rule_sn_mutations_execute_in_rhs_order(self):
+        report = self._rules(
+            "(defrule (true) => "
+            "(set-strategic-number 510 8) "
+            "(up-modify-sn 510 c:+ 2) "
+            "(up-modify-sn 510 s:+ 510) "
+            "(disable-self))
+"
+        )
+        scheduler = PassScheduler(report.rules)
+        scheduler.run_pass()
+
+        self.assertEqual(scheduler.strategic_numbers["510"], 20)
+
     def test_same_pass_operator_semantics_reuse_typed_evaluator(self):
         report = self._rules(
             "(defrule (true) => "
