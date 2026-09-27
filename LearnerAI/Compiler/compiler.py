@@ -52,6 +52,7 @@ if __package__ in (None, ""):
         analyze_strategic_number_expressions,
     )
     from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
+    from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
@@ -96,6 +97,7 @@ else:
         analyze_strategic_number_expressions,
     )
     from .semantic.rule_diagnostics import analyze_rule_diagnostics
+    from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
@@ -459,11 +461,13 @@ def compile_package_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        duc_report = analyze_duc(tuple(effective_rules))
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            duc_report=duc_report,
         )
         if strategic_number_report.errors:
             return semantic_failure_report(
@@ -560,11 +564,13 @@ def compile_source_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        duc_report = analyze_duc(tuple(effective_rules))
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            duc_report=duc_report,
         )
         if strategic_number_report.errors:
             return semantic_failure_report(
@@ -657,11 +663,13 @@ def compile_to_file(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        duc_report = analyze_duc(tuple(effective_rules))
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            duc_report=duc_report,
         )
         if strategic_number_report.errors:
             return semantic_failure_report(
