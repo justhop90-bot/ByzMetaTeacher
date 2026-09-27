@@ -128,6 +128,37 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
             [0, 1, 2],
         )
 
+    def test_static_control_transfer_records_forward_target(self):
+        graph = self._graph(
+            '(defrule (true) => (up-jump-rule 1))\n'
+            '(defrule (true) => (set-goal skipped 1))\n'
+            '(defrule (true) => (set-goal reached 1))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(len(report.control_transfers), 1)
+        transfer = report.control_transfers[0]
+        self.assertEqual(transfer.rule_order, 1)
+        self.assertEqual(transfer.within_rule_order, 0)
+        self.assertEqual(transfer.delta, 1)
+        self.assertEqual(transfer.target_rule_order, 3)
+
+    def test_static_control_transfer_records_backward_target(self):
+        graph = self._graph(
+            '(defrule (true) => (set-goal first 1))\n'
+            '(defrule (true) => (up-jump-rule -1))\n'
+            '(defrule (true) => (set-goal third 1))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(len(report.control_transfers), 1)
+        transfer = report.control_transfers[0]
+        self.assertEqual(transfer.rule_order, 2)
+        self.assertEqual(transfer.within_rule_order, 0)
+        self.assertEqual(transfer.delta, -1)
+        self.assertEqual(transfer.target_rule_order, 2)
     def test_source_order_does_not_claim_firing(self):
         graph = self._graph(
             '(defrule (current-age >= castle-age) => (set-goal castle-ready 1))\n',
