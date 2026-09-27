@@ -1051,17 +1051,16 @@ def _widen_loop_state(
     else:
         point_target = None
     widened_fields: list[str] = []
-    if _list_semantic_key(local) != _list_semantic_key(previous.local_list):
+    if _list_semantic_key(previous.local_list) != _list_semantic_key(current.local_list):
         widened_fields.append("LOCAL_LIST")
-    if _list_semantic_key(remote) != _list_semantic_key(previous.remote_list):
+    if _list_semantic_key(previous.remote_list) != _list_semantic_key(current.remote_list):
         widened_fields.append("REMOTE_LIST")
-    if _filter_key(filters) != _filter_key(previous.filters):
+    if _filter_key(previous.filters) != _filter_key(current.filters):
         widened_fields.append("FILTERS")
-    if _target_key(target) != _target_key(previous.target) or (
-        previous is not None
-        and target is not None
-        and previous.target is not None
-        and target.validity is not previous.target.validity
+    if _target_key(previous.target) != _target_key(current.target) or (
+        previous.target is not None
+        and current.target is not None
+        and previous.target.validity is not current.target.validity
     ):
         widened_fields.append("TARGET")
     if point_target != previous.point_target:
