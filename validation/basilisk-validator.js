@@ -5139,7 +5139,7 @@ function validatePikemanLifecycle(rules) {
 }
 
 function validateRangedCounterLifecycle(rules) {
-  const normalize = (rule) => rule.replace(/\\s+/g, " ");
+  const normalize = (rule) => rule.replace(/\s+/g, " ");
 
   const crossbow = rules.find(
     (rule) =>
