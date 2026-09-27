@@ -123,6 +123,12 @@ _STATE_SPECS = {
         0,
         None,
     ),
+    "up-modify-sn": (
+        PersistentStateKind.STRATEGIC_NUMBER,
+        PersistentStateAccessKind.WRITE,
+        0,
+        None,
+    ),
     "strategic-number": (
         PersistentStateKind.STRATEGIC_NUMBER,
         PersistentStateAccessKind.READ,
@@ -211,7 +217,7 @@ def _guard_accesses(rule: EffectiveRule) -> tuple[PersistentStateAccess, ...]:
             section="GUARD",
             within_rule_order=index,
         )
-        if access is not None and access.effect is PersistentStateAccessKind.READ:
+        if access is not None:
             accesses.append(access)
     return tuple(accesses)
 
