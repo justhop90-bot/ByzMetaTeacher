@@ -956,15 +956,20 @@ class NativeContractCatalog:
             (self.goal_storage_contracts, "Goal storage contract"),
             (self.goal_span_contracts, "Goal span contract"),
             (self.parameter_ranges, "GoalId parameter-range contract"),
+        ):
+            identities = [item.identity for item in values]
+            if len(identities) != len(set(identities)):
+                raise ValueError(f"duplicate {label} identity")
+        for values, label in (
             (self.duc_searches, "DUC search contract"),
             (self.duc_filters, "DUC filter contract"),
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
             (self.duc_targets, "DUC target contract"),
         ):
-            identities = [item.identity for item in values]
-            if len(identities) != len(set(identities)):
-                raise ValueError(f"duplicate {label} identity")
+            commands = [item.command for item in values]
+            if len(commands) != len(set(commands)):
+                raise ValueError(f"duplicate {label} command")
         purposes = [
             item.request_purpose
             for item in self.storage_uses
@@ -1099,35 +1104,20 @@ class NativeContractCatalog:
             if command in item.commands and parameter == "GoalId"
         )
 
-    def duc_search(self, command: str) -> NativeDucSearchContract:
-        for item in self.duc_searches:
-            if item.command == command:
-                return item
-        raise KeyError(command)
+    def duc_search(self, command: str) -> Optional[NativeDucSearchContract]:
+        return next((item for item in self.duc_searches if item.command == command), None)
 
-    def duc_filter(self, command: str) -> NativeDucFilterContract:
-        for item in self.duc_filters:
-            if item.command == command:
-                return item
-        raise KeyError(command)
+    def duc_filter(self, command: str) -> Optional[NativeDucFilterContract]:
+        return next((item for item in self.duc_filters if item.command == command), None)
 
-    def duc_reset(self, command: str) -> NativeDucResetContract:
-        for item in self.duc_resets:
-            if item.command == command:
-                return item
-        raise KeyError(command)
+    def duc_reset(self, command: str) -> Optional[NativeDucResetContract]:
+        return next((item for item in self.duc_resets if item.command == command), None)
 
-    def duc_mutation(self, command: str) -> NativeDucMutationContract:
-        for item in self.duc_mutations:
-            if item.command == command:
-                return item
-        raise KeyError(command)
+    def duc_mutation(self, command: str) -> Optional[NativeDucMutationContract]:
+        return next((item for item in self.duc_mutations if item.command == command), None)
 
-    def duc_target(self, command: str) -> NativeDucTargetContract:
-        for item in self.duc_targets:
-            if item.command == command:
-                return item
-        raise KeyError(command)
+    def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
+        return next((item for item in self.duc_targets if item.command == command), None)
 
     def validate_all_provenance(self) -> None:
         for owner, provenance, expected_scope in (
