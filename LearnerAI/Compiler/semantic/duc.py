@@ -462,8 +462,13 @@ def analyze_duc(
                             **{**target.__dict__, "validity": DucTargetStatus.STALE}
                         )
                 if reset_contract.invalidates_filters:
+                    next_filter_generation = (
+                        filters.generation + 1
+                        if filters.predicates or filters.retained or filters.last_mutation is not None
+                        else filters.generation
+                    )
                     filters = DucFilterState(
-                        filters.generation + 1,
+                        next_filter_generation,
                         (),
                         "",
                         True,
