@@ -13,7 +13,8 @@ import sys
 ROOT = Path(__file__).parents[2]
 FIXTURE = ROOT / "Compiler" / "tests" / "fixtures" / "strategic_number.per"
 
-EXPECTED_TEXT = FIXTURE.read_text(encoding="utf-8")
+${generatedBuilder}
+EXPECTED_TEXT = build_fixture()
 
 
 def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
@@ -50,8 +51,9 @@ def main() -> int:
     args = parser.parse_args()
 
     checked_in = FIXTURE.read_text(encoding="utf-8")
-    if checked_in != EXPECTED_TEXT:
-        raise SystemExit("strategic-number fixture changed during execution")
+    generated = build_fixture()
+    if checked_in != generated:
+        raise SystemExit("strategic-number fixture is stale or non-reproducible")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(EXPECTED_TEXT, encoding="utf-8")
