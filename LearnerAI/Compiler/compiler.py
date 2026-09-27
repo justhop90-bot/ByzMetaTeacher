@@ -474,6 +474,21 @@ def compile_package_with_report(
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
+        duc_errors = tuple(
+            item
+            for item in rule_report.errors
+            if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
+        )
+        if duc_errors:
+            summary = "; ".join(
+                f"{item.code.value if hasattr(item.code, 'value') else item.code}: {item.message}"
+                for item in duc_errors
+            )
+            return semantic_failure_report(
+                CompileError(f"DUC semantic errors: {summary}"),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         if strategic_number_report.errors:
             return semantic_failure_report(
                 StrategicNumberCompilationError(strategic_number_report.errors),
@@ -580,6 +595,21 @@ def compile_source_with_report(
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
+        duc_errors = tuple(
+            item
+            for item in rule_report.errors
+            if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
+        )
+        if duc_errors:
+            summary = "; ".join(
+                f"{item.code.value if hasattr(item.code, 'value') else item.code}: {item.message}"
+                for item in duc_errors
+            )
+            return semantic_failure_report(
+                CompileError(f"DUC semantic errors: {summary}"),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         if strategic_number_report.errors:
             return semantic_failure_report(
                 StrategicNumberCompilationError(strategic_number_report.errors),
@@ -682,6 +712,21 @@ def compile_to_file(
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
+        duc_errors = tuple(
+            item
+            for item in rule_report.errors
+            if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
+        )
+        if duc_errors:
+            summary = "; ".join(
+                f"{item.code.value if hasattr(item.code, 'value') else item.code}: {item.message}"
+                for item in duc_errors
+            )
+            return semantic_failure_report(
+                CompileError(f"DUC semantic errors: {summary}"),
+                output,
+                rule_diagnostics=rule_report.diagnostics,
+            )
         if strategic_number_report.errors:
             return semantic_failure_report(
                 StrategicNumberCompilationError(strategic_number_report.errors),
