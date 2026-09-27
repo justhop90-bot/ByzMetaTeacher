@@ -241,11 +241,18 @@ class DucGoalOutputSpan:
             raise ValueError("DUC group-size Goal output span must have width 1")
         if self.generation < 1:
             raise ValueError("DUC Goal output generation must be positive")
-        if self.overwritten_generation is not None:
-            if self.overwritten_generation < 1 or self.overwritten_generation >= self.generation:
-                raise ValueError("DUC Goal output overwrite generation must precede its writer generation")
-        if self.path_ambiguous and self.provenance is not None:
-            raise ValueError("ambiguous DUC Goal output cannot retain a unique provenance")
+        if self.overwritten_generation is None:
+            if self.overwritten_provenance is not None:
+                raise ValueError(
+                    "DUC Goal output cannot retain overwritten provenance without an overwritten generation"
+                )
+        elif self.overwritten_generation < 1 or self.overwritten_generation >= self.generation:
+            raise ValueError("DUC Goal output overwrite generation must precede its writer generation")
+        if self.path_ambiguous and (
+            self.provenance is not None
+            or self.overwritten_provenance is not None
+        ):
+            raise ValueError("ambiguous DUC Goal output cannot retain unique provenance")
 
 
 @dataclass(frozen=True)
