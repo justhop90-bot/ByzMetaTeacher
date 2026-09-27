@@ -1066,7 +1066,6 @@ def _decode_string(body: str) -> str:
         result.append(char)
         index += 1
     return "".join(result)
-)
 
 
 def _diagnostic(
