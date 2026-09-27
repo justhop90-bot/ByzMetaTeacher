@@ -212,6 +212,19 @@ class RuleExecutionSemanticsTests(unittest.TestCase):
             (1, 2, 3, 4),
         )
 
+    def test_global_reachability_exposes_outgoing_rule_edges(self):
+        graph = self._graph(
+            '(defrule (true) => (up-jump-rule 1))\n'
+            '(defrule (true) => (set-goal skipped 1))\n'
+            '(defrule (true) => (set-goal reached 1))\n'
+        )
+
+        report = analyze_effective_rules(graph)
+
+        self.assertEqual(
+            dict(report.reachability.outgoing_rule_orders),
+            {1: (3,), 2: (3,), 3: ()},
+        )
     def test_source_order_does_not_claim_firing(self):
         graph = self._graph(
             '(defrule (current-age >= castle-age) => (set-goal castle-ready 1))\n',
