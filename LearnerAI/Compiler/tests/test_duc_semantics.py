@@ -301,6 +301,67 @@ class DucSemanticTests(unittest.TestCase):
         widening = report.loop_widenings[0]
         self.assertEqual(widening.widened_fields, ("REMOTE_LIST", "FILTERS"))
 
+    def test_loop_widening_emits_single_field_diagnostic(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(3, (("up-jump-rule", ("-2",)),)),
+            _rule(4, (("up-target-objects", ("1", "action-default", "-1", "-1")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1, 3)), (3, (2,)), (4, (3,))),
+                outgoing_rule_orders=((1, (2,)), (2, (3,)), (3, (2, 4)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        widening_diagnostics = tuple(
+            item for item in report.diagnostics if item.code == "DUC-016"
+        )
+        self.assertEqual(len(widening_diagnostics), 1)
+        diagnostic = widening_diagnostics[0]
+        self.assertEqual(diagnostic.rule_order, 3)
+        self.assertIn("loop head 2", diagnostic.message)
+        self.assertIn("back-edge source 3", diagnostic.message)
+        self.assertIn("iteration bound 3", diagnostic.message)
+        self.assertIn("widened fields: LOCAL_LIST", diagnostic.message)
+
+    def test_loop_widening_emits_multi_field_diagnostic(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (
+                ("up-filter-distance", ("c:", "0", "c:", "100")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+            _rule(3, (("up-jump-rule", ("-2",)),)),
+            _rule(4, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1, 3)), (3, (2,)), (4, (3,))),
+                outgoing_rule_orders=((1, (2,)), (2, (3,)), (3, (2, 4)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        diagnostic = next(
+            item for item in report.diagnostics if item.code == "DUC-016"
+        )
+        self.assertEqual(diagnostic.rule_order, 3)
+        self.assertIn("loop head 2", diagnostic.message)
+        self.assertIn("back-edge source 3", diagnostic.message)
+        self.assertIn("iteration bound 3", diagnostic.message)
+        self.assertIn("widened fields: REMOTE_LIST, FILTERS", diagnostic.message)
+
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
             _rule(1, (
