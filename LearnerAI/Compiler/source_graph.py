@@ -597,7 +597,8 @@ def _parse_assembly_events(
                 payload=payload,
             )
             events.append(event)
-            frames[-1] = (open_event, predicate, event_id)
+            complemented = after.predicates[-1]
+            frames[-1] = (open_event, complemented, event_id)
             continue
 
         if occurrence.kind is SourceAssemblyEventKind.CONDITIONAL_END:
