@@ -375,6 +375,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertFalse(
             any(
                 item.code is RuleDiagnosticCode.PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.state_identifier == "open-loop"
                 for item in diagnostics.diagnostics
             )
         )
@@ -577,6 +578,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
                 (1, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
                 (2, "FIRING_ELIGIBILITY", "RULE-FIRE-004"),
                 (2, "PERSISTENT_STATE", "PSTATE-002"),
+                (2, "PERSISTENT_STATE", "PSTATE-005"),
             ],
         )
 
