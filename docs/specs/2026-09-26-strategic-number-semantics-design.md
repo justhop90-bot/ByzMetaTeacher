@@ -64,6 +64,8 @@ Dependency analysis is explicit. A same-rule dependency on a later RHS writer is
 
 SN mutations are committed immediately in RHS order. A subsequent rule in the same pass therefore reads the new value. The scheduler uses the same typed operator evaluator as static semantic tests.
 
+- Any SN semantic error that is statically knowable blocks artifact promotion before native validation; valid SN artifacts still pass through the pinned native parser.
+
 ## Native validation
 
 A dedicated CI fixture generator emits representative native rules covering every supported operator and each operand domain. `assert_native_zero.py` validates the generated artifact with the pinned `aoe2-ai-parser` validator. The workflow records the fixture as native-validation evidence and fails closed on any parser finding.
