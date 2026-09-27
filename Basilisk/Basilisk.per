@@ -591,7 +591,6 @@
 ; intentionally committed; it is cleared only by the Imperial-age world-state witness.
 (defconst bt-imperial-commitment-goal 710)
 ; Persistent demand to secure the second Castle-age building required for Imperial.
-(defconst bt-imperial-prereq-demand-goal 711)
 ; Feudal eco window hold: 1 means Horse Collar or Double-Bit Axe can execute now.
 ; Late-Feudal BOOM farm budget. The 385W floor reserves 150W Blacksmith + 175W Market + 60W Farm.
 ; Hold only the final two-villager BOOM window before the hard 28-villager Castle boundary; pressure postures and food-emergency farms remain independent.
@@ -1115,7 +1114,6 @@
     (set-goal bt-varangian-fielded-goal 0)
     (set-goal bt-castle-mature-commitment-goal 0)
     (set-goal bt-imperial-commitment-goal 0)
-    (set-goal bt-imperial-prereq-demand-goal 0)
     (set-goal bt-castle-prereq-backoff-goal 0)
     (set-goal bt-castle-prereq-failure-history-goal 0)
     (set-goal bt-imperial-prereq-failure-history-goal 0)
@@ -6536,52 +6534,14 @@ town-center >= 2)))))
 )
 
 ;----------------------------------------------------------------
-; IMPERIAL PREREQUISITE DEMAND / FUNDING
+; IMPERIAL PREREQUISITE FUNDING
 ;----------------------------------------------------------------
-; One existing qualifying Castle-age building creates a persistent demand
-; for the second provider. Siege is first in source order; University
-; Workshop is therefore the deterministic first choice; University remains the fallback. This state is independent of Cataphract strategy.
-(defrule
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 0)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
-    (or
-        (building-type-count-total monastery >= 1)
-        (or
-            (building-type-count-total university >= 1)
-            (building-type-count-total siege-workshop >= 1)
-        )
-    )
-=>
-    (set-goal bt-imperial-prereq-demand-goal 1)
-)
-
-; Clear prerequisite demand when the world already proves Imperial/Castle completion.
-(defrule
-    (goal bt-imperial-prereq-demand-goal 1)
-    (or
-        (current-age >= imperial-age)
-        (building-type-count-total castle >= 1)
-    )
-=>
-    (set-goal bt-imperial-prereq-demand-goal 0)
-)
-
-; Clear prerequisite demand when the engine proves Imperial is immediately researchable.
-(defrule
-    (goal bt-imperial-prereq-demand-goal 1)
-    (can-research-with-escrow imperial-age)
-=>
-    (set-goal bt-imperial-prereq-demand-goal 0)
-)
-
-; Temporarily favor wood while the second Castle-age provider is outstanding.
+; Direct capability funding for the second Castle-age provider. An existing
+; Monastery, University, or Siege Workshop is the qualifying provider witness.
 (defrule
     ; Imperial prerequisite funding overrides age-bank arbitration, but P0
     ; resource crises retain ownership until the crisis clears.
     (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
     (building-type-count-total castle < 1)
     (or
         (building-type-count-total monastery >= 1)
@@ -9141,7 +9101,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; one-of-three completion path later in the pass.
 (defrule
     (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
     (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
     (building-type-count-total castle < 1)
@@ -9191,7 +9150,6 @@ bt-imperial-villagers))) (and (goal bt-resource-mode-goal bt-resource-mode-tc-st
 ; Castle-age building and should immediately satisfy the Imperial prerequisite.
 (defrule
     (current-age == castle-age)
-    (goal bt-imperial-prereq-demand-goal 1)
     (goal bt-imperial-prereq-failure-history-goal 0)
     (goal bt-imperial-prereq-backoff-goal 0)
     (building-type-count-total castle < 1)
