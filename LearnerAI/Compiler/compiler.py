@@ -54,6 +54,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
     from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
+    from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -99,6 +100,7 @@ else:
     from .semantic.rule_diagnostics import analyze_rule_diagnostics
     from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
+    from .semantic.recurrent_execution import analyze_recurrent_execution
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -462,12 +464,14 @@ def compile_package_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        recurrent_execution_report = analyze_recurrent_execution(effective_rules)
         duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
         if strategic_number_report.errors:
@@ -566,12 +570,14 @@ def compile_source_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        recurrent_execution_report = analyze_recurrent_execution(effective_rules)
         duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
         if strategic_number_report.errors:
@@ -666,12 +672,14 @@ def compile_to_file(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
+        recurrent_execution_report = analyze_recurrent_execution(effective_rules)
         duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
             persistent_state_report=persistent_state_report,
             strategic_number_report=strategic_number_report,
+            recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
         )
         if strategic_number_report.errors:

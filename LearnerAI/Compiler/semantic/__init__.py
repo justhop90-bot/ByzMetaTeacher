@@ -177,3 +177,12 @@ from .strategic_number_semantics import (
     parse_strategic_number_comparison,
     parse_strategic_number_mutation,
 )
+
+
+from .recurrent_execution import (
+    RecurrentDiagnosticCode,
+    RecurrentExecutionDiagnostic,
+    RecurrentExecutionReport,
+    RecurrentExecutionStatus,
+    analyze_recurrent_execution,
+)

@@ -6,7 +6,7 @@ Current queue:
 
 1. Native semantic-gap mapping and Philosopher's Stone substrate.
 2. Effective #load/#load-if source graph.
-3. Recurrent rule eligibility, disable-self, later-overwrite, starvation, and reachability analysis.
+3. Path-sensitive recurrent execution eligibility, disable-self lifetime, persistent-state starvation, guaranteed preemption, and conservative bounded reachability.
 4. Goal/SN/Timer command-specific state effects and versioned SN semantics.
 5. Asynchronous provider/queue semantics for BUILD/TRAIN/RESEARCH.
 6. DUC SearchSession/TargetSession/Group semantics.
@@ -592,7 +592,7 @@ Authoritative checklist: LearnerAI/Compiler/COMMUNITY_ENGINE_SEMANTICS_CHECKLIST
 - [x] Preserve the hard boundary: compiler policy must not be mistaken for engine fact or community practice.
 - [x] Correct the recovery model so false can-* feasibility never becomes capability loss.
 - [ ] Implement ENGINE_SEMANTICS_MAPPED as an enforceable per-command support state.
-- [ ] Build the effective source graph.
-- [ ] Build recurrent rule execution semantics.
+- [x] Build the effective source graph.
+- [x] Build bounded path-sensitive recurrent rule execution semantics.
 - [ ] Build DUC/attack state models.
 - [ ] Add semantic-gap golden fixtures and native zero-findings acceptance fixtures.
