@@ -437,6 +437,7 @@ def _analyze_duc_linear(
                         state.target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                 else:
                     state = DucSemanticState(
@@ -446,6 +447,7 @@ def _analyze_duc_linear(
                         state.target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                 searches.append(
                     DucSearchOperation(
@@ -778,6 +780,7 @@ def _analyze_duc_linear(
                         target,
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                     targets.append(target)
                     rule_reads.add(DucStateKind.LIST)
@@ -833,6 +836,7 @@ def _analyze_duc_linear(
                         ),
                         state.point_target,
                         state_revision,
+                        state.pass_id,
                     )
                     diagnostics.append(
                         DucDiagnostic(
@@ -1105,6 +1109,7 @@ def _widen_loop_state(
             target,
             point_target,
             max(previous.state_revision, current.state_revision),
+            max(previous.pass_id, current.pass_id),
         ),
         tuple(widened_fields),
     )
@@ -1261,6 +1266,7 @@ def _join_states(
                 state.point_target == variants[0].point_target for state in variants
             ) else None,
             max(state.state_revision for state in variants),
+            max(state.pass_id for state in variants),
         ),
         tuple(fields),
     )
