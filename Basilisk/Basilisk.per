@@ -3634,16 +3634,7 @@
 ; Generic fallback executor.
 ; This is the normal path after the first house and remains independent of
 ; lumber-camp existence or any preferred placement policy.
-(defrule
-    (building-type-count-total house == 0)
-    (population-headroom > 0)
-    (housing-headroom <= bt-housing-headroom-trigger)
-    (up-pending-objects c: house < bt-housing-pending-cap)
-    (can-build house)
-=>
-    (up-assign-builders c: house c: 2)
-    (build house)
-)
+
 
 (defrule
     (or
@@ -8896,25 +8887,7 @@ sn-stone-gatherer-percentage == 0)))))
 ; University is the alternate second provider. When Monastery or Siege
 ; Workshop already exists, completing University gives the second qualifying
 ; Castle-age building and should immediately satisfy the Imperial prerequisite.
-(defrule
-    (current-age == castle-age)
-    (goal bt-imperial-prereq-backoff-goal 0)
-    (building-type-count-total castle < 1)
-    (not (can-research-with-escrow imperial-age))
-    (or
-        (building-type-count-total monastery >= 1)
-        (building-type-count-total siege-workshop >= 1)
-    )
-    (building-type-count-total university < 1)
-    (up-pending-objects c: university == 0)
-    (strategic-number sn-resource-control == 0)
-    (can-build-with-escrow university)
-=>
-    (set-strategic-number sn-resource-control bt-imperial-university-claim)
-    (enable-timer bt-imperial-prereq-watchdog-timer bt-imperial-prereq-watchdog-seconds)
-    (release-escrow wood)
-    (build university)
-)
+
 
 (defrule
     (strategic-number sn-resource-control == bt-imperial-university-claim)
@@ -11613,20 +11586,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
 ; University is a required Chemistry capability when the Castle-to-Imperial
 ; path did not already build one. Use a separate claim so BBC capability cannot
 ; mutate the Imperial prerequisite failure state.
-(defrule
-    (goal bt-bombard-cannon-demand-goal 1)
-    (goal bt-bombard-university-backoff-goal 0)
-    (current-age >= imperial-age)
-    (building-type-count-total university < 1)
-    (up-pending-objects c: university == 0)
-    (strategic-number sn-resource-control == 0)
-    (can-build-with-escrow university)
-=>
-    (set-strategic-number sn-resource-control bt-bombard-university-claim)
-    (enable-timer bt-bombard-university-watchdog-timer bt-bombard-university-watchdog-seconds)
-    (release-escrow wood)
-    (build university)
-)
+
 
 (defrule
     (strategic-number sn-resource-control == bt-bombard-university-claim)
@@ -15907,31 +15867,7 @@ castle-age) (up-research-status c: castle-age == research-complete))) (and (stra
 ; The project target is the terminal completed-building witness.
 ; building-type-count-total includes construction foundations, so it is
 ; deliberately not used to release the Mill claim.
-(defrule
-    (strategic-number sn-resource-control == bt-mill-claim)
-    (or
-        (and
-            (goal bt-mill-project-goal 1)
-            (building-type-count mill >= 1)
-        )
-        (or
-        (and
-            (goal bt-mill-project-goal 2)
-            (building-type-count mill >= 2)
-        )
-        (and
-            (goal bt-mill-project-goal 3)
-            (building-type-count mill >= 3)
-        )
-            )
-    )
-=>
-    (disable-timer bt-mill-watchdog-timer)
-    (disable-timer bt-mill-backoff-timer)
-    (set-goal bt-mill-project-goal 0)
-    (set-goal bt-mill-backoff-goal 0)
-    (set-strategic-number sn-resource-control 0)
-)
+
 
 ; Completed Mills are closed only by the claim-owning completion rule above.
 ; The watchdog and failure cooldown retain sole ownership of the live
