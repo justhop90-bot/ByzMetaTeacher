@@ -192,9 +192,12 @@ class DucSemanticTests(unittest.TestCase):
         )
         report = analyze_duc(self._branched_execution(rules))
 
+        merged_group = report.final_state.groups[3]
         self.assertIn("GROUPS", next(item for item in report.branch_merges if item.rule_order == 4).merged_fields)
-        self.assertEqual(report.final_state.groups[3].validity, DucGroupStatus.UNKNOWN)
-        self.assertTrue(report.final_state.groups[3].path_ambiguous)
+        self.assertEqual(merged_group.validity, DucGroupStatus.UNKNOWN)
+        self.assertTrue(merged_group.path_ambiguous)
+        self.assertEqual(merged_group.flag_state.value, "UNKNOWN")
+        self.assertIsNone(merged_group.provenance)
     def test_search_reset_does_not_destroy_persistent_group(self):
         report = analyze_duc((
             _rule(1, (
