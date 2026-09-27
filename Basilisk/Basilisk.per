@@ -3696,10 +3696,22 @@
 (defrule
     (building-type-count-total mining-camp == 0)
     (civilian-population >= 8)
+    (or
+        (and
+            (resource-found gold)
+            (dropsite-min-distance gold > bt-opening-dropsite-distance)
+        )
+        (and
+            (resource-found stone)
+            (dropsite-min-distance stone > bt-opening-dropsite-distance)
+        )
+    )
     (up-pending-objects c: mining-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
-    (can-build mining-camp)
+    (can-build-with-escrow mining-camp)
 =>
+    (release-escrow wood)
+    (up-assign-builders c: mining-camp c: 1)
     (build mining-camp)
 )
 
