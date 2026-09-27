@@ -67,10 +67,10 @@ class SourceGraphValidationTests(unittest.TestCase):
 
     def test_duplicate_instance_identity_is_rejected(self):
         graph = self._resolve("duplicate/root.perdsl")
-        duplicate_id = graph.instances[0].instance_id
+        duplicate_id = graph.instances[0].identity
         forged_instances = (
             graph.instances[0],
-            replace(graph.instances[1], instance_id=duplicate_id),
+            replace(graph.instances[1], identity=duplicate_id),
             *graph.instances[2:],
         )
         forged = replace(graph, instances=forged_instances)
@@ -132,7 +132,7 @@ class SourceGraphValidationTests(unittest.TestCase):
         child = graph.instances[1]
         forged_child = replace(
             child,
-            load_stack=(*child.load_stack, child.physical.path),
+            ancestry=(*child.ancestry, child.source),
         )
         forged = replace(
             graph,
@@ -150,18 +150,21 @@ class SourceGraphValidationTests(unittest.TestCase):
             "conditional-defined/root.perdsl",
             (("TEST", LoadSymbolState.DEFINED),),
         )
+        from Compiler.ir.source_graph import ConditionContext, ConditionPredicate
+
         target = next(
             edge
             for edge in graph.edges
-            if edge.target_path is not None
+            if edge.target is not None and edge.condition.predicates
         )
         forged = replace(
             graph,
             edges=tuple(
                 replace(
                     edge,
-                    condition_symbol="UNKNOWN_SYMBOL",
-                    condition_kind=LoadKind.CONDITIONAL_DEFINED,
+                    condition=ConditionContext(
+                        (ConditionPredicate("UNKNOWN_SYMBOL", LoadSymbolState.DEFINED),)
+                    ),
                 )
                 if edge is target
                 else edge
@@ -197,6 +200,63 @@ class SourceGraphValidationTests(unittest.TestCase):
             SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
             {item.code for item in report.errors},
         )
+
+    def test_dual_fingerprints_are_distinct_contracts(self):
+        graph = self._resolve("linear/root.perdsl")
+        self.assertEqual(graph.assembly_fingerprint, graph.fingerprint)
+        self.assertTrue(graph.effective_fingerprint)
+        self.assertNotEqual(graph.assembly_fingerprint, "")
+
+    def test_structural_instance_ids_are_repeatable(self):
+        first = self._resolve("duplicate/root.perdsl")
+        second = self._resolve("duplicate/root.perdsl")
+        self.assertEqual(
+            [item.identity for item in first.instances],
+            [item.identity for item in second.instances],
+        )
+
+    def test_child_edge_and_parent_relationship_are_explicit(self):
+        graph = self._resolve("linear/root.perdsl")
+        child = next(
+            item for item in graph.instances if item.identity != graph.root.identity
+        )
+        edge = next(item for item in graph.edges if item.child == child.identity)
+        self.assertEqual(child.parent, graph.root.identity)
+        self.assertEqual(child.via_edge, edge.identity)
+        self.assertEqual(edge.source, graph.root.identity)
+        self.assertEqual(edge.target, child.source)
+
+    def test_nested_condition_context_preserves_all_predicates(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "child.perdsl").write_text("; child\n", encoding="utf-8")
+            (root / "root.perdsl").write_text(
+                "#load-if-defined A\n"
+                "#load-if-defined B\n"
+                '(load "child.perdsl")\n'
+                "#end-if\n"
+                "#end-if\n",
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=root / "root.perdsl",
+                    load_symbols=LoadSymbolEnvironment(
+                        (
+                            ("A", LoadSymbolState.DEFINED),
+                            ("B", LoadSymbolState.DEFINED),
+                        ),
+                    ),
+                )
+            )
+            edge = next(item for item in graph.edges if item.target is not None)
+            self.assertEqual(edge.condition.depth, 2)
+            self.assertEqual(
+                [item.symbol for item in edge.condition.predicates],
+                ["A", "B"],
+            )
 
     def test_validation_error_exposes_semantic_diagnostics(self):
         graph = self._resolve("linear/root.perdsl")
