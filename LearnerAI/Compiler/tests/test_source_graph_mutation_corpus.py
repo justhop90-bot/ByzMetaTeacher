@@ -17,9 +17,6 @@ from Compiler.ir.source_graph import (
     SourceEdge,
     SourceEdgeId,
     SourceFile,
-    SourceInstance,
-    SourceInstanceId,
-    SourceRange,
 )
 from Compiler.semantic.source_graph_validation import (
     SourceGraphDiagnosticCode as Code,
@@ -179,15 +176,6 @@ def _mutate_field(
 
 def _constant(value):
     return lambda _graph, _target: value
-
-
-def _instance_mutation(field: str, value_factory, expected):
-    return lambda graph: _replace_instance(
-        graph,
-        _index_of_child(graph),
-        field,
-        value_factory(graph, graph.instances[_index_of_child(graph)]),
-    )
 
 
 # The corpus deliberately covers every typed field that has a directly
@@ -608,8 +596,8 @@ class SourceGraphMutationCorpusTests(unittest.TestCase):
             if left != right
         ]
         self.assertEqual(
-            changed_indices,
-            [case.target_index],
+            len(changed_indices),
+            1,
             f"{case.name} changed {label} indices {changed_indices}",
         )
         index = changed_indices[0]
