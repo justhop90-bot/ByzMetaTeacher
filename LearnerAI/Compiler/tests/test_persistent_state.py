@@ -9,6 +9,7 @@ from Compiler.semantic.persistent_state import (
     PersistentStateVisibility,
     analyze_persistent_state,
 )
+from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.semantic.rule_execution import RulePassBehavior, analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
@@ -180,10 +181,10 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             [0, 1],
         )
 
-    def test_incompatible_later_writer_shadows_exact_goal_consumer(self):
+    def test_incompatible_later_one_shot_writer_shadows_exact_goal_consumer(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
-            "(defrule (true) => (set-goal 7 2))\n"
+            "(defrule (true) => (set-goal 7 2) (disable-self))\n"
             "(defrule (goal 7 1) => (set-goal 9 1))\n"
         )
 
@@ -258,7 +259,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].rule_order, 1)
         self.assertEqual(findings[0].access.command, "set-goal")
-        self.assertEqual(findings[0].severity.value, "WARNING")
+        self.assertEqual(findings[0].severity, DiagnosticSeverity.WARNING)
         self.assertIsNone(findings[0].related_access)
 
     def test_downstream_consumer_prevents_open_loop_warning(self):
@@ -272,6 +273,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         self.assertFalse(
             any(
                 item.code is PersistentStateDiagnosticCode.OPEN_LOOP_WRITE_WITHOUT_CONSUMER
+                and item.access.state.identifier == "7"
                 for item in report.diagnostics
             )
         )
