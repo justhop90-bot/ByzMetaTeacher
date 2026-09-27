@@ -17,12 +17,11 @@ The compiler models the native UserPatch/DE contract, not a host-language approx
 - The operand domain is selected by the operator prefix: `c:` constant, `g:` Goal, `s:` Strategic Number.
 - Supported `mathOp` values are `=`, `+`, `-`, `*`, `/`, `z/`, `mod`, `min`, `max`, `neg`, `%*`, `%/`.
 - `min` stores the lesser value; `max` stores the greater value.
-- `/` rounds to the nearest integer according to the documented engine behavior; `z/` floors.
-- `%*` applies the operand as a percentage to the current value; `%/` divides the current value by the operand interpreted as a percentage.
+- `/` rounds to the nearest integer according to the documented engine behavior; `z/` truncates downward. `%*` computes `(current * operand) / 100` with truncation; `%/` computes `(current / operand) * 100` with truncation.
 - The target SN is the only mutated state. Referenced Goal/SN values are reads/dependencies.
 - Persistent state mutations are immediately visible to later actions and later rules in the same scheduler pass. Rule-guard facts are evaluated before that rule's RHS actions.
 - Cross-pass visibility is persistent rather than snapshot-based.
-- SN/Goal values are signed 32-bit engine integers. Static constant operands must fit the native numeric range. Dynamic operands are evaluated at execution time.
+- Goal/SN values are signed 32-bit engine integers. Literal/defconst constant operands are constrained to the documented 16-bit constant range (-32768..32767); dynamic Goal/SN operands use the full signed 32-bit state range.
 - Constant division/modulo by zero is a compile-time semantic error. Dynamic zero divisors are a runtime scheduler error because their value is not statically known.
 
 ## Typed IR
