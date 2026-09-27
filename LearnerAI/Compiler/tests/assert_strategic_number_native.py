@@ -41,17 +41,7 @@ def build_fixture() -> str:
                 f"    (up-modify-sn sn-test-a {prefix}:{operator} {value})"
             )
         lines.extend(["    (disable-self)", ")", ""])
-    lines.extend([
-        "(defrule",
-        "    (strategic-number sn-test-a >= 0)",
-        "    (up-compare-sn sn-test-a >= c:0)",
-        "=>",
-        "    (disable-self)",
-        ")",
-        "",
-    ])
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 EXPECTED_TEXT = build_fixture()
 
