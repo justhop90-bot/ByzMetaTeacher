@@ -18,6 +18,10 @@ from Compiler.semantic.persistent_state import (
     PersistentStateDiagnosticCode,
     analyze_persistent_state,
 )
+from Compiler.semantic.strategic_number_semantics import (
+    StrategicNumberDiagnosticCode,
+    analyze_strategic_number_expressions,
+)
 from Compiler.semantic.rule_execution import analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
@@ -164,6 +168,38 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertEqual(
             diagnostics.diagnostics[0].code,
             RuleDiagnosticCode.NEVER_ELIGIBLE,
+        )
+
+    def test_strategic_number_dependency_findings_compile_into_rule_diagnostics(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => "
+                "(up-modify-sn 510 s:+ 511) "
+                "(set-strategic-number 511 4))
+"
+            )
+        )
+        strategic_numbers = analyze_strategic_number_expressions(report)
+
+        diagnostics = analyze_rule_diagnostics(
+            report,
+            strategic_number_report=strategic_numbers,
+        )
+
+        findings = tuple(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY
+        )
+        self.assertEqual(len(findings), 1)
+        diagnostic = findings[0]
+        self.assertEqual(diagnostic.rule_order, 1)
+        self.assertEqual(diagnostic.severity, DiagnosticSeverity.ERROR)
+        self.assertIsNone(diagnostic.eligibility)
+        self.assertEqual(diagnostic.category.value, "STRATEGIC_NUMBER")
+        self.assertEqual(
+            diagnostic.source_code,
+            StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY.value,
         )
 
     def test_persistent_state_findings_compile_into_rule_diagnostics(self):
