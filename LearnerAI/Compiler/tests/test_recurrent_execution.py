@@ -100,6 +100,7 @@ class RecurrentExecutionSemanticsTests(unittest.TestCase):
     def test_one_shot_jump_does_not_permanently_starve_downstream_rule(self):
         analysis = self._analysis(
             "(defrule (true) => (up-jump-rule 1) (disable-self))\n"
+            "(defrule (true) => (set-goal skipped 1))\n"
             "(defrule (true) => (set-goal reached 1))\n"
         )
 
