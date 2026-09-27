@@ -7559,7 +7559,12 @@ sn-stone-gatherer-percentage == 0)))))
 )
 
 ; research-complete is the terminal witness for the Gold Shaft Mining claim.
-
+(defrule
+    (goal bt-research-mining-camp-claim-goal ri-gold-shaft-mining)
+    (up-research-status c: ri-gold-shaft-mining == research-complete)
+=>
+    (set-goal bt-research-mining-camp-claim-goal 0)
+)
 
 ;----------------------------------------------------------------
 ; GOLD SHAFT MINING WATCHDOG EXPIRY
