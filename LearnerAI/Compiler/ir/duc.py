@@ -143,6 +143,7 @@ class DucObjectRef:
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
+    index_stable: bool = True
 
 
 @dataclass(frozen=True)
