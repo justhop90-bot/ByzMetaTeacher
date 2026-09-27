@@ -389,6 +389,16 @@ def _is_after(
     return writer_key > dependency_key
 
 
+def _diagnostic_code_from_error(
+    error: StrategicNumberSemanticError,
+) -> StrategicNumberDiagnosticCode:
+    prefix = str(error).split(":", 1)[0]
+    for code in StrategicNumberDiagnosticCode:
+        if code.value == prefix:
+            return code
+    return StrategicNumberDiagnosticCode.INVALID_OPERATOR
+
+
 def analyze_strategic_number_expressions(
     report: RuleExecutionReport,
 ) -> StrategicNumberSemanticReport:
@@ -425,7 +435,7 @@ def analyze_strategic_number_expressions(
             except StrategicNumberSemanticError as exc:
                 diagnostics.append(
                     StrategicNumberDiagnostic(
-                        code=StrategicNumberDiagnosticCode.INVALID_OPERATOR,
+                        code=_diagnostic_code_from_error(exc),
                         severity=DiagnosticSeverity.ERROR,
                         message=str(exc),
                         rule_order=rule.rule_order,
