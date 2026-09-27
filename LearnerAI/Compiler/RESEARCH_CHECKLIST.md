@@ -6,7 +6,7 @@ Current queue:
 
 1. Native semantic-gap mapping and Philosopher's Stone substrate.
 2. Effective #load/#load-if source graph.
-3. Recurrent rule eligibility, disable-self, later-overwrite, starvation, and reachability analysis.
+3. Path-sensitive recurrent execution eligibility, disable-self lifetime, persistent-state starvation, guaranteed preemption, and conservative bounded reachability.
 4. Goal/SN/Timer command-specific state effects and versioned SN semantics.
 5. Asynchronous provider/queue semantics for BUILD/TRAIN/RESEARCH.
 6. DUC SearchSession/TargetSession/Group semantics.
