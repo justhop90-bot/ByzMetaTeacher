@@ -60,6 +60,18 @@ class DucTargetProof(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class DucListMutationKind(str, Enum):
+    SORT = "SORT"
+    DEDUPE = "DEDUPE"
+    REMOVE_MATCHES = "REMOVE_MATCHES"
+
+
+class DucTargetTransition(str, Enum):
+    UNCHANGED = "UNCHANGED"
+    STALE = "STALE"
+    UNKNOWN = "UNKNOWN"
+
+
 @dataclass(frozen=True)
 class DucProvenance:
     command: str
@@ -131,6 +143,7 @@ class DucObjectRef:
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
+    index_stable: bool = True
 
 
 @dataclass(frozen=True)
@@ -165,6 +178,18 @@ class DucSearchOperation:
     consumed_filter: DucFilterSnapshot
     output_generation: DucListGeneration
     visibility: DucVisibility
+    provenance: DucProvenance
+
+
+@dataclass(frozen=True)
+class DucListMutationEffect:
+    command: str
+    list_kind: DucListKind
+    kind: DucListMutationKind
+    object_data: str
+    compare_operator: Optional[str]
+    compare_value: Optional[str]
+    target_transition: DucTargetTransition
     provenance: DucProvenance
 
 
@@ -247,6 +272,7 @@ class DucAnalysisReport:
     states: tuple[tuple[int, DucSemanticState], ...]
     searches: tuple[DucSearchOperation, ...] = ()
     resets: tuple[DucResetEffect, ...] = ()
+    mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
     effects: tuple[DucExecutionEffect, ...] = ()
@@ -266,6 +292,8 @@ __all__ = [
     "DucFilterState",
     "DucListGeneration",
     "DucLoopWidening",
+    "DucListMutationEffect",
+    "DucListMutationKind",
     "DucListKind",
     "DucObjectRef",
     "DucPointRef",
@@ -279,6 +307,7 @@ __all__ = [
     "DucStateKind",
     "DucTargetKind",
     "DucTargetProof",
+    "DucTargetTransition",
     "DucTargetState",
     "DucTargetStatus",
     "DucVisibility",

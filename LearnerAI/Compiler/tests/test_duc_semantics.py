@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetProof, DucTargetStatus
+from Compiler.ir.duc import DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -490,6 +490,159 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(report.final_state.target.proof, DucTargetProof.UNKNOWN)
 
+    def test_clean_search_sort_preserves_target_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-clean-search", ("search-local", "object-data-hitpoints", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.kind, DucListMutationKind.SORT)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
+
+    def test_clean_search_duplicate_removal_makes_nonfirst_target_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-clean-search", ("search-local", "-1", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.kind, DucListMutationKind.DEDUPE)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNKNOWN)
+
+    def test_clean_search_duplicate_removal_makes_first_target_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-clean-search", ("search-local", "-1", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+
+    def test_remove_objects_exact_index_match_makes_target_stale(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", "==", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.STALE)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.kind, DucListMutationKind.REMOVE_MATCHES)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.STALE)
+
+    def test_remove_objects_greater_than_target_preserves_index_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", ">", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertTrue(target.object_refs[0].index_stable)
+        self.assertEqual(
+            report.mutations[-1].target_transition,
+            DucTargetTransition.UNCHANGED,
+        )
+
+    def test_remove_objects_less_than_target_invalidates_index_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", "<", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertFalse(target.object_refs[0].index_stable)
+        self.assertEqual(
+            report.mutations[-1].target_transition,
+            DucTargetTransition.UNCHANGED,
+        )
+
+    def test_remove_objects_provably_nonmatching_index_preserves_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", "==", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+
+    def test_remove_objects_non_index_property_makes_target_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "object-data-hitpoints", ">", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+
+    def test_remove_objects_index_match_after_sort_is_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-clean-search", ("search-local", "object-data-hitpoints", "1")),
+                ("up-remove-objects", ("search-local", "-1", "==", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+        self.assertFalse(target.object_refs[0].index_stable)
+        self.assertEqual(
+            report.mutations[-1].target_transition,
+            DucTargetTransition.UNKNOWN,
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()
+
