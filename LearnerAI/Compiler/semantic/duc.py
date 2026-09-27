@@ -240,13 +240,13 @@ def default_native_duc_contract_catalog() -> NativeDucContractCatalog:
                 "up-clean-search",
                 (DucListKind.LOCAL, DucListKind.REMOTE),
                 "-1",
-                (f"{airef}:clean-search",),
+                ("airef:duc:list-mutation",),
             ),
             NativeDucMutationContract(
                 "up-remove-objects",
                 (DucListKind.LOCAL, DucListKind.REMOTE),
                 "-1",
-                (f"{airef}:remove-objects",),
+                ("airef:duc:list-mutation",),
             ),
         ),
         targets=(
