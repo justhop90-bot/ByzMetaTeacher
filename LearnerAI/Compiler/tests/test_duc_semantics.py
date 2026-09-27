@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucTargetStatus
+from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetStatus
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -234,6 +234,14 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(loop_state.remote_list.current_generation)
         self.assertEqual(len(report.states), 4)
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(len(report.loop_widenings), 1)
+        widening = report.loop_widenings[0]
+        self.assertIsInstance(widening, DucLoopWidening)
+        self.assertEqual(widening.loop_head_rule_order, 2)
+        self.assertEqual(widening.back_edge_source_rule_order, 3)
+        self.assertEqual(widening.iteration_limit, 3)
+        self.assertEqual(widening.iterations, 3)
+        self.assertIn("REMOTE_LIST", widening.widened_fields)
 
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
