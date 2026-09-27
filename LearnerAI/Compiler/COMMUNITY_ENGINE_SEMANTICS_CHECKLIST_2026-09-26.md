@@ -67,6 +67,8 @@ Evidence classes are intentionally separate:
 - [ ] Detect unreachable/never-runnable rules caused by earlier persistent state, mutually exclusive guards, or terminal disable-self.
 - [ ] Detect rules that are syntactically valid but behaviorally open-loop because no later rule can observe their state transition.
 - [x] Track action sequencing inside one emitted rule without inventing a false pass boundary.
+- [x] Represent statically parseable `up-jump-rule` control transfers against effective rule order.
+- [x] Diagnose out-of-range control transfers and informational forward bypasses.
 - [x] Track the effective source graph before claiming global rule order once load/load-if-* is supported.
 
 ## Gate 3 — asynchronous build/train/research lifecycles
@@ -234,7 +236,7 @@ Cross-reference against the current recurrent compiler implementation and PR #54
 - [x] Persistent Goal value survives the writer rule becoming one-shot and remains observable on the next pass.
 - [x] disable-self does not abort later actions in the same rule or later rules in the same pass.
 - [x] up-jump-rule forward skip, backward revisit, and out-of-range rejection are covered by scheduler tests.
-- [ ] Build a static control-transfer graph alongside the runtime ControlTransfer trace.
+- [x] Build a static control-transfer graph alongside the runtime ControlTransfer trace.
 - [ ] Diagnose preemption/starvation and globally unreachable rules caused by control flow or persistent state.
 - [ ] Diagnose open-loop state transitions where a persistent mutation has no observable downstream consumer.
 
