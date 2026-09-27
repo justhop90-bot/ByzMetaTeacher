@@ -21,6 +21,63 @@ class PassSchedulerTests(unittest.TestCase):
             )
             return analyze_effective_rules(graph).rules
 
+    def test_recurrent_rule_fires_again_on_second_pass(self):
+        rules = self._rules(
+            '(defrule (true) => (set-goal recurring 1))\\n'
+        )
+
+        scheduler = PassScheduler(tuple(rules))
+        first = scheduler.run_pass()
+        second = scheduler.run_pass()
+
+        self.assertEqual(first.pass_id, 0)
+        self.assertEqual(second.pass_id, 1)
+        self.assertEqual(first.fired_rule_orders, (1,))
+        self.assertEqual(second.fired_rule_orders, (1,))
+        self.assertEqual(first.skipped_rule_orders, ())
+        self.assertEqual(second.skipped_rule_orders, ())
+        self.assertEqual(scheduler.goals["recurring"], 1)
+
+    def test_same_pass_goal_write_is_visible_to_later_rule(self):
+        rules = self._rules(
+            '(defrule (true) => (set-goal same-pass 1) (disable-self))\\n'
+            '(defrule (goal same-pass 1) => (set-goal observed 1) (disable-self))\\n'
+        )
+
+        scheduler = PassScheduler(tuple(rules))
+        trace = scheduler.run_pass()
+
+        self.assertEqual(trace.evaluated_rule_orders, (1, 2))
+        self.assertEqual(trace.fired_rule_orders, (1, 2))
+        self.assertEqual(trace.skipped_rule_orders, ())
+        self.assertEqual(scheduler.goals["same-pass"], 1)
+        self.assertEqual(scheduler.goals["observed"], 1)
+
+    def test_goal_persists_across_passes_after_one_shot_writer(self):
+        rules = self._rules(
+            '(defrule (true) => (set-goal gate 1) (disable-self))\\n'
+            '(defrule (and (goal gate 1) (goal trigger 1)) => '
+            '(set-goal observed 1) (disable-self))\\n'
+            '(defrule (true) => (set-goal trigger 1) (disable-self))\\n'
+        )
+
+        scheduler = PassScheduler(tuple(rules))
+        first = scheduler.run_pass()
+
+        self.assertEqual(first.fired_rule_orders, (1, 3))
+        self.assertEqual(first.skipped_rule_orders, (2,))
+        self.assertEqual(scheduler.goals["gate"], 1)
+        self.assertEqual(scheduler.goals["trigger"], 1)
+        self.assertNotIn("observed", scheduler.goals)
+
+        second = scheduler.run_pass()
+
+        self.assertEqual(second.fired_rule_orders, (2,))
+        self.assertEqual(second.skipped_rule_orders, (1, 3))
+        self.assertEqual(scheduler.goals["gate"], 1)
+        self.assertEqual(scheduler.goals["trigger"], 1)
+        self.assertEqual(scheduler.goals["observed"], 1)
+
     def test_same_pass_timer_write_is_visible_to_later_rule(self):
         rules = self._rules(
             '(defrule (true) => (enable-timer 1 60))\n'
@@ -65,6 +122,12 @@ class PassSchedulerTests(unittest.TestCase):
         trace = scheduler.run_pass()
 
         self.assertEqual(trace.fired_rule_orders, (1, 2))
+        self.assertEqual(scheduler.timers[0].generation, 2)
+        self.assertEqual(scheduler.timers[0].deadline, 60.0)
+
+        second = scheduler.run_pass()
+        self.assertEqual(second.fired_rule_orders, ())
+        self.assertEqual(second.skipped_rule_orders, (1, 2))
         self.assertEqual(scheduler.timers[0].generation, 2)
         self.assertEqual(scheduler.timers[0].deadline, 60.0)
 
