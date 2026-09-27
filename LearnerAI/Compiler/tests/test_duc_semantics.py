@@ -474,8 +474,7 @@ class DucSemanticTests(unittest.TestCase):
         target = second.final_state.target
         self.assertIsNotNone(target)
         self.assertEqual(target.validity, DucTargetStatus.STALE)
-        self.assertNotIn("retained across a pass", "
-".join(item.message for item in second.diagnostics))
+        self.assertNotIn("retained across a pass", "\n".join(item.message for item in second.diagnostics))
         self.assertTrue(any(item.code == "DUC-006" for item in second.diagnostics))
 
 
