@@ -160,7 +160,8 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(remote.produced_by.command, "up-set-group")
         self.assertEqual(remote.cardinality, group.cardinality)
         self.assertEqual(remote.produced_by.input_group_generations, ((3, group.generation),))
-        self.assertIsNone(report.final_state.target)
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.STALE)
 
     def test_group_branch_divergence_widens_to_unknown(self):
         rules = (
