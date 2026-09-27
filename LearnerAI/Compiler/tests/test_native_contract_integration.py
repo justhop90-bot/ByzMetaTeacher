@@ -80,6 +80,108 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(catalog.parameter_ranges_for("goal", "GoalId"), (parameter,))
         self.assertEqual(catalog.parameter_ranges_for("set-goal", "GoalId"), (parameter,))
 
+    def test_shared_catalog_exposes_duc_contracts_and_evidence_ids(self):
+        catalog = default_native_contract_catalog()
+
+        search = catalog.duc_search("up-find-local")
+        mutation = catalog.duc_mutation("up-remove-objects")
+        target = catalog.duc_target("up-set-target-object")
+
+        self.assertIsNotNone(search)
+        self.assertEqual(search.list_kind, "LOCAL")
+        self.assertEqual(search.capacity, 240)
+        self.assertEqual(search.evidence_ids, ("airef:duc:find-local",))
+
+        self.assertIsNotNone(mutation)
+        self.assertEqual(mutation.evidence_ids, ("airef:duc:remove-objects",))
+
+        self.assertIsNotNone(target)
+        self.assertEqual(target.evidence_ids, ("airef:duc:set-target-object",))
+
+        citation_ids = set(catalog.citation_ids())
+        self.assertIn("airef:duc:find-local", citation_ids)
+        self.assertIn("airef:duc:remove-objects", citation_ids)
+        self.assertIn("airef:duc:set-target-object", citation_ids)
+        self.assertIn("airef:duc:get-search-state", citation_ids)
+
+    def test_missing_duc_evidence_blocks_shared_native_catalog(self):
+        base = default_native_contract_catalog()
+        bad_search = replace(
+            base.duc_search("up-find-local"),
+            evidence_ids=("airef:duc:missing",),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "unresolved citation 'airef:duc:missing'",
+        ):
+            NativeContractCatalog(
+                duc_searches=(
+                    bad_search,
+                    *(item for item in base.duc_searches if item.command != "up-find-local"),
+                ),
+            )
+
+    def test_wrong_scope_duc_evidence_blocks_shared_native_catalog(self):
+        base = default_native_contract_catalog()
+        bad_search = replace(
+            base.duc_search("up-find-local"),
+            evidence_ids=("airef:goal-storage",),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "expected GENERAL_NATIVE_FACT",
+        ):
+            NativeContractCatalog(
+                duc_searches=(
+                    bad_search,
+                    *(item for item in base.duc_searches if item.command != "up-find-local"),
+                ),
+            )
+
+    def test_missing_duc_output_evidence_blocks_shared_native_catalog(self):
+        base = default_native_contract_catalog()
+        with self.assertRaisesRegex(
+            ValueError,
+            "unresolved citation 'airef:duc:missing-output'",
+        ):
+            NativeContractCatalog(
+                duc_output_evidence_ids=("airef:duc:missing-output",),
+            )
+
+    def test_broken_duc_evidence_blocks_shared_native_catalog(self):
+        base = default_native_contract_catalog()
+        broken = CitationRecord(
+            "airef:duc:find-local",
+            "https://airef.github.io/commands/commands-details.html#up-find-local",
+            "https://airef.github.io/commands/commands-details.html#up-find-local",
+            LocatorType.COMMAND,
+            "up-find-local",
+            semantic_scope=base.citation_catalog.resolve("airef:duc:find-local").semantic_scope,
+            excerpt=SourceExcerpt.capture(
+                "(up-find-local <typeOp> <UnitId> <typeOp> <Value>)",
+                ExcerptKind.FACT,
+            ),
+            state=CitationState.BROKEN,
+        )
+        citation_catalog = CitationRecordCatalog(
+            (
+                broken,
+                *(
+                    item
+                    for item in base.citation_catalog.records
+                    if item.citation_id != "airef:duc:find-local"
+                ),
+            )
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "citation 'airef:duc:find-local' is not promotable",
+        ):
+            NativeContractCatalog(
+                duc_searches=base.duc_searches,
+                citation_catalog=citation_catalog,
+            )
+
     def test_goal_storage_citation_cannot_back_goal_span_contract(self):
         base = default_native_contract_catalog()
         bad_span = replace(

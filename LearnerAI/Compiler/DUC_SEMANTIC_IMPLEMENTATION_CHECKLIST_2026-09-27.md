@@ -62,7 +62,7 @@ Current implementation location:
 - `LearnerAI/Compiler/semantic/duc.py`
 
 Next consolidation:
-- [ ] promote `NativeDucContractCatalog` into the shared native contract catalog/registry instead of keeping the first slice local to the DUC semantic module.
+- [x] DUC native contracts are members of the shared `NativeContractCatalog`; DUC evidence IDs are centrally resolved and promotion-gated.
 
 ## Vertical slice C: recurrent .per behavior
 
@@ -150,7 +150,7 @@ Primary test file:
 1. [x] Create typed DUC IR.
 2. [x] Implement first abstract-state interpreter.
 3. [ ] Finish hostile state-transition fixtures.
-4. [ ] Move native DUC contracts into the shared native registry.
+4. [x] Move native DUC contracts into the shared native registry.
 5. [ ] Integrate DUC into rule diagnostics.
 6. [ ] Run generic compiler native-zero acceptance with DUC-bearing .per fixtures.
 7. [ ] Add effective-source-graph provenance fixtures.

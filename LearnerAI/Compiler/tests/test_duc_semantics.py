@@ -1,6 +1,8 @@
 import unittest
+from dataclasses import replace
 
 from Compiler.ir.duc import DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
+from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -362,6 +364,26 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIn("iteration bound 3", diagnostic.message)
         self.assertIn("widened fields: REMOTE_LIST, FILTERS", diagnostic.message)
 
+    def test_search_state_provenance_uses_shared_output_evidence(self):
+        base = default_native_contract_catalog()
+        shared = NativeContractCatalog(
+            duc_output_evidence_ids=("airef:duc:get-search-state",),
+        )
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                    ("up-get-search-state", ("100",)),
+                )),
+            ),
+            contracts=shared,
+        )
+
+        self.assertEqual(
+            report.observations[-1].provenance.evidence_ids,
+            ("airef:duc:get-search-state",),
+        )
+
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
             _rule(1, (
@@ -489,6 +511,32 @@ class DucSemanticTests(unittest.TestCase):
 
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(report.final_state.target.proof, DucTargetProof.UNKNOWN)
+
+    def test_analyze_duc_consumes_shared_native_catalog_contracts(self):
+        base = default_native_contract_catalog()
+        altered = replace(
+            base.duc_mutation("up-clean-search"),
+            sentinel_object_data="999",
+        )
+        shared = NativeContractCatalog(
+            duc_mutations=(
+                altered,
+                *(item for item in base.duc_mutations if item.command != "up-clean-search"),
+            ),
+        )
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "4")),
+                    ("up-set-target-object", ("search-local", "c:", "0")),
+                    ("up-clean-search", ("search-local", "-1", "1")),
+                )),
+            ),
+            contracts=shared,
+        )
+
+        self.assertEqual(report.mutations[-1].kind, DucListMutationKind.SORT)
 
     def test_clean_search_sort_preserves_target_proof(self):
         report = analyze_duc((

@@ -42,6 +42,8 @@ from ..ir.duc import (
     DucTargetTransition,
     DucVisibility,
 )
+from ..primitives.native_hygiene import NativeContractCatalog
+from ..primitives.registry import default_native_contract_catalog
 from .rule_execution import (
     EffectiveRule,
     RuleAction,
@@ -77,25 +79,6 @@ DUC_LOOP_WIDENING_LIMIT = 3
 
 
 @dataclass(frozen=True)
-class NativeDucSearchContract:
-    command: str
-    list_kind: DucListKind
-    capacity: int
-    appends_to_current_list: bool
-    consumes_retained_filters: bool
-    evidence_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class NativeDucFilterContract:
-    command: str
-    retained: bool
-    affects_next_search: bool
-    resettable: bool
-    evidence_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True)
 class NativeDucResetResolution:
     invalidates_local_list: bool
     invalidates_remote_list: bool
@@ -106,167 +89,29 @@ class NativeDucResetResolution:
     invalidates_remote_index: bool
 
 
-@dataclass(frozen=True)
-class NativeDucResetContract:
-    command: str
-    reset_kind: DucResetKind
-    invalidates_local_list: bool
-    invalidates_remote_list: bool
-    invalidates_filters: bool
-    invalidates_object_target: bool
-    invalidates_point_target: bool
-    evidence_ids: tuple[str, ...]
-
-    def resolve(self, arguments: tuple[str, ...]) -> NativeDucResetResolution:
-        if self.reset_kind is DucResetKind.SEARCH_BOTH:
-            if len(arguments) != 4:
-                raise ValueError(
-                    "up-reset-search requires LocalIndex, LocalList, RemoteIndex, RemoteList"
-                )
-            return NativeDucResetResolution(
-                invalidates_local_list=arguments[1] == "1",
-                invalidates_remote_list=arguments[3] == "1",
-                invalidates_filters=False,
-                invalidates_object_target=False,
-                invalidates_point_target=False,
-                invalidates_local_index=arguments[0] == "1",
-                invalidates_remote_index=arguments[2] == "1",
+def _resolve_duc_reset(contract, arguments: tuple[str, ...]) -> NativeDucResetResolution:
+    if contract.reset_kind == DucResetKind.SEARCH_BOTH.value:
+        if len(arguments) != 4:
+            raise ValueError(
+                "up-reset-search requires LocalIndex, LocalList, RemoteIndex, RemoteList"
             )
         return NativeDucResetResolution(
-            invalidates_local_list=self.invalidates_local_list,
-            invalidates_remote_list=self.invalidates_remote_list,
-            invalidates_filters=self.invalidates_filters,
-            invalidates_object_target=self.invalidates_object_target,
-            invalidates_point_target=self.invalidates_point_target,
-            invalidates_local_index=False,
-            invalidates_remote_index=False,
+            invalidates_local_list=arguments[1] == "1",
+            invalidates_remote_list=arguments[3] == "1",
+            invalidates_filters=False,
+            invalidates_object_target=False,
+            invalidates_point_target=False,
+            invalidates_local_index=arguments[0] == "1",
+            invalidates_remote_index=arguments[2] == "1",
         )
-
-
-@dataclass(frozen=True)
-class NativeDucMutationContract:
-    command: str
-    list_kinds: tuple[DucListKind, ...]
-    sentinel_object_data: str
-    evidence_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class NativeDucTargetContract:
-    command: str
-    source_kinds: tuple[DucListKind, ...]
-    target_kind: DucTargetKind
-    requires_current_list: bool
-    requires_current_point: bool
-    evidence_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class NativeDucContractCatalog:
-    searches: tuple[NativeDucSearchContract, ...]
-    filters: tuple[NativeDucFilterContract, ...]
-    resets: tuple[NativeDucResetContract, ...]
-    mutations: tuple[NativeDucMutationContract, ...]
-    targets: tuple[NativeDucTargetContract, ...]
-    consumer_commands: tuple[str, ...] = (
-        "up-target-objects",
-        "up-target-point",
-    )
-
-    def search(self, command: str) -> NativeDucSearchContract | None:
-        return next((item for item in self.searches if item.command == command), None)
-
-    def filter(self, command: str) -> NativeDucFilterContract | None:
-        return next((item for item in self.filters if item.command == command), None)
-
-    def reset(self, command: str) -> NativeDucResetContract | None:
-        return next((item for item in self.resets if item.command == command), None)
-
-    def mutation(self, command: str) -> NativeDucMutationContract | None:
-        return next((item for item in self.mutations if item.command == command), None)
-
-    def target(self, command: str) -> NativeDucTargetContract | None:
-        return next((item for item in self.targets if item.command == command), None)
-
-
-def default_native_duc_contract_catalog() -> NativeDucContractCatalog:
-    airef = "airef:duc"
-    return NativeDucContractCatalog(
-        searches=(
-            NativeDucSearchContract("up-find-local", DucListKind.LOCAL, 240, True, True, (f"{airef}:find-local",)),
-            NativeDucSearchContract("up-find-status-local", DucListKind.LOCAL, 240, True, True, (f"{airef}:find-status-local",)),
-            NativeDucSearchContract("up-find-remote", DucListKind.REMOTE, 40, True, True, (f"{airef}:find-remote",)),
-            NativeDucSearchContract("up-find-status-remote", DucListKind.REMOTE, 40, True, True, (f"{airef}:find-status-remote",)),
-            NativeDucSearchContract("up-find-resource", DucListKind.REMOTE, 40, True, True, (f"{airef}:find-resource",)),
-        ),
-        filters=tuple(
-            NativeDucFilterContract(command, True, True, True, (f"{airef}:{command}:retained",))
-            for command in sorted(FILTER_COMMANDS)
-        ),
-        resets=(
-            NativeDucResetContract(
-                "up-reset-filters",
-                DucResetKind.FILTERS,
-                False,
-                False,
-                True,
-                False,
-                False,
-                (f"{airef}:reset-filters",),
-            ),
-            NativeDucResetContract(
-                "up-reset-search",
-                DucResetKind.SEARCH_BOTH,
-                False,
-                False,
-                False,
-                False,
-                False,
-                (f"{airef}:reset-search",),
-            ),
-            NativeDucResetContract(
-                "up-full-reset-search",
-                DucResetKind.FULL,
-                True,
-                True,
-                True,
-                True,
-                True,
-                (f"{airef}:full-reset-search",),
-            ),
-        ),
-        mutations=(
-            NativeDucMutationContract(
-                "up-clean-search",
-                (DucListKind.LOCAL, DucListKind.REMOTE),
-                "-1",
-                ("airef:duc:list-mutation",),
-            ),
-            NativeDucMutationContract(
-                "up-remove-objects",
-                (DucListKind.LOCAL, DucListKind.REMOTE),
-                "-1",
-                ("airef:duc:list-mutation",),
-            ),
-        ),
-        targets=(
-            NativeDucTargetContract(
-                SET_OBJECT_TARGET,
-                (DucListKind.LOCAL, DucListKind.REMOTE),
-                DucTargetKind.OBJECT,
-                True,
-                False,
-                (f"{airef}:set-target-object",),
-            ),
-            NativeDucTargetContract(
-                SET_POINT_TARGET,
-                (),
-                DucTargetKind.POINT,
-                False,
-                False,
-                (f"{airef}:set-target-point",),
-            ),
-        ),
+    return NativeDucResetResolution(
+        invalidates_local_list=contract.invalidates_local_list,
+        invalidates_remote_list=contract.invalidates_remote_list,
+        invalidates_filters=contract.invalidates_filters,
+        invalidates_object_target=contract.invalidates_object_target,
+        invalidates_point_target=contract.invalidates_point_target,
+        invalidates_local_index=False,
+        invalidates_remote_index=False,
     )
 
 
@@ -542,11 +387,11 @@ def _empty_state(pass_id: int = 0) -> DucSemanticState:
 
 def _analyze_duc_linear(
     rules: tuple[EffectiveRule, ...],
-    contracts: NativeDucContractCatalog | None = None,
+    contracts: NativeContractCatalog | None = None,
     *,
     initial_state: DucSemanticState | None = None,
 ) -> DucAnalysisReport:
-    contracts = contracts or default_native_duc_contract_catalog()
+    contracts = contracts or default_native_contract_catalog()
     state = initial_state or _empty_state()
     initial_state = state
     states: list[tuple[int, DucSemanticState]] = []
@@ -569,13 +414,13 @@ def _analyze_duc_linear(
             command = expression.head
             args = _canonical_arguments(expression)
 
-            search_contract = contracts.search(command)
-            filter_contract = contracts.filter(command)
-            reset_contract = contracts.reset(command)
-            target_contract = contracts.target(command)
+            search_contract = contracts.duc_search(command)
+            filter_contract = contracts.duc_filter(command)
+            reset_contract = contracts.duc_reset(command)
+            target_contract = contracts.duc_target(command)
 
             if search_contract is not None:
-                kind = search_contract.list_kind
+                kind = DucListKind(search_contract.list_kind)
                 current = state.local_list if kind is DucListKind.LOCAL else state.remote_list
                 if rule.pass_behavior is RulePassBehavior.RECURRENT and current.current_generation is not None:
                     if kind not in rule_reset_lists:
@@ -730,7 +575,7 @@ def _analyze_duc_linear(
                 continue
 
             if reset_contract is not None:
-                resolution = reset_contract.resolve(args)
+                resolution = _resolve_duc_reset(reset_contract, args)
                 provenance = _provenance(
                     rule,
                     action,
@@ -818,7 +663,7 @@ def _analyze_duc_linear(
                 )
                 reset = DucResetEffect(
                     command,
-                    reset_contract.reset_kind,
+                    DucResetKind(reset_contract.reset_kind),
                     tuple(invalidated),
                     resolution.invalidates_filters,
                     resolution.invalidates_object_target,
@@ -863,7 +708,7 @@ def _analyze_duc_linear(
                     pass_id=state.pass_id,
                     inputs=generations,
                     contract_id="duc.output.search-state",
-                    evidence_ids=("airef:duc:get-search-state",),
+                    evidence_ids=contracts.duc_output_evidence_ids,
                 )
                 observations.append(
                     DucSearchStateObservation(
@@ -1040,7 +885,7 @@ def _analyze_duc_linear(
                 rule_writes.add(DucStateKind.TARGET)
                 continue
 
-            mutation_contract = contracts.mutation(command)
+            mutation_contract = contracts.duc_mutation(command)
             if mutation_contract is not None:
                 if command == "up-clean-search" and len(args) != 3:
                     raise ValueError("up-clean-search requires SearchSource, ObjectData, and SearchOrder")
@@ -1054,7 +899,7 @@ def _analyze_duc_linear(
                     if args[0] == "search-remote"
                     else None
                 )
-                if source is None or source not in mutation_contract.list_kinds:
+                if source is None or source.value not in mutation_contract.list_kinds:
                     raise ValueError(f"{command} requires search-local or search-remote")
                 object_data = args[1]
                 compare_operator = args[2] if command == "up-remove-objects" else None
@@ -1567,12 +1412,12 @@ def _join_states(
 
 def analyze_duc(
     execution: RuleExecutionReport | tuple[EffectiveRule, ...],
-    contracts: NativeDucContractCatalog | None = None,
+    contracts: NativeContractCatalog | None = None,
     *,
     loop_widening_limit: int = DUC_LOOP_WIDENING_LIMIT,
     initial_state: DucSemanticState | None = None,
 ) -> DucAnalysisReport:
-    contracts = contracts or default_native_duc_contract_catalog()
+    contracts = contracts or default_native_contract_catalog()
     seed_state = initial_state or _empty_state()
     if not isinstance(execution, RuleExecutionReport):
         report = _analyze_duc_linear(
@@ -1805,12 +1650,6 @@ def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
 
 
 __all__ = [
-    "NativeDucContractCatalog",
-    "NativeDucFilterContract",
-    "NativeDucResetContract",
-    "NativeDucSearchContract",
-    "NativeDucTargetContract",
     "analyze_duc",
-    "default_native_duc_contract_catalog",
     "advance_duc_pass",
 ]

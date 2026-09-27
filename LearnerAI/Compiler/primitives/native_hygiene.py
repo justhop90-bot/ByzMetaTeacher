@@ -738,6 +738,111 @@ def default_native_goal_span_contracts() -> Tuple[NativeGoalSpanContract, ...]:
     )
 
 
+def default_native_duc_search_contracts() -> Tuple[NativeDucSearchContract, ...]:
+    airef = "airef:duc"
+    return (
+        NativeDucSearchContract("up-find-local", "LOCAL", 240, True, True, (f"{airef}:find-local",)),
+        NativeDucSearchContract("up-find-status-local", "LOCAL", 240, True, True, (f"{airef}:find-status-local",)),
+        NativeDucSearchContract("up-find-remote", "REMOTE", 40, True, True, (f"{airef}:find-remote",)),
+        NativeDucSearchContract("up-find-status-remote", "REMOTE", 40, True, True, (f"{airef}:find-status-remote",)),
+        NativeDucSearchContract("up-find-resource", "REMOTE", 40, True, True, (f"{airef}:find-resource",)),
+    )
+
+
+def default_native_duc_filter_contracts() -> Tuple[NativeDucFilterContract, ...]:
+    commands = (
+        "up-filter-distance",
+        "up-filter-exclude",
+        "up-filter-garrison",
+        "up-filter-include",
+        "up-filter-range",
+        "up-filter-status",
+    )
+    return tuple(
+        NativeDucFilterContract(
+            command,
+            True,
+            True,
+            True,
+            (f"airef:duc:{command}:retained",),
+        )
+        for command in commands
+    )
+
+
+def default_native_duc_reset_contracts() -> Tuple[NativeDucResetContract, ...]:
+    return (
+        NativeDucResetContract(
+            "up-reset-filters",
+            "FILTERS",
+            False,
+            False,
+            True,
+            False,
+            False,
+            ("airef:duc:reset-filters",),
+        ),
+        NativeDucResetContract(
+            "up-reset-search",
+            "SEARCH_BOTH",
+            False,
+            False,
+            False,
+            False,
+            False,
+            ("airef:duc:reset-search",),
+        ),
+        NativeDucResetContract(
+            "up-full-reset-search",
+            "FULL",
+            True,
+            True,
+            True,
+            True,
+            True,
+            ("airef:duc:full-reset-search",),
+        ),
+    )
+
+
+def default_native_duc_mutation_contracts() -> Tuple[NativeDucMutationContract, ...]:
+    return (
+        NativeDucMutationContract(
+            "up-clean-search",
+            ("LOCAL", "REMOTE"),
+            "-1",
+            ("airef:duc:clean-search",),
+        ),
+        NativeDucMutationContract(
+            "up-remove-objects",
+            ("LOCAL", "REMOTE"),
+            "-1",
+            ("airef:duc:remove-objects",),
+        ),
+    )
+
+
+def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]:
+    return (
+        NativeDucTargetContract(
+            "up-set-target-object",
+            ("LOCAL", "REMOTE"),
+            "OBJECT",
+            True,
+            False,
+            ("airef:duc:set-target-object",),
+        ),
+        NativeDucTargetContract(
+            "up-set-target-point",
+            (),
+            "POINT",
+            False,
+            False,
+            ("airef:duc:set-target-point",),
+        ),
+    )
+
+
 def default_native_goal_parameter_ranges() -> Tuple[NativeGoalParameterRangeContract, ...]:
     return (
         NativeGoalParameterRangeContract(
@@ -759,6 +864,55 @@ def default_native_goal_parameter_ranges() -> Tuple[NativeGoalParameterRangeCont
 
 
 @dataclass(frozen=True)
+class NativeDucSearchContract:
+    command: str
+    list_kind: str
+    capacity: int
+    appends_to_current_list: bool
+    consumes_retained_filters: bool
+    evidence_ids: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NativeDucFilterContract:
+    command: str
+    retained: bool
+    affects_next_search: bool
+    resettable: bool
+    evidence_ids: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NativeDucResetContract:
+    command: str
+    reset_kind: str
+    invalidates_local_list: bool
+    invalidates_remote_list: bool
+    invalidates_filters: bool
+    invalidates_object_target: bool
+    invalidates_point_target: bool
+    evidence_ids: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NativeDucMutationContract:
+    command: str
+    list_kinds: Tuple[str, ...]
+    sentinel_object_data: str
+    evidence_ids: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NativeDucTargetContract:
+    command: str
+    source_kinds: Tuple[str, ...]
+    target_kind: str
+    requires_current_list: bool
+    requires_current_point: bool
+    evidence_ids: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class NativeContractCatalog:
     witnesses: Tuple[NativeWitness, ...] = ()
     storage_uses: Tuple[NativeStorageUse, ...] = ()
@@ -766,6 +920,16 @@ class NativeContractCatalog:
     goal_storage_contracts: Tuple[NativeGoalStorageContract, ...] = ()
     goal_span_contracts: Tuple[NativeGoalSpanContract, ...] = ()
     parameter_ranges: Tuple[NativeGoalParameterRangeContract, ...] = ()
+    duc_searches: Tuple[NativeDucSearchContract, ...] = ()
+    duc_filters: Tuple[NativeDucFilterContract, ...] = ()
+    duc_resets: Tuple[NativeDucResetContract, ...] = ()
+    duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
+    duc_targets: Tuple[NativeDucTargetContract, ...] = ()
+    duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
+    duc_consumer_commands: Tuple[str, ...] = (
+        "up-target-objects",
+        "up-target-point",
+    )
     citation_catalog: Optional[CitationRecordCatalog] = None
 
     def __post_init__(self) -> None:
@@ -775,6 +939,16 @@ class NativeContractCatalog:
             object.__setattr__(self, "goal_span_contracts", default_native_goal_span_contracts())
         if not self.parameter_ranges:
             object.__setattr__(self, "parameter_ranges", default_native_goal_parameter_ranges())
+        if not self.duc_searches:
+            object.__setattr__(self, "duc_searches", default_native_duc_search_contracts())
+        if not self.duc_filters:
+            object.__setattr__(self, "duc_filters", default_native_duc_filter_contracts())
+        if not self.duc_resets:
+            object.__setattr__(self, "duc_resets", default_native_duc_reset_contracts())
+        if not self.duc_mutations:
+            object.__setattr__(self, "duc_mutations", default_native_duc_mutation_contracts())
+        if not self.duc_targets:
+            object.__setattr__(self, "duc_targets", default_native_duc_target_contracts())
         for values, label in (
             (self.witnesses, "native witness"),
             (self.storage_uses, "native storage use"),
@@ -786,6 +960,16 @@ class NativeContractCatalog:
             identities = [item.identity for item in values]
             if len(identities) != len(set(identities)):
                 raise ValueError(f"duplicate {label} identity")
+        for values, label in (
+            (self.duc_searches, "DUC search contract"),
+            (self.duc_filters, "DUC filter contract"),
+            (self.duc_resets, "DUC reset contract"),
+            (self.duc_mutations, "DUC mutation contract"),
+            (self.duc_targets, "DUC target contract"),
+        ):
+            commands = [item.command for item in values]
+            if len(commands) != len(set(commands)):
+                raise ValueError(f"duplicate {label} command")
         purposes = [
             item.request_purpose
             for item in self.storage_uses
@@ -796,6 +980,21 @@ class NativeContractCatalog:
         commands = [item.command for item in self.pass_constraints]
         if len(commands) != len(set(commands)):
             raise ValueError("duplicate native pass constraint command")
+        if len(self.duc_consumer_commands) != len(set(self.duc_consumer_commands)):
+            raise ValueError("duplicate DUC consumer command")
+        if not self.duc_output_evidence_ids:
+            raise ValueError("DUC output evidence requires at least one evidence identifier")
+        if len(self.duc_output_evidence_ids) != len(set(self.duc_output_evidence_ids)):
+            raise ValueError("duplicate DUC output evidence identifier")
+        for values, label in (
+            (self.duc_searches, "DUC search contract"),
+            (self.duc_filters, "DUC filter contract"),
+            (self.duc_resets, "DUC reset contract"),
+            (self.duc_mutations, "DUC mutation contract"),
+            (self.duc_targets, "DUC target contract"),
+        ):
+            if any(not item.evidence_ids for item in values):
+                raise ValueError(f"{label} requires evidence identifiers")
         validate_goal_span_non_overlap(self.storage_uses)
 
         goal_storage_ids = {contract.identity for contract in self.goal_storage_contracts}
@@ -866,6 +1065,18 @@ class NativeContractCatalog:
                 ),
             )
         }
+        ids.update(self.duc_output_evidence_ids)
+        ids.update(
+            evidence_id
+            for contract in (
+                *self.duc_searches,
+                *self.duc_filters,
+                *self.duc_resets,
+                *self.duc_mutations,
+                *self.duc_targets,
+            )
+            for evidence_id in contract.evidence_ids
+        )
         return tuple(sorted(ids))
 
     def goal_storage_contract(self, identity: str) -> NativeGoalStorageContract:
@@ -892,6 +1103,21 @@ class NativeContractCatalog:
             for item in self.parameter_ranges
             if command in item.commands and parameter == "GoalId"
         )
+
+    def duc_search(self, command: str) -> Optional[NativeDucSearchContract]:
+        return next((item for item in self.duc_searches if item.command == command), None)
+
+    def duc_filter(self, command: str) -> Optional[NativeDucFilterContract]:
+        return next((item for item in self.duc_filters if item.command == command), None)
+
+    def duc_reset(self, command: str) -> Optional[NativeDucResetContract]:
+        return next((item for item in self.duc_resets if item.command == command), None)
+
+    def duc_mutation(self, command: str) -> Optional[NativeDucMutationContract]:
+        return next((item for item in self.duc_mutations if item.command == command), None)
+
+    def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
+        return next((item for item in self.duc_targets if item.command == command), None)
 
     def validate_all_provenance(self) -> None:
         for owner, provenance, expected_scope in (
@@ -952,6 +1178,47 @@ class NativeContractCatalog:
                 raise ValueError(
                     f"native contract '{owner}' has invalid citation provenance: {exc}"
                 ) from exc
+
+        for owner, evidence_ids in (
+            ("DUC output", self.duc_output_evidence_ids),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_searches
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_filters
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_resets
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_mutations
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_targets
+            ),
+        ):
+            for evidence_id in evidence_ids:
+                try:
+                    record = self.citation_catalog.resolve(evidence_id)
+                    if record.semantic_scope is not CitationSemanticScope.GENERAL_NATIVE_FACT:
+                        raise ValueError(
+                            f"citation '{evidence_id}' has scope "
+                            f"{record.semantic_scope.value}, expected {CitationSemanticScope.GENERAL_NATIVE_FACT.value}"
+                        )
+                    if promotion_state(record, already_promoted=False) is not PromotionState.ELIGIBLE:
+                        raise ValueError(
+                            f"citation '{evidence_id}' is not promotable "
+                            f"(state={record.state.value})"
+                        )
+                except ValueError as exc:
+                    raise ValueError(
+                        f"native contract '{owner}' has invalid citation provenance: {exc}"
+                    ) from exc
 
     def witness(self, identity: str) -> NativeWitness:
         for item in self.witnesses:
@@ -1422,6 +1689,43 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         release="UserPatch 1.1 / 20120416-093415",
     )
 
+    duc_command_specs = (
+        ("airef:duc:find-local", "up-find-local", "(up-find-local <typeOp> <UnitId> <typeOp> <Value>)"),
+        ("airef:duc:find-status-local", "up-find-status-local", "(up-find-status-local <typeOp> <UnitId> <typeOp> <Value>)"),
+        ("airef:duc:find-remote", "up-find-remote", "(up-find-remote <typeOp> <UnitId> <typeOp> <Value>)"),
+        ("airef:duc:find-status-remote", "up-find-status-remote", "(up-find-status-remote <typeOp> <UnitId> <typeOp> <Value>)"),
+        ("airef:duc:find-resource", "up-find-resource", "(up-find-resource <typeOp> <Resource> <typeOp> <Value>)"),
+        ("airef:duc:up-filter-distance:retained", "up-filter-distance", "(up-filter-distance <typeOp> <MinDistance> <typeOp> <MaxDistance>)"),
+        ("airef:duc:up-filter-exclude:retained", "up-filter-exclude", "(up-filter-exclude <CmdId> <ActionId> <OrderId> <ClassId>)"),
+        ("airef:duc:up-filter-garrison:retained", "up-filter-garrison", "(up-filter-garrison <typeOp> <MinGarrison> <typeOp> <MaxGarrison>)"),
+        ("airef:duc:up-filter-include:retained", "up-filter-include", "(up-filter-include <CmdId> <ActionId> <OrderId> <OnMainland>)"),
+        ("airef:duc:up-filter-range:retained", "up-filter-range", "(up-filter-range <MinGarrison> <MaxGarrison> <MinDistance> <MaxDistance>)"),
+        ("airef:duc:up-filter-status:retained", "up-filter-status", "(up-filter-status <typeOp> <ObjectStatus> <typeOp> <ObjectList>)"),
+        ("airef:duc:reset-filters", "up-reset-filters", "(up-reset-filters)"),
+        ("airef:duc:reset-search", "up-reset-search", "(up-reset-search <LocalIndex> <LocalList> <RemoteIndex> <RemoteList>)"),
+        ("airef:duc:full-reset-search", "up-full-reset-search", "(up-full-reset-search)"),
+        ("airef:duc:clean-search", "up-clean-search", "(up-clean-search <SearchSource> <ObjectData> <SearchOrder>)"),
+        ("airef:duc:remove-objects", "up-remove-objects", "(up-remove-objects <SearchSource> <ObjectData> <compareOp> <Value>)"),
+        ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
+        ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
+        ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
+    )
+    duc_records = tuple(
+        CitationRecord(
+            citation_id,
+            f"https://airef.github.io/commands/commands-details.html#{command}",
+            f"https://airef.github.io/commands/commands-details.html#{command}",
+            LocatorType.COMMAND,
+            command,
+            excerpt=SourceExcerpt.capture(signature, ExcerptKind.FACT),
+            source_hash=commands_hash,
+            retrieval=commands_retrieval,
+            state=CitationState.PINNED,
+            engine_version_scope=up_goal_span_scope,
+        )
+        for citation_id, command, signature in duc_command_specs
+    )
+
     return CitationRecordCatalog(
         records=(
             CitationRecord(
@@ -1549,6 +1853,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 state=CitationState.PINNED,
                 engine_version_scope=up_build_scope,
             ),
+            *duc_records,
         )
     )
 
