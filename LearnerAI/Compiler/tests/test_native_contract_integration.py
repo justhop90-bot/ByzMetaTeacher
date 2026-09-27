@@ -102,6 +102,7 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:find-local", citation_ids)
         self.assertIn("airef:duc:remove-objects", citation_ids)
         self.assertIn("airef:duc:set-target-object", citation_ids)
+        self.assertIn("airef:duc:get-search-state", citation_ids)
 
     def test_missing_duc_evidence_blocks_shared_native_catalog(self):
         base = default_native_contract_catalog()
@@ -135,6 +136,16 @@ class NativeContractIntegrationTests(unittest.TestCase):
                     bad_search,
                     *(item for item in base.duc_searches if item.command != "up-find-local"),
                 ),
+            )
+
+    def test_missing_duc_output_evidence_blocks_shared_native_catalog(self):
+        base = default_native_contract_catalog()
+        with self.assertRaisesRegex(
+            ValueError,
+            "unresolved citation 'airef:duc:missing-output'",
+        ):
+            NativeContractCatalog(
+                duc_output_evidence_ids=("airef:duc:missing-output",),
             )
 
     def test_broken_duc_evidence_blocks_shared_native_catalog(self):
