@@ -162,9 +162,9 @@ class DucResetEffect:
     invalidates_filter_state: bool
     invalidates_object_targets: bool
     invalidates_point_target: bool
+    provenance: DucProvenance
     invalidates_local_index: bool = False
     invalidates_remote_index: bool = False
-    provenance: DucProvenance
 
 
 @dataclass(frozen=True)
