@@ -1093,9 +1093,6 @@ const rangedExecutorRules = [
     "(goal strategy-goal bt-strategy-castle-power)",
     "(goal bt-any-threat-goal 0)",
     "(goal bt-ranged-threat-goal 0)",
-    "(goal bt-crossbow-demand-goal 1)",
-    "(goal bt-arbalest-demand-goal 0)",
-    "(up-compare-goal bt-standing-crossbow-target-goal > 0)",
   ]],
   ["ri-thumb-ring", [
     "(goal bt-any-threat-goal 0)",
