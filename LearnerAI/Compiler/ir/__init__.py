@@ -145,3 +145,17 @@ from .recurrent import (
     create_initialized_timer,
     read_timer_triggered,
 )
+
+from .strategic_number import (
+    CONSTANT_OPERAND_MAX,
+    CONSTANT_OPERAND_MIN,
+    STRATEGIC_NUMBER_MAX,
+    STRATEGIC_NUMBER_MIN,
+    StrategicNumberAccess,
+    StrategicNumberAccessKind,
+    StrategicNumberDependency,
+    StrategicNumberMathOp,
+    StrategicNumberMutation,
+    StrategicNumberOperand,
+    StrategicNumberOperandKind,
+)
