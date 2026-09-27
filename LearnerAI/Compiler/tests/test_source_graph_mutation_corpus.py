@@ -89,9 +89,16 @@ def _replace_slice(
     return replace(graph, slices=tuple(slices))
 
 
-def _mutate_graph(field: str, value):
+def _mutate_graph(
+    field: str,
+    value_factory: Callable[[EffectiveSourceGraph, object], object],
+):
     def mutate(graph: EffectiveSourceGraph) -> EffectiveSourceGraph:
-        return replace(graph, **{field: value})
+        current = getattr(graph, field)
+        return replace(
+            graph,
+            **{field: value_factory(graph, current)},
+        )
 
     return mutate
 
@@ -186,7 +193,10 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         "linear/root.perdsl",
         "graph",
         "root",
-        _mutate_graph("root", lambda graph: graph.instances[_index_of_child(graph)]),
+        _mutate_graph(
+            "root",
+            lambda graph, _current: graph.instances[_index_of_child(graph)],
+        ),
         Code.INSTANCE_MISSING_PARENT,
     ),
     MutationCase(
@@ -194,7 +204,7 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         "linear/root.perdsl",
         "graph",
         "instances",
-        _mutate_graph("instances", lambda graph: (graph.instances[0],)),
+        _mutate_graph("instances", lambda graph, _current: (graph.instances[0],)),
         Code.ACTIVE_EDGE_MISSING_CHILD,
     ),
     MutationCase(
@@ -202,7 +212,7 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         "linear/root.perdsl",
         "graph",
         "edges",
-        _mutate_graph("edges", lambda graph: ()),
+        _mutate_graph("edges", lambda _graph, _current: ()),
         Code.ORPHAN_INSTANCE,
     ),
     MutationCase(
@@ -210,7 +220,10 @@ MUTATION_CORPUS: tuple[MutationCase, ...] = (
         "linear/root.perdsl",
         "graph",
         "slices",
-        _mutate_graph("slices", lambda graph: tuple(reversed(graph.slices))),
+        _mutate_graph(
+            "slices",
+            lambda graph, _current: tuple(reversed(graph.slices)),
+        ),
         Code.SLICE_ORDINAL_GAP,
     ),
     MutationCase(
