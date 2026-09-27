@@ -40,8 +40,18 @@ class EffectiveRule:
 
 
 @dataclass(frozen=True)
+class StaticControlTransfer:
+    rule_order: int
+    within_rule_order: int
+    delta: int
+    target_rule_order: int | None
+    location: SourceLocation
+
+
+@dataclass(frozen=True)
 class RuleExecutionReport:
     rules: tuple[EffectiveRule, ...]
+    control_transfers: tuple[StaticControlTransfer, ...] = ()
 
 
 def _line_column(slice_: EffectiveSourceSlice, offset: int) -> SourceLocation:
@@ -337,13 +347,53 @@ def analyze_effective_rules(graph: EffectiveSourceGraph) -> RuleExecutionReport:
                     fires_guaranteed=False,
                 )
                 rules.append(rule)
-    return RuleExecutionReport(tuple(rules))
+
+    rule_count = len(rules)
+    control_transfers: list[StaticControlTransfer] = []
+    for rule in rules:
+        for action in rule.actions:
+            if action.expression.head != "up-jump-rule":
+                continue
+            if len(action.expression.args) != 1:
+                continue
+            try:
+                delta = int(str(action.expression.args[0]), 10)
+            except (TypeError, ValueError):
+                continue
+            target_order = rule.rule_order + delta + 1
+            if not 1 <= target_order <= rule_count:
+                target_order = None
+            control_transfers.append(
+                StaticControlTransfer(
+                    rule_order=rule.rule_order,
+                    within_rule_order=action.within_rule_order,
+                    delta=delta,
+                    target_rule_order=target_order,
+                    location=action.expression.location,
+                )
+            )
+
+    return RuleExecutionReport(
+        tuple(rules),
+        tuple(
+            sorted(
+                control_transfers,
+                key=lambda item: (
+                    item.rule_order,
+                    item.within_rule_order,
+                    item.delta,
+                    item.target_rule_order if item.target_rule_order is not None else -1,
+                ),
+            )
+        ),
+    )
 
 
 __all__ = [
     "EffectiveRule",
     "RuleAction",
     "RuleExecutionReport",
+    "StaticControlTransfer",
     "RulePassBehavior",
     "analyze_effective_rules",
 ]
