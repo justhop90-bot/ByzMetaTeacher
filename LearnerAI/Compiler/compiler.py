@@ -53,6 +53,7 @@ if __package__ in (None, ""):
     )
     from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
     from Compiler.semantic.rule_execution import analyze_effective_rules
+    from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
