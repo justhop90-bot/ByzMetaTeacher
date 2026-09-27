@@ -301,5 +301,19 @@ class RuleDiagnosticsTests(unittest.TestCase):
         )
 
 
+
+    def test_up_compare_sn_goal_dependency_is_tracked(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (set-goal goal-x 1) (set-strategic-number 510 7))\n"
+                "(defrule (up-compare-sn 510 g:>= goal-x) => (disable-self))\n"
+            )
+        )
+        strategic_numbers = analyze_strategic_number_expressions(report)
+        self.assertEqual(len(strategic_numbers.dependencies), 1)
+        dependency = strategic_numbers.dependencies[0]
+        self.assertEqual(dependency.kind.value, "GOAL")
+        self.assertEqual(dependency.identifier, "goal-x")
+
 if __name__ == "__main__":
     unittest.main()

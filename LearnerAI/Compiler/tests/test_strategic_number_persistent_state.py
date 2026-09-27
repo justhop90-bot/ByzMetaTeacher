@@ -52,5 +52,21 @@ class PersistentStateStrategicNumberTests(unittest.TestCase):
         self.assertEqual(writes[0].section, "GUARD")
 
 
+
+    def test_up_compare_sn_is_tracked_as_persistent_sn_read(self):
+        report = self._report(
+            "(defrule (true) => (set-strategic-number 510 7))\n"
+            "(defrule (up-compare-sn 510 >= 7) => (disable-self))\n"
+        )
+        reads = [
+            access
+            for access in report.accesses
+            if access.state.kind is PersistentStateKind.STRATEGIC_NUMBER
+            and access.effect is PersistentStateAccessKind.READ
+            and access.command == "up-compare-sn"
+        ]
+        self.assertEqual(len(reads), 1)
+        self.assertEqual(reads[0].state.identifier, "510")
+
 if __name__ == "__main__":
     unittest.main()

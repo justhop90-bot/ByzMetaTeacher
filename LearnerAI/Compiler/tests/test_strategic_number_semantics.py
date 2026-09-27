@@ -3,7 +3,9 @@ import unittest
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.strategic_number_semantics import (
     StrategicNumberSemanticError,
+    evaluate_strategic_number_comparison,
     evaluate_strategic_number_mutation,
+    parse_strategic_number_comparison,
     parse_strategic_number_mutation,
 )
 
@@ -139,6 +141,75 @@ class StrategicNumberSemanticsTests(unittest.TestCase):
                 self._expr("510", "c:+", "2147483648")
             )
 
+
+
+    def test_up_compare_sn_has_typed_operand_and_operator(self):
+        comparison = parse_strategic_number_comparison(
+            Expression(
+                source="(up-compare-sn ...)",
+                head="up-compare-sn",
+                args=("510", "g:>=", "goal-x"),
+                location=SourceLocation(1, 1, "sn-test"),
+            )
+        )
+        self.assertEqual(comparison.target, "510")
+        self.assertEqual(comparison.operator.value, ">=")
+        self.assertEqual(comparison.operand.kind.value, "GOAL")
+        self.assertEqual(comparison.operand.value, "goal-x")
+
+    def test_up_compare_sn_evaluates_constant_goal_and_sn_operands(self):
+        constant = parse_strategic_number_comparison(
+            Expression("(up-compare-sn ...)", "up-compare-sn", ("510", "c:>=", "8"))
+        )
+        self.assertTrue(evaluate_strategic_number_comparison(
+            constant, current_value=8, goals={}, strategic_numbers={}
+        ))
+        self.assertFalse(evaluate_strategic_number_comparison(
+            constant, current_value=7, goals={}, strategic_numbers={}
+        ))
+        dynamic_cases = (
+            ("g:>", "goal-x", 10, {"goal-x": 5}, {}, True),
+            ("s:==", "511", 25, {}, {"511": 25}, True),
+            ("s:<", "511", 25, {}, {"511": 25}, False),
+        )
+        for operator, operand, current, goals, sns, expected in dynamic_cases:
+            with self.subTest(operator=operator):
+                comparison = parse_strategic_number_comparison(
+                    Expression("(up-compare-sn ...)", "up-compare-sn", ("510", operator, operand))
+                )
+                self.assertEqual(
+                    evaluate_strategic_number_comparison(
+                        comparison,
+                        current_value=current,
+                        goals=goals,
+                        strategic_numbers=sns,
+                    ),
+                    expected,
+                )
+
+    def test_up_compare_sn_rejects_bad_arity_prefix_operator_and_range(self):
+        with self.assertRaises(StrategicNumberSemanticError):
+            parse_strategic_number_comparison(
+                Expression("(up-compare-sn)", "up-compare-sn", ("510", "c:>"))
+            )
+        with self.assertRaises(StrategicNumberSemanticError):
+            parse_strategic_number_comparison(
+                Expression("(up-compare-sn ...)", "up-compare-sn", ("510", "x:>=", "1"))
+            )
+        with self.assertRaises(StrategicNumberSemanticError):
+            parse_strategic_number_comparison(
+                Expression("(up-compare-sn ...)", "up-compare-sn", ("510", "c:>>", "1"))
+            )
+        with self.assertRaises(StrategicNumberSemanticError):
+            parse_strategic_number_comparison(
+                Expression("(up-compare-sn ...)", "up-compare-sn", ("510", "c:>=", "40000"))
+            )
+
+    def test_up_compare_sn_constant_prefix_is_optional(self):
+        comparison = parse_strategic_number_comparison(
+            Expression("(up-compare-sn ...)", "up-compare-sn", ("510", ">=", "8"))
+        )
+        self.assertEqual(comparison.operand.kind.value, "CONSTANT")
 
 if __name__ == "__main__":
     unittest.main()

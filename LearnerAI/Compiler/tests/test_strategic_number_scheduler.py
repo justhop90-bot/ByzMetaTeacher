@@ -86,5 +86,30 @@ class StrategicNumberSchedulerTests(unittest.TestCase):
         self.assertEqual(scheduler.strategic_numbers["510"], 3)
 
 
+
+    def test_up_compare_sn_reads_same_pass_strategic_number_and_goal_state(self):
+        report = self._rules(
+            "(defrule (true) => "
+            "(set-strategic-number 510 7) "
+            "(set-goal goal-x 5) "
+            "(disable-self))\n"
+            "(defrule (up-compare-sn 510 g:>= goal-x) => (disable-self))\n"
+        )
+        scheduler = PassScheduler(report.rules)
+        trace = scheduler.run_pass()
+        self.assertEqual(trace.fired_rule_orders, (1, 2))
+
+    def test_up_compare_sn_uses_current_strategic_number_operand_value(self):
+        report = self._rules(
+            "(defrule (true) => "
+            "(set-strategic-number 510 25) "
+            "(set-strategic-number 511 25) "
+            "(disable-self))\n"
+            "(defrule (up-compare-sn 510 s:== 511) => (disable-self))\n"
+        )
+        scheduler = PassScheduler(report.rules)
+        trace = scheduler.run_pass()
+        self.assertEqual(trace.fired_rule_orders, (1, 2))
+
 if __name__ == "__main__":
     unittest.main()
