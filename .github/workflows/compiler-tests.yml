@@ -127,6 +127,9 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy-runtime.per --report /tmp/native-reports/strategy-runtime.json
+      - name: Native zero-findings acceptance - strategic number semantics fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_strategic_number_native.py             --output /tmp/strategic-number.per             --report /tmp/native-reports/strategic-number.json
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -158,6 +161,7 @@ jobs:
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/basilisk-invalidation.per
+            /tmp/strategic-number.per
           if-no-files-found: warn
           retention-days: 14
 
