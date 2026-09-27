@@ -249,6 +249,28 @@ def _control_flow_diagnostics(
             continue
 
         if transfer.target_rule_order > transfer.rule_order + 1:
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE,
+                    severity=DiagnosticSeverity.INFO,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " can bypass rules "
+                        + str(transfer.rule_order + 1)
+                        + " through "
+                        + str(transfer.target_rule_order - 1)
+                        + " in the current pass"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE.value,
+                    related_rule_order=transfer.target_rule_order,
+                    related_operation="up-jump-rule",
+                )
+            )
             skipped = range(
                 transfer.rule_order + 1,
                 transfer.target_rule_order,
