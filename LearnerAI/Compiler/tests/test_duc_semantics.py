@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import replace
 
-from Compiler.ir.duc import DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
+from Compiler.ir.duc import DucCardinalityRange, DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
 from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
@@ -40,6 +40,57 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+
+    def test_repeated_searches_append_to_one_retained_list_generation_lineage(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-full-reset-search", ()),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "archer-line", "c:", "1")),
+                ("up-find-local", ("c:", "skirmisher-line", "c:", "1")),
+            )),
+        ))
+
+        self.assertEqual(len(report.searches), 3)
+        first, second, third = report.searches
+        self.assertEqual(first.output_generation.cardinality, DucCardinalityRange(0, 240))
+        self.assertEqual(first.output_generation.last_search_cardinality, DucCardinalityRange(0, 240))
+        self.assertEqual(second.output_generation.produced_by.input_state_generations[0], 1)
+        self.assertEqual(third.output_generation.produced_by.input_state_generations[0], 2)
+        self.assertEqual(third.output_generation.capacity, 240)
+        self.assertEqual(third.output_generation.cardinality.maximum, 240)
+        self.assertNotEqual(first.output_generation.content_fingerprint, third.output_generation.content_fingerprint)
+
+    def test_search_state_tracks_total_and_last_search_cardinality(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        observation = report.observations[-1]
+        self.assertEqual(observation.local_total_cardinality, DucCardinalityRange(0, 240))
+        self.assertEqual(observation.local_last_search_cardinality, DucCardinalityRange(0, 240))
+        self.assertEqual(observation.remote_total_cardinality, DucCardinalityRange(0, 40))
+        self.assertEqual(observation.remote_last_search_cardinality, DucCardinalityRange(0, 40))
+
+    def test_full_reset_zeroes_retained_search_cardinality(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-full-reset-search", ()),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        observation = report.observations[-1]
+        self.assertEqual(observation.local_total_cardinality, DucCardinalityRange(0, 0))
+        self.assertEqual(observation.remote_total_cardinality, DucCardinalityRange(0, 0))
+        self.assertEqual(observation.local_last_search_cardinality, DucCardinalityRange(0, 0))
+        self.assertEqual(observation.remote_last_search_cardinality, DucCardinalityRange(0, 0))
 
     def test_partial_search_reset_does_not_invalidate_remote_target(self):
         report = analyze_duc((
