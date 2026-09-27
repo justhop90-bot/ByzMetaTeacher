@@ -476,7 +476,7 @@ def compile_package_with_report(
         )
         duc_errors = tuple(
             item
-            for item in rule_report.errors
+            for item in getattr(rule_report, "errors", ())
             if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
         )
         if duc_errors:
@@ -597,7 +597,7 @@ def compile_source_with_report(
         )
         duc_errors = tuple(
             item
-            for item in rule_report.errors
+            for item in getattr(rule_report, "errors", ())
             if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
         )
         if duc_errors:
@@ -714,7 +714,7 @@ def compile_to_file(
         )
         duc_errors = tuple(
             item
-            for item in rule_report.errors
+            for item in getattr(rule_report, "errors", ())
             if getattr(getattr(item, "category", None), "value", getattr(item, "category", None)) == "DUC"
         )
         if duc_errors:
