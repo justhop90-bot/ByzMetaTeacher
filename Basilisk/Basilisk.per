@@ -12756,14 +12756,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
 )
 (defrule
     (timer-triggered bt-attack-timer)
-    (current-age >= feudal-age)
-    (or
-        (current-age >= castle-age)
-        (or
-            (goal strategy-goal bt-strategy-rush)
-            (goal strategy-goal bt-strategy-flush)
-        )
-    )
+    (current-age >= castle-age)
     (goal bt-castle-commitment-goal 0)
     (players-building-count any-enemy > 0)
     (players-building-count target-player > 0)
@@ -12780,7 +12773,7 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
         )
     )
     ; RUSH has its own Archer production path, outside the generic
-    ; standing-role targets. Attack therefore needs a completed Archer
+    ; standing-role targets.  Attack therefore needs a completed Archer
     ; witness before the pressure posture can authorize attack-now.
     (or
         (not (goal strategy-goal bt-strategy-rush))
@@ -12791,14 +12784,6 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (goal attack-goal 0)
     (goal retreat-now-goal 0)
     (not (town-under-attack))
-=>
-    ; Authorization is a one-pass handoff. The executor below consumes it
-    ; immediately, so attack-now cannot repeat on later passes.
-    (set-goal bt-attack-execution-pending-goal 1)
-)
-
-(defrule
-    (goal bt-attack-execution-pending-goal 1)
 =>
     ; Mark the attack cycle active BEFORE attack-now.
     (set-goal attack-goal 1)
@@ -12816,7 +12801,53 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
 
     ; Hold the attack cycle for three minutes before resetting it.
     (enable-timer bt-attack-timer bt-attack-measurement-seconds)
-    (set-goal bt-attack-execution-pending-goal 0)
+    
+
+)
+(defrule
+    (timer-triggered bt-attack-timer)
+    (current-age == feudal-age)
+    (or
+        (goal strategy-goal bt-strategy-rush)
+        (goal strategy-goal bt-strategy-flush)
+    )
+    (not (goal strategy-goal bt-strategy-castle-power))
+    (goal bt-castle-commitment-goal 0)
+    (players-building-count any-enemy > 0)
+    (players-building-count target-player > 0)
+    (up-compare-goal bt-attack-reserve-goal >= 10)
+    (up-compare-goal bt-relative-force-goal >= 0)
+    ; RUSH has its own Archer production path, outside the generic
+    ; standing-role targets.  Attack therefore needs a completed Archer
+    ; witness before the pressure posture can authorize attack-now.
+    (or
+        (not (goal strategy-goal bt-strategy-rush))
+        (unit-type-count archer-line >= bt-rush-attack-archer-witness)
+    )
+    (goal bt-counter-veto-goal 0)
+    (goal bt-standing-army-demand-goal 0)
+    (goal attack-goal 0)
+    (goal retreat-now-goal 0)
+    (not (town-under-attack))
+=>
+    ; Mark the attack cycle active BEFORE attack-now.
+    (set-goal attack-goal 1)
+    (enable-timer bt-attack-gather-watchdog-timer bt-attack-gather-watchdog-seconds)
+    ; Snapshot the current target infrastructure before attack-now.
+    (up-get-target-fact building-count 0 bt-attack-target-buildings-start-goal)
+    (set-goal bt-attack-target-buildings-now-goal 0)
+    (set-goal bt-attack-buildings-destroyed-goal 0)
+    (set-goal bt-attack-result-goal bt-attack-result-none)
+
+    ; Force the available attack units into an attack-group.
+    ;
+    ; attack-now should NOT be spammed.
+    (attack-now)
+
+    ; Hold the attack cycle for three minutes before resetting it.
+    (enable-timer bt-attack-timer bt-attack-measurement-seconds)
+    
+
 )
 
 ;---------------------------------------------------------------
