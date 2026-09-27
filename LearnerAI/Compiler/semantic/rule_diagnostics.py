@@ -49,6 +49,7 @@ class RuleDiagnosticCode(str, Enum):
     STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY = "SNSEM-009"
     CONTROL_TRANSFER_OUT_OF_RANGE = "RULE-CF-001"
     CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
+    CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
 
 
 @dataclass(frozen=True)
@@ -219,6 +220,7 @@ def _control_flow_diagnostics(
     report: RuleExecutionReport,
 ) -> tuple[RuleDiagnostic, ...]:
     diagnostics: list[RuleDiagnostic] = []
+    rules_by_order = {rule.rule_order: rule for rule in report.rules}
     for transfer in report.control_transfers:
         if transfer.target_rule_order is None:
             diagnostics.append(
@@ -244,28 +246,55 @@ def _control_flow_diagnostics(
             continue
 
         if transfer.target_rule_order > transfer.rule_order + 1:
-            diagnostics.append(
-                RuleDiagnostic(
-                    rule_order=transfer.rule_order,
-                    code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE,
-                    severity=DiagnosticSeverity.INFO,
-                    eligibility=None,
-                    message=(
-                        "up-jump-rule in rule "
-                        + str(transfer.rule_order)
-                        + " can bypass rules "
-                        + str(transfer.rule_order + 1)
-                        + " through "
-                        + str(transfer.target_rule_order - 1)
-                        + " in the current pass"
-                    ),
-                    location=transfer.location,
-                    category=RuleDiagnosticCategory.CONTROL_FLOW,
-                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE.value,
-                    related_rule_order=transfer.target_rule_order,
-                    related_operation="up-jump-rule",
-                )
+            skipped = range(
+                transfer.rule_order + 1,
+                transfer.target_rule_order,
             )
+            source_rule = rules_by_order[transfer.rule_order]
+            source_guard_guaranteed = (
+                len(source_rule.facts) == 1
+                and source_rule.facts[0].head == "true"
+            )
+            for skipped_rule_order in skipped:
+                severity = (
+                    DiagnosticSeverity.WARNING
+                    if source_rule.pass_behavior.value == "RECURRENT"
+                    and source_guard_guaranteed
+                    else DiagnosticSeverity.INFO
+                )
+                code = (
+                    RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+                    if severity is DiagnosticSeverity.WARNING
+                    else RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+                )
+                diagnostics.append(
+                    RuleDiagnostic(
+                        rule_order=transfer.rule_order,
+                        code=code,
+                        severity=severity,
+                        eligibility=None,
+                        message=(
+                            "recurrent guaranteed up-jump-rule in rule "
+                            + str(transfer.rule_order)
+                            + " preempts rule "
+                            + str(skipped_rule_order)
+                            + " on each firing of the source rule; "
+                            + "alternate control paths are not ruled out"
+                            if severity is DiagnosticSeverity.WARNING
+                            else
+                            "up-jump-rule in rule "
+                            + str(transfer.rule_order)
+                            + " can bypass rule "
+                            + str(skipped_rule_order)
+                            + " in the current pass"
+                        ),
+                        location=transfer.location,
+                        category=RuleDiagnosticCategory.CONTROL_FLOW,
+                        source_code=code.value,
+                        related_rule_order=skipped_rule_order,
+                        related_operation="up-jump-rule",
+                    )
+                )
 
     return tuple(diagnostics)
 
