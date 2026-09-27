@@ -1,7 +1,16 @@
 import unittest
 from dataclasses import replace
 
-from Compiler.ir.duc import DucCardinalityRange, DucListKind, DucListMutationKind, DucLoopWidening, DucTargetProof, DucTargetStatus, DucTargetTransition
+from Compiler.ir.duc import (
+    DucCardinalityRange,
+    DucGroupStatus,
+    DucListKind,
+    DucListMutationKind,
+    DucLoopWidening,
+    DucTargetProof,
+    DucTargetStatus,
+    DucTargetTransition,
+)
 from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
@@ -93,6 +102,137 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(observation.remote_total_cardinality, DucCardinalityRange(0, 0))
         self.assertEqual(observation.local_last_search_cardinality, DucCardinalityRange(0, 0))
         self.assertEqual(observation.remote_last_search_cardinality, DucCardinalityRange(0, 0))
+
+    def test_group_contracts_are_first_class_and_persistent(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+            )),
+            _rule(2, (
+                ("up-get-group-size", ("c:", "3", "41")),
+                ("up-group-size", ("c:", "3", ">=", "0")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertEqual(group.group_id, 3)
+        self.assertEqual(group.capacity, 40)
+        self.assertEqual(group.source_list, DucListKind.LOCAL)
+        self.assertEqual(group.source_list_generation, 1)
+        self.assertEqual(group.requested_max_objects, 2)
+        self.assertEqual(group.validity, DucGroupStatus.UNKNOWN)
+        self.assertEqual(group.provenance.command, "up-create-group")
+        self.assertEqual(group.provenance.input_state_generations, (1,))
+        self.assertEqual(group.pass_id, 0)
+        self.assertEqual(report.next_pass_state.groups[3].generation, group.generation)
+
+    def test_reset_group_replaces_membership_and_advances_group_generation(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-reset-group", ("c:", "3")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertEqual(group.validity, DucGroupStatus.EMPTY)
+        self.assertEqual(group.cardinality, DucCardinalityRange(0, 0))
+        self.assertEqual(group.generation, 2)
+        self.assertEqual(group.provenance.command, "up-reset-group")
+
+    def test_set_group_reloads_destination_list_and_invalidates_old_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-set-group", ("search-remote", "c:", "3")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertNotEqual(group.validity, DucGroupStatus.EMPTY)
+        remote = report.final_state.remote_list.current_generation
+        self.assertIsNotNone(remote)
+        self.assertEqual(remote.produced_by.command, "up-set-group")
+        self.assertEqual(remote.cardinality, group.cardinality)
+        self.assertEqual(remote.produced_by.input_group_generations, ((3, group.generation),))
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.STALE)
+
+    def test_group_flag_state_is_persistent_until_overwritten(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-modify-group-flag", ("1", "c:", "3")),
+                ("up-modify-group-flag", ("0", "c:", "3")),
+            )),
+            _rule(2, (
+                ("up-group-size", ("c:", "3", ">=", "0")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertEqual(group.flag_state.value, "CLEARED")
+        self.assertEqual(report.next_pass_state.groups[3].flag_state.value, "CLEARED")
+
+    def test_group_branch_divergence_widens_to_unknown(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+            )),
+            _rule(3, (("up-reset-group", ("c:", "3")),)),
+            _rule(4, (("up-group-size", ("c:", "3", ">=", "0")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        merged_group = report.final_state.groups[3]
+        self.assertIn("GROUPS", next(item for item in report.branch_merges if item.rule_order == 4).merged_fields)
+        self.assertEqual(merged_group.validity, DucGroupStatus.UNKNOWN)
+        self.assertTrue(merged_group.path_ambiguous)
+        self.assertEqual(merged_group.flag_state.value, "UNKNOWN")
+        self.assertIsNone(merged_group.provenance)
+    def test_search_reset_does_not_destroy_persistent_group(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-full-reset-search", ()),
+                ("up-set-group", ("search-remote", "c:", "3")),
+                ("up-group-size", ("c:", "3", "==", "0")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertNotEqual(group.validity, DucGroupStatus.EMPTY)
+        self.assertEqual(
+            report.final_state.remote_list.current_generation.produced_by.command,
+            "up-set-group",
+        )
+        self.assertEqual(
+            report.final_state.remote_list.current_generation.produced_by.input_group_generations,
+            ((3, group.generation),),
+        )
+
+    def test_group_overwrite_advances_generation_and_replaces_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-create-group", ("0", "2", "c:", "3")),
+                ("up-create-group", ("0", "1", "c:", "3")),
+            )),
+        ))
+
+        group = report.final_state.groups[3]
+        self.assertEqual(group.generation, 2)
+        self.assertEqual(group.provenance.command, "up-create-group")
+        self.assertEqual(group.requested_max_objects, 1)
 
     def test_partial_search_reset_does_not_invalidate_remote_target(self):
         report = analyze_duc((

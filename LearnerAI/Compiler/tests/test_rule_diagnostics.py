@@ -11,6 +11,7 @@ from Compiler.ir import (
 )
 from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.semantic.rule_diagnostics import (
+    RuleDiagnosticCategory,
     RuleDiagnosticCode,
     analyze_rule_diagnostics,
 )
@@ -53,6 +54,23 @@ class RuleDiagnosticsTests(unittest.TestCase):
             issuance_source_order=3,
             location=SourceLocation(2, 1, "<test>"),
         )
+
+    def test_duc_group_invalid_state_diagnostic_converts_through_rule_taxonomy(self):
+        execution = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-set-group search-remote c: 99))\n"
+            )
+        )
+        duc = analyze_duc(execution)
+        self.assertTrue(any(item.code == "DUC-017" for item in duc.diagnostics))
+
+        report = analyze_rule_diagnostics(execution, duc_report=duc)
+        diagnostic = next(
+            item for item in report.diagnostics
+            if item.code.value == "DUC-017"
+        )
+        self.assertEqual(diagnostic.category, RuleDiagnosticCategory.DUC)
+        self.assertEqual(diagnostic.source_code, "DUC-017")
 
     def test_duc_loop_widening_maps_to_rule_diagnostic(self):
         report = analyze_effective_rules(

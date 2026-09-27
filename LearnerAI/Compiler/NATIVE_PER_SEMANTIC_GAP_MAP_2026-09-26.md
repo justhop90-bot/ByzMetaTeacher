@@ -63,7 +63,7 @@ Community references:
 | DUC filters | Filters persist until reset/full-reset and affect later searches | EVIDENCE-ONLY | No retained filter state or stale-filter diagnostics | DUC State Semantics |
 | DUC target objects | Lists become target sets; object IDs are transient world references | EVIDENCE-ONLY | No target lifetime/invalidation semantics | DUC Target Semantics |
 | DUC Goal outputs | Search-state/point/cost commands write one or more consecutive Goal outputs | STORAGE PARTIAL | Command-specific output-span contracts incomplete | GoalSpan Semantics |
-| DUC groups | Groups can replace repeated search/filter work and persist as engine state | EVIDENCE-ONLY | Group identity/lifetime/invalidation absent | DUC Group Semantics |
+| DUC groups | Groups can replace repeated search/filter work and persist as engine state | IMPLEMENTED / PATH-SENSITIVE PARTIAL | Group 0..19 state, 40-object capacity, create/reset/set/size/get-size/flag operations, provenance, pass persistence, overwrite generation, and branch widening are modeled; dynamic GroupId and concrete Goal output binding remain runtime-dependent | DUC Group Semantics |
 | Attack machinery | attack-now, attack groups, town-size attack, SN/timer controls form persistent engine behavior | EVIDENCE-ONLY | No attack-mode lifecycle or release model | Attack Engine Semantics |
 | Exploration coupling | Attack loops depend on exploration and explored targets | EVIDENCE-ONLY | No generic attack/exploration dependency graph | Attack Engine Semantics |
 | Recovery | Community scripts preserve strategic intent through temporary blockage and re-enter through native guards | PARTIAL/IMPLEMENTED capability slice | Provider loss/recovery not generalized | Recovery Semantics |

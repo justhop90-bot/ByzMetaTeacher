@@ -30,6 +30,7 @@ class DucStateKind(str, Enum):
     FILTER = "FILTER"
     TARGET = "TARGET"
     OUTPUT = "OUTPUT"
+    GROUP = "GROUP"
 
 
 class DucResetKind(str, Enum):
@@ -50,6 +51,18 @@ class DucVisibility(str, Enum):
 class DucTargetStatus(str, Enum):
     VALID = "VALID"
     STALE = "STALE"
+    UNKNOWN = "UNKNOWN"
+
+
+class DucGroupStatus(str, Enum):
+    EMPTY = "EMPTY"
+    VALID = "VALID"
+    UNKNOWN = "UNKNOWN"
+
+
+class DucGroupFlagState(str, Enum):
+    SET = "SET"
+    CLEARED = "CLEARED"
     UNKNOWN = "UNKNOWN"
 
 
@@ -87,6 +100,7 @@ class DucProvenance:
     input_state_generations: tuple[int, ...] = ()
     semantic_contract_id: str = ""
     evidence_ids: tuple[str, ...] = ()
+    input_group_generations: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -181,6 +195,51 @@ class DucTargetState:
 
 
 @dataclass(frozen=True)
+class DucGroupState:
+    group_id: int
+    generation: int
+    cardinality: DucCardinalityRange
+    capacity: int = 40
+    source_list: Optional[DucListKind] = None
+    source_list_generation: Optional[int] = None
+    source_index_start: Optional[int] = None
+    requested_max_objects: Optional[int] = None
+    content_fingerprint: Optional[str] = None
+    provenance: Optional[DucProvenance] = None
+    validity: DucGroupStatus = DucGroupStatus.EMPTY
+    flag_state: DucGroupFlagState = DucGroupFlagState.UNKNOWN
+    path_ambiguous: bool = False
+    pass_id: int = 0
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.group_id <= 19:
+            raise ValueError("DUC group id must be within 0..19")
+        if self.capacity != 40:
+            raise ValueError("DUC group capacity must be 40")
+        if self.generation < 0:
+            raise ValueError("DUC group generation must be non-negative")
+        if self.validity is DucGroupStatus.EMPTY and self.cardinality != DucCardinalityRange(0, 0):
+            raise ValueError("empty DUC group must have zero cardinality")
+
+
+@dataclass(frozen=True)
+class DucGroupOperation:
+    command: str
+    group_id: int
+    previous_generation: int
+    resulting_generation: int
+    provenance: DucProvenance
+
+
+@dataclass(frozen=True)
+class DucGroupSizeObservation:
+    command: str
+    group_id: int
+    cardinality: DucCardinalityRange
+    provenance: DucProvenance
+
+
+@dataclass(frozen=True)
 class DucSearchOperation:
     command: str
     list_kind: DucListKind
@@ -269,6 +328,27 @@ class DucSemanticState:
     point_target: Optional[DucPointRef]
     state_revision: int
     pass_id: int = 0
+    groups: tuple[DucGroupState, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.groups:
+            object.__setattr__(
+                self,
+                "groups",
+                tuple(
+                    DucGroupState(
+                        group_id=group_id,
+                        generation=0,
+                        cardinality=DucCardinalityRange(0, 0),
+                        validity=DucGroupStatus.EMPTY,
+                    )
+                    for group_id in range(20)
+                ),
+            )
+        elif len(self.groups) != 20:
+            raise ValueError("DUC semantic state requires exactly 20 groups")
+        if tuple(group.group_id for group in self.groups) != tuple(range(20)):
+            raise ValueError("DUC group state must be ordered by group id")
 
 
 @dataclass(frozen=True)
@@ -286,6 +366,8 @@ class DucAnalysisReport:
     final_state: DucSemanticState
     states: tuple[tuple[int, DucSemanticState], ...]
     searches: tuple[DucSearchOperation, ...] = ()
+    group_operations: tuple[DucGroupOperation, ...] = ()
+    group_observations: tuple[DucGroupSizeObservation, ...] = ()
     resets: tuple[DucResetEffect, ...] = ()
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
@@ -300,6 +382,11 @@ class DucAnalysisReport:
 __all__ = [
     "DucAnalysisReport",
     "DucCardinalityRange",
+    "DucGroupFlagState",
+    "DucGroupOperation",
+    "DucGroupSizeObservation",
+    "DucGroupState",
+    "DucGroupStatus",
     "DucBranchMerge",
     "DucDiagnostic",
     "DucExecutionEffect",

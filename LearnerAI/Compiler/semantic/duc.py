@@ -21,6 +21,11 @@ from ..ir.duc import (
     DucFilterPredicate,
     DucFilterSnapshot,
     DucFilterState,
+    DucGroupFlagState,
+    DucGroupOperation,
+    DucGroupSizeObservation,
+    DucGroupStatus,
+    DucGroupState,
     DucListGeneration,
     DucListMutationEffect,
     DucListMutationKind,
@@ -77,6 +82,8 @@ OBJECT_TARGET_CONSUMERS = frozenset({"up-target-objects"})
 POINT_TARGET_CONSUMERS = frozenset({"up-target-point"})
 OBJECT_LIST_MUTATORS = frozenset({"up-clean-search", "up-remove-objects"})
 DUC_LOOP_WIDENING_LIMIT = 3
+DUC_GROUP_COUNT = 20
+DUC_GROUP_CAPACITY = 40
 
 
 @dataclass(frozen=True)
@@ -140,6 +147,7 @@ def _provenance(
     state_revision: int,
     pass_id: int,
     inputs: tuple[int, ...] = (),
+    input_group_generations: tuple[tuple[int, int], ...] = (),
     contract_id: str,
     evidence_ids: tuple[str, ...],
 ) -> DucProvenance:
@@ -155,6 +163,7 @@ def _provenance(
         state_revision=state_revision,
         pass_id=pass_id,
         input_state_generations=inputs,
+        input_group_generations=input_group_generations,
         semantic_contract_id=contract_id,
         evidence_ids=evidence_ids,
     )
@@ -398,6 +407,84 @@ def _list_state(
     )
 
 
+def _empty_groups() -> tuple[DucGroupState, ...]:
+    return tuple(
+        DucGroupState(
+            group_id=group_id,
+            generation=0,
+            cardinality=DucCardinalityRange(0, 0),
+            validity=DucGroupStatus.EMPTY,
+        )
+        for group_id in range(DUC_GROUP_COUNT)
+    )
+
+
+def _group_state(state: DucSemanticState, group_id: int) -> DucGroupState:
+    return state.groups[group_id]
+
+
+def _replace_group(state: DucSemanticState, group: DucGroupState) -> DucSemanticState:
+    groups = list(state.groups)
+    groups[group.group_id] = group
+    return replace(state, groups=tuple(groups))
+
+
+def _group_id_from_args(args: tuple[str, ...], *, command: str) -> int | None:
+    if not args:
+        return None
+    try:
+        group_id = int(args[-1], 10)
+    except ValueError:
+        return None
+    if not 0 <= group_id < DUC_GROUP_COUNT:
+        raise ValueError(f"{command} group id must be within 0..19")
+    return group_id
+
+
+def _group_create_bounds(args: tuple[str, ...]) -> tuple[int | None, int | None]:
+    def decode(value: str, special_zero: int | None = None) -> int | None:
+        if special_zero is not None and value == "0":
+            return special_zero
+        try:
+            return int(value, 10)
+        except ValueError:
+            return None
+
+    start_index = decode(args[0], 0)
+    requested_max = decode(args[1], DUC_GROUP_CAPACITY)
+    if requested_max is not None:
+        requested_max = max(0, min(requested_max, DUC_GROUP_CAPACITY))
+    return start_index, requested_max
+
+
+def _group_cardinality(
+    generation: DucListGeneration,
+    *,
+    start_index: int | None,
+    requested_max_objects: int | None,
+) -> DucCardinalityRange:
+    if start_index is None or requested_max_objects is None or generation.cardinality is None:
+        return DucCardinalityRange(0, DUC_GROUP_CAPACITY)
+    minimum = max(0, generation.cardinality.minimum - start_index)
+    maximum = max(0, generation.cardinality.maximum - start_index)
+    return DucCardinalityRange(
+        min(requested_max_objects, minimum, DUC_GROUP_CAPACITY),
+        min(requested_max_objects, maximum, DUC_GROUP_CAPACITY),
+    )
+
+
+def _group_validity(
+    cardinality: DucCardinalityRange,
+    *,
+    path_ambiguous: bool,
+) -> DucGroupStatus:
+    if cardinality.maximum == 0:
+        return DucGroupStatus.EMPTY
+    if path_ambiguous or cardinality.minimum == 0:
+        return DucGroupStatus.UNKNOWN
+    return DucGroupStatus.VALID
+
+
 def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
@@ -407,6 +494,7 @@ def _empty_state(pass_id: int = 0) -> DucSemanticState:
         point_target=None,
         state_revision=0,
         pass_id=pass_id,
+        groups=_empty_groups(),
     )
 
 
@@ -423,6 +511,8 @@ def _analyze_duc_linear(
     searches: list[DucSearchOperation] = []
     resets: list[DucResetEffect] = []
     mutations: list[DucListMutationEffect] = []
+    groups: list[DucGroupOperation] = []
+    group_observations: list[DucGroupSizeObservation] = []
     targets: list[DucTargetState] = []
     observations: list[DucSearchStateObservation] = []
     effects: list[DucExecutionEffect] = []
@@ -443,6 +533,272 @@ def _analyze_duc_linear(
             filter_contract = contracts.duc_filter(command)
             reset_contract = contracts.duc_reset(command)
             target_contract = contracts.duc_target(command)
+            group_contract = contracts.duc_group(command)
+
+            if group_contract is not None:
+                operation = group_contract.operation
+                try:
+                    group_id = _group_id_from_args(args, command=command)
+                    if group_id is None:
+                        raise ValueError(f"{command} requires a constant GroupId")
+
+                    if operation == "CREATE":
+                        if len(args) != 4:
+                            raise ValueError("up-create-group requires 4 arguments")
+                        start_index, requested_max = _group_create_bounds(args)
+                        previous = _group_state(state, group_id)
+                        provenance = _provenance(
+                            rule,
+                            action,
+                            visibility=DucVisibility.SAME_RULE,
+                            state_revision=state_revision,
+                            pass_id=state.pass_id,
+                            inputs=(
+                                (state.local_list.current_generation.generation,)
+                                if state.local_list.current_generation is not None
+                                else ()
+                            ),
+                            contract_id="duc.group.create",
+                            evidence_ids=group_contract.evidence_ids,
+                        )
+                        generation = previous.generation + 1
+                        if state.local_list.current_generation is None:
+                            cardinality = DucCardinalityRange(0, 0)
+                            validity = DucGroupStatus.EMPTY
+                            source_generation = None
+                            fingerprint = _fingerprint(("empty-group", str(group_id), str(generation)))
+                        else:
+                            current = state.local_list.current_generation
+                            cardinality = _group_cardinality(
+                                current,
+                                start_index=start_index,
+                                requested_max_objects=requested_max,
+                            )
+                            validity = _group_validity(
+                                cardinality,
+                                path_ambiguous=state.local_list.path_ambiguous,
+                            )
+                            source_generation = current.generation
+                            fingerprint = _fingerprint(
+                                (
+                                    "group-create",
+                                    str(group_id),
+                                    str(generation),
+                                    current.content_fingerprint or "",
+                                    str(start_index),
+                                    str(requested_max),
+                                )
+                            )
+                        group = DucGroupState(
+                            group_id=group_id,
+                            generation=generation,
+                            cardinality=cardinality,
+                            source_list=DucListKind.LOCAL,
+                            source_list_generation=source_generation,
+                            source_index_start=start_index,
+                            requested_max_objects=requested_max,
+                            content_fingerprint=fingerprint,
+                            provenance=provenance,
+                            validity=validity,
+                            flag_state=DucGroupFlagState.UNKNOWN,
+                            path_ambiguous=state.local_list.path_ambiguous,
+                            pass_id=state.pass_id,
+                        )
+                        state = _replace_group(state, group)
+                        groups.append(
+                            DucGroupOperation(command, group_id, previous.generation, generation, provenance)
+                        )
+                        rule_writes.add(DucStateKind.GROUP)
+                        continue
+
+                    if operation == "RESET":
+                        if len(args) != 2:
+                            raise ValueError("up-reset-group requires 2 arguments")
+                        previous = _group_state(state, group_id)
+                        provenance = _provenance(
+                            rule,
+                            action,
+                            visibility=DucVisibility.SAME_RULE,
+                            state_revision=state_revision,
+                            pass_id=state.pass_id,
+                            contract_id="duc.group.reset",
+                            evidence_ids=group_contract.evidence_ids,
+                        )
+                        group = DucGroupState(
+                            group_id=group_id,
+                            generation=previous.generation + 1,
+                            cardinality=DucCardinalityRange(0, 0),
+                            provenance=provenance,
+                            validity=DucGroupStatus.EMPTY,
+                            flag_state=DucGroupFlagState.UNKNOWN,
+                            pass_id=state.pass_id,
+                        )
+                        state = _replace_group(state, group)
+                        groups.append(
+                            DucGroupOperation(
+                                command,
+                                group_id,
+                                previous.generation,
+                                group.generation,
+                                provenance,
+                            )
+                        )
+                        rule_writes.add(DucStateKind.GROUP)
+                        continue
+
+                    current_group = _group_state(state, group_id)
+                    provenance = _provenance(
+                        rule,
+                        action,
+                        visibility=DucVisibility.SAME_RULE,
+                        state_revision=state_revision,
+                        pass_id=state.pass_id,
+                        inputs=(current_group.generation,),
+                        input_group_generations=((group_id, current_group.generation),),
+                        contract_id=f"duc.group.{operation.lower()}",
+                        evidence_ids=group_contract.evidence_ids,
+                    )
+
+                    if operation == "SET":
+                        if len(args) != 3:
+                            raise ValueError("up-set-group requires 3 arguments")
+                        source = (
+                            DucListKind.LOCAL
+                            if args[0] == "search-local"
+                            else DucListKind.REMOTE
+                            if args[0] == "search-remote"
+                            else None
+                        )
+                        if source is None:
+                            raise ValueError("up-set-group requires search-local or search-remote")
+                        current_list = (
+                            state.local_list if source is DucListKind.LOCAL else state.remote_list
+                        )
+                        target = state.target
+                        if (
+                            target is not None
+                            and target.kind is DucTargetKind.OBJECT
+                            and target.object_refs
+                            and target.object_refs[0].list_kind is source
+                        ):
+                            target = replace(
+                                target,
+                                validity=DucTargetStatus.STALE,
+                                proof=DucTargetProof.UNKNOWN,
+                            )
+                        destination_generation = current_list.next_generation
+                        destination = DucListGeneration(
+                            list_kind=source,
+                            generation=destination_generation,
+                            produced_by=provenance,
+                            cardinality=current_group.cardinality,
+                            capacity=240 if source is DucListKind.LOCAL else 40,
+                            content_fingerprint=_fingerprint(
+                                (
+                                    "group-set",
+                                    str(group_id),
+                                    str(current_group.generation),
+                                    current_group.content_fingerprint or "",
+                                )
+                            ),
+                        )
+                        destination_list = _list_state(
+                            source,
+                            current_list,
+                            destination,
+                            next_generation=destination_generation + 1,
+                            path_ambiguous=(
+                                current_group.path_ambiguous
+                                or current_group.validity is DucGroupStatus.UNKNOWN
+                            ),
+                        )
+                        state = replace(
+                            state,
+                            local_list=(
+                                destination_list
+                                if source is DucListKind.LOCAL
+                                else state.local_list
+                            ),
+                            remote_list=(
+                                destination_list
+                                if source is DucListKind.REMOTE
+                                else state.remote_list
+                            ),
+                            target=target,
+                        )
+                        groups.append(
+                            DucGroupOperation(
+                                command,
+                                group_id,
+                                current_group.generation,
+                                current_group.generation,
+                                provenance,
+                            )
+                        )
+                        rule_reads.add(DucStateKind.GROUP)
+                        rule_writes.update({DucStateKind.LIST, DucStateKind.TARGET})
+                        continue
+
+                    if operation == "MODIFY_FLAG":
+                        if len(args) != 3:
+                            raise ValueError("up-modify-group-flag requires 3 arguments")
+                        flag_state = (
+                            DucGroupFlagState.SET
+                            if args[0] == "1"
+                            else DucGroupFlagState.CLEARED
+                            if args[0] == "0"
+                            else DucGroupFlagState.UNKNOWN
+                        )
+                        updated = replace(
+                            current_group,
+                            flag_state=flag_state,
+                            provenance=provenance,
+                            pass_id=state.pass_id,
+                        )
+                        state = _replace_group(state, updated)
+                        groups.append(
+                            DucGroupOperation(
+                                command,
+                                group_id,
+                                current_group.generation,
+                                current_group.generation,
+                                provenance,
+                            )
+                        )
+                        rule_reads.add(DucStateKind.GROUP)
+                        rule_writes.add(DucStateKind.GROUP)
+                        continue
+
+                    if operation in {"SIZE_FACT", "SIZE_OUTPUT"}:
+                        expected_arity = 4 if operation == "SIZE_FACT" else 3
+                        if len(args) != expected_arity:
+                            raise ValueError(
+                                f"{command} requires {expected_arity} arguments"
+                            )
+                        group_observations.append(
+                            DucGroupSizeObservation(
+                                command,
+                                group_id,
+                                current_group.cardinality,
+                                provenance,
+                            )
+                        )
+                        rule_reads.add(DucStateKind.GROUP)
+                        if operation == "SIZE_OUTPUT":
+                            rule_writes.add(DucStateKind.OUTPUT)
+                        continue
+
+                except ValueError as exc:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-017",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            str(exc),
+                            _location(action, rule.source_location),
+                        )
+                    )
+                    continue
 
             if search_contract is not None:
                 kind = DucListKind(search_contract.list_kind)
@@ -546,6 +902,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                 else:
                     state = DucSemanticState(
@@ -556,6 +913,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                 searches.append(
                     DucSearchOperation(
@@ -612,6 +970,7 @@ def _analyze_duc_linear(
                     state.point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 rule_writes.add(DucStateKind.FILTER)
                 continue
@@ -702,6 +1061,7 @@ def _analyze_duc_linear(
                     point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 reset = DucResetEffect(
                     command,
@@ -917,6 +1277,7 @@ def _analyze_duc_linear(
                         state.point_target,
                         state_revision,
                         state.pass_id,
+                        groups=state.groups,
                     )
                     targets.append(target)
                     rule_reads.add(DucStateKind.LIST)
@@ -949,6 +1310,7 @@ def _analyze_duc_linear(
                     point,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 rule_writes.add(DucStateKind.TARGET)
                 continue
@@ -1026,6 +1388,7 @@ def _analyze_duc_linear(
                     state.point_target,
                     state_revision,
                     state.pass_id,
+                    groups=state.groups,
                 )
                 mutations.append(
                     DucListMutationEffect(
@@ -1147,6 +1510,8 @@ def _analyze_duc_linear(
         final_state=state,
         states=tuple(states),
         searches=tuple(searches),
+        group_operations=tuple(groups),
+        group_observations=tuple(group_observations),
         resets=tuple(resets),
         mutations=tuple(mutations),
         targets=tuple(targets),
@@ -1290,6 +1655,7 @@ def _widen_loop_state(
     remote = _widen_list_state(previous.remote_list, current.remote_list)
     filters = _widen_filter_state(previous.filters, current.filters)
     target = _widen_target_state(previous.target, current.target)
+    groups = _join_groups((previous.groups, current.groups))
     if previous.point_target == current.point_target:
         point_target = previous.point_target
     else:
@@ -1309,6 +1675,10 @@ def _widen_loop_state(
         widened_fields.append("TARGET")
     if point_target != previous.point_target:
         widened_fields.append("POINT_TARGET")
+    if tuple(_group_key(group) for group in previous.groups) != tuple(
+        _group_key(group) for group in current.groups
+    ):
+        widened_fields.append("GROUPS")
     return (
         DucSemanticState(
             local,
@@ -1318,6 +1688,7 @@ def _widen_loop_state(
             point_target,
             max(previous.state_revision, current.state_revision),
             max(previous.pass_id, current.pass_id),
+            groups=groups,
         ),
         tuple(widened_fields),
     )
@@ -1405,6 +1776,91 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
     )
 
 
+def _group_key(group: DucGroupState) -> tuple[object, ...]:
+    return (
+        group.group_id,
+        group.generation,
+        group.cardinality,
+        group.capacity,
+        group.source_list,
+        group.source_list_generation,
+        group.source_index_start,
+        group.requested_max_objects,
+        group.content_fingerprint,
+        group.validity,
+        group.flag_state,
+        group.path_ambiguous,
+    )
+
+
+def _join_groups(
+    variants: tuple[tuple[DucGroupState, ...], ...],
+) -> tuple[DucGroupState, ...]:
+    merged: list[DucGroupState] = []
+    for group_id in range(DUC_GROUP_COUNT):
+        candidates = tuple(values[group_id] for values in variants)
+        first = candidates[0]
+        if all(
+            _group_key(candidate) == _group_key(first)
+            for candidate in candidates[1:]
+        ):
+            merged.append(first)
+            continue
+        minimum = min(candidate.cardinality.minimum for candidate in candidates)
+        maximum = max(candidate.cardinality.maximum for candidate in candidates)
+        same_source = all(
+            candidate.source_list == first.source_list
+            for candidate in candidates
+        )
+        same_source_generation = all(
+            candidate.source_list_generation == first.source_list_generation
+            for candidate in candidates
+        )
+        same_start = all(
+            candidate.source_index_start == first.source_index_start
+            for candidate in candidates
+        )
+        same_requested_max = all(
+            candidate.requested_max_objects == first.requested_max_objects
+            for candidate in candidates
+        )
+        same_fingerprint = all(
+            candidate.content_fingerprint == first.content_fingerprint
+            for candidate in candidates
+        )
+        same_flag = all(
+            candidate.flag_state is first.flag_state
+            for candidate in candidates
+        )
+        same_provenance = all(
+            candidate.provenance == first.provenance
+            for candidate in candidates
+        )
+        merged.append(
+            replace(
+                first,
+                generation=max(candidate.generation for candidate in candidates),
+                cardinality=DucCardinalityRange(minimum, maximum),
+                source_list=first.source_list if same_source else None,
+                source_list_generation=(
+                    first.source_list_generation if same_source_generation else None
+                ),
+                source_index_start=first.source_index_start if same_start else None,
+                requested_max_objects=(
+                    first.requested_max_objects if same_requested_max else None
+                ),
+                content_fingerprint=(
+                    first.content_fingerprint if same_fingerprint else None
+                ),
+                validity=DucGroupStatus.UNKNOWN,
+                flag_state=first.flag_state if same_flag else DucGroupFlagState.UNKNOWN,
+                provenance=first.provenance if same_provenance else None,
+                path_ambiguous=True,
+            )
+        )
+    return tuple(merged)
+
+
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
         state.pass_id,
@@ -1431,6 +1887,7 @@ def _state_key(state: DucSemanticState) -> tuple[object, ...]:
         _filter_key(state.filters),
         _target_key(state.target),
         state.point_target,
+        tuple(_group_key(group) for group in state.groups),
     )
 
 
@@ -1441,6 +1898,7 @@ def _join_states(
     remote = _join_list_states(tuple(state.remote_list for state in variants))
     filters = _join_filters(tuple(state.filters for state in variants))
     target = _join_targets(tuple(state.target for state in variants))
+    groups = _join_groups(tuple(state.groups for state in variants))
     fields: list[str] = []
     if any(
         _state_key(state)[1] != _state_key(variants[0])[1]
@@ -1464,6 +1922,12 @@ def _join_states(
         fields.append("TARGET")
     if any(state.point_target != variants[0].point_target for state in variants[1:]):
         fields.append("POINT_TARGET")
+    if any(
+        tuple(_group_key(group) for group in state.groups)
+        != tuple(_group_key(group) for group in variants[0].groups)
+        for state in variants[1:]
+    ):
+        fields.append("GROUPS")
     return (
         DucSemanticState(
             local,
@@ -1475,6 +1939,7 @@ def _join_states(
             ) else None,
             max(state.state_revision for state in variants),
             max(state.pass_id for state in variants),
+            groups=groups,
         ),
         tuple(fields),
     )
@@ -1612,6 +2077,16 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for operation in rule_reports[rule_order].searches
     )
+    group_operations = tuple(
+        operation
+        for rule_order in sorted(rule_reports)
+        for operation in rule_reports[rule_order].group_operations
+    )
+    group_observations = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].group_observations
+    )
     resets = tuple(
         effect
         for rule_order in sorted(rule_reports)
@@ -1677,6 +2152,8 @@ def analyze_duc(
         final_state=final_state,
         states=states,
         searches=searches,
+        group_operations=group_operations,
+        group_observations=group_observations,
         resets=resets,
         mutations=mutations,
         targets=targets,
@@ -1716,6 +2193,7 @@ def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
         state.point_target,
         0,
         state.pass_id + 1,
+        groups=state.groups,
     )
 
 

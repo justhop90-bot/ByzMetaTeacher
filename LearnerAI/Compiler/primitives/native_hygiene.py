@@ -843,6 +843,83 @@ def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]
     )
 
 
+def default_native_duc_group_contracts() -> Tuple["NativeDucGroupContract", ...]:
+    return (
+        NativeDucGroupContract(
+            "up-create-group",
+            "CREATE",
+            40,
+            0,
+            19,
+            ("LOCAL",),
+            False,
+            False,
+            True,
+            ("airef:duc:create-group",),
+        ),
+        NativeDucGroupContract(
+            "up-reset-group",
+            "RESET",
+            40,
+            0,
+            19,
+            (),
+            False,
+            True,
+            False,
+            ("airef:duc:reset-group",),
+        ),
+        NativeDucGroupContract(
+            "up-set-group",
+            "SET",
+            40,
+            0,
+            19,
+            ("LOCAL", "REMOTE"),
+            True,
+            False,
+            True,
+            ("airef:duc:set-group",),
+        ),
+        NativeDucGroupContract(
+            "up-group-size",
+            "SIZE_FACT",
+            40,
+            0,
+            19,
+            (),
+            False,
+            False,
+            True,
+            ("airef:duc:group-size",),
+        ),
+        NativeDucGroupContract(
+            "up-get-group-size",
+            "SIZE_OUTPUT",
+            40,
+            0,
+            19,
+            (),
+            False,
+            False,
+            True,
+            ("airef:duc:get-group-size",),
+        ),
+        NativeDucGroupContract(
+            "up-modify-group-flag",
+            "MODIFY_FLAG",
+            40,
+            0,
+            19,
+            (),
+            False,
+            False,
+            True,
+            ("airef:duc:modify-group-flag",),
+        ),
+    )
+
+
 def default_native_goal_parameter_ranges() -> Tuple[NativeGoalParameterRangeContract, ...]:
     return (
         NativeGoalParameterRangeContract(
@@ -861,6 +938,20 @@ def default_native_goal_parameter_ranges() -> Tuple[NativeGoalParameterRangeCont
             ),
         ),
     )
+
+
+@dataclass(frozen=True)
+class NativeDucGroupContract:
+    command: str
+    operation: str
+    capacity: int
+    group_id_min: int
+    group_id_max: int
+    list_kinds: Tuple[str, ...]
+    replaces_search_list: bool
+    invalidates_group: bool
+    requires_group: bool
+    evidence_ids: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -925,6 +1016,7 @@ class NativeContractCatalog:
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
     duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
     duc_targets: Tuple[NativeDucTargetContract, ...] = ()
+    duc_groups: Tuple[NativeDucGroupContract, ...] = ()
     duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
     duc_consumer_commands: Tuple[str, ...] = (
         "up-target-objects",
@@ -949,6 +1041,8 @@ class NativeContractCatalog:
             object.__setattr__(self, "duc_mutations", default_native_duc_mutation_contracts())
         if not self.duc_targets:
             object.__setattr__(self, "duc_targets", default_native_duc_target_contracts())
+        if not self.duc_groups:
+            object.__setattr__(self, "duc_groups", default_native_duc_group_contracts())
         for values, label in (
             (self.witnesses, "native witness"),
             (self.storage_uses, "native storage use"),
@@ -966,6 +1060,7 @@ class NativeContractCatalog:
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
             (self.duc_targets, "DUC target contract"),
+            (self.duc_groups, "DUC group contract"),
         ):
             commands = [item.command for item in values]
             if len(commands) != len(set(commands)):
@@ -992,6 +1087,7 @@ class NativeContractCatalog:
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
             (self.duc_targets, "DUC target contract"),
+            (self.duc_groups, "DUC group contract"),
         ):
             if any(not item.evidence_ids for item in values):
                 raise ValueError(f"{label} requires evidence identifiers")
@@ -1074,6 +1170,7 @@ class NativeContractCatalog:
                 *self.duc_resets,
                 *self.duc_mutations,
                 *self.duc_targets,
+                *self.duc_groups,
             )
             for evidence_id in contract.evidence_ids
         )
@@ -1118,6 +1215,9 @@ class NativeContractCatalog:
 
     def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
         return next((item for item in self.duc_targets if item.command == command), None)
+
+    def duc_group(self, command: str) -> Optional[NativeDucGroupContract]:
+        return next((item for item in self.duc_groups if item.command == command), None)
 
     def validate_all_provenance(self) -> None:
         for owner, provenance, expected_scope in (
@@ -1200,6 +1300,10 @@ class NativeContractCatalog:
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_targets
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_groups
             ),
         ):
             for evidence_id in evidence_ids:
@@ -1709,6 +1813,12 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
         ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
+        ("airef:duc:create-group", "up-create-group", "(up-create-group <GoalId> <GoalId> <typeOp> <GroupId>)"),
+        ("airef:duc:reset-group", "up-reset-group", "(up-reset-group <typeOp> <GroupId>)"),
+        ("airef:duc:set-group", "up-set-group", "(up-set-group <SearchSource> <typeOp> <GroupId>)"),
+        ("airef:duc:group-size", "up-group-size", "(up-group-size <typeOp> <GroupId> <compareOp> <Value>)"),
+        ("airef:duc:get-group-size", "up-get-group-size", "(up-get-group-size <typeOp> <GroupId> <OutputGoalId>)"),
+        ("airef:duc:modify-group-flag", "up-modify-group-flag", "(up-modify-group-flag <Option> <typeOp> <GroupId>)"),
     )
     duc_records = tuple(
         CitationRecord(
