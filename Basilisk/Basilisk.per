@@ -14047,6 +14047,9 @@ retreat-now-goal 1) (or (goal bt-cataphract-demand-goal 1) (goal bt-resource-mod
     (strategic-number sn-resource-control == 0)
     (can-research-with-escrow ri-crossbow)
     (goal bt-research-archery-range-claim-goal 0)
+    (goal bt-crossbow-demand-goal 1)
+    (goal bt-arbalest-demand-goal 0)
+    (up-compare-goal bt-standing-crossbow-target-goal > 0)
     (goal bt-research-ranged-counter-package-goal ri-crossbow)
 =>
     (set-strategic-number sn-resource-control ri-crossbow)
