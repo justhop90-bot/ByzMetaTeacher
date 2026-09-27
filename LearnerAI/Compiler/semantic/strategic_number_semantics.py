@@ -482,7 +482,7 @@ def analyze_strategic_number_expressions(
                     )
                 ]
                 future_writes = [
-                    writer
+                    (writer_section, writer_order)
                     for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
                     if kind == "STRATEGIC_NUMBER"
                     and identifier == dependency.identifier
@@ -524,9 +524,6 @@ def analyze_strategic_number_expressions(
                             location=dependency.location,
                         )
                     )
-                if not prior_or_same_writes and dependency.identifier == mutation.target:
-                    # Self-referential mutation reads the current target value, then writes it.
-                    pass
 
     deduped: dict[tuple[object, ...], StrategicNumberDiagnostic] = {}
     for diagnostic in diagnostics:
