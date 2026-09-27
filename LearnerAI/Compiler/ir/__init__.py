@@ -153,6 +153,8 @@ from .strategic_number import (
     STRATEGIC_NUMBER_MIN,
     StrategicNumberAccess,
     StrategicNumberAccessKind,
+    StrategicNumberComparison,
+    StrategicNumberCompareOp,
     StrategicNumberDependency,
     StrategicNumberMathOp,
     StrategicNumberMutation,
