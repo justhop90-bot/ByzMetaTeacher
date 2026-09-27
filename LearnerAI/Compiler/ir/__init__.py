@@ -111,6 +111,25 @@ from .versioning import (
     Validity,
 )
 
+from .source_graph import (
+    ConditionContext,
+    ConditionPredicate,
+    EffectiveSourceGraph,
+    EffectiveSourceSlice,
+    LoadKind,
+    LoadSymbolEnvironment,
+    LoadSymbolState,
+    SourceEdge,
+    SourceEdgeId,
+    SourceFile,
+    SourceFileId,
+    SourceInstance,
+    SourceInstanceId,
+    SourceRange,
+    structural_edge_id,
+    structural_instance_id,
+)
+
 from .native_metadata import (
     NativeEngineProfile,
     NativeIdentifier,
