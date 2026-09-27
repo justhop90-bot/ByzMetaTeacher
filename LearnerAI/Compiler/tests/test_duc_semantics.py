@@ -555,6 +555,44 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(mutation.kind, DucListMutationKind.REMOVE_MATCHES)
         self.assertEqual(mutation.target_transition, DucTargetTransition.STALE)
 
+    def test_remove_objects_greater_than_target_preserves_index_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", ">", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertTrue(target.object_refs[0].index_stable)
+        self.assertEqual(
+            report.mutations[-1].target_transition,
+            DucTargetTransition.UNCHANGED,
+        )
+
+    def test_remove_objects_less_than_target_invalidates_index_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "1")),
+                ("up-remove-objects", ("search-local", "-1", "<", "1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertFalse(target.object_refs[0].index_stable)
+        self.assertEqual(
+            report.mutations[-1].target_transition,
+            DucTargetTransition.UNCHANGED,
+        )
+
     def test_remove_objects_provably_nonmatching_index_preserves_target(self):
         report = analyze_duc((
             _rule(1, (
