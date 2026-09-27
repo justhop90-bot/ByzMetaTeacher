@@ -199,6 +199,42 @@ class DucSemanticTests(unittest.TestCase):
                 for item in report.diagnostics)
         )
 
+    def test_backward_jump_uses_finite_loop_widening(self):
+        rules = (
+            _rule(1, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(2, (("up-find-remote", ("c:", "town-center", "c:", "1")),)),
+            _rule(3, (("up-find-remote", ("c:", "town-center", "c:", "1")), ("up-jump-rule", ("-2",)))),
+            _rule(4, (("up-set-target-object", ("search-remote", "c:", "0")),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=(
+                    (1, ()),
+                    (2, (1, 3)),
+                    (3, (2,)),
+                    (4, (3,)),
+                ),
+                outgoing_rule_orders=(
+                    (1, (2,)),
+                    (2, (3,)),
+                    (3, (2, 4)),
+                    (4, ()),
+                ),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        self.assertFalse(any(item.code == "DUC-013" for item in report.diagnostics))
+        loop_state = next(state for order, state in report.states if order == 2)
+        self.assertTrue(loop_state.remote_list.path_ambiguous)
+        self.assertIsNone(loop_state.remote_list.current_generation)
+        self.assertEqual(len(report.states), 4)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+
     def test_search_target_provenance_survives_same_rule_chain(self):
         report = analyze_duc((
             _rule(1, (
