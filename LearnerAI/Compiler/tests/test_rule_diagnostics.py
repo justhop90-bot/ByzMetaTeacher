@@ -301,6 +301,32 @@ class RuleDiagnosticsTests(unittest.TestCase):
             )
         )
 
+    def test_one_shot_jump_has_bypass_info_but_no_recurrent_preemption_warning(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule 2) (disable-self))\n"
+                "(defrule (true) => (set-goal skipped-a 1))\n"
+                "(defrule (true) => (set-goal skipped-b 1))\n"
+                "(defrule (true) => (set-goal reached 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_PREEMPTS_RULE
+                for item in diagnostics.diagnostics
+            )
+        )
+        self.assertTrue(
+            any(
+                item.code is RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE
+                and item.severity is DiagnosticSeverity.INFO
+                for item in diagnostics.diagnostics
+            )
+        )
+
     def test_recurrent_guaranteed_jump_gets_preemption_diagnostics_for_each_bypassed_rule(self):
         report = analyze_effective_rules(
             self._graph(
