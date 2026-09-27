@@ -71,10 +71,14 @@ Next consolidation:
 - [x] Mark recurrent rules as potentially repeating.
 - [x] Detect recurrent search accumulation when no same-rule list reset precedes the search.
 - [x] Detect retained filters left active by recurrent rules.
-- [ ] model control-transfer branches explicitly in DUC state propagation.
-- [ ] model path-sensitive filter/list state across jumps.
+- [x] Propagate DUC state across the existing `RuleExecutionReport` control-transfer graph.
+- [x] Join local and remote search-list generations path-sensitively.
+- [x] Join retained filters path-sensitively and mark divergent retained-filter lineage as ambiguous.
+- [x] Join pre-existing object targets so valid-vs-absent or valid-vs-stale paths become `UNKNOWN`.
+- [x] Record branch predecessors and merged DUC fields in typed `DucBranchMerge` metadata.
+- [x] Preserve compiler/native source provenance through the joined state.
 - [ ] model cross-pass target reuse as a distinct proof state rather than a static final-state reuse.
-- [ ] integrate recurrent DUC effects with the existing pass scheduler rather than maintaining parallel recurrence logic.
+- [ ] integrate backward-jump recurrence with a finite loop-widening model rather than conservatively stopping propagation at the back-edge.
 
 ## Vertical slice D: reset and invalidation semantics
 
