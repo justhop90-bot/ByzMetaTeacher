@@ -1795,24 +1795,53 @@ def _join_groups(
             continue
         minimum = min(candidate.cardinality.minimum for candidate in candidates)
         maximum = max(candidate.cardinality.maximum for candidate in candidates)
+        same_source = all(
+            candidate.source_list == first.source_list
+            for candidate in candidates
+        )
+        same_source_generation = all(
+            candidate.source_list_generation == first.source_list_generation
+            for candidate in candidates
+        )
+        same_start = all(
+            candidate.source_index_start == first.source_index_start
+            for candidate in candidates
+        )
+        same_requested_max = all(
+            candidate.requested_max_objects == first.requested_max_objects
+            for candidate in candidates
+        )
+        same_fingerprint = all(
+            candidate.content_fingerprint == first.content_fingerprint
+            for candidate in candidates
+        )
+        same_flag = all(
+            candidate.flag_state is first.flag_state
+            for candidate in candidates
+        )
+        same_provenance = all(
+            candidate.provenance == first.provenance
+            for candidate in candidates
+        )
         merged.append(
             replace(
                 first,
+                generation=max(candidate.generation for candidate in candidates),
                 cardinality=DucCardinalityRange(minimum, maximum),
-                source_list=(
-                    first.source_list
-                    if all(candidate.source_list == first.source_list for candidate in candidates)
-                    else None
-                ),
+                source_list=first.source_list if same_source else None,
                 source_list_generation=(
-                    first.source_list_generation
-                    if all(
-                        candidate.source_list_generation == first.source_list_generation
-                        for candidate in candidates
-                    )
-                    else None
+                    first.source_list_generation if same_source_generation else None
+                ),
+                source_index_start=first.source_index_start if same_start else None,
+                requested_max_objects=(
+                    first.requested_max_objects if same_requested_max else None
+                ),
+                content_fingerprint=(
+                    first.content_fingerprint if same_fingerprint else None
                 ),
                 validity=DucGroupStatus.UNKNOWN,
+                flag_state=first.flag_state if same_flag else DucGroupFlagState.UNKNOWN,
+                provenance=first.provenance if same_provenance else None,
                 path_ambiguous=True,
             )
         )
