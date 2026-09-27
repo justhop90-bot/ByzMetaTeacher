@@ -14,6 +14,8 @@ from ..ir.strategic_number import (
     STRATEGIC_NUMBER_MIN,
     StrategicNumberAccess,
     StrategicNumberAccessKind,
+    StrategicNumberComparison,
+    StrategicNumberCompareOp,
     StrategicNumberDependency,
     StrategicNumberMathOp,
     StrategicNumberMutation,
@@ -64,6 +66,7 @@ class StrategicNumberDiagnostic:
 @dataclass(frozen=True)
 class StrategicNumberSemanticReport:
     mutations: tuple[StrategicNumberMutation, ...]
+    comparisons: tuple[StrategicNumberComparison, ...] = ()
     accesses: tuple[StrategicNumberAccess, ...]
     dependencies: tuple[StrategicNumberDependency, ...]
     diagnostics: tuple[StrategicNumberDiagnostic, ...]
@@ -75,6 +78,16 @@ class StrategicNumberSemanticReport:
             for item in self.diagnostics
             if item.severity is DiagnosticSeverity.ERROR
         )
+
+
+_COMPARE_OPERATOR_MAP = {
+    "==": StrategicNumberCompareOp.EQUAL,
+    "!=": StrategicNumberCompareOp.NOT_EQUAL,
+    "<": StrategicNumberCompareOp.LESS_THAN,
+    "<=": StrategicNumberCompareOp.LESS_EQUAL,
+    ">": StrategicNumberCompareOp.GREATER_THAN,
+    ">=": StrategicNumberCompareOp.GREATER_EQUAL,
+}
 
 
 _OPERATOR_MAP = {
@@ -176,6 +189,76 @@ def _parse_operand(operator_token: str, value: object) -> tuple[StrategicNumberM
 
     return operator, StrategicNumberOperand(operand_kind, value)
 
+
+
+def _parse_compare_operand(
+    operator_token: object,
+    value: object,
+) -> tuple[StrategicNumberCompareOp, StrategicNumberOperand]:
+    token = str(operator_token)
+    if ":" in token:
+        prefix, raw_operator = token.split(":", 1)
+    else:
+        prefix, raw_operator = "c", token
+
+    if prefix not in {"c", "g", "s"}:
+        raise StrategicNumberSemanticError(
+            f"{StrategicNumberDiagnosticCode.INVALID_OPERAND_PREFIX.value}: "
+            f"unknown Strategic Number comparison operand prefix '{prefix}:'"
+        )
+
+    operator = _COMPARE_OPERATOR_MAP.get(raw_operator)
+    if operator is None:
+        raise StrategicNumberSemanticError(
+            f"{StrategicNumberDiagnosticCode.INVALID_OPERATOR.value}: "
+            f"unknown Strategic Number comparison operator '{raw_operator}'"
+        )
+
+    kind = {
+        "c": StrategicNumberOperandKind.CONSTANT,
+        "g": StrategicNumberOperandKind.GOAL,
+        "s": StrategicNumberOperandKind.STRATEGIC_NUMBER,
+    }[prefix]
+    if kind is StrategicNumberOperandKind.CONSTANT:
+        return operator, StrategicNumberOperand(kind, _parse_constant(value))
+    if not isinstance(value, str) or not value:
+        raise StrategicNumberSemanticError(
+            f"{StrategicNumberDiagnosticCode.INVALID_LITERAL.value}: "
+            "Goal/Strategic Number comparison operand must be a non-empty identifier"
+        )
+    return operator, StrategicNumberOperand(kind, value)
+
+
+def parse_strategic_number_comparison(
+    expression: Expression,
+    *,
+    rule_order: int | None = None,
+    within_rule_order: int = 0,
+    section: str = "GUARD",
+) -> StrategicNumberComparison:
+    if not isinstance(expression, Expression):
+        raise TypeError("expression must be an Expression")
+    if expression.head not in {"up-compare-sn", "strategic-number"}:
+        raise StrategicNumberSemanticError(
+            f"expected Strategic Number comparison fact, got '{expression.head}'"
+        )
+    if len(expression.args) != 3:
+        raise StrategicNumberSemanticError(
+            f"{StrategicNumberDiagnosticCode.INVALID_ARITY.value}: "
+            f"{expression.head} requires SnId, compareOp, and Value"
+        )
+    target = _validate_target(expression.args[0])
+    operator, operand = _parse_compare_operand(expression.args[1], expression.args[2])
+    return StrategicNumberComparison(
+        target=target,
+        operator=operator,
+        operand=operand,
+        rule_order=rule_order,
+        within_rule_order=within_rule_order,
+        section=section,
+        expression=expression,
+        location=expression.location,
+    )
 
 def parse_strategic_number_mutation(
     expression: Expression,
@@ -314,6 +397,35 @@ def evaluate_strategic_number_mutation(
     return _clamp(int(result))
 
 
+def evaluate_strategic_number_comparison(
+    comparison: StrategicNumberComparison,
+    *,
+    current_value: int,
+    goals: dict[str, int],
+    strategic_numbers: dict[str, int],
+) -> bool:
+    operand = _resolve_operand(
+        comparison.operand,
+        goals=goals,
+        strategic_numbers=strategic_numbers,
+    )
+    actual = int(current_value)
+    if comparison.operator is StrategicNumberCompareOp.EQUAL:
+        return actual == operand
+    if comparison.operator is StrategicNumberCompareOp.NOT_EQUAL:
+        return actual != operand
+    if comparison.operator is StrategicNumberCompareOp.LESS_THAN:
+        return actual < operand
+    if comparison.operator is StrategicNumberCompareOp.LESS_EQUAL:
+        return actual <= operand
+    if comparison.operator is StrategicNumberCompareOp.GREATER_THAN:
+        return actual > operand
+    if comparison.operator is StrategicNumberCompareOp.GREATER_EQUAL:
+        return actual >= operand
+    raise StrategicNumberSemanticError(
+        f"unsupported Strategic Number comparison operator '{comparison.operator.value}'"
+    )
+
 def _walk(expressions: tuple[Expression, ...] | list[Expression]):
     for expression in expressions:
         yield expression
@@ -426,6 +538,7 @@ def analyze_strategic_number_expressions(
         raise TypeError("report must be a RuleExecutionReport")
 
     mutations: list[StrategicNumberMutation] = []
+    comparisons: list[StrategicNumberComparison] = []
     accesses: list[StrategicNumberAccess] = []
     dependencies: list[StrategicNumberDependency] = []
     diagnostics: list[StrategicNumberDiagnostic] = []
@@ -443,8 +556,63 @@ def analyze_strategic_number_expressions(
         )
 
         for section, within_rule_order, expression in expressions:
-            if expression.head != "up-modify-sn":
+            if expression.head not in {"up-modify-sn", "up-compare-sn"}:
                 continue
+
+            if expression.head == "up-compare-sn":
+                try:
+                    comparison = parse_strategic_number_comparison(
+                        expression,
+                        rule_order=rule.rule_order,
+                        within_rule_order=within_rule_order,
+                        section=section,
+                    )
+                except StrategicNumberSemanticError as exc:
+                    diagnostics.append(
+                        StrategicNumberDiagnostic(
+                            code=_diagnostic_code_from_error(exc),
+                            severity=DiagnosticSeverity.ERROR,
+                            message=str(exc),
+                            rule_order=rule.rule_order,
+                            within_rule_order=within_rule_order,
+                            location=expression.location or rule.source_location,
+                        )
+                    )
+                    continue
+
+                comparisons.append(comparison)
+                accesses.append(comparison.target_access)
+                dependency = comparison.operand_dependency
+                if dependency is None:
+                    continue
+                dependencies.append(dependency)
+                future_writes = [
+                    (kind, identifier, writer_section, writer_order)
+                    for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
+                    if identifier == dependency.identifier
+                    and _is_after(section, within_rule_order, writer_section, writer_order)
+                    and (
+                        (dependency.kind is StrategicNumberOperandKind.STRATEGIC_NUMBER and kind == "STRATEGIC_NUMBER")
+                        or (dependency.kind is StrategicNumberOperandKind.GOAL and kind == "GOAL")
+                    )
+                ]
+                if future_writes:
+                    dependency_name = "Strategic Number" if dependency.kind is StrategicNumberOperandKind.STRATEGIC_NUMBER else "Goal"
+                    diagnostics.append(
+                        StrategicNumberDiagnostic(
+                            code=StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY,
+                            severity=DiagnosticSeverity.ERROR,
+                            message=(
+                                f"{dependency_name} '{dependency.identifier}' is read by "
+                                f"rule {rule.rule_order} before a later same-rule writer"
+                            ),
+                            rule_order=rule.rule_order,
+                            within_rule_order=within_rule_order,
+                            location=dependency.location,
+                        )
+                    )
+                continue
+
             try:
                 mutation = parse_strategic_number_mutation(
                     expression,
@@ -470,17 +638,7 @@ def analyze_strategic_number_expressions(
             if dependency is None:
                 continue
             dependencies.append(dependency)
-
             if dependency.kind is StrategicNumberOperandKind.STRATEGIC_NUMBER:
-                prior_or_same_writes = [
-                    writer
-                    for writer in rule_writers
-                    if writer.identifier == dependency.identifier
-                    and (
-                        writer.section == section
-                        and writer.within_rule_order <= within_rule_order
-                    )
-                ]
                 future_writes = [
                     (writer_section, writer_order)
                     for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
@@ -488,43 +646,29 @@ def analyze_strategic_number_expressions(
                     and identifier == dependency.identifier
                     and _is_after(section, within_rule_order, writer_section, writer_order)
                 ]
-                if future_writes:
-                    diagnostics.append(
-                        StrategicNumberDiagnostic(
-                            code=StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY,
-                            severity=DiagnosticSeverity.ERROR,
-                            message=(
-                                f"Strategic Number '{dependency.identifier}' is read by "
-                                f"rule {rule.rule_order} before a later same-rule writer"
-                            ),
-                            rule_order=rule.rule_order,
-                            within_rule_order=within_rule_order,
-                            location=dependency.location,
-                        )
-                    )
-            elif dependency.kind is StrategicNumberOperandKind.GOAL:
+            else:
                 future_writes = [
-                    writer
+                    (writer_section, writer_order)
                     for kind, identifier, writer_section, writer_order in _all_same_rule_writers(rule)
                     if kind == "GOAL"
                     and identifier == dependency.identifier
                     and _is_after(section, within_rule_order, writer_section, writer_order)
                 ]
-                if future_writes:
-                    diagnostics.append(
-                        StrategicNumberDiagnostic(
-                            code=StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY,
-                            severity=DiagnosticSeverity.ERROR,
-                            message=(
-                                f"Goal '{dependency.identifier}' is read by rule "
-                                f"{rule.rule_order} before a later same-rule writer"
-                            ),
-                            rule_order=rule.rule_order,
-                            within_rule_order=within_rule_order,
-                            location=dependency.location,
-                        )
+            if future_writes:
+                dependency_name = "Strategic Number" if dependency.kind is StrategicNumberOperandKind.STRATEGIC_NUMBER else "Goal"
+                diagnostics.append(
+                    StrategicNumberDiagnostic(
+                        code=StrategicNumberDiagnosticCode.FUTURE_SAME_RULE_DEPENDENCY,
+                        severity=DiagnosticSeverity.ERROR,
+                        message=(
+                            f"{dependency_name} '{dependency.identifier}' is read by "
+                            f"rule {rule.rule_order} before a later same-rule writer"
+                        ),
+                        rule_order=rule.rule_order,
+                        within_rule_order=within_rule_order,
+                        location=dependency.location,
                     )
-
+                )
     deduped: dict[tuple[object, ...], StrategicNumberDiagnostic] = {}
     for diagnostic in diagnostics:
         key = (
@@ -537,6 +681,7 @@ def analyze_strategic_number_expressions(
 
     return StrategicNumberSemanticReport(
         mutations=tuple(mutations),
+        comparisons=tuple(comparisons),
         accesses=tuple(
             sorted(
                 accesses,
@@ -576,10 +721,14 @@ def analyze_strategic_number_expressions(
 __all__ = [
     "StrategicNumberCompilationError",
     "StrategicNumberDiagnostic",
+    "StrategicNumberComparison",
+    "StrategicNumberCompareOp",
     "StrategicNumberDiagnosticCode",
     "StrategicNumberSemanticError",
     "StrategicNumberSemanticReport",
     "analyze_strategic_number_expressions",
+    "evaluate_strategic_number_comparison",
     "evaluate_strategic_number_mutation",
+    "parse_strategic_number_comparison",
     "parse_strategic_number_mutation",
 ]
