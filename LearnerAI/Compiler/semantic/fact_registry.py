@@ -124,6 +124,9 @@ def _parameter_context(
             case_sensitive=False,
         )
 
+    if command == "up-compare-sn" and name == "GoalId":
+        return _identifier_context(parameter, namespace="STRATEGIC_NUMBER")
+
     if name == "PlayerNumber":
         return CanonicalizationContext.integer(parameter_name=name)
 
