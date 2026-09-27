@@ -3478,30 +3478,6 @@
     (set-goal bt-castle-cataphract-demand-goal 1)
 )
 
-; Construction failure is temporary execution state. Once the
-; strategic trigger disappears, the failure-history witness is cleared for future use.
-(defrule
-    (or
-        (current-age >= imperial-age)
-        (or
-        (building-type-count-total castle >= 1)
-        (or
-        (not
-            (or
-                (goal strategy-goal bt-strategy-boom)
-                (goal strategy-goal bt-strategy-flush)
-            )
-        )
-        (or
-        (players-unit-type-count any-enemy militiaman-line < bt-cataphract-enemy-threshold-1)
-        (unit-type-count-total cataphract-line >= bt-cataphract-target-1)
-            )
-            )
-            )
-    )
-=>
-)
-
 ; Imperial age authority owns the transition once the civilian threshold is
 ; reached. Castle/Cataphract capability state is independent of this age gate.
 (defrule
