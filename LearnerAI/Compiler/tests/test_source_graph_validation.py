@@ -201,6 +201,38 @@ class SourceGraphValidationTests(unittest.TestCase):
             {item.code for item in report.errors},
         )
 
+    def test_inactive_source_changes_assembly_not_effective_fingerprint(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "inactive.perdsl").write_text("first\n", encoding="utf-8")
+            (root / "root.perdsl").write_text(
+                "#load-if-defined TEST\n"
+                '(load "inactive.perdsl")\n'
+                "#end-if\n"
+                "true\n",
+                encoding="utf-8",
+            )
+            symbols = LoadSymbolEnvironment(
+                (("TEST", LoadSymbolState.UNDEFINED),)
+            )
+            first = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=root / "root.perdsl",
+                    load_symbols=symbols,
+                )
+            )
+            (root / "inactive.perdsl").write_text("changed\n", encoding="utf-8")
+            second = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=root / "root.perdsl",
+                    load_symbols=symbols,
+                )
+            )
+            self.assertNotEqual(first.assembly_fingerprint, second.assembly_fingerprint)
+            self.assertEqual(first.effective_fingerprint, second.effective_fingerprint)
+
     def test_dual_fingerprints_are_distinct_contracts(self):
         graph = self._resolve("linear/root.perdsl")
         self.assertEqual(graph.assembly_fingerprint, graph.fingerprint)
