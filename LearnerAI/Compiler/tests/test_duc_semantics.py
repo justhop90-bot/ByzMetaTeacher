@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.ir.duc import DucListKind, DucLoopWidening, DucTargetProof, DucTargetStatus
+from Compiler.ir.duc import DucListKind, DucListMutationKind, DucTargetProof, DucTargetStatus, DucTargetTransition
 from Compiler.semantic.duc import analyze_duc
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
@@ -504,8 +504,8 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(target.validity, DucTargetStatus.VALID)
         self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
         mutation = report.mutations[-1]
-        self.assertEqual(mutation.kind.value, "SORT")
-        self.assertEqual(mutation.target_transition, DucTargetStatus.VALID)
+        self.assertEqual(mutation.kind, DucListMutationKind.SORT)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
 
     def test_clean_search_duplicate_removal_makes_nonfirst_target_unknown(self):
         report = analyze_duc((
@@ -521,8 +521,8 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
         mutation = report.mutations[-1]
-        self.assertEqual(mutation.kind.value, "DEDUPE")
-        self.assertEqual(mutation.target_transition, DucTargetStatus.UNKNOWN)
+        self.assertEqual(mutation.kind, DucListMutationKind.DEDUPE)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNKNOWN)
 
     def test_clean_search_duplicate_removal_preserves_first_target(self):
         report = analyze_duc((
@@ -552,8 +552,8 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(target.validity, DucTargetStatus.STALE)
         self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
         mutation = report.mutations[-1]
-        self.assertEqual(mutation.kind.value, "REMOVE_MATCHES")
-        self.assertEqual(mutation.target_transition, DucTargetStatus.STALE)
+        self.assertEqual(mutation.kind, DucListMutationKind.REMOVE_MATCHES)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.STALE)
 
     def test_remove_objects_provably_nonmatching_index_preserves_target(self):
         report = analyze_duc((
