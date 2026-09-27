@@ -37,7 +37,6 @@ The compiler models the native UserPatch/DE contract, not a host-language approx
 - `StrategicNumberComparison`
 - `StrategicNumberCompareOp`
 - `StrategicNumberDependency`
-- `StrategicNumberExpression`
 - diagnostic enums/classes for structural and semantic rejection.
 
 The typed mutation retains the target SN, operator, operand domain/value, source location, rule order, and action order. Strategic Number comparisons retain the target, typed comparison operator, operand domain/value, source location, and rule order. Neither form collapses `c:`, `g:`, and `s:` into an untyped string.
@@ -55,7 +54,7 @@ Dependency analysis is explicit. A same-rule dependency on a later RHS writer is
 
 ## Persistent-state integration
 
-`persistent_state.py` recognizes `up-modify-sn` as a target SN writer and records its source dependency metadata. Existing Goal/SN/Timer source-order reporting remains intact. SN-specific dependency diagnostics are produced by the typed semantic pass so ordinary state-order diagnostics are not overloaded with expression parsing.
+`persistent_state.py` recognizes `up-modify-sn` as a target SN writer and `up-compare-sn` as a persistent SN reader; dynamic comparison operands remain explicit Goal/SN dependencies. Existing Goal/SN/Timer source-order reporting remains intact. SN-specific dependency diagnostics are produced by the typed semantic pass so ordinary state-order diagnostics are not overloaded with expression parsing.
 
 ## Scheduler integration
 
@@ -66,13 +65,13 @@ Dependency analysis is explicit. A same-rule dependency on a later RHS writer is
 - `strategic-number`
 - `up-compare-sn`
 
-SN mutations are committed immediately in RHS order. A subsequent rule in the same pass therefore reads the new value. The scheduler uses the same typed operator evaluator as static semantic tests.
+SN mutations are committed immediately in RHS order. `strategic-number` and `up-compare-sn` guards read the current persistent value at fact-evaluation time. A subsequent rule in the same pass therefore reads the new value. The scheduler uses the same typed operator evaluator as static semantic tests.
 
 - Any SN semantic error that is statically knowable blocks artifact promotion before native validation; valid SN artifacts still pass through the pinned native parser.
 
 ## Native validation
 
-A dedicated CI fixture generator emits representative native rules covering every supported operator and each operand domain. `assert_native_zero.py` validates the generated artifact with the pinned `aoe2-ai-parser` validator. The workflow records the fixture as native-validation evidence and fails closed on any parser finding.
+A dedicated CI fixture generator emits representative native rules covering every supported mutation operator, every mutation operand domain, and all `up-compare-sn` comparison operators across c/g/s operands. `assert_native_zero.py` validates the generated artifact with the pinned `aoe2-ai-parser` validator. The workflow records the fixture as native-validation evidence and fails closed on any parser finding.
 
 ## Hostile fixtures
 
