@@ -106,6 +106,7 @@ from .rule_execution import (
     RuleAction,
     RuleExecutionReport,
     RulePassBehavior,
+    StaticControlTransfer,
     analyze_effective_rules,
 )
 
