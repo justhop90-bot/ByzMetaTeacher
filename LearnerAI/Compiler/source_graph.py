@@ -72,7 +72,9 @@ _CONDITIONAL_RE = re.compile(
 )
 _ELSE_RE = re.compile(r"^\s*#else\s*$")
 _END_RE = re.compile(r"^\s*#end-if\s*$")
-_RAW_LOAD_RE = re.compile(r'^\s*#load\s+"(?P<target>(?:\\.|[^"\\])*)"\s*
+_RAW_LOAD_RE = re.compile(
+    r"""^\s*#load\s+"(?P<target>(?:\\.|[^"\\])*)"\s*$"""
+)
 
 def _diagnostic(
     code: str,
