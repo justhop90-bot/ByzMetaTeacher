@@ -57,7 +57,7 @@ class SourceGraphValidationTests(unittest.TestCase):
 
     def test_forged_fingerprint_is_rejected(self):
         graph = self._resolve("linear/root.perdsl")
-        forged = replace(graph, fingerprint="0" * 64)
+        forged = replace(graph, assembly_fingerprint="0" * 64)
         report = validate_effective_source_graph(forged)
         self.assertFalse(report.valid)
         self.assertIn(
@@ -89,7 +89,7 @@ class SourceGraphValidationTests(unittest.TestCase):
             if edge.active and edge.target_path is not None
         )
         forged_edges = tuple(
-            replace(edge, target_path=None)
+            replace(edge, target=None, child=None)
             if edge is target_edge
             else edge
             for edge in graph.edges
@@ -207,6 +207,16 @@ class SourceGraphValidationTests(unittest.TestCase):
         self.assertTrue(graph.effective_fingerprint)
         self.assertNotEqual(graph.assembly_fingerprint, "")
 
+    def test_forged_effective_fingerprint_is_rejected(self):
+        graph = self._resolve("linear/root.perdsl")
+        forged = replace(graph, effective_fingerprint="0" * 64)
+        report = validate_effective_source_graph(forged)
+        self.assertFalse(report.valid)
+        self.assertIn(
+            SourceGraphDiagnosticCode.EFFECTIVE_FINGERPRINT_MISMATCH,
+            {item.code for item in report.errors},
+        )
+
     def test_structural_instance_ids_are_repeatable(self):
         first = self._resolve("duplicate/root.perdsl")
         second = self._resolve("duplicate/root.perdsl")
@@ -260,7 +270,7 @@ class SourceGraphValidationTests(unittest.TestCase):
 
     def test_validation_error_exposes_semantic_diagnostics(self):
         graph = self._resolve("linear/root.perdsl")
-        forged = replace(graph, fingerprint="0" * 64)
+        forged = replace(graph, assembly_fingerprint="0" * 64)
         report = validate_effective_source_graph(forged)
         error = SourceGraphValidationError(report)
         self.assertIsInstance(error, CompileError)
