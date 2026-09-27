@@ -77,7 +77,7 @@ Next consolidation:
 - [x] Join pre-existing object targets so valid-vs-absent or valid-vs-stale paths become `UNKNOWN`.
 - [x] Record branch predecessors and merged DUC fields in typed `DucBranchMerge` metadata.
 - [x] Preserve compiler/native source provenance through the joined state.
-- [ ] model cross-pass target reuse as a distinct proof state rather than a static final-state reuse.
+- [x] model cross-pass target reuse as a distinct proof state rather than a static final-state reuse.
 - [x] integrate backward-jump recurrence with finite loop widening: bounded three-edge iterations, field-local canonicalization, and stable recurrent state convergence without linearizing the loop.
 - [x] emit deterministic DUC loop-widening diagnostics with loop head, back-edge source, iteration bound, and widened fields.
 
@@ -155,7 +155,7 @@ Primary test file:
 6. [ ] Run generic compiler native-zero acceptance with DUC-bearing .per fixtures.
 7. [ ] Add effective-source-graph provenance fixtures.
 8. [ ] Add DUC cost/cardinality analysis from AIRef performance evidence.
-9. [ ] Integrate DUC effects with recurrent pass analysis.
+9. [x] Integrate DUC effects with recurrent pass analysis.
 10. [ ] Expose the completed DUC knowledge to downstream Byzantine strategy compilation.
 
 ## Explicit scope boundary
