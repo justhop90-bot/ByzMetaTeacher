@@ -592,7 +592,7 @@ Authoritative checklist: LearnerAI/Compiler/COMMUNITY_ENGINE_SEMANTICS_CHECKLIST
 - [x] Preserve the hard boundary: compiler policy must not be mistaken for engine fact or community practice.
 - [x] Correct the recovery model so false can-* feasibility never becomes capability loss.
 - [ ] Implement ENGINE_SEMANTICS_MAPPED as an enforceable per-command support state.
-- [ ] Build the effective source graph.
-- [ ] Build recurrent rule execution semantics.
+- [x] Build the effective source graph.
+- [x] Build bounded path-sensitive recurrent rule execution semantics.
 - [ ] Build DUC/attack state models.
 - [ ] Add semantic-gap golden fixtures and native zero-findings acceptance fixtures.
