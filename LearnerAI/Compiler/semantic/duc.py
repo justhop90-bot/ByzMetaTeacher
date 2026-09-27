@@ -35,7 +35,12 @@ from ..ir.duc import (
     DucTargetStatus,
     DucVisibility,
 )
-from .rule_execution import EffectiveRule, RuleAction, RulePassBehavior
+from .rule_execution import (
+    EffectiveRule,
+    RuleAction,
+    RuleExecutionReport,
+    RulePassBehavior,
+)
 
 
 LOCAL_SEARCHES = frozenset({
