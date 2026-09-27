@@ -566,7 +566,7 @@ def _analyze_duc_linear(
                         and target.object_refs[0].list_kind is DucListKind.REMOTE
                     ):
                         target = DucTargetState(
-                            **{**target.__dict__, "validity": DucTargetStatus.STALE}
+                            **{**target.__dict__, "validity": DucTargetStatus.STALE, "proof": DucTargetProof.UNKNOWN}
                         )
                 if resolution.invalidates_filters:
                     next_filter_generation = (
