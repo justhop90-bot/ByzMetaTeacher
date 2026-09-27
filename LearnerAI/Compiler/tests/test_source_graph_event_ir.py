@@ -198,8 +198,8 @@ class SourceAssemblyEventTests(unittest.TestCase):
             root = Path(tmp)
             entry = root / "root.perdsl"
             entry.write_text(
-                '; (load "missing.perdsl")\\n'
-                "body\\n",
+                '; (load "missing.perdsl")\n'
+                "body\n",
                 encoding="utf-8",
             )
             graph = SourceGraphResolver().resolve(
