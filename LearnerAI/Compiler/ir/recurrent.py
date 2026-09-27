@@ -87,7 +87,7 @@ class TimerRuntimeState:
             and self.generation == pending.generation
             and self.status is TimerStatus.RUNNING
             and self.deadline is not None
-            and self.deadline <= pending.deadline
+            and self.deadline == pending.deadline
         )
 
     def commit_expiry(self) -> "TimerRuntimeState":
