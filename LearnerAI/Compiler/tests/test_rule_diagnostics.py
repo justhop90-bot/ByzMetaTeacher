@@ -529,8 +529,8 @@ class RuleDiagnosticsTests(unittest.TestCase):
     def test_recurrent_execution_findings_compile_into_rule_diagnostics(self):
         report = analyze_effective_rules(
             self._graph(
-                "(defrule (true) => (set-goal gate 0))\\n"
-                "(defrule (goal gate 1) => (set-goal observed 1))\\n"
+                "(defrule (true) => (set-goal gate 0))\n"
+                "(defrule (goal gate 1) => (set-goal observed 1))\n"
             )
         )
         recurrent = analyze_recurrent_execution(report)
