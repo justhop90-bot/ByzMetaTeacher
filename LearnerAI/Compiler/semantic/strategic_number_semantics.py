@@ -66,10 +66,10 @@ class StrategicNumberDiagnostic:
 @dataclass(frozen=True)
 class StrategicNumberSemanticReport:
     mutations: tuple[StrategicNumberMutation, ...]
-    comparisons: tuple[StrategicNumberComparison, ...] = ()
     accesses: tuple[StrategicNumberAccess, ...]
     dependencies: tuple[StrategicNumberDependency, ...]
     diagnostics: tuple[StrategicNumberDiagnostic, ...]
+    comparisons: tuple[StrategicNumberComparison, ...] = ()
 
     @property
     def errors(self) -> tuple[StrategicNumberDiagnostic, ...]:
