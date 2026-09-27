@@ -1129,7 +1129,7 @@ def _validate_edges(
             if event.source_instance != edge.source or event.span != edge.span:
                 diagnostics.append(
                     _diag(
-                        SourceGraphDiagnosticCode.EDGE_EVENT_MISMATCH,
+                        SourceGraphDiagnosticCode.EVENT_EDGE_MISMATCH,
                         f"edge '{edge.edge_id}' does not match its assembly event source or span",
                         path=path,
                         line=line,
