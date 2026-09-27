@@ -925,6 +925,7 @@ class NativeContractCatalog:
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
     duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
     duc_targets: Tuple[NativeDucTargetContract, ...] = ()
+    duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
     duc_consumer_commands: Tuple[str, ...] = (
         "up-target-objects",
         "up-target-point",
@@ -976,6 +977,10 @@ class NativeContractCatalog:
             raise ValueError("duplicate native pass constraint command")
         if len(self.duc_consumer_commands) != len(set(self.duc_consumer_commands)):
             raise ValueError("duplicate DUC consumer command")
+        if not self.duc_output_evidence_ids:
+            raise ValueError("DUC output evidence requires at least one evidence identifier")
+        if len(self.duc_output_evidence_ids) != len(set(self.duc_output_evidence_ids)):
+            raise ValueError("duplicate DUC output evidence identifier")
         for values, label in (
             (self.duc_searches, "DUC search contract"),
             (self.duc_filters, "DUC filter contract"),
@@ -1055,6 +1060,7 @@ class NativeContractCatalog:
                 ),
             )
         }
+        ids.update(self.duc_output_evidence_ids)
         ids.update(
             evidence_id
             for contract in (
@@ -1184,6 +1190,7 @@ class NativeContractCatalog:
                 ) from exc
 
         for owner, evidence_ids in (
+            ("DUC output", self.duc_output_evidence_ids),
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_searches
@@ -1712,8 +1719,6 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
         ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
-        ("airef:duc:target-objects", "up-target-objects", "(up-target-objects <Option> <DUCAction> <Formation> <AttackStance>)"),
-        ("airef:duc:target-point", "up-target-point", "(up-target-point <Point> <DUCAction> <Formation> <AttackStance>)"),
     )
     duc_records = tuple(
         CitationRecord(
