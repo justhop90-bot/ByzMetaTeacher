@@ -71,6 +71,7 @@ class RuleDiagnosticCode(str, Enum):
     DUC_RECURRENT_TARGET_REUSE = "DUC-013"
     DUC_CARDINALITY = "DUC-014"
     DUC_COST = "DUC-015"
+    DUC_LOOP_WIDENING = "DUC-016"
 
 
 @dataclass(frozen=True)

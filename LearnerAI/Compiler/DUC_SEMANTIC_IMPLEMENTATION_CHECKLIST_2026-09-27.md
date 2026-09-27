@@ -79,6 +79,7 @@ Next consolidation:
 - [x] Preserve compiler/native source provenance through the joined state.
 - [ ] model cross-pass target reuse as a distinct proof state rather than a static final-state reuse.
 - [x] integrate backward-jump recurrence with finite loop widening: bounded three-edge iterations, field-local canonicalization, and stable recurrent state convergence without linearizing the loop.
+- [x] emit deterministic DUC loop-widening diagnostics with loop head, back-edge source, iteration bound, and widened fields.
 
 ## Vertical slice D: reset and invalidation semantics
 
