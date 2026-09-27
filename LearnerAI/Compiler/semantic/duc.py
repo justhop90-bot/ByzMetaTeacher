@@ -21,6 +21,8 @@ from ..ir.duc import (
     DucFilterSnapshot,
     DucFilterState,
     DucListGeneration,
+    DucListMutationEffect,
+    DucListMutationKind,
     DucLoopWidening,
     DucListKind,
     DucObjectRef,
@@ -37,6 +39,7 @@ from ..ir.duc import (
     DucTargetProof,
     DucTargetState,
     DucTargetStatus,
+    DucTargetTransition,
     DucVisibility,
 )
 from .rule_execution import (
@@ -141,6 +144,14 @@ class NativeDucResetContract:
 
 
 @dataclass(frozen=True)
+class NativeDucMutationContract:
+    command: str
+    list_kinds: tuple[DucListKind, ...]
+    sentinel_object_data: str
+    evidence_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class NativeDucTargetContract:
     command: str
     source_kinds: tuple[DucListKind, ...]
@@ -155,6 +166,7 @@ class NativeDucContractCatalog:
     searches: tuple[NativeDucSearchContract, ...]
     filters: tuple[NativeDucFilterContract, ...]
     resets: tuple[NativeDucResetContract, ...]
+    mutations: tuple[NativeDucMutationContract, ...]
     targets: tuple[NativeDucTargetContract, ...]
     consumer_commands: tuple[str, ...] = (
         "up-target-objects",
@@ -169,6 +181,9 @@ class NativeDucContractCatalog:
 
     def reset(self, command: str) -> NativeDucResetContract | None:
         return next((item for item in self.resets if item.command == command), None)
+
+    def mutation(self, command: str) -> NativeDucMutationContract | None:
+        return next((item for item in self.mutations if item.command == command), None)
 
     def target(self, command: str) -> NativeDucTargetContract | None:
         return next((item for item in self.targets if item.command == command), None)
@@ -218,6 +233,20 @@ def default_native_duc_contract_catalog() -> NativeDucContractCatalog:
                 True,
                 True,
                 (f"{airef}:full-reset-search",),
+            ),
+        ),
+        mutations=(
+            NativeDucMutationContract(
+                "up-clean-search",
+                (DucListKind.LOCAL, DucListKind.REMOTE),
+                "-1",
+                (f"{airef}:clean-search",),
+            ),
+            NativeDucMutationContract(
+                "up-remove-objects",
+                (DucListKind.LOCAL, DucListKind.REMOTE),
+                "-1",
+                (f"{airef}:remove-objects",),
             ),
         ),
         targets=(
@@ -289,6 +318,97 @@ def _canonical_arguments(expression: Expression) -> tuple[str, ...]:
     return tuple(str(argument) for argument in expression.args)
 
 
+def _static_compare(left: int | None, operator: str, right: int | None) -> bool | None:
+    if left is None or right is None:
+        return None
+    operator = operator.removeprefix("c:")
+    if operator in {"=", "=="}:
+        return left == right
+    if operator == "!=":
+        return left != right
+    if operator == ">":
+        return left > right
+    if operator == ">=":
+        return left >= right
+    if operator == "<":
+        return left < right
+    if operator == "<=":
+        return left <= right
+    return None
+
+
+def _int_or_none(value: str) -> int | None:
+    try:
+        return int(value, 10)
+    except ValueError:
+        return None
+
+
+def _target_after_list_mutation(
+    target: DucTargetState | None,
+    *,
+    list_kind: DucListKind,
+    mutation_kind: DucListMutationKind,
+    object_data: str,
+    compare_operator: str | None,
+    compare_value: str | None,
+) -> tuple[DucTargetState | None, DucTargetTransition]:
+    if target is None or target.kind is not DucTargetKind.OBJECT:
+        return target, DucTargetTransition.UNCHANGED
+    if not target.object_refs or target.object_refs[0].list_kind is not list_kind:
+        return target, DucTargetTransition.UNCHANGED
+    if target.validity is DucTargetStatus.STALE:
+        return target, DucTargetTransition.STALE
+    if target.validity is DucTargetStatus.UNKNOWN:
+        return target, DucTargetTransition.UNKNOWN
+
+    target_index = target.object_refs[0].list_index
+    if mutation_kind is DucListMutationKind.SORT:
+        return target, DucTargetTransition.UNCHANGED
+    if mutation_kind is DucListMutationKind.DEDUPE:
+        if target_index == 0:
+            return target, DucTargetTransition.UNCHANGED
+        return (
+            replace(
+                target,
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.UNKNOWN,
+            ),
+            DucTargetTransition.UNKNOWN,
+        )
+
+    if object_data != "-1" or compare_operator is None or compare_value is None:
+        return (
+            replace(
+                target,
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.UNKNOWN,
+            ),
+            DucTargetTransition.UNKNOWN,
+        )
+
+    result = _static_compare(target_index, compare_operator, _int_or_none(compare_value))
+    if result is True:
+        return (
+            replace(
+                target,
+                validity=DucTargetStatus.STALE,
+                proof=DucTargetProof.UNKNOWN,
+            ),
+            DucTargetTransition.STALE,
+        )
+    if result is False:
+        return target, DucTargetTransition.UNCHANGED
+    return (
+        replace(
+            target,
+            validity=DucTargetStatus.UNKNOWN,
+            proof=DucTargetProof.UNKNOWN,
+        ),
+        DucTargetTransition.UNKNOWN,
+    )
+
+
 def _list_state(
     kind: DucListKind,
     state: DucSearchListState,
@@ -332,6 +452,7 @@ def _analyze_duc_linear(
     states: list[tuple[int, DucSemanticState]] = []
     searches: list[DucSearchOperation] = []
     resets: list[DucResetEffect] = []
+    mutations: list[DucListMutationEffect] = []
     targets: list[DucTargetState] = []
     observations: list[DucSearchStateObservation] = []
     effects: list[DucExecutionEffect] = []
@@ -819,7 +940,33 @@ def _analyze_duc_linear(
                 rule_writes.add(DucStateKind.TARGET)
                 continue
 
-            if command in OBJECT_LIST_MUTATORS:
+            mutation_contract = contracts.mutation(command)
+            if mutation_contract is not None:
+                if command == "up-clean-search" and len(args) != 3:
+                    raise ValueError("up-clean-search requires SearchSource, ObjectData, and SearchOrder")
+                if command == "up-remove-objects" and len(args) != 4:
+                    raise ValueError("up-remove-objects requires SearchSource, ObjectData, compareOp, and Value")
+
+                source = (
+                    DucListKind.LOCAL
+                    if args[0] == "search-local"
+                    else DucListKind.REMOTE
+                    if args[0] == "search-remote"
+                    else None
+                )
+                if source is None or source not in mutation_contract.list_kinds:
+                    raise ValueError(f"{command} requires search-local or search-remote")
+                object_data = args[1]
+                compare_operator = args[2] if command == "up-remove-objects" else None
+                compare_value = args[3] if command == "up-remove-objects" else None
+                mutation_kind = (
+                    DucListMutationKind.DEDUPE
+                    if command == "up-clean-search"
+                    and object_data == mutation_contract.sentinel_object_data
+                    else DucListMutationKind.SORT
+                    if command == "up-clean-search"
+                    else DucListMutationKind.REMOVE_MATCHES
+                )
                 provenance = _provenance(
                     rule,
                     action,
@@ -827,26 +974,47 @@ def _analyze_duc_linear(
                     state_revision=state_revision,
                     pass_id=state.pass_id,
                     contract_id=f"duc.list.mutator.{command}",
-                    evidence_ids=("airef:duc:list-mutation",),
+                    evidence_ids=mutation_contract.evidence_ids,
                 )
-                if state.target is not None and state.target.kind is DucTargetKind.OBJECT:
-                    state = DucSemanticState(
-                        state.local_list,
-                        state.remote_list,
-                        state.filters,
-                        DucTargetState(
-                            **{**state.target.__dict__, "validity": DucTargetStatus.UNKNOWN, "proof": DucTargetProof.UNKNOWN}
-                        ),
-                        state.point_target,
-                        state_revision,
-                        state.pass_id,
+                target, target_transition = _target_after_list_mutation(
+                    state.target,
+                    list_kind=source,
+                    mutation_kind=mutation_kind,
+                    object_data=object_data,
+                    compare_operator=compare_operator,
+                    compare_value=compare_value,
+                )
+                state = DucSemanticState(
+                    state.local_list,
+                    state.remote_list,
+                    state.filters,
+                    target,
+                    state.point_target,
+                    state_revision,
+                    state.pass_id,
+                )
+                mutations.append(
+                    DucListMutationEffect(
+                        command=command,
+                        list_kind=source,
+                        kind=mutation_kind,
+                        object_data=object_data,
+                        compare_operator=compare_operator,
+                        compare_value=compare_value,
+                        target_transition=target_transition,
+                        provenance=provenance,
                     )
+                )
+                if target_transition is DucTargetTransition.UNKNOWN:
                     diagnostics.append(
                         DucDiagnostic(
                             "DUC-007",
                             DiagnosticSeverity.WARNING.value,
                             rule.rule_order,
-                            f"{command} mutates a search list after an object target was established; target identity is no longer provable",
+                            (
+                                f"{command} may remove or invalidate an object target in "
+                                f"{source.value.lower()} DUC state; target lifetime is unknown"
+                            ),
                             _location(action, rule.source_location),
                         )
                     )
@@ -946,6 +1114,7 @@ def _analyze_duc_linear(
         states=tuple(states),
         searches=tuple(searches),
         resets=tuple(resets),
+        mutations=tuple(mutations),
         targets=tuple(targets),
         observations=tuple(observations),
         effects=tuple(effects),
@@ -1412,6 +1581,11 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for effect in rule_reports[rule_order].resets
     )
+    mutations = tuple(
+        effect
+        for rule_order in sorted(rule_reports)
+        for effect in rule_reports[rule_order].mutations
+    )
     targets = tuple(
         target
         for rule_order in sorted(rule_reports)
@@ -1468,6 +1642,7 @@ def analyze_duc(
         states=states,
         searches=searches,
         resets=resets,
+        mutations=mutations,
         targets=targets,
         observations=observations,
         effects=effects,
