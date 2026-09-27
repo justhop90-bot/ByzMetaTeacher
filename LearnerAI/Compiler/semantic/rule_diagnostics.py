@@ -20,7 +20,7 @@ from .strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticReport,
 )
-from .rule_execution import EffectiveRule, RuleExecutionReport, StaticControlTransfer
+from .rule_execution import EffectiveRule, RuleExecutionReport
 
 
 class RuleDiagnosticCategory(str, Enum):
