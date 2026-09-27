@@ -3681,10 +3681,14 @@
 (defrule
     (building-type-count-total lumber-camp == 0)
     (civilian-population >= 7)
+    (resource-found wood)
+    (dropsite-min-distance wood > bt-opening-dropsite-distance)
     (up-pending-objects c: lumber-camp == 0)
     (goal bt-dropsite-placement-claim-goal 0)
-    (can-build lumber-camp)
+    (can-build-with-escrow lumber-camp)
 =>
+    (release-escrow wood)
+    (up-assign-builders c: lumber-camp c: 1)
     (build lumber-camp)
 )
 
