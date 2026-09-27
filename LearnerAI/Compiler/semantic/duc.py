@@ -1271,10 +1271,17 @@ def analyze_duc(
     contracts: NativeDucContractCatalog | None = None,
     *,
     loop_widening_limit: int = DUC_LOOP_WIDENING_LIMIT,
+    initial_state: DucSemanticState | None = None,
 ) -> DucAnalysisReport:
     contracts = contracts or default_native_duc_contract_catalog()
+    seed_state = initial_state or _empty_state()
     if not isinstance(execution, RuleExecutionReport):
-        return _analyze_duc_linear(tuple(execution), contracts)
+        report = _analyze_duc_linear(
+            tuple(execution),
+            contracts,
+            initial_state=seed_state,
+        )
+        return replace(report, next_pass_state=advance_duc_pass(report.final_state))
 
     if loop_widening_limit < 1:
         raise ValueError("loop_widening_limit must be >= 1")
@@ -1282,11 +1289,16 @@ def analyze_duc(
     rules_by_order = {rule.rule_order: rule for rule in execution.rules}
     reachability = execution.reachability
     if reachability is None:
-        return _analyze_duc_linear(execution.rules, contracts)
+        report = _analyze_duc_linear(
+            execution.rules,
+            contracts,
+            initial_state=seed_state,
+        )
+        return replace(report, next_pass_state=advance_duc_pass(report.final_state))
 
     outgoing = dict(reachability.outgoing_rule_orders)
     incoming_states: dict[int, dict[int, DucSemanticState]] = {
-        1: {0: _empty_state()}
+        1: {0: seed_state}
     }
     last_entry_keys: dict[int, tuple[object, ...]] = {}
     rule_reports: dict[int, DucAnalysisReport] = {}
@@ -1442,7 +1454,7 @@ def analyze_duc(
         )
 
     return DucAnalysisReport(
-        initial_state=_empty_state(),
+        initial_state=seed_state,
         final_state=final_state,
         states=states,
         searches=searches,
@@ -1453,6 +1465,37 @@ def analyze_duc(
         diagnostics=tuple(diagnostics),
         branch_merges=tuple(branch_merges[order] for order in sorted(branch_merges)),
         loop_widenings=tuple(loop_widenings[key] for key in sorted(loop_widenings)),
+        next_pass_state=advance_duc_pass(final_state),
+    )
+
+
+def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
+    """Advance persistent DUC state to the next engine pass.
+
+    Search/filter state persists, but an object target established on an earlier
+    pass cannot remain a current-pass proof merely because the syntax still
+    contains it. Without a fresh target establishment or native object-lifetime
+    witness, its status becomes UNKNOWN and is marked as SYNTACTIC_RETENTION.
+    Explicit reset invalidation remains STALE and is never weakened to UNKNOWN.
+    """
+    target = state.target
+    if target is not None:
+        if target.validity is DucTargetStatus.STALE:
+            target = replace(target, proof=DucTargetProof.UNKNOWN)
+        else:
+            target = replace(
+                target,
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.SYNTACTIC_RETENTION,
+            )
+    return DucSemanticState(
+        state.local_list,
+        state.remote_list,
+        state.filters,
+        target,
+        state.point_target,
+        0,
+        state.pass_id + 1,
     )
 
 
@@ -1464,4 +1507,5 @@ __all__ = [
     "NativeDucTargetContract",
     "analyze_duc",
     "default_native_duc_contract_catalog",
+    "advance_duc_pass",
 ]
