@@ -342,7 +342,7 @@ class SourceGraphResolver:
                 target_text = None
                 load_kind = LoadKind.RANDOM
 
-            if event.kind is SourceAssemblyEventKind.LOAD:
+            if event.kind is SourceAssemblyEventKind.LOAD and active:
                 target_source = self._load_unit(
                     Path(target_text),
                     containing_source=physical.path,
@@ -350,7 +350,7 @@ class SourceGraphResolver:
                     error_line=event.span.start_line,
                     error_column=event.span.start_column,
                 )
-            elif active:
+            elif event.kind is SourceAssemblyEventKind.LOAD_RANDOM and active:
                 if not allow_load_random:
                     raise SourceGraphError(
                         "SOURCE-GRAPH-007",
@@ -829,6 +829,11 @@ def _scan_assembly_occurrences(
         if char == '"':
             in_string = True
             index += 1
+            continue
+
+        if char == ";":
+            newline = source.find("\n", index)
+            index = len(source) if newline < 0 else newline + 1
             continue
 
         if char == "(":
