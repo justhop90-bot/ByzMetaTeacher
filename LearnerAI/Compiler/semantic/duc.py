@@ -21,6 +21,11 @@ from ..ir.duc import (
     DucFilterPredicate,
     DucFilterSnapshot,
     DucFilterState,
+    DucGroupFlagState,
+    DucGroupOperation,
+    DucGroupSizeObservation,
+    DucGroupStatus,
+    DucGroupState,
     DucListGeneration,
     DucListMutationEffect,
     DucListMutationKind,
@@ -77,6 +82,8 @@ OBJECT_TARGET_CONSUMERS = frozenset({"up-target-objects"})
 POINT_TARGET_CONSUMERS = frozenset({"up-target-point"})
 OBJECT_LIST_MUTATORS = frozenset({"up-clean-search", "up-remove-objects"})
 DUC_LOOP_WIDENING_LIMIT = 3
+DUC_GROUP_COUNT = 20
+DUC_GROUP_CAPACITY = 40
 
 
 @dataclass(frozen=True)
@@ -140,6 +147,7 @@ def _provenance(
     state_revision: int,
     pass_id: int,
     inputs: tuple[int, ...] = (),
+    input_group_generations: tuple[tuple[int, int], ...] = (),
     contract_id: str,
     evidence_ids: tuple[str, ...],
 ) -> DucProvenance:
@@ -155,6 +163,7 @@ def _provenance(
         state_revision=state_revision,
         pass_id=pass_id,
         input_state_generations=inputs,
+        input_group_generations=input_group_generations,
         semantic_contract_id=contract_id,
         evidence_ids=evidence_ids,
     )
@@ -398,6 +407,84 @@ def _list_state(
     )
 
 
+def _empty_groups() -> tuple[DucGroupState, ...]:
+    return tuple(
+        DucGroupState(
+            group_id=group_id,
+            generation=0,
+            cardinality=DucCardinalityRange(0, 0),
+            validity=DucGroupStatus.EMPTY,
+        )
+        for group_id in range(DUC_GROUP_COUNT)
+    )
+
+
+def _group_state(state: DucSemanticState, group_id: int) -> DucGroupState:
+    return state.groups[group_id]
+
+
+def _replace_group(state: DucSemanticState, group: DucGroupState) -> DucSemanticState:
+    groups = list(state.groups)
+    groups[group.group_id] = group
+    return replace(state, groups=tuple(groups))
+
+
+def _group_id_from_args(args: tuple[str, ...], *, command: str) -> int | None:
+    if not args:
+        return None
+    try:
+        group_id = int(args[-1], 10)
+    except ValueError:
+        return None
+    if not 0 <= group_id < DUC_GROUP_COUNT:
+        raise ValueError(f"{command} group id must be within 0..19")
+    return group_id
+
+
+def _group_create_bounds(args: tuple[str, ...]) -> tuple[int | None, int | None]:
+    def decode(value: str, special_zero: int | None = None) -> int | None:
+        if special_zero is not None and value == "0":
+            return special_zero
+        try:
+            return int(value, 10)
+        except ValueError:
+            return None
+
+    start_index = decode(args[0], 0)
+    requested_max = decode(args[1], DUC_GROUP_CAPACITY)
+    if requested_max is not None:
+        requested_max = max(0, min(requested_max, DUC_GROUP_CAPACITY))
+    return start_index, requested_max
+
+
+def _group_cardinality(
+    generation: DucListGeneration,
+    *,
+    start_index: int | None,
+    requested_max_objects: int | None,
+) -> DucCardinalityRange:
+    if start_index is None or requested_max_objects is None or generation.cardinality is None:
+        return DucCardinalityRange(0, DUC_GROUP_CAPACITY)
+    minimum = max(0, generation.cardinality.minimum - start_index)
+    maximum = max(0, generation.cardinality.maximum - start_index)
+    return DucCardinalityRange(
+        min(requested_max_objects, minimum, DUC_GROUP_CAPACITY),
+        min(requested_max_objects, maximum, DUC_GROUP_CAPACITY),
+    )
+
+
+def _group_validity(
+    cardinality: DucCardinalityRange,
+    *,
+    path_ambiguous: bool,
+) -> DucGroupStatus:
+    if cardinality.maximum == 0:
+        return DucGroupStatus.EMPTY
+    if path_ambiguous or cardinality.minimum == 0:
+        return DucGroupStatus.UNKNOWN
+    return DucGroupStatus.VALID
+
+
 def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
@@ -407,6 +494,7 @@ def _empty_state(pass_id: int = 0) -> DucSemanticState:
         point_target=None,
         state_revision=0,
         pass_id=pass_id,
+        groups=_empty_groups(),
     )
 
 
