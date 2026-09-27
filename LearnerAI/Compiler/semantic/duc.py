@@ -1975,6 +1975,7 @@ def _goal_output_key(span: DucGoalOutputSpan) -> tuple[object, ...]:
         span.width,
         span.generation,
         span.overwritten_generation,
+        span.overwritten_provenance,
         span.cardinality,
         span.pass_id,
         span.path_ambiguous,
@@ -2006,7 +2007,11 @@ def _join_goal_output_spans(
         ):
             merged.append(first)
             continue
-        minimum = min(span.cardinality.minimum for span in present)
+        minimum = (
+            0
+            if len(present) < len(candidates)
+            else min(span.cardinality.minimum for span in present)
+        )
         maximum = max(span.cardinality.maximum for span in present)
         generation = max(span.generation for span in present)
         merged.append(
