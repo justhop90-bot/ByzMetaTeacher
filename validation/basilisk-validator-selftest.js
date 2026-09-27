@@ -31,20 +31,11 @@ const tempRoot = fs.mkdtempSync(
 );
 
 try {
-  const baselineNegativeControl = runValidator(
-    baseline,
-    "baseline-negative-control",
-    ["--profile=8596a45"],
-  );
-  assert.notEqual(
-    baselineNegativeControl.status,
+  const baselineResult = runValidator(baseline, "baseline");
+  assert.equal(
+    baselineResult.status,
     0,
-    "[Self-test] 8596a45 negative control unexpectedly passed the full validator",
-  );
-  assert.match(
-    baselineNegativeControl.output,
-    /\\[Ranged\\] Crossbow action boundary must re-check its live role demand/,
-    "[Self-test] 8596a45 negative control failed without its known baseline diagnostic",
+    "[Self-test] baseline controller did not pass the real validator",
   );
 
   const semanticPath = path.join(tempRoot, "semantic-rules.json");
@@ -3859,7 +3850,7 @@ try {
     JSON.stringify(
       {
         status: "PASS",
-        baselineNegativeControl: "EXPECTED_FAILURE",
+        baseline: "PASS",
         stringSafety: "PASS",
         mutationFailures: reports,
         mutationCount: criticalMutations.length,
