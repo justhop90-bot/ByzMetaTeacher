@@ -64,3 +64,39 @@
     (up-modify-sn sn-test-a s:%/ sn-test-b)
     (disable-self)
 )
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a c:> 3)
+    (up-compare-sn sn-test-a c:>= 3)
+    (up-compare-sn sn-test-a c:< 3)
+    (up-compare-sn sn-test-a c:<= 3)
+    (up-compare-sn sn-test-a c:== 3)
+    (up-compare-sn sn-test-a c:!= 3)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a g:> goal-test-a)
+    (up-compare-sn sn-test-a g:>= goal-test-a)
+    (up-compare-sn sn-test-a g:< goal-test-a)
+    (up-compare-sn sn-test-a g:<= goal-test-a)
+    (up-compare-sn sn-test-a g:== goal-test-a)
+    (up-compare-sn sn-test-a g:!= goal-test-a)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (up-compare-sn sn-test-a s:> sn-test-b)
+    (up-compare-sn sn-test-a s:>= sn-test-b)
+    (up-compare-sn sn-test-a s:< sn-test-b)
+    (up-compare-sn sn-test-a s:<= sn-test-b)
+    (up-compare-sn sn-test-a s:== sn-test-b)
+    (up-compare-sn sn-test-a s:!= sn-test-b)
+    (disable-self)
+)
