@@ -1,4 +1,4 @@
-"""Structural validation for the typed effective AoE2 .per source graph."""
+"""Structural validation for the typed effective AoE2 .per source graph.\n\nDiagnostic policy:\n- exact duplicate diagnostics are removed deterministically;\n- remaining diagnostics use the canonical location/code/identity ordering below;\n- ``SourceGraphValidationReport.primary_code`` is the first diagnostic code in\n  that canonical ordering.\nThis makes multi-failure validation reproducible without relying on traversal\norder or dictionary/set iteration order.\n"""
 from __future__ import annotations
 
 import hashlib
@@ -31,6 +31,9 @@ class SourceGraphValidationSeverity(str, Enum):
 
 
 class SourceGraphDiagnosticCode(str, Enum):
+    # Declaration order is stable diagnostic precedence only within the
+    # canonical code tie-breaker. Primary-code selection is the first item
+    # after exact deduplication and full canonical sorting.
     DUPLICATE_FILE_ID = "SOURCE-GRAPH-VAL-001"
     DUPLICATE_INSTANCE_ID = "SOURCE-GRAPH-VAL-002"
     DUPLICATE_EDGE_ID = "SOURCE-GRAPH-VAL-003"
@@ -122,6 +125,11 @@ class SourceGraphValidationReport:
             if item.severity is SourceGraphValidationSeverity.ERROR
         )
 
+    @property
+    def primary_code(self) -> SourceGraphDiagnosticCode | None:
+        """Return the first canonical diagnostic code, or None when valid."""
+        return self.diagnostics[0].code if self.diagnostics else None
+
 
 class SourceGraphValidationError(CompileError):
     def __init__(self, report: SourceGraphValidationReport) -> None:
@@ -184,6 +192,19 @@ def _diag(
     )
 
 
+def _diag_identity(item: SourceGraphDiagnostic) -> tuple[object, ...]:
+    return (
+        item.code.value,
+        item.severity.value,
+        item.message,
+        str(item.path or ""),
+        item.line or 0,
+        item.column or 0,
+        item.instance_id or "",
+        item.edge_id or "",
+    )
+
+
 def _diag_key(item: SourceGraphDiagnostic) -> tuple[object, ...]:
     return (
         str(item.path or ""),
@@ -194,6 +215,15 @@ def _diag_key(item: SourceGraphDiagnostic) -> tuple[object, ...]:
         item.edge_id or "",
         item.message,
     )
+
+
+def _canonicalize_diagnostics(
+    diagnostics: list[SourceGraphDiagnostic],
+) -> tuple[SourceGraphDiagnostic, ...]:
+    unique: dict[tuple[object, ...], SourceGraphDiagnostic] = {}
+    for item in diagnostics:
+        unique.setdefault(_diag_identity(item), item)
+    return tuple(sorted(unique.values(), key=_diag_key))
 
 
 def _instance_path(instance: SourceInstance | None) -> Path | None:
@@ -957,7 +987,7 @@ def validate_effective_source_graph(
         diagnostics,
     )
 
-    ordered = tuple(sorted(diagnostics, key=_diag_key))
+    ordered = _canonicalize_diagnostics(diagnostics)
     return SourceGraphValidationReport(
         valid=not ordered,
         diagnostics=ordered,
