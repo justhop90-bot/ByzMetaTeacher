@@ -461,7 +461,7 @@ def compile_package_with_report(
             ignored_state_identifiers=_compiler_owned_state_identifiers(result),
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
-        duc_report = analyze_duc(effective_rules)
+        duc_report = analyze_duc(effective_rules, registry.native_contracts)
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
