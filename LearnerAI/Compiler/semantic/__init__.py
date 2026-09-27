@@ -162,6 +162,7 @@ from .fact_values import (
 )
 
 from .strategic_number_semantics import (
+    StrategicNumberCompilationError,
     StrategicNumberDiagnostic,
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticError,
