@@ -344,6 +344,16 @@ def _int_or_none(value: str) -> int | None:
         return None
 
 
+def _target_with_unstable_index(target: DucTargetState) -> DucTargetState:
+    return replace(
+        target,
+        object_refs=tuple(
+            replace(ref, index_stable=False)
+            for ref in target.object_refs
+        ),
+    )
+
+
 def _target_after_list_mutation(
     target: DucTargetState | None,
     *,
@@ -362,25 +372,31 @@ def _target_after_list_mutation(
     if target.validity is DucTargetStatus.UNKNOWN:
         return target, DucTargetTransition.UNKNOWN
 
-    target_index = target.object_refs[0].list_index
+    object_ref = target.object_refs[0]
+    target_index = object_ref.list_index
+
     if mutation_kind is DucListMutationKind.SORT:
-        return target, DucTargetTransition.UNCHANGED
+        return _target_with_unstable_index(target), DucTargetTransition.UNCHANGED
+
     if mutation_kind is DucListMutationKind.DEDUPE:
-        if target_index == 0:
-            return target, DucTargetTransition.UNCHANGED
         return (
             replace(
-                target,
+                _target_with_unstable_index(target),
                 validity=DucTargetStatus.UNKNOWN,
                 proof=DucTargetProof.UNKNOWN,
             ),
             DucTargetTransition.UNKNOWN,
         )
 
-    if object_data != "-1" or compare_operator is None or compare_value is None:
+    if (
+        object_data != "-1"
+        or compare_operator is None
+        or compare_value is None
+        or not object_ref.index_stable
+    ):
         return (
             replace(
-                target,
+                _target_with_unstable_index(target),
                 validity=DucTargetStatus.UNKNOWN,
                 proof=DucTargetProof.UNKNOWN,
             ),
@@ -391,17 +407,18 @@ def _target_after_list_mutation(
     if result is True:
         return (
             replace(
-                target,
+                _target_with_unstable_index(target),
                 validity=DucTargetStatus.STALE,
                 proof=DucTargetProof.UNKNOWN,
             ),
             DucTargetTransition.STALE,
         )
     if result is False:
-        return target, DucTargetTransition.UNCHANGED
+        return _target_with_unstable_index(target), DucTargetTransition.UNCHANGED
+
     return (
         replace(
-            target,
+            _target_with_unstable_index(target),
             validity=DucTargetStatus.UNKNOWN,
             proof=DucTargetProof.UNKNOWN,
         ),
