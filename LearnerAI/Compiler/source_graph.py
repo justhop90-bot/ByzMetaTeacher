@@ -342,14 +342,37 @@ class SourceGraphResolver:
                 target_text = None
                 load_kind = LoadKind.RANDOM
 
-            if active and event.kind is SourceAssemblyEventKind.LOAD:
-                target_source = self._load_unit(
-                    Path(target_text),
-                    containing_source=physical.path,
-                    search_roots=search_roots,
-                    error_line=event.span.start_line,
-                    error_column=event.span.start_column,
-                )
+            if event.kind is SourceAssemblyEventKind.LOAD:
+                if active:
+                    target_source = self._load_unit(
+                        Path(target_text),
+                        containing_source=physical.path,
+                        search_roots=search_roots,
+                        error_line=event.span.start_line,
+                        error_column=event.span.start_column,
+                    )
+                else:
+                    resolved = self._resolve_path(
+                        Path(target_text),
+                        physical.path.parent,
+                        search_roots,
+                    )
+                    if resolved is not None and resolved.is_file():
+                        try:
+                            inactive_text = resolved.read_text(encoding="utf-8")
+                        except OSError as exc:
+                            raise SourceGraphError(
+                                "SOURCE-GRAPH-001",
+                                f"unable to read load target '{target_text}': {exc}",
+                                path=physical.path,
+                                line=event.span.start_line,
+                                column=event.span.start_column,
+                            ) from exc
+                        target_source = SourceFile.from_path_text(
+                            resolved,
+                            inactive_text,
+                        )
+                        self._files_by_id[target_source.identity] = target_source
             elif active:
                 if not allow_load_random:
                     raise SourceGraphError(
