@@ -306,3 +306,5 @@ class SourceAssemblyEventTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Regression anchor: authoritative conditional event ordering and branch activity are tested above.
