@@ -51,11 +51,11 @@
   - Implement engine-compatible evaluator using integer arithmetic and explicit zero-divisor handling.
   - Keep dynamic Goal/SN divisors runtime-valid but statically unknown.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
   - Run the focused unittest command.
   - Expected: all parser/operator/dependency tests pass.
 
-- [ ] **Step 5: Run the affected compiler tests**
+- [x] **Step 5: Run the affected compiler tests**
   - Run: `python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"`
   - Expected: existing suite plus new SN tests pass.
 
@@ -93,15 +93,15 @@
   - Preserve timer/jump/self-disable behavior.
   - Extend persistent-state extraction so `up-modify-sn` is a target writer plus explicit source dependency.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
   - Run the focused scheduler/order tests.
   - Expected: all same-pass and dependency cases pass.
 
-- [ ] **Step 5: Run the affected compiler tests**
+- [x] **Step 5: Run the affected compiler tests**
   - Run the full compiler unittest suite.
   - Expected: no regressions.
 
-- [ ] **Step 6: Commit the passing deliverable**
+- [x] **Step 6: Commit the passing deliverable**
   - Commit: `feat(compiler): integrate strategic number pass semantics`
 
 ---
@@ -135,12 +135,12 @@
   - Generate the fixture deterministically and reject stale checked-in fixture content.
   - Upload the fixture and report with existing native evidence.
 
-- [ ] **Step 4: Verify the native pass**
+- [x] **Step 4: Verify the native pass**
   - Run the dedicated script where the pinned parser is installed.
   - Expected: JSON `finding_count=0`.
   - Run the full compiler unittest suite.
 
-- [ ] **Step 5: Commit the passing deliverable**
+- [x] **Step 5: Commit the passing deliverable**
   - Commit: `test(compiler): add strategic number native acceptance gate`
 
 ---
@@ -155,16 +155,16 @@
 - Consumes: final implementation interfaces and verification results.
 - Produces: design and plan records matching the final code.
 
-- [ ] **Step 1: Reconcile the design and implementation**
+- [x] **Step 1: Reconcile the design and implementation**
   - Record any final naming changes while preserving the approved semantic contract.
 
-- [ ] **Step 2: Self-review**
+- [x] **Step 2: Self-review**
   - Check specification coverage, placeholders, contradictions, and interface-name consistency.
 
-- [ ] **Step 3: Verify documentation references**
+- [x] **Step 3: Verify documentation references**
   - Confirm all paths and exported names exist.
 
-- [ ] **Step 4: Commit passing documentation**
+- [x] **Step 4: Commit passing documentation**
   - Commit: `docs(compiler): finalize strategic number semantics`
 
 ---
