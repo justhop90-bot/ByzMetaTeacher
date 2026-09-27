@@ -20,7 +20,7 @@ from .strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticReport,
 )
-from .rule_execution import EffectiveRule, RuleExecutionReport
+from .rule_execution import EffectiveRule, RuleExecutionReport, analyze_rule_reachability
 
 
 class RuleDiagnosticCategory(str, Enum):
@@ -51,6 +51,7 @@ class RuleDiagnosticCode(str, Enum):
     CONTROL_TRANSFER_OUT_OF_RANGE = "RULE-CF-001"
     CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
     CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
+    CONTROL_TRANSFER_UNREACHABLE_RULE = "RULE-CF-004"
 
 
 @dataclass(frozen=True)
@@ -217,6 +218,39 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         item.related_operation or "",
         item.message,
     )
+
+
+def _unreachable_rule_diagnostics(
+    report: RuleExecutionReport,
+) -> tuple[RuleDiagnostic, ...]:
+    reachability = report.reachability
+    if reachability is None:
+        reachability = analyze_rule_reachability(
+            report.rules,
+            report.control_transfers,
+        )
+
+    diagnostics: list[RuleDiagnostic] = []
+    for rule_order in reachability.unreachable_rule_orders:
+        rule = report.rules[rule_order - 1]
+        diagnostics.append(
+            RuleDiagnostic(
+                rule_order=rule_order,
+                code=RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE,
+                severity=DiagnosticSeverity.ERROR,
+                eligibility=None,
+                message=(
+                    f"rule {rule_order} has no reachable control-flow path "
+                    "from the start of a pass across recurrent rule execution"
+                ),
+                location=rule.source_location,
+                category=RuleDiagnosticCategory.CONTROL_FLOW,
+                source_code=RuleDiagnosticCode.CONTROL_TRANSFER_UNREACHABLE_RULE.value,
+                related_rule_order=None,
+                related_operation="control-flow",
+            )
+        )
+    return tuple(diagnostics)
 
 
 def _control_flow_diagnostics(
@@ -420,6 +454,8 @@ def analyze_rule_diagnostics(
             _strategic_number_diagnostic_for(item, report)
             for item in strategic_number_report.diagnostics
         )
+
+    diagnostics.extend(_unreachable_rule_diagnostics(report))
 
     diagnostics.extend(_control_flow_diagnostics(report))
 
