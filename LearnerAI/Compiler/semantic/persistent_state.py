@@ -604,7 +604,7 @@ def analyze_persistent_state(
         ):
             downstream_readers_by_writer = {}
         else:
-        downstream_readers_by_writer = {
+            downstream_readers_by_writer = {
                 writer: tuple(
                     reader
                     for reader in readers
@@ -648,8 +648,7 @@ def analyze_persistent_state(
                         location=writer.location,
                     )
                 )
-    
-            reachable_orders = (
+        reachable_orders = (
             set(report.reachability.reachable_rule_orders)
             if report.reachability is not None
             else {rule.rule_order for rule in report.rules}
