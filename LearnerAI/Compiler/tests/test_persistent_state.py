@@ -15,6 +15,7 @@ from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
 class PersistentStateSemanticsTests(unittest.TestCase):
+    # Path-sensitive fixtures assert on the specific state under analysis.
     def _graph(self, source: str, child: str | None = None):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
