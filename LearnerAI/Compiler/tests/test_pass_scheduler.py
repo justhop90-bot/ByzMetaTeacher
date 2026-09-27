@@ -38,6 +38,45 @@ class PassSchedulerTests(unittest.TestCase):
         self.assertEqual(second.skipped_rule_orders, ())
         self.assertEqual(scheduler.goals["recurring"], 1)
 
+    def test_logical_fact_arity_and_operand_shape_are_rejected(self):
+        for source in (
+            '(defrule (and) => (disable-self))\n',
+            '(defrule (or (true) (true) (true)) => (disable-self))\n',
+            '(defrule (and (true) not-a-fact) => (disable-self))\n',
+        ):
+            with self.subTest(source=source):
+                scheduler = PassScheduler(self._rules(source))
+                with self.assertRaises(SchedulerSemanticError):
+                    scheduler.run_pass()
+
+    def test_timer_commands_reject_extra_operands(self):
+        cases = (
+            ('(defrule (true) => (disable-timer 1 2))\n', ("1",)),
+            ('(defrule (true) => (up-set-timer c: 1 c: 5 extra))\n', ("1",)),
+            ('(defrule (timer-triggered 1 2) => (disable-self))\n', ("1",)),
+        )
+        for source, timer_ids in cases:
+            with self.subTest(source=source):
+                scheduler = PassScheduler(self._rules(source), timer_ids=timer_ids)
+                with self.assertRaises(SchedulerSemanticError):
+                    scheduler.run_pass()
+
+    def test_timer_status_parser_does_not_strip_arbitrary_prefix_characters(self):
+        rules = self._rules(
+            '(defrule (up-timer-status 1 cc:== timer-running) => (disable-self))\n'
+        )
+        scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
+        with self.assertRaisesRegex(SchedulerSemanticError, "optional c: prefix"):
+            scheduler.run_pass()
+
+    def test_timer_status_rejects_unknown_state_literal(self):
+        rules = self._rules(
+            '(defrule (up-timer-status 1 = running) => (disable-self))\n'
+        )
+        scheduler = PassScheduler(tuple(rules), timer_ids=("1",))
+        with self.assertRaisesRegex(SchedulerSemanticError, "valid timer state"):
+            scheduler.run_pass()
+
     def test_same_pass_goal_write_is_visible_to_later_rule(self):
         rules = self._rules(
             '(defrule (true) => (set-goal same-pass 1) (disable-self))\\n'
