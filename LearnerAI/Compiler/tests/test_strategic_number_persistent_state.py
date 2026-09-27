@@ -24,10 +24,8 @@ class PersistentStateStrategicNumberTests(unittest.TestCase):
 
     def test_up_modify_sn_is_tracked_as_persistent_sn_write(self):
         report = self._report(
-            "(defrule (true) => (up-modify-sn 510 c:+ 1))
-"
-            "(defrule (strategic-number 510 >= 1) => (disable-self))
-"
+            "(defrule (true) => (up-modify-sn 510 c:+ 1))\n"
+            "(defrule (strategic-number 510 >= 1) => (disable-self))\n"
         )
 
         sn_writes = [
