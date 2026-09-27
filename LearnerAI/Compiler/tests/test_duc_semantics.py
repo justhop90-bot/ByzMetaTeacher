@@ -94,9 +94,14 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(merge.rule_order, 4)
         self.assertEqual(merge.predecessor_rule_orders, (2, 3))
         self.assertIn("LOCAL_LIST", merge.merged_fields)
-        self.assertTrue(report.states[2][1].local_list.path_ambiguous)
-        self.assertTrue(report.states[2][1].local_list.initialized)
-        self.assertIsNone(report.states[2][1].local_list.current_generation)
+        join_state = next(
+            state
+            for rule_order, state in report.states
+            if rule_order == 4
+        )
+        self.assertTrue(join_state.local_list.path_ambiguous)
+        self.assertTrue(join_state.local_list.initialized)
+        self.assertIsNone(join_state.local_list.current_generation)
         self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
         self.assertTrue(
             any(item.code == "DUC-007" and item.rule_order in {4, 5}
