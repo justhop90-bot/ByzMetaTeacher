@@ -22,6 +22,7 @@ from Compiler.semantic.strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     analyze_strategic_number_expressions,
 )
+from Compiler.semantic.duc import analyze_duc
 from Compiler.semantic.rule_execution import analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
@@ -51,6 +52,32 @@ class RuleDiagnosticsTests(unittest.TestCase):
             issuance_source_order=3,
             location=SourceLocation(2, 1, "<test>"),
         )
+
+    def test_duc_loop_widening_maps_to_rule_diagnostic(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-find-remote c: town-center c: 1))\\n"
+                "(defrule (true) => (up-find-local c: villager c: 1))\\n"
+                "(defrule (true) => (up-jump-rule -2))\\n"
+                "(defrule (true) => (up-target-objects 1 action-default -1 -1))\\n"
+            )
+        )
+
+        duc_report = analyze_duc(report)
+        diagnostics = analyze_rule_diagnostics(report, duc_report=duc_report)
+
+        finding = next(
+            item for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.DUC_LOOP_WIDENING
+        )
+        self.assertEqual(finding.rule_order, 3)
+        self.assertEqual(finding.severity, DiagnosticSeverity.WARNING)
+        self.assertEqual(finding.category.value, "DUC")
+        self.assertEqual(finding.source_code, "DUC-016")
+        self.assertIn("loop head 2", finding.message)
+        self.assertIn("back-edge source 3", finding.message)
+        self.assertIn("iteration bound 3", finding.message)
+        self.assertIn("widened fields: LOCAL_LIST", finding.message)
 
     def test_forward_control_transfer_gets_bypass_diagnostic(self):
         report = analyze_effective_rules(
