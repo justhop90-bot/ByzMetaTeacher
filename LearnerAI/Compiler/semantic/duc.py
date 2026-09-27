@@ -6,13 +6,14 @@ target lifetime cannot be established.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 
 from ..ast import Expression
 from ..diagnostics import DiagnosticSeverity
 from ..ir.duc import (
     DucAnalysisReport,
+    DucBranchMerge,
     DucDiagnostic,
     DucExecutionEffect,
     DucFilterPredicate,
@@ -35,7 +36,12 @@ from ..ir.duc import (
     DucTargetStatus,
     DucVisibility,
 )
-from .rule_execution import EffectiveRule, RuleAction, RulePassBehavior
+from .rule_execution import (
+    EffectiveRule,
+    RuleAction,
+    RuleExecutionReport,
+    RulePassBehavior,
+)
 
 
 LOCAL_SEARCHES = frozenset({
@@ -283,12 +289,16 @@ def _list_state(
     generation: DucListGeneration | None,
     *,
     next_generation: int | None = None,
+    path_ambiguous: bool = False,
+    generation_variants: tuple[DucListGeneration, ...] = (),
 ) -> DucSearchListState:
     return DucSearchListState(
         list_kind=kind,
         current_generation=generation,
         next_generation=state.next_generation if next_generation is None else next_generation,
         initialized=generation is not None,
+        path_ambiguous=path_ambiguous,
+        generation_variants=generation_variants,
     )
 
 
@@ -303,12 +313,14 @@ def _empty_state() -> DucSemanticState:
     )
 
 
-def analyze_duc(
+def _analyze_duc_linear(
     rules: tuple[EffectiveRule, ...],
     contracts: NativeDucContractCatalog | None = None,
+    *,
+    initial_state: DucSemanticState | None = None,
 ) -> DucAnalysisReport:
     contracts = contracts or default_native_duc_contract_catalog()
-    state = _empty_state()
+    state = initial_state or _empty_state()
     initial_state = state
     states: list[tuple[int, DucSemanticState]] = []
     searches: list[DucSearchOperation] = []
@@ -353,21 +365,44 @@ def analyze_duc(
                     fingerprint=state.filters.fingerprint,
                     predicates=state.filters.predicates,
                     provenance=state.filters.last_mutation,
+                    path_ambiguous=state.filters.path_ambiguous,
                 )
+                if filter_snapshot.path_ambiguous:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-012",
+                            DiagnosticSeverity.WARNING.value,
+                            rule.rule_order,
+                            f"{command} consumes a retained filter state that differs across control-flow paths",
+                            _location(action, rule.source_location),
+                        )
+                    )
                 visible = DucVisibility.SAME_RULE
+                list_generation_inputs = tuple(
+                    sorted(
+                        {
+                            generation.generation
+                            for generation in (
+                                *current.generation_variants,
+                                *(
+                                    (current.current_generation,)
+                                    if current.current_generation is not None
+                                    else ()
+                                ),
+                            )
+                        }
+                    )
+                )
                 provenance = _provenance(
                     rule,
                     action,
                     visibility=visible,
                     state_revision=state_revision,
-                    inputs=(state.filters.generation,),
+                    inputs=list_generation_inputs + (state.filters.generation,),
                     contract_id=f"duc.search.{command}",
                     evidence_ids=search_contract.evidence_ids,
                 )
-                generation_number = (
-                    current.next_generation if current.current_generation is None
-                    else current.current_generation.generation
-                )
+                generation_number = current.next_generation
                 output_generation = DucListGeneration(
                     list_kind=kind,
                     generation=generation_number,
@@ -382,9 +417,9 @@ def analyze_duc(
                     kind,
                     current,
                     output_generation,
-                    next_generation=(
-                        max(current.next_generation, generation_number + 1)
-                    ),
+                    next_generation=generation_number + 1,
+                    path_ambiguous=current.path_ambiguous or filter_snapshot.path_ambiguous,
+                    generation_variants=(),
                 )
                 if kind is DucListKind.LOCAL:
                     state = DucSemanticState(
@@ -452,6 +487,7 @@ def analyze_duc(
                         True,
                         True,
                         provenance,
+                        state.filters.path_ambiguous,
                     ),
                     state.target,
                     state.point_target,
@@ -522,7 +558,7 @@ def analyze_duc(
                 if resolution.invalidates_filters:
                     next_filter_generation = (
                         filters.generation + 1
-                        if filters.predicates or filters.retained
+                        if filters.predicates or filters.retained or filters.path_ambiguous
                         else filters.generation
                     )
                     filters = DucFilterState(
@@ -627,7 +663,7 @@ def analyze_duc(
                         continue
                     source = DucListKind.LOCAL if args[0] == "search-local" else DucListKind.REMOTE if args[0] == "search-remote" else None
                     current = state.local_list if source is DucListKind.LOCAL else state.remote_list if source is DucListKind.REMOTE else None
-                    if source is None or current is None or current.current_generation is None:
+                    if source is None or current is None or not current.initialized:
                         diagnostics.append(
                             DucDiagnostic(
                                 "DUC-005",
@@ -638,17 +674,38 @@ def analyze_duc(
                             )
                         )
                         continue
+                    generation_candidates = tuple(
+                        generation.generation
+                        for generation in current.generation_variants
+                    )
+                    current_generation = (
+                        current.current_generation
+                        if current.current_generation is not None
+                        else (
+                            current.generation_variants[0]
+                            if current.generation_variants
+                            else None
+                        )
+                    )
                     try:
                         index = int(args[2], 10)
                     except ValueError:
                         index = None
-                    if index is not None and not 0 <= index < current.current_generation.capacity:
+                    capacity = (
+                        current_generation.capacity
+                        if current_generation is not None
+                        else max(
+                            (generation.capacity for generation in current.generation_variants),
+                            default=0,
+                        )
+                    )
+                    if index is not None and not 0 <= index < capacity:
                         diagnostics.append(
                             DucDiagnostic(
                                 "DUC-014",
                                 DiagnosticSeverity.ERROR.value,
                                 rule.rule_order,
-                                f"DUC object index {index} exceeds {source.value.lower()} list capacity {current.current_generation.capacity}",
+                                f"DUC object index {index} exceeds {source.value.lower()} list capacity {capacity}",
                                 _location(action, rule.source_location),
                             )
                         )
@@ -658,7 +715,9 @@ def analyze_duc(
                         action,
                         visibility=DucVisibility.SAME_RULE,
                         state_revision=state_revision,
-                        inputs=(current.current_generation.generation, state.filters.generation),
+                        inputs=tuple(
+                            sorted(set(generation_candidates))
+                        ) + (state.filters.generation,),
                         contract_id="duc.target.object",
                         evidence_ids=target_contract.evidence_ids,
                     )
@@ -668,16 +727,24 @@ def analyze_duc(
                         object_refs=(
                             DucObjectRef(
                                 source,
-                                current.current_generation.generation,
+                                current_generation.generation if current_generation is not None else None,
                                 index,
                                 None,
                                 provenance,
                             ),
                         ),
-                        source_list_generation=current.current_generation.generation,
+                        source_list_generation=(
+                            current_generation.generation
+                            if current_generation is not None and not current.path_ambiguous
+                            else None
+                        ),
                         source_filter_generation=state.filters.generation,
                         provenance=provenance,
-                        validity=DucTargetStatus.VALID,
+                        validity=(
+                            DucTargetStatus.UNKNOWN
+                            if current.path_ambiguous or state.filters.path_ambiguous
+                            else DucTargetStatus.VALID
+                        ),
                     )
                     state = DucSemanticState(
                         state.local_list,
@@ -843,6 +910,287 @@ def analyze_duc(
         observations=tuple(observations),
         effects=tuple(effects),
         diagnostics=tuple(diagnostics),
+    )
+
+
+def _generation_key(generation: DucListGeneration) -> tuple[object, ...]:
+    return (
+        generation.list_kind,
+        generation.generation,
+        generation.capacity,
+        generation.content_fingerprint,
+    )
+
+
+def _filter_key(filters: DucFilterState) -> tuple[object, ...]:
+    return (
+        filters.generation,
+        filters.fingerprint,
+        filters.predicates,
+        filters.retained,
+        filters.path_ambiguous,
+    )
+
+
+def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
+    if target is None:
+        return None
+    return (
+        target.kind,
+        target.object_refs,
+        target.point_ref,
+        target.source_list_generation,
+        target.source_filter_generation,
+    )
+
+
+def _join_list_states(states: tuple[DucSearchListState, ...]) -> DucSearchListState:
+    first = states[0]
+    unique_generations: dict[tuple[object, ...], DucListGeneration] = {}
+    for state in states:
+        for generation in state.generation_variants:
+            unique_generations[_generation_key(generation)] = generation
+        if state.current_generation is not None:
+            unique_generations[_generation_key(state.current_generation)] = state.current_generation
+
+    current_keys = {
+        _generation_key(state.current_generation)
+        for state in states
+        if state.current_generation is not None
+    }
+    all_initialized = all(state.initialized for state in states)
+    same_current = (
+        all_initialized
+        and len(current_keys) == 1
+        and not any(state.current_generation is None for state in states)
+    )
+    ambiguous = (
+        any(state.path_ambiguous for state in states)
+        or not all_initialized
+        or len(current_keys) > 1
+        or any(state.current_generation is None for state in states)
+    )
+    current_generation = first.current_generation if same_current else None
+    return DucSearchListState(
+        list_kind=first.list_kind,
+        current_generation=current_generation,
+        next_generation=max(state.next_generation for state in states),
+        initialized=any(state.initialized for state in states),
+        path_ambiguous=ambiguous,
+        generation_variants=tuple(
+            unique_generations[key]
+            for key in sorted(unique_generations, key=str)
+        ),
+    )
+
+
+def _join_filters(states: tuple[DucFilterState, ...]) -> DucFilterState:
+    first = states[0]
+    if all(_filter_key(state) == _filter_key(first) for state in states):
+        return replace(first, path_ambiguous=any(state.path_ambiguous for state in states))
+    return DucFilterState(
+        generation=max(state.generation for state in states),
+        predicates=(),
+        fingerprint="AMBIGUOUS",
+        initialized=any(state.initialized for state in states),
+        retained=any(state.retained for state in states),
+        last_mutation=None,
+        path_ambiguous=True,
+    )
+
+
+def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState | None:
+    first = states[0]
+    if all(_target_key(state) == _target_key(first) for state in states):
+        if first is None:
+            return None
+        if all(state is not None and state.validity is first.validity for state in states):
+            return first
+        return replace(first, validity=DucTargetStatus.UNKNOWN)
+    representatives = [state for state in states if state is not None]
+    if not representatives:
+        return None
+    return replace(representatives[0], validity=DucTargetStatus.UNKNOWN)
+
+
+def _state_key(state: DucSemanticState) -> tuple[object, ...]:
+    return (
+        (
+            _generation_key(state.local_list.current_generation),
+            state.local_list.path_ambiguous,
+        )
+        if state.local_list.current_generation is not None
+        else (
+            "AMBIGUOUS",
+            state.local_list.path_ambiguous,
+            tuple(_generation_key(item) for item in state.local_list.generation_variants),
+        ),
+        (
+            _generation_key(state.remote_list.current_generation),
+            state.remote_list.path_ambiguous,
+        )
+        if state.remote_list.current_generation is not None
+        else (
+            "AMBIGUOUS",
+            state.remote_list.path_ambiguous,
+            tuple(_generation_key(item) for item in state.remote_list.generation_variants),
+        ),
+        _filter_key(state.filters),
+        _target_key(state.target),
+        state.point_target,
+    )
+
+
+def _join_states(
+    variants: tuple[DucSemanticState, ...],
+) -> tuple[DucSemanticState, tuple[str, ...]]:
+    local = _join_list_states(tuple(state.local_list for state in variants))
+    remote = _join_list_states(tuple(state.remote_list for state in variants))
+    filters = _join_filters(tuple(state.filters for state in variants))
+    target = _join_targets(tuple(state.target for state in variants))
+    fields: list[str] = []
+    if any(
+        _state_key(state)[0] != _state_key(variants[0])[0]
+        for state in variants[1:]
+    ):
+        fields.append("LOCAL_LIST")
+    if any(
+        _state_key(state)[1] != _state_key(variants[0])[1]
+        for state in variants[1:]
+    ):
+        fields.append("REMOTE_LIST")
+    if any(
+        _state_key(state)[2] != _state_key(variants[0])[2]
+        for state in variants[1:]
+    ):
+        fields.append("FILTERS")
+    if any(
+        _state_key(state)[3] != _state_key(variants[0])[3]
+        for state in variants[1:]
+    ):
+        fields.append("TARGET")
+    if any(state.point_target != variants[0].point_target for state in variants[1:]):
+        fields.append("POINT_TARGET")
+    return (
+        DucSemanticState(
+            local,
+            remote,
+            filters,
+            target,
+            variants[0].point_target if all(
+                state.point_target == variants[0].point_target for state in variants
+            ) else None,
+            max(state.state_revision for state in variants),
+        ),
+        tuple(fields),
+    )
+
+
+def analyze_duc(
+    execution: RuleExecutionReport | tuple[EffectiveRule, ...],
+    contracts: NativeDucContractCatalog | None = None,
+) -> DucAnalysisReport:
+    contracts = contracts or default_native_duc_contract_catalog()
+    if not isinstance(execution, RuleExecutionReport):
+        return _analyze_duc_linear(tuple(execution), contracts)
+
+    rules_by_order = {rule.rule_order: rule for rule in execution.rules}
+    reachability = execution.reachability
+    if reachability is None:
+        return _analyze_duc_linear(execution.rules, contracts)
+
+    outgoing = dict(reachability.outgoing_rule_orders)
+    incoming_states: dict[int, list[tuple[int, DucSemanticState]]] = {1: [(0, _empty_state())]}
+    states: list[tuple[int, DucSemanticState]] = []
+    searches: list[DucSearchOperation] = []
+    resets: list[DucResetEffect] = []
+    targets: list[DucTargetState] = []
+    observations: list[DucSearchStateObservation] = []
+    effects: list[DucExecutionEffect] = []
+    diagnostics: list[DucDiagnostic] = []
+    branch_merges: list[DucBranchMerge] = []
+
+    for rule_order in sorted(rules_by_order):
+        entries = incoming_states.get(rule_order, [])
+        if not entries:
+            continue
+        distinct: list[DucSemanticState] = []
+        seen: set[tuple[object, ...]] = set()
+        for _, state in entries:
+            key = _state_key(state)
+            if key in seen:
+                continue
+            seen.add(key)
+            distinct.append(state)
+        variants = tuple(distinct)
+        predecessor_orders = tuple(sorted({source for source, _ in entries if source != 0}))
+        if len(variants) == 1:
+            entry_state = variants[0]
+            merged_fields = ()
+        else:
+            entry_state, merged_fields = _join_states(variants)
+        if len(entries) > 1:
+            branch_merges.append(
+                DucBranchMerge(
+                    rule_order=rule_order,
+                    predecessor_rule_orders=predecessor_orders,
+                    merged_fields=merged_fields,
+                    state_variants=len(variants),
+                )
+            )
+        rule_report = _analyze_duc_linear(
+            (rules_by_order[rule_order],),
+            contracts,
+            initial_state=entry_state,
+        )
+        states.extend(rule_report.states)
+        searches.extend(rule_report.searches)
+        resets.extend(rule_report.resets)
+        targets.extend(rule_report.targets)
+        observations.extend(rule_report.observations)
+        effects.extend(rule_report.effects)
+        diagnostics.extend(rule_report.diagnostics)
+
+        current_state = rule_report.final_state
+        for target_order in outgoing.get(rule_order, ()):
+            if target_order <= rule_order:
+                diagnostics.append(
+                    DucDiagnostic(
+                        "DUC-013",
+                        DiagnosticSeverity.WARNING.value,
+                        rule_order,
+                        f"control transfer from rule {rule_order} loops to rule {target_order}; DUC state is not propagated across the back-edge in this forward branch analysis",
+                        rules_by_order[rule_order].source_location,
+                    )
+                )
+                continue
+            incoming_states.setdefault(target_order, []).append(
+                (rule_order, current_state)
+            )
+
+    terminal_states = [
+        state
+        for rule_order, state in states
+        if not outgoing.get(rule_order)
+    ]
+    final_state = (
+        _join_states(tuple(terminal_states))[0]
+        if len(terminal_states) > 1
+        else terminal_states[0]
+        if terminal_states
+        else _empty_state()
+    )
+    return DucAnalysisReport(
+        initial_state=_empty_state(),
+        final_state=final_state,
+        states=tuple(states),
+        searches=tuple(searches),
+        resets=tuple(resets),
+        targets=tuple(targets),
+        observations=tuple(observations),
+        effects=tuple(effects),
+        diagnostics=tuple(diagnostics),
+        branch_merges=tuple(branch_merges),
     )
 
 

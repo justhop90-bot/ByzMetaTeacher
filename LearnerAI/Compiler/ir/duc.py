@@ -84,6 +84,7 @@ class DucFilterState:
     initialized: bool = True
     retained: bool = False
     last_mutation: Optional[DucProvenance] = None
+    path_ambiguous: bool = False
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,7 @@ class DucFilterSnapshot:
     fingerprint: str
     predicates: tuple[DucFilterPredicate, ...]
     provenance: Optional[DucProvenance]
+    path_ambiguous: bool = False
 
 
 @dataclass(frozen=True)
@@ -110,12 +112,14 @@ class DucSearchListState:
     current_generation: Optional[DucListGeneration]
     next_generation: int = 1
     initialized: bool = False
+    path_ambiguous: bool = False
+    generation_variants: tuple[DucListGeneration, ...] = ()
 
 
 @dataclass(frozen=True)
 class DucObjectRef:
     list_kind: DucListKind
-    list_generation: int
+    list_generation: Optional[int]
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
@@ -178,6 +182,14 @@ class DucSearchStateObservation:
 
 
 @dataclass(frozen=True)
+class DucBranchMerge:
+    rule_order: int
+    predecessor_rule_orders: tuple[int, ...]
+    merged_fields: tuple[str, ...]
+    state_variants: int
+
+
+@dataclass(frozen=True)
 class DucExecutionEffect:
     rule_order: int
     within_rule_order: int
@@ -219,10 +231,12 @@ class DucAnalysisReport:
     observations: tuple[DucSearchStateObservation, ...] = ()
     effects: tuple[DucExecutionEffect, ...] = ()
     diagnostics: tuple[DucDiagnostic, ...] = ()
+    branch_merges: tuple[DucBranchMerge, ...] = ()
 
 
 __all__ = [
     "DucAnalysisReport",
+    "DucBranchMerge",
     "DucDiagnostic",
     "DucExecutionEffect",
     "DucFilterPredicate",
