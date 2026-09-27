@@ -225,19 +225,20 @@ def _operand_state_accesses(
 ) -> tuple[PersistentStateAccess, ...]:
     if expression.head not in {"up-modify-sn", "up-compare-sn"}:
         return ()
-    if len(expression.args) < 3:
+    if len(expression.args) != 3:
         return ()
-    operand = str(expression.args[2])
-    if len(operand) < 3 or operand[1] != ":":
+    operator = str(expression.args[1])
+    value = str(expression.args[2])
+    if len(operator) < 3 or operator[1] != ":":
         return ()
-    prefix = operand[:2].lower()
+    prefix = operator[:2].lower()
     if prefix == "g:":
         kind = PersistentStateKind.GOAL
     elif prefix == "s:":
         kind = PersistentStateKind.STRATEGIC_NUMBER
     else:
         return ()
-    identifier = operand[2:]
+    identifier = value
     if not identifier:
         return ()
     return (
