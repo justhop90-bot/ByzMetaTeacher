@@ -175,8 +175,7 @@ class RuleDiagnosticsTests(unittest.TestCase):
             self._graph(
                 "(defrule (true) => "
                 "(up-modify-sn 510 s:+ 511) "
-                "(set-strategic-number 511 4))
-"
+                "(set-strategic-number 511 4))\n"
             )
         )
         strategic_numbers = analyze_strategic_number_expressions(report)
