@@ -228,6 +228,7 @@ class DucGoalOutputSpan:
     width: int
     generation: int
     overwritten_generation: Optional[int]
+    overwritten_provenance: Optional[DucProvenance]
     provenance: Optional[DucProvenance]
     cardinality: DucCardinalityRange
     path_ambiguous: bool = False
