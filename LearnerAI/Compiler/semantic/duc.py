@@ -21,6 +21,7 @@ from ..ir.duc import (
     DucFilterSnapshot,
     DucFilterState,
     DucListGeneration,
+    DucLoopWidening,
     DucListKind,
     DucObjectRef,
     DucPointRef,
@@ -1296,7 +1297,10 @@ def analyze_duc(
         for target_order in outgoing.get(rule_order, ()):
             if target_order <= rule_order:
                 edge = (rule_order, target_order)
-                back_edge_iterations[edge] = back_edge_iterations.get(edge, 0) + 1
+                back_edge_iterations[edge] = min(
+                    back_edge_iterations.get(edge, 0) + 1,
+                    loop_widening_limit,
+                )
                 iteration = back_edge_iterations[edge]
                 if iteration < loop_widening_limit:
                     propagated_state = current_state
@@ -1308,12 +1312,15 @@ def analyze_duc(
                         previous_target_state,
                         current_state,
                     )
-                    loop_widenings[edge] = DucLoopWidening(
-                        loop_head_rule_order=target_order,
-                        back_edge_source_rule_order=rule_order,
-                        iteration_limit=loop_widening_limit,
-                        iterations=iteration,
-                        widened_fields=widened_fields,
+                    loop_widenings.setdefault(
+                        edge,
+                        DucLoopWidening(
+                            loop_head_rule_order=target_order,
+                            back_edge_source_rule_order=rule_order,
+                            iteration_limit=loop_widening_limit,
+                            iterations=iteration,
+                            widened_fields=widened_fields,
+                        ),
                     )
             else:
                 propagated_state = current_state
