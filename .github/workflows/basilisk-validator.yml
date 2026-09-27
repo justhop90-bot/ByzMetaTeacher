@@ -25,13 +25,13 @@ jobs:
           status=$?
           printf '%s\n' "$output"
           if [ "$status" -eq 0 ]; then
-            echo "Expected the 8596a45 compatibility profile to reject its known DE rule-length violation." >&2
+            echo "Expected the 8596a45 compatibility profile to reject its known baseline violation." >&2
             exit 1
           fi
-          if ! grep -Fq "[Rule too long]" <<<"$output"; then
+          if ! grep -Fq "[Ranged] Crossbow action boundary must re-check its live role demand" <<<"$output"; then
             echo "The 8596a45 profile failed for an unexpected reason." >&2
             exit 1
           fi
-          echo "8596a45 baseline negative control passed: expected DE rule-length violation observed."
+          echo "8596a45 baseline negative control passed: expected Ranged/Crossbow lifecycle violation observed."
       - name: Run Basilisk validator self-test
         run: node validation/basilisk-validator-selftest.js
