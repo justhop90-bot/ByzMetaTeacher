@@ -74,6 +74,56 @@ class SourceGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-001"):
             self._resolve("missing/root.perdsl")
 
+    def test_inactive_missing_target_is_not_resolved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text(
+                "#load-if-defined NEVER\\n"
+                '(load "does-not-exist.perdsl")\\n'
+                "#end-if\\n"
+                "true\\n",
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=entry,
+                    load_symbols=LoadSymbolEnvironment(
+                        (("NEVER", LoadSymbolState.UNDEFINED),),
+                    ),
+                )
+            )
+            self.assertEqual(len(graph.instances), 1)
+            inactive = [edge for edge in graph.edges if not edge.active]
+            self.assertEqual(len(inactive), 1)
+            self.assertIsNone(inactive[0].target_path)
+            self.assertIsNone(inactive[0].child)
+
+    def test_inactive_cycle_is_not_resolved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            child = root / "child.perdsl"
+            entry.write_text(
+                "#load-if-defined NEVER\\n"
+                '(load "child.perdsl")\\n'
+                "#end-if\\n",
+                encoding="utf-8",
+            )
+            child.write_text('(load "root.perdsl")\\n', encoding="utf-8")
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=entry,
+                    load_symbols=LoadSymbolEnvironment(
+                        (("NEVER", LoadSymbolState.UNDEFINED),),
+                    ),
+                )
+            )
+            self.assertEqual(len(graph.instances), 1)
+            self.assertEqual(len(graph.edges), 1)
+            self.assertFalse(graph.edges[0].active)
+            self.assertIsNone(graph.edges[0].child)
+
     def test_defined_branch_is_selected(self):
         graph = self._resolve(
             "conditional-defined/root.perdsl",
@@ -232,6 +282,26 @@ class SourceGraphTests(unittest.TestCase):
                     )
                 )
 
+    def test_load_depth_boundary_is_valid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for index in range(11):
+                next_name = f"node-{index + 1}.perdsl"
+                content = (
+                    f'(load "{next_name}")\\n'
+                    if index < 10
+                    else "; terminal node\\n"
+                )
+                (root / f"node-{index}.perdsl").write_text(
+                    content,
+                    encoding="utf-8",
+                )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(entrypoint=root / "node-0.perdsl"),
+            )
+            self.assertEqual(len(graph.instances), 11)
+            self.assertEqual(max(item.depth for item in graph.instances), 10)
+
     def test_load_depth_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -250,6 +320,23 @@ class SourceGraphTests(unittest.TestCase):
                 SourceGraphResolver().resolve(
                     SourceGraphRequest(entrypoint=root / "node-0.perdsl"),
                 )
+
+    def test_lexical_path_normalization_deduplicates_physical_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            child = root / "child.perdsl"
+            child.write_text("; child\\n", encoding="utf-8")
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '(load "./child.perdsl")\\n'
+                '(load "sub/../child.perdsl")\\n',
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+            instances = [item for item in graph.instances if item.physical.path == child.resolve()]
+            self.assertEqual(len(instances), 2)
+            self.assertEqual(instances[0].source, instances[1].source)
+            self.assertEqual(instances[0].source.canonical_path, child.resolve().as_posix())
 
     def test_fingerprint_is_deterministic(self):
         first = self._resolve("linear/root.perdsl")
