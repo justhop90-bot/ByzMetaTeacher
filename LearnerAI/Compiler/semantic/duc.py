@@ -51,6 +51,10 @@ from ..ir.duc import (
 )
 from ..primitives.native_hygiene import NativeContractCatalog
 from ..primitives.registry import default_native_contract_catalog
+from .recurrent_execution import (
+    RecurrentExecutionReport,
+    RecurrentExecutionStatus,
+)
 from .rule_execution import (
     EffectiveRule,
     RuleAction,
@@ -2131,6 +2135,7 @@ def analyze_duc(
     *,
     loop_widening_limit: int = DUC_LOOP_WIDENING_LIMIT,
     initial_state: DucSemanticState | None = None,
+    recurrent_execution: RecurrentExecutionReport | None = None,
 ) -> DucAnalysisReport:
     contracts = contracts or default_native_contract_catalog()
     seed_state = initial_state or _empty_state()
@@ -2156,6 +2161,15 @@ def analyze_duc(
         return replace(report, next_pass_state=advance_duc_pass(report.final_state))
 
     outgoing = dict(reachability.outgoing_rule_orders)
+    firing_status = (
+        {
+            rule.rule_order: recurrent_execution.status_for_rule(rule.rule_order)
+            for rule in execution.rules
+        }
+        if recurrent_execution is not None
+        else {}
+    )
+    max_rule_order = max(rules_by_order, default=0)
     incoming_states: dict[int, dict[int, DucSemanticState]] = {
         1: {0: seed_state}
     }
@@ -2201,16 +2215,33 @@ def analyze_duc(
             continue
         last_entry_keys[rule_order] = entry_key
 
-        rule_report = _analyze_duc_linear(
-            (rules_by_order[rule_order],),
-            contracts,
-            initial_state=entry_state,
-        )
+        if (
+            firing_status.get(rule_order)
+            is RecurrentExecutionStatus.NEVER_RUNNABLE
+        ):
+            rule_report = DucAnalysisReport(
+                initial_state=entry_state,
+                final_state=entry_state,
+                states=((rule_order, entry_state),),
+                next_pass_state=entry_state,
+            )
+            rule_outgoing = (
+                (rule_order + 1,)
+                if rule_order < max_rule_order
+                else ()
+            )
+        else:
+            rule_report = _analyze_duc_linear(
+                (rules_by_order[rule_order],),
+                contracts,
+                initial_state=entry_state,
+            )
+            rule_outgoing = outgoing.get(rule_order, ())
         rule_reports[rule_order] = rule_report
         current_state = rule_report.final_state
         rule_outputs[rule_order] = current_state
 
-        for target_order in outgoing.get(rule_order, ()):
+        for target_order in rule_outgoing:
             if target_order <= rule_order:
                 edge = (rule_order, target_order)
                 back_edge_iterations[edge] = min(

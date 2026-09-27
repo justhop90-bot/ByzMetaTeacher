@@ -14,6 +14,10 @@ from Compiler.ir.duc import (
 )
 from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
 from Compiler.semantic.duc import analyze_duc
+from Compiler.semantic.recurrent_execution import (
+    RecurrentExecutionStatus,
+    analyze_recurrent_execution,
+)
 from Compiler.ast import Expression, SourceLocation
 from Compiler.semantic.rule_execution import (
     EffectiveRule,
@@ -50,6 +54,95 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+
+    def test_duc_state_effects_ignore_rule_that_recurrent_analysis_proves_never_runnable(self):
+        rules = (
+            _rule(1, (("set-goal", ("duc-gate", "0")),)),
+            replace(
+                _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+                facts=(Expression("(goal duc-gate = 1)", "goal", ("duc-gate", "=", "1"), SourceLocation(2, 1, "fixture.per")),),
+            ),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,))),
+                outgoing_rule_orders=((1, (2,)), (2, ())),
+            ),
+        )
+
+        recurrent = analyze_recurrent_execution(execution)
+        self.assertEqual(
+            recurrent.status_for_rule(2),
+            RecurrentExecutionStatus.NEVER_RUNNABLE,
+        )
+        report = analyze_duc(execution, recurrent_execution=recurrent)
+
+        self.assertEqual(report.searches, ())
+        self.assertIsNone(report.final_state.local_list.current_generation)
+
+
+    def test_never_runnable_duc_rule_does_not_export_its_jump_edge(self):
+        rules = (
+            _rule(1, (("set-goal", ("duc-gate", "0")),)),
+            replace(
+                _rule(2, (("up-jump-rule", ("2",)),)),
+                facts=(Expression("(goal duc-gate = 1)", "goal", ("duc-gate", "=", "1"), SourceLocation(2, 1, "fixture.per")),),
+            ),
+            _rule(3, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(4, (("up-do-nothing", ()),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,)), (3, (2,)), (4, (2, 3))),
+                outgoing_rule_orders=((1, (2,)), (2, (4,)), (3, (4,)), (4, ())),
+            ),
+        )
+
+        recurrent = analyze_recurrent_execution(execution)
+        self.assertEqual(
+            recurrent.status_for_rule(2),
+            RecurrentExecutionStatus.NEVER_RUNNABLE,
+        )
+        report = analyze_duc(execution, recurrent_execution=recurrent)
+
+        self.assertEqual(len(report.searches), 1)
+        self.assertEqual(report.searches[0].provenance.rule_order, 3)
+
+
+    def test_runtime_dependent_rule_keeps_duc_effects_live(self):
+        rules = (
+            _rule(1, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            replace(
+                _rule(2, (("up-find-local", ("c:", "archer-line", "c:", "1")),)),
+                facts=(Expression("(game-time >= 600)", "game-time", (">=", "600"), SourceLocation(2, 1, "fixture.per")),),
+            ),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,))),
+                outgoing_rule_orders=((1, (2,)), (2, ())),
+            ),
+        )
+
+        recurrent = analyze_recurrent_execution(execution)
+        self.assertEqual(
+            recurrent.status_for_rule(2),
+            RecurrentExecutionStatus.MAY_RUN,
+        )
+        report = analyze_duc(execution, recurrent_execution=recurrent)
+
+        self.assertEqual(len(report.searches), 2)
+        self.assertEqual(report.searches[-1].provenance.rule_order, 2)
+
 
     def test_repeated_searches_append_to_one_retained_list_generation_lineage(self):
         report = analyze_duc((
