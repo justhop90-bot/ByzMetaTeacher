@@ -265,8 +265,8 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         RuleDiagnosticCategory.PERSISTENT_STATE: 1,
         RuleDiagnosticCategory.STRATEGIC_NUMBER: 1,
         RuleDiagnosticCategory.CONTROL_FLOW: 2,
-        RuleDiagnosticCategory.RECURRENT_EXECUTION: 3,
         RuleDiagnosticCategory.DUC: 3,
+        RuleDiagnosticCategory.RECURRENT_EXECUTION: 4,
     }
     return (
         item.rule_order,
