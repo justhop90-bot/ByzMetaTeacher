@@ -20,13 +20,14 @@ from .strategic_number_semantics import (
     StrategicNumberDiagnosticCode,
     StrategicNumberSemanticReport,
 )
-from .rule_execution import EffectiveRule, RuleExecutionReport
+from .rule_execution import EffectiveRule, RuleExecutionReport, StaticControlTransfer
 
 
 class RuleDiagnosticCategory(str, Enum):
     FIRING_ELIGIBILITY = "FIRING_ELIGIBILITY"
     PERSISTENT_STATE = "PERSISTENT_STATE"
     STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
+    CONTROL_FLOW = "CONTROL_FLOW"
 
 
 class RuleDiagnosticCode(str, Enum):
@@ -46,6 +47,8 @@ class RuleDiagnosticCode(str, Enum):
     STRATEGIC_NUMBER_MISSING_DEPENDENCY = "SNSEM-007"
     STRATEGIC_NUMBER_INVALID_TARGET = "SNSEM-008"
     STRATEGIC_NUMBER_FUTURE_SAME_RULE_DEPENDENCY = "SNSEM-009"
+    CONTROL_TRANSFER_OUT_OF_RANGE = "RULE-CF-001"
+    CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
 
 
 @dataclass(frozen=True)
@@ -194,9 +197,15 @@ def _persistent_diagnostic_for(
 
 def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
     related_rule = item.related_rule_order if item.related_rule_order is not None else -1
+    category_order = {
+        RuleDiagnosticCategory.FIRING_ELIGIBILITY: 0,
+        RuleDiagnosticCategory.PERSISTENT_STATE: 1,
+        RuleDiagnosticCategory.STRATEGIC_NUMBER: 1,
+        RuleDiagnosticCategory.CONTROL_FLOW: 2,
+    }
     return (
         item.rule_order,
-        0 if item.category is RuleDiagnosticCategory.FIRING_ELIGIBILITY else 1,
+        category_order[item.category],
         item.code.value,
         item.state_kind or "",
         item.state_identifier or "",
@@ -205,6 +214,60 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         item.message,
     )
 
+
+def _control_flow_diagnostics(
+    report: RuleExecutionReport,
+) -> tuple[RuleDiagnostic, ...]:
+    diagnostics: list[RuleDiagnostic] = []
+    for transfer in report.control_transfers:
+        if transfer.target_rule_order is None:
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE,
+                    severity=DiagnosticSeverity.ERROR,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " with delta "
+                        + str(transfer.delta)
+                        + " resolves outside the effective rule set"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_OUT_OF_RANGE.value,
+                    related_rule_order=None,
+                    related_operation="up-jump-rule",
+                )
+            )
+            continue
+
+        if transfer.target_rule_order > transfer.rule_order + 1:
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE,
+                    severity=DiagnosticSeverity.INFO,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " can bypass rules "
+                        + str(transfer.rule_order + 1)
+                        + " through "
+                        + str(transfer.target_rule_order - 1)
+                        + " in the current pass"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_BYPASSES_RULE.value,
+                    related_rule_order=transfer.target_rule_order,
+                    related_operation="up-jump-rule",
+                )
+            )
+
+    return tuple(diagnostics)
 
 def _strategic_number_diagnostic_for(
     item,
@@ -303,6 +366,8 @@ def analyze_rule_diagnostics(
             _strategic_number_diagnostic_for(item, report)
             for item in strategic_number_report.diagnostics
         )
+
+    diagnostics.extend(_control_flow_diagnostics(report))
 
     return RuleDiagnosticReport(
         tuple(sorted(diagnostics, key=_diagnostic_sort_key))
