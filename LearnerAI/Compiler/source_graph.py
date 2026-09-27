@@ -43,7 +43,6 @@ class SourceGraphRequest:
     allow_load_random: bool = False
 
 
-@dataclass(frozen=True)
 SourceUnit = SourceFile
 
 
