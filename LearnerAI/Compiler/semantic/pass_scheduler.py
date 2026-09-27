@@ -268,7 +268,7 @@ class PassScheduler:
         head = expression.head
         if head == "true":
             return True
-        if head in {"strategic-number", "up-compare-sn"}:
+        if head == "strategic-number":
             return self._evaluate_strategic_number_fact(expression)
         if head == "up-modify-sn":
             self._apply_strategic_number_mutation(
@@ -376,7 +376,7 @@ class PassScheduler:
     def _evaluate_strategic_number_fact(self, expression: Expression) -> bool:
         if len(expression.args) != 3:
             raise SchedulerSemanticError(
-                f"{expression.head} requires SnId, compareOp, and Value"
+                "strategic-number requires SnId, compareOp, and Value"
             )
         sn_id = str(expression.args[0])
         actual = self._strategic_numbers.get(sn_id, 0)
