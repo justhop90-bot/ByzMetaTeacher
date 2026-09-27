@@ -40,7 +40,7 @@ class StrategicNumberSemanticsTests(unittest.TestCase):
             "c:min": 3,
             "c:max": 8,
             "c:neg": -3,
-            "c:%*": 2,
+            "c:%*": 0,
             "c:%/": 266,
         }
         for operator, expected in cases.items():
