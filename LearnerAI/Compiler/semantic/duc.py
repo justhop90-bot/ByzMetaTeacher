@@ -1761,6 +1761,46 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
     )
 
 
+def _group_key(group: DucGroupState) -> tuple[object, ...]:
+    return (
+        group.group_id,
+        group.generation,
+        group.cardinality,
+        group.capacity,
+        group.source_list,
+        group.source_list_generation,
+        group.source_index_start,
+        group.requested_max_objects,
+        group.content_fingerprint,
+        group.validity,
+        group.flag_state,
+        group.path_ambiguous,
+    )
+
+
+def _join_groups(
+    variants: tuple[tuple[DucGroupState, ...], ...],
+) -> tuple[DucGroupState, ...]:
+    merged: list[DucGroupState] = []
+    for group_id in range(DUC_GROUP_COUNT):
+        candidates = tuple(values[group_id] for values in variants)
+        first = candidates[0]
+        if all(
+            _group_key(candidate) == _group_key(first)
+            for candidate in candidates[1:]
+        ):
+            merged.append(first)
+            continue
+        merged.append(
+            replace(
+                first,
+                validity=DucGroupStatus.UNKNOWN,
+                path_ambiguous=True,
+            )
+        )
+    return tuple(merged)
+
+
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
         state.pass_id,
@@ -1787,6 +1827,7 @@ def _state_key(state: DucSemanticState) -> tuple[object, ...]:
         _filter_key(state.filters),
         _target_key(state.target),
         state.point_target,
+        tuple(_group_key(group) for group in state.groups),
     )
 
 
@@ -1797,6 +1838,7 @@ def _join_states(
     remote = _join_list_states(tuple(state.remote_list for state in variants))
     filters = _join_filters(tuple(state.filters for state in variants))
     target = _join_targets(tuple(state.target for state in variants))
+    groups = _join_groups(tuple(state.groups for state in variants))
     fields: list[str] = []
     if any(
         _state_key(state)[1] != _state_key(variants[0])[1]
@@ -1820,6 +1862,12 @@ def _join_states(
         fields.append("TARGET")
     if any(state.point_target != variants[0].point_target for state in variants[1:]):
         fields.append("POINT_TARGET")
+    if any(
+        tuple(_group_key(group) for group in state.groups)
+        != tuple(_group_key(group) for group in variants[0].groups)
+        for state in variants[1:]
+    ):
+        fields.append("GROUPS")
     return (
         DucSemanticState(
             local,
@@ -1831,6 +1879,7 @@ def _join_states(
             ) else None,
             max(state.state_revision for state in variants),
             max(state.pass_id for state in variants),
+            groups=groups,
         ),
         tuple(fields),
     )
