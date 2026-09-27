@@ -524,7 +524,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(mutation.kind, DucListMutationKind.DEDUPE)
         self.assertEqual(mutation.target_transition, DucTargetTransition.UNKNOWN)
 
-    def test_clean_search_duplicate_removal_preserves_first_target(self):
+    def test_clean_search_duplicate_removal_makes_first_target_unknown(self):
         report = analyze_duc((
             _rule(1, (
                 ("up-find-local", ("c:", "villager", "c:", "4")),
@@ -535,8 +535,8 @@ class DucSemanticTests(unittest.TestCase):
 
         target = report.final_state.target
         self.assertIsNotNone(target)
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
-        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
 
     def test_remove_objects_exact_index_match_makes_target_stale(self):
         report = analyze_duc((
@@ -583,9 +583,6 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
 
-
-if __name__ == "__main__":
-    unittest.main()
     def test_remove_objects_index_match_after_sort_is_unknown(self):
         report = analyze_duc((
             _rule(1, (
@@ -650,6 +647,10 @@ if __name__ == "__main__":
         self.assertIsNotNone(target)
         self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 
 if __name__ == "__main__":
