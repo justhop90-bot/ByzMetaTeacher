@@ -325,6 +325,7 @@ def emit(
             out += [
                 f"; Construction observation: {demand.name}",
                 "; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY",
+                f"; Completion witness: {demand.name} | PENDING/ISSUED -> COMPLETE",
             ]
             for transition in construction_transition_rules():
                 if transition.kind is ConstructionTransitionKind.COMPLETE:
@@ -340,7 +341,7 @@ def emit(
                         f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                     ]
                 elif transition.kind is ConstructionTransitionKind.FOUNDATION_PENDING:
-                    label = "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING"
+                    label = f"; Pending admission: {demand.name} | ISSUED/PENDING -> PENDING"
                     guards = [
                         "    (or",
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
@@ -353,7 +354,7 @@ def emit(
                         f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                     ]
                 elif transition.kind is ConstructionTransitionKind.PLACEMENT_PENDING:
-                    label = "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING"
+                    label = f"; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING"
                     guards = [
                         "    (or",
                         f"        (goal demand-{demand.name} {lifecycle.issued.value})",
