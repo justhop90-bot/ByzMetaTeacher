@@ -108,6 +108,12 @@ class DucSearchFactResult(str, Enum):
     RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
     GUARANTEED_FALSE = "GUARANTEED_FALSE"
 
+
+class DucSearchAvailabilityResult(str, Enum):
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_FALSE = "GUARANTEED_FALSE"
+
+
 class DucTargetFactResult(str, Enum):
     NOT_A_FACT = "NOT_A_FACT"
     RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
@@ -394,6 +400,17 @@ class DucSearchOperation:
 
 
 @dataclass(frozen=True)
+class DucSearchAvailabilityObservation:
+    command: str
+    source_list: DucListKind
+    result: DucSearchAvailabilityResult
+    cursor_disposition: DucSearchCursorDisposition
+    list_initialized: bool
+    cardinality: Optional[DucCardinalityRange]
+    provenance: "DucProvenance"
+
+
+@dataclass(frozen=True)
 class DucTargetFactObservation:
     command: str
     result: DucTargetFactResult
@@ -529,6 +546,7 @@ class DucAnalysisReport:
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
     target_fact_observations: tuple[DucTargetFactObservation, ...] = ()
+    search_availability: tuple[DucSearchAvailabilityObservation, ...] = ()
     target_consumers: tuple[DucTargetConsumerEffect, ...] = ()
     target_data_observations: tuple[DucTargetDataObservation, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
@@ -565,6 +583,8 @@ __all__ = [
     "DucSearchIndexState",
     "DucSearchResultDisposition",
     "DucSearchFactResult",
+    "DucSearchAvailabilityObservation",
+    "DucSearchAvailabilityResult",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",
