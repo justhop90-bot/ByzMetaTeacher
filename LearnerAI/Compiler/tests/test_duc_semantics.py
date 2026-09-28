@@ -21,7 +21,7 @@ from Compiler.ir.duc import (
     DucTargetTransition,
 )
 from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
-from Compiler.semantic.duc import analyze_duc
+from Compiler.semantic.duc import _empty_state, analyze_duc
 from Compiler.semantic.recurrent_execution import (
     RecurrentExecutionStatus,
     analyze_recurrent_execution,
@@ -62,6 +62,40 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_set_target_object_fact_on_proven_empty_search_list_is_guaranteed_false(self):
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
+        location = SourceLocation(1, 1, "fixture.per")
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 0)",
+            "up-set-target-object",
+            ("search-local", "c:", "0"),
+            location,
+        )
+
+        report = analyze_duc(
+            (
+                replace(
+                    _rule(1, ()),
+                    facts=(target_fact,),
+                ),
+            ),
+            initial_state=initial,
+        )
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.GUARANTEED_FALSE,
+        )
+        self.assertIsNone(report.target_fact_observations[-1].target)
+
     def test_set_target_object_action_rejects_proven_empty_search_list(self):
         from Compiler.semantic.duc import _empty_state
 
