@@ -86,6 +86,33 @@ class TimerAllocationIRTests(unittest.TestCase):
         self.assertIn("(disable-timer cooldown)", artifact)
         self.assertIn("(up-timer-status cooldown = timer-disabled)", artifact)
 
+    def test_timer_binding_manifest_preserves_slot_and_initialization_policy(self):
+        from Compiler.compiler import _binding_manifest_text, _compile_source_parts
+
+        source = """
+        demand timer_gate {
+            timer cooldown
+            require (up-timer-status cooldown = timer-disabled)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        artifact, bindings, context = _compile_source_parts(
+            source,
+            source_unit="timer-fixture",
+            registry=default_de_registry(),
+        )
+        manifest = _binding_manifest_text(bindings, context)
+
+        self.assertIn("(defconst cooldown 1)", artifact)
+        self.assertIn('"binding_kind": "TIMER"', manifest)
+        self.assertIn('"timer_id": 1', manifest)
+        self.assertIn(
+            '"initialization_policy": "DISABLE_BEFORE_FIRST_USE"',
+            manifest,
+        )
+
     def test_timer_storage_is_deterministic_when_multiple_names_are_declared(self):
         from Compiler.compiler import compile_source
 
