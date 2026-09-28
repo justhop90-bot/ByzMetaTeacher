@@ -79,6 +79,14 @@ class DucListMutationKind(str, Enum):
     REMOVE_MATCHES = "REMOVE_MATCHES"
 
 
+class DucSearchIndexResetReason(str, Enum):
+    INITIAL = "INITIAL"
+    EXPLICIT = "EXPLICIT"
+    FILTER_CHANGED = "FILTER_CHANGED"
+    QUERY_CHANGED = "QUERY_CHANGED"
+    UNKNOWN = "UNKNOWN"
+
+
 class DucTargetTransition(str, Enum):
     UNCHANGED = "UNCHANGED"
     STALE = "STALE"
@@ -141,6 +149,23 @@ class DucCardinalityRange:
 
 
 @dataclass(frozen=True)
+class DucSearchIndexState:
+    offset: Optional[int] = 0
+    generation: int = 0
+    query_signature: Optional[tuple[str, ...]] = None
+    focus_player_signature: Optional[str] = None
+    known: bool = True
+    last_reset_reason: Optional[DucSearchIndexResetReason] = None
+    path_ambiguous: bool = False
+
+    def __post_init__(self) -> None:
+        if self.offset is not None and self.offset < 0:
+            raise ValueError("DUC search index offset must be non-negative")
+        if self.generation < 0:
+            raise ValueError("DUC search index generation must be non-negative")
+
+
+@dataclass(frozen=True)
 class DucListGeneration:
     list_kind: DucListKind
     generation: int
@@ -159,6 +184,7 @@ class DucSearchListState:
     initialized: bool = False
     path_ambiguous: bool = False
     generation_variants: tuple[DucListGeneration, ...] = ()
+    search_index: DucSearchIndexState = DucSearchIndexState()
 
 
 @dataclass(frozen=True)
@@ -285,6 +311,10 @@ class DucSearchOperation:
     output_generation: DucListGeneration
     visibility: DucVisibility
     provenance: DucProvenance
+    index_before: Optional[int] = None
+    index_after: Optional[int] = None
+    index_generation: int = 0
+    index_reset_reason: Optional[DucSearchIndexResetReason] = None
 
 
 @dataclass(frozen=True)
@@ -436,6 +466,8 @@ __all__ = [
     "DucFilterSnapshot",
     "DucFilterState",
     "DucListGeneration",
+    "DucSearchIndexResetReason",
+    "DucSearchIndexState",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",
