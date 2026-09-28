@@ -15,6 +15,7 @@
 (defconst issued-defensive-spearmen 45)
 (defconst pending-defensive-spearmen 43)
 (defconst complete-defensive-spearmen 44)
+(defconst production-retry-barrier-defensive-spearmen 46)
 (defconst demand-wheelbarrow 43)
 (defconst issued-wheelbarrow 46)
 (defconst pending-wheelbarrow 44)
@@ -33,6 +34,13 @@
     (true)
 =>
     (set-goal construction-retry-barrier-castle 0)
+)
+
+; Per-pass production retry barriers
+(defrule
+    (true)
+=>
+    (set-goal production-retry-barrier-defensive-spearmen 0)
 )
 
 ; Demand initialization
@@ -149,25 +157,48 @@
     (set-goal demand-defensive-spearmen 0)
 )
 
-; Completion witness: defensive-spearmen | PENDING -> COMPLETE
+; Completion witness: defensive-spearmen | PENDING/ISSUED -> COMPLETE
 (defrule
-    (goal demand-defensive-spearmen 43)
+    (or
+        (goal demand-defensive-spearmen 45)
+        (goal demand-defensive-spearmen 43)
+    )
     (unit-type-count spearman >= 2)
 =>
     (set-goal demand-defensive-spearmen 44)
 )
 
-; Pending admission: defensive-spearmen | ISSUED -> PENDING
+; Pending admission: defensive-spearmen | ISSUED/PENDING -> PENDING
 (defrule
-    (goal demand-defensive-spearmen 45)
+    (or
+        (goal demand-defensive-spearmen 45)
+        (goal demand-defensive-spearmen 43)
+    )
+    (not (unit-type-count spearman >= 2))
+    (up-pending-objects c: spearman >= 1)
 =>
     (set-goal demand-defensive-spearmen 43)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-defensive-spearmen 45)
+        (goal demand-defensive-spearmen 43)
+    )
+    (not (unit-type-count spearman >= 2))
+    (not (up-pending-objects c: spearman >= 1))
+=>
+    (set-goal demand-defensive-spearmen 1)
+    (set-goal production-retry-barrier-defensive-spearmen 1)
 )
 
 ; Action issuance: defensive-spearmen | ACTIVE -> ISSUED
 (defrule
     (goal demand-defensive-spearmen 1)
     (not (unit-type-count spearman >= 2))
+    (goal production-retry-barrier-defensive-spearmen 0)
+    (not (up-pending-objects c: spearman >= 1))
     (not (unit-type-count spearman >= 2))
     (current-age >= feudal)
     (unit-type-count-total spearman < 2)
