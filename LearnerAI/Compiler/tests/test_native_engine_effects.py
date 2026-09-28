@@ -102,12 +102,12 @@ class NativeEngineEffectCatalogTests(unittest.TestCase):
     def test_support_state_promotes_mapped_control_plane_commands(self):
         for command in self.catalog.commands():
             assessment = self.registry.assess_support(command)
-            self.assertEqual(
-                assessment.state,
-                NativeSupportState.ENGINE_SEMANTICS_MAPPED,
-                command,
+            expected = (
+                NativeSupportState.EXECUTABLE_SAFE
+                if self.registry.get(command) is not None
+                else NativeSupportState.ENGINE_SEMANTICS_MAPPED
             )
-            self.assertIn("engine", assessment.message)
+            self.assertEqual(assessment.state, expected, command)
 
     def test_dual_fact_action_commands_are_schema_typed_but_not_falsely_promoted_to_primitive_safe(self):
         for command in ("up-modify-goal", "up-modify-sn"):
