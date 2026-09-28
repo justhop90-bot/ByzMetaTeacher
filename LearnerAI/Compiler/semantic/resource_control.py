@@ -14,6 +14,9 @@ from ..ir.resource_control import (
     EscrowContract,
     EscrowReserveKind,
     EscrowRetentionPolicy,
+    NativeEscrowReleasePlan,
+    NATIVE_ESCROW_RELEASE_COMMAND,
+    NATIVE_ESCROW_RELEASE_RESOURCES,
     NativeArbitrationContract,
     NativeArbitrationRecoveryKind,
     NativeArbitrationReleaseKind,
@@ -632,6 +635,76 @@ def validate_escrow_execution(
     )
 
 
+def validate_escrow_release_plan(
+    plan: NativeEscrowReleasePlan,
+) -> ResourceControlValidationReport:
+    errors: list[ResourceControlValidationError] = []
+    seen_contracts: set[str] = set()
+    previous_key = None
+    for operation in plan.operations:
+        subject = operation.contract_identity
+        key = (
+            operation.rule_order,
+            operation.within_rule_order,
+            operation.contract_identity,
+        )
+        if previous_key is not None and key < previous_key:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
+                    "native escrow release operations must be declared in deterministic order",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        previous_key = key
+        if operation.contract_identity in seen_contracts:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                    f"native escrow release contract '{subject}' appears more than once",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        seen_contracts.add(operation.contract_identity)
+        if operation.kind is not EscrowOperationKind.RELEASE:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_COMMAND_MISMATCH,
+                    "native escrow release plan accepts only RELEASE operations",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        if operation.command != NATIVE_ESCROW_RELEASE_COMMAND:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_COMMAND_MISMATCH,
+                    f"native escrow release operation uses '{operation.command}', expected '{NATIVE_ESCROW_RELEASE_COMMAND}'",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        if operation.resource not in NATIVE_ESCROW_RELEASE_RESOURCES:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RESOURCES,
+                    f"unsupported native escrow release resource '{operation.resource}'",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+    return ResourceControlValidationReport(
+        errors=tuple(
+            sorted(
+                errors,
+                key=lambda item: (item.code.value, item.subject, item.message),
+            )
+        )
+    )
+
+
 def validate_transient_action_exclusion_claim(
     claim: TransientActionExclusionClaim,
 ) -> tuple[ResourceControlValidationError, ...]:
@@ -835,6 +908,7 @@ __all__ = [
     "ResourceControlValidationReport",
     "validate_escrow_contract_set",
     "validate_escrow_execution",
+    "validate_escrow_release_plan",
     "validate_escrow_against_arbitration",
     "validate_escrow_contract",
     "validate_native_arbitration_against_escrow",
