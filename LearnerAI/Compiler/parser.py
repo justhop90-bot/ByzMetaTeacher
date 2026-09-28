@@ -8,6 +8,7 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _HEADER_RE = re.compile(r"^demand\s+([A-Za-z][A-Za-z0-9_-]*)\s*\{$")
 _FIELDS = ("action", "witness", "release")
 _SN_STATE_RE = re.compile(r"^sn\s+([a-z][a-z0-9_-]*)\s*=\s*(-?[0-9]+)$")
+_TIMER_STATE_RE = re.compile(r"^timer\s+([a-z][a-z0-9_-]*)$")
 
 def _clean_line(line: str) -> tuple[str, int]:
     without_comment = line.split("#", 1)[0]
@@ -62,6 +63,7 @@ def parse(
         fields: dict[str, str] = {}
         field_locations: dict[str, SourceLocation] = {}
         strategic_number_states: list[tuple[str, int, SourceLocation]] = []
+        timer_states: list[tuple[str, SourceLocation]] = []
         while i < len(raw):
             text, statement_column = _clean_line(raw[i])
             line_no = i + 1
@@ -93,6 +95,24 @@ def parse(
                 strategic_number_states.append(
                     (sn_name, int(sn_value), value_location)
                 )
+                i += 1
+                continue
+            timer_match = _TIMER_STATE_RE.fullmatch(text)
+            if timer_match:
+                timer_name = timer_match.group(1)
+                if any(existing[0] == timer_name for existing in timer_states):
+                    raise CompileError(
+                        f"line {line_no + line_offset}: duplicate timer state '{timer_name}' "
+                        f"in demand '{name}'"
+                    )
+                timer_location = _location(
+                    line_no,
+                    statement_column,
+                    source_unit=source_unit,
+                    line_offset=line_offset,
+                    first_line_column_offset=first_line_column_offset,
+                )
+                timer_states.append((timer_name, timer_location))
                 i += 1
                 continue
             match = re.fullmatch(r"(require|action|witness|release|invalidate)\s+(.+)", text)
@@ -140,6 +160,7 @@ def parse(
                 field_locations.get("release"),
                 field_locations.get("invalidate"),
                 tuple(strategic_number_states),
+                tuple(timer_states),
             )
         )
         i += 1
