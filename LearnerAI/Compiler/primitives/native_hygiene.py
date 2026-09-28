@@ -1261,6 +1261,10 @@ class NativeDucTargetContract:
     def __post_init__(self) -> None:
         if self.identity_kind not in {"LIST_INDEX", "NATIVE_ID", "POINT"}:
             raise ValueError(f"unknown DUC target identity kind: {self.identity_kind}")
+        if self.returns_false_on_invalid_index and not self.supports_fact:
+            raise ValueError(
+                "DUC target contracts with invalid-index Fact failure semantics must support Fact evaluation"
+            )
 
 
 @dataclass(frozen=True)
