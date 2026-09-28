@@ -205,7 +205,7 @@ Commit message: `feat(compiler): bind strategic-number state to native controlle
 
 Extend tests only where the repository already tests documentation contracts. Do not create brittle line-oriented documentation tests solely to increase coverage.
 
-- [ ] **Step 2: Run the full verification**
+- [x] **Step 2: Run the full verification**
 
 Run the compiler regression suite and the repository's native acceptance/zero-findings gate through GitHub Actions.
 
