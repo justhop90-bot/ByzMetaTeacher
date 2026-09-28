@@ -1,0 +1,17 @@
+name: DUC target data red
+
+on:
+  push:
+    branches:
+      - compiler-duc-target-data-readers
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Red target-data test
+        run: PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_get_object_data_requires_selected_target
