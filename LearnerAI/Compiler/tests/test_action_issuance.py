@@ -156,5 +156,71 @@ class ActionIssuanceTests(unittest.TestCase):
             )
 
 
+    def test_train_pending_admission_is_queue_guarded(self):
+        source = """
+        demand spears {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        output = compile_source(source)
+        pending_start = output.index("; Pending admission: spears")
+        pending_end = output.index("; Action issuance: spears", pending_start)
+        pending_block = output[pending_start:pending_end]
+
+        self.assertIn("(up-pending-objects c: spearman >= 1)", pending_block)
+        self.assertIn("(goal demand-spears 42)", pending_block)
+        self.assertIn("(set-goal demand-spears 42)", pending_block)
+
+    def test_train_retry_is_barriered_to_a_later_pass(self):
+        source = """
+        demand spears {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        output = compile_source(source)
+        retry = output.index("; RETRY | ISSUED/PENDING -> ACTIVE")
+        issuance = output.index("; Action issuance: spears | ACTIVE -> ISSUED")
+        reset = output.index("(set-goal production-retry-barrier-spears 0)")
+        set_barrier = output.index("(set-goal production-retry-barrier-spears 1)")
+        guard = output.index("(goal production-retry-barrier-spears 0)", issuance)
+
+        self.assertLess(reset, retry)
+        self.assertLess(retry, set_barrier)
+        self.assertLess(set_barrier, issuance)
+        self.assertIn("(not (up-pending-objects c: spearman >= 1))", output[retry:issuance])
+        self.assertIn("(goal production-retry-barrier-spears 0)", output[issuance:])
+
+    def test_train_uses_production_retry_storage_but_build_does_not(self):
+        train = compile_source(
+            """
+            demand spears {
+                require (can-train spearman)
+                action (train spearman)
+                witness (unit-type-count spearman >= 1)
+                release (unit-type-count spearman >= 1)
+            }
+            """
+        )
+        build = compile_source(
+            """
+            demand castle {
+                require (can-build castle)
+                action (build castle)
+                witness (building-type-count castle > 0)
+                release (building-type-count castle > 0)
+            }
+            """
+        )
+
+        self.assertIn("production-retry-barrier-spears", train)
+        self.assertNotIn("production-retry-barrier-castle", build)
+
+
 if __name__ == "__main__":
     unittest.main()
