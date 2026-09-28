@@ -18,6 +18,7 @@ from .native_binder import (
 from .engine_semantics import (
     EngineSemanticMappingRegistry,
     default_engine_semantic_mapping_registry,
+    default_duc_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
 from .native_hygiene import (
