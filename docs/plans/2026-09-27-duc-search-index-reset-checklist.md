@@ -39,7 +39,7 @@ Base: concrete four-Goal up-get-search-state tranche
 - [x] Track a deterministic query signature for the most recent find-local/find-remote family.
 - [x] Track an index generation/epoch independent of list generation.
 - [x] Track whether the current offset is known or unknown.
-- [ ] Add search-index metadata to DucSearchOperation.
+- [x] Add search-index metadata to DucSearchOperation.
 - [x] Record reset reason categories without pretending to know the exact post-find cursor.
 
 ### Native contracts
@@ -59,15 +59,15 @@ Base: concrete four-Goal up-get-search-state tranche
 
 ### Tests
 - [x] Initial index state is explicitly zero/known.
-- [ ] up-reset-search 1 0 0 0 resets only local index.
-- [ ] up-reset-search 0 0 1 0 resets only remote index.
-- [ ] up-reset-filters resets both indices without clearing list generations.
+- [x] up-reset-search 1 0 0 0 resets only local index.
+- [x] up-reset-search 0 0 1 0 resets only remote index.
+- [x] up-reset-filters resets both indices without clearing list generations.
 - [x] Every filter command that inherits filter-range reset semantics resets both indices.
 - [x] Switching local query type/class resets local index.
 - [x] Switching remote query type/class resets remote index.
 - [x] Unchanged query signatures do not introduce a spurious reset.
 - [x] Focus-player mutation remains explicitly unknown rather than inferred.
-- [ ] Existing list-retention and target tests remain unchanged.
+- [x] Existing list-retention and target tests remain unchanged.
 
 ### Evidence boundary retained
 
