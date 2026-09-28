@@ -15,6 +15,13 @@ class ConstructionPhase(str, Enum):
     COMPLETE = "COMPLETE"
 
 
+class ConstructionTransitionKind(str, Enum):
+    COMPLETE = "COMPLETE"
+    FOUNDATION_PENDING = "FOUNDATION_PENDING"
+    PLACEMENT_PENDING = "PLACEMENT_PENDING"
+    RETRY = "RETRY"
+
+
 @dataclass(frozen=True)
 class ConstructionObservation:
     completed: bool = False
@@ -30,8 +37,17 @@ class ConstructionState:
 
 
 @dataclass(frozen=True)
+class ConstructionTransitionRule:
+    kind: ConstructionTransitionKind
+    source_lifecycles: tuple[LifecycleState, ...]
+    target: ConstructionState
+    precedence: int
+
+
+@dataclass(frozen=True)
 class ConstructionLifecycle:
     building: str
+    native_building_id: int
     completion_witness: Expression | None
     pending_foundation_fact: Expression
     pending_placement_fact: Expression
@@ -42,4 +58,6 @@ __all__ = [
     "ConstructionObservation",
     "ConstructionPhase",
     "ConstructionState",
+    "ConstructionTransitionKind",
+    "ConstructionTransitionRule",
 ]
