@@ -29,7 +29,7 @@ def _aliases(value: str) -> tuple[str, ...]:
 
 
 def _canonical_alias(value: str) -> str:
-    return re.sub(r"(?<=[a-z0-9])-(?=[a-z0-9])", "", value.lower())
+    return re.sub(r"(?<=[a-z0-9])[- _]+(?=[a-z0-9])", "", value.lower())
 
 
 @lru_cache(maxsize=1)
@@ -56,22 +56,29 @@ def _matches(token: str) -> tuple[int, ...]:
 
     for entry in _techs():
         ai_name = entry.get("ai_name")
-        if not isinstance(ai_name, str):
-            continue
-        aliases = _aliases(ai_name)
-        if token in aliases:
+        display_name = entry.get("name")
+
+        ai_aliases = _aliases(ai_name) if isinstance(ai_name, str) else ()
+        display_aliases = _aliases(display_name) if isinstance(display_name, str) else ()
+
+        if token in ai_aliases or token in display_aliases:
             exact.add(entry["tech_id"])
-        elif canonical_token in {_canonical_alias(alias) for alias in aliases}:
+            continue
+
+        all_aliases = ai_aliases + display_aliases
+        if canonical_token in {
+            _canonical_alias(alias) for alias in all_aliases
+        }:
             canonical.add(entry["tech_id"])
 
     matches = exact or canonical
-    return tuple(sorted(matches))
+    return tuple(sorted(set(matches)))
 
 
 def resolve_tech_id(symbol: str) -> int:
     """Resolve a source research target to one deterministic native TechId."""
     token = symbol.strip().lower()
-    if not token or not re.fullmatch(r"[a-z][a-z0-9-]*|[0-9]+", token):
+    if not token or not re.fullmatch(r"[a-z][a-z0-9_ -]*|[0-9]+", token):
         raise NativeTechIdError(f"invalid TechId symbol '{symbol}'")
     if token.isdigit():
         tech_id = int(token)
