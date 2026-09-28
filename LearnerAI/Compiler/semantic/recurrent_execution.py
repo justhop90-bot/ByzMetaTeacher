@@ -254,14 +254,14 @@ def _apply_action(
         try:
             mutation = parse_strategic_number_mutation(expression)
             goals = {
-                ident: value
-                for (("GOAL", ident), value) in values.items()
-                if value is not None
+                key[1]: value
+                for key, value in values.items()
+                if key[0] == "GOAL" and value is not None
             }
             strategic_numbers = {
-                ident: value
-                for (("SN", ident), value in values.items()
-                if value is not None
+                key[1]: value
+                for key, value in values.items()
+                if key[0] == "SN" and value is not None
             }
             values[("GOAL", str(expression.args[0]))] = evaluate_strategic_number_mutation(
                 mutation,
