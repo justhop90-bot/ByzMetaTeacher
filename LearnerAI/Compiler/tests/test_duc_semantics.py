@@ -1607,6 +1607,47 @@ class DucSemanticTests(unittest.TestCase):
             report.final_state.local_list.current_generation.content_fingerprint
         )
 
+    def test_add_object_by_id_preserves_existing_target_and_search_cursor(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-add-object-by-id", ("search-local", "c:", "93")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(target.object_refs[0].list_index, 0)
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
+        self.assertEqual(
+            report.final_state.local_list.search_index,
+            report.states[-1][1].local_list.search_index,
+        )
+
+    def test_add_object_by_id_rejects_fact_evaluation_when_native_truth_is_unresolved(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        base = _rule(1, ())
+        fact = Expression(
+            "(up-add-object-by-id search-local c: 93)",
+            "up-add-object-by-id",
+            ("search-local", "c:", "93"),
+            location,
+        )
+        report = analyze_duc((
+            replace(base, facts=(fact,)),
+        ))
+
+        self.assertFalse(report.mutations)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "Fact semantics are unresolved" in item.message
+            for item in report.diagnostics
+        ))
+
     def test_add_object_by_id_rejects_negative_id(self):
         report = analyze_duc((
             _rule(1, (
