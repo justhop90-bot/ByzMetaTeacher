@@ -13,10 +13,15 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Owner: `semantic/action_issuance.py`, `semantic/completion_witness.py`, `semantic/release_state.py`, `semantic/resource_conflicts.py`, `ir/model.py`, `emitter/per.py`.
   - Gate: same-pass visibility proof plus runtime evidence for foundation/placement semantics.
 
-- [x] Close the Strategic Number binding persistence boundary.
-  - Muse: `compiler_coverage_baseline.md` says SN is analysis-safe/emission-open and explicitly calls out inventory, DSL allocation, and emission; `implementation_map.md` assigns SN allocation to `semantic/analyzer.py`, `compiler.py:_storage_requests`, and `runtime_binding.py`; `compiler_false_assumptions.md` warns that typed-native support is not executable support.
-  - Implemented in this tranche: v4 manifest schema (`schemas/binding-manifest-v4.schema.json`), request fingerprinting, integrity validation, migration rules, and manifest-focused regression tests.
-  - Remaining SN work: compiler-owned request construction, explicit inventory/catalog, end-to-end allocation, numeric binding resolution, emitted fixture, native zero-findings gate.
+- [x] Close the Strategic Number binding persistence and execution slice.
+  - Muse: `compiler_coverage_baseline.md` identifies the SN plane as analysis-safe/emission-open and explicitly calls out inventory, DSL allocation, and emission; `implementation_map.md` assigns request construction to `semantic/analyzer.py`, request collection to `compiler.py:_storage_requests`, and inventory wiring to `runtime_binding.py`; `compiler_undercoverage.md` says the 10k-hit SN corpus justifies catalog + DSL allocation now.
+  - Manifest/persistence: v4 schema in `schemas/binding-manifest-v4.schema.json`, request fingerprints, inventory provenance, integrity verification, explicit v1-v3 migration, and regression coverage.
+  - Compiler-owned request construction: `parser.py` accepts explicit `sn <name> = <initial>` state declarations; `ir/strategic_number.py` carries typed `StrategicNumberState` + `StrategicNumberStorageRequest`; `semantic/analyzer.py` assigns owner/request identity, WHY_NOT_GOAL, stability key, and native contract.
+  - Versioned catalog/inventory: `primitives/strategic_number_catalog.py` consumes the pinned DE-filtered AIRef snapshot, materializes the full 0..511 namespace, derives documented/candidate IDs, records the source SHA, pins catalog version `airef-de-2026-04-29-v1`, and excludes compiler allocation of SN 511.
+  - Compiler-to-binder integration: `compiler.py:_storage_requests()` now collects compiler-owned SN requests; absent explicit inventory the compiler installs the versioned catalog inventory; binding is required to produce `StrategicNumberSlot`.
+  - Numeric emission: `emitter/per.py` resolves symbolic state identity through `BindingResult`, emits numeric `defconst` aliases, and emits one-shot `set-strategic-number` initialization rules.
+  - Native acceptance: `tests/fixtures/strategic_number.perdsl` is now a checked-in compiler fixture; `assert_strategic_number_native.py` compiles it twice, verifies deterministic numeric allocation against the catalog, and runs the pinned `aoe2_ai_lab` zero-findings gate. This directly addresses the Muse false assumption that fixture-only semantic tests prove emission coverage.
+  - Remaining SN unknowns are now engine-knowledge questions, not allocation plumbing: per-SN defaults/auto-mutation/version scope and unknown-SN write behavior remain explicitly OPEN in `native_unknowns.md`.
 
 - [ ] Implement Timer allocation using the same symbolic-storage boundary.
   - Muse: `compiler_coverage_baseline.md`, `implementation_map.md`, `native_unknowns.md`.
