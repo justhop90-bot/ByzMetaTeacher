@@ -1400,6 +1400,120 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_set_target_by_id_binds_native_object_identity(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.kind, DucTargetKind.OBJECT)
+        self.assertEqual(target.object_refs[0].native_object_id, "12345")
+        self.assertIsNone(target.object_refs[0].list_kind)
+        self.assertIsNone(target.object_refs[0].list_generation)
+        self.assertIsNone(target.object_refs[0].list_index)
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
+
+
+    def test_direct_target_survives_search_resets_and_filter_resets(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-reset-search", ("1", "1", "1", "1")),
+                ("up-reset-filters", ()),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.object_refs[0].native_object_id, "12345")
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
+
+
+    def test_direct_target_survives_unrelated_list_mutations(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-clean-search", ("search-local", "object-data-hitpoints", "1")),
+                ("up-remove-objects", ("search-local", "-1", "==", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.object_refs[0].native_object_id, "12345")
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
+
+
+    def test_same_native_id_branch_join_preserves_direct_identity(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-set-target-by-id", ("c:", "12345")),)),
+            _rule(3, (("up-set-target-by-id", ("c:", "12345")),)),
+            _rule(4, (("up-target-objects", ("0", "action-default", "-1", "-1")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.object_refs[0].native_object_id, "12345")
+        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
+
+
+    def test_divergent_native_id_branch_join_widens_target_to_unknown(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-set-target-by-id", ("c:", "12345")),)),
+            _rule(3, (("up-set-target-by-id", ("c:", "54321")),)),
+            _rule(4, (("up-target-objects", ("0", "action-default", "-1", "-1")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertIsNone(target.object_refs[0].native_object_id)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof.value, "UNKNOWN")
+
+
+    def test_symbolic_native_id_remains_unresolved(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("g:", "target-object-id")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertIsNone(target.object_refs[0].native_object_id)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof.value, "UNKNOWN")
+
+
+    def test_negative_native_id_is_rejected(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "non-negative" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertIsNone(report.final_state.target)
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
