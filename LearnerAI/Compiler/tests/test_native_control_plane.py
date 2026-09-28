@@ -94,9 +94,69 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         self.assertIn("(set-strategic-number resource-control 50)", output)
         self.assertIn("(up-timer-status cooldown == timer-running)", output)
 
+
+    def test_goal_mutation_and_comparison_share_recurrent_scheduler_state(self):
+        location = SourceLocation(1, 1, "<test>")
+        rules = (
+            EffectiveRule(
+                rule_order=1,
+                source_location=location,
+                source_slice_ordinal=0,
+                instance_id="r1",
+                facts=(Expression("(true)", "true", (), location),),
+                actions=(
+                    RuleAction(
+                        Expression("(set-goal g 5)", "set-goal", ("g", "5"), location),
+                        0,
+                    ),
+                    RuleAction(
+                        Expression(
+                            "(up-modify-goal g c:+ 2)",
+                            "up-modify-goal",
+                            ("g", "c:+", "2"),
+                            location,
+                        ),
+                        1,
+                    ),
+                ),
+                pass_behavior=RulePassBehavior.ONE_SHOT,
+                disable_self_action_index=None,
+            ),
+            EffectiveRule(
+                rule_order=2,
+                source_location=location,
+                source_slice_ordinal=0,
+                instance_id="r2",
+                facts=(
+                    Expression(
+                        "(up-compare-goal g c:== 7)",
+                        "up-compare-goal",
+                        ("g", "c:==", "7"),
+                        location,
+                    ),
+                ),
+                actions=(
+                    RuleAction(
+                        Expression("(set-goal result 1)", "set-goal", ("result", "1"), location),
+                        0,
+                    ),
+                ),
+                pass_behavior=RulePassBehavior.ONE_SHOT,
+                disable_self_action_index=None,
+            ),
+        )
+
+        scheduler = PassScheduler(rules, goal_values={"g": -1})
+        scheduler.run_pass()
+
+        self.assertEqual(scheduler.goals["g"], 7)
+        self.assertEqual(scheduler.goals["result"], 1)
+
     def test_control_plane_requires_declared_symbolic_storage(self):
         from Compiler.primitives.registry import default_de_registry
         from Compiler.semantic.native_control import validate_native_control_plan
+from Compiler.semantic.pass_scheduler import PassScheduler
+from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePassBehavior
 
         plan = NativeControlPlan(
             states=(),
