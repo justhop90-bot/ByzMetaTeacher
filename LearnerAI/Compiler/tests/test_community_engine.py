@@ -40,6 +40,7 @@ class EngineSemanticsTests(unittest.TestCase):
         self.assertIn("attack.group-state-control", {p.identity for p in registry.practices})
         self.assertEqual(registry.practice("state.sn.engine-control").status, PracticeStatus.PARTIAL)
         self.assertEqual(registry.lifecycle("build").feasibility_fact, "can-build")
+        self.assertEqual(registry.lifecycle("research").pending_fact, "up-research-status")
         self.assertFalse(registry.lifecycle("build").pending_is_completion)
 
     def test_lifecycle_completion_witness_is_distinct_from_admission_and_pending(self):
