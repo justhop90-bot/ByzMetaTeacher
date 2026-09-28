@@ -4,15 +4,24 @@
   "title": "AoE2 DE Same-Pass Escrow Research Oracle Candidate",
   "description": "Portable shape for the capture-ready native escrow same-pass research experiment. Candidates are not native evidence until populated from an actual DE run.",
   "type": "object",
-  "required": ["fixture"],
+  "required": [
+    "fixture"
+  ],
   "additionalProperties": false,
   "properties": {
-    "fixture": { "$ref": "#/$defs/fixture" }
+    "fixture": {
+      "$ref": "#/$defs/fixture"
+    }
   },
   "$defs": {
     "assertionResult": {
       "type": "string",
-      "enum": ["PASS", "FAIL", "UNVERIFIED", "NOT_APPLICABLE"]
+      "enum": [
+        "PASS",
+        "FAIL",
+        "UNVERIFIED",
+        "NOT_APPLICABLE"
+      ]
     },
     "terminalResult": {
       "type": "string",
@@ -44,7 +53,9 @@
         "status_model",
         "trace_fields",
         "variants",
-        "promotion"
+        "promotion",
+        "terminal_precedence",
+        "failure_classes"
       ],
       "additionalProperties": false,
       "properties": {
@@ -54,11 +65,17 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["NATIVE_OBSERVATION", "SEMANTIC_EXAMPLE"]
+          "enum": [
+            "NATIVE_OBSERVATION",
+            "SEMANTIC_EXAMPLE"
+          ]
         },
         "command_under_test": {
           "type": "array",
-          "const": ["release-escrow", "research"]
+          "const": [
+            "release-escrow",
+            "research"
+          ]
         },
         "experiment_reference": {
           "type": "string",
@@ -74,58 +91,141 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "variants": {
           "type": "array",
           "minItems": 5,
           "maxItems": 5,
-          "items": { "$ref": "#/$defs/variant" }
+          "items": {
+            "$ref": "#/$defs/variant"
+          }
         },
         "promotion": {
           "$ref": "#/$defs/promotion"
+        },
+        "terminal_precedence": {
+          "type": "array",
+          "const": [
+            "NATIVE_ENGINE_ERROR",
+            "CONTROL_CONTAMINATION",
+            "INVALID_PRECONDITION",
+            "NONDETERMINISTIC",
+            "STATUS_LIFECYCLE_FAILURE",
+            "RESOURCE_CONSUMPTION_FAILURE",
+            "ORDERING_FAILURE",
+            "SAME_PASS_VISIBILITY_FAILURE",
+            "BASELINE_FAILURE",
+            "BLOCKED_CONTROL_LEAK",
+            "REVERSED_ORDER_ACCEPTED",
+            "LATER_PASS_RESEARCH_FAILURE",
+            "TIMEOUT",
+            "PASS"
+          ]
+        },
+        "failure_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
     "engineScope": {
       "type": "object",
-      "required": ["game", "build", "run_status"],
+      "required": [
+        "game",
+        "build",
+        "run_status"
+      ],
       "additionalProperties": false,
       "properties": {
-        "game": { "const": "aoe2de" },
-        "build": { "type": "string", "minLength": 1 },
-        "patch": { "type": "string", "minLength": 1 },
-        "ai_layer": { "type": "string", "minLength": 1 },
-        "platform": { "type": "string", "minLength": 1 },
+        "game": {
+          "const": "aoe2de"
+        },
+        "build": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ai_layer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
         "run_status": {
           "type": "string",
-          "enum": ["UNVERIFIED", "CAPTURED"]
+          "enum": [
+            "UNVERIFIED",
+            "CAPTURED"
+          ]
         }
       }
     },
     "statusModel": {
       "type": "object",
-      "required": ["unavailable", "available", "pending", "complete", "allowed_transitions", "forbidden_transitions"],
+      "required": [
+        "unavailable",
+        "available",
+        "pending",
+        "complete",
+        "allowed_transitions",
+        "forbidden_transitions"
+      ],
       "additionalProperties": false,
       "properties": {
-        "unavailable": { "const": 0 },
-        "available": { "const": 1 },
-        "pending": { "const": 2 },
-        "complete": { "const": 3 },
+        "unavailable": {
+          "const": 0
+        },
+        "available": {
+          "const": 1
+        },
+        "pending": {
+          "const": 2
+        },
+        "complete": {
+          "const": 3
+        },
         "allowed_transitions": {
           "type": "array",
-          "const": ["1->1", "1->2", "2->2", "2->3", "3->3"]
+          "const": [
+            "1->1",
+            "1->2",
+            "2->2",
+            "2->3",
+            "3->3"
+          ]
         },
         "forbidden_transitions": {
           "type": "array",
           "minItems": 1,
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "variant": {
       "type": "object",
-      "required": ["id", "purpose", "action_order", "expected_terminal_result", "allowed_status_transitions"],
+      "required": [
+        "id",
+        "purpose",
+        "action_order",
+        "expected_terminal_result",
+        "allowed_status_transitions"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -138,17 +238,24 @@
             "ESCROW_LATER_PASS_CONTROL"
           ]
         },
-        "purpose": { "type": "string", "minLength": 1 },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
         "action_order": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "expected_terminal_result": {
           "const": "PASS"
         },
         "allowed_status_transitions": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "runtime_runs_required": {
           "const": 10
@@ -157,7 +264,12 @@
     },
     "promotion": {
       "type": "object",
-      "required": ["status", "required_variant_ids", "required_runs_per_variant", "statement"],
+      "required": [
+        "status",
+        "required_variant_ids",
+        "required_runs_per_variant",
+        "statement"
+      ],
       "additionalProperties": false,
       "properties": {
         "status": {
@@ -172,8 +284,13 @@
             "ESCROW_LATER_PASS_CONTROL"
           ]
         },
-        "required_runs_per_variant": { "const": 10 },
-        "statement": { "type": "string", "minLength": 1 }
+        "required_runs_per_variant": {
+          "const": 10
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }
