@@ -145,6 +145,26 @@ Still required:
 Primary test file:
 - `LearnerAI/Compiler/tests/test_duc_semantics.py`
 
+## Vertical slice I: direct target identity
+
+- [x] Model `up-set-target-by-id` as a first-class native DUC target contract.
+- [x] Preserve zero-based direct object ID as immutable target identity when concrete.
+- [x] Separate native-ID identity proof from runtime object liveness.
+- [x] Keep direct-ID targets independent of search-list generations and search-index epochs.
+- [x] Preserve same direct object ID across control-flow joins and widen divergent IDs to UNKNOWN.
+- [x] Keep full native search reset authoritative for target clearing.
+- [x] Add hostile regression coverage for reset, mutation, branch, symbolic-ID, and negative-ID cases.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+- `LearnerAI/Compiler/primitives/native_hygiene.py`
+
+Primary tests:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+- `LearnerAI/Compiler/tests/test_native_contract_integration.py`
+- `LearnerAI/Compiler/tests/test_native_hygiene.py`
+
 ## Integration order
 
 1. [x] Create typed DUC IR.

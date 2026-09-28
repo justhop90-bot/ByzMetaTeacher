@@ -69,6 +69,7 @@ class DucGroupFlagState(str, Enum):
 class DucTargetProof(str, Enum):
     CURRENT_PASS_PROOF = "CURRENT_PASS_PROOF"
     PRESERVED_PROOF = "PRESERVED_PROOF"
+    NATIVE_ID_PROOF = "NATIVE_ID_PROOF"
     SYNTACTIC_RETENTION = "SYNTACTIC_RETENTION"
     UNKNOWN = "UNKNOWN"
 
@@ -77,6 +78,14 @@ class DucListMutationKind(str, Enum):
     SORT = "SORT"
     DEDUPE = "DEDUPE"
     REMOVE_MATCHES = "REMOVE_MATCHES"
+
+
+class DucSearchIndexResetReason(str, Enum):
+    INITIAL = "INITIAL"
+    EXPLICIT = "EXPLICIT"
+    FILTER_CHANGED = "FILTER_CHANGED"
+    QUERY_CHANGED = "QUERY_CHANGED"
+    UNKNOWN = "UNKNOWN"
 
 
 class DucTargetTransition(str, Enum):
@@ -141,6 +150,23 @@ class DucCardinalityRange:
 
 
 @dataclass(frozen=True)
+class DucSearchIndexState:
+    offset: Optional[int] = 0
+    generation: int = 0
+    query_signature: Optional[tuple[str, ...]] = None
+    focus_player_signature: Optional[str] = None
+    known: bool = True
+    last_reset_reason: Optional[DucSearchIndexResetReason] = None
+    path_ambiguous: bool = False
+
+    def __post_init__(self) -> None:
+        if self.offset is not None and self.offset < 0:
+            raise ValueError("DUC search index offset must be non-negative")
+        if self.generation < 0:
+            raise ValueError("DUC search index generation must be non-negative")
+
+
+@dataclass(frozen=True)
 class DucListGeneration:
     list_kind: DucListKind
     generation: int
@@ -159,16 +185,23 @@ class DucSearchListState:
     initialized: bool = False
     path_ambiguous: bool = False
     generation_variants: tuple[DucListGeneration, ...] = ()
+    search_index: DucSearchIndexState = DucSearchIndexState()
 
 
 @dataclass(frozen=True)
 class DucObjectRef:
-    list_kind: DucListKind
+    list_kind: Optional[DucListKind]
     list_generation: Optional[int]
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
     index_stable: bool = True
+
+    def __post_init__(self) -> None:
+        if self.list_kind is None and (
+            self.list_generation is not None or self.list_index is not None
+        ):
+            raise ValueError("direct DUC object identity cannot carry list coordinates")
 
 
 @dataclass(frozen=True)
@@ -237,8 +270,10 @@ class DucGoalOutputSpan:
     def __post_init__(self) -> None:
         if not 1 <= self.start_goal_id <= 16000:
             raise ValueError("DUC Goal output must use GoalId range 1..16000")
-        if self.width != 1:
-            raise ValueError("DUC group-size Goal output span must have width 1")
+        if self.width not in {1, 4}:
+            raise ValueError("DUC Goal output span must have width 1 or 4")
+        if self.start_goal_id + self.width - 1 > 16000:
+            raise ValueError("DUC Goal output span exceeds the native GoalId range")
         if self.generation < 1:
             raise ValueError("DUC Goal output generation must be positive")
         if self.overwritten_generation is None:
@@ -283,6 +318,10 @@ class DucSearchOperation:
     output_generation: DucListGeneration
     visibility: DucVisibility
     provenance: DucProvenance
+    index_before: Optional[int] = None
+    index_after: Optional[int] = None
+    index_generation: int = 0
+    index_reset_reason: Optional[DucSearchIndexResetReason] = None
 
 
 @dataclass(frozen=True)
@@ -322,6 +361,7 @@ class DucSearchStateObservation:
     local_last_search_cardinality: Optional[DucCardinalityRange] = None
     remote_total_cardinality: Optional[DucCardinalityRange] = None
     remote_last_search_cardinality: Optional[DucCardinalityRange] = None
+    output_span: Optional[DucGoalOutputSpan] = None
 
 
 @dataclass(frozen=True)
@@ -433,6 +473,8 @@ __all__ = [
     "DucFilterSnapshot",
     "DucFilterState",
     "DucListGeneration",
+    "DucSearchIndexResetReason",
+    "DucSearchIndexState",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",
