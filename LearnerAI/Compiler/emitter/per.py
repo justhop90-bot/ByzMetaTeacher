@@ -111,6 +111,7 @@ def emit(
     arbitration_requests = {}
     strategic_number_states = []
     timer_states = []
+    research_tech_states = []
 
     for demand in demands:
         for state in demand.strategic_number_states:
@@ -142,6 +143,19 @@ def emit(
                 )
             timer_states.append((state, binding))
 
+        if demand.research_lifecycle is not None:
+            state = demand.research_lifecycle
+            if any(
+                existing_state.native_tech_id != state.native_tech_id
+                and existing_state.technology == state.technology
+                for existing_state in research_tech_states
+            ):
+                raise CompileError(
+                    f"EMITTER-RESEARCH-TECH-DUPLICATE: conflicting TechId for "
+                    f"'{state.technology}'"
+                )
+            research_tech_states.append(state)
+
     if timer_states:
         out.extend([
             "",
@@ -172,6 +186,31 @@ def emit(
                     )
                 out.append(f"    (disable-timer {state.name})")
             out.extend(["    (disable-self)", ")", ""])
+
+    if research_tech_states:
+        out.extend([
+            "",
+            "; Research technology constants",
+        ])
+        seen_tech_symbols: set[str] = set()
+        seen_tech_ids: dict[int, str] = {}
+        for state in sorted(
+            research_tech_states,
+            key=lambda item: (item.technology, item.native_tech_id),
+        ):
+            if state.technology in seen_tech_symbols:
+                continue
+            previous = seen_tech_ids.get(state.native_tech_id)
+            if previous is not None and previous != state.technology:
+                raise CompileError(
+                    f"EMITTER-RESEARCH-TECH-ID: TechId {state.native_tech_id} "
+                    f"is assigned to both '{previous}' and '{state.technology}'"
+                )
+            seen_tech_symbols.add(state.technology)
+            seen_tech_ids[state.native_tech_id] = state.technology
+            out.append(
+                f"(defconst {state.technology} {state.native_tech_id})"
+            )
 
     for state, binding in sorted(
         strategic_number_states,
