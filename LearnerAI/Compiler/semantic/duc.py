@@ -1387,7 +1387,7 @@ def _analyze_duc_linear(
                     )
                     output_provenance = replace(
                         provenance,
-                        contract_id=search_state_span_contract.identity,
+                        semantic_contract_id=search_state_span_contract.identity,
                     )
                     output_span, output_spans = _write_goal_output_span(
                         state,
@@ -1969,16 +1969,13 @@ def _join_search_indices(
 
 
 def _list_semantic_key(state: DucSearchListState) -> tuple[object, ...]:
-    index_key = _search_index_key(state.search_index)
     if state.current_generation is not None:
         return (
             _generation_key(state.current_generation),
-            index_key,
             state.path_ambiguous,
         )
     return (
         "AMBIGUOUS",
-        index_key,
         state.path_ambiguous,
         tuple(_generation_key(item) for item in state.generation_variants),
     )
@@ -1989,7 +1986,12 @@ def _widen_list_state(
     current: DucSearchListState,
 ) -> DucSearchListState:
     if _list_semantic_key(previous) == _list_semantic_key(current):
-        return previous
+        return replace(
+            previous,
+            search_index=_join_search_indices(
+                (previous.search_index, current.search_index)
+            ),
+        )
     candidates: dict[tuple[object, ...], DucListGeneration] = {}
     for generation in (
         *previous.generation_variants,
@@ -2391,6 +2393,7 @@ def _join_goal_output_spans(
 def _state_key(state: DucSemanticState) -> tuple[object, ...]:
     return (
         state.pass_id,
+        _search_index_key(state.local_list.search_index),
         (
             _generation_key(state.local_list.current_generation),
             state.local_list.path_ambiguous,
@@ -2401,6 +2404,7 @@ def _state_key(state: DucSemanticState) -> tuple[object, ...]:
             state.local_list.path_ambiguous,
             tuple(_generation_key(item) for item in state.local_list.generation_variants),
         ),
+        _search_index_key(state.remote_list.search_index),
         (
             _generation_key(state.remote_list.current_generation),
             state.remote_list.path_ambiguous,
