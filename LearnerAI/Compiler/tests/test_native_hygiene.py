@@ -16,6 +16,7 @@ from Compiler.primitives.native_hygiene import (
     ExcerptKind,
     ExcerptMatchKind,
     LocatorType,
+    NativeDucSearchIndexTransitionContract,
     NativeGoalParameterRangeContract,
     NativeGoalSpanContract,
     NativeGoalStorageContract,
@@ -60,6 +61,58 @@ def provenance(
 
 
 class NativeHygieneTests(unittest.TestCase):
+    def test_duc_search_index_transition_contract_rejects_invalid_states(self):
+        scope = EngineVersionScope(
+            source_families=(AIRefVersionFamily.UP,),
+            engine_targets=(AIRefVersionFamily.DE,),
+            introduced_family=AIRefVersionFamily.UP,
+            release="test",
+        )
+        with self.assertRaises(ValueError):
+            NativeDucSearchIndexTransitionContract(
+                "BAD_TRIGGER",
+                ("LOCAL",),
+                True,
+                True,
+                True,
+                "UNKNOWN",
+                ("ai:test",),
+                scope,
+            )
+        with self.assertRaises(ValueError):
+            NativeDucSearchIndexTransitionContract(
+                "QUERY_CHANGE",
+                ("INVALID",),
+                True,
+                True,
+                True,
+                "UNKNOWN",
+                ("ai:test",),
+                scope,
+            )
+        with self.assertRaises(ValueError):
+            NativeDucSearchIndexTransitionContract(
+                "QUERY_CHANGE",
+                ("SEARCHED_LIST",),
+                True,
+                True,
+                True,
+                "MAYBE",
+                ("ai:test",),
+                scope,
+            )
+        with self.assertRaises(ValueError):
+            NativeDucSearchIndexTransitionContract(
+                "QUERY_CHANGE",
+                ("SEARCHED_LIST",),
+                True,
+                True,
+                True,
+                "UNKNOWN",
+                (),
+                scope,
+            )
+
     def test_ordinary_goal_storage_stops_at_512(self):
         NativeStorageUse(
             "ordinary-goal-512",
