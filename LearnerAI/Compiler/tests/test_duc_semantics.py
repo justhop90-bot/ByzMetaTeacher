@@ -8,6 +8,7 @@ from Compiler.ir.duc import (
     DucSearchCursorDisposition,
     DucSearchFactResult,
     DucSearchResultDisposition,
+    DucStateKind,
     DucListKind,
     DucListMutationKind,
     DucSearchIndexResetReason,
@@ -62,6 +63,59 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_get_cost_delta_creates_four_goal_output_span(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-cost-delta", ("41",)),),
+            ),
+        ))
+
+        self.assertEqual(len(report.final_state.goal_output_spans), 1)
+        span = report.final_state.goal_output_spans[0]
+        self.assertEqual(span.start_goal_id, 41)
+        self.assertEqual(span.width, 4)
+        self.assertEqual(span.provenance.command, "up-get-cost-delta")
+        self.assertTrue(
+            any(
+                effect.writes == (DucStateKind.OUTPUT,)
+                for effect in report.effects
+                if effect.rule_order == 1
+            )
+        )
+
+
+    def test_get_cost_delta_accepts_last_native_start(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-cost-delta", ("15996",)),),
+            ),
+        ))
+
+        self.assertEqual(
+            report.final_state.goal_output_spans[0].start_goal_id,
+            15996,
+        )
+        self.assertEqual(report.final_state.goal_output_spans[0].width, 4)
+
+
+    def test_get_cost_delta_rejects_start_that_would_overrun_extended_goal_span(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-cost-delta", ("15997",)),),
+            ),
+        ))
+
+        self.assertFalse(report.final_state.goal_output_spans)
+        self.assertTrue(any(
+            item.code == "DUC-017"
+            and "15996" in item.message
+            for item in report.diagnostics
+        ))
+
+
     def test_recurrent_local_search_reports_evidence_backed_cost(self):
         report = analyze_duc((
             _rule(1, (
