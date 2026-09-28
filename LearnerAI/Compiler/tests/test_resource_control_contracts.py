@@ -16,13 +16,11 @@ from Compiler.ir.resource_control import (
     NativeArbitrationRecoveryKind,
     NativeArbitrationRelease,
     NativeArbitrationReleaseKind,
-    NativeArbitrationStarvationPolicy,
     NativeControlStorage,
-    ResourceControlErrorCode,
-    ResourceControlValidationReport,
     TransientActionExclusionClaim,
-    TransientClaimKind,
-    TransientClaimScope,
+)
+from Compiler.semantic.resource_control import (
+    ResourceControlErrorCode,
     validate_resource_control_contracts,
 )
 
