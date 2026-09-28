@@ -119,6 +119,19 @@ def _resolve_duc_reset(contract, arguments: tuple[str, ...]) -> NativeDucResetRe
             invalidates_local_index=arguments[0] == "1",
             invalidates_remote_index=arguments[2] == "1",
         )
+    if contract.reset_kind in {
+        DucResetKind.FILTERS.value,
+        DucResetKind.FULL.value,
+    }:
+        return NativeDucResetResolution(
+            invalidates_local_list=contract.invalidates_local_list,
+            invalidates_remote_list=contract.invalidates_remote_list,
+            invalidates_filters=contract.invalidates_filters,
+            invalidates_object_target=contract.invalidates_object_target,
+            invalidates_point_target=contract.invalidates_point_target,
+            invalidates_local_index=True,
+            invalidates_remote_index=True,
+        )
     return NativeDucResetResolution(
         invalidates_local_list=contract.invalidates_local_list,
         invalidates_remote_list=contract.invalidates_remote_list,
@@ -1120,9 +1133,26 @@ def _analyze_duc_linear(
                     contract_id=f"duc.filter.{command}",
                     evidence_ids=filter_contract.evidence_ids,
                 )
+                local_list = state.local_list
+                remote_list = state.remote_list
+                if filter_contract.resets_search_indices:
+                    local_list = replace(
+                        local_list,
+                        search_index=_reset_search_index(
+                            local_list.search_index,
+                            DucSearchIndexResetReason.FILTER_CHANGED,
+                        ),
+                    )
+                    remote_list = replace(
+                        remote_list,
+                        search_index=_reset_search_index(
+                            remote_list.search_index,
+                            DucSearchIndexResetReason.FILTER_CHANGED,
+                        ),
+                    )
                 state = DucSemanticState(
-                    state.local_list,
-                    state.remote_list,
+                    local_list,
+                    remote_list,
                     DucFilterState(
                         state.filters.generation + 1,
                         predicates,
@@ -1202,6 +1232,22 @@ def _analyze_duc_linear(
                         target = DucTargetState(
                             **{**target.__dict__, "validity": DucTargetStatus.STALE, "proof": DucTargetProof.UNKNOWN}
                         )
+                if resolution.invalidates_local_index:
+                    local = replace(
+                        local,
+                        search_index=_reset_search_index(
+                            local.search_index,
+                            DucSearchIndexResetReason.EXPLICIT,
+                        ),
+                    )
+                if resolution.invalidates_remote_index:
+                    remote = replace(
+                        remote,
+                        search_index=_reset_search_index(
+                            remote.search_index,
+                            DucSearchIndexResetReason.EXPLICIT,
+                        ),
+                    )
                 if resolution.invalidates_filters:
                     next_filter_generation = (
                         filters.generation + 1
