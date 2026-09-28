@@ -1,7 +1,7 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Implementation base: main 7917269792ff809616f0132fb70a45f2eece2f7b
+Implementation base: main 51489706c54ce5c0680d295169ac72a24467e36a
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
