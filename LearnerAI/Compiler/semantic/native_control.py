@@ -224,6 +224,11 @@ def _validate_leaf(
             f"{assessment.message}"
         )
 
+    if head in {"up-modify-goal", "up-modify-sn"} and not is_action:
+        raise ValueError(
+            f"native control state mutation '{head}' must be emitted as an Action, not a Fact"
+        )
+
     if is_action:
         if head not in _CONTROL_COMMANDS:
             raise ValueError(
