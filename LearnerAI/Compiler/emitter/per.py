@@ -110,6 +110,7 @@ def emit(
     encoded: dict[str, LifecycleEncoding] = {}
     arbitration_requests = {}
     strategic_number_states = []
+    timer_states = []
 
     for demand in demands:
         for state in demand.strategic_number_states:
@@ -127,6 +128,44 @@ def emit(
                     f"{type(binding).__name__}"
                 )
             strategic_number_states.append((state, binding))
+
+        for state in demand.timer_states:
+            binding = bindings.binding_for(state.request.request_id)
+            if not isinstance(binding, TimerSlot):
+                raise CompileError(
+                    f"EMITTER-TIMER-BINDING: state '{state.name}' has non-Timer binding "
+                    f"{type(binding).__name__}"
+                )
+            if any(existing_state.name == state.name for existing_state, _ in timer_states):
+                raise CompileError(
+                    f"EMITTER-TIMER-DUPLICATE: duplicate Timer state '{state.name}'"
+                )
+            timer_states.append((state, binding))
+
+    for state, binding in sorted(
+        timer_states,
+        key=lambda item: (
+            item[0].request.request_id.owner.source_unit,
+            item[0].request.request_id.owner.local_name,
+            item[0].request.request_id.purpose,
+        ),
+    ):
+        out.append(f"(defconst {state.name} {binding.id})")
+
+    if timer_states:
+        out.extend([
+            "",
+            "; Timer state constants",
+        ])
+        for state, binding in sorted(
+            timer_states,
+            key=lambda item: (
+                item[0].request.request_id.owner.source_unit,
+                item[0].request.request_id.owner.local_name,
+                item[0].request.request_id.purpose,
+            ),
+        ):
+            out.append(f"(defconst {state.name} {binding.id})")
 
     for state, binding in sorted(
         strategic_number_states,
