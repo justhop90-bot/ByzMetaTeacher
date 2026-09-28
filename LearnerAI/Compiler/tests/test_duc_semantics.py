@@ -5,10 +5,15 @@ from Compiler.ir.duc import (
     DucCardinalityRange,
     DucGoalOutputSpan,
     DucGroupStatus,
+    DucSearchCursorDisposition,
+    DucSearchFactResult,
+    DucSearchResultDisposition,
     DucListKind,
     DucListMutationKind,
+    DucSearchIndexResetReason,
     DucLoopWidening,
     DucTargetConsumerMode,
+    DucTargetDataRelation,
     DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
@@ -1261,6 +1266,316 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(search.index_reset_reason)
 
 
+    def test_find_local_fact_updates_search_state_and_keeps_fact_truth_runtime_dependent(self):
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-get-search-state", ("41",)),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ))
+
+        self.assertEqual(len(report.searches), 1)
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.fact_result, DucSearchFactResult.RUNTIME_DEPENDENT)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(report.observations[0].local_search_cursor_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertIsNotNone(report.final_state.local_list.current_generation)
+
+
+    def test_find_remote_fact_updates_remote_cursor_and_can_be_reset_afterwards(self):
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-reset-search", ("0", "0", "1", "0")),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-remote c: town-center c: 1)",
+                        "up-find-remote",
+                        ("c:", "town-center", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ))
+
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.fact_result, DucSearchFactResult.RUNTIME_DEPENDENT)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(
+            report.final_state.remote_list.search_index.cursor_disposition,
+            DucSearchCursorDisposition.RESET_START,
+        )
+        self.assertEqual(report.final_state.remote_list.search_index.offset, 0)
+
+
+    def test_find_fact_at_known_end_is_guaranteed_false(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        seed_index = replace(
+            first.final_state.local_list.search_index,
+            cursor_disposition=DucSearchCursorDisposition.AT_END,
+            offset=None,
+            known=False,
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                search_index=seed_index,
+            ),
+        )
+
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-get-search-state", ("41",)),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ), initial_state=seed)
+
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.result_disposition, DucSearchResultDisposition.GUARANTEED_EMPTY)
+        self.assertEqual(search.fact_result, DucSearchFactResult.GUARANTEED_FALSE)
+        self.assertEqual(search.cursor_before_disposition, DucSearchCursorDisposition.AT_END)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.AT_END)
+        self.assertEqual(report.observations[0].local_search_cursor_disposition, DucSearchCursorDisposition.AT_END)
+
+
+    def test_branch_ambiguous_cursor_remains_ambiguous_after_later_search(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(3, (("up-do-nothing", ()),)),
+            _rule(4, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        search = report.searches[-1]
+        self.assertEqual(
+            search.cursor_before_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertEqual(
+            search.cursor_after_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertEqual(
+            report.final_state.local_list.search_index.cursor_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertTrue(report.final_state.local_list.path_ambiguous)
+
+
+    def test_repeated_same_query_uses_prior_runtime_cursor_state(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertEqual(first.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(second.cursor_before_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertIsNone(second.index_before)
+        self.assertEqual(second.index_reset_reason, None)
+
+
+    def test_search_records_runtime_cursor_transition(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[0]
+        self.assertEqual(
+            getattr(search, "cursor_after_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+
+
+    def test_get_search_state_observes_search_cursor_without_mutating_it(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        observation = report.observations[0]
+        self.assertEqual(
+            getattr(observation, "local_search_cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+
+
+    def test_explicit_search_reset_restores_cursor_to_start(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-reset-search", ("1", "0", "0", "0")),
+            )),
+        ))
+
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RESET_START",
+        )
+        self.assertEqual(
+            report.final_state.local_list.search_index.offset,
+            0,
+        )
+
+    def test_search_at_proven_end_is_guaranteed_empty_and_does_not_rewind(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        seed_index = replace(
+            first.final_state.local_list.search_index,
+            cursor_disposition=DucSearchCursorDisposition.AT_END,
+            offset=None,
+            known=False,
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                search_index=seed_index,
+            ),
+        )
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("up-get-search-state", ("41",)),
+                )),
+            ),
+            initial_state=seed,
+        )
+
+        search = report.searches[0]
+        self.assertEqual(search.result_disposition.value, "GUARANTEED_EMPTY")
+        self.assertEqual(search.cursor_before_disposition.value, "AT_END")
+        self.assertEqual(search.cursor_after_disposition.value, "AT_END")
+        self.assertEqual(
+            report.final_state.local_list.current_generation.last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+        observation = report.observations[0]
+        self.assertEqual(
+            observation.local_search_cursor_disposition.value,
+            "AT_END",
+        )
+        self.assertEqual(
+            observation.local_last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+
+
+    def test_search_on_full_destination_list_is_guaranteed_empty_and_cursor_blocked(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        full_generation = replace(
+            first.final_state.local_list.current_generation,
+            cardinality=DucCardinalityRange(240, 240),
+            last_search_cardinality=DucCardinalityRange(240, 240),
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                current_generation=full_generation,
+            ),
+        )
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                )),
+            ),
+            initial_state=seed,
+        )
+
+        search = report.searches[0]
+        self.assertEqual(search.result_disposition.value, "GUARANTEED_EMPTY")
+        self.assertEqual(search.cursor_after_disposition.value, "BLOCKED_BY_CAPACITY")
+        self.assertEqual(
+            report.final_state.local_list.search_index.cursor_disposition.value,
+            "BLOCKED_BY_CAPACITY",
+        )
+        self.assertEqual(
+            report.final_state.local_list.current_generation.last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+
+
+    def test_remote_cursor_advancement_and_focus_reset_are_independent(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertEqual(first.cursor_after_disposition.value, "RUNTIME_ADVANCED")
+        self.assertEqual(
+            second.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(
+            second.cursor_before_disposition,
+            DucSearchCursorDisposition.RESET_START,
+        )
+        self.assertEqual(second.focus_player_signature, "2")
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(
+            second.cursor_after_disposition.value,
+            "RUNTIME_ADVANCED",
+        )
+
+
     def test_changed_local_query_signature_resets_local_search_index(self):
         report = analyze_duc((
             _rule(1, (
@@ -1363,7 +1678,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(second.index_reset_reason.value, "QUERY_CHANGED")
 
 
-    def test_focus_player_reset_remains_explicitly_unknown(self):
+    def test_focus_player_search_index_starts_at_native_default(self):
         report = analyze_duc((
             _rule(1, (
                 ("up-find-remote", ("c:", "town-center", "c:", "1")),
@@ -1371,7 +1686,8 @@ class DucSemanticTests(unittest.TestCase):
         ))
 
         index = report.final_state.remote_list.search_index
-        self.assertIsNone(index.focus_player_signature)
+        self.assertEqual(index.focus_player_signature, "0")
+        self.assertIsNone(index.focus_player_provenance)
 
 
 
@@ -1698,6 +2014,440 @@ class DucSemanticTests(unittest.TestCase):
         ))
 
 
+
+
+
+    def test_get_object_data_requires_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "up-get-object-data" in item.message
+            and "target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_data_reads_current_selected_object_and_writes_goal_span(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-get-object-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT)
+        self.assertEqual(observation.source_kind, "ACTION")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertEqual(observation.target_proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(observation.output_span.start_goal_id, 41)
+        self.assertEqual(observation.output_span.width, 1)
+        self.assertEqual(observation.output_span.generation, 1)
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-data")
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+        self.assertFalse(any(item.code in {"DUC-005", "DUC-006", "DUC-007"} for item in report.diagnostics))
+
+
+    def test_object_data_fact_reads_current_selected_object(self):
+        base = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-object-data 38 c:> 0)",
+            "up-object-data",
+            ("38", "c:>", "0"),
+            location,
+        )
+        report = analyze_duc((
+            replace(base, facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[0]
+        self.assertEqual(observation.command, "up-object-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT)
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertFalse(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(observation.target_proof, DucTargetProof.UNKNOWN)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "previously established object target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_exposes_runtime_target_of_target_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-get-object-target-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT_TARGET)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertEqual(observation.target_proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-target-data")
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "target-of-target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_data_rejects_stale_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-reset-search", ("1", "1", "0", "0")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-006"
+            and "invalidated" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertEqual(
+            report.target_data_observations[-1].target_validity,
+            DucTargetStatus.STALE,
+        )
+
+
+    def test_get_object_data_preserves_native_id_liveness_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.target_proof, DucTargetProof.NATIVE_ID_PROOF)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "liveness is unverified" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_preserves_native_id_and_warns_target_of_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-target-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.target_proof, DucTargetProof.NATIVE_ID_PROOF)
+        messages = [item.message for item in report.diagnostics if item.code == "DUC-007"]
+        self.assertTrue(any("liveness is unverified" in message for message in messages))
+        self.assertTrue(any("target-of-target" in message for message in messages))
+
+
+    def test_get_object_data_goal_id_out_of_range_is_diagnostic(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "16001")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-017"
+            and "1..16000" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertIsNone(report.target_data_observations[-1].output_span)
+
+
+    def test_get_object_data_overwrites_previous_goal_writer_with_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "41")),
+                ("up-get-object-data", ("39", "41")),
+            )),
+        ))
+
+        first, second = report.target_data_observations[-2:]
+        self.assertEqual(first.output_span.generation, 1)
+        self.assertEqual(second.output_span.generation, 2)
+        self.assertEqual(second.output_span.overwritten_generation, 1)
+        self.assertEqual(
+            second.output_span.overwritten_provenance.command,
+            "up-get-object-data",
+        )
+        self.assertEqual(report.final_state.goal_output_spans, (second.output_span,))
+
+
+    def test_get_object_data_fact_writes_goal_output_span(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-get-object-data 38 41)",
+            "up-get-object-data",
+            ("38", "41"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[0]
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-data")
+
+
+    def test_cross_pass_target_data_reuse_warns_syntactic_retention(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+        second = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-get-object-data", ("38", "41")),
+                )),
+            ),
+            initial_state=first.next_pass_state,
+        )
+
+        self.assertEqual(
+            second.target_data_observations[-1].target_proof,
+            DucTargetProof.SYNTACTIC_RETENTION,
+        )
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "retained across a pass" in item.message
+            for item in second.diagnostics
+        ))
+
+
+    def test_object_target_data_fact_reads_current_object_target(self):
+        first = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-object-target-data 38 c:> 0)",
+            "up-object-target-data",
+            ("38", "c:>", "0"),
+            location,
+        )
+        report = analyze_duc((
+            first,
+            replace(_rule(2, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-object-target-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT_TARGET)
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertFalse(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "target-of-target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_fact_writes_goal_output_span(self):
+        first = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-get-object-target-data 38 41)",
+            "up-get-object-target-data",
+            ("38", "41"),
+            location,
+        )
+        report = analyze_duc((
+            first,
+            replace(_rule(2, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-get-object-target-data")
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(observation.output_span.start_goal_id, 41)
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+
+
+    def test_focus_player_change_resets_remote_search_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(
+            second.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(second.focus_player_signature, "2")
+        self.assertIsNotNone(second.focus_player_provenance)
+        self.assertEqual(second.focus_player_provenance.command, "set-strategic-number")
+        self.assertEqual(second.focus_player_provenance.within_rule_order, 1)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_same_focus_player_assignment_does_not_reset_remote_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "0")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertIsNone(second.index_before)
+        self.assertIsNone(second.index_reset_reason)
+        self.assertEqual(second.focus_player_signature, "0")
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 0)
+        self.assertEqual(
+            second.focus_player_provenance.command,
+            "set-strategic-number",
+        )
+
+
+    def test_up_modify_sn_constant_assignment_resets_remote_index_and_tracks_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-modify-sn", ("sn-focus-player-number", "c:=", "3")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[-1]
+        self.assertEqual(search.index_before, 0)
+        self.assertEqual(
+            search.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(search.focus_player_signature, "3")
+        self.assertEqual(search.focus_player_provenance.command, "up-modify-sn")
+        self.assertEqual(search.focus_player_provenance.within_rule_order, 1)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_local_search_index_is_not_reset_by_focus_player_change(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertIsNone(second.index_reset_reason)
+        self.assertIsNone(second.index_before)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+        self.assertEqual(report.final_state.remote_list.search_index.focus_player_signature, "2")
+
+
+    def test_dynamic_focus_player_mutation_resets_remote_index_but_preserves_unknown_value(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-goal", ("focus-goal", "4")),
+                ("up-modify-sn", ("sn-focus-player-number", "g:=", "focus-goal")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[-1]
+        self.assertEqual(search.index_before, 0)
+        self.assertEqual(
+            search.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertIsNone(search.focus_player_signature)
+        self.assertEqual(search.focus_player_provenance.command, "up-modify-sn")
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_focus_player_provenance_survives_next_pass(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("set-strategic-number", ("sn-focus-player-number", "5")),
+            )),
+        ))
+        second = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        self.assertEqual(
+            second.final_state.remote_list.search_index.focus_player_signature,
+            "5",
+        )
+        self.assertEqual(
+            second.final_state.remote_list.search_index.focus_player_provenance.command,
+            "set-strategic-number",
+        )
+
+
+    def test_branch_divergence_makes_focus_player_context_ambiguous(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+            )),
+            _rule(3, (("up-do-nothing", ()),)),
+            _rule(4, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,)), (3, (1,)), (4, (2, 3))),
+                outgoing_rule_orders=((1, (2, 3)), (2, (4,)), (3, (4,)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+        index = report.final_state.remote_list.search_index
+        self.assertIsNone(index.focus_player_signature)
+        self.assertTrue(index.path_ambiguous)
+        self.assertIsNone(index.focus_player_provenance)
 
 
 

@@ -85,7 +85,28 @@ class DucSearchIndexResetReason(str, Enum):
     EXPLICIT = "EXPLICIT"
     FILTER_CHANGED = "FILTER_CHANGED"
     QUERY_CHANGED = "QUERY_CHANGED"
+    FOCUS_PLAYER_CHANGED = "FOCUS_PLAYER_CHANGED"
     UNKNOWN = "UNKNOWN"
+
+
+class DucSearchCursorDisposition(str, Enum):
+    INITIAL = "INITIAL"
+    RESET_START = "RESET_START"
+    RUNTIME_ADVANCED = "RUNTIME_ADVANCED"
+    AT_END = "AT_END"
+    BLOCKED_BY_CAPACITY = "BLOCKED_BY_CAPACITY"
+    PATH_AMBIGUOUS = "PATH_AMBIGUOUS"
+
+
+class DucSearchResultDisposition(str, Enum):
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_EMPTY = "GUARANTEED_EMPTY"
+
+
+class DucSearchFactResult(str, Enum):
+    NOT_A_FACT = "NOT_A_FACT"
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_FALSE = "GUARANTEED_FALSE"
 
 
 class DucTargetTransition(str, Enum):
@@ -97,6 +118,24 @@ class DucTargetTransition(str, Enum):
 class DucTargetConsumerMode(str, Enum):
     LOCAL_SEARCH_RESULTS = "LOCAL_SEARCH_RESULTS"
     SELECTED_OBJECT_ONLY = "SELECTED_OBJECT_ONLY"
+
+
+class DucTargetDataRelation(str, Enum):
+    SELECTED_OBJECT = "SELECTED_OBJECT"
+    SELECTED_OBJECT_TARGET = "SELECTED_OBJECT_TARGET"
+
+
+@dataclass(frozen=True)
+class DucTargetDataObservation:
+    command: str
+    relation: DucTargetDataRelation
+    object_data: str
+    source_kind: str
+    writes_goal: bool
+    target_validity: DucTargetStatus
+    target_proof: DucTargetProof
+    provenance: DucProvenance
+    output_span: Optional["DucGoalOutputSpan"] = None
 
 
 @dataclass(frozen=True)
@@ -173,7 +212,9 @@ class DucSearchIndexState:
     focus_player_signature: Optional[str] = None
     known: bool = True
     last_reset_reason: Optional[DucSearchIndexResetReason] = None
+    cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     path_ambiguous: bool = False
+    focus_player_provenance: Optional["DucProvenance"] = None
 
     def __post_init__(self) -> None:
         if self.offset is not None and self.offset < 0:
@@ -338,6 +379,13 @@ class DucSearchOperation:
     index_after: Optional[int] = None
     index_generation: int = 0
     index_reset_reason: Optional[DucSearchIndexResetReason] = None
+    cursor_before_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    cursor_after_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    result_disposition: DucSearchResultDisposition = DucSearchResultDisposition.RUNTIME_DEPENDENT
+    source_kind: str = "ACTION"
+    fact_result: DucSearchFactResult = DucSearchFactResult.NOT_A_FACT
+    focus_player_signature: Optional[str] = None
+    focus_player_provenance: Optional["DucProvenance"] = None
 
 
 @dataclass(frozen=True)
@@ -377,6 +425,8 @@ class DucSearchStateObservation:
     local_last_search_cardinality: Optional[DucCardinalityRange] = None
     remote_total_cardinality: Optional[DucCardinalityRange] = None
     remote_last_search_cardinality: Optional[DucCardinalityRange] = None
+    local_search_cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    remote_search_cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     output_span: Optional[DucGoalOutputSpan] = None
 
 
@@ -466,6 +516,7 @@ class DucAnalysisReport:
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
     target_consumers: tuple[DucTargetConsumerEffect, ...] = ()
+    target_data_observations: tuple[DucTargetDataObservation, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
     effects: tuple[DucExecutionEffect, ...] = ()
     diagnostics: tuple[DucDiagnostic, ...] = ()
@@ -488,12 +539,17 @@ __all__ = [
     "DucExecutionEffect",
     "DucTargetConsumerEffect",
     "DucTargetConsumerMode",
+    "DucTargetDataObservation",
+    "DucTargetDataRelation",
     "DucFilterPredicate",
     "DucFilterSnapshot",
     "DucFilterState",
     "DucListGeneration",
+    "DucSearchCursorDisposition",
     "DucSearchIndexResetReason",
     "DucSearchIndexState",
+    "DucSearchResultDisposition",
+    "DucSearchFactResult",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",

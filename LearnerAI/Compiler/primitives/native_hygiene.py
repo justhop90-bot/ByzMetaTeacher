@@ -829,6 +829,45 @@ def default_native_duc_mutation_contracts() -> Tuple[NativeDucMutationContract, 
     )
 
 
+def default_native_duc_target_data_contracts() -> Tuple[NativeDucTargetDataContract, ...]:
+    return (
+        NativeDucTargetDataContract(
+            "up-object-data",
+            "SELECTED_OBJECT",
+            False,
+            ("airef:duc:object-data",),
+        ),
+        NativeDucTargetDataContract(
+            "up-get-object-data",
+            "SELECTED_OBJECT",
+            True,
+            ("airef:duc:get-object-data",),
+            output_width=1,
+            output_goal_min=1,
+            output_goal_max=16000,
+            output_contract_id="up-get-object-data.output-goal",
+            output_evidence_ids=("airef:duc:get-object-data",),
+        ),
+        NativeDucTargetDataContract(
+            "up-object-target-data",
+            "SELECTED_OBJECT_TARGET",
+            False,
+            ("airef:duc:object-target-data",),
+        ),
+        NativeDucTargetDataContract(
+            "up-get-object-target-data",
+            "SELECTED_OBJECT_TARGET",
+            True,
+            ("airef:duc:get-object-target-data",),
+            output_width=1,
+            output_goal_min=1,
+            output_goal_max=16000,
+            output_contract_id="up-get-object-target-data.output-goal",
+            output_evidence_ids=("airef:duc:get-object-target-data",),
+        ),
+    )
+
+
 def default_native_duc_target_consumer_contracts() -> Tuple[NativeDucTargetConsumerContract, ...]:
     return (
         NativeDucTargetConsumerContract(
@@ -1021,6 +1060,20 @@ class NativeDucSearchContract:
     appends_to_current_list: bool
     consumes_retained_filters: bool
     evidence_ids: Tuple[str, ...]
+    supports_fact: bool = True
+    cursor_model: str = "SCAN_FRONTIER"
+    returns_false_on_zero_results: bool = True
+    stops_on_capacity: bool = True
+
+    def __post_init__(self) -> None:
+        if self.cursor_model != "SCAN_FRONTIER":
+            raise ValueError("unsupported DUC search cursor model")
+        if not self.command or self.list_kind not in {"LOCAL", "REMOTE"}:
+            raise ValueError("DUC search contract requires command and list kind")
+        if self.capacity <= 0:
+            raise ValueError("DUC search capacity must be positive")
+        if not self.evidence_ids:
+            raise ValueError("DUC search contract requires evidence")
 
 
 @dataclass(frozen=True)
@@ -1078,6 +1131,39 @@ class NativeDucTargetConsumerContract:
 
 
 @dataclass(frozen=True)
+class NativeDucTargetDataContract:
+    command: str
+    relation: str
+    writes_goal: bool
+    evidence_ids: Tuple[str, ...]
+    output_width: int = 0
+    output_goal_min: int = 1
+    output_goal_max: int = 16000
+    output_contract_id: Optional[str] = None
+    output_evidence_ids: Tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.relation not in {"SELECTED_OBJECT", "SELECTED_OBJECT_TARGET"}:
+            raise ValueError(f"unknown DUC target-data relation: {self.relation}")
+        if not self.command or not self.evidence_ids:
+            raise ValueError("DUC target-data contract requires command and evidence")
+        if not self.writes_goal:
+            if self.output_width or self.output_contract_id or self.output_evidence_ids:
+                raise ValueError(
+                    "non-output DUC target-data contract cannot declare Goal output metadata"
+                )
+            return
+        if self.output_width != 1:
+            raise ValueError("DUC target-data Goal output width must be 1")
+        if not 1 <= self.output_goal_min <= self.output_goal_max <= 16000:
+            raise ValueError("DUC target-data Goal output range must be within 1..16000")
+        if not self.output_contract_id:
+            raise ValueError("DUC target-data output contract requires an identity")
+        if not self.output_evidence_ids:
+            raise ValueError("DUC target-data output contract requires evidence")
+
+
+@dataclass(frozen=True)
 class NativeDucTargetContract:
     command: str
     source_kinds: Tuple[str, ...]
@@ -1105,6 +1191,7 @@ class NativeContractCatalog:
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
     duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
     duc_targets: Tuple[NativeDucTargetContract, ...] = ()
+    duc_target_data: Tuple[NativeDucTargetDataContract, ...] = ()
     duc_target_consumers: Tuple[NativeDucTargetConsumerContract, ...] = ()
     duc_groups: Tuple[NativeDucGroupContract, ...] = ()
     duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
@@ -1131,6 +1218,8 @@ class NativeContractCatalog:
             object.__setattr__(self, "duc_mutations", default_native_duc_mutation_contracts())
         if not self.duc_targets:
             object.__setattr__(self, "duc_targets", default_native_duc_target_contracts())
+        if not self.duc_target_data:
+            object.__setattr__(self, "duc_target_data", default_native_duc_target_data_contracts())
         if not self.duc_target_consumers:
             object.__setattr__(self, "duc_target_consumers", default_native_duc_target_consumer_contracts())
         if not self.duc_groups:
@@ -1263,10 +1352,17 @@ class NativeContractCatalog:
                 *self.duc_resets,
                 *self.duc_mutations,
                 *self.duc_targets,
+                *self.duc_target_data,
                 *self.duc_target_consumers,
                 *self.duc_groups,
             )
             for evidence_id in contract.evidence_ids
+        )
+        ids.update(
+            evidence_id
+            for contract in self.duc_target_data
+            for evidence_id in contract.output_evidence_ids
+            if contract.output_width
         )
         ids.update(
             evidence_id
@@ -1315,6 +1411,9 @@ class NativeContractCatalog:
 
     def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
         return next((item for item in self.duc_targets if item.command == command), None)
+
+    def duc_target_data_contract(self, command: str) -> Optional[NativeDucTargetDataContract]:
+        return next((item for item in self.duc_target_data if item.command == command), None)
 
     def duc_target_consumer(self, command: str) -> Optional[NativeDucTargetConsumerContract]:
         return next((item for item in self.duc_target_consumers if item.command == command), None)
@@ -1406,11 +1505,20 @@ class NativeContractCatalog:
             ),
             *(
                 (contract.command, contract.evidence_ids)
+                for contract in self.duc_target_data
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
                 for contract in self.duc_target_consumers
             ),
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_groups
+            ),
+            *(
+                (contract.output_contract_id or f"{contract.command}.output", contract.output_evidence_ids)
+                for contract in self.duc_target_data
+                if contract.output_width
             ),
             *(
                 (contract.output_contract_id or f"{contract.command}.output", contract.output_evidence_ids)
@@ -1923,6 +2031,10 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:clean-search", "up-clean-search", "(up-clean-search <SearchSource> <ObjectData> <SearchOrder>)"),
         ("airef:duc:remove-objects", "up-remove-objects", "(up-remove-objects <SearchSource> <ObjectData> <compareOp> <Value>)"),
         ("airef:duc:set-target-by-id", "up-set-target-by-id", "(up-set-target-by-id <typeOp> <Id>)"),
+        ("airef:duc:object-data", "up-object-data", "(up-object-data <ObjectData> <compareOp> <Value>)"),
+        ("airef:duc:get-object-data", "up-get-object-data", "(up-get-object-data <ObjectData> <OutputGoalId>)"),
+        ("airef:duc:object-target-data", "up-object-target-data", "(up-object-target-data <ObjectData> <compareOp> <Value>)"),
+        ("airef:duc:get-object-target-data", "up-get-object-target-data", "(up-get-object-target-data <ObjectData> <OutputGoalId>)"),
         ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
         ("airef:duc:target-objects", "up-target-objects", "(up-target-objects <Option> <DUCAction> <Formation> <AttackStance>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
