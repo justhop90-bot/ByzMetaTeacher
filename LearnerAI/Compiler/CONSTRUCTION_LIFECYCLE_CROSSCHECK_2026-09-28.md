@@ -245,3 +245,7 @@ CI closure evidence:
 - [x] Do not reuse BUILD_PASS_SINGLETON as persistent construction ownership.
 - [x] Do not infer foundation existence from the build action itself.
 - [x] Do not infer completion from timing or from pending-state disappearance alone.
+
+## Validation-order invariant
+
+For build demands, generic completion-witness validation runs before construction-specific witness canonicalization. This preserves the existing WIT-002/WIT-003/WIT-004 diagnostics for timing evidence, non-completion observations, and action coupling. Only a generically valid witness is then canonicalized to completed building presence and attached to the construction lifecycle contract.
