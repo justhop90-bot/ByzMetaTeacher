@@ -75,6 +75,7 @@ class DucTargetProof(str, Enum):
 
 
 class DucListMutationKind(str, Enum):
+    ADD_OBJECT = "ADD_OBJECT"
     SORT = "SORT"
     DEDUPE = "DEDUPE"
     REMOVE_MATCHES = "REMOVE_MATCHES"
