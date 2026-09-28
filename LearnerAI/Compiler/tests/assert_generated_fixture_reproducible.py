@@ -23,10 +23,6 @@ def main() -> int:
     generated = compile_source(source).encode("utf-8")
     checked_in = GENERATED.read_bytes()
 
-    if args.output is not None:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_bytes(generated)
-
     if generated != checked_in:
         expected_sha = hashlib.sha256(generated).hexdigest()
         actual_sha = hashlib.sha256(checked_in).hexdigest()
@@ -34,6 +30,10 @@ def main() -> int:
             "generated/CompilerFixture.per is stale or non-reproducible: "
             f"expected sha256={expected_sha}, actual sha256={actual_sha}"
         )
+
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_bytes(generated)
 
     print(
         "verified generated/CompilerFixture.per is reproducible "
