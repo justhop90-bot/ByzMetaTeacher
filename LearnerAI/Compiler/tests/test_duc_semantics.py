@@ -214,6 +214,21 @@ class DucSemanticTests(unittest.TestCase):
         )
 
 
+    def test_search_state_accepts_highest_safe_four_goal_start(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("15996",)),
+            )),
+        ))
+
+        span = report.observations[-1].output_span
+        self.assertIsNotNone(span)
+        self.assertEqual(span.start_goal_id, 15996)
+        self.assertEqual(span.width, 4)
+        self.assertEqual(report.final_state.goal_output_spans, (span,))
+
+
     def test_search_state_rejects_start_that_cannot_fit_four_goals(self):
         report = analyze_duc((
             _rule(1, (
