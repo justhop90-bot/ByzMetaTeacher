@@ -110,6 +110,13 @@ def main() -> int:
         raise SystemExit(f"attack artifact is missing emitted fragments: {missing}")
 
     forbidden_fragments = (
+        "sn-number-attack-groups",
+        "sn-percent-attack-soldiers",
+        "sn-initial-exploration-required",
+        "sn-number-explore-groups",
+        "sn-total-number-explorers",
+        "sn-enemy-sighted-response-distance",
+        "sn-maximum-town-size",
         "(up-reset-attack-now)",
         "(timer-triggered",
         "(enable-timer",
@@ -117,8 +124,15 @@ def main() -> int:
     present = tuple(fragment for fragment in forbidden_fragments if fragment in first)
     if present:
         raise SystemExit(
-            f"attack artifact emitted forbidden lifecycle machinery: {present}"
+            f"attack artifact emitted forbidden controller/lifecycle machinery: {present}"
         )
+
+    attack_section = first.split("; Native attack lifecycle plan", 1)[1]
+    attack_section = attack_section.split("; Native persistent control plane", 1)[0]
+    if "(set-goal " in attack_section:
+        raise SystemExit("attack lifecycle section emitted synthetic goal lifecycle state")
+    if "COMPLETE" in attack_section or "RELEASE" in attack_section:
+        raise SystemExit("attack lifecycle section emitted synthetic completion/release semantics")
 
     if first.count("(attack-now)") != 2:
         raise SystemExit(
