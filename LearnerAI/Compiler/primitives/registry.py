@@ -323,6 +323,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("can-train", "FACT", "FEASIBILITY", 1, 1),
         Primitive("can-train-with-escrow", "FACT", "FEASIBILITY", 1, 1),
         Primitive("up-pending-objects", "FACT", "OBSERVATION", 4, 4, completion_witness=False),
+        Primitive("up-pending-placement", "FACT", "OBSERVATION", 2, 2, completion_witness=False),
         Primitive("up-compare-sn", "FACT", "PERSISTENT_STATE", 3, 3, completion_witness=False),
         Primitive("research-available", "FACT", "ADMISSIBILITY", 1, 1),
         Primitive("can-afford-research", "FACT", "RESOURCE_ARBITRATION", 1, 1),
