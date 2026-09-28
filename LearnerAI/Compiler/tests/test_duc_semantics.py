@@ -237,6 +237,73 @@ class DucSemanticTests(unittest.TestCase):
             for item in report.diagnostics
         ))
 
+    def test_control_flow_report_preserves_target_fact_observations(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 0)",
+            "up-set-target-object",
+            ("search-local", "c:", "0"),
+            location,
+        )
+        rules = (
+            replace(
+                _rule(1, (("up-do-nothing", ()),)),
+                facts=(target_fact,),
+            ),
+            _rule(2, (("up-do-nothing", ()),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,))),
+                outgoing_rule_orders=((1, (2,)), (2, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        self.assertEqual(len(report.target_fact_observations), 1)
+        self.assertEqual(
+            report.target_fact_observations[0].result,
+            DucTargetFactResult.GUARANTEED_FALSE,
+        )
+        self.assertEqual(
+            report.target_fact_observations[0].provenance.rule_order,
+            1,
+        )
+
+    def test_control_flow_report_preserves_target_consumer_effects(self):
+        rules = (
+            _rule(
+                1,
+                (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("up-target-objects", ("0", "action-default", "-1", "-1")),
+                ),
+            ),
+            _rule(2, (("up-do-nothing", ()),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,))),
+                outgoing_rule_orders=((1, (2,)), (2, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+
+        self.assertEqual(len(report.target_consumers), 1)
+        self.assertEqual(
+            report.target_consumers[0].mode,
+            DucTargetConsumerMode.LOCAL_SEARCH_RESULTS,
+        )
+        self.assertEqual(report.target_consumers[0].provenance.rule_order, 1)
+
     def test_duc_state_effects_ignore_rule_that_recurrent_analysis_proves_never_runnable(self):
         rules = (
             _rule(1, (("set-goal", ("duc-gate", "0")),)),
