@@ -465,23 +465,20 @@ def validate_escrow_execution(
         validate_escrow_contract(contract)
     )
     ordered_operations = tuple(sorted(operations, key=_escrow_operation_key))
-    terminal_kind: EscrowOperationKind | None = None
-    release_operation = next(
-        (
-            operation
-            for operation in ordered_operations
-            if operation.kind is EscrowOperationKind.RELEASE
-        ),
-        None,
+    release_operations = tuple(
+        operation
+        for operation in ordered_operations
+        if operation.kind is EscrowOperationKind.RELEASE
     )
-    consume_operations = [
+    consume_operations = tuple(
         operation
         for operation in ordered_operations
         if operation.kind is EscrowOperationKind.CONSUME
-    ]
+    )
 
     for operation in ordered_operations:
         subject = contract.identity
+        location = operation.location or contract.location
 
         if operation.contract_identity != contract.identity:
             errors.append(
@@ -490,7 +487,7 @@ def validate_escrow_execution(
                     f"escrow operation belongs to contract '{operation.contract_identity}', "
                     f"not '{contract.identity}'",
                     subject=subject,
-                    location=operation.location or contract.location,
+                    location=location,
                 )
             )
             continue
@@ -504,7 +501,7 @@ def validate_escrow_execution(
                     f"match contract owner "
                     f"'{contract.owner.source_unit}:{contract.owner.local_name}'",
                     subject=subject,
-                    location=operation.location or contract.location,
+                    location=location,
                 )
             )
 
@@ -515,7 +512,7 @@ def validate_escrow_execution(
                     f"escrow operation resource '{operation.resource}' is not claimed by "
                     f"contract '{contract.identity}'",
                     subject=subject,
-                    location=operation.location or contract.location,
+                    location=location,
                 )
             )
 
@@ -531,117 +528,87 @@ def validate_escrow_execution(
                     f"escrow operation '{operation.kind.value}' uses command "
                     f"'{operation.command}', expected '{expected_command}'",
                     subject=subject,
-                    location=operation.location or contract.location,
+                    location=location,
                 )
             )
 
-        if operation.kind is EscrowOperationKind.POLICY_RESET:
-            continue
+    if len(release_operations) > 1:
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                f"escrow contract '{contract.identity}' releases its balance more than once",
+                subject=contract.identity,
+                location=release_operations[1].location or contract.location,
+            )
+        )
 
-        if operation.kind is EscrowOperationKind.RELEASE:
-            if terminal_kind is EscrowOperationKind.CONSUME:
-                errors.append(
-                    _error(
-                        ResourceControlErrorCode.ESCROW_RELEASE_AFTER_CONSUMPTION,
-                        f"escrow contract '{contract.identity}' releases after consumption",
-                        subject=subject,
-                        location=operation.location or contract.location,
-                    )
-                )
-            elif terminal_kind is EscrowOperationKind.RELEASE:
-                errors.append(
-                    _error(
-                        ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
-                        f"escrow contract '{contract.identity}' releases its balance more than once",
-                        subject=subject,
-                        location=operation.location or contract.location,
-                    )
-                )
-            else:
-                terminal_kind = EscrowOperationKind.RELEASE
-            continue
+    if len(consume_operations) > 1:
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                f"escrow contract '{contract.identity}' consumes its protected balance more than once",
+                subject=contract.identity,
+                location=consume_operations[1].location or contract.location,
+            )
+        )
 
-        if terminal_kind is EscrowOperationKind.CONSUME:
+    release_operation = release_operations[0] if release_operations else None
+    consume_operation = consume_operations[0] if consume_operations else None
+
+    if release_operation is not None and consume_operation is not None:
+        release_key = _escrow_operation_key(release_operation)
+        consume_key = _escrow_operation_key(consume_operation)
+
+        if release_key >= consume_key:
             errors.append(
                 _error(
-                    ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
-                    f"escrow contract '{contract.identity}' consumes its protected balance more than once",
-                    subject=subject,
-                    location=operation.location or contract.location,
+                    ResourceControlErrorCode.ESCROW_RELEASE_AFTER_CONSUMPTION,
+                    f"escrow contract '{contract.identity}' releases after or at the same "
+                    "position as its protected consumption",
+                    subject=contract.identity,
+                    location=release_operation.location or contract.location,
                 )
             )
-            continue
-
-        if contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION:
-            if release_operation is None:
-                errors.append(
-                    _error(
-                        ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
-                        f"non-escrow action '{operation.command}' requires release-escrow "
-                        f"before consumption for contract '{contract.identity}'",
-                        subject=subject,
-                        location=operation.location or contract.location,
-                    )
-                )
-            elif (
-                release_operation.rule_order != operation.rule_order
-                or release_operation.within_rule_order >= operation.within_rule_order
-            ):
-                errors.append(
-                    _error(
-                        ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
-                        f"non-escrow action for escrow contract '{contract.identity}' "
-                        "must consume in the same rule after its release",
-                        subject=subject,
-                        location=operation.location or contract.location,
-                    )
-                )
         elif (
-            release_operation is not None
-            and _escrow_operation_key(release_operation)
-            > _escrow_operation_key(operation)
+            release_operation.rule_order != consume_operation.rule_order
+            and contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION
         ):
             errors.append(
                 _error(
-                    ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
-                    f"escrow-aware action for contract '{contract.identity}' occurs before its release",
-                    subject=subject,
-                    location=operation.location or contract.location,
+                    ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
+                    f"non-escrow action for escrow contract '{contract.identity}' must "
+                    "consume in the same emitted rule after its release",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
+                )
+            )
+        elif (
+            release_operation.rule_order != consume_operation.rule_order
+            and contract.consumption.mode is EscrowConsumptionMode.ESCROW_AWARE_ACTION
+        ):
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
+                    f"escrow-aware action for escrow contract '{contract.identity}' cannot "
+                    "consume from a prior-rule released balance",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
                 )
             )
 
-        if terminal_kind is EscrowOperationKind.RELEASE:
-            release_position = _escrow_operation_key(release_operation)
-            current_position = _escrow_operation_key(operation)
-            if release_position >= current_position:
-                errors.append(
-                    _error(
-                        ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
-                        f"escrow contract '{contract.identity}' consumes after its release "
-                        "without same-rule ordering",
-                        subject=subject,
-                        location=operation.location or contract.location,
-                    )
+    elif consume_operation is not None:
+        if contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
+                    f"non-escrow action '{consume_operation.command}' requires release-escrow "
+                    f"before consumption for contract '{contract.identity}'",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
                 )
-            else:
-                terminal_kind = EscrowOperationKind.CONSUME
-        else:
-            terminal_kind = EscrowOperationKind.CONSUME
+            )
 
-    if consume_operations and contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION:
-        consume = consume_operations[0]
-        if release_operation is None:
-            pass
-        elif _escrow_operation_key(release_operation) >= _escrow_operation_key(consume):
-            pass
-
-    if not ordered_operations or not any(
-        operation.kind in {
-            EscrowOperationKind.RELEASE,
-            EscrowOperationKind.CONSUME,
-        }
-        for operation in ordered_operations
-    ):
+    if not release_operations and not consume_operations:
         errors.append(
             _error(
                 ResourceControlErrorCode.ESCROW_OPEN_LOOP,
