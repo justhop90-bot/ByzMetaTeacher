@@ -242,6 +242,19 @@ def emit(
                 f"(defconst construction-retry-barrier-{demand.name} "
                 f"{barrier_slot.id.value})"
             )
+        if demand.production_retry_barrier is not None:
+            barrier_slot = bindings.binding_for(
+                demand.production_retry_barrier.request_id
+            )
+            if not isinstance(barrier_slot, GoalSlot):
+                raise CompileError(
+                    f"PRODUCTION-BARRIER-BINDING: production retry barrier for "
+                    f"'{demand.name}' resolved to '{type(barrier_slot).__name__}', expected GoalSlot"
+                )
+            out.append(
+                f"(defconst production-retry-barrier-{demand.name} "
+                f"{barrier_slot.id.value})"
+            )
 
     for request_id, _request in sorted(
         arbitration_requests.items(),
@@ -356,6 +369,21 @@ def emit(
                 "",
             ]
 
+    production_barrier_demands = tuple(
+        demand for demand in demands if demand.production_retry_barrier is not None
+    )
+    if production_barrier_demands:
+        out.append("; Per-pass production retry barriers")
+        for demand in production_barrier_demands:
+            out += [
+                "(defrule",
+                "    (true)",
+                "=>",
+                f"    (set-goal production-retry-barrier-{demand.name} 0)",
+                ")",
+                "",
+            ]
+
     if demands:
         out.append("; Demand initialization")
         for start in range(0, len(demands), INITIALIZATION_CHUNK):
@@ -418,6 +446,7 @@ def emit(
         ]
 
         construction = demand.construction_lifecycle
+        production = demand.production_lifecycle
         if construction is not None:
             out += [
                 f"; Construction observation: {demand.name}",
@@ -487,6 +516,52 @@ def emit(
                         f"    (set-goal construction-retry-barrier-{demand.name} 1)"
                     )
                 out += [label, "(defrule", *guards, "=>", *actions, ")", ""]
+        elif production is not None:
+            out += [
+                f"; Completion witness: {demand.name} | PENDING/ISSUED -> COMPLETE",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    {demand.witness.source}",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
+                ")",
+                "",
+                f"; Pending admission: {demand.name} | ISSUED/PENDING -> PENDING",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    (not {demand.witness.source})",
+                f"    {production.pending_fact.source}",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
+                ")",
+                "",
+                f"; RETRY | ISSUED/PENDING -> ACTIVE",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    (not {demand.witness.source})",
+                f"    (not {production.pending_fact.source})",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
+            ]
+            if demand.production_retry_barrier is None:
+                raise CompileError(
+                    f"PRODUCTION-BARRIER-MISSING: production demand '{demand.name}' "
+                    "has no retry barrier storage"
+                )
+            out += [
+                f"    (set-goal production-retry-barrier-{demand.name} 1)",
+                ")",
+                "",
+            ]
         else:
             out += [
                 f"; Completion witness: {demand.name} | PENDING -> COMPLETE",
@@ -518,6 +593,12 @@ def emit(
                 f"    (goal construction-retry-barrier-{demand.name} 0)",
                 f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                 f"    (not {construction.pending_placement_fact.source})",
+            ]
+
+        if production is not None:
+            out += [
+                f"    (goal production-retry-barrier-{demand.name} 0)",
+                f"    (not {production.pending_fact.source})",
             ]
 
         out += [

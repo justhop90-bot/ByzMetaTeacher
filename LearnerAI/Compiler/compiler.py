@@ -142,6 +142,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
                 "cancelled-",
                 "action-claim-",
                 "construction-retry-barrier-",
+                "production-retry-barrier-",
             )
         ):
             ignored.add(identifier)
@@ -155,6 +156,7 @@ def _storage_requests(ir, control_plan=None):
         for request in (
             demand.lifecycle.slot,
             demand.construction_retry_barrier,
+            demand.production_retry_barrier,
             demand.action.arbitration_request,
             *(state.request for state in demand.strategic_number_states),
             *(state.request for state in demand.timer_states),

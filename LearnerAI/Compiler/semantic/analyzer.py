@@ -15,6 +15,7 @@ from ..ir import (
     InvalidationEvidenceKind,
     CancellationStateContract,
     ConstructionLifecycle,
+    ProductionLifecycle,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -345,6 +346,8 @@ def analyze(
         semantic_id = SemanticId(source_unit=demand_source_unit, local_name=demand.name)
         construction_lifecycle = None
         construction_retry_barrier = None
+        production_lifecycle = None
+        production_retry_barrier = None
         if action.head == "build":
             if len(action.args) != 1 or not isinstance(action.args[0], str):
                 raise CompileError(
@@ -381,6 +384,30 @@ def analyze(
                     source=f"(up-pending-placement c: {native_token})",
                     head="up-pending-placement",
                     args=("c:", native_token),
+                    location=action.location,
+                ),
+            )
+
+        elif action.head == "train":
+            if len(action.args) != 1 or not isinstance(action.args[0], str):
+                raise CompileError(
+                    f"PRODUCTION-TRAIN-TARGET: demand '{demand.name}' train action "
+                    "must have one literal unit target"
+                )
+            unit = action.args[0]
+            production_retry_barrier = GoalSlotRequest(
+                request_id=StorageRequestId(
+                    owner=semantic_id,
+                    purpose="production-retry-barrier",
+                ),
+                role=GoalRole.EXECUTION_MEMORY,
+            )
+            production_lifecycle = ProductionLifecycle(
+                unit=unit,
+                pending_fact=Expression(
+                    source=f"(up-pending-objects c: {unit} >= 1)",
+                    head="up-pending-objects",
+                    args=("c:", unit, ">=", "1"),
                     location=action.location,
                 ),
             )
@@ -687,6 +714,8 @@ def analyze(
                 pending_diagnostics=_pending_diagnostics(demand),
                 construction_lifecycle=construction_lifecycle,
                 construction_retry_barrier=construction_retry_barrier,
+                production_lifecycle=production_lifecycle,
+                production_retry_barrier=production_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
                 timer_states=tuple(timer_states),
                 location=demand.location,
