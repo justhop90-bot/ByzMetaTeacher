@@ -1421,11 +1421,35 @@ def _analyze_duc_linear(
                     path_ambiguous=state.filters.path_ambiguous,
                 )
                 query_signature = args
-                prepared_index, index_reset_reason, index_before = (
-                    _prepare_search_index_for_query(
-                        current.search_index,
-                        query_signature,
-                    )
+                (
+                    prepared_index,
+                    index_reset_reason,
+                    index_before,
+                    cursor_before_disposition,
+                ) = _prepare_search_index_for_query(
+                    current.search_index,
+                    query_signature,
+                )
+                requested_max = _search_limit(args, search_contract.capacity)
+                blocked_by_capacity = (
+                    current.current_generation is not None
+                    and current.current_generation.cardinality is not None
+                    and current.current_generation.cardinality.minimum
+                    >= search_contract.capacity
+                )
+                guaranteed_empty = (
+                    not blocked_by_capacity
+                    and index_reset_reason is None
+                    and cursor_before_disposition is DucSearchCursorDisposition.AT_END
+                )
+                (
+                    post_search_index,
+                    cursor_after_disposition,
+                    result_disposition,
+                ) = _search_cursor_transition(
+                    prepared_index,
+                    guaranteed_empty=guaranteed_empty,
+                    blocked_by_capacity=blocked_by_capacity,
                 )
                 if filter_snapshot.path_ambiguous:
                     diagnostics.append(
@@ -1470,6 +1494,10 @@ def _analyze_duc_linear(
                 total_cardinality, last_search_cardinality = _search_cardinality(
                     current.current_generation,
                     capacity=search_contract.capacity,
+                    requested_max=requested_max,
+                    guaranteed_empty=(
+                        result_disposition is DucSearchResultDisposition.GUARANTEED_EMPTY
+                    ),
                 )
                 previous_fingerprint = (
                     current.current_generation.content_fingerprint
@@ -1490,8 +1518,11 @@ def _analyze_duc_linear(
                             command,
                             *args,
                             filter_snapshot.fingerprint,
-                            str(prepared_index.generation),
+                            str(post_search_index.generation),
                             index_reset_reason.value if index_reset_reason is not None else "NONE",
+                            cursor_before_disposition.value,
+                            cursor_after_disposition.value,
+                            result_disposition.value,
                         )
                     ),
                     last_search_cardinality=last_search_cardinality,
@@ -1503,7 +1534,7 @@ def _analyze_duc_linear(
                     next_generation=generation_number + 1,
                     path_ambiguous=current.path_ambiguous or filter_snapshot.path_ambiguous,
                     generation_variants=(),
-                    search_index=prepared_index,
+                    search_index=post_search_index,
                 )
                 if kind is DucListKind.LOCAL:
                     state = DucSemanticState(
@@ -1540,11 +1571,14 @@ def _analyze_duc_linear(
                         visible,
                         provenance,
                         index_before=index_before,
-                        index_after=prepared_index.offset,
-                        index_generation=prepared_index.generation,
+                        index_after=post_search_index.offset,
+                        index_generation=post_search_index.generation,
                         index_reset_reason=index_reset_reason,
-                        focus_player_signature=prepared_index.focus_player_signature,
-                        focus_player_provenance=prepared_index.focus_player_provenance,
+                        cursor_before_disposition=cursor_before_disposition,
+                        cursor_after_disposition=cursor_after_disposition,
+                        result_disposition=result_disposition,
+                        focus_player_signature=post_search_index.focus_player_signature,
+                        focus_player_provenance=post_search_index.focus_player_provenance,
                     )
                 )
                 rule_reads.add(DucStateKind.FILTER)
