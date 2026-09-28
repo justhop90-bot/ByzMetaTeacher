@@ -423,6 +423,8 @@ def analyze(
                     args=("c:", str(native_unit_id), ">=", "1"),
                     location=action.location,
                 ),
+                completion_witness=witness,
+                retry_barrier=production_retry_barrier,
             )
 
         elif action.head == "research":
@@ -760,7 +762,11 @@ def analyze(
                 construction_lifecycle=construction_lifecycle,
                 construction_retry_barrier=construction_retry_barrier,
                 production_lifecycle=production_lifecycle,
-                production_retry_barrier=production_retry_barrier,
+                production_retry_barrier=(
+                    production_lifecycle.retry_barrier
+                    if production_lifecycle is not None
+                    else None
+                ),
                 research_lifecycle=research_lifecycle,
                 research_retry_barrier=research_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
