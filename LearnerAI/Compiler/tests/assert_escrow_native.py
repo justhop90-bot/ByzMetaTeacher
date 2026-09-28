@@ -115,6 +115,8 @@ def main() -> int:
         "\n; Native persistent control plane",
         "\n; Per-pass transient action arbitration",
         "\n; Per-pass construction retry barriers",
+        "\n; Per-pass production retry barriers",
+        "\n; Per-pass research retry barriers",
         "\n; Demand initialization",
     ):
         if marker in section:
