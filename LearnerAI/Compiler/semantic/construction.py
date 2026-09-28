@@ -1,6 +1,8 @@
 """Construction lifecycle transition semantics."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 from ..errors import CompileError
 from ..ir.construction import (
     ConstructionObservation,
@@ -9,7 +11,7 @@ from ..ir.construction import (
     ConstructionTransitionKind,
     ConstructionTransitionRule,
 )
-from ..ir.model import LifecycleState
+from ..ir.model import LifecycleState, SemanticDemand
 from ..ast import Expression
 
 
@@ -55,22 +57,27 @@ def construction_transition_rules() -> tuple[ConstructionTransitionRule, ...]:
 def canonical_build_completion_witness(
     building: str,
     witness: Expression,
+    *,
+    demand_name: str | None = None,
 ) -> Expression:
     """Require and canonicalize completed-presence evidence for one build target."""
+    subject = (
+        f"demand '{demand_name}' build completion witness"
+        if demand_name is not None
+        else "build completion witness"
+    )
     if witness.head != "building-type-count" or len(witness.args) != 3:
         raise CompileError(
-            f"CONSTRUCTION-WITNESS: build completion witness for target '{building}' "
-            "must use building-type-count"
+            f"CONSTRUCTION-WITNESS: {subject} must use building-type-count"
         )
     target, compare_op, value = witness.args
     if not isinstance(target, str) or target != building:
         raise CompileError(
-            f"CONSTRUCTION-WITNESS: build completion witness must target '{building}'"
+            f"CONSTRUCTION-WITNESS: {subject} must target '{building}'"
         )
     if (compare_op, value) not in ((">", "0"), (">=", "1")):
         raise CompileError(
-            f"CONSTRUCTION-WITNESS: build completion witness for target '{building}' "
-            "must establish at least one completed building"
+            f"CONSTRUCTION-WITNESS: {subject} must establish at least one completed building"
         )
     return Expression(
         source=f"(building-type-count {building} >= 1)",
@@ -78,6 +85,44 @@ def canonical_build_completion_witness(
         args=(building, ">=", "1"),
         location=witness.location,
     )
+
+
+def canonicalize_construction_witnesses(
+    demands: tuple[SemanticDemand, ...] | list[SemanticDemand],
+) -> tuple[SemanticDemand, ...]:
+    """Canonicalize build witnesses after generic witness validation has passed."""
+    result: list[SemanticDemand] = []
+    for demand in demands:
+        if demand.construction_lifecycle is None:
+            result.append(demand)
+            continue
+        canonical = canonical_build_completion_witness(
+            demand.construction_lifecycle.building,
+            demand.witness,
+            demand_name=demand.identity.local_name,
+        )
+        completion_witness = demand.completion_witness
+        if completion_witness is None:
+            raise CompileError(
+                f"CONSTRUCTION-WITNESS: demand '{demand.name}' has no completion witness contract"
+            )
+        construction = replace(
+            demand.construction_lifecycle,
+            completion_witness=canonical,
+        )
+        result.append(
+            replace(
+                demand,
+                witness=canonical,
+                completion_witness=replace(
+                    completion_witness,
+                    primitive=canonical.head,
+                    expression=canonical,
+                ),
+                construction_lifecycle=construction,
+            )
+        )
+    return tuple(result)
 
 
 def transition_construction(
@@ -131,6 +176,7 @@ def is_construction_retryable(state: ConstructionState) -> bool:
 
 __all__ = [
     "canonical_build_completion_witness",
+    "canonicalize_construction_witnesses",
     "construction_transition_rules",
     "is_construction_retryable",
     "transition_construction",
