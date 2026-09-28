@@ -484,7 +484,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
     def test_up_modify_goal_is_a_persistent_goal_writer_with_operand_dependency(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
-            "(defrule (true) => (up-modify-goal 8 c:+ 7))\n"
+            "(defrule (true) => (up-modify-goal 8 g:+ 7))\n"
         )
 
         report = analyze_persistent_state(analyze_effective_rules(graph))
