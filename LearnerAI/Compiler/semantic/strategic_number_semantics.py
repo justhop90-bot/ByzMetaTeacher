@@ -23,6 +23,10 @@ from ..ir.strategic_number import (
     StrategicNumberOperandKind,
 )
 from .native_controller import NativeControllerBinding, bind_strategic_number_accesses
+from .native_controller_interactions import (
+    NativeControllerInteractionBinding,
+    bind_strategic_number_interactions,
+)
 from .rule_execution import EffectiveRule, RuleExecutionReport
 
 
@@ -72,6 +76,7 @@ class StrategicNumberSemanticReport:
     diagnostics: tuple[StrategicNumberDiagnostic, ...]
     comparisons: tuple[StrategicNumberComparison, ...] = ()
     controller_bindings: tuple[NativeControllerBinding, ...] = ()
+    controller_interactions: tuple[NativeControllerInteractionBinding, ...] = ()
 
     @property
     def errors(self) -> tuple[StrategicNumberDiagnostic, ...]:
@@ -685,6 +690,9 @@ def analyze_strategic_number_expressions(
         mutations=tuple(mutations),
         comparisons=tuple(comparisons),
         controller_bindings=bind_strategic_number_accesses(accesses),
+        controller_interactions=bind_strategic_number_interactions(
+            bind_strategic_number_accesses(accesses)
+        ),
         accesses=tuple(
             sorted(
                 accesses,
@@ -723,6 +731,7 @@ def analyze_strategic_number_expressions(
 
 __all__ = [
     "NativeControllerBinding",
+    "NativeControllerInteractionBinding",
     "StrategicNumberCompilationError",
     "StrategicNumberDiagnostic",
     "StrategicNumberComparison",
