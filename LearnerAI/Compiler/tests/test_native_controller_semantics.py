@@ -89,27 +89,15 @@ class NativeControllerSemanticsTests(unittest.TestCase):
             catalog.validate()
 
     def test_self_interaction_is_rejected(self):
-        edge = NativeControllerEdge(
-            source_controller="attack",
-            target_controller="attack",
-            relation=NativeControllerRelation.COUPLED_WITH,
-            status=PracticeStatus.EVIDENCE_ONLY,
-            sources=("test",),
-        )
-        controller = NativeController(
-            identity="attack",
-            domain=NativeControllerDomain.ATTACK,
-            status=PracticeStatus.EVIDENCE_ONLY,
-            sources=("test",),
-            description="self-edge test",
-        )
-        catalog = NativeControllerCatalog(
-            controllers=(controller,),
-            surfaces=(),
-            edges=(edge,),
-        )
         with self.assertRaises(ValueError):
-            catalog.validate()
+            NativeControllerEdge(
+                source_controller="attack",
+                target_controller="attack",
+                relation=NativeControllerRelation.COUPLED_WITH,
+                evidence=EvidenceClass.COMMUNITY_PRACTICE,
+                status=PracticeStatus.EVIDENCE_ONLY,
+                sources=("test",),
+            )
 
     def test_evidence_only_surface_cannot_promote_to_executable(self):
         catalog = default_native_controller_catalog()
