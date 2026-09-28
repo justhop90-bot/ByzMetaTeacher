@@ -56,7 +56,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.emitter import emit
-    from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberSlot
+    from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from Compiler.semantic.source_graph_validation import (
@@ -103,7 +103,7 @@ else:
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .emitter import emit
-    from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberSlot
+    from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from .semantic.source_graph_validation import (
@@ -258,7 +258,7 @@ def _compile_ir_parts(
     context = binding_context or BindingContext()
     storage_requests = _storage_requests(ir)
     if any(
-        isinstance(request, StrategicNumberStorageRequest)
+        isinstance(request, StrategicNumberRequest)
         for request in storage_requests
     ) and context.strategic_number_inventory is None:
         context = replace(
