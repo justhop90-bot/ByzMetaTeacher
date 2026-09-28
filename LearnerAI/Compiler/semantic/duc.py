@@ -562,7 +562,6 @@ def _search_cardinality(
     current: DucListGeneration | None,
     *,
     capacity: int,
-    requested_max: int,
     guaranteed_empty: bool = False,
 ) -> tuple[DucCardinalityRange, DucCardinalityRange]:
     previous = (
@@ -571,7 +570,7 @@ def _search_cardinality(
         else DucCardinalityRange(0, 0)
     )
     available_maximum = max(0, capacity - previous.minimum)
-    maximum_added = min(max(0, requested_max), available_maximum)
+    maximum_added = available_maximum
     last_search = (
         DucCardinalityRange(0, 0)
         if guaranteed_empty
@@ -582,11 +581,6 @@ def _search_cardinality(
         min(capacity, previous.maximum + last_search.maximum),
     )
     return total, last_search
-
-
-def _search_limit(arguments: tuple[str, ...], capacity: int) -> int:
-    requested = _int_or_none(arguments[-1]) if arguments else None
-    return capacity if requested is None else max(0, min(capacity, requested))
 
 
 def _search_cursor_transition(
@@ -1036,7 +1030,6 @@ def _apply_duc_search(
         current.search_index,
         query_signature,
     )
-    requested_max = _search_limit(args, search_contract.capacity)
     blocked_by_capacity = (
         current.current_generation is not None
         and current.current_generation.cardinality is not None
@@ -1101,7 +1094,6 @@ def _apply_duc_search(
     total_cardinality, last_search_cardinality = _search_cardinality(
         current.current_generation,
         capacity=search_contract.capacity,
-        requested_max=requested_max,
         guaranteed_empty=(
             result_disposition is DucSearchResultDisposition.GUARANTEED_EMPTY
         ),
