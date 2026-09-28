@@ -23,7 +23,7 @@ class CompilerTests(unittest.TestCase):
             Path(__file__).resolve().parents[1] / "generated" / "CompilerFixture.per"
         ).read_text(encoding="utf-8")
         self.assertEqual(generated, compile_source(EXAMPLES))
-        self.assertEqual(generated.count("(defrule"), 14)
+        self.assertEqual(generated.count("(defrule"), 17)
         init_start = generated.index("; Demand initialization")
         init_end = generated.index("; Pending diagnostics: castle")
         self.assertIn("(true)\n=>", generated[init_start:init_end])
@@ -36,7 +36,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 44)", a)
         self.assertIn("(set-goal demand-castle 43)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
-        self.assertEqual(a.count("(defrule"), 14)
+        self.assertEqual(a.count("(defrule"), 17)
 
     def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
         source = """
@@ -705,10 +705,10 @@ class CompilerTests(unittest.TestCase):
             require (game-time >= 510)
             require (unit-type-count man-at-arms >= 2)
             require (dropsite-min-distance gold > 12)
-            require (can-build watch-tower)
-            action (build watch-tower)
-            witness (building-type-count watch-tower > 0)
-            release (building-type-count watch-tower > 0)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         output = compile_source(source)
@@ -720,10 +720,10 @@ class CompilerTests(unittest.TestCase):
     def test_positional_observation_cannot_be_completion_witness(self):
         source = """
         demand bad-tower {
-            require (can-build watch-tower)
-            action (build watch-tower)
+            require (can-build castle)
+            action (build castle)
             witness (dropsite-min-distance gold > 12)
-            release (building-type-count watch-tower > 0)
+            release (building-type-count castle > 0)
         }
         """
         with self.assertRaisesRegex(CompileError, "completion witness"):
