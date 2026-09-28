@@ -166,6 +166,73 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(third.output_generation.cardinality.maximum, 240)
         self.assertNotEqual(first.output_generation.content_fingerprint, third.output_generation.content_fingerprint)
 
+    def test_search_state_binds_concrete_four_goal_output_span(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        observation = report.observations[-1]
+        self.assertIsNotNone(observation.output_span)
+        self.assertEqual(observation.output_span.start_goal_id, 41)
+        self.assertEqual(observation.output_span.width, 4)
+        self.assertEqual(observation.output_span.generation, 1)
+        self.assertIsNone(observation.output_span.overwritten_generation)
+        self.assertEqual(
+            observation.output_span.provenance.command,
+            "up-get-search-state",
+        )
+        self.assertEqual(
+            report.final_state.goal_output_spans,
+            (observation.output_span,),
+        )
+
+
+    def test_search_state_overwrite_records_previous_four_goal_span_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        first, second = report.observations[-2:]
+        self.assertEqual(first.output_span.width, 4)
+        self.assertEqual(second.output_span.width, 4)
+        self.assertEqual(second.output_span.generation, 2)
+        self.assertEqual(second.output_span.overwritten_generation, 1)
+        self.assertEqual(
+            second.output_span.overwritten_provenance.command,
+            "up-get-search-state",
+        )
+        self.assertEqual(
+            report.final_state.goal_output_spans,
+            (second.output_span,),
+        )
+
+
+    def test_search_state_rejects_start_that_cannot_fit_four_goals(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("15997",)),
+            )),
+        ))
+
+        self.assertTrue(
+            any(
+                item.code == "DUC-017"
+                and "15996" in item.message
+                for item in report.diagnostics
+            )
+        )
+        self.assertEqual(report.observations, ())
+        self.assertEqual(report.final_state.goal_output_spans, ())
+
+
     def test_search_state_tracks_total_and_last_search_cardinality(self):
         report = analyze_duc((
             _rule(1, (
