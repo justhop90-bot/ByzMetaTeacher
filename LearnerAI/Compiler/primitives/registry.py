@@ -19,6 +19,7 @@ from .engine_semantics import (
     EngineSemanticMappingRegistry,
     default_engine_semantic_mapping_registry,
 )
+from .native_engine_effects import default_native_engine_effect_catalog
 from .native_hygiene import (
     AIRefProvenance,
     ConfidenceBasis,
@@ -362,6 +363,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     )
     semantic_registry = default_engine_semantic_mapping_registry()
     native_contracts = default_native_contract_catalog()
+    default_native_engine_effect_catalog().validate_native_registry(native_registry)
     primitive_items = tuple(facts + actions)
     semantic_registry.validate_exact_executable_commands(
         tuple(item.name for item in primitive_items)
