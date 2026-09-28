@@ -1364,6 +1364,31 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.observations[0].local_search_cursor_disposition, DucSearchCursorDisposition.AT_END)
 
 
+    def test_branch_ambiguous_cursor_remains_ambiguous_after_later_search(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(3, (("up-do-nothing", ()),)),
+            _rule(4, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        search = report.searches[-1]
+        self.assertEqual(
+            search.cursor_before_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertEqual(
+            search.cursor_after_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertEqual(
+            report.final_state.local_list.search_index.cursor_disposition,
+            DucSearchCursorDisposition.PATH_AMBIGUOUS,
+        )
+        self.assertTrue(report.final_state.local_list.path_ambiguous)
+
+
     def test_repeated_same_query_uses_prior_runtime_cursor_state(self):
         report = analyze_duc((
             _rule(1, (
