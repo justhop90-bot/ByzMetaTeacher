@@ -9,7 +9,13 @@ from Compiler.ir import (
     StorageRequestId,
 )
 from Compiler.ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
-from Compiler.runtime_binding import BindingContext, RuntimeBinder
+from Compiler.runtime_binding import (
+    BindingContext,
+    RuntimeBinder,
+    StrategicNumberInventory,
+    StrategicNumberRequest,
+    TimerRequest,
+)
 
 
 class NativePersistentControlPlaneTests(unittest.TestCase):
@@ -19,12 +25,12 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             StorageRequestId(owner, "strategy-goal"),
             role=GoalRole.PERSISTENT_STATE,
         )
-        sn_request = __import__("Compiler.runtime_binding", fromlist=["StrategicNumberRequest"]).StrategicNumberRequest(
+        sn_request = StrategicNumberRequest(
             StorageRequestId(owner, "resource-control"),
             why_not_goal="This state directly controls a native Strategic Number.",
             stability_key="control.fixture.resource-control",
         )
-        timer_request = __import__("Compiler.runtime_binding", fromlist=["TimerRequest"]).TimerRequest(
+        timer_request = TimerRequest(
             StorageRequestId(owner, "cooldown"),
             initialization_policy="DISABLE_BEFORE_FIRST_USE",
             stability_key="control.fixture.cooldown",
@@ -62,6 +68,11 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             ),
         )
 
+        sn_inventory = StrategicNumberInventory(
+            inventory_sha="control-plane-test",
+            documented_ids=frozenset(),
+            candidate_ids=frozenset({510, 509}),
+        )
         output = compile_source(
             """
             demand bootstrap {
@@ -71,7 +82,9 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
                 release (building-type-count house >= 1)
             }
             """,
-            binding_context=BindingContext(),
+            binding_context=BindingContext(
+                strategic_number_inventory=sn_inventory,
+            ),
             native_control_plan=plan,
         )
 
