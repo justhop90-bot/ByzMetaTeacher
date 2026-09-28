@@ -403,6 +403,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     for command, identity in _WITNESS_SPECS:
         mappings.append(_fact_mapping(command, identity, "WITNESS"))
     mappings.append(_pending_mapping())
+    mappings.append(_pending_placement_mapping())
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
         (
