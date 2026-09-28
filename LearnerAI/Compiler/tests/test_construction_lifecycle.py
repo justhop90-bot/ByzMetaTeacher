@@ -1,5 +1,7 @@
 import unittest
 
+from Compiler.compiler import compile_source
+from Compiler.primitives import NativeSupportState, default_de_registry
 from Compiler.ir.construction import ConstructionObservation, ConstructionPhase
 from Compiler.ir.model import LifecycleState
 from Compiler.semantic.construction import transition_construction
@@ -72,6 +74,43 @@ class ConstructionTransitionTests(unittest.TestCase):
 
         self.assertEqual(state.lifecycle, LifecycleState.COMPLETE)
         self.assertEqual(state.phase, ConstructionPhase.COMPLETE)
+
+
+    def test_native_placement_pending_fact_is_executable_safe(self):
+        registry = default_de_registry()
+        self.assertIs(
+            registry.support_state("up-pending-placement"),
+            NativeSupportState.EXECUTABLE_SAFE,
+        )
+
+    def test_build_emission_uses_phase_observers_and_retry(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+
+        self.assertIn("(up-pending-objects c: castle >= 1)", output)
+        self.assertIn("(up-pending-placement c: castle)", output)
+        self.assertIn("(not (up-pending-placement c: castle))", output)
+        self.assertIn("; COMPLETE | ISSUED/PENDING -> COMPLETE", output)
+        self.assertIn(
+            "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
+            output,
+        )
+        self.assertIn(
+            "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
+            output,
+        )
+        self.assertIn("; RETRY | ISSUED/PENDING -> ACTIVE", output)
+        self.assertNotIn(
+            "; Pending admission: castle | ISSUED -> PENDING",
+            output,
+        )
 
 
 if __name__ == "__main__":
