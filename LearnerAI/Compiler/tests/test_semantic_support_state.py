@@ -69,6 +69,7 @@ class SemanticSupportStateTests(unittest.TestCase):
         mapping_registry = default_engine_semantic_mapping_registry()
         from Compiler.primitives.engine_semantics import (
             default_duc_executable_commands,
+            default_escrow_executable_commands,
             default_native_controller_executable_commands,
         )
 
@@ -76,6 +77,7 @@ class SemanticSupportStateTests(unittest.TestCase):
             sorted(
                 tuple(default_de_registry().names())
                 + tuple(default_duc_executable_commands())
+                + tuple(default_escrow_executable_commands())
                 + tuple(default_native_controller_executable_commands())
             )
         )
