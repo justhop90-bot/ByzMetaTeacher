@@ -62,6 +62,45 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_set_target_object_action_rejects_proven_empty_search_list(self):
+        from Compiler.semantic.duc import _empty_state
+
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
+
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-set-target-object", ("search-local", "c:", "0")),
+                    ),
+                ),
+            ),
+            initial_state=initial,
+        )
+
+        self.assertEqual(
+            report.searches[-1].output_generation.cardinality,
+            DucCardinalityRange(0, 0),
+        )
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(
+            any(
+                item.code == "DUC-014"
+                and "proven zero cardinality" in item.message
+                for item in report.diagnostics
+            )
+        )
+
     def test_failed_target_action_on_uninitialized_search_list_does_not_establish_target(self):
         report = analyze_duc((
             _rule(1, (
