@@ -1,7 +1,8 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
-Verified base: `main` at `adec462b420f87bc66c2868908058c0e272baf7c`
-Working state: release-only `release-escrow` lowering is executable-safe and native-verified; broader escrow semantics remain open
+Historical promotion base: `adec462b420f87bc66c2868908058c0e272baf7c`.
+Current verified main: `41861dc8393dabb5a4cac5bb924cd9f6489fefaa`.
+Working state: release-only `release-escrow` lowering remains executable-safe and was re-verified as part of Compiler workflow #2149; broader escrow semantics remain open.
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
 
@@ -25,7 +26,7 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 - [x] For a non-escrow action, the semantic execution contract requires release before consumption.
 - [x] Same-rule order is represented explicitly by rule order plus within-rule action order.
 - [x] A release followed by an ordinary action is the canonical community shape.
-- [ ] Native DE same-pass visibility of `release-escrow -> ordinary action` has a direct engine proof. This remains an evidence gate, not a compiler assumption.
+- [ ] Native DE same-pass visibility of `release-escrow -> ordinary action` has a direct engine proof. This remains an evidence gate, not a compiler assumption; workflow #2149 verifies the compiler artifact and native parser acceptance, not this runtime timing fact.
 
 ### B. Ownership
 
@@ -73,7 +74,8 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 
 The promoted command is exactly `release-escrow`, with the native Action signature `(release-escrow <Resource>)` and Resource domain `food|wood|stone|gold`. The compiler emits only the explicitly supplied release operations, grouped deterministically by rule order and preserving within-rule order. It emits no implicit percentage reset, research/build/train action, retry loop, starvation scheduler, or ownership handoff.
 
-Acceptance run: Compiler tests #2036 / Actions run 36481020162 on main `adec462b420f87bc66c2868908058c0e272baf7c`. The dedicated artifact gate reported `finding_count=0), `findings=[]`, and artifact SHA-256 `7bfea09bd313323aaaf8bd82972eb51042453adb76256e810f56ab1e9bc9ab27`. Full regression: 922 tests OK. Cross-platform native-support determinism: all 9 OS/Python jobs plus snapshot comparison passed. Aggregate compiler verification gate passed.
+Original promotion acceptance: Compiler tests #2036 / Actions run `36481020162` on `adec462b420f87bc66c2868908058c0e272baf7c` passed the release-only native gate and full regression.
+Current re-verification: Compiler workflow #2149 / Actions run `36497398646` at code SHA `e9dd1106fbd6255b35e06ef7195826f3998a8576` passed the escrow-release native zero-findings step, full 963-test compiler regression, all 9 native-support determinism jobs, aggregate snapshot comparison, and the compiler verification gate. This newer run is the authoritative current verification record.
 
 ## Non-goals
 
