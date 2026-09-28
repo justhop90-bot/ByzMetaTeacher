@@ -14,6 +14,7 @@ from ..ir import (
     InvalidationContract,
     InvalidationEvidenceKind,
     CancellationStateContract,
+    ConstructionLifecycle,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -288,6 +289,31 @@ def analyze(
             {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
             f"demand '{demand.name}' witness",
         )
+
+        construction_lifecycle = None
+        if action.head == "build":
+            if len(action.args) != 1 or not isinstance(action.args[0], str):
+                raise CompileError(
+                    f"CONSTRUCTION-BUILD-TARGET: demand '{demand.name}' build action "
+                    "must have one literal BuildingId argument"
+                )
+            building = action.args[0]
+            construction_lifecycle = ConstructionLifecycle(
+                building=building,
+                completion_witness=witness,
+                pending_foundation_fact=Expression(
+                    source=f"(up-pending-objects c: {building} >= 1)",
+                    head="up-pending-objects",
+                    args=("c:", building, ">=", "1"),
+                    location=action.location,
+                ),
+                pending_placement_fact=Expression(
+                    source=f"(up-pending-placement c: {building})",
+                    head="up-pending-placement",
+                    args=("c:", building),
+                    location=action.location,
+                ),
+            )
         release = parse_expression(
             demand.release,
             demand.release_location or demand.location,
@@ -490,6 +516,7 @@ def analyze(
                 ),
                 action_issuance=action_issuance,
                 witness=witness,
+                construction_lifecycle=construction_lifecycle,
                 completion_witness=completion_witness,
                 release=release,
                 release_state=release_state,
