@@ -38,9 +38,11 @@ EVIDENCE: A DUC rows; 11.6k/11.9k hits; 124 tests fixture-only; oracle schema.
 IMPLEMENTATION: semantic/duc.py + ir/duc.py + hygiene contracts.
 TEST: fixture-only (no DSL end-to-end). REMAINING: adapters; emission; reset taxonomy; perf advisories.
 
-## Controllers/attack — CURRENT: evidence-only. TARGET: lifecycle-complete.
-EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding.
-IMPLEMENTATION: catalogs only. TEST: evidence-only suites. REMAINING: entire executable plane.
+## Controllers/attack — CURRENT: issue-executable, lifecycle incomplete. TARGET: lifecycle-complete.
+EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding; native attack-now reference and controller ownership catalog.
+IMPLEMENTATION: typed ir/native_attack.py, dedicated binder promotion, contracted issue-only mapping, deterministic emitter/compiler threading.
+TEST: test_native_attack_lifecycle.py, compiler native integration, assert_attack_native.py pinned zero-findings artifact gate.
+REMAINING: completion witness, release semantics, group membership/admission details, exploration/town-size/targeting coupling, attack Strategic Numbers, runtime behavioral evidence.
 
 ## Source graph — CURRENT: executable-safe minus load-random. TARGET: met incl. decision on load-random.
 EVIDENCE: depths/fingerprints; 67 tests; Duke + vendored-AI topology.
