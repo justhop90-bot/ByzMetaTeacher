@@ -1,6 +1,9 @@
 import unittest
 
 from Compiler.ast import Expression
+from Compiler.parser import parse
+from Compiler.primitives import default_de_registry
+from Compiler.semantic import analyze
 from Compiler.ir import (
     GoalRole,
     GoalSlotRequest,
@@ -96,6 +99,31 @@ class ProductionLifecycleContractTests(unittest.TestCase):
             "production retry barrier must use the 'production-retry-barrier' purpose",
         ):
             _lifecycle(retry_purpose="research-retry-barrier")
+
+    def test_analyzer_connects_canonical_witness_and_retry_barrier(self):
+        source = """
+        demand spears {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        demand = analyze(
+            parse(source),
+            default_de_registry(),
+            source_unit="test",
+        )[0]
+
+        self.assertIsNotNone(demand.production_lifecycle)
+        self.assertEqual(
+            demand.production_lifecycle.completion_witness,
+            demand.completion_witness.expression,
+        )
+        self.assertEqual(
+            demand.production_lifecycle.retry_barrier,
+            demand.production_retry_barrier,
+        )
 
 
 if __name__ == "__main__":
