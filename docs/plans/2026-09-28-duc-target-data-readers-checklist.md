@@ -53,11 +53,11 @@ Base: `main` at `257f1cf984454b3717300a18400090bffddc0d1a`
 - [x] Observed red focused test: `up-get-object-data` without a target produced no DUC diagnostic.
 - [x] Observed green focused target-data suite on the implementation head before final cleanup.
 - [x] Native target-data contract and citation assertions passed in the focused runner.
-- [ ] Full compiler regression suite on final cleaned branch head.
-- [ ] Native zero-findings acceptance on final cleaned branch head.
-- [ ] All 9 native-support determinism jobs on final cleaned branch head.
-- [ ] Aggregate native-support snapshot comparison on final cleaned branch head.
-- [ ] Compiler verification gate on final cleaned branch head.
+- [x] Full compiler regression suite passed on final cleaned branch head in workflow run `36371712710`.
+- [x] Native zero-findings acceptance passed on final cleaned branch head in workflow run `36371712710`.
+- [x] All 9 native-support determinism jobs passed on final cleaned branch head in workflow run `36371712710`.
+- [x] Aggregate native-support snapshot comparison passed on final cleaned branch head in workflow run `36371712710`.
+- [x] Compiler verification gate passed on final cleaned branch head in workflow run `36371712710`.
 - [ ] Post-merge `main` verification.
 
 ## External evidence
