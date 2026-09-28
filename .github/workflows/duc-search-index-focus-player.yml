@@ -1,0 +1,17 @@
+name: DUC focus-player lifecycle
+
+on:
+  push:
+    branches:
+      - compiler-duc-search-index-focus-player
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Focus-player lifecycle red test
+        run: PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_focus_player_change_resets_remote_search_index
