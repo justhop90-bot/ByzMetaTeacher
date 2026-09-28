@@ -222,5 +222,51 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertNotIn("production-retry-barrier-castle", build)
 
 
+    def test_research_lifecycle_uses_native_in_progress_status(self):
+        output = compile_source(
+            """
+            demand wheelbarrow {
+                require (can-research ri-wheelbarrow)
+                action (research ri-wheelbarrow)
+                witness (research-completed ri-wheelbarrow)
+                release (research-completed ri-wheelbarrow)
+            }
+            """
+        )
+        self.assertIn("research-retry-barrier-wheelbarrow", output)
+        pending_start = output.index("; Completion witness: wheelbarrow")
+        action_start = output.index("; Action issuance: wheelbarrow")
+        lifecycle = output[pending_start:action_start]
+        self.assertIn(
+            "(up-research-status c: ri-wheelbarrow >= research-pending)",
+            lifecycle,
+        )
+        self.assertIn(
+            "(not (up-research-status c: ri-wheelbarrow >= research-pending))",
+            lifecycle,
+        )
+
+    def test_research_retry_is_barriered_to_a_later_pass(self):
+        output = compile_source(
+            """
+            demand wheelbarrow {
+                require (can-research ri-wheelbarrow)
+                action (research ri-wheelbarrow)
+                witness (research-completed ri-wheelbarrow)
+                release (research-completed ri-wheelbarrow)
+            }
+            """
+        )
+        issuance = output.index("; Action issuance: wheelbarrow")
+        action_block = output[issuance:]
+        self.assertIn("(goal research-retry-barrier-wheelbarrow 0)", action_block)
+        retry_start = output.index("; RETRY | ISSUED/PENDING -> ACTIVE")
+        retry_block = output[retry_start:issuance]
+        self.assertIn(
+            "(set-goal research-retry-barrier-wheelbarrow 1)",
+            retry_block,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
