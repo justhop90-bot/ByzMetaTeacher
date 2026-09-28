@@ -227,6 +227,8 @@ from .resource_control import (
     ResourceControlErrorCode,
     ResourceControlValidationError,
     ResourceControlValidationReport,
+    validate_escrow_contract_set,
+    validate_escrow_execution,
     validate_escrow_against_arbitration,
     validate_escrow_contract,
     validate_native_arbitration_against_escrow,
