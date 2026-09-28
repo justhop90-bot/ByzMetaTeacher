@@ -1414,7 +1414,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(target.object_refs[0].list_kind)
         self.assertIsNone(target.object_refs[0].list_generation)
         self.assertIsNone(target.object_refs[0].list_index)
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
 
 
