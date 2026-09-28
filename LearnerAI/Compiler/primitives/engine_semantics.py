@@ -462,6 +462,11 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
 def default_duc_executable_commands() -> tuple[str, ...]:
     return tuple(command for command, _identity in _DUC_COMMAND_SPECS)
 
+def default_native_controller_executable_commands() -> tuple[str, ...]:
+    """Return commands promoted through dedicated controller binders."""
+    return ("attack-now",)
+
+
 
 def _pending_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
@@ -572,6 +577,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _WITNESS_SPECS)
         + ("up-pending-objects", "up-pending-placement")
         + tuple(command for command, _identity in _ACTION_SPECS)
-        + ("attack-now",)
+        + default_native_controller_executable_commands()
     )
     return registry
