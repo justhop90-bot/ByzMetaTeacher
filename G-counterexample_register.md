@@ -4,8 +4,8 @@ Each entry: assumption | contradiction | evidence | implication | status.
 1. ASSUMPTION: attack-now is the attack actuator.
    CONTRA: local corpus has 47 attack-now vs 1455 town-size + 10202 set-SN; control is
    SN/town-size/DUC-mediated. Promisory/Naga pipelines stage via groups/targets.
-   IMPL: attack lifecycle must model mediated control, not just attack-now.
-   STATUS: OPEN — needs attack-controller lifecycle (Prompt 9).
+   IMPL: attack lifecycle must model mediated control, not just attack-now. The compiler now connects only the narrow issue emission path; mediated control, completion, release, and group-state semantics remain open.
+   STATUS: OPEN — issue slice connected; needs full attack-controller lifecycle (Prompt 9).
 
 2. ASSUMPTION: escrow is a minor feasibility flag.
    CONTRA: 10859 escrow hits; escrow.per (Promisory) + commodity.per + resource_control 49KB (Duke).
