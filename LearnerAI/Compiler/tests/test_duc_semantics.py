@@ -6,6 +6,7 @@ from Compiler.ir.duc import (
     DucGoalOutputSpan,
     DucGroupStatus,
     DucSearchCursorDisposition,
+    DucSearchFactResult,
     DucListKind,
     DucListMutationKind,
     DucSearchIndexResetReason,
@@ -1262,6 +1263,120 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(search.index_before, 0)
         self.assertIsNone(search.index_after)
         self.assertIsNone(search.index_reset_reason)
+
+
+    def test_find_local_fact_updates_search_state_and_keeps_fact_truth_runtime_dependent(self):
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-get-search-state", ("41",)),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ))
+
+        self.assertEqual(len(report.searches), 1)
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.fact_result, DucSearchFactResult.RUNTIME_DEPENDENT)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(report.observations[0].local_search_cursor_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertIsNotNone(report.final_state.local_list.current_generation)
+
+
+    def test_find_remote_fact_updates_remote_cursor_and_can_be_reset_afterwards(self):
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-reset-search", ("0", "0", "1", "0")),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-remote c: town-center c: 1)",
+                        "up-find-remote",
+                        ("c:", "town-center", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ))
+
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.fact_result, DucSearchFactResult.RUNTIME_DEPENDENT)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(
+            report.final_state.remote_list.search_index.cursor_disposition,
+            DucSearchCursorDisposition.RESET_START,
+        )
+        self.assertEqual(report.final_state.remote_list.search_index.offset, 0)
+
+
+    def test_find_fact_at_known_end_is_guaranteed_false(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        seed_index = replace(
+            first.final_state.local_list.search_index,
+            cursor_disposition=DucSearchCursorDisposition.AT_END,
+            offset=None,
+            known=False,
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                search_index=seed_index,
+            ),
+        )
+
+        report = analyze_duc((
+            replace(
+                _rule(1, (
+                    ("up-get-search-state", ("41",)),
+                )),
+                facts=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                        SourceLocation(1, 1, "fixture.per"),
+                    ),
+                ),
+            ),
+        ), initial_state=seed)
+
+        search = report.searches[0]
+        self.assertEqual(search.source_kind, "FACT")
+        self.assertEqual(search.result_disposition, DucSearchResultDisposition.GUARANTEED_EMPTY)
+        self.assertEqual(search.fact_result, DucSearchFactResult.GUARANTEED_FALSE)
+        self.assertEqual(search.cursor_before_disposition, DucSearchCursorDisposition.AT_END)
+        self.assertEqual(search.cursor_after_disposition, DucSearchCursorDisposition.AT_END)
+        self.assertEqual(report.observations[0].local_search_cursor_disposition, DucSearchCursorDisposition.AT_END)
+
+
+    def test_repeated_same_query_uses_prior_runtime_cursor_state(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertEqual(first.cursor_after_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertEqual(second.cursor_before_disposition, DucSearchCursorDisposition.RUNTIME_ADVANCED)
+        self.assertIsNone(second.index_before)
+        self.assertEqual(second.index_reset_reason, None)
 
 
     def test_search_records_runtime_cursor_transition(self):
