@@ -1,0 +1,70 @@
+"""Authoritative native BuildingId binding from the checked-in engine catalog."""
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
+import re
+
+
+_CATALOG_ROOT = Path(__file__).resolve().parents[3] / "docs" / "reference" / "engine" / "catalog"
+_DETAIL_RE = re.compile(r"^- Detail: Object (\d+) - ", re.MULTILINE)
+
+
+class NativeBuildingIdError(ValueError):
+    """Raised when a build target cannot be bound to a native BuildingId."""
+
+
+@lru_cache(maxsize=1)
+def _building_ids() -> dict[str, int]:
+    if not _CATALOG_ROOT.is_dir():
+        raise NativeBuildingIdError(
+            f"native engine catalog is unavailable at {_CATALOG_ROOT}"
+        )
+
+    result: dict[str, int] = {}
+    for path in sorted(_CATALOG_ROOT.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        if "- Kind: `object`" not in text:
+            continue
+        if not re.search(r"^Class: `building-class\b", text, re.MULTILINE):
+            continue
+        match = _DETAIL_RE.search(text)
+        if match is None:
+            continue
+        token = path.stem.lower()
+        object_id = int(match.group(1))
+        previous = result.get(token)
+        if previous is not None and previous != object_id:
+            raise NativeBuildingIdError(
+                f"native building symbol '{token}' maps to both {previous} and {object_id}"
+            )
+        result[token] = object_id
+
+    return result
+
+
+def resolve_building_id(symbol: str) -> int:
+    """Resolve one source build target to its native numeric BuildingId."""
+    token = symbol.strip().lower()
+    if token.isdigit():
+        object_id = int(token)
+        if object_id < 0:
+            raise NativeBuildingIdError(
+                f"numeric BuildingId '{symbol}' is negative"
+            )
+        return object_id
+
+    if not token or not re.fullmatch(r"[a-z][a-z0-9_-]*", token):
+        raise NativeBuildingIdError(
+            f"invalid BuildingId symbol '{symbol}'"
+        )
+
+    try:
+        return _building_ids()[token]
+    except KeyError as exc:
+        raise NativeBuildingIdError(
+            f"unknown native BuildingId symbol '{symbol}'"
+        ) from exc
+
+
+__all__ = ["NativeBuildingIdError", "resolve_building_id"]
