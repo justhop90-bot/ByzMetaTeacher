@@ -258,7 +258,7 @@ def _compile_ir_parts(
     context = binding_context or BindingContext()
     storage_requests = _storage_requests(ir)
     if any(
-        request.__class__.__name__ == "StrategicNumberStorageRequest"
+        isinstance(request, StrategicNumberStorageRequest)
         for request in storage_requests
     ) and context.strategic_number_inventory is None:
         context = replace(
