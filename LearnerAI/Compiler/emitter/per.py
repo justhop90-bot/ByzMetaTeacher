@@ -277,7 +277,7 @@ def emit(
         construction = demand.construction_lifecycle
         if construction is not None:
             out += [
-                f"; Construction observation: ${demand.name}",
+                f"; Construction observation: {demand.name}",
                 "; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY",
             ]
             for transition in construction_transition_rules():
