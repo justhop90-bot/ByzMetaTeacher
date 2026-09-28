@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ..errors import CompileError
-from ..ir import NativeControlPlan, SemanticDemand
+from ..ir import NativeControlPlan, SemanticDemand, ConstructionTransitionKind
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..runtime_binding import (
     BindingResult,
@@ -11,6 +11,7 @@ from ..runtime_binding import (
     StrategicNumberSlot,
     TimerSlot,
 )
+from ..semantic.construction import construction_transition_rules
 from ..semantic.native_control import validate_native_control_plan
 
 MAX_RULES = 10_000
@@ -124,6 +125,16 @@ def emit(
             out.append(
                 f"(defconst cancelled-{demand.name} {lifecycle.cancelled.value})"
             )
+        if demand.construction_retry_barrier is not None:
+            barrier_slot = bindings.binding_for(demand.construction_retry_barrier.request_id)
+            if not isinstance(barrier_slot, GoalSlot):
+                raise CompileError(
+                    f"CONSTRUCTION-BARRIER-BINDING: construction retry barrier for "
+                    f"'{demand.name}' resolved to '{type(barrier_slot).__name__}', expected GoalSlot"
+                )
+            out.append(
+                f"(defconst construction-retry-barrier-{demand.name} {barrier_slot.id.value})"
+            )
 
     for request_id, _request in sorted(
         arbitration_requests.items(),
@@ -183,6 +194,21 @@ def emit(
                 "    (true)",
                 "=>",
                 f"    (set-goal {_claim_name(conflict_class)} 0)",
+                ")",
+                "",
+            ]
+
+    construction_barrier_demands = tuple(
+        demand for demand in demands if demand.construction_retry_barrier is not None
+    )
+    if construction_barrier_demands:
+        out.append("; Per-pass construction retry barriers")
+        for demand in construction_barrier_demands:
+            out += [
+                "(defrule",
+                "    (true)",
+                "=>",
+                f"    (set-goal construction-retry-barrier-{demand.name} 0)",
                 ")",
                 "",
             ]
@@ -251,58 +277,72 @@ def emit(
         construction = demand.construction_lifecycle
         if construction is not None:
             out += [
-                f"; Construction observation: {demand.name}",
+                f"; Construction observation: ${demand.name}",
                 "; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY",
-                "; COMPLETE | ISSUED/PENDING -> COMPLETE",
-                "(defrule",
-                "    (or",
-                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
-                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
-                "    )",
-                f"    {demand.witness.source}",
-                "=>",
-                f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
-                ")",
-                "",
-                "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
-                "(defrule",
-                "    (or",
-                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
-                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
-                "    )",
-                f"    (not {demand.witness.source})",
-                f"    {construction.pending_foundation_fact.source}",
-                "=>",
-                f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
-                ")",
-                "",
-                "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
-                "(defrule",
-                "    (or",
-                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
-                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
-                "    )",
-                f"    (not {demand.witness.source})",
-                f"    (up-pending-objects c: {construction.building} == 0)",
-                f"    {construction.pending_placement_fact.source}",
-                "=>",
-                f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
-                ")",
-                "",
-                "; RETRY | ISSUED/PENDING -> ACTIVE",
-                "(defrule",
-                "    (or",
-                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
-                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
-                "    )",
-                f"    (not {demand.witness.source})",
-                f"    (up-pending-objects c: {construction.building} == 0)",
-                f"    (not {construction.pending_placement_fact.source})",
-                "=>",
-                f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
-                ")",
-                "",
             ]
+            for transition in construction_transition_rules():
+                if transition.kind is ConstructionTransitionKind.COMPLETE:
+                    label = "; COMPLETE | ISSUED/PENDING -> COMPLETE"
+                    guards = [
+                        "    (or",
+                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        "    )",
+                        f"    {demand.witness.source}",
+                    ]
+                    actions = [
+                        f"    (set-goal demand-${demand.name} {lifecycle.complete.value})",
+                    ]
+                elif transition.kind is ConstructionTransitionKind.FOUNDATION_PENDING:
+                    label = "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING"
+                    guards = [
+                        "    (or",
+                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        "    )",
+                        f"    (not {demand.witness.source})",
+                        f"    {construction.pending_foundation_fact.source}",
+                    ]
+                    actions = [
+                        f"    (set-goal demand-${demand.name} {lifecycle.pending.value})",
+                    ]
+                elif transition.kind is ConstructionTransitionKind.PLACEMENT_PENDING:
+                    label = "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING"
+                    guards = [
+                        "    (or",
+                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        "    )",
+                        f"    (not {demand.witness.source})",
+                        f"    (up-pending-objects c: {construction.native_building_id} == 0)",
+                        f"    {construction.pending_placement_fact.source}",
+                    ]
+                    actions = [
+                        f"    (set-goal demand-${demand.name} {lifecycle.pending.value})",
+                    ]
+                else:
+                    label = "; RETRY | ISSUED/PENDING -> ACTIVE"
+                    guards = [
+                        "    (or",
+                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        "    )",
+                        f"    (not {demand.witness.source})",
+                        f"    (up-pending-objects c: {construction.native_building_id} == 0)",
+                        f"    (not {construction.pending_placement_fact.source})",
+                    ]
+                    actions = [
+                        f"    (set-goal demand-${demand.name} {lifecycle.active.value})",
+                    ]
+                    if demand.construction_retry_barrier is None:
+                        raise CompileError(
+                            f"CONSTRUCTION-BARRIER-MISSING: construction demand '{demand.name}' "
+                            "has no retry barrier storage"
+                        )
+                    actions.append(
+                        f"    (set-goal construction-retry-barrier-${demand.name} 1)"
+                    )
+                out += [label, "(defrule", *guards, "=>", *actions, ")", ""]
         else:
             out += [
                 f"; Completion witness: {demand.name} | PENDING -> COMPLETE",
@@ -331,7 +371,8 @@ def emit(
 
         if construction is not None:
             out += [
-                f"    (up-pending-objects c: {construction.building} == 0)",
+                f"    (goal construction-retry-barrier-{demand.name} 0)",
+                f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                 f"    (not {construction.pending_placement_fact.source})",
             ]
 
