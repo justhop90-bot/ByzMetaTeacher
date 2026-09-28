@@ -9,6 +9,7 @@ from Compiler.ir.duc import (
     DucListMutationKind,
     DucLoopWidening,
     DucTargetConsumerMode,
+    DucTargetDataRelation,
     DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
