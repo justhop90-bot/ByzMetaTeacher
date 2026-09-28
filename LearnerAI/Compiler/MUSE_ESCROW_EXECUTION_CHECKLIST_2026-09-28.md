@@ -1,7 +1,7 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
 Historical promotion base: `adec462b420f87bc66c2868908058c0e272baf7c`.
-Current verified compiler code SHA: `e9dd1106fbd6255b35e06ef7195826f3998a8576`; current main tip: `053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d`.
+Verified compiler code SHA: `e9dd1106fbd6255b35e06ef7195826f3998a8576`; later main changes in this checklist tranche are documentation-only.
 Working state: release-only `release-escrow` lowering remains executable-safe and was re-verified as part of Compiler workflow #2149; broader escrow semantics remain open.
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
