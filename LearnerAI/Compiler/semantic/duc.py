@@ -968,6 +968,13 @@ def _analyze_duc_linear(
                     provenance=state.filters.last_mutation,
                     path_ambiguous=state.filters.path_ambiguous,
                 )
+                query_signature = args
+                prepared_index, index_reset_reason, index_before = (
+                    _prepare_search_index_for_query(
+                        current.search_index,
+                        query_signature,
+                    )
+                )
                 if filter_snapshot.path_ambiguous:
                     diagnostics.append(
                         DucDiagnostic(
@@ -1000,7 +1007,10 @@ def _analyze_duc_linear(
                     visibility=visible,
                     state_revision=state_revision,
                     pass_id=state.pass_id,
-                    inputs=list_generation_inputs + (state.filters.generation,),
+                    inputs=list_generation_inputs + (
+                        state.filters.generation,
+                        prepared_index.generation,
+                    ),
                     contract_id=f"duc.search.{command}",
                     evidence_ids=search_contract.evidence_ids,
                 )
@@ -1028,6 +1038,8 @@ def _analyze_duc_linear(
                             command,
                             *args,
                             filter_snapshot.fingerprint,
+                            str(prepared_index.generation),
+                            index_reset_reason.value if index_reset_reason is not None else "NONE",
                         )
                     ),
                     last_search_cardinality=last_search_cardinality,
@@ -1039,6 +1051,7 @@ def _analyze_duc_linear(
                     next_generation=generation_number + 1,
                     path_ambiguous=current.path_ambiguous or filter_snapshot.path_ambiguous,
                     generation_variants=(),
+                    search_index=prepared_index,
                 )
                 if kind is DucListKind.LOCAL:
                     state = DucSemanticState(
@@ -1074,6 +1087,10 @@ def _analyze_duc_linear(
                         output_generation,
                         visible,
                         provenance,
+                        index_before=index_before,
+                        index_after=prepared_index.offset,
+                        index_generation=prepared_index.generation,
+                        index_reset_reason=index_reset_reason,
                     )
                 )
                 rule_reads.add(DucStateKind.FILTER)
