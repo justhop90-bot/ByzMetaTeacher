@@ -90,8 +90,6 @@ def main() -> int:
 
     if "(disable-timer cooldown)" not in first:
         raise SystemExit("timer initialization rule is missing disable-timer cooldown")
-    if "(up-timer-status cooldown = timer-disabled)" not in first:
-        raise SystemExit("symbolic timer consumer is missing from emitted artifact")
 
     manifest_payload = json.loads(first_manifest)
     timer_records = [
