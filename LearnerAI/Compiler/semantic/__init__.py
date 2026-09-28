@@ -215,3 +215,10 @@ from .native_controller_interactions import (
     NativeInteractionVisibility,
     default_native_controller_interaction_catalog,
 )
+
+from .native_control import (
+    NativeControlValidationReport,
+    storage_requests_for_plan,
+    validate_native_control_plan,
+    validate_native_control_plan_shape,
+)
