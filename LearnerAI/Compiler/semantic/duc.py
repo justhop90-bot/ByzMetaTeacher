@@ -1933,6 +1933,9 @@ def _widen_list_state(
         initialized=previous.initialized or current.initialized,
         path_ambiguous=True,
         generation_variants=(representative,) if representative is not None else (),
+        search_index=_join_search_indices(
+            (previous.search_index, current.search_index)
+        ),
     )
 
 
