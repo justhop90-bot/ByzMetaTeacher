@@ -1,7 +1,7 @@
 # DUC `up-add-object-by-id` Repair Checklist
 
 Date: 2026-09-28
-Scope: bounded compiler support for Action-only `up-add-object-by-id`.
+Scope: bounded compiler support for Action-only `up-add-object-by-id`, with fail-closed list-state semantics pending native duplicate evidence.
 
 ## Native contract
 
@@ -11,20 +11,21 @@ Scope: bounded compiler support for Action-only `up-add-object-by-id`.
 - [x] Native command is registered as an Action in the engine semantic mapping.
 - [x] Native citation `airef:duc:add-object-by-id` is pinned in the command catalog.
 - [x] Local/remote capacity is inherited from the existing native DUC list contracts: 240/40.
-- [x] Exact runtime object liveness and duplicate behavior remain outside the compiler proof boundary.
+- [x] Exact runtime object liveness, duplicate behavior, and already-present-ID behavior remain outside the compiler proof boundary.
 
 ## Compiler semantics
 
 - [x] Add `DucListMutationKind.ADD_OBJECT`.
-- [x] Model object-id append as a distinct DUC mutation, not as clean/remove/search.
-- [x] Preserve the existing search cursor and filter state.
-- [x] Preserve an existing object target because append-at-end does not shift existing list indices.
-- [x] Concrete `c:` IDs increase known cardinality by one when the list is not proven full.
-- [x] Dynamic `g:`/`s:` IDs do not receive fabricated cardinality proof.
+- [x] Model object-id insertion as a distinct DUC mutation, not as clean/remove/search.
+- [x] Preserve the existing search cursor and filter state because this tranche does not claim a native cursor transition.
+- [x] Treat list cardinality after the mutation as UNKNOWN because duplicate/already-present behavior is unproven.
+- [x] Invalidate the list content fingerprint after the mutation.
+- [x] Downgrade list-index targets on the affected list to UNKNOWN; direct native-ID targets are not list-derived and are left unchanged.
+- [x] Dynamic `g:`/`s:` IDs receive no fabricated cardinality or membership proof.
 - [x] Reject negative or malformed concrete IDs with `DUC-017` diagnostics.
 - [x] Reject Fact evaluation with `DUC-005` because exact native Fact truth is unresolved in the available evidence.
-- [x] Reject appends to compiler-proven full lists with `DUC-014`.
-- [x] Do not infer object existence, visibility, uniqueness, or runtime success from the ID alone.
+- [x] Do not reject a full list solely from capacity; native full-list behavior is not established for this command.
+- [x] Do not infer object existence, visibility, uniqueness, append position, or runtime success from the ID alone.
 
 ## Verification
 
@@ -43,6 +44,11 @@ The previous red TDD run (#2135) correctly failed on the unimplemented command. 
 ## Explicitly open
 
 - Runtime truth for whether a requested object ID exists or is currently admissible to the engine.
-- Duplicate-ID behavior when the object is already retained.
+- Duplicate/already-present-ID behavior: append, no-op, reposition/refresh, or other runtime behavior.
 - Exact Fact truth semantics, pending stronger native evidence.
+- Runtime oracle capture for local and remote duplicate-present cases.
 - Remaining unpromoted DUC source/selection surfaces.
+
+## Native oracle required before promotion
+
+The runtime experiment must cover both `search-local` and `search-remote`: establish a known list, add a fresh concrete ID, add that same ID again, capture list contents/cardinality, and probe target identity/index before and after. The fixture must distinguish append, no-op, reposition/refresh, and failure/undefined outcomes. Corpus frequency is not proof of this branch.
