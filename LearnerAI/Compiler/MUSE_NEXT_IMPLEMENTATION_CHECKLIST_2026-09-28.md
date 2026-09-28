@@ -1,17 +1,17 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Implementation base: main 51489706c54ce5c0680d295169ac72a24467e36a
+Implementation base: main dca0458986d0e50e2ae26889d89f863a3c2ff923
+Post-merge compiler verification: 915 tests; native zero-findings; deterministic cross-platform matrix.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
 ## Tier 0 — establish executable foundations
 
-- [ ] Merge construction lifecycle hardening from PR #86.
-  - Muse: `implementation_map.md`, `compiler_coverage_baseline.md`, `00-README.md`.
-  - Current state: PR #86 remains unmerged; main lacks the final foundation/placement lifecycle hardening.
-  - Owner: `semantic/action_issuance.py`, `semantic/completion_witness.py`, `semantic/release_state.py`, `semantic/resource_conflicts.py`, `ir/model.py`, `emitter/per.py`.
-  - Gate: same-pass visibility proof plus runtime evidence for foundation/placement semantics.
+- [x] Construction lifecycle hardening is on main.
+  - PR #86 was audited and closed as superseded because its emitter/compiler revisions were stale against current main.
+  - Current implementation includes foundation/placement observation, retry barriers, canonical build witnesses, and current diagnostics/tests.
+  - Remaining gate: same-pass visibility proof plus runtime evidence for foundation/placement semantics.
 
 - [x] Close the Strategic Number binding persistence and execution slice.
   - Muse: `compiler_coverage_baseline.md` identifies the SN plane as analysis-safe/emission-open and explicitly calls out inventory, DSL allocation, and emission; `implementation_map.md` assigns request construction to `semantic/analyzer.py`, request collection to `compiler.py:_storage_requests`, and inventory wiring to `runtime_binding.py`; `compiler_undercoverage.md` says the 10k-hit SN corpus justifies catalog + DSL allocation now.
@@ -30,14 +30,16 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 
 ## Tier 1 — largest evidence-backed lowering gaps
 
-- [ ] Escrow/resource-control executable lowering.
+- [~] Escrow/resource-control executable lowering.
+  - PR #94 merged the typed `NativeEscrowReleasePlan`, release-plan validation, registry native arity/type checks, and forwarding through all six public compiler surfaces.
+  - Remaining executable gap: dedicated native binder, engine-semantics mapping, registry promotion, deterministic `release-escrow` emission, source-to-.per fixture, and native zero-findings acceptance.
 - [x] Escrow ownership/order/lifetime semantic gate.
   - Added typed ordered `EscrowOperation` IR plus contract-set ownership validation and execution-order validation.
   - Acceptance coverage: same-rule release-before-consume, reversed ordering, escrow-aware consume, post-release stale consumption, policy-reset cleanup, and hostile owner mismatch/resource contention.
   - Deliberately does not claim native DE same-pass visibility or starvation/handoff runtime proof.
   - Checklist: `LearnerAI/Compiler/MUSE_ESCROW_EXECUTION_CHECKLIST_2026-09-28.md`.
   
-  - Muse: `compiler_undercoverage.md` identifies 10.9k escrow hits as the largest volume gap; `community_knowledge_coverage.md` marks escrow-age-up/commodity escrow/starvation as not lowerable; `native_unknowns.md` keeps gating formula and release/admission order open.
+  - Muse: `compiler_undercoverage.md` identifies 10.9k escrow hits as the largest volume gap. The affordability/resource-view formula and mutation/ownership/lifetime model are now closed in the research repair; same-pass visibility, starvation recovery, and multi-owner handoff remain open runtime questions.
   - Owner: `semantic/resource_conflicts.py`, analyzer/emitter escrow paths, native contracts.
   - Gate: admission, claim, release, starvation/recovery, and hostile competing-owner tests.
 
@@ -47,7 +49,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
   - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
   - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
-  - Full compiler/native verification: compiler regression suite 895 tests OK on the final implementation head; all native-support determinism jobs and the aggregate compiler verification gate pass.
+  - Full compiler/native verification: current mainline compiler regression suite is 915 tests OK; all native-support determinism jobs and the aggregate compiler verification gate pass.
 
 - [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
   - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `native_unknowns.md`; `attack-now` is only 47 corpus hits and the corpus says attack is largely mediated by persistent SN/town-size/group state.
