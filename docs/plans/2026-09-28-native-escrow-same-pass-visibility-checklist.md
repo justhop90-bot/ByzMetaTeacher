@@ -47,9 +47,10 @@
   - `ESCROW_SAME_PASS_POSITIVE`
   - `ESCROW_SAME_PASS_REVERSED`
   - `ESCROW_LATER_PASS_CONTROL`
-- [x] Research status model is fixed to `1 -> 2 -> 3), with `2 -> 2` and `3 -> 3` allowed.
+- [x] Research status model is fixed to `1 -> 2 -> 3`, with `2 -> 2` and `3 -> 3` allowed.
 - [x] Required controller/world-state trace fields are fixed.
 - [x] Terminal failure precedence is fixed.
+- [x] Variant-specific failure classifications are fixed.
 - [x] Ten fresh runs per variant are required for promotion.
 - [x] Same-pass proof is restricted to ordinary research.
 
