@@ -2297,6 +2297,104 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
 
 
+    def test_query_change_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        query = replace(
+            base.duc_search_index_transition("QUERY_CHANGE"),
+            affected_lists=("REMOTE",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                query,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "QUERY_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-find-local", ("c:", "archer", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+
+    def test_filter_change_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        filter_change = replace(
+            base.duc_search_index_transition("FILTER_CHANGE"),
+            affected_lists=("REMOTE",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                filter_change,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "FILTER_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-filter-range", ("0", "100", "0", "100")),
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+
+    def test_focus_player_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        focus_change = replace(
+            base.duc_search_index_transition("FOCUS_PLAYER_CHANGE"),
+            affected_lists=("LOCAL",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                focus_change,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "FOCUS_PLAYER_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                        ("set-strategic-number", ("sn-focus-player-number", "2")),
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 0)
+
     def test_focus_player_change_resets_remote_search_index(self):
         report = analyze_duc((
             _rule(1, (
