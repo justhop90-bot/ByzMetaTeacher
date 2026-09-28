@@ -19,6 +19,7 @@ from ..primitives.native_hygiene import (
 )
 from .community_engine import EvidenceClass
 from .native_controller import (
+    NativeControllerBinding,
     NativeControllerCatalog,
     NativeControlSurfaceKind,
     default_native_controller_catalog,
@@ -400,7 +401,7 @@ class NativeControllerInteractionBinding:
 
 
 def bind_strategic_number_interactions(
-    bindings: tuple[object, ...],
+    bindings: tuple[NativeControllerBinding, ...],
     interaction_catalog: NativeControllerInteractionCatalog | None = None,
 ) -> tuple[NativeControllerInteractionBinding, ...]:
     catalog = interaction_catalog or default_native_controller_interaction_catalog()
