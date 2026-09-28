@@ -148,3 +148,26 @@ Initial controller families seeded from explicit AIRef/community evidence are:
 Strategic Number semantic analysis now records controller bindings for known, explicitly catalogued surfaces. This metadata does not change arithmetic semantics, rule-order semantics, native lowering, or promotion status. Unmapped Strategic Numbers remain outside the controller model rather than being assigned fabricated meaning.
 
 The semantic gap is therefore SUBSTRATE IMPLEMENTED / CONTROLLER CORPUS PARTIAL. The next expansion is command-specific controller interactions, performance/cardinality effects, version/patch behavior, and the remaining DUC and attack state machines.
+
+
+## Native Controller Interaction Semantics implementation status — 2026-09-28
+
+The controller interaction layer is implemented as a separate typed semantic contract over the Native Controller Graph.
+
+Coverage includes:
+
+- typed controller and control-surface endpoints;
+- CONTROLLED_BY, COUPLED_WITH, GATES, FEEDS, FEEDBACK, AUTO_MUTATES, world-state, targeting, placement, allocation, queue-admission, attack-state, override, reassessment, and cost relations;
+- contradiction detection for directional reverse edges;
+- explicit feedback edges excluded from dependency projections;
+- persistent/transient lifetime and same-rule/later-rule/next-pass/runtime visibility;
+- automatic engine mutation ownership distinct from compiler actions;
+- explicit engine-version target scope with fail-closed mismatch rejection;
+- evidence-bearing support state with fail-closed promotion;
+- deterministic ordering/fingerprints;
+- advisory DUC local 0..240 and remote 0..40 cardinality/performance metadata;
+- deterministic inbound/outbound interaction binding on Strategic Number semantic reports.
+
+The seeded interaction corpus remains EVIDENCE_ONLY. It is not an executable native mapping and does not change emitted .per behavior.
+
+The next semantic expansion is DUC SearchSession / TargetSession state, where search generations, retained filters, target provenance, Goal output spans, recurrent eligibility, and cardinality/performance evidence need to converge into one state machine.
