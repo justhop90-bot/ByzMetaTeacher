@@ -1214,6 +1214,7 @@ class RuntimeBinder:
             raise ValueError("duplicate storage request identity")
 
         records: list[BindingRecord] = []
+        strategic_number_metadata: list[StrategicNumberBindingMetadata] = []
         allocated_intervals = list(occupied_intervals) + list(existing_intervals)
 
         for request in ordered:
@@ -1291,8 +1292,25 @@ class RuntimeBinder:
                         )
                 allocated_intervals.append(interval)
             records.append(BindingRecord(request.request_id, binding))
+            if isinstance(request, StrategicNumberRequest):
+                strategic_number_metadata.append(
+                    _strategic_number_binding_metadata(request)
+                )
 
-        return BindingResult(tuple(records))
+        return BindingResult(
+            tuple(records),
+            strategic_number_metadata=tuple(
+                sorted(
+                    strategic_number_metadata,
+                    key=lambda item: (
+                        item.request_id.owner.source_unit,
+                        item.request_id.owner.local_name,
+                        item.request_id.purpose,
+                        item.stability_key,
+                    ),
+                )
+            ),
+        )
 
     def _validate_existing_binding(
         self,
@@ -1340,20 +1358,21 @@ class RuntimeBinder:
                 )
             if binding.role is not request.role:
                 raise ValueError(f"existing binding role mismatch for {request.request_id}")
-            if not request.why_not_goal.strip():
+            if strategic_number_inventory is None:
                 raise ValueError(
-                    f"Strategic Number request {request.request_id} requires WHY_NOT_GOAL justification"
+                    "Strategic Number binding reuse requires an explicit AIRef inventory"
                 )
-            if strategic_number_inventory is not None:
-                if binding.id not in strategic_number_inventory.candidate_ids:
-                    raise ValueError(
-                        f"existing Strategic Number {binding.id} is not approved by inventory "
-                        f"{strategic_number_inventory.inventory_sha}"
-                    )
-                if binding.inventory_sha != strategic_number_inventory.inventory_sha:
-                    raise ValueError(
-                        f"existing Strategic Number {binding.id} provenance inventory mismatch"
-                    )
+            if binding.id not in strategic_number_inventory.candidate_ids:
+                raise ValueError(
+                    f"existing Strategic Number {binding.id} is not approved by inventory "
+                    f"{strategic_number_inventory.inventory_sha}"
+                )
+            if binding.inventory_sha != strategic_number_inventory.inventory_sha:
+                raise ValueError(
+                    f"existing Strategic Number {binding.id} provenance inventory mismatch"
+                )
+            if binding.id == 511:
+                raise ValueError("Strategic Number 511 is not eligible for compiler allocation")
             return
 
         if not isinstance(binding, TimerSlot):
