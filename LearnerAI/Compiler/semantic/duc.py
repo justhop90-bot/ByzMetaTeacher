@@ -457,7 +457,14 @@ def _write_goal_output_span(
     goal_id: int,
     cardinality: DucCardinalityRange,
     provenance: DucProvenance,
+    width: int = 1,
+    minimum_start: int = 1,
+    maximum_start: int = 16000,
 ) -> tuple[DucGoalOutputSpan, tuple[DucGoalOutputSpan, ...]]:
+    if not minimum_start <= goal_id <= maximum_start:
+        raise ValueError(
+            f"DUC Goal output span permits starts {minimum_start}..{maximum_start}, got {goal_id}"
+        )
     previous = next(
         (
             span
@@ -1193,6 +1200,39 @@ def _analyze_duc_linear(
                     )
                     if generation is not None
                 )
+                search_state_span_contract = contracts.goal_span_contract(
+                    "extended-4-goal-span"
+                )
+                output_span = None
+                if len(args) != 1:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-017",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            "up-get-search-state requires exactly one OutputGoalId",
+                            _location(action, rule.source_location),
+                        )
+                    )
+                    continue
+                output_goal_id = _int_or_none(args[0])
+                if output_goal_id is not None:
+                    try:
+                        search_state_span_contract.validate_shape(
+                            output_goal_id,
+                            output_goal_id + search_state_span_contract.width - 1,
+                        )
+                    except ValueError as exc:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-017",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                str(exc),
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
                 if not generations:
                     diagnostics.append(
                         DucDiagnostic(
@@ -1215,11 +1255,51 @@ def _analyze_duc_linear(
                 )
                 local_generation = state.local_list.current_generation
                 remote_generation = state.remote_list.current_generation
+                if output_goal_id is not None:
+                    combined_cardinality = DucCardinalityRange(
+                        (
+                            local_generation.cardinality.minimum
+                            if local_generation
+                            else 0
+                        )
+                        + (
+                            remote_generation.cardinality.minimum
+                            if remote_generation
+                            else 0
+                        ),
+                        (
+                            local_generation.cardinality.maximum
+                            if local_generation
+                            else 0
+                        )
+                        + (
+                            remote_generation.cardinality.maximum
+                            if remote_generation
+                            else 0
+                        ),
+                    )
+                    output_provenance = replace(
+                        provenance,
+                        contract_id=search_state_span_contract.identity,
+                    )
+                    output_span, output_spans = _write_goal_output_span(
+                        state,
+                        goal_id=output_goal_id,
+                        width=search_state_span_contract.width,
+                        minimum_start=search_state_span_contract.minimum_start,
+                        maximum_start=search_state_span_contract.maximum_start,
+                        cardinality=combined_cardinality,
+                        provenance=output_provenance,
+                    )
+                    state = replace(
+                        state,
+                        goal_output_spans=output_spans,
+                    )
                 observations.append(
                     DucSearchStateObservation(
                         DucListKind.LOCAL,
                         local_generation.generation if local_generation else None,
-                        args[0] if args else "",
+                        args[0],
                         (
                             "local_search_count",
                             "local_list_count",
@@ -1252,6 +1332,7 @@ def _analyze_duc_linear(
                             if remote_generation and remote_generation.last_search_cardinality
                             else _zero_cardinality()
                         ),
+                        output_span=output_span,
                     )
                 )
                 rule_reads.add(DucStateKind.LIST)
