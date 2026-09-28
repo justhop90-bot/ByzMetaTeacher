@@ -3666,6 +3666,16 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for target in rule_reports[rule_order].targets
     )
+    target_fact_observations = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].target_fact_observations
+    )
+    target_consumers = tuple(
+        consumer
+        for rule_order in sorted(rule_reports)
+        for consumer in rule_reports[rule_order].target_consumers
+    )
     target_data_observations = tuple(
         observation
         for rule_order in sorted(rule_reports)
@@ -3726,6 +3736,8 @@ def analyze_duc(
         resets=resets,
         mutations=mutations,
         targets=targets,
+        target_fact_observations=target_fact_observations,
+        target_consumers=target_consumers,
         target_data_observations=target_data_observations,
         observations=observations,
         effects=effects,
