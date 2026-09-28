@@ -2099,10 +2099,11 @@ def _join_goal_output_spans(
         )
         maximum = max(span.cardinality.maximum for span in present)
         generation = max(span.generation for span in present)
+        width = max(span.width for span in present)
         merged.append(
             DucGoalOutputSpan(
                 start_goal_id=start,
-                width=1,
+                width=width,
                 generation=generation,
                 overwritten_generation=None,
                 overwritten_provenance=None,
