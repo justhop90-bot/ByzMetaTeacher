@@ -1,7 +1,7 @@
 """Minimal recurrent .per pass scheduler for timer/control-flow semantics."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from ..ast import Expression
@@ -155,6 +155,12 @@ class PassScheduler:
                     )
                 elif head == "set-goal":
                     self._set_goal_action(expression)
+                elif head == "up-modify-goal":
+                    self._apply_goal_mutation(
+                        expression,
+                        rule.rule_order,
+                        action.within_rule_order,
+                    )
                 elif head == "set-strategic-number":
                     self._set_strategic_number_action(expression)
                 elif head == "up-modify-sn":
@@ -273,6 +279,16 @@ class PassScheduler:
             return True
         if head in {"strategic-number", "up-compare-sn"}:
             return self._evaluate_strategic_number_comparison_fact(expression)
+        if head == "up-compare-goal":
+            return self._evaluate_goal_comparison_fact(expression)
+        if head == "up-modify-goal":
+            self._apply_goal_mutation(
+                expression,
+                None,
+                -1,
+                section="GUARD",
+            )
+            return True
         if head == "up-modify-sn":
             self._apply_strategic_number_mutation(
                 expression,
@@ -286,7 +302,7 @@ class PassScheduler:
                 raise SchedulerSemanticError(
                     "goal requires GoalId and expected value"
                 )
-            return self._goals.get(str(expression.args[0]), 0) == self._parse_int(
+            return self._goals.get(str(expression.args[0]), -1) == self._parse_int(
                 expression.args[1],
                 "goal value",
             )
@@ -358,6 +374,31 @@ class PassScheduler:
             "goal value",
         )
 
+    def _apply_goal_mutation(
+        self,
+        expression: Expression,
+        rule_order: int | None,
+        within_rule_order: int,
+        *,
+        section: str = "ACTION",
+    ) -> None:
+        try:
+            mutation = parse_strategic_number_mutation(
+                replace(expression, head="up-modify-sn"),
+                rule_order=rule_order,
+                within_rule_order=within_rule_order,
+                section=section,
+            )
+            result = evaluate_strategic_number_mutation(
+                mutation,
+                current_value=self._goals.get(mutation.target, -1),
+                goals=self._goals,
+                strategic_numbers=self._strategic_numbers,
+            )
+        except StrategicNumberSemanticError as exc:
+            raise SchedulerSemanticError(str(exc)) from exc
+        self._goals[mutation.target] = result
+
     def _set_strategic_number_action(self, expression: Expression) -> None:
         if len(expression.args) != 2:
             raise SchedulerSemanticError(
@@ -392,6 +433,20 @@ class PassScheduler:
         except StrategicNumberSemanticError as exc:
             raise SchedulerSemanticError(str(exc)) from exc
         self._strategic_numbers[mutation.target] = result
+
+    def _evaluate_goal_comparison_fact(self, expression: Expression) -> bool:
+        try:
+            comparison = parse_strategic_number_comparison(
+                replace(expression, head="up-compare-sn")
+            )
+            return evaluate_strategic_number_comparison(
+                comparison,
+                current_value=self._goals.get(comparison.target, -1),
+                goals=self._goals,
+                strategic_numbers=self._strategic_numbers,
+            )
+        except StrategicNumberSemanticError as exc:
+            raise SchedulerSemanticError(str(exc)) from exc
 
     def _evaluate_strategic_number_comparison_fact(self, expression: Expression) -> bool:
         try:
@@ -435,8 +490,34 @@ class PassScheduler:
             raise SchedulerSemanticError(
                 "up-set-timer requires exactly four arguments: typeOp, TimerId, typeOp, and interval"
             )
+        timer_selector = str(expression.args[0]).lower()
+        if timer_selector not in {"c:", "c"}:
+            raise SchedulerSemanticError(
+                "up-set-timer requires a constant TimerId selector in the scheduler model"
+            )
         timer_id = self._timer_id_arg(expression, 1)
-        interval = self._parse_int(expression.args[3], "up-set-timer interval")
+        interval_type = str(expression.args[2]).lower()
+        value = expression.args[3]
+        if interval_type in {"c:", "c"}:
+            interval = self._parse_int(value, "up-set-timer interval")
+        elif interval_type in {"g:", "g"}:
+            goal_id = str(value)
+            if goal_id not in self._goals:
+                raise SchedulerSemanticError(
+                    f"up-set-timer references unknown Goal '{goal_id}'"
+                )
+            interval = self._goals[goal_id]
+        elif interval_type in {"s:", "s"}:
+            sn_id = str(value)
+            if sn_id not in self._strategic_numbers:
+                raise SchedulerSemanticError(
+                    f"up-set-timer references unknown Strategic Number '{sn_id}'"
+                )
+            interval = self._strategic_numbers[sn_id]
+        else:
+            raise SchedulerSemanticError(
+                f"up-set-timer interval typeOp '{interval_type}' is invalid"
+            )
         return timer_id, interval
 
     @staticmethod

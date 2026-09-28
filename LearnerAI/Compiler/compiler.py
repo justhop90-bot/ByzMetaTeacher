@@ -55,6 +55,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
+    from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -102,6 +103,7 @@ else:
     from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
+    from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -141,7 +143,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir):
+def _storage_requests(ir, control_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -151,6 +153,12 @@ def _storage_requests(ir):
             *(state.request for state in demand.strategic_number_states),
         ):
             if request is None or request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
+    if control_plan is not None:
+        for request in control_plan.storage_requests:
+            if request.request_id in seen:
                 continue
             seen.add(request.request_id)
             requests.append(request)
@@ -192,6 +200,7 @@ def _compile_ir_parts(
     base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
+    control_plan=None,
 ):
     reports = []
 
@@ -255,8 +264,14 @@ def _compile_ir_parts(
     if semantic_diagnostics:
         raise _semantic_compile_failure(semantic_diagnostics)
 
+    if control_plan is not None:
+        try:
+            validate_native_control_plan(control_plan, registry)
+        except (TypeError, ValueError) as exc:
+            raise CompileError(f"CONTROL-PLANE-VALIDATION: {exc}") from exc
+
     context = binding_context or BindingContext()
-    storage_requests = _storage_requests(ir)
+    storage_requests = _storage_requests(ir, control_plan)
     if any(
         isinstance(request, StrategicNumberRequest)
         for request in storage_requests
@@ -282,7 +297,11 @@ def _compile_ir_parts(
             registry.validate_demand_lowering(demand, bindings)
     except (KeyError, ValueError) as exc:
         raise CompileError(f"NATIVE-CONTRACT-LOWERING: {exc}") from exc
-    return emit(ir, bindings, registry=registry), bindings, context
+    return (
+        emit(ir, bindings, registry=registry, control_plan=control_plan),
+        bindings,
+        context,
+    )
 
 
 def _parse_source_slices(slices) -> list:
@@ -306,6 +325,7 @@ def _compile_source_parts(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
@@ -315,6 +335,7 @@ def _compile_source_parts(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
 
 
@@ -324,6 +345,7 @@ def _compile_package_parts(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -337,6 +359,7 @@ def _compile_package_parts(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
     return result, bindings, context, graph
 
@@ -349,6 +372,7 @@ def compile_semantic_demands(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -357,6 +381,7 @@ def compile_semantic_demands(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
     return result
 
@@ -394,12 +419,14 @@ def compile_package(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
         request,
         base_goal,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     return result
 
@@ -411,6 +438,7 @@ def compile_source(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
@@ -418,6 +446,7 @@ def compile_source(
         source_unit=source_unit,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     return result
 
@@ -431,6 +460,7 @@ def compile_package_with_report(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> CombinedValidationReport:
     if native_backend is None:
         return backend_failure_report(
@@ -444,6 +474,7 @@ def compile_package_with_report(
             base_goal,
             binding_context=binding_context,
             registry=registry,
+        control_plan=control_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -554,6 +585,7 @@ def compile_source_with_report(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -569,6 +601,7 @@ def compile_source_with_report(
             source_unit=source_unit,
             binding_context=binding_context,
             registry=registry,
+        control_plan=control_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -675,6 +708,7 @@ def compile_to_file(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
@@ -688,6 +722,7 @@ def compile_to_file(
         source_unit=source_unit,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
