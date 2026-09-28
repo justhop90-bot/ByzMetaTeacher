@@ -7,6 +7,7 @@ from Compiler.ir.duc import (
     DucGroupStatus,
     DucListKind,
     DucListMutationKind,
+    DucSearchIndexResetReason,
     DucLoopWidening,
     DucTargetConsumerMode,
     DucTargetDataRelation,
