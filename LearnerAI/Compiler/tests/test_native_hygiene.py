@@ -522,6 +522,7 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:extended-goal-span-4",
                 "airef:goal-id-parameter-range",
                 "airef:build-pass-limit",
+                "airef:duc:can-search",
                 "airef:duc:find-local",
                 "airef:duc:find-status-local",
                 "airef:duc:find-remote",
