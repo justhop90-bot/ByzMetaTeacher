@@ -59,7 +59,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.emitter import emit
     from Compiler.ir import NativeAttackLifecyclePlan, NativeDucPlan
-    from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
+    from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from Compiler.semantic.source_graph_validation import (
@@ -109,7 +109,7 @@ else:
     from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
     from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowReleasePlan
-    from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
+    from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from .semantic.source_graph_validation import (
@@ -157,6 +157,7 @@ def _storage_requests(ir, control_plan=None):
             demand.construction_retry_barrier,
             demand.action.arbitration_request,
             *(state.request for state in demand.strategic_number_states),
+            *(state.request for state in demand.timer_states),
         ):
             if request is None or request.request_id in seen:
                 continue
@@ -306,6 +307,14 @@ def _compile_ir_parts(
                 raise CompileError(
                     f"NATIVE-SN-BINDING: compiler-owned Strategic Number state "
                     f"'{state.name}' did not receive a StrategicNumberSlot"
+                )
+    for demand in ir:
+        for state in demand.timer_states:
+            binding = bindings.binding_for(state.request.request_id)
+            if not isinstance(binding, TimerSlot):
+                raise CompileError(
+                    f"NATIVE-TIMER-BINDING: compiler-owned Timer state "
+                    f"'{state.name}' did not receive a TimerSlot"
                 )
     try:
         for demand in ir:
