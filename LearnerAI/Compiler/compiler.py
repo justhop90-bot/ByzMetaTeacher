@@ -561,6 +561,7 @@ def compile_source_with_report(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -576,6 +577,7 @@ def compile_source_with_report(
             source_unit=source_unit,
             binding_context=binding_context,
             registry=registry,
+            control_plan=control_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
