@@ -376,6 +376,50 @@ class NativeControllerInteractionCatalog:
         return hashlib.sha256(encoded).hexdigest()
 
 
+@dataclass(frozen=True)
+class NativeControllerInteractionBinding:
+    access_identifier: str
+    controller_id: str
+    interaction_id: str
+    relation: NativeControllerInteractionKind
+    status: NativeInteractionSupportState
+    rule_order: int
+    within_rule_order: int
+
+
+def bind_strategic_number_interactions(
+    bindings: tuple[object, ...],
+    interaction_catalog: NativeControllerInteractionCatalog | None = None,
+) -> tuple[NativeControllerInteractionBinding, ...]:
+    catalog = interaction_catalog or default_native_controller_interaction_catalog()
+    output: list[NativeControllerInteractionBinding] = []
+    for binding in bindings:
+        for interaction in catalog.interactions:
+            if interaction.source.kind is NativeInteractionEndpointKind.CONTROLLER and interaction.source.identity == binding.controller_id:
+                output.append(
+                    NativeControllerInteractionBinding(
+                        access_identifier=binding.access_identifier,
+                        controller_id=binding.controller_id,
+                        interaction_id=interaction.identity,
+                        relation=interaction.relation,
+                        status=interaction.status,
+                        rule_order=binding.rule_order,
+                        within_rule_order=binding.within_rule_order,
+                    )
+                )
+    return tuple(
+        sorted(
+            output,
+            key=lambda item: (
+                item.rule_order,
+                item.within_rule_order,
+                item.access_identifier,
+                item.interaction_id,
+            ),
+        )
+    )
+
+
 def _scope(
     *,
     source_families: tuple[AIRefVersionFamily, ...] = (AIRefVersionFamily.DE,),
@@ -668,6 +712,7 @@ def default_native_controller_interaction_catalog(
 
 __all__ = [
     "NativeControllerInteraction",
+    "NativeControllerInteractionBinding",
     "NativeControllerInteractionCatalog",
     "NativeControllerInteractionKind",
     "NativeInteractionCardinality",
@@ -678,4 +723,5 @@ __all__ = [
     "NativeInteractionSupportState",
     "NativeInteractionVisibility",
     "default_native_controller_interaction_catalog",
+    "bind_strategic_number_interactions",
 ]
