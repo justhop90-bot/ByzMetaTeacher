@@ -28,11 +28,15 @@ def _expr(source, head, *args):
     return Expression(source, head, tuple(args))
 
 
-def _attack_rule(identity="attack", order=1, *, facts=(), actions=None, lifecycle=LIFECYCLE):
+def _attack_rule(identity="attack", order=1, *, facts=None, actions=None, lifecycle=LIFECYCLE):
     return NativeAttackRule(
         identity=identity,
         order=order,
-        facts=tuple(facts),
+        facts=(
+            (_expr("(true)", "true"),)
+            if facts is None
+            else tuple(facts)
+        ),
         actions=(
             _expr("(attack-now)", "attack-now")
             if actions is None
@@ -116,7 +120,8 @@ class NativeAttackIrTests(unittest.TestCase):
         plan = NativeAttackLifecyclePlan((first, second))
         self.assertEqual(tuple(rule.identity for rule in plan.rules), ("a", "b"))
         self.assertFalse(plan.empty)
-        self.assertEqual(plan.commands, ("attack-now",))
+        self.assertIn("attack-now", plan.commands)
+        self.assertIn("true", plan.commands)
 
         with self.assertRaisesRegex(ValueError, "deterministic order"):
             NativeAttackLifecyclePlan((second, first))
