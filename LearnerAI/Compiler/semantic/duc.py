@@ -799,6 +799,26 @@ def _mutate_list_generation(
     )
 
 
+def _target_after_filter_generation_change(
+    target: DucTargetState | None,
+    *,
+    next_filter_generation: int,
+) -> DucTargetState | None:
+    if target is None or target.kind is not DucTargetKind.OBJECT:
+        return target
+    if target.source_filter_generation is None:
+        return target
+    if target.source_filter_generation == next_filter_generation:
+        return target
+    if target.validity is DucTargetStatus.STALE:
+        return target
+    return replace(
+        target,
+        validity=DucTargetStatus.UNKNOWN,
+        proof=DucTargetProof.UNKNOWN,
+    )
+
+
 def _target_with_unstable_index(target: DucTargetState) -> DucTargetState:
     return replace(
         target,
@@ -1994,19 +2014,25 @@ def _analyze_duc_linear(
                                 DucSearchIndexResetReason.FILTER_CHANGED,
                             ),
                         )
+                next_filter_generation = state.filters.generation + 1
+                updated_filter_state = DucFilterState(
+                    next_filter_generation,
+                    predicates,
+                    fingerprint,
+                    True,
+                    True,
+                    provenance,
+                    state.filters.path_ambiguous,
+                )
+                target = _target_after_filter_generation_change(
+                    state.target,
+                    next_filter_generation=next_filter_generation,
+                )
                 state = DucSemanticState(
                     local_list,
                     remote_list,
-                    DucFilterState(
-                        state.filters.generation + 1,
-                        predicates,
-                        fingerprint,
-                        True,
-                        True,
-                        provenance,
-                        state.filters.path_ambiguous,
-                    ),
-                    state.target,
+                    updated_filter_state,
+                    target,
                     state.point_target,
                     state_revision,
                     state.pass_id,
