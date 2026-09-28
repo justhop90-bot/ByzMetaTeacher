@@ -52,6 +52,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
         controller = NativeController(
             identity="economy",
             domain=NativeControllerDomain.ECONOMY,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
             status=PracticeStatus.EVIDENCE_ONLY,
             sources=("test",),
             description="duplicate surface owner",
@@ -76,6 +77,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
         controller = NativeController(
             identity="attack",
             domain=NativeControllerDomain.ATTACK,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
             status=PracticeStatus.EVIDENCE_ONLY,
             sources=("test",),
             description="edge owner",
