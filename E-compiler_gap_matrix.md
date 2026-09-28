@@ -49,9 +49,9 @@ GAP: escrow-claim lowering; protected-research pattern catalog; in-progress sign
 
 ## Resource/escrow/arbitration
 native-fact PARTIAL (resource-view formula closed; same-pass release timing OPEN) |
-IR OK for typed escrow contracts + release plan | validator OK | binding OPEN for release slice |
-emitter OPEN for release slice | acceptance OPEN | runtime-evidence MISSING (native escrow timing) |
-tests OK for semantic ownership/order/lifetime + compiler threading | corpus STRONG (10859 hits) |
+IR OK for typed escrow contracts + release plan | validator OK | binding OK for promoted release-only slice |
+emitter OK for promoted release-only slice | acceptance OK (native zero-findings) | runtime-evidence SPECIFIED but MISSING (native escrow timing) |
+tests OK for semantic ownership/order/lifetime + release-only compiler/native acceptance + oracle-spec regression | corpus STRONG (10859 hits) |
 strategy PARTIAL.
 GAP: dedicated release binder/mapping/registry/emitter/fixture; native same-pass timing; starvation/handoff.
 Must NOT become a universal scheduler.
