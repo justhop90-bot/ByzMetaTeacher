@@ -331,8 +331,8 @@ class CompilerTests(unittest.TestCase):
 
         markers = {
             "release": output.find("; Release: castle | COMPLETE -> RELEASED"),
-            "witness": output.find("; Completion witness: castle | PENDING -> COMPLETE"),
-            "pending": output.find("; Pending admission: castle | ISSUED -> PENDING"),
+            "witness": output.find("; Completion witness: castle | PENDING/ISSUED -> COMPLETE"),
+            "pending": output.find("; Pending admission: castle | ISSUED/PENDING -> PENDING"),
             "action": output.find("; Action issuance: castle | ACTIVE -> ISSUED"),
         }
         self.assertTrue(all(index >= 0 for index in markers.values()))
