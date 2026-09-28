@@ -263,8 +263,13 @@ def _validate_leaf(
             argument_index=timer_index,
         )
 
-    effect = registry._native_contracts.get(head)
-    if effect is not None and effect.typed_operand_dependency:
+    if head in {
+        "up-compare-goal",
+        "up-modify-goal",
+        "up-compare-sn",
+        "up-modify-sn",
+        "strategic-number",
+    }:
         _validate_typed_operand(head, expression, states)
 
     if head == "up-jump-rule":
