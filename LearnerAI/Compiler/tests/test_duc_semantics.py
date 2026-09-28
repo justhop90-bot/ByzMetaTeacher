@@ -1585,7 +1585,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertTrue(any(item.code == "DUC-006" for item in second.diagnostics))
 
 
-    def test_add_object_by_id_appends_concrete_id_to_local_list(self):
+    def test_add_object_by_id_invalidates_cardinality_and_fingerprint(self):
         report = analyze_duc((
             _rule(1, (
                 ("up-add-object-by-id", ("search-local", "c:", "93")),
@@ -1599,15 +1599,12 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(mutation.object_data, "93")
         self.assertIsNone(mutation.compare_operator)
         self.assertIsNone(mutation.compare_value)
-        self.assertEqual(
-            report.final_state.local_list.current_generation.cardinality,
-            DucCardinalityRange(1, 1),
-        )
-        self.assertTrue(
-            report.final_state.local_list.current_generation.content_fingerprint
-        )
+        generation = report.final_state.local_list.current_generation
+        self.assertIsNotNone(generation)
+        self.assertIsNone(generation.cardinality)
+        self.assertIsNone(generation.content_fingerprint)
 
-    def test_add_object_by_id_preserves_existing_target_and_search_cursor(self):
+    def test_add_object_by_id_invalidates_existing_list_target_but_preserves_cursor(self):
         report = analyze_duc((
             _rule(1, (
                 ("up-find-local", ("c:", "villager", "c:", "1")),
@@ -1618,15 +1615,29 @@ class DucSemanticTests(unittest.TestCase):
 
         target = report.final_state.target
         self.assertIsNotNone(target)
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
-        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
-        self.assertEqual(target.object_refs[0].list_index, 0)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+        self.assertFalse(target.object_refs[0].index_stable)
         mutation = report.mutations[-1]
-        self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNKNOWN)
+        self.assertTrue(any(item.code == "DUC-007" for item in report.diagnostics))
         self.assertEqual(
             report.final_state.local_list.search_index,
             report.states[-1][1].local_list.search_index,
         )
+
+    def test_add_object_by_id_remote_has_same_unknown_post_state_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-add-object-by-id", ("search-remote", "c:", "93")),
+            )),
+        ))
+
+        generation = report.final_state.remote_list.current_generation
+        self.assertIsNone(generation)
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.list_kind, DucListKind.REMOTE)
+        self.assertEqual(mutation.kind, DucListMutationKind.ADD_OBJECT)
 
     def test_add_object_by_id_rejects_fact_evaluation_when_native_truth_is_unresolved(self):
         location = SourceLocation(1, 1, "fixture.per")
