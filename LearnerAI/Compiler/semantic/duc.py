@@ -1913,6 +1913,12 @@ def _analyze_duc_linear(
                             if remote_generation and remote_generation.last_search_cardinality
                             else _zero_cardinality()
                         ),
+                        local_search_cursor_disposition=(
+                            state.local_list.search_index.cursor_disposition
+                        ),
+                        remote_search_cursor_disposition=(
+                            state.remote_list.search_index.cursor_disposition
+                        ),
                         output_span=output_span,
                     )
                 )
