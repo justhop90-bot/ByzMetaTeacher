@@ -1,7 +1,7 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
 Historical promotion base: `adec462b420f87bc66c2868908058c0e272baf7c`.
-Current verified main: `41861dc8393dabb5a4cac5bb924cd9f6489fefaa`.
+Current verified compiler code SHA: `e9dd1106fbd6255b35e06ef7195826f3998a8576`; current main tip: `053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d`.
 Working state: release-only `release-escrow` lowering remains executable-safe and was re-verified as part of Compiler workflow #2149; broader escrow semantics remain open.
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
@@ -114,7 +114,7 @@ Until that evidence exists, `NATIVE_ESCROW_SAME_PASS_VISIBILITY = OPEN`.
 The promoted command is exactly `release-escrow`, with the native Action signature `(release-escrow <Resource>)` and Resource domain `food|wood|stone|gold`. The compiler emits only the explicitly supplied release operations, grouped deterministically by rule order and preserving within-rule order. It emits no implicit percentage reset, research/build/train action, retry loop, starvation scheduler, or ownership handoff.
 
 Original promotion acceptance: Compiler tests #2036 / Actions run `36481020162` on `adec462b420f87bc66c2868908058c0e272baf7c` passed the release-only native gate and full regression.
-Current re-verification: Compiler workflow #2149 / Actions run `36497398646` at code SHA `e9dd1106fbd6255b35e06ef7195826f3998a8576` passed the escrow-release native zero-findings step, full 963-test compiler regression, all 9 native-support determinism jobs, aggregate snapshot comparison, and the compiler verification gate. This newer run is the authoritative current verification record.
+Current re-verification: Compiler workflow #2158 / Actions run `36499275902` at main tip `053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d` passed the escrow-release native zero-findings step, full 974-test compiler regression, all 9 native-support determinism jobs, aggregate snapshot comparison, and the compiler verification gate. This is the authoritative current verification record.
 
 ## Non-goals
 
