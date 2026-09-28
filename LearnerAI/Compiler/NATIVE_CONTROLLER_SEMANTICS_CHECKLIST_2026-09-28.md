@@ -7,7 +7,7 @@ This tranche cross-references the largest remaining semantic hole identified in 
 
 The compiler already models native state lifetime, recurrent rule execution, lifecycle causality, source reachability, capability/dependency semantics, and substantial DUC state. The missing layer was the relationship between those state surfaces and the larger native controllers they steer.
 
-This document is a boundary record, not a claim that every Strategic Number has been reverse-engineered.
+This document is a boundary record, not a claim that every Strategic Number has been reverse-engineered. The interaction layer now records causal direction, endpoint type, lifetime, visibility, automatic mutation ownership, engine-version scope, and advisory performance/cardinality metadata.
 
 ## Community cross-reference
 
@@ -43,11 +43,26 @@ Sources:
 - [x] Self-interaction rejection.
 - [x] Fail-closed executable-surface gate.
 - [x] Native control surfaces remain evidence-only until a controller and surface both have contractual engine facts.
-- [x] Six initial controller families seeded from explicit community/native references.
-- [x] Representative Strategic Number and command surfaces seeded.
+- [x] Nine controller families seeded from explicit community/native references.
+- [x] Representative Strategic Number, command, DUC target, production-admission, and research-admission surfaces seeded.
 - [x] Strategic Number semantic analysis emits deterministic controller binding metadata without changing arithmetic or lowering.
 - [x] Unmapped Strategic Numbers remain valid semantic/native state without fabricated controller claims.
 - [x] Deterministic controller fingerprinting.
+- [x] Typed controller-to-controller and surface-to-controller interaction contract.
+- [x] Directed interaction validation with contradiction rejection.
+- [x] Feedback relations excluded from dependency edges.
+- [x] Explicit interaction lifetime and pass-visibility semantics.
+- [x] Explicit engine-version scope and fail-closed scope mismatch validation.
+- [x] Explicit mutation ownership distinguishing automatic engine mutation from compiler action.
+- [x] Evidence-only interaction status preserved until native mapping is justified.
+- [x] DUC local/remote cardinality and advisory performance metadata recorded.
+- [x] Strategic Number report carries deterministic inbound/outbound interaction bindings.
+
+## Native Controller Interaction Semantics
+
+The interaction substrate is implemented in `semantic/native_controller_interactions.py`. It is intentionally descriptive and does not alter `.per` lowering. The seeded corpus covers attack-group gating by exploration, town-size effects on attack targeting, civilian-allocation/resource-escrow coupling, escrow-aware production/research admission, DUC search-to-target handoff, and documented automatic DUC search-index resets caused by filter changes. The DUC search interactions carry explicit local/remote cardinality bounds of 240/40 and qualitative performance classes derived from AIRef benchmarks.
+
+All seeded relationships remain `EVIDENCE_ONLY`. No interaction has been promoted to `ENGINE_SEMANTICS_MAPPED` merely because community practice is strong. Interaction version scope must cover the target DE family, feedback relations are non-dependency edges, and automatic mutations require explicit `ENGINE_AUTOMATIC` ownership.
 
 ## Deliberately not claimed
 
