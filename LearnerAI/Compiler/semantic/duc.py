@@ -42,6 +42,8 @@ from ..ir.duc import (
     DucSearchOperation,
     DucSearchCursorDisposition,
     DucSearchFactResult,
+    DucSearchAvailabilityObservation,
+    DucSearchAvailabilityResult,
     DucSearchIndexResetReason,
     DucSearchIndexState,
     DucSearchResultDisposition,
@@ -100,6 +102,7 @@ FILTER_COMMANDS = frozenset({
     "up-filter-status",
 })
 SEARCH_STATE_COMMAND = "up-get-search-state"
+SEARCH_AVAILABILITY_COMMAND = "up-can-search"
 SET_OBJECT_TARGET = "up-set-target-object"
 SET_OBJECT_ID_TARGET = "up-set-target-by-id"
 SET_POINT_TARGET = "up-set-target-point"
@@ -1437,6 +1440,88 @@ def _analyze_target_object_fact(
     )
 
 
+def _analyze_search_availability(
+    state: DucSemanticState,
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    args: tuple[str, ...],
+    contract,
+    state_revision: int,
+) -> tuple[DucSearchAvailabilityObservation | None, tuple[DucDiagnostic, ...]]:
+    if len(args) != 1:
+        return (
+            None,
+            (
+                DucDiagnostic(
+                    "DUC-005",
+                    DiagnosticSeverity.ERROR.value,
+                    rule.rule_order,
+                    "up-can-search requires exactly one SearchSource",
+                    _location(action, rule.source_location),
+                ),
+            ),
+        )
+
+    source = (
+        DucListKind.LOCAL
+        if args[0] == "search-local"
+        else DucListKind.REMOTE
+        if args[0] == "search-remote"
+        else None
+    )
+    if source is None or source.value not in contract.list_kinds:
+        return (
+            None,
+            (
+                DucDiagnostic(
+                    "DUC-005",
+                    DiagnosticSeverity.ERROR.value,
+                    rule.rule_order,
+                    "up-can-search requires search-local or search-remote",
+                    _location(action, rule.source_location),
+                ),
+            ),
+        )
+
+    current = state.local_list if source is DucListKind.LOCAL else state.remote_list
+    generation = current.current_generation
+    provenance = _provenance(
+        rule,
+        action,
+        visibility=DucVisibility.SAME_RULE,
+        state_revision=state_revision,
+        pass_id=state.pass_id,
+        inputs=(
+            generation.generation if generation is not None else -1,
+            current.search_index.generation,
+        ),
+        contract_id="duc.search.availability",
+        evidence_ids=contract.evidence_ids,
+    )
+    disposition = current.search_index.cursor_disposition
+    result = (
+        DucSearchAvailabilityResult.GUARANTEED_FALSE
+        if disposition in {
+            DucSearchCursorDisposition.AT_END,
+            DucSearchCursorDisposition.BLOCKED_BY_CAPACITY,
+        }
+        else DucSearchAvailabilityResult.RUNTIME_DEPENDENT
+    )
+    return (
+        DucSearchAvailabilityObservation(
+            command=SEARCH_AVAILABILITY_COMMAND,
+            source_list=source,
+            result=result,
+            cursor_disposition=disposition,
+            list_initialized=current.initialized,
+            cardinality=generation.cardinality if generation is not None else None,
+            provenance=provenance,
+        ),
+        (),
+    )
+
+
 def _analyze_duc_linear(
     rules: tuple[EffectiveRule, ...],
     contracts: NativeContractCatalog | None = None,
@@ -1454,6 +1539,7 @@ def _analyze_duc_linear(
     group_observations: list[DucGroupSizeObservation] = []
     targets: list[DucTargetState] = []
     target_fact_observations: list[DucTargetFactObservation] = []
+    search_availability: list[DucSearchAvailabilityObservation] = []
     target_consumers: list[DucTargetConsumerEffect] = []
     target_data_observations: list[DucTargetDataObservation] = []
     observations: list[DucSearchStateObservation] = []
@@ -1537,6 +1623,22 @@ def _analyze_duc_linear(
                         rule_reads.add(DucStateKind.FILTER)
                 continue
 
+            search_availability_contract = contracts.duc_search_availability(fact.head)
+            if search_availability_contract is not None:
+                availability_observation, availability_diagnostics = _analyze_search_availability(
+                    state,
+                    rule=rule,
+                    action=fact_action,
+                    args=fact_args,
+                    contract=search_availability_contract,
+                    state_revision=state_revision,
+                )
+                diagnostics.extend(availability_diagnostics)
+                if availability_observation is not None:
+                    search_availability.append(availability_observation)
+                    rule_reads.add(DucStateKind.LIST)
+                continue
+
             fact_search_contract = contracts.duc_search(fact.head)
             if fact_search_contract is not None:
                 try:
@@ -1586,6 +1688,7 @@ def _analyze_duc_linear(
                 )
                 continue
 
+            search_availability_contract = contracts.duc_search_availability(command)
             search_contract = contracts.duc_search(command)
             filter_contract = contracts.duc_filter(command)
             reset_contract = contracts.duc_reset(command)
@@ -1593,6 +1696,18 @@ def _analyze_duc_linear(
             target_data_contract = contracts.duc_target_data_contract(command)
             target_consumer_contract = contracts.duc_target_consumer(command)
             group_contract = contracts.duc_group(command)
+
+            if search_availability_contract is not None:
+                diagnostics.append(
+                    DucDiagnostic(
+                        "DUC-005",
+                        DiagnosticSeverity.ERROR.value,
+                        rule.rule_order,
+                        "up-can-search is a Fact and cannot execute as an Action",
+                        _location(action, rule.source_location),
+                    )
+                )
+                continue
 
             if target_data_contract is not None:
                 (
@@ -2980,6 +3095,7 @@ def _analyze_duc_linear(
         mutations=tuple(mutations),
         targets=tuple(targets),
         target_fact_observations=tuple(target_fact_observations),
+        search_availability=tuple(search_availability),
         target_consumers=tuple(target_consumers),
         target_data_observations=tuple(target_data_observations),
         observations=tuple(observations),
@@ -3824,6 +3940,11 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for observation in rule_reports[rule_order].target_fact_observations
     )
+    search_availability = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].search_availability
+    )
     target_consumers = tuple(
         consumer
         for rule_order in sorted(rule_reports)
@@ -3890,6 +4011,7 @@ def analyze_duc(
         mutations=mutations,
         targets=targets,
         target_fact_observations=target_fact_observations,
+        search_availability=search_availability,
         target_consumers=target_consumers,
         target_data_observations=target_data_observations,
         observations=observations,
