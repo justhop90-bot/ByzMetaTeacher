@@ -1588,6 +1588,7 @@ class DucSemanticTests(unittest.TestCase):
     def test_add_object_by_id_invalidates_cardinality_and_fingerprint(self):
         report = analyze_duc((
             _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
                 ("up-add-object-by-id", ("search-local", "c:", "93")),
             )),
         ))
