@@ -48,6 +48,144 @@ Status legend: `[x]` verified; `[~]` partially implemented but not fully connect
 - [ ] [UNFINISHED] Add order-sensitive emitter regression coverage asserting COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY > ACTION ISSUANCE and explicitly testing same-pass Goal visibility.
 - [ ] [x] Keep `up-build`, builder allocation, controlled placement policy, and `up-reset-placement` as the next execution-control surface; do not silently invent them in the phase-observation tranche.
 
+## Acceptance criteria and verification commands for open construction items
+
+### 1. Native `ObjectId` typing/binding
+
+Status may change from `[ ] [BLOCKED]` to `[x]` only when all of the following are true:
+- The semantic/native binding path represents `up-pending-objects` `ObjectId` and `up-pending-placement` `BuildingId` as the correct native object domain, rather than emitting unresolved symbolic names directly into `c:` operands.
+- A build target such as `castle` has one deterministic canonical native representation in the emitted `.per`, and the pinned native parser accepts it without `undefined-constant`, operand-domain, or parameter-shape findings.
+- The same canonicalization path is used by both construction Facts.
+- A negative fixture proves that an unresolved or wrong-domain identifier fails closed during semantic validation.
+
+Local verification:
+
+```text
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "Construction"
+python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/construction-lifecycle.per --report /tmp/native-reports/construction-lifecycle.json
+```
+
+Expected evidence: zero focused-test failures; `finding_count: 0`; `findings: []`; no `undefined-constant` findings.
+
+CI closure evidence:
+- `Compiler tests + native zero-findings` is SUCCESS.
+- `native-reports/construction-lifecycle.json` exists in the `native-validation-evidence` artifact and contains zero findings.
+- `compiler-verification-log` exists and is green.
+- `Compare native-support snapshots` is SUCCESS.
+- `Compiler verification gate` reports PASSED.
+
+### 2. Canonical build-completion witness enforcement
+
+Status may change from `[ ] [UNFINISHED]` to `[x]` only when semantic analysis rejects any `build B` demand whose completion witness is not the canonical completed-world-state observation for the same `B`.
+
+Required acceptance cases:
+- Valid: `action (build castle)` with `witness (building-type-count castle > 0)`.
+- Invalid target: `action (build castle)` with `witness (building-type-count town-center > 0)`.
+- Invalid witness family: a unit-count or research-status witness.
+- Invalid shape: a witness that cannot establish completed presence of the requested building type.
+- Emission uses the canonical build witness derived from the build target, not an arbitrary client witness.
+
+Local verification:
+
+```text
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "Construction"
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
+```
+
+Expected evidence: explicit accept/reject coverage for all four invalid/valid categories and zero full-suite failures.
+
+CI closure evidence:
+- Construction acceptance/rejection cases are present in `compiler-verification-log`.
+- Generic train/research lifecycle tests remain green.
+- Construction native zero-findings remains zero.
+- Verification gate SUCCESS.
+
+### 3. Transition-model wiring
+
+Status may change from `[ ] [FUNCTIONALLY-DISCONNECTED]` to `[x]` only when the typed transition model is the single executable semantic source for construction transitions.
+
+Acceptance criteria:
+- `transition_construction()` or a replacement shared transition representation is invoked by the semantic lowering path that produces construction lifecycle rules.
+- The emitter no longer independently redefines the construction state machine.
+- Changing the canonical transition table/order changes the emitted construction rule plan through the shared path.
+- Tests prove parity between semantic transition states and emitted rules for COMPLETE, FOUNDATION_PENDING, PLACEMENT_PENDING, and RETRY.
+
+Local verification:
+
+```text
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "ConstructionTransition"
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "Construction"
+```
+
+Expected evidence: an integration test that exercises lowering, not merely unit coverage of the pure transition function.
+
+CI closure evidence:
+- Construction transition integration tests execute in the normal compiler regression suite.
+- Static review shows no duplicated construction transition implementation in the emitter.
+- Construction native fixture passes zero-findings.
+- Cross-platform native-support determinism remains SUCCESS.
+- Verification gate SUCCESS.
+
+### 4. Same-pass retry behavior
+
+Status may change from `[ ] [OPEN-LOOP]` to `[x]` only after the compiler explicitly chooses and enforces one native rule-pass contract.
+
+Preferred closure contract:
+- RETRY may restore the demand to `ACTIVE`, but the same pass must not subsequently issue the build again.
+- The next legal build issuance occurs only on a later rule pass.
+- The implementation uses existing engine-native rule ordering/state behavior, not a new scheduler or synthetic retry counter.
+
+Required acceptance cases:
+- PENDING plus no completion plus no pending foundation plus no pending placement causes exactly one transition to ACTIVE.
+- The same pass cannot execute `build B` after that retry transition.
+- The next pass may execute `build B` when all admission guards are true.
+- PLACEMENT_PENDING and FOUNDATION_PENDING never fall through into same-pass reissue.
+- Retry preserves demand identity, strategic binding, target, resource-control binding, and witness identity.
+
+Local verification:
+
+```text
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "Construction"
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "RuleExecutionSemantics"
+```
+
+Expected evidence: an actual same-pass Goal-visibility regression, not merely emitted-string inspection.
+
+CI closure evidence:
+- Focused rule-execution suite passes.
+- Construction regression logs show explicit same-pass retry coverage.
+- The emitted fixture plus execution-model test prove no RETRY -> ACTIVE -> BUILD execution within one simulated pass.
+- Native zero-findings remains zero.
+- Full verification gate SUCCESS.
+
+### 5. Order-sensitive emitter regression tests
+
+Status may change from `[ ] [UNFINISHED]` to `[x]` only when emitted construction rules have an explicit tested order tied to the chosen same-pass retry contract.
+
+Acceptance criteria:
+- Invalidation is emitted before construction observation rules.
+- COMPLETE cannot be shadowed by FOUNDATION_PENDING or PLACEMENT_PENDING when the completion witness is true.
+- FOUNDATION_PENDING precedes PLACEMENT_PENDING.
+- RETRY is ordered consistently with the selected same-pass policy; the test must not assume RETRY-before-ISSUANCE is safe when same-pass Goal writes are visible.
+- ACTION ISSUANCE is positioned so unintended same-pass reissue is impossible under the selected policy.
+- The test checks exact rule ordering, not merely the presence of comments or substrings.
+- No generic `ISSUED -> PENDING` rule exists for a build demand.
+
+Local verification:
+
+```text
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py" -k "Construction"
+python -m unittest discover -s LearnerAI/Compiler/tests -p "test_*.py"
+```
+
+Expected evidence: an order-sensitive regression fails when rule order is perturbed and passes only with the selected ordering.
+
+CI closure evidence:
+- Order-sensitive construction tests pass in `compiler-verification-log`.
+- `assert_generated_fixture_reproducible.py` passes for the checked-in generated fixture.
+- Construction native zero-findings reports zero findings.
+- All nine native-support determinism jobs and the snapshot comparison pass.
+- Final verification gate reports SUCCESS.
 ## Explicit non-goals
 
 - [x] Do not model a numeric construction-progress percentage; current documented ObjectData progress values describe training/research, not generic building construction.
