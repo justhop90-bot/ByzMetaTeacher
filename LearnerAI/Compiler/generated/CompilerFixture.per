@@ -53,25 +53,63 @@
     (set-goal demand-castle 0)
 )
 
-; Completion witness: castle | PENDING -> COMPLETE
+; Construction observation: castle
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
-    (goal demand-castle 42)
+    (or
+        (goal demand-castle 44)
+        (goal demand-castle 42)
+    )
     (building-type-count castle > 0)
 =>
     (set-goal demand-castle 43)
 )
 
-; Pending admission: castle | ISSUED -> PENDING
+; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING
 (defrule
-    (goal demand-castle 44)
+    (or
+        (goal demand-castle 44)
+        (goal demand-castle 42)
+    )
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle >= 1)
 =>
     (set-goal demand-castle 42)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle 44)
+        (goal demand-castle 42)
+    )
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (up-pending-placement c: castle)
+=>
+    (set-goal demand-castle 42)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle 44)
+        (goal demand-castle 42)
+    )
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
+=>
+    (set-goal demand-castle 1)
 )
 
 ; Action issuance: castle | ACTIVE -> ISSUED
 (defrule
     (goal demand-castle 1)
     (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
     (not (building-type-count castle > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle)
