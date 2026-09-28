@@ -112,26 +112,21 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(report.final_state.target)
 
     def test_failed_target_action_preserves_existing_target_when_native_effect_is_open(self):
-        first = analyze_duc((
+        report = analyze_duc((
             _rule(1, (
                 ("up-find-local", ("c:", "villager", "c:", "1")),
                 ("up-set-target-object", ("search-local", "c:", "0")),
-            )),
-        ))
-        second = analyze_duc((
-            _rule(1, (
                 ("up-set-target-object", ("search-local", "c:", "240")),
             )),
-        ), initial_state=first.next_pass_state)
+        ))
 
-        self.assertIsNotNone(second.final_state.target)
-        self.assertEqual(second.final_state.target.validity, DucTargetStatus.VALID)
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
         self.assertTrue(any(
             item.code == "DUC-007"
             and "failed target establishment Action" in item.message
-            for item in second.diagnostics
+            for item in report.diagnostics
         ))
-
 
     def test_duc_state_effects_ignore_rule_that_recurrent_analysis_proves_never_runnable(self):
         rules = (
