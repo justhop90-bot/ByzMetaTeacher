@@ -548,8 +548,14 @@ def _prepare_search_index_for_query(
             DucSearchIndexResetReason.QUERY_CHANGED,
         )
         reset_reason = DucSearchIndexResetReason.QUERY_CHANGED
-    index_before = prepared.offset
     cursor_before = prepared.cursor_disposition
+    if cursor_before is DucSearchCursorDisposition.RESET_START and prepared.offset != 0:
+        prepared = replace(
+            prepared,
+            offset=0,
+            known=True,
+        )
+    index_before = prepared.offset
     after_search = replace(
         prepared,
         query_signature=query_signature,
