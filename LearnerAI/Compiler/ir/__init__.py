@@ -216,3 +216,5 @@ from .construction import (
 )
 
 from .production import ProductionLifecycle
+
+from .research import ResearchLifecycle
