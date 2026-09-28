@@ -62,6 +62,20 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_failed_target_action_on_uninitialized_search_list_does_not_establish_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "no initialized search list" in item.message
+            for item in report.diagnostics
+        ))
+
     def test_set_target_object_fact_records_runtime_dependent_result_without_fabricating_target(self):
         location = SourceLocation(1, 1, "fixture.per")
         find_fact = Expression(
