@@ -224,6 +224,7 @@ _OBSERVATION_SPECS = (
     ("game-time", "observation.timing.game-time"),
     ("dropsite-min-distance", "observation.placement.dropsite-distance"),
     ("unit-type-count", "observation.unit.count"),
+    ("up-research-status", "observation.research.status"),
 )
 
 _ADMISSIBILITY_SPECS = (
