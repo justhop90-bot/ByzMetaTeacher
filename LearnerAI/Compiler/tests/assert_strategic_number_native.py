@@ -15,18 +15,7 @@ from Compiler.primitives.strategic_number_catalog import (
     default_strategic_number_catalog,
 )
 
-SOURCE = """
-demand strategic-posture {
-    sn posture = 3
-    sn secondary-posture = 7
-    require (up-compare-sn posture >= 1)
-    require (up-compare-sn secondary-posture >= 0)
-    require (can-build castle)
-    action (build castle)
-    witness (building-type-count castle > 0)
-    release (building-type-count castle > 0)
-}
-""".strip() + "\n"
+FIXTURE = Path(__file__).parent / "fixtures" / "strategic_number.perdsl"
 
 
 def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
@@ -74,6 +63,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
+    SOURCE = FIXTURE.read_text(encoding="utf-8")
     first = compile_source(SOURCE)
     second = compile_source(SOURCE)
     if first != second:
