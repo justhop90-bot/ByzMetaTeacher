@@ -486,6 +486,7 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:duc:clean-search",
                 "airef:duc:remove-objects",
                 "airef:duc:set-target-by-id",
+                "airef:duc:target-objects",
                 "airef:duc:set-target-object",
                 "airef:duc:set-target-point",
                 "airef:duc:get-search-state",
