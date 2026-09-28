@@ -31,6 +31,12 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 ## Tier 1 — largest evidence-backed lowering gaps
 
 - [ ] Escrow/resource-control executable lowering.
+- [x] Escrow ownership/order/lifetime semantic gate.
+  - Added typed ordered `EscrowOperation` IR plus contract-set ownership validation and execution-order validation.
+  - Acceptance coverage: same-rule release-before-consume, reversed ordering, escrow-aware consume, post-release stale consumption, policy-reset cleanup, and hostile owner mismatch/resource contention.
+  - Deliberately does not claim native DE same-pass visibility or starvation/handoff runtime proof.
+  - Checklist: `LearnerAI/Compiler/MUSE_ESCROW_EXECUTION_CHECKLIST_2026-09-28.md`.
+  
   - Muse: `compiler_undercoverage.md` identifies 10.9k escrow hits as the largest volume gap; `community_knowledge_coverage.md` marks escrow-age-up/commodity escrow/starvation as not lowerable; `native_unknowns.md` keeps gating formula and release/admission order open.
   - Owner: `semantic/resource_conflicts.py`, analyzer/emitter escrow paths, native contracts.
   - Gate: admission, claim, release, starvation/recovery, and hostile competing-owner tests.
