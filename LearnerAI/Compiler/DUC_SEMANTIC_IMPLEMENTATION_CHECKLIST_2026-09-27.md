@@ -209,6 +209,27 @@ Primary tests:
 - `LearnerAI/Compiler/tests/test_native_contract_integration.py`
 - `LearnerAI/Compiler/tests/test_native_hygiene.py`
 
+## Vertical slice L: focus-player search-index lifecycle
+
+- [x] Track the native `sn-focus-player-number` default of 0 in remote DUC search-index state.
+- [x] Track focus-player signature and mutation provenance.
+- [x] Reset the remote search index with `FOCUS_PLAYER_CHANGED` when the focus player changes.
+- [x] Reuse Strategic Number mutation semantics for constant `up-modify-sn` forms.
+- [x] Keep dynamic Goal/SN-derived focus identity UNKNOWN.
+- [x] Preserve focus context across pass advancement.
+- [x] Preserve LOCAL search-index state across focus-player changes.
+- [x] Add hostile regressions for same-rule sequencing, unchanged assignments, constant/dynamic mutations, cross-pass persistence, and branch ambiguity.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+
+Primary tests:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+
+Native evidence:
+- UserPatch 20130305 documents focus-player changes as remote search-index reset boundaries.
+- UserPatch 20110723 documents `sn-focus-player-number` as the `focus-player` source.
 ## Integration order
 
 1. [x] Create typed DUC IR.
