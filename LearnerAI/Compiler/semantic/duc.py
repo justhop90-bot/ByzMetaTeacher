@@ -2436,22 +2436,22 @@ def _join_states(
     )
     fields: list[str] = []
     if any(
-        _state_key(state)[1] != _state_key(variants[0])[1]
+        _list_semantic_key(state.local_list) != _list_semantic_key(variants[0].local_list)
         for state in variants[1:]
     ):
         fields.append("LOCAL_LIST")
     if any(
-        _state_key(state)[2] != _state_key(variants[0])[2]
+        _list_semantic_key(state.remote_list) != _list_semantic_key(variants[0].remote_list)
         for state in variants[1:]
     ):
         fields.append("REMOTE_LIST")
     if any(
-        _state_key(state)[3] != _state_key(variants[0])[3]
+        _filter_key(state.filters) != _filter_key(variants[0].filters)
         for state in variants[1:]
     ):
         fields.append("FILTERS")
     if any(
-        _state_key(state)[4] != _state_key(variants[0])[4]
+        _target_key(state.target) != _target_key(variants[0].target)
         for state in variants[1:]
     ):
         fields.append("TARGET")
