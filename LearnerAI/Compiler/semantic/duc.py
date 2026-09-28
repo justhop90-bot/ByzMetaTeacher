@@ -84,6 +84,7 @@ FILTER_COMMANDS = frozenset({
 })
 SEARCH_STATE_COMMAND = "up-get-search-state"
 SET_OBJECT_TARGET = "up-set-target-object"
+SET_OBJECT_ID_TARGET = "up-set-target-by-id"
 SET_POINT_TARGET = "up-set-target-point"
 OBJECT_TARGET_CONSUMERS = frozenset({"up-target-objects"})
 POINT_TARGET_CONSUMERS = frozenset({"up-target-point"})
@@ -1446,6 +1447,105 @@ def _analyze_duc_linear(
                 continue
 
             if target_contract is not None:
+                if target_contract.identity_kind == "NATIVE_ID":
+                    if len(args) != 2:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-005",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-set-target-by-id requires typeOp and Id",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
+                    type_op, object_id_operand = args
+                    if type_op not in {"c:", "g:", "s:"}:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-005",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-set-target-by-id requires typeOp c:, g:, or s:",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
+                    native_object_id = None
+                    numeric_id = _int_or_none(object_id_operand)
+                    if type_op == "c:" and numeric_id is not None:
+                        if numeric_id < 0:
+                            diagnostics.append(
+                                DucDiagnostic(
+                                    "DUC-005",
+                                    DiagnosticSeverity.ERROR.value,
+                                    rule.rule_order,
+                                    "up-set-target-by-id Id must be non-negative",
+                                    _location(action, rule.source_location),
+                                )
+                            )
+                            continue
+                        native_object_id = str(numeric_id)
+                    elif type_op == "c:" and object_id_operand.lstrip("-").isdigit() and numeric_id is not None:
+                        if numeric_id < 0:
+                            diagnostics.append(
+                                DucDiagnostic(
+                                    "DUC-005",
+                                    DiagnosticSeverity.ERROR.value,
+                                    rule.rule_order,
+                                    "up-set-target-by-id Id must be non-negative",
+                                    _location(action, rule.source_location),
+                                )
+                            )
+                            continue
+
+                    provenance = _provenance(
+                        rule,
+                        action,
+                        visibility=DucVisibility.SAME_RULE,
+                        state_revision=state_revision,
+                        pass_id=state.pass_id,
+                        contract_id="duc.target.object-id",
+                        evidence_ids=target_contract.evidence_ids,
+                    )
+                    target = DucTargetState(
+                        kind=DucTargetKind.OBJECT,
+                        generation=state_revision,
+                        object_refs=(
+                            DucObjectRef(
+                                None,
+                                None,
+                                None,
+                                native_object_id,
+                                provenance,
+                            ),
+                        ),
+                        source_list_generation=None,
+                        source_filter_generation=None,
+                        provenance=provenance,
+                        validity=DucTargetStatus.UNKNOWN,
+                        pass_id=state.pass_id,
+                        proof=(
+                            DucTargetProof.NATIVE_ID_PROOF
+                            if native_object_id is not None
+                            else DucTargetProof.UNKNOWN
+                        ),
+                    )
+                    state = DucSemanticState(
+                        state.local_list,
+                        state.remote_list,
+                        state.filters,
+                        target,
+                        state.point_target,
+                        state_revision,
+                        state.pass_id,
+                        groups=state.groups,
+                        goal_output_spans=state.goal_output_spans,
+                    )
+                    targets.append(target)
+                    rule_writes.add(DucStateKind.TARGET)
+                    continue
+
                 if command == SET_OBJECT_TARGET:
                     if len(args) != 3:
                         diagnostics.append(
@@ -1736,6 +1836,8 @@ def _analyze_duc_linear(
                         "up-target-objects consumes an object target retained across a pass "
                         "without a current-pass re-establishment; target lifetime is unknown"
                         if target.proof is DucTargetProof.SYNTACTIC_RETENTION
+                        else "up-target-objects has a concrete native object identity, but runtime target liveness is unverified"
+                        if target.proof is DucTargetProof.NATIVE_ID_PROOF
                         else "up-target-objects consumes an object target whose source-list identity is no longer provable"
                     )
                     diagnostics.append(
@@ -2089,6 +2191,31 @@ def _join_filters(states: tuple[DucFilterState, ...]) -> DucFilterState:
 
 def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState | None:
     first = states[0]
+
+    direct_id_targets = tuple(
+        state
+        for state in states
+        if (
+            state is not None
+            and state.kind is DucTargetKind.OBJECT
+            and len(state.object_refs) == 1
+            and state.object_refs[0].list_kind is None
+            and state.object_refs[0].native_object_id is not None
+        )
+    )
+    if len(direct_id_targets) == len(states) and direct_id_targets:
+        native_ids = {
+            state.object_refs[0].native_object_id
+            for state in direct_id_targets
+        }
+        if len(native_ids) == 1:
+            representative = direct_id_targets[0]
+            return replace(
+                representative,
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.NATIVE_ID_PROOF,
+            )
+
     if all(_target_key(state) == _target_key(first) for state in states):
         if first is None:
             return None
@@ -2107,8 +2234,21 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
     representatives = [state for state in states if state is not None]
     if not representatives:
         return None
+    representative = representatives[0]
+    if (
+        representative.kind is DucTargetKind.OBJECT
+        and representative.object_refs
+        and representative.object_refs[0].list_kind is None
+    ):
+        representative = replace(
+            representative,
+            object_refs=tuple(
+                replace(ref, native_object_id=None)
+                for ref in representative.object_refs
+            ),
+        )
     return replace(
-        representatives[0],
+        representative,
         validity=DucTargetStatus.UNKNOWN,
         proof=DucTargetProof.UNKNOWN,
     )
