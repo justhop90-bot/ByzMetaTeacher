@@ -154,6 +154,10 @@ jobs:
         run: |
           python LearnerAI/Compiler/tests/assert_duc_native.py             --output /tmp/duc-binder-emission.per             --report /tmp/native-reports/duc-binder-emission.json
 
+      - name: Native zero-findings acceptance - attack lifecycle fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_attack_native.py             --output /tmp/attack-lifecycle.per             --report /tmp/native-reports/attack-lifecycle.json
+
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -188,6 +192,7 @@ jobs:
             /tmp/construction-lifecycle.per
             /tmp/strategic-number.per
             /tmp/duc-binder-emission.per
+            /tmp/attack-lifecycle.per
           if-no-files-found: warn
           retention-days: 14
 
