@@ -45,7 +45,7 @@ Base: main at eef52a4c0fc302864c577879eb801ae78d218050
 ## Verification
 
 - [x] Observed real red phase in focused workflow run `36369718073`: Option 0 incorrectly emitted `DUC-005`.
-- [ ] Focused DUC tests pass after implementation.
+- [x] Focused target-consumer suite passed, including Option 0/1, direct-ID liveness boundary, and both previously hanging loop-widening cases.
 - [ ] Full compiler test suite passes.
 - [ ] Native zero-findings acceptance passes.
 - [ ] All 9 native-support determinism jobs pass.
