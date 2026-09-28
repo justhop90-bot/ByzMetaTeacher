@@ -1263,6 +1263,60 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(search.index_reset_reason)
 
 
+    def test_search_records_runtime_cursor_transition(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[0]
+        self.assertEqual(
+            getattr(search, "cursor_after_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+
+
+    def test_get_search_state_observes_search_cursor_without_mutating_it(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+        ))
+
+        observation = report.observations[0]
+        self.assertEqual(
+            getattr(observation, "local_search_cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RUNTIME_ADVANCED",
+        )
+
+
+    def test_explicit_search_reset_restores_cursor_to_start(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-reset-search", ("1", "0", "0", "0")),
+            )),
+        ))
+
+        self.assertEqual(
+            getattr(report.final_state.local_list.search_index, "cursor_disposition", None),
+            "RESET_START",
+        )
+        self.assertEqual(
+            report.final_state.local_list.search_index.offset,
+            0,
+        )
+
     def test_changed_local_query_signature_resets_local_search_index(self):
         report = analyze_duc((
             _rule(1, (
