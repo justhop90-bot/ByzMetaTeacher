@@ -227,10 +227,15 @@ class DucSemanticTests(unittest.TestCase):
 
 
     def test_can_search_uninitialized_local_is_runtime_dependent(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-can-search search-local)",
+            "up-can-search",
+            ("search-local",),
+            location,
+        )
         report = analyze_duc((
-            _rule(1, (
-                ("up-can-search", ("search-local",)),
-            )),
+            replace(_rule(1, ()), facts=(fact,)),
         ))
 
         observation = report.search_availability[-1]
@@ -245,25 +250,19 @@ class DucSemanticTests(unittest.TestCase):
         )
 
     def test_can_search_proven_end_is_guaranteed_false(self):
-        initial = _empty_state()
-        local = replace(
-            initial.local_list,
-            search_index=replace(
-                initial.local_list.search_index,
-                cursor_disposition=DucSearchCursorDisposition.AT_END,
-            ),
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-can-search search-local)",
+            "up-can-search",
+            ("search-local",),
+            location,
         )
-        initial = replace(initial, local_list=local)
-
-        report = analyze_duc(
-            (
-                _rule(1, (
-                    ("up-find-local", ("c:", "villager", "c:", "1")),
-                    ("up-can-search", ("search-local",)),
-                )),
-            ),
-            initial_state=initial,
-        )
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+            replace(_rule(2, ()), facts=(fact,)),
+        ))
 
         observation = report.search_availability[-1]
         self.assertEqual(
@@ -276,12 +275,19 @@ class DucSemanticTests(unittest.TestCase):
         )
 
     def test_can_search_remote_reads_only_remote_search_state(self):
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-can-search search-remote)",
+            "up-can-search",
+            ("search-remote",),
+            location,
+        )
         report = analyze_duc((
             _rule(1, (
                 ("up-find-local", ("c:", "villager", "c:", "1")),
                 ("up-find-remote", ("c:", "town-center", "c:", "1")),
-                ("up-can-search", ("search-remote",)),
             )),
+            replace(_rule(2, ()), facts=(fact,)),
         ))
 
         observation = report.search_availability[-1]
