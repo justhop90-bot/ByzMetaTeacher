@@ -142,6 +142,10 @@ class DucNativeOracleFixtureTests(unittest.TestCase):
             probe_sources,
         )
         self.assertIn(
+            "search-local capacity is 240; index 240 is invalid",
+            fixture["scenario"]["object_set"][0]["metadata"]["capacity_boundary"],
+        )
+        self.assertIn(
             "(up-get-object-target-data object-data-id 101)",
             probe_sources,
         )
