@@ -1716,6 +1716,214 @@ class DucSemanticTests(unittest.TestCase):
         ))
 
 
+    def test_get_object_data_reads_current_selected_object_and_writes_goal_span(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-get-object-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT)
+        self.assertEqual(observation.source_kind, "ACTION")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertEqual(observation.target_proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(observation.output_span.start_goal_id, 41)
+        self.assertEqual(observation.output_span.width, 1)
+        self.assertEqual(observation.output_span.generation, 1)
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-data")
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+        self.assertFalse(any(item.code in {"DUC-005", "DUC-006", "DUC-007"} for item in report.diagnostics))
+
+
+    def test_object_data_fact_reads_current_selected_object(self):
+        base = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-object-data 38 c:> 0)",
+            "up-object-data",
+            ("38", "c:>", "0"),
+            location,
+        )
+        report = analyze_duc((
+            replace(base, facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[0]
+        self.assertEqual(observation.command, "up-object-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT)
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertFalse(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(observation.target_proof, DucTargetProof.UNKNOWN)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "previously established object target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_exposes_runtime_target_of_target_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-get-object-target-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT_TARGET)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertEqual(observation.target_proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-target-data")
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "target-of-target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_data_rejects_stale_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-reset-search", ("1", "1", "0", "0")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-006"
+            and "invalidated" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertEqual(
+            report.target_data_observations[-1].target_validity,
+            DucTargetStatus.STALE,
+        )
+
+
+    def test_get_object_data_preserves_native_id_liveness_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.target_proof, DucTargetProof.NATIVE_ID_PROOF)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "liveness is unverified" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_preserves_native_id_and_warns_target_of_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-target-data", ("38", "41")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.target_proof, DucTargetProof.NATIVE_ID_PROOF)
+        messages = [item.message for item in report.diagnostics if item.code == "DUC-007"]
+        self.assertTrue(any("liveness is unverified" in message for message in messages))
+        self.assertTrue(any("target-of-target" in message for message in messages))
+
+
+    def test_get_object_data_goal_id_out_of_range_is_diagnostic(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "16001")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-017"
+            and "1..16000" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertIsNone(report.target_data_observations[-1].output_span)
+
+
+    def test_get_object_data_overwrites_previous_goal_writer_with_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-get-object-data", ("38", "41")),
+                ("up-get-object-data", ("39", "41")),
+            )),
+        ))
+
+        first, second = report.target_data_observations[-2:]
+        self.assertEqual(first.output_span.generation, 1)
+        self.assertEqual(second.output_span.generation, 2)
+        self.assertEqual(second.output_span.overwritten_generation, 1)
+        self.assertEqual(
+            second.output_span.overwritten_provenance.command,
+            "up-get-object-data",
+        )
+        self.assertEqual(report.final_state.goal_output_spans, (second.output_span,))
+
+
+    def test_get_object_data_fact_writes_goal_output_span(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-get-object-data 38 41)",
+            "up-get-object-data",
+            ("38", "41"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[0]
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+        self.assertEqual(observation.output_span.provenance.command, "up-get-object-data")
+
+
+    def test_cross_pass_target_data_reuse_warns_syntactic_retention(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+        second = analyze_duc((
+            _rule(1, (
+                ("up-get-object-data", ("38", "41")),
+            )),
+            initial_state=first.next_pass_state,
+        ))
+
+        self.assertEqual(
+            second.target_data_observations[-1].target_proof,
+            DucTargetProof.SYNTACTIC_RETENTION,
+        )
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "retained across a pass" in item.message
+            for item in second.diagnostics
+        ))
+
+
 
 if __name__ == "__main__":
     unittest.main()
