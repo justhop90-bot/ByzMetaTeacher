@@ -950,8 +950,11 @@ def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]
             "OBJECT",
             True,
             False,
-            ("airef:duc:set-target-object",),
+            ("airef:duc:set-target-object", "airef:duc:set-target-object-failure"),
             "LIST_INDEX",
+            True,
+            True,
+            None,
         ),
         NativeDucTargetContract(
             "up-set-target-point",
@@ -1251,6 +1254,9 @@ class NativeDucTargetContract:
     requires_current_point: bool
     evidence_ids: Tuple[str, ...]
     identity_kind: str = "LIST_INDEX"
+    supports_fact: bool = False
+    returns_false_on_invalid_index: bool = False
+    failed_action_preserves_previous_target: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.identity_kind not in {"LIST_INDEX", "NATIVE_ID", "POINT"}:
@@ -2316,6 +2322,23 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "20130305-140519",
                 excerpt=SourceExcerpt.capture(
                     "Changing direct unit search filters should reset the search index offsets. Now, filter-include, filter-exclude, and filter-range will automatically reset the local and remote search index offsets, which is equivalent to (up-reset-search 1 0 1 0), to ensure that the lists are checked from the beginning with the new filter state, for subsequent find commands. A similar index offset reset occurs if you find-local or find-remote with a different type/class from last time, or the focus-player has changed for find-remote.",
+                    ExcerptKind.PATCH_NOTE,
+                    locator_text="20130305-140519",
+                ),
+                semantic_scope=CitationSemanticScope.GENERAL_NATIVE_FACT,
+                source_hash=patch_notes_hash,
+                retrieval=patch_notes_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_build_scope,
+            ),
+            CitationRecord(
+                "airef:duc:set-target-object-failure",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                LocatorType.PATCH_RELEASE,
+                "20130305-140519",
+                excerpt=SourceExcerpt.capture(
+                    "If the index is out of range, up-set-target-object now returns false as a Fact.",
                     ExcerptKind.PATCH_NOTE,
                     locator_text="20130305-140519",
                 ),
