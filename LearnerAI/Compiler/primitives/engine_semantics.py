@@ -184,6 +184,29 @@ _AOERF_LIMITS = "https://airef.github.io/resources/articles/data-limits.html"
 _AOERF_PER = "https://airef.github.io/resources/articles/intro-to-commands.html"
 _AOE2AI = "https://github.com/lewisc64/aoe2ai"
 _DUKE = "https://github.com/niektb/AI"
+_DUC_COMMAND_SPECS = (
+    ("up-find-local", "duc.search.local"),
+    ("up-find-status-local", "duc.search.local-status"),
+    ("up-find-remote", "duc.search.remote"),
+    ("up-find-status-remote", "duc.search.remote-status"),
+    ("up-find-resource", "duc.search.resource"),
+    ("up-filter-distance", "duc.filter.distance"),
+    ("up-filter-exclude", "duc.filter.exclude"),
+    ("up-filter-garrison", "duc.filter.garrison"),
+    ("up-filter-include", "duc.filter.include"),
+    ("up-filter-range", "duc.filter.range"),
+    ("up-filter-status", "duc.filter.status"),
+    ("up-reset-filters", "duc.reset.filters"),
+    ("up-reset-search", "duc.reset.search"),
+    ("up-full-reset-search", "duc.reset.full-search"),
+    ("up-clean-search", "duc.mutation.clean-search"),
+    ("up-remove-objects", "duc.mutation.remove-objects"),
+    ("up-set-target-by-id", "duc.target.by-id"),
+    ("up-set-target-object", "duc.target.object"),
+    ("up-set-target-point", "duc.target.point"),
+    ("up-target-objects", "duc.target.consume-objects"),
+)
+
 
 _PERSISTENT_STATE_SPECS = (
     ("up-compare-sn", "state.compare.strategic-number"),
@@ -352,6 +375,68 @@ def _persistent_state_mapping(command: str, identity: str) -> EngineSemanticMapp
         practice_references=(),
     )
 
+def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    native_kind = {
+        "up-find-local": "Fact/Action",
+        "up-find-status-local": "Fact/Action",
+        "up-find-remote": "Fact/Action",
+        "up-find-status-remote": "Fact/Action",
+        "up-find-resource": "Fact/Action",
+        "up-filter-distance": "Action",
+        "up-filter-exclude": "Action",
+        "up-filter-garrison": "Action",
+        "up-filter-include": "Action",
+        "up-filter-range": "Action",
+        "up-filter-status": "Action",
+        "up-reset-filters": "Action",
+        "up-reset-search": "Action",
+        "up-full-reset-search": "Action",
+        "up-clean-search": "Action",
+        "up-remove-objects": "Action",
+        "up-set-target-by-id": "Action",
+        "up-set-target-object": "Fact/Action",
+        "up-set-target-point": "Action",
+        "up-target-objects": "Action",
+    }[command]
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind=native_kind,
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER, _AOE2AI, _DUKE),
+        state_effects=(
+            "mutates or consumes documented DUC search, filter, target, or "
+            "object-list engine state according to its native command contract"
+        ),
+        lifetime=(
+            "DUC state remains engine-managed until the command's documented "
+            "replacement/reset/invalidation semantics apply"
+        ),
+        ordering=(
+            "later DUC operations in emitted source order observe the preceding "
+            "native DUC state mutation in the same rule/pass sequence"
+        ),
+        admission=(
+            "native command is present in the pinned AIRef schema with the "
+            "documented parameter family and arity"
+        ),
+        completion=(
+            "one-shot DUC control command has no generic compiler completion "
+            "witness; runtime state remains the authority"
+        ),
+        recovery=(
+            "re-establish or reset the affected DUC state using the corresponding "
+            "native DUC command; no synthetic scheduler is introduced"
+        ),
+        practice_references=("duc.search-state-retained",),
+    )
+
+
+def default_duc_executable_commands() -> tuple[str, ...]:
+    return tuple(command for command, _identity in _DUC_COMMAND_SPECS)
+
+
 def _pending_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
         identity="execution.pending-objects",
@@ -406,6 +491,10 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.append(_pending_placement_mapping())
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
+        _duc_mapping(command, identity)
+        for command, identity in _DUC_COMMAND_SPECS
+    )
+    mappings.extend(
         (
             EngineSemanticMapping(
                 identity="duc.search-state-retained",
@@ -447,7 +536,8 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     }
     registry.validate_practice_references(practice_ids)
     registry.validate_exact_executable_commands(
-        tuple(command for command, _identity in _PERSISTENT_STATE_SPECS)
+        default_duc_executable_commands()
+        + tuple(command for command, _identity in _PERSISTENT_STATE_SPECS)
         + tuple(command for command, _identity in _OBSERVATION_SPECS)
         + tuple(command for command, _identity in _ADMISSIBILITY_SPECS)
         + tuple(command for command, _identity in _ARBITRATION_SPECS)

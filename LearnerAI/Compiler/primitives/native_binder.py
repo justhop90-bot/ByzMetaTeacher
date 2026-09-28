@@ -28,6 +28,19 @@ class NativeSupportState(str, Enum):
 
 
 @dataclass(frozen=True)
+class NativeDucSemanticBinding:
+    command: str
+    native_version: str
+    native_kind: str
+    parameter_count: int
+    semantic_mapping_id: str
+    mapping_status: EngineSemanticMappingStatus
+    evidence_class: str
+    evidence_sources: tuple[str, ...]
+    support_state: NativeSupportState
+
+
+@dataclass(frozen=True)
 class NativeSupportDiagnostic:
     command: str
     state: NativeSupportState
@@ -457,6 +470,126 @@ class NativeSemanticBinder:
             tuple(diagnostics),
             binding,
         )
+
+    def assess_duc_command(self, name: str) -> NativeSupportAssessment:
+        native = self.native_registry.get(name)
+        if native is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-DUC-006",
+                "error",
+                "DUC command is not present in the checked-in native schema",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        if not self._native_typed(native):
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-DUC-006",
+                "error",
+                "DUC native metadata is not typed",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        mapping = self.semantic_mappings.for_command(name)
+        if mapping is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-DUC-006",
+                "error",
+                "DUC command has no contracted engine semantic mapping",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        mapping_ok, mapping_message = self.semantic_mappings.validate_primitive(
+            command=name,
+            native_kind=native.command_type,
+            identity=mapping.identity,
+        )
+        if not mapping_ok:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-DUC-006",
+                "error",
+                mapping_message,
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        binding = NativeDucSemanticBinding(
+            command=name,
+            native_version=native.version,
+            native_kind=native.command_type,
+            parameter_count=native.parameter_count,
+            semantic_mapping_id=mapping.identity,
+            mapping_status=mapping.status,
+            evidence_class=mapping.evidence_class,
+            evidence_sources=tuple(mapping.evidence_sources),
+            support_state=NativeSupportState.EXECUTABLE_SAFE,
+        )
+        diagnostic = self._diagnostic(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "NATIVE-DUC-005",
+            "info",
+            "DUC command has native schema, contracted engine semantics, and executable-safe promotion",
+        )
+        return NativeSupportAssessment(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "DUC command is executable-safe",
+            (diagnostic,),
+            binding=None,
+        )
+
+    def bind_duc_command(self, name: str) -> NativeDucSemanticBinding:
+        assessment = self.assess_duc_command(name)
+        if assessment.state is not NativeSupportState.EXECUTABLE_SAFE:
+            raise ValueError(assessment.message)
+        mapping = self.semantic_mappings.for_command(name)
+        native = self.native_registry.get(name)
+        assert mapping is not None and native is not None
+        return NativeDucSemanticBinding(
+            command=name,
+            native_version=native.version,
+            native_kind=native.command_type,
+            parameter_count=native.parameter_count,
+            semantic_mapping_id=mapping.identity,
+            mapping_status=mapping.status,
+            evidence_class=mapping.evidence_class,
+            evidence_sources=tuple(mapping.evidence_sources),
+            support_state=NativeSupportState.EXECUTABLE_SAFE,
+        )
+
+    def bind_duc_plan(self, plan) -> tuple[NativeDucSemanticBinding, ...]:
+        bindings = tuple(
+            self.bind_duc_command(command)
+            for command in plan.commands
+        )
+        return tuple(sorted(bindings, key=lambda item: item.command))
 
     def bind(self, name: str) -> NativeSemanticBinding:
         assessment = self.assess(name)

@@ -1,4 +1,5 @@
 from .native_binder import (
+    NativeDucSemanticBinding,
     NativeSemanticBinder,
     NativeSemanticBinding,
     NativeSupportAssessment,
@@ -17,6 +18,7 @@ from .engine_semantics import (
     EngineSemanticMappingRegistry,
     EngineSemanticMappingStatus,
     default_engine_semantic_mapping_registry,
+    default_duc_executable_commands,
 )
 from .native_hygiene import (
     AIRefProvenance,

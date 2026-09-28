@@ -18,6 +18,7 @@ from .native_binder import (
 from .engine_semantics import (
     EngineSemanticMappingRegistry,
     default_engine_semantic_mapping_registry,
+    default_duc_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
 from .native_hygiene import (
@@ -157,6 +158,48 @@ class PrimitiveRegistry:
                         f"native pass constraint '{constraint.identity}' uses unsupported failure mode "
                         f"'{constraint.failure_mode.value}'"
                     )
+
+    def bind_duc_plan(self, plan):
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        return binder.bind_duc_plan(plan)
+
+    def validate_duc_plan(self, plan) -> None:
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        for rule in plan.rules:
+            for expression in (*rule.facts, *rule.actions):
+                binding = binder.bind_duc_command(expression.head)
+                if len(expression.args) != binding.parameter_count:
+                    raise ValueError(
+                        f"DUC command '{expression.head}' expects exactly "
+                        f"{binding.parameter_count} argument(s), got {len(expression.args)}"
+                    )
+            for expression in rule.facts:
+                native = self.require_native(expression.head)
+                if native.command_type not in {"Fact", "Fact/Action"}:
+                    raise ValueError(
+                        f"DUC command '{expression.head}' is an Action and cannot be emitted as a Fact"
+                    )
+            for expression in rule.actions:
+                native = self.require_native(expression.head)
+                if native.command_type not in {"Action", "Fact/Action"}:
+                    raise ValueError(
+                        f"DUC command '{expression.head}' is a Fact and cannot be emitted as an Action"
+                    )
+        identities = tuple(rule.identity for rule in plan.rules)
+        if identities != tuple(sorted(identities, key=lambda identity: next(
+            rule.order for rule in plan.rules if rule.identity == identity
+        ))):
+            raise ValueError("DUC plan rule order is not deterministic")
 
     def validate_demand_lowering(self, demand, bindings) -> None:
         primitive = self.require(demand.action.expression.head)
@@ -367,7 +410,8 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     default_native_engine_effect_catalog().validate_native_registry(native_registry)
     primitive_items = tuple(facts + actions)
     semantic_registry.validate_exact_executable_commands(
-        tuple(item.name for item in primitive_items)
+        default_duc_executable_commands()
+        + tuple(item.name for item in primitive_items)
     )
     mapped_items = tuple(
         replace(

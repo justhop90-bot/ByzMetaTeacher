@@ -1,3 +1,4 @@
+from .native_duc import NativeDucPlan, NativeDucRule
 from .capability import (
     ActionSpec,
     Capability,

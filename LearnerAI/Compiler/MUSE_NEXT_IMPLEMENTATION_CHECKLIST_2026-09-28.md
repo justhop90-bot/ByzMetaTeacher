@@ -41,10 +41,13 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Owner: `semantic/resource_conflicts.py`, analyzer/emitter escrow paths, native contracts.
   - Gate: admission, claim, release, starvation/recovery, and hostile competing-owner tests.
 
-- [ ] DUC binder and emission.
-  - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `compiler_coverage_baseline.md`; corpus gives 11.6k `up-find` and 11.9k `up-set-target` hits.
-  - Owner: `primitives/registry.py`, `primitives/native_binder.py`, `emitter/per.py`, DUC semantic IR.
-  - Gate: search/filter/reset/target/group state survives source-order and recurrent analysis, then lowers through typed native contracts.
+- [x] DUC binder and emission.
+  - Muse evidence remains the same: `implementation_map.md`, `compiler_undercoverage.md`, `compiler_coverage_baseline.md`; corpus gives 11.6k `up-find` and 11.9k `up-set-target` hits.
+  - Typed internal path implemented with no new source syntax: `ir/native_duc.py`, `primitives/native_binder.py`, `primitives/engine_semantics.py`, `primitives/registry.py`, `emitter/per.py`, compiler threading in `compiler.py`.
+  - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
+  - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
+  - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
+  - Full compiler/native verification: compiler regression suite 895 tests OK on the final implementation head; all native-support determinism jobs and the aggregate compiler verification gate pass.
 
 - [ ] Native controller attack lifecycle.
   - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `native_unknowns.md`; `attack-now` is only 47 corpus hits and the corpus says attack is largely mediated by persistent SN/town-size/group state.
