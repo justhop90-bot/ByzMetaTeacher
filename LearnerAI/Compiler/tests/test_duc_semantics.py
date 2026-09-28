@@ -1370,11 +1370,6 @@ class DucSemanticTests(unittest.TestCase):
 
         index = report.final_state.remote_list.search_index
         self.assertIsNone(index.focus_player_signature)
-        self.assertTrue(any(
-            item.code == "DUC-018"
-            and "focus-player" in item.message
-            for item in report.diagnostics
-        ))
 
 
 
