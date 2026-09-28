@@ -46,6 +46,8 @@ from ..ir.duc import (
     DucStateKind,
     DucTargetConsumerEffect,
     DucTargetConsumerMode,
+    DucTargetDataObservation,
+    DucTargetDataRelation,
     DucTargetKind,
     DucTargetProof,
     DucTargetState,
@@ -194,6 +196,173 @@ def _provenance(
 
 def _canonical_arguments(expression: Expression) -> tuple[str, ...]:
     return tuple(str(argument) for argument in expression.args)
+
+
+def _target_data_relation(contract_relation: str) -> DucTargetDataRelation:
+    return DucTargetDataRelation(contract_relation)
+
+
+def _target_data_read(
+    state: DucSemanticState,
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    args: tuple[str, ...],
+    contract,
+    state_revision: int,
+    source_kind: str,
+) -> tuple[
+    DucSemanticState,
+    DucTargetDataObservation | None,
+    tuple[DucDiagnostic, ...],
+    bool,
+    bool,
+]:
+    command = action.expression.head
+    expected_args = 2 if contract.writes_goal else 3
+    if len(args) != expected_args:
+        return (
+            state,
+            None,
+            (
+                DucDiagnostic(
+                    "DUC-005",
+                    DiagnosticSeverity.ERROR.value,
+                    rule.rule_order,
+                    (
+                        f"{command} requires ObjectData and OutputGoalId"
+                        if contract.writes_goal
+                        else f"{command} requires ObjectData, compareOp, and Value"
+                    ),
+                    _location(action, rule.source_location),
+                ),
+            ),
+            True,
+            False,
+        )
+
+    provenance = _provenance(
+        rule,
+        action,
+        visibility=DucVisibility.SAME_RULE,
+        state_revision=state_revision,
+        pass_id=state.pass_id,
+        inputs=((state.target.generation,) if state.target is not None else ()),
+        contract_id=f"duc.target-data.{command}",
+        evidence_ids=contract.evidence_ids,
+    )
+    target = state.target
+    diagnostics: list[DucDiagnostic] = []
+
+    if target is None:
+        diagnostics.append(
+            DucDiagnostic(
+                "DUC-005",
+                DiagnosticSeverity.ERROR.value,
+                rule.rule_order,
+                f"{command} requires a previously established object target",
+                _location(action, rule.source_location),
+            )
+        )
+        target_validity = DucTargetStatus.UNKNOWN
+        target_proof = DucTargetProof.UNKNOWN
+    elif target.validity is DucTargetStatus.STALE:
+        diagnostics.append(
+            DucDiagnostic(
+                "DUC-006",
+                DiagnosticSeverity.ERROR.value,
+                rule.rule_order,
+                f"{command} consumes an object target invalidated by later DUC reset state",
+                _location(action, rule.source_location),
+            )
+        )
+        target_validity = target.validity
+        target_proof = target.proof
+    else:
+        target_validity = target.validity
+        target_proof = target.proof
+        if target.validity is DucTargetStatus.UNKNOWN:
+            message = (
+                f"{command} consumes an object target retained across a pass "
+                "without a current-pass re-establishment; target lifetime is unknown"
+                if target.proof is DucTargetProof.SYNTACTIC_RETENTION
+                else f"{command} has a concrete native object identity, but runtime target liveness is unverified"
+                if target.proof is DucTargetProof.NATIVE_ID_PROOF
+                else f"{command} consumes an object target whose source-list identity is no longer provable"
+            )
+            diagnostics.append(
+                DucDiagnostic(
+                    "DUC-007",
+                    DiagnosticSeverity.WARNING.value,
+                    rule.rule_order,
+                    message,
+                    _location(action, rule.source_location),
+                )
+            )
+
+    relation = _target_data_relation(contract.relation)
+    if relation is DucTargetDataRelation.SELECTED_OBJECT_TARGET and target is not None:
+        if target.validity is not DucTargetStatus.STALE:
+            diagnostics.append(
+                DucDiagnostic(
+                    "DUC-007",
+                    DiagnosticSeverity.WARNING.value,
+                    rule.rule_order,
+                    (
+                        f"{command} reads the selected object's current target; "
+                        "target-of-target identity is runtime-dependent and is not modeled as compiler state"
+                    ),
+                    _location(action, rule.source_location),
+                )
+            )
+
+    next_state = state
+    output_span = None
+    if contract.writes_goal:
+        goal_id = _int_or_none(args[1])
+        if goal_id is None or not contract.output_goal_min <= goal_id <= contract.output_goal_max:
+            diagnostics.append(
+                DucDiagnostic(
+                    "DUC-017",
+                    DiagnosticSeverity.ERROR.value,
+                    rule.rule_order,
+                    (
+                        f"{command} OutputGoalId must be within "
+                        f"{contract.output_goal_min}..{contract.output_goal_max}"
+                    ),
+                    _location(action, rule.source_location),
+                )
+            )
+        else:
+            output_span, spans = _write_goal_output_span(
+                state,
+                goal_id=goal_id,
+                cardinality=DucCardinalityRange(0, 1),
+                provenance=provenance,
+                width=contract.output_width,
+                minimum_start=contract.output_goal_min,
+                maximum_start=contract.output_goal_max,
+            )
+            next_state = replace(state, goal_output_spans=spans)
+
+    observation = DucTargetDataObservation(
+        command=command,
+        relation=relation,
+        object_data=args[0],
+        source_kind=source_kind,
+        writes_goal=contract.writes_goal,
+        target_validity=target_validity,
+        target_proof=target_proof,
+        provenance=provenance,
+        output_span=output_span,
+    )
+    return (
+        next_state,
+        observation,
+        tuple(diagnostics),
+        True,
+        contract.writes_goal and output_span is not None,
+    )
 
 
 def _static_compare(left: int | None, operator: str, right: int | None) -> bool | None:
@@ -634,6 +803,7 @@ def _analyze_duc_linear(
     group_observations: list[DucGroupSizeObservation] = []
     targets: list[DucTargetState] = []
     target_consumers: list[DucTargetConsumerEffect] = []
+    target_data_observations: list[DucTargetDataObservation] = []
     observations: list[DucSearchStateObservation] = []
     effects: list[DucExecutionEffect] = []
     diagnostics: list[DucDiagnostic] = []
@@ -644,6 +814,38 @@ def _analyze_duc_linear(
         rule_writes: set[DucStateKind] = set()
         rule_reset_lists: set[DucListKind] = set()
 
+        for fact_index, fact in enumerate(rule.facts):
+            target_data_contract = contracts.duc_target_data(fact.head)
+            if target_data_contract is None:
+                continue
+            fact_action = RuleAction(
+                expression=fact,
+                within_rule_order=-1 - fact_index,
+            )
+            fact_args = _canonical_arguments(fact)
+            (
+                state,
+                target_data_observation,
+                target_data_diagnostics,
+                fact_reads_target,
+                fact_writes_output,
+            ) = _target_data_read(
+                state,
+                rule=rule,
+                action=fact_action,
+                args=fact_args,
+                contract=target_data_contract,
+                state_revision=state_revision,
+                source_kind="FACT",
+            )
+            diagnostics.extend(target_data_diagnostics)
+            if target_data_observation is not None:
+                target_data_observations.append(target_data_observation)
+            if fact_reads_target:
+                rule_reads.add(DucStateKind.TARGET)
+            if fact_writes_output:
+                rule_writes.add(DucStateKind.OUTPUT)
+
         for action in rule.actions:
             expression = action.expression
             command = expression.head
@@ -653,8 +855,34 @@ def _analyze_duc_linear(
             filter_contract = contracts.duc_filter(command)
             reset_contract = contracts.duc_reset(command)
             target_contract = contracts.duc_target(command)
+            target_data_contract = contracts.duc_target_data(command)
             target_consumer_contract = contracts.duc_target_consumer(command)
             group_contract = contracts.duc_group(command)
+
+            if target_data_contract is not None:
+                (
+                    state,
+                    target_data_observation,
+                    target_data_diagnostics,
+                    target_data_reads_target,
+                    target_data_writes_output,
+                ) = _target_data_read(
+                    state,
+                    rule=rule,
+                    action=action,
+                    args=args,
+                    contract=target_data_contract,
+                    state_revision=state_revision,
+                    source_kind="ACTION",
+                )
+                diagnostics.extend(target_data_diagnostics)
+                if target_data_observation is not None:
+                    target_data_observations.append(target_data_observation)
+                if target_data_reads_target:
+                    rule_reads.add(DucStateKind.TARGET)
+                if target_data_writes_output:
+                    rule_writes.add(DucStateKind.OUTPUT)
+                continue
 
             if group_contract is not None:
                 operation = group_contract.operation
@@ -2009,6 +2237,7 @@ def _analyze_duc_linear(
         mutations=tuple(mutations),
         targets=tuple(targets),
         target_consumers=tuple(target_consumers),
+        target_data_observations=tuple(target_data_observations),
         observations=tuple(observations),
         effects=tuple(effects),
         diagnostics=tuple(diagnostics),
@@ -2817,6 +3046,11 @@ def analyze_duc(
         for rule_order in sorted(rule_reports)
         for target in rule_reports[rule_order].targets
     )
+    target_data_observations = tuple(
+        observation
+        for rule_order in sorted(rule_reports)
+        for observation in rule_reports[rule_order].target_data_observations
+    )
     observations = tuple(
         observation
         for rule_order in sorted(rule_reports)
@@ -2872,6 +3106,7 @@ def analyze_duc(
         resets=resets,
         mutations=mutations,
         targets=targets,
+        target_data_observations=target_data_observations,
         observations=observations,
         effects=effects,
         diagnostics=tuple(diagnostics),
