@@ -548,6 +548,7 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:duc:set-target-point",
                 "airef:duc:get-search-state",
                 "airef:duc:search-index-transition",
+                "airef:duc:set-target-object-failure",
                 "airef:duc:create-group",
                 "airef:duc:reset-group",
                 "airef:duc:set-group",
