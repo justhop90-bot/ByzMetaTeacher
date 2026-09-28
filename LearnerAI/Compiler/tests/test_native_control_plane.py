@@ -97,6 +97,84 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         self.assertIn("(up-timer-status cooldown == timer-running)", output)
 
 
+
+    def test_all_control_plane_commands_can_cross_the_control_lowering_gate(self):
+        owner = SemanticId("control.fixture", "all-commands")
+        states = (
+            NativeControlState(
+                "g",
+                GoalSlotRequest(
+                    StorageRequestId(owner, "g"),
+                    role=GoalRole.PERSISTENT_STATE,
+                ),
+            ),
+            NativeControlState(
+                "s",
+                StrategicNumberRequest(
+                    StorageRequestId(owner, "s"),
+                    why_not_goal="This state directly controls native Strategic Number behavior.",
+                    stability_key="control.fixture.s",
+                ),
+            ),
+            NativeControlState(
+                "timer",
+                TimerRequest(
+                    StorageRequestId(owner, "timer"),
+                    initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                    stability_key="control.fixture.timer",
+                ),
+            ),
+        )
+        location = SourceLocation(1, 1, "<control-plane>")
+        facts = (
+            Expression("(goal g -1)", "goal", ("g", "-1"), location),
+            Expression("(up-compare-goal g c:>= -1)", "up-compare-goal", ("g", "c:>=", "-1"), location),
+            Expression("(strategic-number s c:== 0)", "strategic-number", ("s", "c:==", "0"), location),
+            Expression("(up-compare-sn s c:== 0)", "up-compare-sn", ("s", "c:==", "0"), location),
+            Expression("(timer-triggered timer)", "timer-triggered", ("timer",), location),
+            Expression("(up-timer-status timer c:== timer-disabled)", "up-timer-status", ("timer", "c:==", "timer-disabled"), location),
+        )
+        actions = (
+            Expression("(set-goal g 1)", "set-goal", ("g", "1"), location),
+            Expression("(up-modify-goal g c:+ 1)", "up-modify-goal", ("g", "c:+", "1"), location),
+            Expression("(set-strategic-number s 1)", "set-strategic-number", ("s", "1"), location),
+            Expression("(up-modify-sn s c:+ 1)", "up-modify-sn", ("s", "c:+", "1"), location),
+            Expression("(enable-timer timer 5)", "enable-timer", ("timer", "5"), location),
+            Expression("(disable-timer timer)", "disable-timer", ("timer",), location),
+            Expression("(up-set-timer c: timer c: 5)", "up-set-timer", ("c:", "timer", "c:", "5"), location),
+            Expression("(disable-self)", "disable-self", (), location),
+            Expression("(up-jump-rule 0)", "up-jump-rule", ("0",), location),
+        )
+        from Compiler.primitives.registry import default_de_registry
+
+        report = validate_native_control_plan(
+            NativeControlPlan(
+                states=states,
+                rules=(NativeControlRule("all", facts=facts, actions=actions, location=location),),
+            ),
+            default_de_registry(),
+        )
+        self.assertEqual(
+            set(report.control_commands),
+            {
+                "set-goal",
+                "goal",
+                "up-compare-goal",
+                "up-modify-goal",
+                "set-strategic-number",
+                "strategic-number",
+                "up-compare-sn",
+                "up-modify-sn",
+                "enable-timer",
+                "disable-timer",
+                "timer-triggered",
+                "up-set-timer",
+                "up-timer-status",
+                "disable-self",
+                "up-jump-rule",
+            },
+        )
+
     def test_goal_mutation_and_comparison_share_recurrent_scheduler_state(self):
         location = SourceLocation(1, 1, "<test>")
         rules = (
