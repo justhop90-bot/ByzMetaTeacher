@@ -13,9 +13,11 @@ runtime binding, numeric emission, reproducibility/native fixture.
 TEST: source fixture + native zero-findings. REMAINING: engine knowledge for per-SN defaults, auto-mutation,
 version scope, and unknown-SN write behavior.
 
-## Timers — CURRENT: model-safe, emission-open. TARGET: executable-safe.
-EVIDENCE: A timer rows; ~4k hits; staged-expiry design. IMPLEMENTATION: scheduler + recurrent IR.
-TEST: scheduler + semantics (static-true impossible by design). REMAINING: DSL alloc; granularity measure.
+## Timers — CURRENT: symbolic allocation + native emission implemented; runtime cadence remains open. TARGET: executable-safe with measured engine timing.
+EVIDENCE: A timer rows; ~4k hits; staged-expiry design; community timer idioms use named constants, explicit initialization, trigger reads, and re-arm loops.
+IMPLEMENTATION: scheduler + recurrent IR + TimerRequest/TimerState DSL allocation + deterministic TimerSlot binding + native defconst aliases + explicit one-shot initialization.
+TEST: runtime scheduler/semantics + focused timer allocation suite + checked-in source fixture + pinned native zero-findings acceptance + binding-manifest determinism.
+REMAINING: engine countdown/pass granularity; explicit timer reuse/lifetime model; external co-loaded timer occupancy.
 
 ## Construction — CURRENT: executable-safe on main; lifecycle hardening integrated.
 TARGET: runtime-proven. EVIDENCE: build rows; ~3k hits; current lifecycle contracts.
