@@ -72,7 +72,7 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
 
     def test_v4_rejects_tampered_numeric_binding(self):
         payload = json.loads(self._manifest().to_json())
-        payload["records"][0]["binding"]["strategic_number_id"] = 508
+        payload["records"][0]["strategic_number_id"] = 508
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         with self.assertRaisesRegex(ValueError, "integrity"):
             BindingManifest.from_json(text)
@@ -95,7 +95,7 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
         payload["records"] = list(payload["records"])
         payload["records"][0] = dict(payload["records"][0])
         payload["records"][0]["binding"] = dict(payload["records"][0]["binding"])
-        payload["records"][0]["binding"]["strategic_number_id"] = 508
+        payload["records"][0]["strategic_number_id"] = 508
 
         tampered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         tampered_manifest = BindingManifest.from_json(
@@ -124,8 +124,13 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
             ],
         }
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        with self.assertRaisesRegex(ValueError, "migration context"):
+        with self.assertRaisesRegex(ValueError, "explicit migration to v4"):
             BindingManifest.from_json(text)
+        with self.assertRaisesRegex(ValueError, "migration context"):
+            BindingManifest.migrate_to_v4(
+                text,
+                strategic_number_inventory=self._inventory(),
+            )
 
     def test_v3_migration_preserves_numeric_binding(self):
         request = self._request()
@@ -152,7 +157,7 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
             strategic_number_requests=(request,),
             strategic_number_inventory=self._inventory(),
             package_inventory_sha="b" * 64,
-            allocator_version="native-storage-v4",
+            allocator_version="native-storage-v5",
         )
         record = migrated.to_json()
         round_trip = BindingManifest.from_json(record)
@@ -191,7 +196,7 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
             strategic_number_requests=(request,),
             strategic_number_inventory=inventory,
             package_inventory_sha="b" * 64,
-            allocator_version="native-storage-v4",
+            allocator_version="native-storage-v5",
         )
         self.assertEqual(
             migrated.binding_for(request.request_id).id,
