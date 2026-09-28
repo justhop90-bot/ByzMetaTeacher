@@ -28,5 +28,7 @@ jobs:
           PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_get_object_data_overwrites_previous_goal_writer_with_provenance
           PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_get_object_data_fact_writes_goal_output_span
           PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_cross_pass_target_data_reuse_warns_syntactic_retention
+          PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_object_target_data_fact_reads_current_object_target
+          PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_get_object_target_data_fact_writes_goal_output_span
           PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_native_contract_integration.NativeContractIntegrationTests.test_shared_catalog_exposes_duc_contracts_and_evidence_ids
           PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_native_hygiene.NativeHygieneTests.test_default_native_citation_catalog_is_complete_and_promotable
