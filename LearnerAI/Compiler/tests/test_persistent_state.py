@@ -480,5 +480,56 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             codes,
         )
 
+
+    def test_up_modify_goal_is_a_persistent_goal_writer_with_operand_dependency(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (true) => (up-modify-goal 8 c:+ 7))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        writers = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.effect is PersistentStateAccessKind.WRITE
+        )
+        reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(
+            [(item.command, item.state.identifier, item.rule_order) for item in writers],
+            [("set-goal", "7", 1), ("up-modify-goal", "8", 2)],
+        )
+        self.assertEqual(
+            [(item.command, item.state.identifier, item.rule_order) for item in reads],
+            [("up-modify-goal", "7", 2)],
+        )
+
+    def test_up_compare_goal_goal_operand_is_part_of_persistent_state_dependency_graph(self):
+        graph = self._graph(
+            "(defrule (true) => (set-goal 7 1))\n"
+            "(defrule (up-compare-goal 8 g:== 7) => (set-goal 9 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        reads = tuple(
+            item
+            for item in report.accesses
+            if item.state.kind is PersistentStateKind.GOAL
+            and item.state.identifier == "7"
+            and item.effect is PersistentStateAccessKind.READ
+        )
+
+        self.assertEqual(len(reads), 1)
+        self.assertEqual(reads[0].command, "up-compare-goal")
+        self.assertEqual(reads[0].rule_order, 2)
+
 if __name__ == "__main__":
     unittest.main()
