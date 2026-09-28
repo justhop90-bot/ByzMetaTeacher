@@ -178,7 +178,12 @@ class NativeControllerInteractionCatalog:
         controller_catalog: NativeControllerCatalog,
     ) -> None:
         if endpoint.kind is NativeInteractionEndpointKind.CONTROLLER:
-            controller_catalog.controller(endpoint.identity)
+            try:
+                controller_catalog.controller(endpoint.identity)
+            except KeyError as exc:
+                raise ValueError(
+                    f"unknown controller endpoint '{endpoint.identity}'"
+                ) from exc
             return
 
         if endpoint.kind is NativeInteractionEndpointKind.CONTROL_SURFACE:
