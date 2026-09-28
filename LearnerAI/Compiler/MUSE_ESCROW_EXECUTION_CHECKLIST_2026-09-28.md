@@ -56,9 +56,48 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 - [x] Post-release stale consumption rejection.
 - [x] Policy reset after release accepted as cleanup.
 - [x] Operation owner mismatch rejection.
-- [ ] Native artifact fixture proving actual same-pass release visibility. **Still OPEN by design.**
+- [ ] Native artifact fixture proving actual same-pass release visibility. **Still OPEN by design.** Concrete DE fixture and machine-checkable oracle are now specified in `docs/plans/2026-09-28-native-escrow-same-pass-visibility.md`.
 - [ ] Native artifact fixture proving competing-owner behavior under the game engine. **Still OPEN by design.**
 - [x] Native artifact fixture proves actual release emission, deterministic artifact bytes, and zero native parser findings for the promoted release-only slice.
+
+## Runtime evidence specification
+
+The same-pass proof is intentionally a DE runtime evidence task, not a compiler-only acceptance test.
+
+The frozen fixture suite contains five variants:
+
+1. `NORMAL_BASELINE`
+2. `ESCROW_BLOCKED_NO_RELEASE`
+3. `ESCROW_SAME_PASS_POSITIVE`
+4. `ESCROW_SAME_PASS_REVERSED`
+5. `ESCROW_LATER_PASS_CONTROL`
+
+The required research-status model is:
+
+`1 -> 2 -> 3`
+
+with `2 -> 2` and `3 -> 3` allowed observations. All other spontaneous status transitions are failures.
+
+The positive oracle requires, in one executable rule:
+
+`release-escrow gold` -> ordinary `research ri-loom` -> status `research-pending`, with escrow reduced to zero and the exact research cost consumed.
+
+The reversed oracle requires research-before-release to remain unaccepted in that pass, followed by successful later-pass research after release.
+
+The blocked control requires no research, no gold consumption, and no escrow mutation when release is absent.
+
+The complete trace schema and terminal failure taxonomy are specified in `docs/plans/2026-09-28-native-escrow-same-pass-visibility.md`.
+
+Required runtime evidence for promotion:
+- frozen DE build and scenario identity/hash;
+- exact script source hash;
+- raw controller/world-state trace;
+- normalized oracle trace;
+- ten fresh runs per variant;
+- no non-`PASS` terminal classifications;
+- no byte-identical-input nondeterminism.
+
+Until that evidence exists, `NATIVE_ESCROW_SAME_PASS_VISIBILITY = OPEN`.
 
 ## Compiler invariants implemented by this tranche
 
