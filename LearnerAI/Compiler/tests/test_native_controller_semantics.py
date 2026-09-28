@@ -147,8 +147,11 @@ class NativeControllerSemanticsTests(unittest.TestCase):
         expected = {
             "civilian-task-allocation",
             "duc-search-state",
+            "duc-target-control",
             "exploration-control",
             "attack-group-control",
+            "production-admission",
+            "research-admission",
             "resource-escrow-control",
             "town-size-defense-targeting",
         }
