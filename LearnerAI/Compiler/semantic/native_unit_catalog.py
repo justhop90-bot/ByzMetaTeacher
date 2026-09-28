@@ -29,31 +29,31 @@ def _aliases(value: str) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=1)
-def _unit_ids() -> dict[str, int]:
+def _objects() -> tuple[dict, ...]:
     if not _INVENTORY.is_file():
         raise NativeUnitIdError(
             f"native AIRef object inventory is unavailable at {_INVENTORY}"
         )
 
     payload = json.loads(_INVENTORY.read_text(encoding="utf-8"))
-    result: dict[str, int] = {}
-    for entry in payload.get("objects", ()):
-        object_id = entry.get("object_id")
+    return tuple(
+        entry
+        for entry in payload.get("objects", ())
+        if isinstance(entry, dict)
+        and isinstance(entry.get("object_id"), int)
+        and (entry.get("versions") or {}).get("de") == 1
+    )
+
+
+def _unit_ids_for(token: str) -> tuple[int, ...]:
+    ids: set[int] = set()
+    for entry in _objects():
         ai_name = entry.get("ai_name")
-        versions = entry.get("versions") or {}
-        if not isinstance(object_id, int) or versions.get("de") != 1:
-            continue
         if not isinstance(ai_name, str):
             continue
-        for alias in _aliases(ai_name):
-            previous = result.get(alias)
-            if previous is not None and previous != object_id:
-                raise NativeUnitIdError(
-                    f"native unit symbol '{alias}' maps to both "
-                    f"{previous} and {object_id}"
-                )
-            result[alias] = object_id
-    return result
+        if token in _aliases(ai_name):
+            ids.add(entry["object_id"])
+    return tuple(sorted(ids))
 
 
 def resolve_unit_id(symbol: str) -> int:
@@ -63,17 +63,24 @@ def resolve_unit_id(symbol: str) -> int:
         raise NativeUnitIdError(f"invalid UnitId symbol '{symbol}'")
     if token.isdigit():
         unit_id = int(token)
-        if unit_id not in _unit_ids().values():
+        known_ids = {entry["object_id"] for entry in _objects()}
+        if unit_id not in known_ids:
             raise NativeUnitIdError(
                 f"numeric UnitId '{symbol}' is not a known DE unit"
             )
         return unit_id
-    try:
-        return _unit_ids()[token]
-    except KeyError as exc:
+
+    matches = _unit_ids_for(token)
+    if not matches:
         raise NativeUnitIdError(
             f"unknown native UnitId symbol '{symbol}'"
-        ) from exc
+        )
+    if len(matches) > 1:
+        raise NativeUnitIdError(
+            f"native UnitId symbol '{symbol}' maps to multiple DE objects: "
+            + ", ".join(str(item) for item in matches)
+        )
+    return matches[0]
 
 
 __all__ = ["NativeUnitIdError", "resolve_unit_id"]
