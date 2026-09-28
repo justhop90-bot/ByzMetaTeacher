@@ -26,9 +26,9 @@ class NativeDucRule:
             raise ValueError("native DUC rule identity must not be empty")
         if self.order < 0:
             raise ValueError("native DUC rule order must be non-negative")
-        if not self.facts:
+        if not self.facts and not self.actions:
             raise ValueError(
-                f"native DUC rule '{self.identity}' requires at least one fact"
+                f"native DUC rule '{self.identity}' requires a fact or action"
             )
         if not isinstance(self.facts, tuple) or not isinstance(self.actions, tuple):
             raise TypeError("native DUC rule facts/actions must be tuples")
