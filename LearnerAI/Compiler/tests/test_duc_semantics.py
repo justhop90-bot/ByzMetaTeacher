@@ -63,6 +63,62 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_filter_generation_change_downgrades_local_target_proof_to_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-filter-distance", ("c:", "-1", "c:", "4")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(report.final_state.target.proof, DucTargetProof.UNKNOWN)
+
+
+    def test_filter_generation_change_downgrades_remote_target_proof_to_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-filter-distance", ("c:", "-1", "c:", "4")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(report.final_state.target.proof, DucTargetProof.UNKNOWN)
+
+
+    def test_native_id_target_survives_filter_generation_change(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "93")),
+                ("up-filter-distance", ("c:", "-1", "c:", "4")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(report.final_state.target.proof, DucTargetProof.NATIVE_ID_PROOF)
+
+
+    def test_target_reestablishment_after_filter_change_restores_current_pass_proof(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-filter-distance", ("c:", "-1", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
+        self.assertEqual(report.final_state.target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+
+
     def test_get_cost_delta_creates_four_goal_output_span(self):
         report = analyze_duc((
             _rule(
