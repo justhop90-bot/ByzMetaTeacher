@@ -9,6 +9,36 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum
 
+from ..ast import SourceLocation
+from .model import GoalRole, StorageRequestId
+
+
+@dataclass(frozen=True)
+class TimerRequest:
+    request_id: StorageRequestId
+    initialization_policy: str
+    stability_key: str
+    role: GoalRole = GoalRole.EXECUTION_MEMORY
+
+    def __post_init__(self) -> None:
+        if not self.initialization_policy.strip():
+            raise ValueError("TimerRequest initialization_policy must not be empty")
+        if not self.stability_key.strip():
+            raise ValueError("TimerRequest stability_key must not be empty")
+
+
+@dataclass(frozen=True)
+class TimerState:
+    name: str
+    request: TimerRequest
+    location: "SourceLocation | None" = None
+
+    def __post_init__(self) -> None:
+        if not self.name.strip():
+            raise ValueError("Timer state name must not be empty")
+        if self.request.request_id.purpose != f"timer:{self.name}":
+            raise ValueError("Timer request purpose must match its state name")
+
 
 class TimerStatus(str, Enum):
     DISABLED = "DISABLED"
@@ -124,6 +154,8 @@ def read_timer_triggered(timer: TimerRuntimeState) -> bool:
 
 __all__ = [
     "PendingTimerExpiry",
+    "TimerRequest",
+    "TimerState",
     "TimerReadKind",
     "TimerRuntimeState",
     "TimerStatus",
