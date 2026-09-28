@@ -133,6 +133,35 @@ class CompilerTests(unittest.TestCase):
         ):
             compile_source(source)
 
+
+    def test_undeclared_symbolic_strategic_number_is_rejected(self):
+        source = """
+        demand posture {
+            sn castle-mode = 3
+            require (up-compare-sn unknown-mode >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "references undeclared compiler-owned Strategic Number 'unknown-mode'",
+        ):
+            compile_source(source)
+
+    def test_numeric_native_strategic_number_reference_remains_allowed(self):
+        source = """
+        demand posture {
+            require (up-compare-sn 510 >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(up-compare-sn 510 >= 1)", output)
+
     def test_strategic_number_state_reserved_prefix_is_rejected(self):
         source = """
         demand posture {
