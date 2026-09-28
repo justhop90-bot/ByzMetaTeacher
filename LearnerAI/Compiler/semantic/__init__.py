@@ -186,3 +186,15 @@ from .recurrent_execution import (
     RecurrentExecutionStatus,
     analyze_recurrent_execution,
 )
+
+
+from .native_controller import (
+    NativeController,
+    NativeControllerCatalog,
+    NativeControllerDomain,
+    NativeControllerEdge,
+    NativeControllerRelation,
+    NativeControlSurface,
+    NativeControlSurfaceKind,
+    default_native_controller_catalog,
+)
