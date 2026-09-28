@@ -96,18 +96,16 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
         payload["records"][0] = dict(payload["records"][0])
         payload["records"][0]["strategic_number_id"] = 508
 
-        tampered_payload_without_integrity = dict(payload)
-        tampered_payload_without_integrity.pop("integrity")
+        payload["integrity"] = {
+            "algorithm": "SHA-256",
+            "content_sha256": "0" * 64,
+        }
         tampered_manifest_seed = BindingManifest.from_json(
-            json.dumps(tampered_payload_without_integrity, indent=2, sort_keys=True)
-            + "\n",
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
             verify_integrity=False,
         )
         tampered_content_sha256 = tampered_manifest_seed.content_sha256()
-        payload["integrity"] = {
-            "algorithm": "SHA-256",
-            "content_sha256": tampered_content_sha256,
-        }
+        payload["integrity"]["content_sha256"] = tampered_content_sha256
         tampered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         tampered_manifest = BindingManifest.from_json(
             tampered,
