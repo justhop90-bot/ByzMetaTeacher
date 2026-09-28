@@ -87,7 +87,7 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             binding_context=BindingContext(
                 strategic_number_inventory=sn_inventory,
             ),
-            native_control_plan=plan,
+            control_plan=plan,
         )
 
         self.assertIn("(defconst strategy-goal 42)", output)
@@ -247,7 +247,7 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
                 ),
             ),
         )
-        with self.assertRaisesRegex(ValueError, "undeclared Goal state"):
+        with self.assertRaisesRegex(ValueError, "undeclared GOAL state"):
             validate_native_control_plan(plan, default_de_registry())
 
 
