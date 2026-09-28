@@ -91,7 +91,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIn("remote", cost[0].message)
         self.assertIn("40", cost[0].message)
         self.assertIn("FAST", cost[0].message)
-        self.assertEqual(cost[0].severity, "WARNING")
+        self.assertEqual(cost[0].severity, "warning")
 
 
     def test_same_rule_search_reset_suppresses_recurrent_cost_diagnostic(self):
