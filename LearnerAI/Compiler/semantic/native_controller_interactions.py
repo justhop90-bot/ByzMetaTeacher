@@ -376,11 +376,292 @@ class NativeControllerInteractionCatalog:
         return hashlib.sha256(encoded).hexdigest()
 
 
+def _scope(
+    *,
+    source_families: tuple[AIRefVersionFamily, ...] = (AIRefVersionFamily.DE,),
+) -> EngineVersionScope:
+    return EngineVersionScope(
+        source_families=source_families,
+        engine_targets=(AIRefVersionFamily.DE,),
+        introduced_family=source_families[-1],
+    )
+
+
+def _controller(identifier: str) -> NativeInteractionEndpoint:
+    return NativeInteractionEndpoint(
+        NativeInteractionEndpointKind.CONTROLLER,
+        identifier,
+    )
+
+
+def _surface(identifier: str) -> NativeInteractionEndpoint:
+    return NativeInteractionEndpoint(
+        NativeInteractionEndpointKind.CONTROL_SURFACE,
+        identifier,
+    )
+
+
 def default_native_controller_interaction_catalog(
     controller_catalog: NativeControllerCatalog | None = None,
 ) -> NativeControllerInteractionCatalog:
     controller_catalog = controller_catalog or default_native_controller_catalog()
-    catalog = NativeControllerInteractionCatalog(())
+
+    airef_command = "https://airef.github.io/commands/commands-details.html"
+    airef_limits = "https://airef.github.io/resources/articles/data-limits.html"
+    performance = "https://airef.github.io/resources/articles/command-performance.html"
+    patch_notes = "https://airef.github.io/tables/up-patch-notes.html"
+    attack_forum = (
+        "https://forums.ageofempires.com/t/three-ways-to-get-the-ai-to-attack/205476"
+    )
+    economy_forum = (
+        "https://forums.ageofempires.com/t/creating-simple-ai-scripts-for-your-custom-campaigns/210881"
+    )
+    scripting = "https://userpatch.aiscripters.net/reference.html"
+    aoe2ai = "https://github.com/lewisc64/aoe2ai"
+    duke = "https://github.com/niektb/AI"
+
+    interactions = (
+        NativeControllerInteraction(
+            identity="attack-groups-gated-by-exploration",
+            source=_controller("attack-group-control"),
+            target=_controller("exploration-control"),
+            relation=NativeControllerInteractionKind.GATES,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(attack_forum, scripting, aoe2ai, duke),
+            engine_version_scope=_scope(),
+            description=(
+                "Community attack-group patterns require explored enemy state before "
+                "the attack machinery has usable targets."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="town-size-affects-attack-targeting",
+            source=_controller("town-size-defense-targeting"),
+            target=_controller("attack-group-control"),
+            relation=NativeControllerInteractionKind.AFFECTS_TARGETING,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(attack_forum, duke),
+            engine_version_scope=_scope(),
+            description=(
+                "Town-size and enemy-response controls are adjusted with attack-state "
+                "rules and timers in mature community attack scripts."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="civilian-allocation-coupled-with-resource-escrow",
+            source=_controller("civilian-task-allocation"),
+            target=_controller("resource-escrow-control"),
+            relation=NativeControllerInteractionKind.COUPLED_WITH,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(economy_forum, duke),
+            engine_version_scope=_scope(),
+            description=(
+                "Community economy scripts coordinate civilian allocation with "
+                "resource-protection and spending-control state; the evidence does "
+                "not establish a universal causal direction."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="escrow-gates-production-admission",
+            source=_controller("resource-escrow-control"),
+            target=_controller("production-admission"),
+            relation=NativeControllerInteractionKind.GATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(f"{airef_command}#release-escrow", f"{airef_command}#can-train"),
+            engine_version_scope=_scope(),
+            description=(
+                "Escrow-aware native production feasibility distinguishes resources "
+                "available in normal stockpiles from resources explicitly admitted "
+                "through escrow-aware production predicates."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="escrow-gates-research-admission",
+            source=_controller("resource-escrow-control"),
+            target=_controller("research-admission"),
+            relation=NativeControllerInteractionKind.GATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(f"{airef_command}#release-escrow", f"{airef_command}#can-research"),
+            engine_version_scope=_scope(),
+            description=(
+                "Escrow-aware native research feasibility distinguishes resources "
+                "available to ordinary research from explicitly escrow-enabled research."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="duc-local-search-feeds-target-control",
+            source=_controller("duc-search-state"),
+            target=_controller("duc-target-control"),
+            relation=NativeControllerInteractionKind.FEEDS,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(f"{airef_command}#up-find-local", performance, patch_notes, aoe2ai),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.WK, AIRefVersionFamily.DE)),
+            performance_class=PerformanceClass.MEDIUM,
+            cardinality=NativeInteractionCardinality(0, 240),
+            description=(
+                "Local DUC search results feed later selected-target operations; "
+                "AIRef benchmark evidence shows cost varies materially with list "
+                "cardinality and the searched object population."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="duc-remote-search-feeds-target-control",
+            source=_controller("duc-search-state"),
+            target=_controller("duc-target-control"),
+            relation=NativeControllerInteractionKind.FEEDS,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.RUNTIME_DEPENDENT,
+            mutation_owner=NativeInteractionMutationOwner.NONE,
+            sources=(f"{airef_command}#up-find-remote", performance, patch_notes, aoe2ai),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.WK, AIRefVersionFamily.DE)),
+            performance_class=PerformanceClass.FAST,
+            cardinality=NativeInteractionCardinality(0, 40),
+            description=(
+                "Remote DUC search results feed later selected-target operations; "
+                "remote-list capacity and benchmark cost are explicitly bounded."
+            ),
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-include-auto-resets-local-index",
+            source=_surface("duc-search-state:command:up-filter-include"),
+            target=_surface("duc-search-state:duc_search_index:local"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets local search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-include-auto-resets-remote-index",
+            source=_surface("duc-search-state:command:up-filter-include"),
+            target=_surface("duc-search-state:duc_search_index:remote"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets remote search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-exclude-auto-resets-local-index",
+            source=_surface("duc-search-state:command:up-filter-exclude"),
+            target=_surface("duc-search-state:duc_search_index:local"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets local search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-exclude-auto-resets-remote-index",
+            source=_surface("duc-search-state:command:up-filter-exclude"),
+            target=_surface("duc-search-state:duc_search_index:remote"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets remote search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-range-auto-resets-local-index",
+            source=_surface("duc-search-state:command:up-filter-range"),
+            target=_surface("duc-search-state:duc_search_index:local"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets local search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-filter-range-auto-resets-remote-index",
+            source=_surface("duc-search-state:command:up-filter-range"),
+            target=_surface("duc-search-state:duc_search_index:remote"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Changing DUC filters resets remote search cursor state for subsequent searches.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-reset-filters-auto-resets-local-index",
+            source=_surface("duc-search-state:command:up-reset-filters"),
+            target=_surface("duc-search-state:duc_search_index:local"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Resetting retained DUC filters resets local search cursor state.",
+        ),
+        NativeControllerInteraction(
+            identity="duc-reset-filters-auto-resets-remote-index",
+            source=_surface("duc-search-state:command:up-reset-filters"),
+            target=_surface("duc-search-state:duc_search_index:remote"),
+            relation=NativeControllerInteractionKind.AUTO_MUTATES,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=NativeInteractionSupportState.EVIDENCE_ONLY,
+            lifetime=NativeInteractionLifetime.PERSISTENT,
+            visibility=NativeInteractionVisibility.SAME_RULE,
+            mutation_owner=NativeInteractionMutationOwner.ENGINE_AUTOMATIC,
+            sources=(patch_notes, scripting),
+            engine_version_scope=_scope(source_families=(AIRefVersionFamily.UP, AIRefVersionFamily.DE)),
+            description="Resetting retained DUC filters resets remote search cursor state.",
+        ),
+    )
+
+    catalog = NativeControllerInteractionCatalog(interactions)
     catalog.validate(controller_catalog)
     return catalog
 
