@@ -32,28 +32,28 @@ Target: `up-get-search-state` concrete four-Goal output-span semantics.
 ## Implementation
 
 ### IR
-- [ ] Allow `DucGoalOutputSpan` widths 1 and 4 with native range validation.
-- [ ] Preserve generation, overwrite-generation, writer provenance, and pass identity for width-4 outputs.
-- [ ] Add concrete `output_span` metadata to `DucSearchStateObservation`.
-- [ ] Keep existing width-1 group-size behavior unchanged.
+- [x] Allow `DucGoalOutputSpan` widths 1 and 4 with native range validation.
+- [x] Preserve generation, overwrite-generation, writer provenance, and pass identity for width-4 outputs.
+- [x] Add concrete `output_span` metadata to `DucSearchStateObservation`.
+- [x] Keep existing width-1 group-size behavior unchanged.
 
 ### Semantic analysis
-- [ ] Derive the search-state output width/range from the shared native storage contract.
-- [ ] Validate numeric OutputGoalId against the four-goal contract.
-- [ ] Create and persist a concrete width-4 span in `goal_output_spans`.
-- [ ] Record previous writer generation/provenance when the same output span is rewritten.
-- [ ] Preserve the observation's existing cardinality fields unchanged.
-- [ ] Fail closed with a deterministic DUC diagnostic when a numeric start cannot fit the width-4 contract.
-- [ ] Leave symbolic OutputGoalId unresolved rather than manufacturing a GoalId.
+- [x] Derive the search-state output width/range from the shared native storage contract.
+- [x] Validate numeric OutputGoalId against the four-goal contract.
+- [x] Create and persist a concrete width-4 span in `goal_output_spans`.
+- [x] Record previous writer generation/provenance when the same output span is rewritten.
+- [x] Preserve the observation's existing cardinality fields unchanged.
+- [x] Fail closed with a deterministic DUC diagnostic when a numeric start cannot fit the width-4 contract.
+- [x] Leave symbolic OutputGoalId unresolved rather than manufacturing a GoalId.
 
 ### Tests
-- [ ] Width-4 span is created for a valid numeric OutputGoalId.
-- [ ] Span provenance names `up-get-search-state`.
-- [ ] Repeated writes to the same four-goal block advance generation and preserve overwrite provenance.
-- [ ] Start 15996 is accepted.
-- [ ] Start 15997 is rejected with deterministic DUC diagnostics.
-- [ ] Existing group-size width-1 tests remain unchanged.
-- [ ] Existing branch/loop/recurrent DUC tests remain unchanged.
+- [x] Width-4 span is created for a valid numeric OutputGoalId.
+- [x] Span provenance names `up-get-search-state`.
+- [x] Repeated writes to the same four-goal block advance generation and preserve overwrite provenance.
+- [x] Start 15996 is accepted.
+- [x] Start 15997 is rejected with deterministic DUC diagnostics.
+- [x] Existing group-size width-1 tests remain unchanged.
+- [x] Existing branch/loop/recurrent DUC tests remain unchanged.
 
 ### Verification
 - [ ] Focused DUC semantic suite passes.
@@ -62,6 +62,11 @@ Target: `up-get-search-state` concrete four-Goal output-span semantics.
 - [ ] Cross-platform native-support determinism jobs pass.
 - [ ] Aggregate snapshot comparison passes.
 - [ ] Only then merge to `main`.
+
+### Additional edge coverage implemented
+
+- [x] Preserve width-4 search-state spans across path joins where only some control-flow paths write the output.
+- [x] Leave symbolic OutputGoalId values unresolved at the DUC semantic layer.
 
 ## Evidence-backed acceptance
 
