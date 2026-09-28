@@ -2082,6 +2082,36 @@ def _join_search_indices(
     )
 
 
+def _widen_search_index(
+    previous: DucSearchIndexState,
+    current: DucSearchIndexState,
+) -> DucSearchIndexState:
+    if _search_index_key(previous) == _search_index_key(current):
+        return previous
+    same_query = previous.query_signature == current.query_signature
+    same_focus = previous.focus_player_signature == current.focus_player_signature
+    same_offset = previous.offset == current.offset
+    return DucSearchIndexState(
+        offset=previous.offset if same_offset else None,
+        generation=0,
+        query_signature=previous.query_signature if same_query else None,
+        focus_player_signature=(
+            previous.focus_player_signature if same_focus else None
+        ),
+        known=(
+            previous.known
+            and current.known
+            and same_offset
+        ),
+        last_reset_reason=(
+            previous.last_reset_reason
+            if previous.last_reset_reason is current.last_reset_reason
+            else DucSearchIndexResetReason.UNKNOWN
+        ),
+        path_ambiguous=True,
+    )
+
+
 def _list_semantic_key(state: DucSearchListState) -> tuple[object, ...]:
     if state.current_generation is not None:
         return (
@@ -2102,8 +2132,9 @@ def _widen_list_state(
     if _list_semantic_key(previous) == _list_semantic_key(current):
         return replace(
             previous,
-            search_index=_join_search_indices(
-                (previous.search_index, current.search_index)
+            search_index=_widen_search_index(
+                previous.search_index,
+                current.search_index,
             ),
         )
     candidates: dict[tuple[object, ...], DucListGeneration] = {}
@@ -2138,8 +2169,9 @@ def _widen_list_state(
         initialized=previous.initialized or current.initialized,
         path_ambiguous=True,
         generation_variants=(representative,) if representative is not None else (),
-        search_index=_join_search_indices(
-            (previous.search_index, current.search_index)
+        search_index=_widen_search_index(
+            previous.search_index,
+            current.search_index,
         ),
     )
 
