@@ -13,6 +13,7 @@ import json
 from typing import Iterable
 
 from ..ir.strategic_number import StrategicNumberAccess
+from ..ir.strategic_number import StrategicNumberAccess
 from .community_engine import EvidenceClass, PracticeStatus
 
 
@@ -107,6 +108,16 @@ class NativeControllerEdge:
             raise ValueError("native controller self-interactions are not supported")
         if not self.sources:
             raise ValueError("native controller edges require evidence sources")
+
+
+@dataclass(frozen=True)
+class NativeControllerBinding:
+    access_identifier: str
+    controller_id: str
+    surface_identity: str
+    status: PracticeStatus
+    rule_order: int
+    within_rule_order: int
 
 
 @dataclass(frozen=True)
@@ -259,6 +270,44 @@ class NativeControllerCatalog:
             separators=(",", ":"),
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
+
+
+def bind_strategic_number_accesses(
+    accesses: tuple[StrategicNumberAccess, ...],
+    catalog: NativeControllerCatalog | None = None,
+) -> tuple[NativeControllerBinding, ...]:
+    """Bind known Strategic Number accesses to descriptive controller surfaces."""
+    controller_catalog = catalog or default_native_controller_catalog()
+    bindings: list[NativeControllerBinding] = []
+    for access in accesses:
+        try:
+            surface = controller_catalog.resolve_surface(
+                NativeControlSurfaceKind.STRATEGIC_NUMBER,
+                access.identifier,
+            )
+        except KeyError:
+            continue
+        bindings.append(
+            NativeControllerBinding(
+                access_identifier=access.identifier,
+                controller_id=surface.controller_id,
+                surface_identity=surface.identity,
+                status=surface.status,
+                rule_order=access.rule_order,
+                within_rule_order=access.within_rule_order,
+            )
+        )
+    return tuple(
+        sorted(
+            bindings,
+            key=lambda item: (
+                item.rule_order,
+                item.within_rule_order,
+                item.access_identifier,
+                item.controller_id,
+            ),
+        )
+    )
 
 
 def _surface(
@@ -524,9 +573,11 @@ __all__ = [
     "NativeController",
     "NativeControllerCatalog",
     "NativeControllerDomain",
+    "NativeControllerBinding",
     "NativeControllerEdge",
     "NativeControllerRelation",
     "NativeControlSurface",
     "NativeControlSurfaceKind",
     "default_native_controller_catalog",
+    "bind_strategic_number_accesses",
 ]
