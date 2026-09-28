@@ -18,7 +18,8 @@
           "native_id": null,
           "initial_index": 0,
           "metadata": {
-            "role": "object selected before failed Action"
+            "role": "object selected before failed Action",
+            "capacity_boundary": "search-local capacity is 240; index 240 is invalid because valid indices are 0..239"
           }
         }
       ],
@@ -51,7 +52,7 @@
     ],
     "probe": [
       {
-        "label": "failed-target-establishment-action",
+        "label": "failed-target-establishment-action-at-capacity",
         "source": "(up-set-target-object search-local c: 240)",
         "expect_native_result": "FAILURE"
       },
@@ -179,7 +180,7 @@
           "message": "Capture required from a real AoE2DE runtime before contract promotion."
         }
       ],
-      "notes": "Capture template only. Placeholder engine scope and empty observations are intentional. This artifact is not native evidence and must not be promoted until populated by an exact-build runtime capture."
+      "notes": "Capture template only. The failed Action deliberately uses index 240, exactly equal to the documented search-local capacity of 240 and therefore outside the valid index range 0..239. Placeholder engine scope and empty observations are intentional. This is not native evidence until executed against the exact AoE2DE runtime."
     }
   }
 }
