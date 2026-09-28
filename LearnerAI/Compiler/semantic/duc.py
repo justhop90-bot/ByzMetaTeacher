@@ -2924,14 +2924,11 @@ def _analyze_duc_linear(
                             )
                         )
                         continue
-                search_contract = contracts.duc_search(
-                    "up-find-local" if source is DucListKind.LOCAL else "up-find-remote"
+                current = (
+                    state.local_list
+                    if source is DucListKind.LOCAL
+                    else state.remote_list
                 )
-                if search_contract is None:
-                    raise ValueError(
-                        f"no native DUC capacity contract exists for {source.value.lower()} object append"
-                    )
-
                 provenance = _provenance(
                     rule,
                     action,
@@ -2939,53 +2936,47 @@ def _analyze_duc_linear(
                     state_revision=state_revision,
                     pass_id=state.pass_id,
                     inputs=(
-                        (
-                            current.generation,
-                        )
-                        if (
-                            current := (
-                                state.local_list
-                                if source is DucListKind.LOCAL
-                                else state.remote_list
-                            ).current_generation
-                        ) is not None
+                        (current.current_generation.generation,)
+                        if current.current_generation is not None
                         else ()
                     ),
                     contract_id="duc.mutation.add-object-by-id",
                     evidence_ids=mutation_contract.evidence_ids,
                 )
-                current = (
-                    state.local_list
+                target, target_transition = _target_after_list_mutation(
+                    state.target,
+                    list_kind=source,
+                    mutation_kind=DucListMutationKind.ADD_OBJECT,
+                    object_data=object_id,
+                    compare_operator=None,
+                    compare_value=None,
+                )
+                updated_list = _mutate_list_generation(
+                    current,
+                    command=command,
+                    arguments=args,
+                    mutation_kind=DucListMutationKind.ADD_OBJECT,
+                )
+                local_list = (
+                    updated_list
                     if source is DucListKind.LOCAL
+                    else state.local_list
+                )
+                remote_list = (
+                    updated_list
+                    if source is DucListKind.REMOTE
                     else state.remote_list
                 )
-                if (
-                    current.current_generation is not None
-                    and current.current_generation.cardinality is not None
-                    and current.current_generation.cardinality.minimum >= search_contract.capacity
-                ):
-                    diagnostics.append(
-                        DucDiagnostic(
-                            "DUC-014",
-                            DiagnosticSeverity.ERROR.value,
-                            rule.rule_order,
-                            (
-                                f"up-add-object-by-id cannot append to the full "
-                                f"{source.value.lower()} DUC list at capacity "
-                                f"{search_contract.capacity}"
-                            ),
-                            _location(action, rule.source_location),
-                        )
-                    )
-                    continue
-
-                state = _append_object_by_id(
-                    state,
-                    list_kind=source,
-                    type_op=type_op,
-                    object_id=object_id,
-                    provenance=provenance,
-                    capacity=search_contract.capacity,
+                state = DucSemanticState(
+                    local_list,
+                    remote_list,
+                    state.filters,
+                    target,
+                    state.point_target,
+                    state_revision,
+                    state.pass_id,
+                    groups=state.groups,
+                    goal_output_spans=state.goal_output_spans,
                 )
                 mutations.append(
                     DucListMutationEffect(
@@ -2995,13 +2986,25 @@ def _analyze_duc_linear(
                         object_data=object_id,
                         compare_operator=None,
                         compare_value=None,
-                        target_transition=DucTargetTransition.UNCHANGED,
+                        target_transition=target_transition,
                         provenance=provenance,
                     )
                 )
+                if target_transition is DucTargetTransition.UNKNOWN:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-007",
+                            DiagnosticSeverity.WARNING.value,
+                            rule.rule_order,
+                            (
+                                f"{command} may invalidate an object target in "
+                                f"{source.value.lower()} DUC state; target lifetime is unknown"
+                            ),
+                            _location(action, rule.source_location),
+                        )
+                    )
                 rule_writes.add(DucStateKind.LIST)
                 continue
-
             if mutation_contract is not None:
                 if command == "up-clean-search" and len(args) != 3:
                     raise ValueError("up-clean-search requires SearchSource, ObjectData, and SearchOrder")
