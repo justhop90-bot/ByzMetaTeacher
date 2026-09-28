@@ -108,6 +108,11 @@ class DucSearchFactResult(str, Enum):
     RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
     GUARANTEED_FALSE = "GUARANTEED_FALSE"
 
+class DucTargetFactResult(str, Enum):
+    NOT_A_FACT = "NOT_A_FACT"
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_FALSE = "GUARANTEED_FALSE"
+
 
 class DucTargetTransition(str, Enum):
     UNCHANGED = "UNCHANGED"
@@ -389,6 +394,14 @@ class DucSearchOperation:
 
 
 @dataclass(frozen=True)
+class DucTargetFactObservation:
+    command: str
+    result: DucTargetFactResult
+    target: Optional["DucTargetState"]
+    provenance: "DucProvenance"
+
+
+@dataclass(frozen=True)
 class DucListMutationEffect:
     command: str
     list_kind: DucListKind
@@ -515,6 +528,7 @@ class DucAnalysisReport:
     resets: tuple[DucResetEffect, ...] = ()
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
+    target_fact_observations: tuple[DucTargetFactObservation, ...] = ()
     target_consumers: tuple[DucTargetConsumerEffect, ...] = ()
     target_data_observations: tuple[DucTargetDataObservation, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
@@ -538,6 +552,7 @@ __all__ = [
     "DucDiagnostic",
     "DucExecutionEffect",
     "DucTargetConsumerEffect",
+    "DucTargetFactObservation",
     "DucTargetConsumerMode",
     "DucTargetDataObservation",
     "DucTargetDataRelation",
@@ -564,6 +579,7 @@ __all__ = [
     "DucSearchStateObservation",
     "DucSemanticState",
     "DucStateKind",
+    "DucTargetFactResult",
     "DucTargetKind",
     "DucTargetProof",
     "DucTargetTransition",
