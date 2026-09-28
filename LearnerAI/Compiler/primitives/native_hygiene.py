@@ -832,12 +832,22 @@ def default_native_duc_mutation_contracts() -> Tuple[NativeDucMutationContract, 
 def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]:
     return (
         NativeDucTargetContract(
+            "up-set-target-by-id",
+            (),
+            "OBJECT",
+            False,
+            False,
+            ("airef:duc:set-target-by-id",),
+            "NATIVE_ID",
+        ),
+        NativeDucTargetContract(
             "up-set-target-object",
             ("LOCAL", "REMOTE"),
             "OBJECT",
             True,
             False,
             ("airef:duc:set-target-object",),
+            "LIST_INDEX",
         ),
         NativeDucTargetContract(
             "up-set-target-point",
@@ -846,6 +856,7 @@ def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]
             False,
             False,
             ("airef:duc:set-target-point",),
+            "POINT",
         ),
     )
 
@@ -1043,6 +1054,11 @@ class NativeDucTargetContract:
     requires_current_list: bool
     requires_current_point: bool
     evidence_ids: Tuple[str, ...]
+    identity_kind: str = "LIST_INDEX"
+
+    def __post_init__(self) -> None:
+        if self.identity_kind not in {"LIST_INDEX", "NATIVE_ID", "POINT"}:
+            raise ValueError(f"unknown DUC target identity kind: {self.identity_kind}")
 
 
 @dataclass(frozen=True)
@@ -1863,6 +1879,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:full-reset-search", "up-full-reset-search", "(up-full-reset-search)"),
         ("airef:duc:clean-search", "up-clean-search", "(up-clean-search <SearchSource> <ObjectData> <SearchOrder>)"),
         ("airef:duc:remove-objects", "up-remove-objects", "(up-remove-objects <SearchSource> <ObjectData> <compareOp> <Value>)"),
+        ("airef:duc:set-target-by-id", "up-set-target-by-id", "(up-set-target-by-id <typeOp> <Id>)"),
         ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
         ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
