@@ -20,7 +20,8 @@ SN_ID_MAX = 511
 TIMER_ID_MIN = 1
 TIMER_ID_MAX = 50
 ALLOCATOR_VERSION = "native-storage-v4"
-BINDING_MANIFEST_VERSION = 3
+BINDING_MANIFEST_SCHEMA = "aoe2.compiler.binding-manifest"
+BINDING_MANIFEST_VERSION = 4
 GoalStorageShape = GoalSpanKind
 
 
@@ -381,6 +382,63 @@ class StrategicNumberRequest:
     why_not_goal: str
     stability_key: str
     role: GoalRole = GoalRole.PERSISTENT_STATE
+    native_contract_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.why_not_goal.strip():
+            raise ValueError(
+                f"Strategic Number request {self.request_id} requires WHY_NOT_GOAL justification"
+            )
+        if not self.stability_key.strip():
+            raise ValueError(
+                f"Strategic Number request {self.request_id} requires a stability_key"
+            )
+
+
+@dataclass(frozen=True)
+class StrategicNumberBindingMetadata:
+    request_id: StorageRequestId
+    role: GoalRole
+    stability_key: str
+    why_not_goal: str
+    native_contract_id: str | None
+    request_fingerprint: str
+
+
+def strategic_number_request_fingerprint(
+    request: StrategicNumberRequest,
+) -> str:
+    material = {
+        "request": {
+            "source_unit": request.request_id.owner.source_unit,
+            "local_name": request.request_id.owner.local_name,
+            "purpose": request.request_id.purpose,
+        },
+        "role": request.role.value,
+        "stability_key": request.stability_key.strip(),
+        "why_not_goal": request.why_not_goal.strip(),
+        "native_contract_id": request.native_contract_id,
+    }
+    canonical = json.dumps(
+        material,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _strategic_number_binding_metadata(
+    request: StrategicNumberRequest,
+) -> StrategicNumberBindingMetadata:
+    return StrategicNumberBindingMetadata(
+        request_id=request.request_id,
+        role=request.role,
+        stability_key=request.stability_key.strip(),
+        why_not_goal=request.why_not_goal.strip(),
+        native_contract_id=request.native_contract_id,
+        request_fingerprint=strategic_number_request_fingerprint(request),
+    )
 
 
 @dataclass(frozen=True)
