@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Native zero-findings acceptance gate for the typed internal DUC plan path."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+ROOT = Path(__file__).parents[2]
+sys.path.insert(0, str(ROOT))
+
+from Compiler.ast import Expression
+from Compiler.compiler import compile_source
+from Compiler.ir import NativeDucPlan, NativeDucRule
+
+
+def _plan() -> NativeDucPlan:
+    return NativeDucPlan(
+        (
+            NativeDucRule(
+                identity="search-and-select",
+                order=100,
+                facts=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-set-target-object search-local c: 0)",
+                        "up-set-target-object",
+                        ("search-local", "c:", "0"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="target-action",
+                order=101,
+                facts=(
+                    Expression(
+                        "(up-set-target-object search-local c: 0)",
+                        "up-set-target-object",
+                        ("search-local", "c:", "0"),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-target-objects 1 action-default -1 -1)",
+                        "up-target-objects",
+                        ("1", "action-default", "-1", "-1"),
+                    ),
+                ),
+            ),
+        )
+    )
+
+
+def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "aoe2_ai_lab",
+            "lint",
+            str(artifact),
+            "--profile",
+            "default",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"native validator did not return JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit("native validator JSON root must be an object")
+    return result, payload
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    args = parser.parse_args()
+
+    source = """
+    demand marker {
+        require (can-train spearman)
+        action (train spearman)
+        witness (unit-type-count spearman >= 1)
+        release (unit-type-count spearman >= 1)
+    }
+    """
+    plan = _plan()
+    first = compile_source(source, duc_plan=plan)
+    second = compile_source(source, duc_plan=plan)
+    if first != second:
+        raise SystemExit("typed NativeDucPlan artifact is non-deterministic")
+
+    required_fragments = (
+        "(up-find-local c: villager c: 1)",
+        "(up-set-target-object search-local c: 0)",
+        "(up-target-objects 1 action-default -1 -1)",
+    )
+    missing = tuple(
+        fragment for fragment in required_fragments if fragment not in first
+    )
+    if missing:
+        raise SystemExit(
+            f"DUC artifact is missing emitted commands: {missing}"
+        )
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(first, encoding="utf-8")
+
+    result, payload = _validate_native(args.output)
+    finding_count = payload.get("finding_count")
+    findings = payload.get("findings")
+
+    report = {
+        "artifact": str(args.output.resolve()),
+        "source_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        "artifact_sha256": hashlib.sha256(first.encode("utf-8")).hexdigest(),
+        "validator_exit_code": result.returncode,
+        "duc_rules": [
+            {
+                "identity": rule.identity,
+                "order": rule.order,
+                "facts": tuple(expression.source for expression in rule.facts),
+                "actions": tuple(expression.source for expression in rule.actions),
+            }
+            for rule in plan.rules
+        ],
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "finding_count": finding_count,
+        "findings": findings,
+    }
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    sys.stdout.write(result.stdout)
+    sys.stderr.write(result.stderr)
+
+    if result.returncode != 0:
+        print(
+            f"native validator exited {result.returncode}",
+            file=sys.stderr,
+        )
+        return result.returncode or 1
+    if finding_count != 0 or findings != []:
+        print(
+            f"DUC native gate failed: finding_count={finding_count}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(
+        "DUC compiler/native zero-findings gate passed "
+        f"(sha256={report['artifact_sha256']})"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
