@@ -21,7 +21,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
-    fixture = ROOT / "tests" / "fixtures" / "research_in_progress.perdsl"
+    fixture = Path(__file__).parent / "fixtures" / "research_in_progress.perdsl"
     source = fixture.read_text(encoding="utf-8")
     first = compile_source(source, source_unit=str(fixture))
     second = compile_source(source, source_unit=str(fixture))
