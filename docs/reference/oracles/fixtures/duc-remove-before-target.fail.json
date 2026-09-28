@@ -1,0 +1,186 @@
+{
+  "fixture": {
+    "id": "DUC-ORACLE-REMOVE-BEFORE-TARGET-EXAMPLE",
+    "kind": "SEMANTIC_EXAMPLE",
+    "command_under_test": "up-remove-objects",
+    "engine_scope": {
+      "game": "aoe2de",
+      "build": "fixture-test-double",
+      "patch": "schema-example",
+      "ai_layer": "duc-oracle-double"
+    },
+    "scenario": {
+      "name": "canonical-five-object-list",
+      "object_set": [
+        {
+          "alias": "A",
+          "native_id": 1001,
+          "initial_index": 0
+        },
+        {
+          "alias": "B",
+          "native_id": 1002,
+          "initial_index": 1
+        },
+        {
+          "alias": "C",
+          "native_id": 1003,
+          "initial_index": 2
+        },
+        {
+          "alias": "D",
+          "native_id": 1004,
+          "initial_index": 3
+        },
+        {
+          "alias": "E",
+          "native_id": 1005,
+          "initial_index": 4
+        }
+      ],
+      "object_identity": {
+        "method": "native-object-id",
+        "note": "Synthetic IDs used only to exercise the oracle artifact format."
+      }
+    },
+    "setup": [
+      {
+        "label": "reset",
+        "source": "(up-full-reset-search)"
+      },
+      {
+        "label": "populate",
+        "source": "(up-find-local c:unit c:1)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "select-D",
+        "source": "(up-set-target-object search-local c:3)",
+        "expect_native_result": "SUCCESS"
+      }
+    ],
+    "probe": [
+      {
+        "label": "remove-B",
+        "source": "(up-remove-objects search-local -1 == 1)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "read-target-index",
+        "source": "(up-get-object-data object-data-index 110)",
+        "expect_native_result": "SUCCESS"
+      }
+    ],
+    "assertions": [
+      {
+        "id": "old-index-preserved",
+        "description": "Intentional failing semantic expectation: D must remain at index 3 after removing B.",
+        "expected": 3,
+        "observation_path": "/fixture/observation/target/after/index"
+      },
+      {
+        "id": "target-identity-survives",
+        "description": "The selected native object remains D.",
+        "expected": 1004,
+        "observation_path": "/fixture/observation/target/after/native_id"
+      }
+    ],
+    "observation": {
+      "engine": {
+        "build": "fixture-test-double",
+        "patch": "schema-example",
+        "ai_layer": "duc-oracle-double"
+      },
+      "result": "FAIL",
+      "list": {
+        "before": {
+          "ids": [
+            1001,
+            1002,
+            1003,
+            1004,
+            1005
+          ],
+          "source": "search-local"
+        },
+        "after": {
+          "ids": [
+            1001,
+            1003,
+            1004,
+            1005
+          ],
+          "source": "search-local"
+        }
+      },
+      "target": {
+        "before": {
+          "selected": true,
+          "source": "search-local",
+          "index": 3,
+          "native_id": 1004,
+          "access_result": "SUCCESS"
+        },
+        "after": {
+          "selected": true,
+          "source": "search-local",
+          "index": 2,
+          "native_id": 1004,
+          "access_result": "SUCCESS"
+        }
+      },
+      "cursor": {
+        "before": null,
+        "after": null,
+        "transition": "UNOBSERVABLE",
+        "observability": "UNOBSERVABLE",
+        "probe_method": "next-search"
+      },
+      "search_state": {
+        "before": {
+          "local_total": 5,
+          "local_last_search": 5,
+          "remote_total": 0,
+          "remote_last_search": 0
+        },
+        "after": {
+          "local_total": 4,
+          "local_last_search": 0,
+          "remote_total": 0,
+          "remote_last_search": 0
+        }
+      },
+      "probe": {
+        "commands": [
+          {
+            "source": "(up-remove-objects search-local -1 == 1)",
+            "result": "SUCCESS"
+          },
+          {
+            "source": "(up-get-object-data object-data-index 110)",
+            "result": "SUCCESS",
+            "observed_output": {
+              "object_data_index": 2
+            }
+          }
+        ]
+      },
+      "assertions": [
+        {
+          "id": "old-index-preserved",
+          "result": "FAIL",
+          "expected": 3,
+          "actual": 2,
+          "message": "Selected object identity survives, but its list index shifts from 3 to 2."
+        },
+        {
+          "id": "target-identity-survives",
+          "result": "PASS",
+          "expected": 1004,
+          "actual": 1004
+        }
+      ],
+      "notes": "Synthetic semantic example only; the FAIL result is intentional and demonstrates semantic assertion failure without malformed fixture data."
+    }
+  }
+}

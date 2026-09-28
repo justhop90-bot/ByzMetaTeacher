@@ -1,0 +1,737 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/justhop90-bot/ByzMetaTeacher/raw/refs/heads/main/docs/reference/oracles/duc-native-oracle.schema.json",
+  "title": "AoE2 DUC Native Oracle Fixture",
+  "description": "Portable JSON Schema for black-box DUC native oracle fixtures. Cross-document and arithmetic consistency checks intentionally remain outside the schema.",
+  "type": "object",
+  "required": [
+    "fixture"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "fixture": {
+      "$ref": "#/$defs/fixture"
+    }
+  },
+  "$defs": {
+    "assertionResult": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "UNVERIFIED",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "cursorTransition": {
+      "type": "string",
+      "enum": [
+        "PRESERVED",
+        "REBASED",
+        "RESET",
+        "AT_END",
+        "BLOCKED",
+        "UNOBSERVABLE"
+      ]
+    },
+    "fixture": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "command_under_test",
+        "engine_scope",
+        "scenario",
+        "setup",
+        "probe",
+        "assertions",
+        "observation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DUC-ORACLE-[A-Z0-9-]+$"
+        },
+        "command_under_test": {
+          "type": "string",
+          "enum": [
+            "up-remove-objects",
+            "up-clean-search"
+          ]
+        },
+        "engine_scope": {
+          "$ref": "#/$defs/engineScope"
+        },
+        "scenario": {
+          "$ref": "#/$defs/scenario"
+        },
+        "setup": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nativeCommand"
+          }
+        },
+        "probe": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nativeCommand"
+          }
+        },
+        "assertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/fixtureAssertion"
+          }
+        },
+        "observation": {
+          "$ref": "#/$defs/observationRecord"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "NATIVE_OBSERVATION",
+            "SEMANTIC_EXAMPLE"
+          ]
+        }
+      }
+    },
+    "engineScope": {
+      "type": "object",
+      "required": [
+        "game",
+        "build"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "game": {
+          "const": "aoe2de"
+        },
+        "build": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ai_layer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "required": [
+        "name",
+        "object_set"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object_set": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/objectAlias"
+          }
+        },
+        "object_identity": {
+          "$ref": "#/$defs/objectIdentity"
+        }
+      }
+    },
+    "objectAlias": {
+      "type": "object",
+      "required": [
+        "alias"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "alias": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_-]*$"
+        },
+        "native_id": {
+          "type": [
+            "string",
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "initial_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "objectIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "object-data-index",
+            "native-object-id",
+            "harness-assigned-alias"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "nativeCommand": {
+      "type": "object",
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expect_native_result": {
+          "type": "string",
+          "enum": [
+            "SUCCESS",
+            "FAILURE",
+            "UNKNOWN",
+            "NOT_OBSERVED"
+          ]
+        }
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "uri"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "AIREF",
+            "USERPATCH",
+            "COMMUNITY",
+            "REPOSITORY",
+            "NATIVE_EXPERIMENT"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "fixtureAssertion": {
+      "type": "object",
+      "required": [
+        "id",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected": {},
+        "observation_path": {
+          "type": "string",
+          "pattern": "^/fixture/observation/"
+        },
+        "allowed_results": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/assertionResult"
+          }
+        }
+      }
+    },
+    "observationRecord": {
+      "type": "object",
+      "required": [
+        "engine",
+        "result",
+        "list",
+        "target",
+        "cursor",
+        "search_state",
+        "probe",
+        "assertions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "$ref": "#/$defs/runtimeEngine"
+        },
+        "result": {
+          "$ref": "#/$defs/assertionResult"
+        },
+        "list": {
+          "$ref": "#/$defs/listObservation"
+        },
+        "target": {
+          "$ref": "#/$defs/targetObservation"
+        },
+        "cursor": {
+          "$ref": "#/$defs/cursorObservation"
+        },
+        "search_state": {
+          "$ref": "#/$defs/searchStateObservation"
+        },
+        "probe": {
+          "$ref": "#/$defs/probeObservation"
+        },
+        "assertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/assertionObservation"
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "runtimeEngine": {
+      "type": "object",
+      "required": [
+        "build"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "build": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ai_layer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captured_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "listObservation": {
+      "type": "object",
+      "required": [
+        "before",
+        "after"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/listSnapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/listSnapshot"
+        }
+      }
+    },
+    "listSnapshot": {
+      "type": "object",
+      "required": [
+        "ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "search-local",
+            "search-remote"
+          ]
+        }
+      }
+    },
+    "targetObservation": {
+      "type": "object",
+      "required": [
+        "before",
+        "after"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/targetSnapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/targetSnapshot"
+        }
+      }
+    },
+    "targetSnapshot": {
+      "type": "object",
+      "required": [
+        "selected",
+        "access_result"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "selected": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "search-local",
+            "search-remote",
+            "direct-id",
+            null
+          ]
+        },
+        "index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "native_id": {
+          "type": [
+            "string",
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "access_result": {
+          "type": "string",
+          "enum": [
+            "SUCCESS",
+            "FAILURE",
+            "UNKNOWN",
+            "NOT_ATTEMPTED"
+          ]
+        },
+        "object_data": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "selected": {
+                "const": true
+              }
+            },
+            "required": [
+              "selected"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "source",
+                  "index",
+                  "native_id"
+                ],
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "search-local",
+                      "search-remote"
+                    ]
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "native_id": {
+                    "type": [
+                      "string",
+                      "integer"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              },
+              {
+                "required": [
+                  "source",
+                  "native_id"
+                ],
+                "properties": {
+                  "source": {
+                    "const": "direct-id"
+                  },
+                  "native_id": {
+                    "type": [
+                      "string",
+                      "integer"
+                    ],
+                    "minimum": 0
+                  }
+                },
+                "not": {
+                  "required": [
+                    "index"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "selected": {
+                "const": false
+              }
+            },
+            "required": [
+              "selected"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source": {
+                "type": "null"
+              },
+              "index": {
+                "type": "null"
+              },
+              "native_id": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cursorObservation": {
+      "type": "object",
+      "required": [
+        "before",
+        "after",
+        "transition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "after": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "transition": {
+          "$ref": "#/$defs/cursorTransition"
+        },
+        "observability": {
+          "type": "string",
+          "enum": [
+            "DIRECT",
+            "INFERRED",
+            "UNOBSERVABLE"
+          ]
+        },
+        "probe_method": {
+          "type": "string",
+          "enum": [
+            "next-search",
+            "search-state",
+            "both",
+            "none"
+          ]
+        }
+      }
+    },
+    "searchStateObservation": {
+      "type": "object",
+      "required": [
+        "before",
+        "after"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/searchStateSnapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/searchStateSnapshot"
+        }
+      }
+    },
+    "searchStateSnapshot": {
+      "type": "object",
+      "required": [
+        "local_total",
+        "local_last_search",
+        "remote_total",
+        "remote_last_search"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "local_total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "local_last_search": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "remote_total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "remote_last_search": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "probeObservation": {
+      "type": "object",
+      "required": [
+        "commands"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/probeCommandResult"
+          }
+        }
+      }
+    },
+    "probeCommandResult": {
+      "type": "object",
+      "required": [
+        "source",
+        "result"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "SUCCESS",
+            "FAILURE",
+            "UNKNOWN"
+          ]
+        },
+        "observed_output": {},
+        "native_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "assertionObservation": {
+      "type": "object",
+      "required": [
+        "id",
+        "result"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "result": {
+          "$ref": "#/$defs/assertionResult"
+        },
+        "expected": {},
+        "actual": {},
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
