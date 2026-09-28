@@ -3,7 +3,7 @@ Date: 2026-09-28. Authoritative project-state snapshot; updated after PR #94 mer
 
 ## Repository state (verified 2026-09-28)
 - Remote: https://github.com/justhop90-bot/ByzMetaTeacher
-- `main` HEAD = `a60ab012a85afcf84cb526160b7b751a84ae3346` after the current-state documentation commits.
+- `main` contains the verified code merge `dca0458986d0e50e2ae26889d89f863a3c2ff923` plus the current-state documentation updates recorded after that merge.
 - The immediately preceding code merge is PR #94, merge commit `dca0458986d0e50e2ae26889d89f863a3c2ff923`.
 - PR #94 adds typed escrow release-plan validation and forwards `escrow_plan` through all six public compiler surfaces into the single emitter path.
 - PR #83 and PR #86 were audited and closed as superseded; their stale divergent revisions were not merged.
