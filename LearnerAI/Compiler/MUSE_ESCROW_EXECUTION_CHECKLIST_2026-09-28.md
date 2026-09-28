@@ -1,7 +1,7 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
-Base: `main` at `2e104374bb543d900be8406b7854f465097701cb`
-Working branch: `port/muse-escrow-resource-lowering`
+Base: `main` at `dca0458986d0e50e2ae26889d89f863a3c2ff923`
+Working state: merged compiler escrow threading/validation seam; executable release lowering remains open
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
 
