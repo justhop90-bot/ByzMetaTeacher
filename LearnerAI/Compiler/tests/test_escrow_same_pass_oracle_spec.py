@@ -154,6 +154,17 @@ class EscrowSamePassOracleSpecTests(unittest.TestCase):
         self.assertEqual(tuple(promotion["required_variant_ids"]), EXPECTED_VARIANTS)
         self.assertEqual(promotion["required_runs_per_variant"], 10)
         self.assertEqual(promotion["status"], "OPEN")
+        self.assertEqual(
+            tuple(self.candidate["terminal_precedence"][-1:]),
+            ("PASS",),
+        )
+
+    def test_variant_failure_classes_are_present(self):
+        failure_classes = set(self.candidate["failure_classes"])
+        self.assertIn("SAME_PASS_VISIBILITY_FAILURE", failure_classes)
+        self.assertIn("REVERSED_ORDER_ACCEPTED", failure_classes)
+        self.assertIn("LATER_PASS_RESEARCH_FAILURE", failure_classes)
+        self.assertIn("INVALID_PRECONDITION", self.candidate["terminal_precedence"])
 
     def test_schema_declares_all_required_top_level_contracts(self):
         fixture_schema = self.schema["$defs"]["fixture"]
@@ -169,6 +180,8 @@ class EscrowSamePassOracleSpecTests(unittest.TestCase):
                 "trace_fields",
                 "variants",
                 "promotion",
+                "terminal_precedence",
+                "failure_classes",
             ),
         )
         self.assertEqual(
