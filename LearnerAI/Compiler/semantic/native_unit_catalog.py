@@ -53,7 +53,20 @@ def _unit_ids_for(token: str) -> tuple[int, ...]:
             continue
         if token in _aliases(ai_name):
             ids.add(entry["object_id"])
-    return tuple(sorted(ids))
+    if ids:
+        return tuple(sorted(ids))
+
+    line_ids = []
+    for entry in _objects():
+        if entry.get("line") == token:
+            age = entry.get("age")
+            if isinstance(age, int):
+                line_ids.append((age, entry["object_id"]))
+    if not line_ids:
+        return ()
+    min_age = min(age for age, _ in line_ids)
+    base_ids = sorted({object_id for age, object_id in line_ids if age == min_age})
+    return tuple(base_ids)
 
 
 def resolve_unit_id(symbol: str) -> int:
