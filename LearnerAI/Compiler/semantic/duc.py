@@ -558,6 +558,10 @@ def _prepare_search_index_for_query(
     return after_search, reset_reason, index_before, cursor_before
 
 
+def _zero_cardinality() -> DucCardinalityRange:
+    return DucCardinalityRange(0, 0)
+
+
 def _search_cardinality(
     current: DucListGeneration | None,
     *,
@@ -2682,6 +2686,11 @@ def _join_search_indices(
         ),
         known=all(index.known for index in indices) and all(index.offset == first.offset for index in indices),
         last_reset_reason=first.last_reset_reason if same_reason else DucSearchIndexResetReason.UNKNOWN,
+        cursor_disposition=(
+            first.cursor_disposition
+            if all(index.cursor_disposition is first.cursor_disposition for index in indices)
+            else DucSearchCursorDisposition.PATH_AMBIGUOUS
+        ),
         path_ambiguous=True,
     )
 
