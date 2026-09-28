@@ -475,7 +475,7 @@ def _write_goal_output_span(
     )
     span = DucGoalOutputSpan(
         start_goal_id=goal_id,
-        width=1,
+        width=width,
         generation=(previous.generation + 1 if previous is not None else 1),
         overwritten_generation=(previous.generation if previous is not None else None),
         overwritten_provenance=(previous.provenance if previous is not None else None),
