@@ -856,10 +856,15 @@ def _mutate_list_generation(
         if mutation_kind is DucListMutationKind.SORT
         else None
     )
+    content_fingerprint = (
+        None
+        if mutation_kind is DucListMutationKind.ADD_OBJECT
+        else fingerprint
+    )
     updated = replace(
         generation,
         cardinality=cardinality,
-        content_fingerprint=fingerprint,
+        content_fingerprint=content_fingerprint,
     )
     return _list_state(
         state.list_kind,
