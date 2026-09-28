@@ -79,25 +79,6 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
-      - name: Capture generated compiler fixture for verification
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from LearnerAI.Compiler.compiler import compile_source
-          source = Path("LearnerAI/Compiler/examples/basics.perdsl").read_text(encoding="utf-8")
-          Path("/tmp/CompilerFixture.generated.per").write_text(
-              compile_source(source),
-              encoding="utf-8",
-          )
-          PY
-      - name: Upload generated compiler fixture for verification
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: generated-compiler-fixture-debug
-          path: /tmp/CompilerFixture.generated.per
-          if-no-files-found: error
-          retention-days: 1
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
