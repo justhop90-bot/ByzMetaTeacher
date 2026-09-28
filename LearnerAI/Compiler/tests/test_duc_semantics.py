@@ -326,6 +326,25 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.goal_output_spans, ())
 
 
+    def test_goal_output_branch_join_widens_conflicting_search_and_group_writers(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+            _rule(3, (("up-get-group-size", ("c:", "0", "41")),)),
+            _rule(4, (("up-do-nothing", ()),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        span = report.final_state.goal_output_spans[0]
+        self.assertEqual(span.start_goal_id, 41)
+        self.assertEqual(span.width, 4)
+        self.assertTrue(span.path_ambiguous)
+        self.assertIsNone(span.provenance)
+        self.assertIsNone(span.overwritten_provenance)
+        self.assertIsNone(span.overwritten_generation)
     def test_search_state_branch_join_preserves_width_four_output_span(self):
         rules = (
             _rule(1, (("up-jump-rule", ("1",)),)),
