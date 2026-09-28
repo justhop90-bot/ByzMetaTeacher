@@ -1542,6 +1542,94 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_target_objects_option_zero_uses_local_list_without_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertIsNone(report.final_state.target)
+        self.assertFalse(any(
+            item.code == "DUC-005"
+            and "up-target-objects" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_target_objects_option_zero_requires_local_search_state(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "local" in item.message.lower()
+            for item in report.diagnostics
+        ))
+
+
+    def test_target_objects_option_one_consumes_selected_object_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertFalse(any(
+            item.code in {"DUC-005", "DUC-006"}
+            and "up-target-objects" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_target_objects_rejects_invalid_option(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-target-objects", ("2", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "option" in item.message.lower()
+            for item in report.diagnostics
+        ))
+
+
+    def test_sort_invalidates_list_index_target_before_selected_only_targeting(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-clean-search", ("search-remote", "object-data-distance", "1")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "source-list identity" in item.message
+            for item in report.diagnostics
+        ))
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
