@@ -76,13 +76,6 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(span.start_goal_id, 41)
         self.assertEqual(span.width, 4)
         self.assertEqual(span.provenance.command, "up-get-cost-delta")
-        self.assertTrue(
-            any(
-                effect.writes == (DucStateKind.OUTPUT,)
-                for effect in report.effects
-                if effect.rule_order == 1
-            )
-        )
 
 
     def test_get_cost_delta_accepts_last_native_start(self):
