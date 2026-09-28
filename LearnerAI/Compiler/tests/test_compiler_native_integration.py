@@ -571,7 +571,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertTrue(all("goal_id" in record for record in payload["records"]))
             production = [record for record in payload["records"] if record.get("purpose") == "production-retry-barrier"]
             self.assertEqual(len(production), 1)
-            self.assertEqual(production[0]["kind"], "GOAL_SLOT")
+            self.assertEqual(production[0]["binding_kind"], "GOAL_SLOT")
             self.assertEqual(payload["integrity"]["algorithm"], "SHA-256")
             self.assertEqual(len(payload["integrity"]["content_sha256"]), 64)
 
