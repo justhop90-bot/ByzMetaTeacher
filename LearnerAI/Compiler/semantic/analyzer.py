@@ -409,34 +409,6 @@ def analyze(
             )
         strategic_number_states = []
         for state_name, initial_value, state_location in demand.strategic_number_states:
-        timer_states = []
-        for timer_name, timer_location in demand.timer_states:
-            if timer_name in seen_timer_names:
-                raise CompileError(
-                    f"duplicate compiler-owned Timer state '{timer_name}'"
-                )
-            seen_timer_names.add(timer_name)
-            timer_request_id = StorageRequestId(
-                owner=semantic_id,
-                purpose=f"timer:{timer_name}",
-            )
-            timer_request = TimerRequest(
-                request_id=timer_request_id,
-                initialization_policy="DISABLE_BEFORE_FIRST_USE",
-                stability_key=(
-                    f"timer-state:v1:"
-                    f"{demand_source_unit}:{demand.name}:{timer_name}"
-                ),
-                role=GoalRole.EXECUTION_MEMORY,
-            )
-            timer_states.append(
-                TimerState(
-                    name=timer_name,
-                    request=timer_request,
-                    location=timer_location,
-                )
-            )
-
             if not _SN_STATE_NAME_RE.fullmatch(state_name):
                 raise CompileError(
                     f"demand '{demand.name}' has invalid Strategic Number state name '{state_name}'"
@@ -471,6 +443,34 @@ def analyze(
                     initial_value=initial_value,
                     request=request,
                     location=state_location,
+                )
+            )
+
+        timer_states = []
+        for timer_name, timer_location in demand.timer_states:
+            if timer_name in seen_timer_names:
+                raise CompileError(
+                    f"duplicate compiler-owned Timer state '{timer_name}'"
+                )
+            seen_timer_names.add(timer_name)
+            timer_request_id = StorageRequestId(
+                owner=semantic_id,
+                purpose=f"timer:{timer_name}",
+            )
+            timer_request = TimerRequest(
+                request_id=timer_request_id,
+                initialization_policy="DISABLE_BEFORE_FIRST_USE",
+                stability_key=(
+                    f"timer-state:v1:"
+                    f"{demand_source_unit}:{demand.name}:{timer_name}"
+                ),
+                role=GoalRole.EXECUTION_MEMORY,
+            )
+            timer_states.append(
+                TimerState(
+                    name=timer_name,
+                    request=timer_request,
+                    location=timer_location,
                 )
             )
 
