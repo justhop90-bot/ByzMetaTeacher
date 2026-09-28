@@ -9,6 +9,6 @@
 8. load-random runtime selection semantics (OPEN).
 9. `resource-found` latch-vs-live (OPEN).
 10. Package-collision behavior between co-loaded AIs in DE (OPEN).
-11. Timer countdown pass granularity (minor; OPEN).
+11. Timer countdown/pass granularity in the real DE rule scheduler (OPEN); compiler-side staged expiry and symbolic allocation are now connected.
 12. Unknown-SN write behavior per version (OPEN).
 13. .xs↔.per state bridge semantics (OPEN).
