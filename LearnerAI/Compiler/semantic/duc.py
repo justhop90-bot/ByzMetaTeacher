@@ -2903,9 +2903,27 @@ def _analyze_duc_linear(
                 if type_op == "c:":
                     object_id_value = _int_or_none(object_id)
                     if object_id_value is None:
-                        raise ValueError("up-add-object-by-id c: Id must be an integer")
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-017",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-add-object-by-id c: Id must be an integer",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
                     if object_id_value < 0:
-                        raise ValueError("up-add-object-by-id c: Id must be non-negative")
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-017",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-add-object-by-id c: Id must be non-negative",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
                 search_contract = contracts.duc_search(
                     "up-find-local" if source is DucListKind.LOCAL else "up-find-remote"
                 )
