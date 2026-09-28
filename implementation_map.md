@@ -1,13 +1,14 @@
 # Implementation map — exact files/modules/tests per gap (read-only pointers)
 Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compiler\
 
-## Merge PR86 (construction hardening into main)
-- Branch: compiler-construction-lifecycle-final-verify (731f193; parent 88006ce).
-- Files: semantic/action_issuance.py, completion_witness.py, release_state.py,
-  resource_conflicts.py, ir/model.py (+PR86 transition types), emitter/per.py,
-  primitives/native_engine_effects.py (placement-pending fact).
-- Tests: existing issuance/witness/release suites + PR86 fixtures.
-- Evidence needed: same-pass visibility proof; foundation/placement runtime runs.
+## Construction lifecycle — current mainline
+- Status: integrated on current `main`; PR #86 was audited and closed as superseded.
+- Current implementation: `semantic/action_issuance.py`, `semantic/completion_witness.py`,
+  `semantic/release_state.py`, `semantic/resource_conflicts.py`, `ir/model.py`,
+  `ir/construction.py`, `semantic/construction.py`, `emitter/per.py`,
+  `primitives/native_engine_effects.py`.
+- Tests: current construction lifecycle suite plus native zero-findings acceptance.
+- Remaining evidence: same-pass visibility proof; foundation/placement runtime evidence.
 
 ## SN/Timer DSL allocation + catalog
 - Build: semantic/analyzer.py (construct StrategicNumberRequest/TimerRequest),
@@ -15,10 +16,19 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Catalog: new SN table (defaults/version/auto-mutation) + timer granularity note.
 - Tests: tests/test_strategic_number_*.py + test_timer_* (add DSL end-to-end, not fixtures).
 
-## Escrow lowering
-- Build: analyzer + emitter paths for set-escrow-percentage/release-escrow/up-modify-escrow;
-  extend resource_conflicts.py beyond 1-owner build singleton.
-- Tests: extend test_resource_conflicts.py (8) + escrow fixtures (ID 007/024/026).
+## Escrow lowering — release-only executable slice
+- Current seam on main: `ir/resource_control.py` `NativeEscrowReleasePlan`,
+  `semantic/resource_control.py` release-plan validator,
+  `primitives/registry.py` native arity/type gate,
+  `compiler.py` six-path forwarding,
+  `emitter/per.py` plan validation.
+- Next build: `primitives/native_binder.py` dedicated escrow binding,
+  `primitives/engine_semantics.py` `escrow.execution.release` mapping,
+  `primitives/registry.py` executable command inventory/promotion,
+  `emitter/per.py` deterministic `release-escrow` rules.
+- Do not broaden this tranche into `set-escrow-percentage`, UP escrow mutation,
+  starvation scheduling, multi-owner handoff, or ordinary-action same-pass coupling.
+- Tests: dedicated release-plan semantics plus source-to-.per fixture and native zero-findings acceptance.
 
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py
