@@ -188,7 +188,7 @@ def emit(
                 f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                 "    )",
                 f"    (not {demand.witness.source})",
-                f"    {construction.pending_foundation_fact.source.replace('>= 1', '== 0')}",
+                f"    (up-pending-objects c: {construction.building} == 0)",
                 f"    (not {construction.pending_placement_fact.source})",
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
