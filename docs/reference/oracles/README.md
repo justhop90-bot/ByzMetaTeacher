@@ -5,7 +5,8 @@ This directory is the canonical home for black-box DUC engine-oracle artifacts.
 ## Layout
 
 - `duc-native-oracle.schema.json`: portable JSON Schema Draft 2020-12 for fixture and observation shape.
-- `fixtures/`: only pinned, reviewable native observations. One JSON file per oracle case.
+- `fixtures/`: only pinned, reviewable native observations and synthetic semantic examples.
+- `candidates/`: capture-ready native fixture candidates that are not evidence and are never eligible for native-contract promotion.
 - `README.md`: boundary and maintenance rules.
 
 Do not create parallel schemas under compiler tests, plans, or inventories.
@@ -31,6 +32,19 @@ List snapshots store `ids` as the authoritative observation. A separate `count` 
 - `FAIL`: native observation contradicts the assertion.
 - `UNVERIFIED`: the fixture ran, but the observation is insufficient to prove the assertion.
 - `NOT_APPLICABLE`: the assertion is outside the applicable path for that fixture.
+
+## Candidate boundary
+
+Files under `candidates/` are capture specifications, not observations. They may contain placeholders for engine build, platform, object identity, and observation values.
+
+A candidate becomes a promotable fixture only after:
+1. the exact AoE2DE build, patch, AI layer, and runtime platform are recorded;
+2. the setup and probe commands are executed against that runtime;
+3. the observation fields are populated from the runtime rather than inferred;
+4. each relevant assertion is `PASS` or `FAIL`;
+5. the populated artifact is moved into `fixtures/` and validated by the oracle assertion runner.
+
+Do not replace `UNVERIFIED` with a guessed engine behavior. Native uncertainty is data.
 
 ## Maintenance rules
 
