@@ -255,6 +255,19 @@ def emit(
                 f"(defconst production-retry-barrier-{demand.name} "
                 f"{barrier_slot.id.value})"
             )
+        if demand.research_retry_barrier is not None:
+            barrier_slot = bindings.binding_for(
+                demand.research_retry_barrier.request_id
+            )
+            if not isinstance(barrier_slot, GoalSlot):
+                raise CompileError(
+                    f"RESEARCH-BARRIER-BINDING: research retry barrier for "
+                    f"'{demand.name}' resolved to '{type(barrier_slot).__name__}', expected GoalSlot"
+                )
+            out.append(
+                f"(defconst research-retry-barrier-{demand.name} "
+                f"{barrier_slot.id.value})"
+            )
 
     for request_id, _request in sorted(
         arbitration_requests.items(),
@@ -380,6 +393,21 @@ def emit(
                 "    (true)",
                 "=>",
                 f"    (set-goal production-retry-barrier-{demand.name} 0)",
+                ")",
+                "",
+            ]
+
+    research_barrier_demands = tuple(
+        demand for demand in demands if demand.research_retry_barrier is not None
+    )
+    if research_barrier_demands:
+        out.append("; Per-pass research retry barriers")
+        for demand in research_barrier_demands:
+            out += [
+                "(defrule",
+                "    (true)",
+                "=>",
+                f"    (set-goal research-retry-barrier-{demand.name} 0)",
                 ")",
                 "",
             ]
@@ -516,6 +544,53 @@ def emit(
                         f"    (set-goal construction-retry-barrier-{demand.name} 1)"
                     )
                 out += [label, "(defrule", *guards, "=>", *actions, ")", ""]
+        elif demand.research_lifecycle is not None:
+            research = demand.research_lifecycle
+            out += [
+                f"; Completion witness: {demand.name} | PENDING/ISSUED -> COMPLETE",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    {demand.witness.source}",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
+                ")",
+                "",
+                f"; Pending admission: {demand.name} | ISSUED/PENDING -> PENDING",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    (not {demand.witness.source})",
+                f"    {research.pending_fact.source}",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
+                ")",
+                "",
+                f"; RETRY | ISSUED/PENDING -> ACTIVE",
+                "(defrule",
+                "    (or",
+                f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                f"        (goal demand-{demand.name} {lifecycle.pending.value})",
+                "    )",
+                f"    (not {demand.witness.source})",
+                f"    (not {research.pending_fact.source})",
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
+            ]
+            if demand.research_retry_barrier is None:
+                raise CompileError(
+                    f"RESEARCH-BARRIER-MISSING: research demand '{demand.name}' "
+                    "has no retry barrier storage"
+                )
+            out += [
+                f"    (set-goal research-retry-barrier-{demand.name} 1)",
+                ")",
+                "",
+            ]
         elif production is not None:
             out += [
                 f"; Completion witness: {demand.name} | PENDING/ISSUED -> COMPLETE",
@@ -599,6 +674,12 @@ def emit(
             out += [
                 f"    (goal production-retry-barrier-{demand.name} 0)",
                 f"    (not {production.pending_fact.source})",
+            ]
+
+        if demand.research_lifecycle is not None:
+            out += [
+                f"    (goal research-retry-barrier-{demand.name} 0)",
+                f"    (not {demand.research_lifecycle.pending_fact.source})",
             ]
 
         out += [
