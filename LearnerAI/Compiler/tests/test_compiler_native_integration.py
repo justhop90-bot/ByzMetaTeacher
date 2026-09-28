@@ -35,7 +35,8 @@ from Compiler.primitives.engine_semantics import (
     default_engine_semantic_mapping_registry,
 )
 from Compiler.diagnostics import DiagnosticSeverity, ReportStatus
-from Compiler.ast import SourceLocation
+from Compiler.ast import SourceLocation, Expression
+from Compiler.ir import NativeDucPlan, NativeDucRule
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.perdsl").read_text(encoding="utf-8")
 
@@ -85,6 +86,91 @@ class FakeBackend:
         return self.result
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
+    @staticmethod
+    def _duc_plan():
+        return NativeDucPlan(
+            (
+                NativeDucRule(
+                    identity="search-and-select",
+                    order=100,
+                    facts=(
+                        Expression(
+                            "(up-find-local c: villager c: 1)",
+                            "up-find-local",
+                            ("c:", "villager", "c:", "1"),
+                        ),
+                    ),
+                    actions=(
+                        Expression(
+                            "(up-set-target-object search-local c: 0)",
+                            "up-set-target-object",
+                            ("search-local", "c:", "0"),
+                        ),
+                    ),
+                ),
+                NativeDucRule(
+                    identity="target-action",
+                    order=101,
+                    facts=(
+                        Expression(
+                            "(up-set-target-object search-local c: 0)",
+                            "up-set-target-object",
+                            ("search-local", "c:", "0"),
+                        ),
+                    ),
+                    actions=(
+                        Expression(
+                            "(up-target-objects 1 action-default -1 -1)",
+                            "up-target-objects",
+                            ("1", "action-default", "-1", "-1"),
+                        ),
+                    ),
+                ),
+            )
+        )
+
+    def test_internal_duc_plan_survives_binding_and_emission(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            first = tmp / "first.per"
+            second = tmp / "second.per"
+
+            first_backend = FakeBackend(
+                fake_result(first, ValidationStatus.VALIDATED)
+            )
+            second_backend = FakeBackend(
+                fake_result(second, ValidationStatus.VALIDATED)
+            )
+
+            first_report = compile_to_file(
+                source,
+                first,
+                native_backend=first_backend,
+                duc_plan=self._duc_plan(),
+            )
+            second_report = compile_to_file(
+                source,
+                second,
+                native_backend=second_backend,
+                duc_plan=self._duc_plan(),
+            )
+
+            self.assertEqual(first_report.status, ValidationStatus.VALIDATED)
+            self.assertEqual(second_report.status, ValidationStatus.VALIDATED)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            self.assertIn("; Native DUC execution plan", first.read_text(encoding="utf-8"))
+            self.assertIn("; Native DUC rule: search-and-select", first.read_text(encoding="utf-8"))
+            self.assertIn("(up-find-local c: villager c: 1)", first_backend.seen_artifact_text)
+            self.assertIn("(up-target-objects 1 action-default -1 -1)", first_backend.seen_artifact_text)
+
     def test_compile_to_file_requires_native_validation(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             output = Path(tmp_dir) / "CompilerFixture.per"
