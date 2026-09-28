@@ -17,18 +17,19 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: tests/test_strategic_number_*.py + test_timer_* (add DSL end-to-end, not fixtures).
 
 ## Escrow lowering — release-only executable slice
-- Current seam on main: `ir/resource_control.py` `NativeEscrowReleasePlan`,
-  `semantic/resource_control.py` release-plan validator,
-  `primitives/registry.py` native arity/type gate,
-  `compiler.py` six-path forwarding,
-  `emitter/per.py` plan validation.
-- Next build: `primitives/native_binder.py` dedicated escrow binding,
-  `primitives/engine_semantics.py` `escrow.execution.release` mapping,
-  `primitives/registry.py` executable command inventory/promotion,
-  `emitter/per.py` deterministic `release-escrow` rules.
-- Do not broaden this tranche into `set-escrow-percentage`, UP escrow mutation,
-  starvation scheduling, multi-owner handoff, or ordinary-action same-pass coupling.
-- Tests: dedicated release-plan semantics plus source-to-.per fixture and native zero-findings acceptance.
+- Status: **integrated and verified on main `adec462b420f87bc66c2868908058c0e272baf7c`**.
+- IR/semantic seam: `ir/resource_control.py` `NativeEscrowReleasePlan`; `semantic/resource_control.py`
+  release-plan validator; compiler threading through all six public surfaces.
+- Native promotion: `primitives/native_binder.py` dedicated `NativeEscrowSemanticBinding`;
+  `primitives/engine_semantics.py` `escrow.execution.release`; `primitives/registry.py`
+  executable command inventory and resource-domain validation.
+- Emission: `emitter/per.py` deterministic rule grouping by `rule_order` and preserving
+  `within_rule_order`.
+- Acceptance: `tests/fixtures/escrow_release.perdsl`, `tests/assert_escrow_native.py`,
+  `tests/test_native_escrow_release.py`, `tests/test_native_semantic_binder.py`,
+  `tests/test_semantic_support_state.py`, plus CI native zero-findings and 9-way determinism.
+- Non-goals preserved: `set-escrow-percentage`, UP escrow mutation, starvation scheduling,
+  multi-owner handoff, and same-pass release→ordinary-action coupling remain OPEN.
 
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py

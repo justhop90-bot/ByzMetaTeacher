@@ -31,12 +31,15 @@ TEST: guard tests; witness-rejection policy test. REMAINING: queue/capacity/prov
 EVIDENCE: A research rows; 2.9k hits. IMPLEMENTATION: generic lifecycle.
 TEST: integration. REMAINING: escrow-claim lowering; in-progress signal.
 
-## Escrow/resources — CURRENT: semantic-safe + release-plan plumbing; executable release lowering open.
+## Escrow/resources — CURRENT: release-only executable-safe; family remains incomplete.
 EVIDENCE: escrow rows; 10.9k hits (largest gap by volume).
-IMPLEMENTATION: typed escrow IR, ownership/order/lifetime validation, `NativeEscrowReleasePlan`, compiler threading,
-registry validation. TEST: escrow semantics + six-path threading + full native regression.
-REMAINING: dedicated binder/mapping/registry promotion/emission for `release-escrow`; native same-pass proof;
-starvation/handoff runtime semantics.
+IMPLEMENTATION: typed escrow IR, ownership/order/lifetime validation, `NativeEscrowReleasePlan`, dedicated
+native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic emission,
+compiler threading.
+TEST: escrow semantics + six-path threading + checked-in source-to-.per fixture + pinned native zero-findings +
+cross-platform native-support determinism + full compiler regression.
+REMAINING: same-pass release→ordinary-action proof, starvation/emergency release, multi-owner handoff,
+`set-escrow-percentage`/UP escrow mutations, research in-progress integration.
 
 ## DUC — CURRENT: narrow promoted slice emitted + proven. TARGET: broader executable DUC coverage.
 EVIDENCE: DUC rows; 11.6k/11.9k hits; typed plan/binder/emitter; pinned native fixture.

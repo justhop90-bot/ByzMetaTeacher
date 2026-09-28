@@ -1,7 +1,7 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
-Base: `main` at `dca0458986d0e50e2ae26889d89f863a3c2ff923`
-Working state: merged compiler escrow threading/validation seam; executable release lowering remains open
+Verified base: `main` at `adec462b420f87bc66c2868908058c0e272baf7c`
+Working state: release-only `release-escrow` lowering is executable-safe and native-verified; broader escrow semantics remain open
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
 
@@ -55,8 +55,9 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 - [x] Post-release stale consumption rejection.
 - [x] Policy reset after release accepted as cleanup.
 - [x] Operation owner mismatch rejection.
-- [ ] Native artifact fixture proving actual same-pass release visibility.
-- [ ] Native artifact fixture proving competing-owner behavior under the game engine.
+- [ ] Native artifact fixture proving actual same-pass release visibility. **Still OPEN by design.**
+- [ ] Native artifact fixture proving competing-owner behavior under the game engine. **Still OPEN by design.**
+- [x] Native artifact fixture proves actual release emission, deterministic artifact bytes, and zero native parser findings for the promoted release-only slice.
 
 ## Compiler invariants implemented by this tranche
 
@@ -67,6 +68,12 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 5. Every executable escrow operation must identify the same semantic owner as its contract.
 6. Resource contention is rejected before emission when two active escrow contracts are owned by different semantic identities.
 7. The compiler does not claim that these static contracts prove native same-pass engine behavior.
+
+## Verified release-only promotion
+
+The promoted command is exactly `release-escrow`, with the native Action signature `(release-escrow <Resource>)` and Resource domain `food|wood|stone|gold`. The compiler emits only the explicitly supplied release operations, grouped deterministically by rule order and preserving within-rule order. It emits no implicit percentage reset, research/build/train action, retry loop, starvation scheduler, or ownership handoff.
+
+Acceptance run: Compiler tests #2036 / Actions run 36481020162 on main `adec462b420f87bc66c2868908058c0e272baf7c`. The dedicated artifact gate reported `finding_count=0), `findings=[]`, and artifact SHA-256 `7bfea09bd313323aaaf8bd82972eb51042453adb76256e810f56ab1e9bc9ab27`. Full regression: 922 tests OK. Cross-platform native-support determinism: all 9 OS/Python jobs plus snapshot comparison passed. Aggregate compiler verification gate passed.
 
 ## Non-goals
 

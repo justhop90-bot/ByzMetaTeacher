@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Implementation base: main dca0458986d0e50e2ae26889d89f863a3c2ff923
-Post-merge compiler verification: 915 tests; native zero-findings; deterministic cross-platform matrix.
+Implementation base for escrow lowering: main adec462b420f87bc66c2868908058c0e272baf7c
+Post-merge compiler verification: 922 tests; escrow native zero-findings; deterministic cross-platform matrix; aggregate gate green.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
@@ -31,8 +31,8 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 ## Tier 1 — largest evidence-backed lowering gaps
 
 - [~] Escrow/resource-control executable lowering.
-  - PR #94 merged the typed `NativeEscrowReleasePlan`, release-plan validation, registry native arity/type checks, and forwarding through all six public compiler surfaces.
-  - Remaining executable gap: dedicated native binder, engine-semantics mapping, registry promotion, deterministic `release-escrow` emission, source-to-.per fixture, and native zero-findings acceptance.
+  - **Release-only promoted slice is now complete on main.** Added dedicated native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic `release-escrow` emission, source-to-.per fixture, pinned native zero-findings acceptance, and cross-platform determinism coverage.
+  - The family remains partial: `set-escrow-percentage`, UP escrow mutations, starvation/emergency release, multi-owner handoff, and same-pass release→ordinary-action proof remain outside executable-safe promotion.
 - [x] Escrow ownership/order/lifetime semantic gate.
   - Added typed ordered `EscrowOperation` IR plus contract-set ownership validation and execution-order validation.
   - Acceptance coverage: same-rule release-before-consume, reversed ordering, escrow-aware consume, post-release stale consumption, policy-reset cleanup, and hostile owner mismatch/resource contention.
@@ -80,7 +80,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 
 ## Mandatory verification discipline
 
-- [ ] Every new emitted capability gets an actual source-to-.per test. Synthetic `EffectiveRule` fixtures do not count as emission coverage.
+- [x] Every new emitted capability gets an actual source-to-.per test. The release-only escrow slice uses a checked-in source fixture plus a pinned native validator; synthetic semantic fixtures are supplementary only.
 - [ ] Every native promotion must pass NATIVE_KNOWN → NATIVE_TYPED → SEMANTICALLY_ADAPTED → ENGINE_SEMANTICS_MAPPED → EXECUTABLE_SAFE.
 - [ ] Open engine facts remain fail-closed and explicitly labeled OPEN/UNKNOWN.
 - [ ] Community lineage is discounted when evidence is duplicated through snapshots.
