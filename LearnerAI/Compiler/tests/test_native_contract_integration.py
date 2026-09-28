@@ -89,7 +89,7 @@ class NativeContractIntegrationTests(unittest.TestCase):
             self.assertTrue(contract.supports_fact)
             self.assertEqual(contract.cursor_model, "SCAN_FRONTIER")
             self.assertTrue(contract.returns_false_on_zero_results)
-            self.assertTrue(contract.stops_on_result_limit_or_capacity)
+            self.assertTrue(contract.stops_on_capacity)
         mutation = catalog.duc_mutation("up-remove-objects")
         for command, relation, writes_goal in (
             ("up-object-data", "SELECTED_OBJECT", False),
