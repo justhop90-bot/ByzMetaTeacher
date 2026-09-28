@@ -130,3 +130,21 @@ The companion Philosopher's Stone architecture defines the components and gates 
 ## Phase 0 implementation status — semantic support promotion
 
 Implemented: native primitive support now has an explicit `ENGINE_SEMANTICS_MAPPED` stage between `SEMANTICALLY_ADAPTED` and `EXECUTABLE_SAFE`. Every default DE primitive resolves its deterministic mapping identity through a checked semantic-contract catalog, including state effects, lifetime, ordering, admission, completion, recovery, and evidence provenance. Unknown, open/unknown, and evidence-only identities fail closed and cannot promote a primitive to executable support. The community-engine registry remains the evidence/practice layer, with lifecycle mappings cross-referenced to known engine practices. DUC and attack practices remain evidence-only and are not promoted into executable native support.
+
+
+## Native Controller Semantics implementation status — 2026-09-28
+
+The first control-plane substrate is now implemented in semantic/native_controller.py and covered by focused regression tests. It introduces typed controller domains, typed control surfaces, explicit interaction relations, deterministic graph validation, evidence/status provenance, and a fail-closed executable-surface gate.
+
+Initial controller families seeded from explicit AIRef/community evidence are:
+
+- civilian task allocation;
+- exploration control;
+- attack-group control;
+- town-size defense/targeting;
+- resource/escrow control;
+- DUC search state.
+
+Strategic Number semantic analysis now records controller bindings for known, explicitly catalogued surfaces. This metadata does not change arithmetic semantics, rule-order semantics, native lowering, or promotion status. Unmapped Strategic Numbers remain outside the controller model rather than being assigned fabricated meaning.
+
+The semantic gap is therefore SUBSTRATE IMPLEMENTED / CONTROLLER CORPUS PARTIAL. The next expansion is command-specific controller interactions, performance/cardinality effects, version/patch behavior, and the remaining DUC and attack state machines.

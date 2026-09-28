@@ -376,3 +376,12 @@ GameData is now an explicit factual boundary rather than a strategy database. Th
 A partial snapshot never means "unavailable to the civilization." StrategyProfile capability intents are admitted only when their referenced factual entity is covered by the resolved snapshot. The runtime engine remains authoritative for actual feasibility and execution.
 
 The full universal game-data baseline, civ availability overlays, and replayable historical patch overlays remain separate open data-layer work. Do not bypass the coverage gate by filling absent entities from generic AIRef records: AIRef native technology IDs establish engine identity and command metadata, not Byzantine civilization availability.
+
+
+## Native Controller Semantics
+
+The compiler now has a typed descriptive control-plane layer in semantic/native_controller.py. It separates native controller families from the Goals, Strategic Numbers, Timers, commands, and DUC surfaces that steer them. The catalog records evidence class, community/contract status, deterministic surface ownership, and explicitly evidenced controller interactions.
+
+This layer is deliberately not an engine simulator and is not an executable promotion mechanism. Evidence-only controller relationships cannot become executable native semantics merely because they are common community practice. Strategic Number analysis can attach deterministic controller-binding metadata for known surfaces while leaving unmapped native SNs valid and untouched.
+
+The initial corpus covers civilian task allocation, exploration, attack-group control, town-size defense/targeting, resource escrow control, and DUC search state. Detailed attack, DUC, performance, and versioned controller semantics remain separate expansion tranches.

@@ -601,3 +601,12 @@ It should become a machine that can distinguish:
     experimental idea
 
 and then make the last three increasingly reproducible without confusing them with the first.
+
+
+## 5.5 Native controller semantics
+
+The community corpus repeatedly demonstrates that advanced .per authors steer native subsystems rather than invoking isolated commands. Strategic Numbers, Timers, Goals, attack commands, escrow controls, and DUC state are control surfaces attached to larger native controllers such as civilian task allocation, exploration, attack grouping, town-size defense/targeting, resource protection, and DUC search state.
+
+The compiler therefore records a typed Native Controller Graph. A controller record is evidence-bearing and status-bearing; a control surface identifies the native mechanism that steers it; an interaction edge records only explicitly evidenced relationships such as attack-group control requiring explored targets or town-size control affecting attack targeting.
+
+A controller graph entry is not an executable semantic mapping. Promotion still requires the native-contract evidence and lowering boundary described elsewhere in this specification. This preserves the distinction between engine fact, community practice, compiler policy, and open research.
