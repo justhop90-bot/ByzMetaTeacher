@@ -815,7 +815,7 @@ def _analyze_duc_linear(
         rule_reset_lists: set[DucListKind] = set()
 
         for fact_index, fact in enumerate(rule.facts):
-            target_data_contract = contracts.duc_target_data(fact.head)
+            target_data_contract = contracts.duc_target_data_contract(fact.head)
             if target_data_contract is None:
                 continue
             fact_action = RuleAction(
@@ -855,7 +855,7 @@ def _analyze_duc_linear(
             filter_contract = contracts.duc_filter(command)
             reset_contract = contracts.duc_reset(command)
             target_contract = contracts.duc_target(command)
-            target_data_contract = contracts.duc_target_data(command)
+            target_data_contract = contracts.duc_target_data_contract(command)
             target_consumer_contract = contracts.duc_target_consumer(command)
             group_contract = contracts.duc_group(command)
 
