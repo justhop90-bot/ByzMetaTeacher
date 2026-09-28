@@ -7,7 +7,10 @@ from Compiler.ir.native_attack import (
     NativeAttackRule,
 )
 from Compiler.primitives import default_de_registry, default_native_contract_catalog
-from Compiler.primitives.engine_semantics import EngineSemanticMappingStatus
+from Compiler.primitives.engine_semantics import (
+    EngineSemanticMappingStatus,
+    default_native_controller_executable_commands,
+)
 from Compiler.primitives.native_binder import NativeSemanticBinder, NativeSupportState
 from Compiler.primitives.native_schema import load_default_native_schema
 from Compiler.semantic.native_controller import (
@@ -134,6 +137,12 @@ class NativeAttackIrTests(unittest.TestCase):
         self.assertTrue(plan.empty)
         self.assertEqual(plan.expressions, ())
         self.assertEqual(plan.commands, ())
+
+    def test_attack_command_is_in_dedicated_executable_inventory(self):
+        self.assertEqual(
+            default_native_controller_executable_commands(),
+            ("attack-now",),
+        )
 
     def test_mapping_is_narrow_issue_only_contract(self):
         registry = default_de_registry()
