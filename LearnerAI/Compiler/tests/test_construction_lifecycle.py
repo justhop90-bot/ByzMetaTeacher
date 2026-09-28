@@ -116,7 +116,7 @@ class ConstructionTransitionTests(unittest.TestCase):
         self.assertIn("(not (up-pending-placement c: 82))", output)
         self.assertIn("; COMPLETE | ISSUED/PENDING -> COMPLETE", output)
         self.assertIn(
-            "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
+            "; Pending admission: castle | ISSUED/PENDING -> PENDING",
             output,
         )
         self.assertIn(
@@ -178,7 +178,7 @@ class ConstructionTransitionTests(unittest.TestCase):
         """
         with self.assertRaisesRegex(
             CompileError,
-            r"CONSTRUCTION-WITNESS: demand 'castle' build completion witness must use building-type-count",
+            r"WIT-003: completion witness for demand 'castle' contains no completion-capable native observation",
         ):
             compile_source(source)
 
