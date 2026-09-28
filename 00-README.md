@@ -1,20 +1,14 @@
 # Forensic research program — ByzMetaTeacher `.per` compiler
-Date: 2026-09-28. Read-only; no repo modifications, no commits.
+Date: 2026-09-28. Authoritative project-state snapshot; updated after PR #94 merge.
 
 ## Repository state (verified 2026-09-28)
 - Remote: https://github.com/justhop90-bot/ByzMetaTeacher
-- `main` HEAD = `7917269792ff809616f0132fb70a45f2eece2f7b` ("Fix DUC report-surface aggregation").
-  Matches the historical SHA in the brief — main has NOT moved.
-- PR #86 `feat(compiler): close construction lifecycle observation semantics`: DRAFT,
-  58 commits, base `compiler-native-persistent-control-plane`,
-  head branch `compiler-construction-lifecycle-final-verify` =
-  `731f1935426c47a6dad6ec1f0b22286c70c699f8` (fixture-repair commit).
-  Previous construction head `88006ce6637c89f5315b9f243d124028e35f1d9d`
-  ("Update construction lifecycle CI evidence index") is the direct parent of `731f193`.
-  So: implementation work is IN PR #86, unmerged; `main` does NOT contain it.
-- Open PRs: 2 total (per PR page nav). gh CLI unavailable (no auth); PR #86 verified via web.
-- Local clone for reading: `C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher`
-  checked out at `7917269` (verified `rev-parse HEAD`).
+- `main` HEAD = `a60ab012a85afcf84cb526160b7b751a84ae3346` after the current-state documentation commits.
+- The immediately preceding code merge is PR #94, merge commit `dca0458986d0e50e2ae26889d89f863a3c2ff923`.
+- PR #94 adds typed escrow release-plan validation and forwards `escrow_plan` through all six public compiler surfaces into the single emitter path.
+- PR #83 and PR #86 were audited and closed as superseded; their stale divergent revisions were not merged.
+- Open PRs: none.
+- Current main verification run passed 915 compiler tests, generic/native zero-findings acceptance, all native-support determinism jobs, cross-platform snapshot comparison, and the aggregate Compiler verification gate.
 
 ## Local installation (primary archaeological source)
 - Install root (this machine): `C:\Program Files (x86)\Steam\steamapps\common\AoE2DE`
@@ -48,19 +42,15 @@ up-jump-rule 6449; disable-self 3351; can-build 2977; can-research 2942;
 timer-triggered 2278; up-pending-objects 1987; enable-timer 1782; can-train 1463;
 town-size 1455; attack-now 47.
 
-## Compiler architecture verdict (from implementation read)
-Two pipelines: Demand-DSL path (`compiler.py:_compile_ir_parts:183-262`, tiny
-`demand{require/action/witness/release/invalidate}` grammar) and artifact path
-(`compile_package_with_report`, SourceGraph → persistent/SN/recurrent/DUC analyzers).
-Goals + construction lifecycle ACTIVE→ISSUED→PENDING→COMPLETE→RELEASED: implemented
-end-to-end. SN/timers: analysis+binding infra implemented, DSL lowering open
-(no Request construction from DSL; default inventory None raises).
-DUC: 124-test analyzer implemented, zero registry adapters → UNSUPPORTED at binder.
-Controllers (9) + interactions (15): all EVIDENCE_ONLY. Escrow: feasibility facts +
-build singleton only; native escrow ops unlowered. Source graph: implemented except
-`load-random` (SOURCE-GRAPH-007). Game data: Byzantine-only factual subset
-(CIV_ID=7, patch 185872/2026-09-22). Tests: 56 files, 830 methods, mostly synthetic
-EffectiveRule fixtures — analyzer coverage, not DSL emission coverage.
+## Compiler architecture verdict (verified against current main)
+The compiler's current execution substrate includes persistent control, construction lifecycle,
+Strategic Number allocation/catalog, DUC narrow executable promotion, and attack issue connectivity.
+Escrow is currently at the typed-plan/compiler-threading seam: `NativeEscrowReleasePlan` is
+validated and forwarded through every public compiler path, but dedicated `release-escrow`
+binding/mapping/emission remains open. Timers still lack the final symbolic allocation/emission
+slice. Source graph remains executable-safe except for `load-random`; Byzantine data remains
+a verified subset rather than the complete 145-node manifest. Current verification covers 915
+compiler tests and requires source-to-.per coverage plus the pinned native zero-findings gate.
 
 ## Artifacts in this directory
 A native_command_semantics.csv · B community_per_idiom_catalog.csv ·
