@@ -168,6 +168,42 @@ class PrimitiveRegistry:
         )
         return binder.bind_duc_plan(plan)
 
+    def bind_attack_plan(self, plan):
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        return binder.bind_attack_plan(plan)
+
+    def validate_attack_plan(self, plan) -> None:
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        bindings = binder.bind_attack_plan(plan)
+        binding_by_command = {binding.command: binding for binding in bindings}
+        for rule in plan.rules:
+            for expression in (*rule.facts, *rule.actions):
+                binding = binding_by_command[expression.head]
+                if len(expression.args) != binding.parameter_count:
+                    raise ValueError(
+                        f"attack lifecycle command '{expression.head}' expects exactly "
+                        f"{binding.parameter_count} argument(s), got {len(expression.args)}"
+                    )
+                native = self.require_native(expression.head)
+                if expression in rule.facts and native.command_type not in {"Fact", "Fact/Action"}:
+                    raise ValueError(
+                        f"attack lifecycle command '{expression.head}' is an Action and cannot be emitted as a Fact"
+                    )
+                if expression in rule.actions and native.command_type not in {"Action", "Fact/Action"}:
+                    raise ValueError(
+                        f"attack lifecycle command '{expression.head}' is a Fact and cannot be emitted as an Action"
+                    )
+
     def validate_duc_plan(self, plan) -> None:
         binder = NativeSemanticBinder(
             native_registry=self._native,
