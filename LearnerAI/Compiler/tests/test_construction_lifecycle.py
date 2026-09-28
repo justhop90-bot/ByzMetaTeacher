@@ -1,6 +1,7 @@
 import unittest
 
 from Compiler.compiler import compile_source
+from Compiler.errors import CompileError
 from Compiler.primitives import NativeSupportState, default_de_registry
 from Compiler.ir.construction import ConstructionObservation, ConstructionPhase
 from Compiler.ir.model import LifecycleState
@@ -95,9 +96,9 @@ class ConstructionTransitionTests(unittest.TestCase):
         """
         output = compile_source(source)
 
-        self.assertIn("(up-pending-objects c: castle >= 1)", output)
-        self.assertIn("(up-pending-placement c: castle)", output)
-        self.assertIn("(not (up-pending-placement c: castle))", output)
+        self.assertIn("(up-pending-objects c: 82 >= 1)", output)
+        self.assertIn("(up-pending-placement c: 82)", output)
+        self.assertIn("(not (up-pending-placement c: 82))", output)
         self.assertIn("; COMPLETE | ISSUED/PENDING -> COMPLETE", output)
         self.assertIn(
             "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
@@ -218,6 +219,28 @@ class ConstructionTransitionTests(unittest.TestCase):
         self.assertIn("(up-pending-objects c: 82 >= 1)", output)
         self.assertIn("(up-pending-placement c: 82)", output)
         self.assertIn("(not (up-pending-placement c: 82))", output)
+
+    def test_emitter_order_matches_shared_transition_plan(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+            invalidate (not (building-available castle))
+        }
+        """
+        output = compile_source(source)
+        markers = (
+            "; Invalidation: castle",
+            "; COMPLETE | ISSUED/PENDING -> COMPLETE",
+            "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
+            "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
+            "; RETRY | ISSUED/PENDING -> ACTIVE",
+            "; Action issuance: castle | ACTIVE -> ISSUED",
+        )
+        positions = tuple(output.index(marker) for marker in markers)
+        self.assertEqual(positions, tuple(sorted(positions)))
 
 if __name__ == "__main__":
     unittest.main()
