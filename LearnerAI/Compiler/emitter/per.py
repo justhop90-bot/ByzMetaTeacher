@@ -94,6 +94,114 @@ def emit(
     arbitration_requests = {}
     for demand in demands:
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
+        lifecycle = LifecycleEncoding.for_goal_slot(slot)
+        encoded[demand.name] = lifecycle
+
+        native_pass_constraints = registry.pass_constraints_for(demand.action.expression.head)
+        for constraint in native_pass_constraints:
+            out.append(
+                f"; NATIVE-PASS-CONSTRAINT {demand.action.expression.head} "
+                f"maximum-successes={constraint.maximum_successes}"
+            )
+            if (
+                constraint.maximum_successes == 1
+                and demand.action.arbitration_request is None
+            ):
+                raise CompileError(
+                    f"EMITTER-NATIVE-PASS-CONSTRAINT: action '{demand.action.expression.head}' "
+                    "requires a transient arbitration owner for maximum-successes=1"
+                )
+
+        request = demand.action.arbitration_request
+        if request is not None:
+            arbitration_requests[request.request_id] = request
+
+        out.append(f"(defconst demand-{demand.name} {slot.id.value})")
+        out.append(f"(defconst issued-{demand.name} {lifecycle.issued.value})")
+        out.append(f"(defconst pending-{demand.name} {lifecycle.pending.value})")
+        out.append(f"(defconst complete-{demand.name} {lifecycle.complete.value})")
+        if demand.invalidation is not None:
+            out.append(
+                f"(defconst cancelled-{demand.name} {lifecycle.cancelled.value})"
+            )
+
+    for request_id, _request in sorted(
+        arbitration_requests.items(),
+        key=lambda item: (item[0].owner.source_unit, item[0].purpose),
+    ):
+        slot = bindings.binding_for(request_id)
+        conflict_class = request_id.purpose.split(":", 1)[1]
+        out.append(f"(defconst {_claim_name(conflict_class)} {slot.id.value})")
+
+    out.append("")
+
+    if control_plan is not None:
+        out.append("; Native persistent control plane")
+        emitted_symbols = {
+            line.split()[1]
+            for line in out
+            if line.startswith("(defconst ") and len(line.split()) >= 3
+        }
+        for state in sorted(control_plan.states, key=lambda item: item.identifier):
+            binding = bindings.binding_for(state.request.request_id)
+            if isinstance(binding, GoalSlot):
+                value = binding.id.value
+            elif isinstance(binding, StrategicNumberSlot):
+                value = binding.id
+            elif isinstance(binding, TimerSlot):
+                value = binding.id
+            else:
+                raise CompileError(
+                    f"CONTROL-PLANE-BINDING: state '{state.identifier}' resolved to unsupported "
+                    f"binding type '{type(binding).__name__}'"
+                )
+            if state.identifier in emitted_symbols:
+                raise CompileError(
+                    f"CONTROL-PLANE-SYMBOL: duplicate emitted defconst '{state.identifier}'"
+                )
+            emitted_symbols.add(state.identifier)
+            out.append(f"(defconst {state.identifier} {value})")
+
+        out.append("")
+        for rule in control_plan.rules:
+            out.append(f"; Native control rule: {rule.identity}")
+            out.append("(defrule")
+            out.extend(f"    {fact.source}" for fact in rule.facts)
+            out.append("=>")
+            out.extend(f"    {action.source}" for action in rule.actions)
+            out += [")", ""]
+
+    if arbitration_requests:
+        out.append("; Per-pass transient action arbitration")
+        for request_id, _request in sorted(
+            arbitration_requests.items(),
+            key=lambda item: (item[0].owner.source_unit, item[0].purpose),
+        ):
+            conflict_class = request_id.purpose.split(":", 1)[1]
+            out += [
+                "(defrule",
+                "    (true)",
+                "=>",
+                f"    (set-goal {_claim_name(conflict_class)} 0)",
+                ")",
+                "",
+            ]
+
+    if demands:
+        out.append("; Demand initialization")
+        for start in range(0, len(demands), INITIALIZATION_CHUNK):
+            chunk = demands[start : start + INITIALIZATION_CHUNK]
+            out += ["(defrule", "    (true)", "=>"]
+            for demand in chunk:
+                out.append(
+                    f"    (set-goal demand-{demand.name} "
+                    f"{encoded[demand.name].active.value})"
+                )
+            out.append("    (disable-self)")
+            out += [")", ""]
+
+    for demand in demands:
+        slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = encoded[demand.name]
         if demand.invalidation is not None:
             out += [
@@ -145,7 +253,7 @@ def emit(
             out += [
                 f"; Construction observation: {demand.name}",
                 "; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY",
-                f"; COMPLETE | ISSUED/PENDING -> COMPLETE",
+                "; COMPLETE | ISSUED/PENDING -> COMPLETE",
                 "(defrule",
                 "    (or",
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
@@ -156,7 +264,7 @@ def emit(
                 f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                 ")",
                 "",
-                f"; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
+                "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
                 "(defrule",
                 "    (or",
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
@@ -168,7 +276,7 @@ def emit(
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                 ")",
                 "",
-                f"; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
+                "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
                 "(defrule",
                 "    (or",
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
@@ -181,7 +289,7 @@ def emit(
                 f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                 ")",
                 "",
-                f"; RETRY | ISSUED/PENDING -> ACTIVE",
+                "; RETRY | ISSUED/PENDING -> ACTIVE",
                 "(defrule",
                 "    (or",
                 f"        (goal demand-{demand.name} {lifecycle.issued.value})",
