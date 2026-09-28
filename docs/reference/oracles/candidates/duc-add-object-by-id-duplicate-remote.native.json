@@ -83,9 +83,9 @@
     "assertions": [
       {
         "id": "duplicate-policy",
-        "description": "Determine whether re-adding an already-retained native object ID appends another copy, is a no-op, repositions/refreshes the object, or produces another native outcome.",
-        "expected": "RECORD-ACTUAL-DUPLICATE-POLICY",
-        "observation_path": "/fixture/observation/probe/duplicate_policy",
+        "description": "Determine duplicate policy from the observed post-command ID sequence.",
+        "expected": ["RECORD-ACTUAL-POST-DUPLICATE-ID-LIST"],
+        "observation_path": "/fixture/observation/list/after/ids",
         "allowed_results": [
           "PASS",
           "FAIL",
@@ -96,7 +96,7 @@
         "id": "post-duplicate-cardinality",
         "description": "Record the retained-list cardinality after the duplicate-present invocation.",
         "expected": "RECORD-ACTUAL-CARDINALITY",
-        "observation_path": "/fixture/observation/search_state/after/local_total",
+        "observation_path": "/fixture/observation/search_state/after/remote_total",
         "allowed_results": [
           "PASS",
           "FAIL",
