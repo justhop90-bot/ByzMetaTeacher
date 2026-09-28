@@ -1060,6 +1060,7 @@ class NativeDucSearchContract:
     appends_to_current_list: bool
     consumes_retained_filters: bool
     evidence_ids: Tuple[str, ...]
+    supports_fact: bool = True
     cursor_model: str = "SCAN_FRONTIER"
     returns_false_on_zero_results: bool = True
     stops_on_result_limit_or_capacity: bool = True
