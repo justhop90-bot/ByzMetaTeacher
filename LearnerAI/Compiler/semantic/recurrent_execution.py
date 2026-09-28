@@ -143,18 +143,34 @@ def _stateful_fact(
             expected = _int(expression.args[1])
             if expected is None:
                 return _Truth.UNKNOWN
-            return _compare(values.get(("GOAL", ident), 0), "==", expected)
+            return _compare(values.get(("GOAL", ident), -1), "==", expected)
         if len(expression.args) == 3:
             ident = str(expression.args[0])
             expected = _int(expression.args[2])
             if expected is None:
                 return _Truth.UNKNOWN
             return _compare(
-                values.get(("GOAL", ident), 0),
+                values.get(("GOAL", ident), -1),
                 str(expression.args[1]),
                 expected,
             )
         return _Truth.UNKNOWN
+
+    if expression.head == "up-compare-goal":
+        if len(expression.args) != 3:
+            return _Truth.UNKNOWN
+        ident = str(expression.args[0])
+        expected = _int(expression.args[2])
+        if expected is None:
+            return _Truth.UNKNOWN
+        operator = str(expression.args[1])
+        if operator.startswith("c:"):
+            operator = operator[2:]
+        return _compare(
+            values.get(("GOAL", ident), -1),
+            operator,
+            expected,
+        )
 
     if expression.head in {"strategic-number", "up-compare-sn"}:
         if len(expression.args) != 3:
@@ -234,6 +250,28 @@ def _apply_action(
         values[("GOAL", str(expression.args[0]))] = _int(expression.args[1])
     elif expression.head == "set-strategic-number" and len(expression.args) == 2:
         values[("SN", str(expression.args[0]))] = _int(expression.args[1])
+    elif expression.head == "up-modify-goal" and expression.args:
+        try:
+            mutation = parse_strategic_number_mutation(expression)
+            goals = {
+                ident: value
+                for (("GOAL", ident), value) in values.items()
+                if value is not None
+            }
+            strategic_numbers = {
+                ident: value
+                for (("SN", ident), value in values.items()
+                if value is not None
+            }
+            values[("GOAL", str(expression.args[0]))] = evaluate_strategic_number_mutation(
+                mutation,
+                current_value=values.get(("GOAL", str(expression.args[0])), -1),
+                goals=goals,
+                strategic_numbers=strategic_numbers,
+            )
+        except StrategicNumberSemanticError:
+            values[("GOAL", str(expression.args[0]))] = None
+
     elif expression.head == "up-modify-sn" and expression.args:
         values[("SN", str(expression.args[0]))] = None
     elif expression.head == "enable-timer" and len(expression.args) == 2:
