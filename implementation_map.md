@@ -27,10 +27,10 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Perf: static warnings only (advisory), from oracle + corpus cardinality.
 
 ## Controllers/attack lifecycle
-- Build: semantic/native_controller.py (promote attack-group-control first),
-  native_controller_interactions.py (exploration→attack, town-size→targeting),
-  new attack-lifecycle validator (admission/completion/release/reassess).
-- Tests: new attack-lifecycle suite (ID 012/014 + 47-attack-now corpus sample).
+- Build: ir/native_attack.py (typed issue-only lifecycle IR), primitives/engine_semantics.py (contracted attack.execution.issue mapping), primitives/native_binder.py (dedicated attack-now promotion), primitives/registry.py (typed-plan validation), emitter/per.py and compiler.py (deterministic lowering/threading).
+- Controller ownership remains descriptive in semantic/native_controller.py; attack-group-control is not promoted through its evidence-only status.
+- Excluded until separately contracted: attack SNs, exploration gating, town-size targeting, DUC prerequisites, completion/release, group membership, and timer/reset recovery.
+- Tests: tests/test_native_attack_lifecycle.py, tests/test_compiler_native_integration.py, tests/assert_attack_native.py plus CI native zero-findings evidence.
 
 ## Source graph / game data / strategy
 - load-random: ir/source_graph.py LoadKind + resolver materialization.
