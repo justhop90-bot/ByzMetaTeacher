@@ -158,6 +158,9 @@ from .strategic_number import (
     StrategicNumberDependency,
     StrategicNumberMathOp,
     StrategicNumberMutation,
+    StrategicNumberOrigin,
     StrategicNumberOperand,
     StrategicNumberOperandKind,
+    StrategicNumberState,
+    StrategicNumberStorageRequest,
 )
