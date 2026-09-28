@@ -432,10 +432,6 @@ def _strategic_number_binding_metadata(
     )
 
 
-gerprint=strategic_number_request_fingerprint(request),
-    )
-
-
 @dataclass(frozen=True)
 class TimerRequest:
     request_id: StorageRequestId
