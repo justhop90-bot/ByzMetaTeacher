@@ -68,6 +68,47 @@ class TimerAllocationIRTests(unittest.TestCase):
             "timer-state:v1:timer-fixture:timer_gate:cooldown",
         )
 
+    def test_compiler_binds_timer_and_emits_symbolic_alias_and_initialization(self):
+        from Compiler.compiler import compile_source
+
+        source = """
+        demand timer_gate {
+            timer cooldown
+            require (up-timer-status cooldown = timer-disabled)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        artifact = compile_source(source, source_unit="timer-fixture")
+
+        self.assertIn("(defconst cooldown 1)", artifact)
+        self.assertIn("(disable-timer cooldown)", artifact)
+        self.assertIn("(up-timer-status cooldown = timer-disabled)", artifact)
+
+    def test_timer_storage_is_deterministic_when_multiple_names_are_declared(self):
+        from Compiler.compiler import compile_source
+
+        source = """
+        demand timer_gate {
+            timer cooldown
+            timer scouting-window
+            require (up-timer-status cooldown = timer-disabled)
+            require (up-timer-status scouting-window = timer-disabled)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        first = compile_source(source, source_unit="timer-fixture")
+        second = compile_source(source, source_unit="timer-fixture")
+
+        self.assertEqual(first, second)
+        self.assertLess(
+            first.index("(defconst cooldown"),
+            first.index("(defconst scouting-window"),
+        )
+
     def test_timer_names_are_compiler_owned_and_unique_across_demands(self):
         source = """
         demand first {
