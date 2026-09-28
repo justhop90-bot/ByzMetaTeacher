@@ -63,8 +63,8 @@ tests OK (native deterministic acceptance) | corpus STRONG (11.6k up-find) | str
 GAP: retained-filter/stale-target semantics, broader source expressiveness, and non-promoted output/storage surfaces.
 
 ## DUC TargetSession/groups/outputs/costs
-Same as SearchSession, plus: liveness/cardinality/performance OPEN (no measurements;
-advisory-only rule required — never correctness rules per brief).
+Same as SearchSession, plus: target liveness remains OPEN; runtime cost measurement remains OPEN; cardinality/performance diagnostics are now IMPLEMENTED as advisory evidence consumers.
+The compiler reports existing native local/remote cardinality bounds and AIRef benchmark classes for recurrent retained DUC searches without imposing correctness thresholds.
 
 ## Controllers (9) + interactions (15) incl. attack
 native-fact MISSING (no per-controller causal proof) | IR EVIDENCE-ONLY catalog |
