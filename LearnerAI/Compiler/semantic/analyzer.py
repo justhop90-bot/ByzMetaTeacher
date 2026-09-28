@@ -16,6 +16,7 @@ from ..ir import (
     CancellationStateContract,
     ConstructionLifecycle,
     ProductionLifecycle,
+    ResearchLifecycle,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -349,6 +350,8 @@ def analyze(
         construction_retry_barrier = None
         production_lifecycle = None
         production_retry_barrier = None
+        research_lifecycle = None
+        research_retry_barrier = None
         if action.head == "build":
             if len(action.args) != 1 or not isinstance(action.args[0], str):
                 raise CompileError(
@@ -417,6 +420,30 @@ def analyze(
                     source=f"(up-pending-objects c: {native_unit_id} >= 1)",
                     head="up-pending-objects",
                     args=("c:", str(native_unit_id), ">=", "1"),
+                    location=action.location,
+                ),
+            )
+
+        elif action.head == "research":
+            if len(action.args) != 1 or not isinstance(action.args[0], str):
+                raise CompileError(
+                    f"RESEARCH-TARGET: demand '{demand.name}' research action "
+                    "must have one literal technology target"
+                )
+            technology = action.args[0]
+            research_retry_barrier = GoalSlotRequest(
+                request_id=StorageRequestId(
+                    owner=semantic_id,
+                    purpose="research-retry-barrier",
+                ),
+                role=GoalRole.EXECUTION_MEMORY,
+            )
+            research_lifecycle = ResearchLifecycle(
+                technology=technology,
+                pending_fact=Expression(
+                    source=f"(up-research-status c: {technology} >= research-pending)",
+                    head="up-research-status",
+                    args=("c:", technology, ">=", "research-pending"),
                     location=action.location,
                 ),
             )
@@ -725,6 +752,8 @@ def analyze(
                 construction_retry_barrier=construction_retry_barrier,
                 production_lifecycle=production_lifecycle,
                 production_retry_barrier=production_retry_barrier,
+                research_lifecycle=research_lifecycle,
+                research_retry_barrier=research_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
                 timer_states=tuple(timer_states),
                 location=demand.location,
