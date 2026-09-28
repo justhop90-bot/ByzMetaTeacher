@@ -94,7 +94,6 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
         payload = dict(original_payload)
         payload["records"] = list(payload["records"])
         payload["records"][0] = dict(payload["records"][0])
-        payload["records"][0]["binding"] = dict(payload["records"][0]["binding"])
         payload["records"][0]["strategic_number_id"] = 508
 
         tampered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
