@@ -200,3 +200,18 @@ from .native_controller import (
     default_native_controller_catalog,
     bind_strategic_number_accesses,
 )
+
+
+from .native_controller_interactions import (
+    NativeControllerInteraction,
+    NativeControllerInteractionCatalog,
+    NativeControllerInteractionKind,
+    NativeInteractionCardinality,
+    NativeInteractionEndpoint,
+    NativeInteractionEndpointKind,
+    NativeInteractionLifetime,
+    NativeInteractionMutationOwner,
+    NativeInteractionSupportState,
+    NativeInteractionVisibility,
+    default_native_controller_interaction_catalog,
+)

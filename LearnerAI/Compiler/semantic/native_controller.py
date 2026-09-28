@@ -13,7 +13,6 @@ import json
 from typing import Iterable
 
 from ..ir.strategic_number import StrategicNumberAccess
-from ..ir.strategic_number import StrategicNumberAccess
 from .community_engine import EvidenceClass, PracticeStatus
 
 
@@ -32,6 +31,7 @@ class NativeControlSurfaceKind(str, Enum):
     TIMER = "TIMER"
     GOAL = "GOAL"
     COMMAND = "COMMAND"
+    DUC_SEARCH_INDEX = "DUC_SEARCH_INDEX"
 
 
 class NativeControllerRelation(str, Enum):
@@ -317,6 +317,7 @@ def _surface(
     *,
     sources: tuple[str, ...],
     description: str,
+    evidence: EvidenceClass | None = None,
 ) -> NativeControlSurface:
     identity = f"{controller_id}:{kind.value.lower()}:{native_identifier}"
     return NativeControlSurface(
@@ -324,9 +325,15 @@ def _surface(
         controller_id=controller_id,
         kind=kind,
         native_identifier=native_identifier,
-        evidence=EvidenceClass.ENGINE_FACT
-        if kind is NativeControlSurfaceKind.STRATEGIC_NUMBER
-        else EvidenceClass.COMMUNITY_PRACTICE,
+        evidence=(
+            evidence
+            if evidence is not None
+            else (
+                EvidenceClass.ENGINE_FACT
+                if kind is NativeControlSurfaceKind.STRATEGIC_NUMBER
+                else EvidenceClass.COMMUNITY_PRACTICE
+            )
+        ),
         status=PracticeStatus.EVIDENCE_ONLY,
         sources=sources,
         description=description,
@@ -348,6 +355,9 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
     attack_forum = (
         "https://forums.ageofempires.com/t/three-ways-to-get-the-ai-to-attack/205476"
     )
+    patch_notes = "https://airef.github.io/tables/up-patch-notes.html"
+    can_train_docs = "https://airef.github.io/commands/commands-details.html#can-train"
+    can_research_docs = "https://airef.github.io/commands/commands-details.html#can-research"
 
     controller_sources = {
         "civilian-task-allocation": (airef_sn, economy_forum, duke, aoe2ai),
@@ -355,7 +365,10 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
         "attack-group-control": (airef_sn, attack_forum, duke, aoe2ai),
         "town-size-defense-targeting": (airef_sn, attack_forum, duke),
         "resource-escrow-control": (scripting, duke),
-        "duc-search-state": (airef_performance, aoe2ai),
+        "duc-search-state": (airef_performance, patch_notes, aoe2ai),
+        "duc-target-control": (patch_notes, scripting, aoe2ai),
+        "production-admission": (can_train_docs, scripting),
+        "research-admission": (can_research_docs, scripting),
     }
 
     controllers = (
@@ -390,6 +403,39 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
             description=(
                 "Stateful Direct Unit Control search-list/session behavior including "
                 "search, reset, and search-state observation."
+            ),
+        ),
+        NativeController(
+            identity="duc-target-control",
+            domain=NativeControllerDomain.DUC,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=PracticeStatus.EVIDENCE_ONLY,
+            sources=controller_sources["duc-target-control"],
+            description=(
+                "Native DUC selected-object and target-point state consumed by "
+                "subsequent DUC target actions."
+            ),
+        ),
+        NativeController(
+            identity="production-admission",
+            domain=NativeControllerDomain.ECONOMY,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=PracticeStatus.EVIDENCE_ONLY,
+            sources=controller_sources["production-admission"],
+            description=(
+                "Native unit-production feasibility and escrow-aware admission "
+                "checks used before production actions."
+            ),
+        ),
+        NativeController(
+            identity="research-admission",
+            domain=NativeControllerDomain.ECONOMY,
+            evidence=EvidenceClass.ENGINE_FACT,
+            status=PracticeStatus.EVIDENCE_ONLY,
+            sources=controller_sources["research-admission"],
+            description=(
+                "Native technology-research feasibility and escrow-aware admission "
+                "checks used before research actions."
             ),
         ),
         NativeController(
@@ -479,6 +525,69 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
                 "up-find-remote",
                 "up-full-reset-search",
                 "up-get-search-state",
+                "up-reset-filters",
+                "up-filter-include",
+                "up-filter-exclude",
+                "up-filter-range",
+            )
+        ),
+        *(
+            _surface(
+                "duc-search-state",
+                NativeControlSurfaceKind.DUC_SEARCH_INDEX,
+                identifier,
+                sources=controller_sources["duc-search-state"],
+                description="Persistent DUC search cursor/index state.",
+                evidence=EvidenceClass.ENGINE_FACT,
+            )
+            for identifier in (
+                "local",
+                "remote",
+            )
+        ),
+        *(
+            _surface(
+                "duc-target-control",
+                NativeControlSurfaceKind.COMMAND,
+                identifier,
+                sources=controller_sources["duc-target-control"],
+                description="DUC target-state selection or target execution command.",
+            )
+            for identifier in (
+                "up-set-target-object",
+                "up-set-target-point",
+                "up-target-objects",
+                "up-target-point",
+            )
+        ),
+        *(
+            _surface(
+                "production-admission",
+                NativeControlSurfaceKind.COMMAND,
+                identifier,
+                sources=controller_sources["production-admission"],
+                description="Native production feasibility/admission surface.",
+            )
+            for identifier in (
+                "can-train",
+                "can-train-with-escrow",
+                "up-can-train",
+                "train",
+            )
+        ),
+        *(
+            _surface(
+                "research-admission",
+                NativeControlSurfaceKind.COMMAND,
+                identifier,
+                sources=controller_sources["research-admission"],
+                description="Native research feasibility/admission surface.",
+            )
+            for identifier in (
+                "can-research",
+                "can-research-with-escrow",
+                "up-can-research",
+                "research",
             )
         ),
         *(
@@ -506,6 +615,8 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
             for identifier in (
                 "release-escrow",
                 "set-escrow-percentage",
+                "up-release-escrow",
+                "up-modify-escrow",
             )
         ),
         *(

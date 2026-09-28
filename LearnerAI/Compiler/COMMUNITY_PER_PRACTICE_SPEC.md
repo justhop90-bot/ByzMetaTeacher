@@ -610,3 +610,16 @@ The community corpus repeatedly demonstrates that advanced .per authors steer na
 The compiler therefore records a typed Native Controller Graph. A controller record is evidence-bearing and status-bearing; a control surface identifies the native mechanism that steers it; an interaction edge records only explicitly evidenced relationships such as attack-group control requiring explored targets or town-size control affecting attack targeting.
 
 A controller graph entry is not an executable semantic mapping. Promotion still requires the native-contract evidence and lowering boundary described elsewhere in this specification. This preserves the distinction between engine fact, community practice, compiler policy, and open research.
+
+
+## 5.6 Native controller interaction semantics
+
+The controller graph establishes ownership; interaction records establish documented relationships between those owners. This distinction is mandatory because community `.per` scripts routinely coordinate multiple native systems in the same rule family without proving that either system causally owns the other.
+
+Interaction evidence therefore carries an explicit relation, endpoint type, lifetime, visibility, mutation owner, engine-version scope, and support state. `EVIDENCE_ONLY` is the normal status for community-derived controller relationships. `ENGINE_SEMANTICS_MAPPED` requires engine-fact evidence and a compatible version target. This prevents a frequently repeated community pattern from becoming a compiler invariant merely through repetition.
+
+The first interaction corpus records attack/exploration gating, town-size/attack targeting, civilian/resource coupling, escrow-aware production/research admission, DUC search-to-target flow, and documented automatic DUC search-index resets. DUC interaction records also preserve native local/remote cardinality bounds and advisory benchmark classes. These records are semantic evidence, not emitted `.per` behavior.
+
+Feedback edges are not prerequisite edges. They remain visible in the interaction graph but are excluded from dependency projections so an adaptive control loop cannot accidentally become a false acyclic prerequisite. Likewise, engine-automatic mutations are not compiler-owned mutations simply because the compiler can issue a command that exposes the affected state.
+
+The next corpus expansion is DUC SearchSession / TargetSession semantics. That tranche must preserve search-list generation, filter generation, target provenance, Goal-output provenance, and recurrent firing eligibility as separate native state evidence.
