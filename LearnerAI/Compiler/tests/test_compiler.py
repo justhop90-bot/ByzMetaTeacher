@@ -271,6 +271,22 @@ class CompilerTests(unittest.TestCase):
         output = compile_source(source)
         self.assertIn("(and (building-available castle) (can-build castle))", output)
 
+    def test_up_research_status_is_compilable_as_a_native_observation(self):
+        source = """
+        demand wheelbarrow-status {
+            require (up-research-status c: ri-wheelbarrow >= research-pending)
+            require (can-research ri-wheelbarrow)
+            action (research ri-wheelbarrow)
+            witness (research-completed ri-wheelbarrow)
+            release (research-completed ri-wheelbarrow)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn(
+            "(up-research-status c: ri-wheelbarrow >= research-pending)",
+            output,
+        )
+
     def test_native_expression_parser_exposes_root_primitive(self):
         expr = parse_expression("(current-age >= castle)")
         self.assertEqual(expr.head, "current-age")
