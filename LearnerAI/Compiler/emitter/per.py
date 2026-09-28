@@ -153,7 +153,7 @@ def emit(
             else:
                 raise CompileError(
                     f"CONTROL-PLANE-BINDING: state '{state.identifier}' resolved to unsupported "
-                    f"binding type '{binding_type}'"
+                    f"binding type '{type(binding).__name__}'"
                 )
             if state.identifier in emitted_symbols:
                 raise CompileError(
