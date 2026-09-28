@@ -187,6 +187,28 @@ Primary tests:
 - `LearnerAI/Compiler/tests/test_native_contract_integration.py`
 - `LearnerAI/Compiler/tests/test_native_hygiene.py`
 
+## Vertical slice K: target-data readers and Goal writers
+
+- [x] Add shared native contracts for `up-object-data`, `up-get-object-data`, `up-object-target-data`, and `up-get-object-target-data`.
+- [x] Pin AIRef evidence and register all four commands in the native citation catalog.
+- [x] Model selected-object vs selected-object-target relationships explicitly.
+- [x] Require an object target and fail closed on absent/stale targets.
+- [x] Preserve direct native-ID identity while keeping runtime liveness UNKNOWN.
+- [x] Emit target-of-target runtime uncertainty rather than inventing object-target identity.
+- [x] Model Fact and Action contexts.
+- [x] Track width-1 Goal output spans, overwrite generations, and provenance for the two `up-get-*` commands.
+- [x] Add hostile regressions for missing/stale/cross-pass/native-ID targets, Fact paths, output bounds, overwrite provenance, and target-of-target uncertainty.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/primitives/native_hygiene.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+
+Primary tests:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+- `LearnerAI/Compiler/tests/test_native_contract_integration.py`
+- `LearnerAI/Compiler/tests/test_native_hygiene.py`
+
 ## Integration order
 
 1. [x] Create typed DUC IR.
