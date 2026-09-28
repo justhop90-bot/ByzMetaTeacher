@@ -62,6 +62,66 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_recurrent_local_search_reports_evidence_backed_cost(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        cost = tuple(item for item in report.diagnostics if item.code == "DUC-015")
+        self.assertEqual(len(cost), 1)
+        self.assertIn("local", cost[0].message)
+        self.assertIn("240", cost[0].message)
+        self.assertIn("MEDIUM", cost[0].message)
+        self.assertEqual(cost[0].severity, "WARNING")
+
+
+    def test_recurrent_remote_search_reports_evidence_backed_cost(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        cost = tuple(item for item in report.diagnostics if item.code == "DUC-015")
+        self.assertEqual(len(cost), 1)
+        self.assertIn("remote", cost[0].message)
+        self.assertIn("40", cost[0].message)
+        self.assertIn("FAST", cost[0].message)
+        self.assertEqual(cost[0].severity, "WARNING")
+
+
+    def test_same_rule_search_reset_suppresses_recurrent_cost_diagnostic(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-reset-search", ("1", "1", "0", "0")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        self.assertFalse(any(item.code == "DUC-015" for item in report.diagnostics))
+
+
+    def test_one_shot_search_does_not_emit_recurrent_cost_diagnostic(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("disable-self", ()),
+                ),
+                pass_behavior=RulePassBehavior.ONE_SHOT,
+            ),
+        ))
+
+        self.assertFalse(any(item.code == "DUC-015" for item in report.diagnostics))
+
+
     def test_set_target_object_action_rejects_first_remote_out_of_range_index(self):
         report = analyze_duc(
             (
