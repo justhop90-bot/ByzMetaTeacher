@@ -179,7 +179,7 @@ class EscrowResourceControlTests(unittest.TestCase):
 
         self.assertEqual(
             tuple(error.code for error in report.errors),
-            (ResourceControlErrorCode.ESCROW_RELEASE_ORDER,),
+            (ResourceControlErrorCode.ESCROW_RELEASE_AFTER_CONSUMPTION,),
         )
 
     def test_escrow_aware_consumption_is_terminal_without_release(self):
