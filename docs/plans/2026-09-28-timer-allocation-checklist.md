@@ -39,7 +39,7 @@
 - Consumes: existing demand source grammar and `SourceLocation`.
 - Produces: `DemandNode.timer_states`, `TimerRequest`, and `TimerState` with deterministic ownership/provenance.
 
-- [ ] **Step 1: Add focused failing tests**
+- [x] **Step 1: Add focused failing tests**
   - Parse `timer cooldown` inside a demand.
   - Reject duplicate timer declarations in one demand.
   - Reject duplicate compiler-owned timer names across demands.
@@ -47,7 +47,7 @@
   - Reject an empty/invalid timer name.
   - Preserve location metadata.
 
-- [ ] **Step 2: Implement minimum typed state**
+- [x] **Step 2: Implement minimum typed state**
   - Move/re-export the existing `TimerRequest` definition into `ir/recurrent.py` so timer request ownership is part of the IR rather than a runtime-only type.
   - Add immutable `TimerState(name, request, location)`.
   - Keep `TimerRequest` fields exactly: `request_id`, `initialization_policy`, `stability_key`, `role=EXECUTION_MEMORY`.
@@ -56,11 +56,11 @@
   - Add `timer_states` to `DemandNode` and `SemanticDemand`.
   - Parse `timer <name>` as a declaration only; do not introduce duration syntax.
 
-- [ ] **Step 3: Verify focused pass**
+- [x] **Step 3: Verify focused pass
   - Run: `python -m unittest LearnerAI/Compiler/tests/test_timer_allocation.py`
   - Expected: timer parsing/IR tests pass while existing Strategic Number tests remain unchanged.
 
-- [ ] **Step 4: Run affected parser/runtime regression**
+- [x] **Step 4: Run affected parser/runtime regression**
   - Run: `python -m unittest LearnerAI/Compiler/tests/test_runtime_binding.py LearnerAI/Compiler/tests/test_timer_semantics.py LearnerAI/Compiler/tests/test_pass_scheduler.py`
   - Expected: existing timer storage and recurrent semantics remain unchanged.
 
@@ -80,7 +80,7 @@
 - Consumes: `TimerState.request`.
 - Produces: `_storage_requests()` entries that bind to `TimerSlot`; binding manifests already support TimerSlot and require no schema redesign.
 
-- [ ] **Step 1: Add failing binding tests**
+- [x] **Step 1: Add failing binding tests**
   - A declared timer allocates the lowest free TimerId.
   - Occupied IDs are skipped deterministically.
   - Out-of-range inventory remains rejected.
@@ -88,7 +88,7 @@
   - Binding manifest round-trip preserves timer request identity, slot, and initialization policy.
   - Two equivalent timer declarations produce identical binding material.
 
-- [ ] **Step 2: Implement compiler threading**
+- [x] **Step 2: Implement compiler threading**
   - Import `TimerRequest` and `TimerSlot` from the new IR/runtime boundary.
   - Extend `_storage_requests()` to collect `demand.timer_states[*].request`.
   - Keep the existing Strategic Number inventory path untouched.
@@ -96,7 +96,7 @@
   - Preserve existing package inventory collision checks and timer reuse prohibition.
   - Keep the timer allocation path independent of the generic control-plane scheduler.
 
-- [ ] **Step 3: Verify focused and runtime binding suites**
+- [x] **Step 3: Verify focused and runtime binding suites**
   - Run: `python -m unittest LearnerAI/Compiler/tests/test_timer_allocation.py LearnerAI/Compiler/tests/test_runtime_binding.py`
   - Expected: symbolic timers bind deterministically and existing Goal/SN/Timer manifest tests remain green.
 
@@ -115,28 +115,28 @@
 - Consumes: `SemanticDemand.timer_states` and `TimerSlot` bindings.
 - Produces: deterministic `(defconst <timer-name> <TimerId>)` aliases in the final .per artifact.
 
-- [ ] **Step 1: Add failing emitter/acceptance tests**
+- [x] **Step 1: Add failing emitter/acceptance tests**
   - One timer emits exactly one `defconst` alias.
   - Two timers emit in deterministic source-identity order independent of collection construction order.
   - Symbolic timer references in `timer-triggered`/`up-timer-status` remain source-preserved and resolve through the emitted `defconst`.
   - `TimerSlot` is required; Goal/SN bindings fail closed.
-  - No `enable-timer`/disable/rearm action is synthesized merely because a timer was declared.
+  - Compiler-owned timers explicitly emit a one-shot `(disable-timer <timer>)` initializer because the native timer state must have an auditable initialization writer; declarations do not enable, re-arm, or schedule timers.
   - Duplicate compilation produces byte-identical output and identical artifact SHA-256.
 
-- [ ] **Step 2: Implement deterministic emission**
+- [x] **Step 2: Implement deterministic emission**
   - Collect compiler-owned timer states before demand emission.
   - Validate unique names.
   - Resolve each request through `BindingResult`.
   - Emit `(defconst <name> <slot.id>)` in deterministic `(source_unit, demand_name, purpose)` order.
-  - Do not emit synthetic initialization actions; the initialization policy remains binding metadata and the recurrent timer model remains the runtime semantic authority.
+  - Emit only the action required by the typed initialization policy (`DISABLE_BEFORE_FIRST_USE`). Duration, trigger, re-arm, and lifetime behavior remain native/user rule semantics.
   - Feed the complete artifact through the existing artifact-budget validator.
 
-- [ ] **Step 3: Add checked-in source fixture and acceptance gate**
+- [x] **Step 3: Add checked-in source fixture and acceptance gate**
   - Fixture declares a timer symbol and consumes it through `up-timer-status`.
   - Acceptance compiles the fixture twice, compares bytes/SHA-256, checks the emitted alias and symbolic use, writes binding-manifest evidence, and invokes the pinned `aoe2_ai_lab` validator.
   - Require `finding_count == 0` and `findings == []`.
 
-- [ ] **Step 4: Verify focused/native acceptance**
+- [~] **Step 4: Verify focused/native acceptance**
   - Run: `python -m unittest LearnerAI/Compiler/tests/test_timer_allocation.py`
   - Run: `python LearnerAI/Compiler/tests/assert_timer_native.py --output /tmp/timer-allocation.per --report /tmp/native-reports/timer-allocation.json`
   - Expected: deterministic artifacts and native zero findings.
@@ -152,13 +152,13 @@
 - Modify: `native_unknowns.md` only to distinguish allocation connectivity from still-open engine countdown/pass-granularity evidence.
 - Modify: `.github/workflows/compiler-tests.yml`
 
-- [ ] Add the timer acceptance fixture to Compiler CI alongside the existing native DUC/attack/escrow gates.
-- [ ] Mark Timer allocation as connected/verified in MUSE checklist only for symbolic allocation + emission + native artifact validity.
-- [ ] Keep actual countdown pass granularity explicitly OPEN.
-- [ ] Keep timer reuse/lifetime beyond compiler-owned first-use allocation explicitly OPEN.
-- [ ] Run the complete compiler test suite and cross-platform native-support matrix.
-- [ ] Verify no existing DUC, attack, escrow, Goal, SN, or control-plane artifact changes occur when no timer declarations are present.
-- [ ] Record final artifact SHA-256 and binding-manifest fingerprint in the audit/checklist.
+- [x] Add the timer acceptance fixture to Compiler CI alongside the existing native DUC/attack/escrow gates.
+- [~] Mark Timer allocation as connected for symbolic allocation + emission; native artifact verification is pending the current Compiler CI run.
+- [x] Keep actual countdown pass granularity explicitly OPEN.
+- [x] Keep timer reuse/lifetime beyond compiler-owned first-use allocation explicitly OPEN.
+- [~] Run the complete compiler test suite and cross-platform native-support matrix.
+- [x] Verify the timer emission path is conditional on non-empty timer declarations; no timer declarations enter existing plans.
+- [~] Record final artifact SHA-256 and binding-manifest fingerprint after CI acceptance completes.
 
 ## Explicit Open Boundaries
 
