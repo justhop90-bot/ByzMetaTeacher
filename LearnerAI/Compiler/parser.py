@@ -7,6 +7,7 @@ from .errors import CompileError
 _NAME_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 _HEADER_RE = re.compile(r"^demand\s+([A-Za-z][A-Za-z0-9_-]*)\s*\{$")
 _FIELDS = ("action", "witness", "release")
+_SN_STATE_RE = re.compile(r"^sn\s+([a-z][a-z0-9_-]*)\s*=\s*(-?[0-9]+)$")
 
 def _clean_line(line: str) -> tuple[str, int]:
     without_comment = line.split("#", 1)[0]
@@ -60,6 +61,7 @@ def parse(
         req_locations: list[SourceLocation] = []
         fields: dict[str, str] = {}
         field_locations: dict[str, SourceLocation] = {}
+        strategic_number_states: list[tuple[str, int, SourceLocation]] = []
         while i < len(raw):
             text, statement_column = _clean_line(raw[i])
             line_no = i + 1
@@ -68,6 +70,31 @@ def parse(
                 continue
             if text == "}":
                 break
+            sn_match = _SN_STATE_RE.fullmatch(text)
+            if sn_match:
+                sn_name, sn_value = sn_match.groups()
+                if any(existing[0] == sn_name for existing in strategic_number_states):
+                    raise CompileError(
+                        f"line {line_no + line_offset}: duplicate sn state '{sn_name}' "
+                        f"in demand '{name}'"
+                    )
+                if not -32768 <= int(sn_value) <= 32767:
+                    raise CompileError(
+                        f"line {line_no + line_offset}: SN state '{sn_name}' initial value "
+                        "must be in -32768..32767"
+                    )
+                value_location = _location(
+                    line_no,
+                    statement_column,
+                    source_unit=source_unit,
+                    line_offset=line_offset,
+                    first_line_column_offset=first_line_column_offset,
+                )
+                strategic_number_states.append(
+                    (sn_name, int(sn_value), value_location)
+                )
+                i += 1
+                continue
             match = re.fullmatch(r"(require|action|witness|release|invalidate)\s+(.+)", text)
             if not match:
                 raise CompileError(f"line {line_no + line_offset}: invalid demand statement")
@@ -112,6 +139,7 @@ def parse(
                 field_locations.get("witness"),
                 field_locations.get("release"),
                 field_locations.get("invalidate"),
+                tuple(strategic_number_states),
             )
         )
         i += 1
