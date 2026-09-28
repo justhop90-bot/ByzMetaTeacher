@@ -11,11 +11,14 @@ class ResearchLifecycle:
     """Native in-progress observation for an asynchronous research action."""
 
     technology: str
+    native_tech_id: int
     pending_fact: Expression
 
     def __post_init__(self) -> None:
         if not self.technology:
             raise ValueError("research technology must be nonempty")
+        if self.native_tech_id < 0:
+            raise ValueError("research native_tech_id must be non-negative")
         if self.pending_fact.head != "up-research-status":
             raise ValueError("research pending fact must use up-research-status")
         if self.pending_fact.args[-1] != "research-pending":
