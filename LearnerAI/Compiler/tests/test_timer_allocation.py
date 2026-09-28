@@ -13,9 +13,10 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand timer_gate {
             timer cooldown
-            action (research ri-loom)
-            witness (up-research-status c: ri-loom >= research-complete)
-            release (research-available ri-loom)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         demand = parse(source, source_unit="timer-fixture")[0]
@@ -30,10 +31,10 @@ class TimerAllocationIRTests(unittest.TestCase):
         demand timer_gate {
             timer cooldown
             timer cooldown
-            require (true)
-            action (research ri-loom)
-            witness (up-research-status c: ri-loom >= research-complete)
-            release (research-available ri-loom)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         with self.assertRaisesRegex(CompileError, "duplicate timer state"):
@@ -43,10 +44,10 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand timer_gate {
             timer cooldown
-            require (up-timer-status cooldown = timer-disabled)
-            action (research ri-loom)
-            witness (up-research-status c: ri-loom >= research-complete)
-            release (research-available ri-loom)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         demand = analyze(parse(source, source_unit="timer-fixture"), default_de_registry())[0]
@@ -73,7 +74,7 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand timer_gate {
             timer cooldown
-            require (up-timer-status cooldown = timer-disabled)
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
@@ -90,7 +91,7 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand timer_gate {
             timer cooldown
-            require (up-timer-status cooldown = timer-disabled)
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
@@ -119,6 +120,7 @@ class TimerAllocationIRTests(unittest.TestCase):
         demand timer_gate {
             timer cooldown
             timer scouting-window
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
@@ -137,18 +139,18 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand first {
             timer cooldown
-            require (true)
-            action (research ri-loom)
-            witness (up-research-status c: ri-loom >= research-complete)
-            release (research-available ri-loom)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
 
         demand second {
             timer cooldown
-            require (true)
-            action (research ri-loom)
-            witness (up-research-status c: ri-loom >= research-complete)
-            release (research-available ri-loom)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         with self.assertRaisesRegex(CompileError, "duplicate compiler-owned Timer state"):
