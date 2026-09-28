@@ -1514,6 +1514,34 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_direct_target_is_cleared_by_full_search_reset(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-full-reset-search", ()),
+            )),
+        ))
+
+        self.assertIsNone(report.final_state.target)
+
+
+    def test_direct_target_consumption_reports_liveness_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "liveness is unverified" in item.message
+            for item in report.diagnostics
+        ))
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
