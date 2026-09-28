@@ -1,7 +1,7 @@
 # Compiler gap matrix — native/community capability vs implementation stages
 Stages: native-fact | semantic-IR | validator | binding | emitter | native-acceptance |
 runtime-evidence | tests | community-corpus | strategy-integration.
-Verdict tokens: OK / PARTIAL / MISSING / EVIDENCE-ONLY / FIXTURE-ONLY / UNMERGED-PR86.
+Verdict tokens: OK / PARTIAL / MISSING / EVIDENCE-ONLY / FIXTURE-ONLY / OPEN.
 
 ## Goals (scalar + spans)
 native-fact OK (AIRef 385 schema pins set-goal/goal/up-modify-goal/up-compare-goal) |
@@ -13,12 +13,11 @@ GAP: package-collision + volatile-vs-strategic discipline is COMPILER POLICY, no
 
 ## Strategic numbers 0..511
 native-fact PARTIAL (slot structure known; per-SN defaults/auto-mutation/version incomplete) |
-IR OK (StrategicNumberMutation/Comparison/Access/Dependency) |
-validator OK (SNSEM-001..009, c:/g:/s:) | binding OK-infra / MISSING-from-DSL |
-emitter MISSING | acceptance n/a | runtime-evidence MISSING (no auto-mutation catalog) |
-tests FIXTURE-ONLY (synthetic EffectiveRule; default inventory raises) |
-corpus OK (10202 set + Duke/Niek tables) | strategy PARTIAL (descriptive access binding).
-GAP: (1) full 0..511 catalog with defaults/version/auto-mutation; (2) DSL allocation path.
+IR OK | validator OK (SNSEM-001..009) | binding OK | emitter OK | acceptance OK |
+runtime-evidence PARTIAL (catalog pins namespace; engine defaults/auto-mutation remain OPEN) |
+tests OK (source fixture + native deterministic acceptance) | corpus OK (10202 set + Duke/Niek tables) |
+strategy PARTIAL.
+GAP: engine knowledge for per-SN defaults/auto-mutation/version behavior and unknown-SN writes.
 
 ## Timers (50 slots)
 native-fact OK (arm/disarm/trigger/staged-expiry) | IR OK (TimerRuntimeState) |
@@ -29,12 +28,10 @@ corpus OK (1782 enable + 2278 triggered) | strategy PARTIAL (cooldown patterns u
 GAP: DSL allocation; trigger-granularity measurement.
 
 ## Construction (build/can-build/pending/placement/retry)
-native-fact OK | IR OK (LifecycleState + PR86 transitions) | validator OK (+PR86 UNMERGED) |
-binding OK | emitter OK (+PR86 UNMERGED emission) | acceptance OK |
-runtime-evidence PARTIAL (foundation/placement split per PR86 needs runtime proof) |
-tests OK (+PR86 fixtures UNMERGED) | corpus OK (2977 can-build; buildings.per 88KB Duke) |
-strategy OK (build_land_castle_strategy).
-GAP: merge PR86; same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
+native-fact OK | IR OK | validator OK | binding OK | emitter OK | acceptance OK |
+runtime-evidence PARTIAL (foundation/placement same-pass behavior still needs runtime proof) |
+tests OK | corpus OK (2977 can-build; buildings.per 88KB Duke) | strategy OK.
+GAP: same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
 
 ## Train/production (queue/capacity/provider/birth)
 native-fact PARTIAL (queue exists; capacity/provider-idle/birth-timing unproven) |
@@ -51,23 +48,19 @@ tests PARTIAL | corpus OK | strategy OK (feudal-age escrow example).
 GAP: escrow-claim lowering; protected-research pattern catalog; in-progress signal.
 
 ## Resource/escrow/arbitration
-native-fact PARTIAL (gating formula unproven) | IR PARTIAL (transient claims only) |
-validator PARTIAL (resource_conflicts 1-owner claims; build singleton only) |
-binding PARTIAL | emitter PARTIAL (claim reset/guard for build) |
-acceptance PARTIAL | runtime-evidence MISSING (no escrow timing proof) |
-tests PARTIAL (8 resource_conflicts; feasibility-fact tests) | corpus STRONG (10859 hits) |
-strategy PARTIAL (OpportunityCost/ProtectedFloor are strategy-level, not native).
-GAP: biggest corpus-to-compiler gap by hit count. Needs escrow op lowering + starvation/
-emergency-override + ownership/release semantics. Must NOT become universal scheduler
-(brief constraint) — bound to claim/escrow/release primitives.
+native-fact PARTIAL (resource-view formula closed; same-pass release timing OPEN) |
+IR OK for typed escrow contracts + release plan | validator OK | binding OPEN for release slice |
+emitter OPEN for release slice | acceptance OPEN | runtime-evidence MISSING (native escrow timing) |
+tests OK for semantic ownership/order/lifetime + compiler threading | corpus STRONG (10859 hits) |
+strategy PARTIAL.
+GAP: dedicated release binder/mapping/registry/emitter/fixture; native same-pass timing; starvation/handoff.
+Must NOT become a universal scheduler.
 
-## DUC SearchSession (lists/cursor/generation/filter/reset/capacity)
-native-fact OK-structure (240/40/groups 20x40/widths) | IR OK (DucSemanticState) |
-validator OK (DUC-008/012/016, widening limit 3) | binding MISSING (zero adapters → UNSUPPORTED) |
-emitter MISSING | acceptance n/a | runtime-evidence PARTIAL (oracle schema + candidates) |
-tests FIXTURE-ONLY (124 semantics on synthetic rules) | corpus STRONG (11.6k up-find) |
-strategy MISSING.
-GAP: binder adapters + DSL emission; retained-filter rules; reset taxonomy proof.
+## DUC SearchSession (promoted narrow slice)
+native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
+emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |
+tests OK (native deterministic acceptance) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
+GAP: retained-filter/stale-target semantics, broader source expressiveness, and non-promoted output/storage surfaces.
 
 ## DUC TargetSession/groups/outputs/costs
 Same as SearchSession, plus: liveness/cardinality/performance OPEN (no measurements;
