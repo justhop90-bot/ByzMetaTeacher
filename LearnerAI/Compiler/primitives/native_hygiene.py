@@ -829,6 +829,19 @@ def default_native_duc_mutation_contracts() -> Tuple[NativeDucMutationContract, 
     )
 
 
+def default_native_duc_target_consumer_contracts() -> Tuple[NativeDucTargetConsumerContract, ...]:
+    return (
+        NativeDucTargetConsumerContract(
+            "up-target-objects",
+            0,
+            1,
+            True,
+            True,
+            ("airef:duc:target-objects",),
+        ),
+    )
+
+
 def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]:
     return (
         NativeDucTargetContract(
@@ -1047,6 +1060,24 @@ class NativeDucMutationContract:
 
 
 @dataclass(frozen=True)
+class NativeDucTargetConsumerContract:
+    command: str
+    option_min: int
+    option_max: int
+    option_zero_requires_local_list: bool
+    option_one_requires_object_target: bool
+    evidence_ids: Tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.option_min > self.option_max:
+            raise ValueError("DUC target consumer option range is invalid")
+        if self.option_min < 0 or self.option_max > 1:
+            raise ValueError("DUC target consumer option range must be within 0..1")
+        if not self.command or not self.evidence_ids:
+            raise ValueError("DUC target consumer contract requires command and evidence")
+
+
+@dataclass(frozen=True)
 class NativeDucTargetContract:
     command: str
     source_kinds: Tuple[str, ...]
@@ -1074,6 +1105,7 @@ class NativeContractCatalog:
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
     duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
     duc_targets: Tuple[NativeDucTargetContract, ...] = ()
+    duc_target_consumers: Tuple[NativeDucTargetConsumerContract, ...] = ()
     duc_groups: Tuple[NativeDucGroupContract, ...] = ()
     duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
     duc_consumer_commands: Tuple[str, ...] = (
@@ -1099,6 +1131,8 @@ class NativeContractCatalog:
             object.__setattr__(self, "duc_mutations", default_native_duc_mutation_contracts())
         if not self.duc_targets:
             object.__setattr__(self, "duc_targets", default_native_duc_target_contracts())
+        if not self.duc_target_consumers:
+            object.__setattr__(self, "duc_target_consumers", default_native_duc_target_consumer_contracts())
         if not self.duc_groups:
             object.__setattr__(self, "duc_groups", default_native_duc_group_contracts())
         for values, label in (
@@ -1118,6 +1152,7 @@ class NativeContractCatalog:
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
             (self.duc_targets, "DUC target contract"),
+            (self.duc_target_consumers, "DUC target consumer contract"),
             (self.duc_groups, "DUC group contract"),
         ):
             commands = [item.command for item in values]
@@ -1228,6 +1263,7 @@ class NativeContractCatalog:
                 *self.duc_resets,
                 *self.duc_mutations,
                 *self.duc_targets,
+                *self.duc_target_consumers,
                 *self.duc_groups,
             )
             for evidence_id in contract.evidence_ids
@@ -1279,6 +1315,9 @@ class NativeContractCatalog:
 
     def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
         return next((item for item in self.duc_targets if item.command == command), None)
+
+    def duc_target_consumer(self, command: str) -> Optional[NativeDucTargetConsumerContract]:
+        return next((item for item in self.duc_target_consumers if item.command == command), None)
 
     def duc_group(self, command: str) -> Optional[NativeDucGroupContract]:
         return next((item for item in self.duc_groups if item.command == command), None)
@@ -1364,6 +1403,10 @@ class NativeContractCatalog:
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_targets
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_target_consumers
             ),
             *(
                 (contract.command, contract.evidence_ids)
@@ -1881,6 +1924,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:remove-objects", "up-remove-objects", "(up-remove-objects <SearchSource> <ObjectData> <compareOp> <Value>)"),
         ("airef:duc:set-target-by-id", "up-set-target-by-id", "(up-set-target-by-id <typeOp> <Id>)"),
         ("airef:duc:set-target-object", "up-set-target-object", "(up-set-target-object <SearchSource> <typeOp> <Index>)"),
+        ("airef:duc:target-objects", "up-target-objects", "(up-target-objects <Option> <DUCAction> <Formation> <AttackStance>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
         ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
         ("airef:duc:create-group", "up-create-group", "(up-create-group <GoalId> <GoalId> <typeOp> <GroupId>)"),
