@@ -85,6 +85,21 @@ class ConstructionTransitionTests(unittest.TestCase):
             NativeSupportState.EXECUTABLE_SAFE,
         )
 
+    def test_generic_witness_diagnostics_precede_construction_canonicalization(self):
+        source = """
+        demand castle {
+            require (can-build castle)
+            action (build castle)
+            witness (game-time >= 600)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            r"WIT-002: completion witness for demand 'castle' contains timing evidence",
+        ):
+            compile_source(source)
+
     def test_build_emission_uses_phase_observers_and_retry(self):
         source = """
         demand castle {
