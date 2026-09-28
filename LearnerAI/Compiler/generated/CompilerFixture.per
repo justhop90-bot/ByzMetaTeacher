@@ -63,6 +63,7 @@
 
 ; Construction observation: castle
 ; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: castle | PENDING/ISSUED -> COMPLETE
 ; COMPLETE | ISSUED/PENDING -> COMPLETE
 (defrule
     (or
@@ -74,7 +75,7 @@
     (set-goal demand-castle 43)
 )
 
-; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING
+; Pending admission: castle | ISSUED/PENDING -> PENDING
 (defrule
     (or
         (goal demand-castle 44)
