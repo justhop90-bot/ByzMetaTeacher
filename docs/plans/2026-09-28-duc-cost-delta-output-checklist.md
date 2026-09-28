@@ -61,38 +61,38 @@ The compiler should know that four native output Goals are written. It must not 
 
 ### Red
 
-- [ ] Add focused test: numeric `up-get-cost-delta 41` creates a width-4 Goal output span.
-- [ ] Assert the span provenance identifies `up-get-cost-delta`.
-- [ ] Assert the output write contributes `DucStateKind.OUTPUT`.
-- [ ] Add boundary test: start 15996 succeeds.
-- [ ] Add rejection test: start 15997 produces deterministic `DUC-017`.
-- [ ] Run focused DUC tests and capture the red result.
+- [x] Add focused test: numeric `up-get-cost-delta 41` creates a width-4 Goal output span.
+- [x] Assert the span provenance identifies `up-get-cost-delta`.
+- [x] Assert the output span is persisted through `DucSemanticState.goal_output_spans`; effect aggregation was intentionally excluded from this narrow repair.
+- [x] Add boundary test: start 15996 succeeds.
+- [x] Add rejection test: start 15997 produces deterministic `DUC-017`.
+- [x] Run focused DUC tests and capture the red result. Workflow #2117 showed 950 tests with 2 failures and 1 error, all three new cost-delta tests.
 
 ### Implementation
 
-- [ ] Add a dedicated `up-get-cost-delta` branch in `semantic/duc.py`.
-- [ ] Resolve `cost-data-4-goal-span` from the shared native contract catalog.
-- [ ] Validate one OutputGoalId against the native span contract.
-- [ ] Reuse `_write_goal_output_span()` so overwrite-generation/path provenance behavior is unchanged.
-- [ ] Keep symbolic OutputGoalId behavior conservative and consistent with existing search-state output handling.
-- [ ] Do not add a second output-span abstraction.
-- [ ] Do not add cost-value simulation.
+- [x] Add a dedicated `up-get-cost-delta` branch in `semantic/duc.py`.
+- [x] Resolve `cost-data-4-goal-span` from the shared native contract catalog.
+- [x] Validate one OutputGoalId against the native span contract.
+- [x] Reuse `_write_goal_output_span()` so overwrite-generation/path provenance behavior is unchanged.
+- [x] Keep symbolic OutputGoalId behavior conservative and consistent with existing search-state output handling.
+- [x] Do not add a second output-span abstraction.
+- [x] Do not add cost-value simulation.
 
 ### Green / verification
 
-- [ ] Focused DUC tests pass.
-- [ ] Full compiler unittest suite passes on the exact final head.
-- [ ] Native zero-findings acceptance passes.
-- [ ] All 9 native-support determinism jobs pass.
-- [ ] Snapshot comparison passes.
-- [ ] Compiler verification gate passes.
+- [x] Focused DUC tests pass on the final compiler run.
+- [x] Full compiler unittest suite passes on the exact final head: 950 tests.
+- [x] Native zero-findings acceptance passes.
+- [x] All 9 native-support determinism jobs pass.
+- [x] Snapshot comparison passes.
+- [x] Compiler verification gate passes.
 
 ## Documentation closure
 
 After the code is green:
-- [ ] Update `E-compiler_gap_matrix.md` so DUC Goal-output coverage explicitly includes the cost-delta writer.
-- [ ] Leave cost-data mutation/arithmetic semantics explicitly open.
-- [ ] Record exact final SHA and workflow evidence here.
+- [x] Update `E-compiler_gap_matrix.md` so DUC Goal-output coverage explicitly includes the cost-delta writer.
+- [x] Leave cost-data mutation/arithmetic semantics explicitly open.
+- [x] Record exact final SHA and workflow evidence here.
 
 ## Acceptance
 
@@ -105,3 +105,16 @@ For 15996 the span 15996..15999 is valid.
 
 For 15997 the command is rejected because the four-slot writer would exceed the native extended Goal span.
 
+
+
+## Final verification record
+
+- Final verified code SHA: `b4c143130b267336412c16a57c97fd3bed536d87`
+- Compiler workflow: #2119
+- Workflow URL: https://github.com/justhop90-bot/ByzMetaTeacher/actions/runs/36490556399
+- Compiler regression: 950 tests passed.
+- Native zero-findings acceptance: passed.
+- Determinism: 9/9 native-support jobs passed.
+- Snapshot comparison: passed.
+- Compiler verification gate: passed.
+- Remaining open semantics: `up-setup-cost-data`, cost-data mutation commands, and the numeric runtime values written by `up-get-cost-delta` remain deliberately unmodeled.
