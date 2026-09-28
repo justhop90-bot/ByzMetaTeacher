@@ -150,6 +150,10 @@ jobs:
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/construction-lifecycle.per --report /tmp/native-reports/construction-lifecycle.json
 
+      - name: Native zero-findings acceptance - DUC binder/emission fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_duc_native.py             --output /tmp/duc-binder-emission.per             --report /tmp/native-reports/duc-binder-emission.json
+
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -183,6 +187,7 @@ jobs:
             /tmp/basilisk-invalidation.per
             /tmp/construction-lifecycle.per
             /tmp/strategic-number.per
+            /tmp/duc-binder-emission.per
           if-no-files-found: warn
           retention-days: 14
 
