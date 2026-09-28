@@ -11,10 +11,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Remaining evidence: same-pass visibility proof; foundation/placement runtime evidence.
 
 ## SN/Timer DSL allocation + catalog
-- Build: semantic/analyzer.py (construct StrategicNumberRequest/TimerRequest),
-  compiler.py:_storage_requests (collect them), runtime_binding.py (inventory wiring).
-- Catalog: new SN table (defaults/version/auto-mutation) + timer granularity note.
-- Tests: tests/test_strategic_number_*.py + test_timer_* (add DSL end-to-end, not fixtures).
+- SN remains executable-safe through its versioned catalog/binding/emission path.
+- Timer: `parser.py` accepts `timer <name>` declarations; `ir/recurrent.py` owns `TimerRequest`/`TimerState`; `semantic/analyzer.py` constructs deterministic requests with `DISABLE_BEFORE_FIRST_USE`; `compiler.py:_storage_requests` collects them; existing `runtime_binding.py` allocates `TimerSlot` with 1..50 range/collision checks and manifest provenance.
+- Emission: `emitter/per.py` emits deterministic symbolic `defconst` aliases and one-shot `disable-timer` initialization rules; no duration/rearm policy is invented.
+- Tests: `tests/test_timer_allocation.py`, `tests/fixtures/timer_allocation.perdsl`, `tests/assert_timer_native.py`, plus Compiler CI native zero-findings and determinism.
+- Remaining: engine countdown/pass granularity and explicit TimerId reuse/lifetime model.
 
 ## Escrow lowering — release-only executable slice
 - Status: **integrated and verified on main `adec462b420f87bc66c2868908058c0e272baf7c`**.
