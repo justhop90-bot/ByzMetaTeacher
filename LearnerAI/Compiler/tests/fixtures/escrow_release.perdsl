@@ -1,0 +1,6 @@
+demand escrow_release_probe {
+    require (can-research-with-escrow wheelbarrow)
+    action (research wheelbarrow)
+    witness (research-completed wheelbarrow)
+    release (research-completed wheelbarrow)
+}

@@ -5,6 +5,12 @@ from Compiler.primitives.engine_semantics import (
     EngineSemanticMappingStatus,
     default_engine_semantic_mapping_registry,
 )
+from Compiler.ir import (
+    EscrowOperation,
+    EscrowOperationKind,
+    NativeEscrowReleasePlan,
+    SemanticId,
+)
 from Compiler.primitives.native_binder import NativeSemanticBinder
 from Compiler.primitives.native_schema import load_default_native_schema
 
@@ -91,6 +97,39 @@ class NativeSemanticBinderTests(unittest.TestCase):
     def test_up_compare_sn_has_executable_native_semantic_contract(self):
         assessment = self.binder.assess("up-compare-sn")
         self.assertEqual(assessment.state.value, "executable-safe")
+
+    def test_release_escrow_has_dedicated_executable_binding(self):
+        binding = self.binder.bind_escrow_command("release-escrow")
+        self.assertEqual(binding.command, "release-escrow")
+        self.assertEqual(binding.native_kind, "Action")
+        self.assertEqual(binding.parameter_count, 1)
+        self.assertEqual(binding.parameter_name, "Resource")
+        self.assertEqual(binding.parameter_type, "Const")
+        self.assertEqual(binding.parameter_direction, "in")
+        self.assertEqual(
+            binding.resource_domain,
+            ("food", "wood", "stone", "gold"),
+        )
+        self.assertEqual(
+            binding.semantic_mapping_id,
+            "escrow.execution.release",
+        )
+        self.assertEqual(binding.support_state.value, "executable-safe")
+
+    def test_release_escrow_plan_uses_dedicated_binder(self):
+        plan = NativeEscrowReleasePlan(
+            (
+                EscrowOperation(
+                    contract_identity="escrow-food",
+                    owner=SemanticId("test", "research"),
+                    kind=EscrowOperationKind.RELEASE,
+                    resource="food",
+                    command="release-escrow",
+                    rule_order=20,
+                ),
+            )
+        )
+        self.primitives.validate_escrow_release_plan(plan)
 
 if __name__ == "__main__":
     unittest.main()

@@ -228,6 +228,22 @@ def emit(
             out.extend(f"    {action.source}" for action in rule.actions)
             out += [")", ""]
 
+    if escrow_plan is not None and not escrow_plan.empty:
+        out.append("; Native escrow release plan")
+        current_rule_order = None
+        for operation in escrow_plan.operations:
+            if operation.rule_order != current_rule_order:
+                if current_rule_order is not None:
+                    out += [")", ""]
+                current_rule_order = operation.rule_order
+                out.append(
+                    f"; Native escrow release rule: {current_rule_order}"
+                )
+                out += ["(defrule", "    (true)", "=>"]
+            out.append(f"    (release-escrow {operation.resource})")
+        if current_rule_order is not None:
+            out += [")", ""]
+
     if control_plan is not None:
         out.append("; Native persistent control plane")
         emitted_symbols = {

@@ -258,6 +258,10 @@ _ACTION_SPECS = (
     ("research", "execution.research.request"),
 )
 
+_ESCROW_COMMAND_SPECS = (
+    ("release-escrow", "escrow.execution.release"),
+)
+
 
 
 def _practice_references(command: str) -> tuple[str, ...]:
@@ -375,6 +379,46 @@ def _persistent_state_mapping(command: str, identity: str) -> EngineSemanticMapp
         practice_references=(),
     )
 
+def _escrow_release_mapping() -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity="escrow.execution.release",
+        native_command="release-escrow",
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(
+            "https://airef.github.io/commands/commands-details.html#release-escrow",
+            "https://github.com/JackkelDragon/AoE2DE_AIBuilder/blob/master/AI%20Libraries/builder%20upgrades.per",
+            "https://gist.github.com/Andygmb/1e3a6d9d444b2dfa8c40",
+            "repo://docs/reference/engine/commands/release-escrow.md",
+        ),
+        state_effects=(
+            "transfers all escrowed stockpile units of the named resource into "
+            "the corresponding normal stockpile and sets that escrow balance to zero"
+        ),
+        lifetime=(
+            "one-shot native resource-state mutation; the resulting normal stockpile "
+            "persists as engine player state"
+        ),
+        ordering=(
+            "release executes at its position in the emitted action sequence; this "
+            "mapping does not claim same-pass visibility to a following ordinary action"
+        ),
+        admission=(
+            "native release-escrow Action with exactly one Resource constant parameter; "
+            "the compiler restricts that parameter to food, wood, stone, or gold"
+        ),
+        completion=(
+            "the native mutation itself is the contracted operation; no separate "
+            "world-state completion witness is synthesized"
+        ),
+        recovery=(
+            "reassess the owning semantic demand; no automatic percentage reset, "
+            "reacquisition, or starvation scheduler is emitted by this slice"
+        ),
+        practice_references=(),
+    )
+
 def _attack_issue_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
         identity="attack.execution.issue",
@@ -462,6 +506,10 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
 def default_duc_executable_commands() -> tuple[str, ...]:
     return tuple(command for command, _identity in _DUC_COMMAND_SPECS)
 
+def default_escrow_executable_commands() -> tuple[str, ...]:
+    """Return commands promoted through the dedicated escrow binder."""
+    return tuple(command for command, _identity in _ESCROW_COMMAND_SPECS)
+
 def default_native_controller_executable_commands() -> tuple[str, ...]:
     """Return commands promoted through dedicated controller binders."""
     return ("attack-now",)
@@ -525,6 +573,10 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         _duc_mapping(command, identity)
         for command, identity in _DUC_COMMAND_SPECS
     )
+    mappings.extend(
+        _escrow_release_mapping()
+        for _command, _identity in _ESCROW_COMMAND_SPECS
+    )
     mappings.append(_attack_issue_mapping())
     mappings.extend(
         (
@@ -577,6 +629,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _WITNESS_SPECS)
         + ("up-pending-objects", "up-pending-placement")
         + tuple(command for command, _identity in _ACTION_SPECS)
+        + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
     )
     return registry

@@ -189,15 +189,29 @@ class PrimitiveRegistry:
                 f"{error.code.value}: {error.message}" for error in report.errors
             )
             raise ValueError(f"escrow release plan validation failed: {summary}")
-        native = self.require_native(NATIVE_ESCROW_RELEASE_COMMAND)
-        if native.command_type not in {"Action", "Fact/Action"}:
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        bindings = binder.bind_escrow_plan(plan)
+        binding_by_command = {binding.command: binding for binding in bindings}
+        if set(plan.commands) != set(binding_by_command):
             raise ValueError(
-                "release-escrow is not declared as an executable native Action"
+                "escrow release plan contains a command without a dedicated native binding"
             )
-        if native.parameter_count != 1:
-            raise ValueError(
-                f"release-escrow expects exactly 1 native parameter, got {native.parameter_count}"
-            )
+        for operation in plan.operations:
+            binding = binding_by_command[operation.command]
+            if operation.resource not in binding.resource_domain:
+                raise ValueError(
+                    f"escrow release resource '{operation.resource}' is outside the "
+                    f"native domain {binding.resource_domain}"
+                )
+            if binding.parameter_count != 1:
+                raise ValueError(
+                    "release-escrow dedicated native binding does not expose exactly one parameter"
+                )
 
     def validate_attack_plan(self, plan) -> None:
         binder = NativeSemanticBinder(

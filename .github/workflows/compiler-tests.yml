@@ -158,6 +158,10 @@ jobs:
         run: |
           python LearnerAI/Compiler/tests/assert_attack_native.py             --output /tmp/attack-lifecycle.per             --report /tmp/native-reports/attack-lifecycle.json
 
+      - name: Native zero-findings acceptance - escrow release lowering fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_escrow_native.py             --output /tmp/escrow-release.per             --report /tmp/native-reports/escrow-release.json
+
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -193,6 +197,7 @@ jobs:
             /tmp/strategic-number.per
             /tmp/duc-binder-emission.per
             /tmp/attack-lifecycle.per
+            /tmp/escrow-release.per
           if-no-files-found: warn
           retention-days: 14
 
