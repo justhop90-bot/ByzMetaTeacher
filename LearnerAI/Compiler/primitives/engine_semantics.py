@@ -370,6 +370,24 @@ def _pending_mapping() -> EngineSemanticMapping:
     )
 
 
+
+def _pending_placement_mapping() -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity="execution.pending-placement",
+        native_command="up-pending-placement",
+        native_kind="Fact",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_LIMITS),
+        state_effects="reads native placement-work state for one building type without mutating construction policy",
+        lifetime="placement request remains observable while the native placement system is attempting placement",
+        ordering="observed after construction issuance and before a foundation exists",
+        admission="native placement-pending observation",
+        completion="placement pending never proves a foundation or completed building",
+        recovery="re-evaluate placement state; explicit up-reset-placement remains a separate recovery action",
+        practice_references=("build.can-pending-witness",),
+    )
+
 def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings: list[EngineSemanticMapping] = []
     for command, identity in _PERSISTENT_STATE_SPECS:
@@ -434,7 +452,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _ARBITRATION_SPECS)
         + tuple(command for command, _identity in _FEASIBILITY_SPECS)
         + tuple(command for command, _identity in _WITNESS_SPECS)
-        + ("up-pending-objects",)
+        + ("up-pending-objects", "up-pending-placement")
         + tuple(command for command, _identity in _ACTION_SPECS)
     )
     return registry
