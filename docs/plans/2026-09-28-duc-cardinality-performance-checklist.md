@@ -58,29 +58,29 @@ OPEN:
 ## TDD checklist
 
 ### Red phase
-- [ ] Add failing local recurrent-search fixture requiring `DUC-015` with the existing local performance class and 0..240 bound.
-- [ ] Add failing remote recurrent-search fixture requiring `DUC-015` with the existing remote performance class and 0..40 bound.
-- [ ] Add failing regression proving a same-rule explicit reset suppresses the cost diagnostic.
-- [ ] Add failing regression proving one-shot searches do not receive recurrent-cost diagnostics.
-- [ ] Run the focused DUC suite and capture the red result.
+- [x] Add failing local recurrent-search fixture requiring `DUC-015` with the existing local performance class and 0..240 bound.
+- [x] Add failing remote recurrent-search fixture requiring `DUC-015` with the existing remote performance class and 0..40 bound.
+- [x] Add failing regression proving a same-rule explicit reset suppresses the cost diagnostic.
+- [x] Add failing regression proving one-shot searches do not receive recurrent-cost diagnostics.
+- [x] Run the focused DUC suite and capture the red result. Observed red in Compiler workflow #2113: 947 tests, 2 failures, both new DUC-015 assertions.
 
 ### Implementation
-- [ ] Resolve DUC search performance metadata from the shared native interaction catalog; do not duplicate benchmark facts in `semantic/duc.py`.
-- [ ] Emit `DUC-015` only for recurrent searches operating on a retained prior list generation without an applicable same-rule list reset.
-- [ ] Include list kind, native capacity, retained cardinality upper bound, and benchmark performance class in the diagnostic.
-- [ ] Keep severity advisory (`WARNING`); never reject compilation.
-- [ ] Fail closed to no cost diagnostic when the shared evidence mapping is unavailable.
-- [ ] Leave `DUC-008` accumulation semantics unchanged.
-- [ ] Do not add source syntax, runtime scheduling, thresholds, or automatic resets.
+- [x] Resolve DUC search performance metadata from the shared native interaction catalog; do not duplicate benchmark facts in `semantic/duc.py`.
+- [x] Emit `DUC-015` only for recurrent searches operating on a retained prior list generation without an applicable same-rule list reset.
+- [x] Include list kind, native capacity, retained cardinality upper bound, and benchmark performance class in the diagnostic.
+- [x] Keep severity advisory (`WARNING`); never reject compilation.
+- [x] Fail closed to no cost diagnostic when the shared evidence mapping is unavailable.
+- [x] Leave `DUC-008` accumulation semantics unchanged.
+- [x] Do not add source syntax, runtime scheduling, thresholds, or automatic resets.
 
 ### Green / refactor
-- [ ] Focused DUC performance tests pass.
-- [ ] Complete DUC semantic suite passes.
-- [ ] Full compiler regression passes.
-- [ ] Existing native zero-findings fixtures pass unchanged.
-- [ ] All 9 native-support determinism jobs pass.
-- [ ] Cross-platform native snapshot comparison passes.
-- [ ] Compiler verification gate passes on the exact final main SHA.
+- [x] Focused DUC performance tests pass.
+- [x] Complete DUC semantic suite passes. via Compiler workflow #2116.
+- [x] Full compiler regression passes. 947 tests passed on #2116.
+- [x] Existing native zero-findings fixtures pass unchanged. on #2116.
+- [x] All 9 native-support determinism jobs pass. on #2116.
+- [x] Cross-platform native snapshot comparison passes. on #2116.
+- [x] Compiler verification gate passes on the exact final main SHA. `752e93f77bc646b11beda5d13a47e755548a4545` on #2116.
 
 ## Files
 
@@ -103,3 +103,16 @@ An expert reading a recurrent retained DUC search must be able to see:
 5. that an explicit same-rule reset removes the accumulation/cost condition.
 
 No new engine fact may be inferred from community frequency alone.
+
+
+## Final verification record
+
+- Final main SHA: `752e93f77bc646b11beda5d13a47e755548a4545`
+- Compiler workflow: #2116
+- Workflow URL: https://github.com/justhop90-bot/ByzMetaTeacher/actions/runs/36489605102
+- Compiler regression: 947 tests passed.
+- Native acceptance: all existing fixtures passed, including Research in-progress and escrow release.
+- Determinism: 9/9 OS/Python jobs passed.
+- Snapshot comparison: passed.
+- Verification gate: passed.
+- Remaining runtime boundary: benchmark classes remain empirical/advisory; the compiler still does not predict actual milliseconds or visible lag for the current live-world population.
