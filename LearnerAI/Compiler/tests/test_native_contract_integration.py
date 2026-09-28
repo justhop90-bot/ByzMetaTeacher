@@ -106,6 +106,7 @@ class NativeContractIntegrationTests(unittest.TestCase):
         citation_ids = set(catalog.citation_ids())
         self.assertIn("airef:duc:find-local", citation_ids)
         self.assertIn("airef:duc:remove-objects", citation_ids)
+        self.assertIn("airef:duc:set-target-by-id", citation_ids)
         self.assertIn("airef:duc:set-target-object", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
 
