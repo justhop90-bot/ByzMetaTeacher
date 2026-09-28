@@ -23,18 +23,18 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Native acceptance: `tests/fixtures/strategic_number.perdsl` is now a checked-in compiler fixture; `assert_strategic_number_native.py` compiles it twice, verifies deterministic numeric allocation against the catalog, and runs the pinned `aoe2_ai_lab` zero-findings gate. This directly addresses the Muse false assumption that fixture-only semantic tests prove emission coverage.
   - Remaining SN unknowns are now engine-knowledge questions, not allocation plumbing: per-SN defaults/auto-mutation/version scope and unknown-SN write behavior remain explicitly OPEN in `native_unknowns.md`.
 
-- [~] Timer allocation using the same symbolic-storage boundary is implemented; native/CI verification is pending on the current head.
+- [x] Timer allocation using the same symbolic-storage boundary is implemented and CI/native-verified.
   - Parser/IR: `timer <name>` declarations become typed `TimerState` + `TimerRequest` records with explicit `DISABLE_BEFORE_FIRST_USE` policy and deterministic stability keys.
   - Binding: `compiler.py:_storage_requests()` now collects Timer requests; existing `TimerSlot` allocation/inventory/manifests are reused unchanged.
   - Emission: deterministic TimerId `defconst` aliases plus one-shot `disable-timer` initialization are emitted only for declared compiler-owned timers.
-  - Acceptance: checked-in `tests/fixtures/timer_allocation.perdsl`, `tests/assert_timer_native.py`, focused `test_timer_allocation.py`, and Compiler CI native zero-findings gate are added.
-  - Remaining gate: actual engine countdown/pass granularity remains OPEN; timer reuse/lifetime remains explicitly unpromoted.
+  - Acceptance: checked-in `tests/fixtures/timer_allocation.perdsl`, `tests/assert_timer_native.py`, focused `test_timer_allocation.py`, and Compiler CI native zero-findings gate are green.
+  - Remaining engine unknowns: actual countdown/pass granularity and timer reuse/lifetime remain explicitly unpromoted.
 
 ## Tier 1 — largest evidence-backed lowering gaps
 
 - [~] Escrow/resource-control executable lowering.
-  - **Release-only promoted slice is now complete on main.** Added dedicated native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic `release-escrow` emission, source-to-.per fixture, pinned native zero-findings acceptance, and cross-platform determinism coverage.
-  - The family remains partial: `set-escrow-percentage`, UP escrow mutations, starvation/emergency release, multi-owner handoff, and same-pass release→ordinary-action proof remain outside executable-safe promotion.
+  - **Release-only promoted slice is complete and independently re-verified by Compiler workflow #2149.** Added dedicated native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic `release-escrow` emission, source-to-.per fixture, pinned native zero-findings acceptance, and cross-platform determinism coverage.
+  - The family remains partial: `set-escrow-percentage`, UP escrow mutations, starvation/emergency release, multi-owner handoff, and direct native proof of same-pass `release-escrow -> ordinary action` remain outside executable-safe promotion.
 - [x] Escrow ownership/order/lifetime semantic gate.
   - Added typed ordered `EscrowOperation` IR plus contract-set ownership validation and execution-order validation.
   - Acceptance coverage: same-rule release-before-consume, reversed ordering, escrow-aware consume, post-release stale consumption, policy-reset cleanup, and hostile owner mismatch/resource contention.
@@ -51,7 +51,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
   - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
   - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
-  - Full compiler/native verification: current mainline compiler regression suite is 915 tests OK; all native-support determinism jobs and the aggregate compiler verification gate pass.
+  - Full compiler/native verification: current verified mainline baseline is 963 tests OK; all native-support determinism jobs and the aggregate compiler verification gate pass.
 
 - [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
   - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `native_unknowns.md`; `attack-now` is only 47 corpus hits and the corpus says attack is largely mediated by persistent SN/town-size/group state.
