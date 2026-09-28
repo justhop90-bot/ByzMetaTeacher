@@ -170,7 +170,6 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
-            /tmp/native-reports/construction-lifecycle.json
       - name: Upload native validation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
@@ -182,6 +181,7 @@ jobs:
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/basilisk-invalidation.per
+            /tmp/construction-lifecycle.per
             /tmp/strategic-number.per
           if-no-files-found: warn
           retention-days: 14
