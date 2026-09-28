@@ -56,4 +56,6 @@ The acceptance fixture requires byte-identical duplicate compilation and invokes
 
 Static repository audit: complete.
 
+CI verification probe: branch-only change used to execute the pull-request compiler workflow against this main-state implementation.
+
 Local runtime test execution is not available in the current execution container because the repository itself is not mounted and outbound GitHub network access is unavailable. Native/compiler execution evidence must therefore come from the repository's CI environment. A temporary pull-request verification probe is used only to execute the existing CI job against the already-implemented main state; the implementation itself remains on `main`.
