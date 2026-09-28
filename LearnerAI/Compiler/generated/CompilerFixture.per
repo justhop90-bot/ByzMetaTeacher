@@ -20,6 +20,7 @@
 (defconst issued-wheelbarrow 46)
 (defconst pending-wheelbarrow 44)
 (defconst complete-wheelbarrow 45)
+(defconst research-retry-barrier-wheelbarrow 47)
 (defconst action-claim-build-pass-singleton 44)
 
 ; Per-pass transient action arbitration
@@ -41,6 +42,13 @@
     (true)
 =>
     (set-goal production-retry-barrier-defensive-spearmen 0)
+)
+
+; Per-pass research retry barriers
+(defrule
+    (true)
+=>
+    (set-goal research-retry-barrier-wheelbarrow 0)
 )
 
 ; Demand initialization
@@ -224,25 +232,48 @@
     (set-goal demand-wheelbarrow 0)
 )
 
-; Completion witness: wheelbarrow | PENDING -> COMPLETE
+; Completion witness: wheelbarrow | PENDING/ISSUED -> COMPLETE
 (defrule
-    (goal demand-wheelbarrow 44)
+    (or
+        (goal demand-wheelbarrow 46)
+        (goal demand-wheelbarrow 44)
+    )
     (research-completed ri-wheelbarrow)
 =>
     (set-goal demand-wheelbarrow 45)
 )
 
-; Pending admission: wheelbarrow | ISSUED -> PENDING
+; Pending admission: wheelbarrow | ISSUED/PENDING -> PENDING
 (defrule
-    (goal demand-wheelbarrow 46)
+    (or
+        (goal demand-wheelbarrow 46)
+        (goal demand-wheelbarrow 44)
+    )
+    (not (research-completed ri-wheelbarrow))
+    (up-research-status c: ri-wheelbarrow >= research-pending)
 =>
     (set-goal demand-wheelbarrow 44)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-wheelbarrow 46)
+        (goal demand-wheelbarrow 44)
+    )
+    (not (research-completed ri-wheelbarrow))
+    (not (up-research-status c: ri-wheelbarrow >= research-pending))
+=>
+    (set-goal demand-wheelbarrow 1)
+    (set-goal research-retry-barrier-wheelbarrow 1)
 )
 
 ; Action issuance: wheelbarrow | ACTIVE -> ISSUED
 (defrule
     (goal demand-wheelbarrow 1)
     (not (research-completed ri-wheelbarrow))
+    (goal research-retry-barrier-wheelbarrow 0)
+    (not (up-research-status c: ri-wheelbarrow >= research-pending))
     (not (research-completed ri-wheelbarrow))
     (research-available ri-wheelbarrow)
     (can-afford-research ri-wheelbarrow)
