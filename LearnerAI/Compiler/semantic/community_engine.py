@@ -357,7 +357,7 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
         EngineLifecycleContract(
             action="research",
             feasibility_fact="can-research",
-            pending_fact=None,
+            pending_fact="up-research-status",
             completion_witness="research-completed",
         ),
     )
