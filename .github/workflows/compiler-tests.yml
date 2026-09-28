@@ -67,6 +67,8 @@ jobs:
     name: Compiler tests + native zero-findings
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PYTHONPATH: LearnerAI
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
