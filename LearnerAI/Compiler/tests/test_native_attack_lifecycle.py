@@ -37,8 +37,8 @@ def _attack_rule(identity="attack", order=1, *, facts=None, actions=None, lifecy
         order=order,
         facts=(
             (_expr("(true)", "true"),)
-            if facts is not None
-            else (_expr("(true)", "true"),)
+            if facts is None
+            else tuple(facts)
         ),
         actions=(
             (_expr("(attack-now)", "attack-now"),)
@@ -47,6 +47,7 @@ def _attack_rule(identity="attack", order=1, *, facts=None, actions=None, lifecy
         ),
         lifecycle=tuple(lifecycle),
     )
+
 
 
 class NativeAttackIrTests(unittest.TestCase):
@@ -252,7 +253,7 @@ class NativeAttackBinderTests(unittest.TestCase):
             )
 
     def test_evidence_only_interaction_does_not_add_attack_facts(self):
-        plan = NativeAttackLifecyclePlan((_attack_rule(),))
+        plan = NativeAttackLifecyclePlan((_attack_rule(facts=()),))
         bindings = self.binder.bind_attack_plan(plan)
         self.assertEqual(
             tuple(binding.command for binding in bindings),
