@@ -27,6 +27,7 @@ class DemandNode:
     release_location: SourceLocation | None = None
     invalidate_location: SourceLocation | None = None
     strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
+    timer_states: tuple[tuple[str, SourceLocation], ...] = ()
 
 
 @dataclass(frozen=True)
