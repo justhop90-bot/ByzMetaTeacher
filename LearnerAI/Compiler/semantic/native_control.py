@@ -7,15 +7,11 @@ primitives and it does not invent a scheduler or alternate source language.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from ..ast import Expression
 from ..ir.native_control import NativeControlPlan
 from ..primitives.native_binder import NativeSupportState
-from ..primitives.native_engine_effects import (
-    NativeEffectKind,
-    NativeStateDomain,
-)
 from ..runtime_binding import (
     GoalSlotRequest,
     StrategicNumberRequest,
@@ -229,6 +225,10 @@ def _validate_leaf(
         )
 
     if is_action:
+        if head not in _CONTROL_COMMANDS:
+            raise ValueError(
+                f"native control plan action '{head}' is outside the persistent-control vocabulary"
+            )
         if native.command_type not in {"Action", "Fact/Action"}:
             raise ValueError(
                 f"native control action '{head}' is declared as {native.command_type}"
@@ -279,11 +279,9 @@ def _validate_leaf(
         try:
             semantic_expression = expression
             if head in {"up-compare-goal"}:
-                from dataclasses import replace
                 semantic_expression = replace(expression, head="up-compare-sn")
                 parse_strategic_number_comparison(semantic_expression)
             elif head == "up-modify-goal":
-                from dataclasses import replace
                 semantic_expression = replace(expression, head="up-modify-sn")
                 parse_strategic_number_mutation(semantic_expression)
             elif head in {"up-compare-sn", "strategic-number"}:
