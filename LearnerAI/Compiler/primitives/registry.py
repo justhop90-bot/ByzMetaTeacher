@@ -447,6 +447,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("building-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("unit-type-count", "FACT", "OBSERVATION", 3, 3),
         Primitive("unit-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
+        Primitive("up-research-status", "FACT", "OBSERVATION", 4, 4, completion_witness=False),
         Primitive("can-train", "FACT", "FEASIBILITY", 1, 1),
         Primitive("can-train-with-escrow", "FACT", "FEASIBILITY", 1, 1),
         Primitive("up-pending-objects", "FACT", "OBSERVATION", 4, 4, completion_witness=False),
