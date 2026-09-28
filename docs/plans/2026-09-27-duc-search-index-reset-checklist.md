@@ -35,39 +35,43 @@ Base: concrete four-Goal up-get-search-state tranche
 ## Implementation
 
 ### IR
-- [ ] Add typed search-index state to each DUC list.
-- [ ] Track a deterministic query signature for the most recent find-local/find-remote family.
-- [ ] Track an index generation/epoch independent of list generation.
-- [ ] Track whether the current offset is known or unknown.
+- [x] Add typed search-index state to each DUC list.
+- [x] Track a deterministic query signature for the most recent find-local/find-remote family.
+- [x] Track an index generation/epoch independent of list generation.
+- [x] Track whether the current offset is known or unknown.
 - [ ] Add search-index metadata to DucSearchOperation.
-- [ ] Record reset reason categories without pretending to know the exact post-find cursor.
+- [x] Record reset reason categories without pretending to know the exact post-find cursor.
 
 ### Native contracts
-- [ ] Extend NativeDucFilterContract with explicit resets_search_indices.
-- [ ] Mark all direct-unit filter commands that reset indices according to UserPatch evidence.
-- [ ] Preserve existing filter retention semantics.
+- [x] Extend NativeDucFilterContract with explicit resets_search_indices.
+- [x] Mark all direct-unit filter commands that reset indices according to UserPatch evidence.
+- [x] Preserve existing filter retention semantics.
 
 ### Semantic analysis
-- [ ] Initialize local/remote index state explicitly at zero.
-- [ ] On up-reset-search, reset only the requested offsets and retain lists unless list flags are also set.
-- [ ] On up-reset-filters, reset both offsets while retaining result lists.
-- [ ] On direct-unit filter mutations, reset both offsets before subsequent searches.
-- [ ] On find-local/find-remote query-family changes, reset the relevant offset before the search.
-- [ ] Preserve index reset lineage in search provenance and content fingerprints.
-- [ ] Leave exact post-search offset unknown rather than fabricating an increment.
-- [ ] Preserve existing list-generation cardinality behavior.
+- [x] Initialize local/remote index state explicitly at zero.
+- [x] On up-reset-search, reset only the requested offsets and retain lists unless list flags are also set.
+- [x] On up-reset-filters, reset both offsets while retaining result lists.
+- [x] On direct-unit filter mutations, reset both offsets before subsequent searches.
+- [x] On find-local/find-remote query-family changes, reset the relevant offset before the search.
+- [x] Preserve index reset lineage in search provenance and content fingerprints.
+- [x] Leave exact post-search offset unknown rather than fabricating an increment.
+- [x] Preserve existing list-generation cardinality behavior.
 
 ### Tests
-- [ ] Initial index state is explicitly zero/known.
+- [x] Initial index state is explicitly zero/known.
 - [ ] up-reset-search 1 0 0 0 resets only local index.
 - [ ] up-reset-search 0 0 1 0 resets only remote index.
 - [ ] up-reset-filters resets both indices without clearing list generations.
-- [ ] Every filter command that inherits filter-range reset semantics resets both indices.
-- [ ] Switching local query type/class resets local index.
-- [ ] Switching remote query type/class resets remote index.
-- [ ] Unchanged query signatures do not introduce a spurious reset.
-- [ ] Focus-player mutation remains explicitly unknown rather than inferred.
+- [x] Every filter command that inherits filter-range reset semantics resets both indices.
+- [x] Switching local query type/class resets local index.
+- [x] Switching remote query type/class resets remote index.
+- [x] Unchanged query signatures do not introduce a spurious reset.
+- [x] Focus-player mutation remains explicitly unknown rather than inferred.
 - [ ] Existing list-retention and target tests remain unchanged.
+
+### Evidence boundary retained
+
+- [x] Exact post-find cursor advancement and remote focus-player mutation remain unresolved and are not invented.
 
 ### Verification
 - [ ] Focused DUC semantic tests pass.
