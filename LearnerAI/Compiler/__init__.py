@@ -43,4 +43,13 @@ __all__ = (
     "SourceGraphResolver",
     "SourceInstance",
     "SourceUnit",
+    "NativeControlPlan",
+    "NativeControlRule",
+    "NativeControlState",
+    "compile_source",
+    "compile_package",
+    "compile_semantic_demands",
 )
+
+from .ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
+from .compiler import compile_source, compile_package, compile_semantic_demands
