@@ -46,7 +46,13 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             rules=(
                 NativeControlRule(
                     "initialize",
-                    facts=(),
+                    facts=(
+                        Expression(
+                            "(goal strategy-goal -1)",
+                            "goal",
+                            ("strategy-goal", "-1"),
+                        ),
+                    ),
                     actions=(
                         Expression("(set-goal strategy-goal 1)", "set-goal", ("strategy-goal", "1")),
                         Expression("(set-strategic-number resource-control 50)", "set-strategic-number", ("resource-control", "50")),
