@@ -10,6 +10,7 @@ from ..ast import Expression, SourceLocation
 if TYPE_CHECKING:
     from .strategy import StrategicBinding
     from .strategic_number import StrategicNumberState
+    from .recurrent import TimerState
 
 
 class LifecycleState(str, Enum):
@@ -253,6 +254,7 @@ class SemanticDemand:
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
     strategic_binding: StrategicBinding | None = None
     strategic_number_states: tuple["StrategicNumberState", ...] = ()
+    timer_states: tuple["TimerState", ...] = ()
     location: SourceLocation | None = None
 
     @property
