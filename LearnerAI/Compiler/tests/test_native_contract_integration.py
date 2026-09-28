@@ -143,6 +143,12 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertTrue(consumer.option_one_requires_object_target)
         self.assertEqual(consumer.evidence_ids, ("airef:duc:target-objects",))
 
+        object_target = catalog.duc_target("up-set-target-object")
+        self.assertTrue(object_target.supports_fact)
+        self.assertTrue(object_target.returns_false_on_invalid_index)
+        self.assertIsNone(object_target.failed_action_preserves_previous_target)
+        self.assertIn("airef:duc:set-target-object-failure", object_target.evidence_ids)
+
         direct_target = catalog.duc_target("up-set-target-by-id")
         self.assertIsNotNone(direct_target)
         self.assertEqual(direct_target.identity_kind, "NATIVE_ID")
