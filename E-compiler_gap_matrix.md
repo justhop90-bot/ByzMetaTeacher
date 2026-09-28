@@ -60,7 +60,8 @@ Must NOT become a universal scheduler.
 native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
 emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |
 tests OK (native deterministic acceptance) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
-GAP: broader source expressiveness remains open; retained list-derived target proof now invalidates across filter-generation changes while runtime object liveness remains open.
+The promoted source slice now includes semantic observation support for Fact-only `up-can-search`, which records modeled local/remote search availability and proves FALSE only at compiler-proven end/capacity states.
+GAP: `up-add-object-by-id` and other unpromoted DUC source surfaces remain open; exact native `up-can-search` truth outside proven exhaustion/capacity remains runtime-dependent. Retained list-derived target proof now invalidates across filter-generation changes while runtime object liveness remains open.
 
 ## DUC TargetSession/groups/outputs/costs
 Same as SearchSession, plus: target liveness remains OPEN; runtime cost measurement remains OPEN; cardinality/performance diagnostics are IMPLEMENTED as advisory evidence consumers.
