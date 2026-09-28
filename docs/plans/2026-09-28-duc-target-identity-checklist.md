@@ -36,46 +36,46 @@ Base: compiler-duc-search-index-resets
 
 ## IR implementation
 
-- [ ] Add a typed direct-object identity/proof state.
-- [ ] Permit DucObjectRef to represent a direct object target without a search-list source.
-- [ ] Store the zero-based native object ID as immutable target identity.
-- [ ] Prevent search-list resets and list mutations from invalidating a direct-ID target merely because no list identity exists.
-- [ ] Preserve direct-ID identity through branch joins when all paths agree on the same native object ID.
-- [ ] Widen divergent direct IDs to UNKNOWN.
-- [ ] Preserve current-pass proof semantics separately from native-ID identity.
+- [x] Add a typed direct-object identity/proof state.
+- [x] Permit DucObjectRef to represent a direct object target without a search-list source.
+- [x] Store the zero-based native object ID as immutable target identity.
+- [x] Prevent search-list resets and list mutations from invalidating a direct-ID target merely because no list identity exists.
+- [x] Preserve direct-ID identity through branch joins when all paths agree on the same native object ID.
+- [x] Widen divergent direct IDs to UNKNOWN.
+- [x] Preserve current-pass proof semantics separately from native-ID identity.
 
 ## Native contract implementation
 
-- [ ] Add up-set-target-by-id to NativeDucTargetContract.
-- [ ] Encode its source requirement as no search list.
-- [ ] Encode its target kind as OBJECT.
-- [ ] Encode zero-based object-ID argument validation without fabricating a maximum range.
-- [ ] Give it dedicated evidence/provenance identity.
+- [x] Add up-set-target-by-id to NativeDucTargetContract.
+- [x] Encode its source requirement as no search list.
+- [x] Encode its target kind as OBJECT.
+- [x] Encode zero-based object-ID argument validation without fabricating a maximum range.
+- [x] Give it dedicated evidence/provenance identity.
 
 ## Semantic implementation
 
-- [ ] Validate arity and typeOp/Id shape for up-set-target-by-id.
-- [ ] Accept numeric non-negative IDs as concrete identity.
-- [ ] Leave symbolic IDs unresolved rather than guessing.
-- [ ] Set target validity to VALID with a dedicated native-ID proof when a concrete ID is authored.
-- [ ] Preserve the direct target across list reset/filter/search mutations.
-- [ ] Preserve direct target across search-list sort/dedupe/remove operations until the compiler has native evidence that the selected object itself was removed.
-- [ ] Keep full native reset behavior authoritative.
+- [x] Validate arity and typeOp/Id shape for up-set-target-by-id.
+- [x] Accept numeric non-negative IDs as concrete identity.
+- [x] Leave symbolic IDs unresolved rather than guessing.
+- [x] Record concrete native-ID proof while leaving runtime target liveness UNKNOWN.
+- [x] Preserve the direct target across list reset/filter/search mutations.
+- [x] Preserve direct target across search-list sort/dedupe/remove operations until the compiler has native evidence that the selected object itself was removed.
+- [x] Keep full native reset behavior authoritative.
 
 ## Hostile tests
 
-- [ ] Direct target stores native object ID and has no list generation/index dependency.
-- [ ] Direct target is not invalidated by up-reset-search local/remote flags.
-- [ ] Direct target is not invalidated by up-reset-filters.
-- [ ] Direct target survives list sort mutation.
-- [ ] Direct target survives an unrelated remove-objects mutation.
-- [ ] Direct target survives an unrelated list generation replacement.
-- [ ] Divergent branch direct IDs widen to UNKNOWN.
-- [ ] Same-ID branch joins preserve native-ID proof.
-- [ ] Symbolic direct ID remains unresolved.
-- [ ] Negative direct IDs are rejected deterministically.
-- [ ] Existing search-index target behavior remains unchanged.
-- [ ] Existing stale/unknown list-index mutation tests remain unchanged.
+- [x] Direct target stores native object ID and has no list generation/index dependency.
+- [x] Direct target is not invalidated by up-reset-search local/remote flags.
+- [x] Direct target is not invalidated by up-reset-filters.
+- [x] Direct target survives list sort mutation.
+- [x] Direct target survives an unrelated remove-objects mutation.
+- [x] Direct target survives an unrelated list generation replacement.
+- [x] Divergent branch direct IDs widen to UNKNOWN.
+- [x] Same-ID branch joins preserve native-ID proof.
+- [x] Symbolic direct ID remains unresolved.
+- [x] Negative direct IDs are rejected deterministically.
+- [x] Existing search-index target behavior remains unchanged.
+- [x] Existing stale/unknown list-index mutation tests remain unchanged.
 
 ## Verification
 
@@ -88,10 +88,10 @@ Base: compiler-duc-search-index-resets
 
 ## Explicitly unverified
 
-- [ ] Runtime existence/liveness of a concrete native object ID.
-- [ ] Exact engine semantics when an object with that ID dies, is removed, or leaves the targetable set.
-- [ ] Any undocumented relationship between object IDs and player-specific object ownership over time.
-- [ ] Exact target behavior after exotic engine-side target refresh operations.
+- [x] Runtime existence/liveness of a concrete native object ID.
+- [x] Exact engine semantics when an object with that ID dies, is removed, or leaves the targetable set.
+- [x] Any undocumented relationship between object IDs and player-specific object ownership over time.
+- [x] Exact target behavior after exotic engine-side target refresh operations.
 
 ## Sources
 
