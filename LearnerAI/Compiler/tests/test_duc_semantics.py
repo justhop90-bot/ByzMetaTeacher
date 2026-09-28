@@ -1585,6 +1585,38 @@ class DucSemanticTests(unittest.TestCase):
         self.assertTrue(any(item.code == "DUC-006" for item in second.diagnostics))
 
 
+    def test_add_object_by_id_appends_concrete_id_to_local_list(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-add-object-by-id", ("search-local", "c:", "93")),
+            )),
+        ))
+
+        mutation = report.mutations[-1]
+        self.assertEqual(mutation.command, "up-add-object-by-id")
+        self.assertEqual(mutation.list_kind, DucListKind.LOCAL)
+        self.assertEqual(mutation.kind, DucListMutationKind.ADD_OBJECT)
+        self.assertEqual(mutation.object_data, "93")
+        self.assertIsNone(mutation.compare_operator)
+        self.assertIsNone(mutation.compare_value)
+        self.assertEqual(report.final_state.local_list.current_generation.cardinality,
+                         DucCardinalityRange(1, 1))
+        self.assertIn("93", report.final_state.local_list.current_generation.content_fingerprint)
+
+    def test_add_object_by_id_rejects_negative_id(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-add-object-by-id", ("search-remote", "c:", "-1")),
+            )),
+        ))
+
+        self.assertFalse(report.mutations)
+        self.assertTrue(any(
+            item.code == "DUC-017"
+            and "non-negative" in item.message
+            for item in report.diagnostics
+        ))
+
     def test_list_mutation_forces_unknown_target_proof(self):
         report = analyze_duc((
             _rule(1, (
