@@ -86,7 +86,7 @@ up-jump-rule
 
 - [x] Preserve the existing primitive path:
   `NATIVE_KNOWN -> NATIVE_TYPED -> SEMANTICALLY_ADAPTED -> ENGINE_SEMANTICS_MAPPED -> EXECUTABLE_SAFE`.
-- [x] Promote mapped engine-state/control commands to `ENGINE_SEMANTICS_MAPPED`.
+- [x] Promote mapped non-primitive engine-state/control commands to `ENGINE_SEMANTICS_MAPPED` while preserving `EXECUTABLE_SAFE` for commands that already have complete primitive adapters.
 - [x] Keep those commands distinct from `EXECUTABLE_SAFE` primitive bindings.
 - [x] Keep unknown native commands fail-closed.
 - [x] Do not promote a mapped command whose checked-in native schema kind disagrees with its contract.
@@ -110,7 +110,7 @@ up-jump-rule
 - [x] Timer write/read contracts are asserted.
 - [x] Rule-control persistence and same-pass behavior are asserted.
 - [x] Evidence provenance is asserted.
-- [x] All mapped control-plane commands report `ENGINE_SEMANTICS_MAPPED`.
+- [x] Non-primitive mapped control-plane commands report `ENGINE_SEMANTICS_MAPPED`; pre-existing primitive-backed commands retain `EXECUTABLE_SAFE`.
 - [x] Dual `Fact/Action` commands do not receive false primitive-safe bindings.
 - [x] Existing primitive-level executable mappings remain unchanged.
 - [x] `up-modify-goal` contributes both a Goal writer and a prefixed Goal/SN operand reader.
