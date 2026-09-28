@@ -85,6 +85,13 @@ class NativeContractIntegrationTests(unittest.TestCase):
 
         search = catalog.duc_search("up-find-local")
         mutation = catalog.duc_mutation("up-remove-objects")
+        consumer = catalog.duc_target_consumer("up-target-objects")
+        self.assertIsNotNone(consumer)
+        self.assertEqual((consumer.option_min, consumer.option_max), (0, 1))
+        self.assertTrue(consumer.option_zero_requires_local_list)
+        self.assertTrue(consumer.option_one_requires_object_target)
+        self.assertEqual(consumer.evidence_ids, ("airef:duc:target-objects",))
+
         direct_target = catalog.duc_target("up-set-target-by-id")
         self.assertIsNotNone(direct_target)
         self.assertEqual(direct_target.identity_kind, "NATIVE_ID")
@@ -107,6 +114,7 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:find-local", citation_ids)
         self.assertIn("airef:duc:remove-objects", citation_ids)
         self.assertIn("airef:duc:set-target-by-id", citation_ids)
+        self.assertIn("airef:duc:target-objects", citation_ids)
         self.assertIn("airef:duc:set-target-object", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
 
