@@ -461,6 +461,7 @@ def compile_package(
         registry=registry,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
     return result
 
@@ -484,6 +485,7 @@ def compile_source(
         registry=registry,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
     return result
 
