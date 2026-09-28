@@ -1301,7 +1301,7 @@ class NativeContractCatalog:
     goal_span_contracts: Tuple[NativeGoalSpanContract, ...] = ()
     parameter_ranges: Tuple[NativeGoalParameterRangeContract, ...] = ()
     duc_searches: Tuple[NativeDucSearchContract, ...] = ()
-    duc_search_availability: Tuple[NativeDucSearchAvailabilityContract, ...] = ()
+    duc_search_availability_contracts: Tuple[NativeDucSearchAvailabilityContract, ...] = ()
     duc_search_index_transitions: Tuple[NativeDucSearchIndexTransitionContract, ...] = ()
     duc_filters: Tuple[NativeDucFilterContract, ...] = ()
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
@@ -1326,10 +1326,10 @@ class NativeContractCatalog:
             object.__setattr__(self, "parameter_ranges", default_native_goal_parameter_ranges())
         if not self.duc_searches:
             object.__setattr__(self, "duc_searches", default_native_duc_search_contracts())
-        if not self.duc_search_availability:
+        if not self.duc_search_availability_contracts:
             object.__setattr__(
                 self,
-                "duc_search_availability",
+                "duc_search_availability_contracts",
                 default_native_duc_search_availability_contracts(),
             )
         if not self.duc_search_index_transitions:
@@ -1367,7 +1367,7 @@ class NativeContractCatalog:
                 raise ValueError(f"duplicate {label} identity")
         for values, label in (
             (self.duc_searches, "DUC search contract"),
-            (self.duc_search_availability, "DUC search-availability contract"),
+            (self.duc_search_availability_contracts, "DUC search-availability contract"),
             (self.duc_filters, "DUC filter contract"),
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
@@ -1479,7 +1479,7 @@ class NativeContractCatalog:
             evidence_id
             for contract in (
                 *self.duc_searches,
-                *self.duc_search_availability,
+                *self.duc_search_availability_contracts,
                 *self.duc_search_index_transitions,
                 *self.duc_filters,
                 *self.duc_resets,
@@ -1654,7 +1654,7 @@ class NativeContractCatalog:
             ),
             *(
                 (contract.command, contract.evidence_ids)
-                for contract in self.duc_search_availability
+                for contract in self.duc_search_availability_contracts
             ),
             *(
                 (f"DUC search-index transition {contract.trigger_kind}", contract.evidence_ids)
