@@ -1906,12 +1906,14 @@ class DucSemanticTests(unittest.TestCase):
                 ("up-set-target-object", ("search-local", "c:", "0")),
             )),
         ))
-        second = analyze_duc((
-            _rule(1, (
-                ("up-get-object-data", ("38", "41")),
-            )),
+        second = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-get-object-data", ("38", "41")),
+                )),
+            ),
             initial_state=first.next_pass_state,
-        ))
+        )
 
         self.assertEqual(
             second.target_data_observations[-1].target_proof,
