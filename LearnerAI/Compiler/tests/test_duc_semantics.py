@@ -1927,6 +1927,61 @@ class DucSemanticTests(unittest.TestCase):
         ))
 
 
+    def test_object_target_data_fact_reads_current_object_target(self):
+        first = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-object-target-data 38 c:> 0)",
+            "up-object-target-data",
+            ("38", "c:>", "0"),
+            location,
+        )
+        report = analyze_duc((
+            first,
+            replace(_rule(2, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-object-target-data")
+        self.assertEqual(observation.relation, DucTargetDataRelation.SELECTED_OBJECT_TARGET)
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertFalse(observation.writes_goal)
+        self.assertEqual(observation.target_validity, DucTargetStatus.VALID)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "target-of-target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+    def test_get_object_target_data_fact_writes_goal_output_span(self):
+        first = _rule(1, (
+            ("up-find-local", ("c:", "villager", "c:", "1")),
+            ("up-set-target-object", ("search-local", "c:", "0")),
+        ))
+        location = SourceLocation(2, 1, "fixture.per")
+        fact = Expression(
+            "(up-get-object-target-data 38 41)",
+            "up-get-object-target-data",
+            ("38", "41"),
+            location,
+        )
+        report = analyze_duc((
+            first,
+            replace(_rule(2, ()), facts=(fact,)),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(observation.command, "up-get-object-target-data")
+        self.assertEqual(observation.source_kind, "FACT")
+        self.assertTrue(observation.writes_goal)
+        self.assertEqual(observation.output_span.start_goal_id, 41)
+        self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
+
+
 
 if __name__ == "__main__":
     unittest.main()
