@@ -34,7 +34,7 @@ def _rule(order, actions):
     )
 
 
-class DucTargetConsumerRedPhaseTests(unittest.TestCase):
+class PersistentStateSemanticsTestsDucTargetConsumerRed(unittest.TestCase):
     def test_option_zero_targets_local_search_results_without_selected_target(self):
         report = analyze_duc((
             _rule(1, (
