@@ -1553,7 +1553,7 @@ class DucSemanticTests(unittest.TestCase):
         report = analyze_duc((
             _rule(1, (
                 ("up-find-remote", ("c:", "town-center", "c:", "1")),
-                ("set-strategic-number", ("sn-focus-player-number", "c:", "2")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
                 ("up-find-remote", ("c:", "town-center", "c:", "1")),
             )),
         ))
