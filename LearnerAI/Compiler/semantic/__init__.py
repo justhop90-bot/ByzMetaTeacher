@@ -190,6 +190,7 @@ from .recurrent_execution import (
 
 from .native_controller import (
     NativeController,
+    NativeControllerBinding,
     NativeControllerCatalog,
     NativeControllerDomain,
     NativeControllerEdge,
@@ -197,4 +198,5 @@ from .native_controller import (
     NativeControlSurface,
     NativeControlSurfaceKind,
     default_native_controller_catalog,
+    bind_strategic_number_accesses,
 )
