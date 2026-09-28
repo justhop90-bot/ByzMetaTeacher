@@ -78,9 +78,17 @@
       {
         "id": "NORMAL_BASELINE",
         "purpose": "Prove ordinary Loom research works in the sterile scenario without escrow.",
-        "action_order": ["research ri-loom"],
+        "action_order": [
+          "research ri-loom"
+        ],
         "expected_terminal_result": "PASS",
-        "allowed_status_transitions": ["1->1", "1->2", "2->2", "2->3", "3->3"],
+        "allowed_status_transitions": [
+          "1->1",
+          "1->2",
+          "2->2",
+          "2->3",
+          "3->3"
+        ],
         "runtime_runs_required": 10
       },
       {
@@ -88,31 +96,61 @@
         "purpose": "Prove escrowed gold blocks ordinary research when no release occurs.",
         "action_order": [],
         "expected_terminal_result": "PASS",
-        "allowed_status_transitions": ["1->1", "3->3"],
+        "allowed_status_transitions": [
+          "1->1"
+        ],
         "runtime_runs_required": 10
       },
       {
         "id": "ESCROW_SAME_PASS_POSITIVE",
         "purpose": "Prove release makes gold visible to ordinary research later in the same executable rule/pass.",
-        "action_order": ["release-escrow gold", "research ri-loom"],
+        "action_order": [
+          "release-escrow gold",
+          "research ri-loom"
+        ],
         "expected_terminal_result": "PASS",
-        "allowed_status_transitions": ["1->1", "1->2", "2->2", "2->3", "3->3"],
+        "allowed_status_transitions": [
+          "1->1",
+          "1->2",
+          "2->2",
+          "2->3",
+          "3->3"
+        ],
         "runtime_runs_required": 10
       },
       {
         "id": "ESCROW_SAME_PASS_REVERSED",
         "purpose": "Prove ordinary research does not consume protected gold before the release action.",
-        "action_order": ["research ri-loom", "release-escrow gold", "later-pass rescue: research ri-loom"],
+        "action_order": [
+          "research ri-loom",
+          "release-escrow gold",
+          "later-pass rescue: research ri-loom"
+        ],
         "expected_terminal_result": "PASS",
-        "allowed_status_transitions": ["1->1", "1->2", "2->2", "2->3", "3->3"],
+        "allowed_status_transitions": [
+          "1->1",
+          "1->2",
+          "2->2",
+          "2->3",
+          "3->3"
+        ],
         "runtime_runs_required": 10
       },
       {
         "id": "ESCROW_LATER_PASS_CONTROL",
         "purpose": "Prove release in one rule/pass permits ordinary research in a later rule/pass.",
-        "action_order": ["pass N: release-escrow gold", "pass N+1: research ri-loom"],
+        "action_order": [
+          "pass N: release-escrow gold",
+          "pass N+1: research ri-loom"
+        ],
         "expected_terminal_result": "PASS",
-        "allowed_status_transitions": ["1->1", "1->2", "2->2", "2->3", "3->3"],
+        "allowed_status_transitions": [
+          "1->1",
+          "1->2",
+          "2->2",
+          "2->3",
+          "3->3"
+        ],
         "runtime_runs_required": 10
       }
     ],
@@ -127,6 +165,51 @@
       ],
       "required_runs_per_variant": 10,
       "statement": "On the tested DE build, release-escrow <Resource> is visible to a later ordinary research action in the same executable rule/pass, and action order is material."
-    }
+    },
+    "terminal_precedence": [
+      "NATIVE_ENGINE_ERROR",
+      "CONTROL_CONTAMINATION",
+      "INVALID_PRECONDITION",
+      "NONDETERMINISTIC",
+      "STATUS_LIFECYCLE_FAILURE",
+      "RESOURCE_CONSUMPTION_FAILURE",
+      "ORDERING_FAILURE",
+      "SAME_PASS_VISIBILITY_FAILURE",
+      "BASELINE_FAILURE",
+      "BLOCKED_CONTROL_LEAK",
+      "REVERSED_ORDER_ACCEPTED",
+      "LATER_PASS_RESEARCH_FAILURE",
+      "TIMEOUT",
+      "PASS"
+    ],
+    "failure_classes": [
+      "BASELINE_NO_ADMISSION",
+      "BASELINE_NO_ISSUANCE",
+      "BASELINE_BAD_RESOURCE_DELTA",
+      "BASELINE_NO_COMPLETION",
+      "BASELINE_STATUS_REGRESSION",
+      "BASELINE_UNCONTROLLED_SIDE_EFFECT",
+      "BLOCKED_CONTROL_LEAK",
+      "BLOCKED_RESOURCE_LEAK",
+      "BLOCKED_ESCROW_MUTATION",
+      "BLOCKED_EXTERNAL_ACTION",
+      "POSITIVE_PRECONDITION_FAILURE",
+      "RELEASE_NOT_OBSERVED",
+      "SAME_PASS_VISIBILITY_FAILURE",
+      "RESEARCH_REJECTED_AFTER_RELEASE",
+      "RESOURCE_CONSUMPTION_FAILURE",
+      "RESEARCH_STATUS_REGRESSION",
+      "COMPLETION_WITNESS_FAILURE",
+      "UNCONTROLLED_SIDE_EFFECT",
+      "REVERSED_ORDER_ACCEPTED",
+      "REVERSED_RESOURCE_CONSUMED",
+      "REVERSED_SAME_PASS_LEAK",
+      "REVERSED_RESCUE_FAILURE",
+      "REVERSED_RESEARCH_STATUS_REGRESSION",
+      "LATER_PASS_NO_RELEASE",
+      "LATER_PASS_UNEXPECTED_SAME_PASS",
+      "LATER_PASS_RESEARCH_FAILURE",
+      "LATER_PASS_STATUS_REGRESSION"
+    ]
   }
 }
