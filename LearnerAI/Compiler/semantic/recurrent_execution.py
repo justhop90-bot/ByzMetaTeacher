@@ -6,7 +6,7 @@ native rule control transfer. Unknown world facts branch conservatively.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Mapping
 
@@ -252,7 +252,9 @@ def _apply_action(
         values[("SN", str(expression.args[0]))] = _int(expression.args[1])
     elif expression.head == "up-modify-goal" and expression.args:
         try:
-            mutation = parse_strategic_number_mutation(expression)
+            mutation = parse_strategic_number_mutation(
+                replace(expression, head="up-modify-sn")
+            )
             goals = {
                 key[1]: value
                 for key, value in values.items()
