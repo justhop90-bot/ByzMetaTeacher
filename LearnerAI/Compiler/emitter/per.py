@@ -4,7 +4,13 @@ from __future__ import annotations
 from ..errors import CompileError
 from ..ir import NativeControlPlan, SemanticDemand
 from ..primitives import PrimitiveRegistry, default_de_registry
-from ..runtime_binding import BindingResult, LifecycleEncoding
+from ..runtime_binding import (
+    BindingResult,
+    GoalSlot,
+    LifecycleEncoding,
+    StrategicNumberSlot,
+    TimerSlot,
+)
 from ..semantic.native_control import validate_native_control_plan
 
 MAX_RULES = 10_000
@@ -131,15 +137,18 @@ def emit(
 
     if control_plan is not None:
         out.append("; Native persistent control plane")
-        emitted_symbols: set[str] = set()
+        emitted_symbols = {
+            line.split()[1]
+            for line in out
+            if line.startswith("(defconst ") and len(line.split()) >= 3
+        }
         for state in sorted(control_plan.states, key=lambda item: item.identifier):
             binding = bindings.binding_for(state.request.request_id)
-            binding_type = type(binding).__name__
-            if binding_type == "GoalSlot":
+            if isinstance(binding, GoalSlot):
                 value = binding.id.value
-            elif binding_type == "StrategicNumberSlot":
+            elif isinstance(binding, StrategicNumberSlot):
                 value = binding.id
-            elif binding_type == "TimerSlot":
+            elif isinstance(binding, TimerSlot):
                 value = binding.id
             else:
                 raise CompileError(
