@@ -567,8 +567,11 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(result.status, ValidationStatus.VALIDATED)
             payload = json.loads(manifest.read_text(encoding="utf-8"))
             self.assertEqual(payload["format_version"], 4)
-            self.assertEqual(len(payload["records"]), 5)
+            self.assertEqual(len(payload["records"]), 6)
             self.assertTrue(all("goal_id" in record for record in payload["records"]))
+            production = [record for record in payload["records"] if record.get("purpose") == "production-retry-barrier"]
+            self.assertEqual(len(production), 1)
+            self.assertEqual(production[0]["kind"], "GOAL_SLOT")
             self.assertEqual(payload["integrity"]["algorithm"], "SHA-256")
             self.assertEqual(len(payload["integrity"]["content_sha256"]), 64)
 
