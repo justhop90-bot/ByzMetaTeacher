@@ -379,7 +379,12 @@ class StrategicNumberInventory:
         candidates = frozenset(value for value in range(SN_ID_MIN, SN_ID_MAX + 1) if value not in documented)
         return cls(
             inventory_sha=inventory_sha,
-            documented_ids=frozensetStrategicNumberRequest = StrategicNumberStorageRequest
+            documented_ids=frozenset(documented),
+            candidate_ids=candidates,
+        )
+
+
+StrategicNumberRequest = StrategicNumberStorageRequest
 
 @dataclass(frozen=True)
 class StrategicNumberBindingMetadata:
