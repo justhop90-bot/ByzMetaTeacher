@@ -89,6 +89,7 @@ else:
     from .semantic.source_order import validate_non_lifecycle_source_order
     from .semantic.action_issuance import validate_action_issuance
     from .semantic.completion_witness import validate_completion_witnesses
+from .semantic.construction import canonicalize_construction_witnesses
     from .semantic.release_state import validate_release_states
     from .semantic.invalidation import validate_invalidation_contracts
     from .semantic.capability_bridge import project_capability_graph
@@ -220,6 +221,8 @@ def _compile_ir_parts(
 
     witness_report = validate_completion_witnesses(ir, registry)
     reports.append(witness_report)
+    if witness_report.valid:
+        ir = canonicalize_construction_witnesses(ir)
 
     release_report = validate_release_states(ir, registry)
     reports.append(release_report)
