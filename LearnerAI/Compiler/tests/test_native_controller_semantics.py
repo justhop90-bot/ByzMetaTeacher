@@ -148,6 +148,48 @@ class NativeControllerSemanticsTests(unittest.TestCase):
             tuple(sorted(item.identity for item in first.controllers)),
         )
 
+
+    def test_seeded_controller_corpus_is_explicitly_evidence_only(self):
+        catalog = default_native_controller_catalog()
+        expected = {
+            "civilian-task-allocation",
+            "duc-search-state",
+            "exploration-control",
+            "attack-group-control",
+            "resource-escrow-control",
+            "town-size-defense-targeting",
+        }
+        self.assertEqual(
+            {controller.identity for controller in catalog.controllers},
+            expected,
+        )
+        self.assertTrue(
+            all(
+                controller.status is PracticeStatus.EVIDENCE_ONLY
+                for controller in catalog.controllers
+            )
+        )
+
+    def test_representative_control_surfaces_are_seeded(self):
+        catalog = default_native_controller_catalog()
+        for identifier, controller_id in (
+            ("sn-food-gatherer-percentage", "civilian-task-allocation"),
+            ("sn-number-explore-groups", "exploration-control"),
+            ("sn-number-attack-groups", "attack-group-control"),
+            ("sn-maximum-town-size", "town-size-defense-targeting"),
+            ("set-escrow-percentage", "resource-escrow-control"),
+            ("up-find-local", "duc-search-state"),
+        ):
+            kind = (
+                NativeControlSurfaceKind.STRATEGIC_NUMBER
+                if identifier.startswith("sn-")
+                else NativeControlSurfaceKind.COMMAND
+            )
+            self.assertEqual(
+                catalog.resolve_surface(kind, identifier).controller_id,
+                controller_id,
+            )
+
     def test_executable_surface_requires_contractual_status(self):
         catalog = NativeControllerCatalog(
             controllers=(
