@@ -1,4 +1,5 @@
 name: Compiler tests
+# Timer allocation tranche verification remains pinned to this workflow.
 
 on:
   push:
