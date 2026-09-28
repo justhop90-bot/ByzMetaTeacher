@@ -89,6 +89,20 @@ class DucSearchIndexResetReason(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class DucSearchCursorDisposition(str, Enum):
+    INITIAL = "INITIAL"
+    RESET_START = "RESET_START"
+    RUNTIME_ADVANCED = "RUNTIME_ADVANCED"
+    AT_END = "AT_END"
+    BLOCKED_BY_CAPACITY = "BLOCKED_BY_CAPACITY"
+    PATH_AMBIGUOUS = "PATH_AMBIGUOUS"
+
+
+class DucSearchResultDisposition(str, Enum):
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_EMPTY = "GUARANTEED_EMPTY"
+
+
 class DucTargetTransition(str, Enum):
     UNCHANGED = "UNCHANGED"
     STALE = "STALE"
@@ -192,6 +206,7 @@ class DucSearchIndexState:
     focus_player_signature: Optional[str] = None
     known: bool = True
     last_reset_reason: Optional[DucSearchIndexResetReason] = None
+    cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     path_ambiguous: bool = False
     focus_player_provenance: Optional["DucProvenance"] = None
 
@@ -358,6 +373,9 @@ class DucSearchOperation:
     index_after: Optional[int] = None
     index_generation: int = 0
     index_reset_reason: Optional[DucSearchIndexResetReason] = None
+    cursor_before_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    cursor_after_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    result_disposition: DucSearchResultDisposition = DucSearchResultDisposition.RUNTIME_DEPENDENT
     focus_player_signature: Optional[str] = None
     focus_player_provenance: Optional["DucProvenance"] = None
 
@@ -399,6 +417,8 @@ class DucSearchStateObservation:
     local_last_search_cardinality: Optional[DucCardinalityRange] = None
     remote_total_cardinality: Optional[DucCardinalityRange] = None
     remote_last_search_cardinality: Optional[DucCardinalityRange] = None
+    local_search_cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
+    remote_search_cursor_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     output_span: Optional[DucGoalOutputSpan] = None
 
 
@@ -517,8 +537,10 @@ __all__ = [
     "DucFilterSnapshot",
     "DucFilterState",
     "DucListGeneration",
+    "DucSearchCursorDisposition",
     "DucSearchIndexResetReason",
     "DucSearchIndexState",
+    "DucSearchResultDisposition",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",
