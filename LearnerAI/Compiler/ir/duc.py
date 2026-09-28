@@ -103,6 +103,12 @@ class DucSearchResultDisposition(str, Enum):
     GUARANTEED_EMPTY = "GUARANTEED_EMPTY"
 
 
+class DucSearchFactResult(str, Enum):
+    NOT_A_FACT = "NOT_A_FACT"
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    GUARANTEED_FALSE = "GUARANTEED_FALSE"
+
+
 class DucTargetTransition(str, Enum):
     UNCHANGED = "UNCHANGED"
     STALE = "STALE"
@@ -376,6 +382,8 @@ class DucSearchOperation:
     cursor_before_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     cursor_after_disposition: DucSearchCursorDisposition = DucSearchCursorDisposition.INITIAL
     result_disposition: DucSearchResultDisposition = DucSearchResultDisposition.RUNTIME_DEPENDENT
+    source_kind: str = "ACTION"
+    fact_result: DucSearchFactResult = DucSearchFactResult.NOT_A_FACT
     focus_player_signature: Optional[str] = None
     focus_player_provenance: Optional["DucProvenance"] = None
 
@@ -541,6 +549,7 @@ __all__ = [
     "DucSearchIndexResetReason",
     "DucSearchIndexState",
     "DucSearchResultDisposition",
+    "DucSearchFactResult",
     "DucLoopWidening",
     "DucListMutationEffect",
     "DucListMutationKind",
