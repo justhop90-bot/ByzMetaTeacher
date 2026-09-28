@@ -38,6 +38,46 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 14)
 
+    def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
+        source = """
+        demand castle-posture {
+            sn posture = 3
+            require (up-compare-sn posture >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertRegex(output, r"\(defconst posture [0-9]+\)")
+        self.assertIn("(set-strategic-number posture 3)", output)
+        self.assertIn("(up-compare-sn posture >= 1)", output)
+
+    def test_compiler_owned_strategic_number_reuses_supplied_inventory_context(self):
+        from Compiler.runtime_binding import BindingContext, StrategicNumberInventory
+
+        source = """
+        demand castle-posture {
+            sn posture = 3
+            require (up-compare-sn posture >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        inventory = StrategicNumberInventory(
+            inventory_sha="sn-test" * 8,
+            documented_ids=frozenset({511}),
+            candidate_ids=frozenset({510, 509}),
+        )
+        output = compile_source(
+            source,
+            binding_context=BindingContext(
+                strategic_number_inventory=inventory,
+            ),
+        )
+        self.assertIn("(defconst posture 510)", output)
+
     def test_known_typed_native_command_without_adapter_reports_support_state(self):
         source = """
         demand flare {
