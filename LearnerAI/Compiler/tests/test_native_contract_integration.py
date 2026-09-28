@@ -85,6 +85,20 @@ class NativeContractIntegrationTests(unittest.TestCase):
 
         search = catalog.duc_search("up-find-local")
         mutation = catalog.duc_mutation("up-remove-objects")
+        for command, relation, writes_goal in (
+            ("up-object-data", "SELECTED_OBJECT", False),
+            ("up-get-object-data", "SELECTED_OBJECT", True),
+            ("up-object-target-data", "SELECTED_OBJECT_TARGET", False),
+            ("up-get-object-target-data", "SELECTED_OBJECT_TARGET", True),
+        ):
+            contract = catalog.duc_target_data_contract(command)
+            self.assertIsNotNone(contract)
+            self.assertEqual(contract.relation, relation)
+            self.assertEqual(contract.writes_goal, writes_goal)
+            if writes_goal:
+                self.assertEqual(contract.output_width, 1)
+                self.assertEqual((contract.output_goal_min, contract.output_goal_max), (1, 16000))
+
         consumer = catalog.duc_target_consumer("up-target-objects")
         self.assertIsNotNone(consumer)
         self.assertEqual((consumer.option_min, consumer.option_max), (0, 1))
@@ -116,6 +130,10 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:set-target-by-id", citation_ids)
         self.assertIn("airef:duc:target-objects", citation_ids)
         self.assertIn("airef:duc:set-target-object", citation_ids)
+        self.assertIn("airef:duc:object-data", citation_ids)
+        self.assertIn("airef:duc:get-object-data", citation_ids)
+        self.assertIn("airef:duc:object-target-data", citation_ids)
+        self.assertIn("airef:duc:get-object-target-data", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
 
     def test_shared_catalog_exposes_first_class_duc_group_contracts(self):
