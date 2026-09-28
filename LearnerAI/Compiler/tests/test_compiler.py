@@ -43,6 +43,7 @@ class CompilerTests(unittest.TestCase):
         demand castle-posture {
             sn posture = 3
             require (up-compare-sn posture >= 1)
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
@@ -60,6 +61,7 @@ class CompilerTests(unittest.TestCase):
         demand castle-posture {
             sn posture = 3
             require (up-compare-sn posture >= 1)
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
@@ -154,6 +156,7 @@ class CompilerTests(unittest.TestCase):
         source = """
         demand posture {
             require (up-compare-sn 510 >= 1)
+            require (can-build castle)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
