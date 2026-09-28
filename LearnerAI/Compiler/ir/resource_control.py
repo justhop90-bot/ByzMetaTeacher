@@ -33,6 +33,38 @@ class EscrowAdmissionMode(str, Enum):
     INCLUDE_ESCROW = "INCLUDE_ESCROW"
 
 
+class EscrowOperationKind(str, Enum):
+    """Executable escrow mutation/consumption step within one lifecycle package."""
+
+    RELEASE = "RELEASE"
+    CONSUME = "CONSUME"
+    POLICY_RESET = "POLICY_RESET"
+
+
+@dataclass(frozen=True)
+class EscrowOperation:
+    """One ordered native escrow operation tied to one semantic contract."""
+
+    contract_identity: str
+    owner: SemanticId
+    kind: EscrowOperationKind
+    resource: str
+    command: str
+    rule_order: int
+    within_rule_order: int = 0
+    location: SourceLocation | None = None
+
+    def __post_init__(self) -> None:
+        if not self.contract_identity.strip():
+            raise ValueError("escrow operation contract identity must not be empty")
+        if not self.resource.strip():
+            raise ValueError("escrow operation resource must not be empty")
+        if not self.command.strip():
+            raise ValueError("escrow operation command must not be empty")
+        if self.rule_order < 0 or self.within_rule_order < 0:
+            raise ValueError("escrow operation order values must be non-negative")
+
+
 class EscrowReserveKind(str, Enum):
     SET_PERCENTAGE = "SET_PERCENTAGE"
     MODIFY_AMOUNT = "MODIFY_AMOUNT"
@@ -146,6 +178,8 @@ class TransientActionExclusionClaim:
 
 __all__ = [
     "EscrowAdmissionMode",
+    "EscrowOperation",
+    "EscrowOperationKind",
     "EscrowConsumption",
     "EscrowConsumptionMode",
     "EscrowContract",
