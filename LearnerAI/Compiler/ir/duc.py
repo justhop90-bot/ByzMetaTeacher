@@ -99,6 +99,24 @@ class DucTargetConsumerMode(str, Enum):
     SELECTED_OBJECT_ONLY = "SELECTED_OBJECT_ONLY"
 
 
+class DucTargetDataRelation(str, Enum):
+    SELECTED_OBJECT = "SELECTED_OBJECT"
+    SELECTED_OBJECT_TARGET = "SELECTED_OBJECT_TARGET"
+
+
+@dataclass(frozen=True)
+class DucTargetDataObservation:
+    command: str
+    relation: DucTargetDataRelation
+    object_data: str
+    source_kind: str
+    writes_goal: bool
+    target_validity: DucTargetStatus
+    target_proof: DucTargetProof
+    provenance: DucProvenance
+    output_span: Optional["DucGoalOutputSpan"] = None
+
+
 @dataclass(frozen=True)
 class DucTargetConsumerEffect:
     command: str
@@ -466,6 +484,7 @@ class DucAnalysisReport:
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
     target_consumers: tuple[DucTargetConsumerEffect, ...] = ()
+    target_data_observations: tuple[DucTargetDataObservation, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
     effects: tuple[DucExecutionEffect, ...] = ()
     diagnostics: tuple[DucDiagnostic, ...] = ()
@@ -488,6 +507,8 @@ __all__ = [
     "DucExecutionEffect",
     "DucTargetConsumerEffect",
     "DucTargetConsumerMode",
+    "DucTargetDataObservation",
+    "DucTargetDataRelation",
     "DucFilterPredicate",
     "DucFilterSnapshot",
     "DucFilterState",
