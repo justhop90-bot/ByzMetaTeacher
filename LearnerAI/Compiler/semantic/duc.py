@@ -402,6 +402,20 @@ def _int_or_none(value: str) -> int | None:
         return None
 
 
+def _transition_affects_list(
+    transition_contract,
+    list_kind: DucListKind,
+) -> bool:
+    if transition_contract is None or not transition_contract.reset_offset_to_zero:
+        return False
+    scopes = set(transition_contract.affected_lists)
+    return (
+        "BOTH" in scopes
+        or list_kind.value in scopes
+        or "SEARCHED_LIST" in scopes
+    )
+
+
 def _reset_search_index(
     index: DucSearchIndexState,
     reason: DucSearchIndexResetReason,
@@ -473,6 +487,7 @@ def _apply_focus_player_mutation(
     rule: EffectiveRule,
     action: RuleAction,
     state_revision: int,
+    transition_contract,
 ) -> DucSemanticState:
     command = action.expression.head
     arguments = _canonical_arguments(action.expression)
@@ -504,7 +519,10 @@ def _apply_focus_player_mutation(
         contract_id="duc.search-index.focus-player",
         evidence_ids=(),
     )
-    if proven_unchanged:
+    if proven_unchanged or not _transition_affects_list(
+        transition_contract,
+        DucListKind.REMOTE,
+    ):
         updated_index = replace(
             previous_index,
             focus_player_signature=next_signature,
@@ -531,6 +549,9 @@ def _apply_focus_player_mutation(
 def _prepare_search_index_for_query(
     index: DucSearchIndexState,
     query_signature: tuple[str, ...],
+    *,
+    list_kind: DucListKind,
+    transition_contract,
 ) -> tuple[
     DucSearchIndexState,
     Optional[DucSearchIndexResetReason],
@@ -542,6 +563,7 @@ def _prepare_search_index_for_query(
     if (
         index.query_signature is not None
         and index.query_signature != query_signature
+        and _transition_affects_list(transition_contract, list_kind)
     ):
         prepared = _reset_search_index(
             index,
@@ -998,6 +1020,7 @@ def _apply_duc_search(
     action: RuleAction,
     args: tuple[str, ...],
     search_contract,
+    query_transition_contract,
     state_revision: int,
     rule_reset_lists: set[DucListKind],
     source_kind: str,
@@ -1058,6 +1081,8 @@ def _apply_duc_search(
     ) = _prepare_search_index_for_query(
         current.search_index,
         query_signature,
+        list_kind=kind,
+        transition_contract=query_transition_contract,
     )
     blocked_by_capacity = (
         current.current_generation is not None
@@ -1299,6 +1324,7 @@ def _analyze_duc_linear(
                         action=fact_action,
                         args=fact_args,
                         search_contract=fact_search_contract,
+                        query_transition_contract=contracts.duc_search_index_transition("QUERY_CHANGE"),
                         state_revision=state_revision,
                         rule_reset_lists=rule_reset_lists,
                         source_kind="FACT",
@@ -1330,6 +1356,7 @@ def _analyze_duc_linear(
                     rule=rule,
                     action=action,
                     state_revision=state_revision,
+                    transition_contract=contracts.duc_search_index_transition("FOCUS_PLAYER_CHANGE"),
                 )
                 continue
 
@@ -1696,6 +1723,7 @@ def _analyze_duc_linear(
                         action=action,
                         args=args,
                         search_contract=search_contract,
+                        query_transition_contract=contracts.duc_search_index_transition("QUERY_CHANGE"),
                         state_revision=state_revision,
                         rule_reset_lists=rule_reset_lists,
                         source_kind="ACTION",
@@ -1743,20 +1771,23 @@ def _analyze_duc_linear(
                 local_list = state.local_list
                 remote_list = state.remote_list
                 if filter_contract.resets_search_indices:
-                    local_list = replace(
-                        local_list,
-                        search_index=_reset_search_index(
-                            local_list.search_index,
-                            DucSearchIndexResetReason.FILTER_CHANGED,
-                        ),
-                    )
-                    remote_list = replace(
-                        remote_list,
-                        search_index=_reset_search_index(
-                            remote_list.search_index,
-                            DucSearchIndexResetReason.FILTER_CHANGED,
-                        ),
-                    )
+                    transition_contract = contracts.duc_search_index_transition("FILTER_CHANGE")
+                    if _transition_affects_list(transition_contract, DucListKind.LOCAL):
+                        local_list = replace(
+                            local_list,
+                            search_index=_reset_search_index(
+                                local_list.search_index,
+                                DucSearchIndexResetReason.FILTER_CHANGED,
+                            ),
+                        )
+                    if _transition_affects_list(transition_contract, DucListKind.REMOTE):
+                        remote_list = replace(
+                            remote_list,
+                            search_index=_reset_search_index(
+                                remote_list.search_index,
+                                DucSearchIndexResetReason.FILTER_CHANGED,
+                            ),
+                        )
                 state = DucSemanticState(
                     local_list,
                     remote_list,
