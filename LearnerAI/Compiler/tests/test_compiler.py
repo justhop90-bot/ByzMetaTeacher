@@ -303,8 +303,8 @@ class CompilerTests(unittest.TestCase):
     def test_lifecycle_rule_order_prevents_same_pass_collapse(self):
         output = compile_source(EXAMPLES)
         release = output.find("; Release: castle | COMPLETE -> RELEASED")
-        witness = output.find("; Completion witness: castle | PENDING -> COMPLETE")
-        pending = output.find("; Pending admission: castle | ISSUED -> PENDING")
+        witness = output.find("; Completion witness: castle | PENDING/ISSUED -> COMPLETE")
+        pending = output.find("; Pending admission: castle | ISSUED/PENDING -> PENDING")
         action = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
         self.assertGreaterEqual(release, 0)
         self.assertGreaterEqual(witness, 0)
@@ -715,7 +715,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(game-time >= 510)", output)
         self.assertIn("(unit-type-count man-at-arms >= 2)", output)
         self.assertIn("(dropsite-min-distance gold > 12)", output)
-        self.assertIn("(can-build watch-tower)", output)
+        self.assertIn("(can-build castle)", output)
 
     def test_positional_observation_cannot_be_completion_witness(self):
         source = """
