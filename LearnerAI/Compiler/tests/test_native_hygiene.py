@@ -537,6 +537,7 @@ class NativeHygieneTests(unittest.TestCase):
                 "airef:duc:reset-filters",
                 "airef:duc:reset-search",
                 "airef:duc:full-reset-search",
+                "airef:duc:add-object-by-id",
                 "airef:duc:clean-search",
                 "airef:duc:remove-objects",
                 "airef:duc:set-target-by-id",
