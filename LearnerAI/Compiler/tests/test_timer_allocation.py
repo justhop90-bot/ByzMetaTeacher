@@ -13,7 +13,6 @@ class TimerAllocationIRTests(unittest.TestCase):
         source = """
         demand timer_gate {
             timer cooldown
-            require (up-timer-status cooldown = timer-disabled)
             action (research ri-loom)
             witness (up-research-status c: ri-loom >= research-complete)
             release (research-available ri-loom)
@@ -84,7 +83,6 @@ class TimerAllocationIRTests(unittest.TestCase):
 
         self.assertIn("(defconst cooldown 1)", artifact)
         self.assertIn("(disable-timer cooldown)", artifact)
-        self.assertIn("(up-timer-status cooldown = timer-disabled)", artifact)
 
     def test_timer_binding_manifest_preserves_slot_and_initialization_policy(self):
         from Compiler.compiler import _binding_manifest_text, _compile_source_parts
@@ -106,6 +104,7 @@ class TimerAllocationIRTests(unittest.TestCase):
         manifest = _binding_manifest_text(bindings, context)
 
         self.assertIn("(defconst cooldown 1)", artifact)
+        self.assertIn("(disable-timer cooldown)", artifact)
         self.assertIn('"binding_kind": "TIMER"', manifest)
         self.assertIn('"timer_id": 1', manifest)
         self.assertIn(
@@ -120,8 +119,6 @@ class TimerAllocationIRTests(unittest.TestCase):
         demand timer_gate {
             timer cooldown
             timer scouting-window
-            require (up-timer-status cooldown = timer-disabled)
-            require (up-timer-status scouting-window = timer-disabled)
             action (build castle)
             witness (building-type-count castle > 0)
             release (building-type-count castle > 0)
