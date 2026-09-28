@@ -1,0 +1,10 @@
+demand strategic-posture {
+    sn posture = 3
+    sn secondary-posture = 7
+    require (up-compare-sn posture >= 1)
+    require (up-compare-sn secondary-posture >= 0)
+    require (can-build castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
