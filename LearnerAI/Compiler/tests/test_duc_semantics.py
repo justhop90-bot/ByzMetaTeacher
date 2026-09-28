@@ -62,6 +62,28 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_set_target_object_action_rejects_first_remote_out_of_range_index(self):
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                        ("up-set-target-object", ("search-remote", "c:", "40")),
+                    ),
+                ),
+            ),
+        )
+
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(
+            any(
+                item.code == "DUC-014"
+                and "remote list capacity 40" in item.message
+                for item in report.diagnostics
+            )
+        )
+
     def test_set_target_object_fact_on_proven_empty_search_list_is_guaranteed_false(self):
         initial = _empty_state()
         local = replace(
