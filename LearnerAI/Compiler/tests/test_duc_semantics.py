@@ -8,6 +8,7 @@ from Compiler.ir.duc import (
     DucListKind,
     DucListMutationKind,
     DucLoopWidening,
+    DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
     DucTargetTransition,
