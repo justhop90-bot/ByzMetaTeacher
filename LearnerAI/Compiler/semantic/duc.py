@@ -40,6 +40,7 @@ from ..ir.duc import (
     DucSearchListState,
     DucSearchOperation,
     DucSearchCursorDisposition,
+    DucSearchFactResult,
     DucSearchIndexResetReason,
     DucSearchIndexState,
     DucSearchResultDisposition,
@@ -974,6 +975,235 @@ def _empty_state(pass_id: int = 0) -> DucSemanticState:
     )
 
 
+def _apply_duc_search(
+    state: DucSemanticState,
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    args: tuple[str, ...],
+    search_contract,
+    state_revision: int,
+    rule_reset_lists: set[DucListKind],
+    source_kind: str,
+) -> tuple[
+    DucSemanticState,
+    DucSearchOperation,
+    tuple[DucDiagnostic, ...],
+]:
+    command = action.expression.head
+    diagnostics: list[DucDiagnostic] = []
+    kind = DucListKind(search_contract.list_kind)
+    current = state.local_list if kind is DucListKind.LOCAL else state.remote_list
+
+    if source_kind == "FACT" and not search_contract.supports_fact:
+        diagnostics.append(
+            DucDiagnostic(
+                "DUC-005",
+                DiagnosticSeverity.ERROR.value,
+                rule.rule_order,
+                f"{command} is not a valid DUC Fact under its native contract",
+                _location(action, rule.source_location),
+            )
+        )
+        raise ValueError(f"{command} does not support Fact evaluation")
+
+    if rule.pass_behavior is RulePassBehavior.RECURRENT and current.current_generation is not None:
+        if kind not in rule_reset_lists:
+            diagnostics.append(
+                DucDiagnostic(
+                    "DUC-008",
+                    DiagnosticSeverity.WARNING.value,
+                    rule.rule_order,
+                    f"recurrent {command} can accumulate results in retained {kind.value.lower()} DUC list generation {current.current_generation.generation}",
+                    _location(action, rule.source_location),
+                )
+            )
+
+    filter_snapshot = DucFilterSnapshot(
+        generation=state.filters.generation,
+        fingerprint=state.filters.fingerprint,
+        predicates=state.filters.predicates,
+        provenance=state.filters.last_mutation,
+        path_ambiguous=state.filters.path_ambiguous,
+    )
+    query_signature = args
+    (
+        prepared_index,
+        index_reset_reason,
+        index_before,
+        cursor_before_disposition,
+    ) = _prepare_search_index_for_query(
+        current.search_index,
+        query_signature,
+    )
+    requested_max = _search_limit(args, search_contract.capacity)
+    blocked_by_capacity = (
+        current.current_generation is not None
+        and current.current_generation.cardinality is not None
+        and current.current_generation.cardinality.minimum >= search_contract.capacity
+    )
+    guaranteed_empty = (
+        not blocked_by_capacity
+        and index_reset_reason is None
+        and cursor_before_disposition is DucSearchCursorDisposition.AT_END
+    )
+    (
+        post_search_index,
+        cursor_after_disposition,
+        result_disposition,
+    ) = _search_cursor_transition(
+        prepared_index,
+        guaranteed_empty=guaranteed_empty,
+        blocked_by_capacity=blocked_by_capacity,
+    )
+    if filter_snapshot.path_ambiguous:
+        diagnostics.append(
+            DucDiagnostic(
+                "DUC-012",
+                DiagnosticSeverity.WARNING.value,
+                rule.rule_order,
+                f"{command} consumes a retained filter state that differs across control-flow paths",
+                _location(action, rule.source_location),
+            )
+        )
+
+    visible = DucVisibility.SAME_RULE
+    list_generation_inputs = tuple(
+        sorted(
+            {
+                generation.generation
+                for generation in (
+                    *current.generation_variants,
+                    *(
+                        (current.current_generation,)
+                        if current.current_generation is not None
+                        else ()
+                    ),
+                )
+            }
+        )
+    )
+    provenance = _provenance(
+        rule,
+        action,
+        visibility=visible,
+        state_revision=state_revision,
+        pass_id=state.pass_id,
+        inputs=list_generation_inputs + (
+            state.filters.generation,
+            prepared_index.generation,
+        ),
+        contract_id=f"duc.search.{command}",
+        evidence_ids=search_contract.evidence_ids,
+    )
+
+    generation_number = current.next_generation
+    total_cardinality, last_search_cardinality = _search_cardinality(
+        current.current_generation,
+        capacity=search_contract.capacity,
+        requested_max=requested_max,
+        guaranteed_empty=(
+            result_disposition is DucSearchResultDisposition.GUARANTEED_EMPTY
+        ),
+    )
+    previous_fingerprint = (
+        current.current_generation.content_fingerprint
+        if current.current_generation is not None
+        else ""
+    )
+    output_generation = DucListGeneration(
+        list_kind=kind,
+        generation=generation_number,
+        produced_by=provenance,
+        cardinality=total_cardinality,
+        capacity=search_contract.capacity,
+        content_fingerprint=_fingerprint(
+            (
+                "append-search",
+                previous_fingerprint,
+                kind.value,
+                command,
+                *args,
+                filter_snapshot.fingerprint,
+                str(post_search_index.generation),
+                index_reset_reason.value if index_reset_reason is not None else "NONE",
+                cursor_before_disposition.value,
+                cursor_after_disposition.value,
+                result_disposition.value,
+            )
+        ),
+        last_search_cardinality=last_search_cardinality,
+    )
+    updated_list = _list_state(
+        kind,
+        current,
+        output_generation,
+        next_generation=generation_number + 1,
+        path_ambiguous=current.path_ambiguous or filter_snapshot.path_ambiguous,
+        generation_variants=(),
+        search_index=post_search_index,
+    )
+    if kind is DucListKind.LOCAL:
+        state = DucSemanticState(
+            updated_list,
+            state.remote_list,
+            state.filters,
+            state.target,
+            state.point_target,
+            state_revision,
+            state.pass_id,
+            groups=state.groups,
+            goal_output_spans=state.goal_output_spans,
+        )
+    else:
+        state = DucSemanticState(
+            state.local_list,
+            updated_list,
+            state.filters,
+            state.target,
+            state.point_target,
+            state_revision,
+            state.pass_id,
+            groups=state.groups,
+            goal_output_spans=state.goal_output_spans,
+        )
+
+    fact_result = (
+        DucSearchFactResult.NOT_A_FACT
+        if source_kind != "FACT"
+        else (
+            DucSearchFactResult.GUARANTEED_FALSE
+            if (
+                result_disposition is DucSearchResultDisposition.GUARANTEED_EMPTY
+                and search_contract.returns_false_on_zero_results
+            )
+            else DucSearchFactResult.RUNTIME_DEPENDENT
+        )
+    )
+    operation = DucSearchOperation(
+        command,
+        kind,
+        action.expression.source,
+        args,
+        filter_snapshot,
+        output_generation,
+        visible,
+        provenance,
+        index_before=index_before,
+        index_after=post_search_index.offset,
+        index_generation=post_search_index.generation,
+        index_reset_reason=index_reset_reason,
+        cursor_before_disposition=cursor_before_disposition,
+        cursor_after_disposition=cursor_after_disposition,
+        result_disposition=result_disposition,
+        source_kind=source_kind,
+        fact_result=fact_result,
+        focus_player_signature=post_search_index.focus_player_signature,
+        focus_player_provenance=post_search_index.focus_player_provenance,
+    )
+    return state, operation, tuple(diagnostics)
+
+
 def _analyze_duc_linear(
     rules: tuple[EffectiveRule, ...],
     contracts: NativeContractCatalog | None = None,
@@ -1003,36 +1233,70 @@ def _analyze_duc_linear(
         rule_reset_lists: set[DucListKind] = set()
 
         for fact_index, fact in enumerate(rule.facts):
-            target_data_contract = contracts.duc_target_data_contract(fact.head)
-            if target_data_contract is None:
-                continue
             fact_action = RuleAction(
                 expression=fact,
                 within_rule_order=-1 - fact_index,
             )
             fact_args = _canonical_arguments(fact)
-            (
-                state,
-                target_data_observation,
-                target_data_diagnostics,
-                fact_reads_target,
-                fact_writes_output,
-            ) = _target_data_read(
-                state,
-                rule=rule,
-                action=fact_action,
-                args=fact_args,
-                contract=target_data_contract,
-                state_revision=state_revision,
-                source_kind="FACT",
-            )
-            diagnostics.extend(target_data_diagnostics)
-            if target_data_observation is not None:
-                target_data_observations.append(target_data_observation)
-            if fact_reads_target:
-                rule_reads.add(DucStateKind.TARGET)
-            if fact_writes_output:
-                rule_writes.add(DucStateKind.OUTPUT)
+
+            target_data_contract = contracts.duc_target_data_contract(fact.head)
+            if target_data_contract is not None:
+                (
+                    state,
+                    target_data_observation,
+                    target_data_diagnostics,
+                    fact_reads_target,
+                    fact_writes_output,
+                ) = _target_data_read(
+                    state,
+                    rule=rule,
+                    action=fact_action,
+                    args=fact_args,
+                    contract=target_data_contract,
+                    state_revision=state_revision,
+                    source_kind="FACT",
+                )
+                diagnostics.extend(target_data_diagnostics)
+                if target_data_observation is not None:
+                    target_data_observations.append(target_data_observation)
+                if fact_reads_target:
+                    rule_reads.add(DucStateKind.TARGET)
+                if fact_writes_output:
+                    rule_writes.add(DucStateKind.OUTPUT)
+                continue
+
+            fact_search_contract = contracts.duc_search(fact.head)
+            if fact_search_contract is not None:
+                try:
+                    (
+                        state,
+                        search_operation,
+                        search_diagnostics,
+                    ) = _apply_duc_search(
+                        state,
+                        rule=rule,
+                        action=fact_action,
+                        args=fact_args,
+                        search_contract=fact_search_contract,
+                        state_revision=state_revision,
+                        rule_reset_lists=rule_reset_lists,
+                        source_kind="FACT",
+                    )
+                except ValueError as exc:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-017",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            str(exc),
+                            _location(fact_action, rule.source_location),
+                        )
+                    )
+                    continue
+                diagnostics.extend(search_diagnostics)
+                searches.append(search_operation)
+                rule_reads.add(DucStateKind.FILTER)
+                rule_writes.add(DucStateKind.LIST)
 
         for action in rule.actions:
             expression = action.expression
@@ -1400,187 +1664,34 @@ def _analyze_duc_linear(
                     continue
 
             if search_contract is not None:
-                kind = DucListKind(search_contract.list_kind)
-                current = state.local_list if kind is DucListKind.LOCAL else state.remote_list
-                if rule.pass_behavior is RulePassBehavior.RECURRENT and current.current_generation is not None:
-                    if kind not in rule_reset_lists:
-                        diagnostics.append(
-                            DucDiagnostic(
-                                "DUC-008",
-                                DiagnosticSeverity.WARNING.value,
-                                rule.rule_order,
-                                f"recurrent {command} can accumulate results in retained {kind.value.lower()} DUC list generation {current.current_generation.generation}",
-                                _location(action, rule.source_location),
-                            )
-                        )
-                filter_snapshot = DucFilterSnapshot(
-                    generation=state.filters.generation,
-                    fingerprint=state.filters.fingerprint,
-                    predicates=state.filters.predicates,
-                    provenance=state.filters.last_mutation,
-                    path_ambiguous=state.filters.path_ambiguous,
-                )
-                query_signature = args
-                (
-                    prepared_index,
-                    index_reset_reason,
-                    index_before,
-                    cursor_before_disposition,
-                ) = _prepare_search_index_for_query(
-                    current.search_index,
-                    query_signature,
-                )
-                requested_max = _search_limit(args, search_contract.capacity)
-                blocked_by_capacity = (
-                    current.current_generation is not None
-                    and current.current_generation.cardinality is not None
-                    and current.current_generation.cardinality.minimum
-                    >= search_contract.capacity
-                )
-                guaranteed_empty = (
-                    not blocked_by_capacity
-                    and index_reset_reason is None
-                    and cursor_before_disposition is DucSearchCursorDisposition.AT_END
-                )
-                (
-                    post_search_index,
-                    cursor_after_disposition,
-                    result_disposition,
-                ) = _search_cursor_transition(
-                    prepared_index,
-                    guaranteed_empty=guaranteed_empty,
-                    blocked_by_capacity=blocked_by_capacity,
-                )
-                if filter_snapshot.path_ambiguous:
+                try:
+                    (
+                        state,
+                        search_operation,
+                        search_diagnostics,
+                    ) = _apply_duc_search(
+                        state,
+                        rule=rule,
+                        action=action,
+                        args=args,
+                        search_contract=search_contract,
+                        state_revision=state_revision,
+                        rule_reset_lists=rule_reset_lists,
+                        source_kind="ACTION",
+                    )
+                except ValueError as exc:
                     diagnostics.append(
                         DucDiagnostic(
-                            "DUC-012",
-                            DiagnosticSeverity.WARNING.value,
+                            "DUC-017",
+                            DiagnosticSeverity.ERROR.value,
                             rule.rule_order,
-                            f"{command} consumes a retained filter state that differs across control-flow paths",
+                            str(exc),
                             _location(action, rule.source_location),
                         )
                     )
-                visible = DucVisibility.SAME_RULE
-                list_generation_inputs = tuple(
-                    sorted(
-                        {
-                            generation.generation
-                            for generation in (
-                                *current.generation_variants,
-                                *(
-                                    (current.current_generation,)
-                                    if current.current_generation is not None
-                                    else ()
-                                ),
-                            )
-                        }
-                    )
-                )
-                provenance = _provenance(
-                    rule,
-                    action,
-                    visibility=visible,
-                    state_revision=state_revision,
-                    pass_id=state.pass_id,
-                    inputs=list_generation_inputs + (
-                        state.filters.generation,
-                        prepared_index.generation,
-                    ),
-                    contract_id=f"duc.search.{command}",
-                    evidence_ids=search_contract.evidence_ids,
-                )
-                generation_number = current.next_generation
-                total_cardinality, last_search_cardinality = _search_cardinality(
-                    current.current_generation,
-                    capacity=search_contract.capacity,
-                    requested_max=requested_max,
-                    guaranteed_empty=(
-                        result_disposition is DucSearchResultDisposition.GUARANTEED_EMPTY
-                    ),
-                )
-                previous_fingerprint = (
-                    current.current_generation.content_fingerprint
-                    if current.current_generation is not None
-                    else ""
-                )
-                output_generation = DucListGeneration(
-                    list_kind=kind,
-                    generation=generation_number,
-                    produced_by=provenance,
-                    cardinality=total_cardinality,
-                    capacity=search_contract.capacity,
-                    content_fingerprint=_fingerprint(
-                        (
-                            "append-search",
-                            previous_fingerprint,
-                            kind.value,
-                            command,
-                            *args,
-                            filter_snapshot.fingerprint,
-                            str(post_search_index.generation),
-                            index_reset_reason.value if index_reset_reason is not None else "NONE",
-                            cursor_before_disposition.value,
-                            cursor_after_disposition.value,
-                            result_disposition.value,
-                        )
-                    ),
-                    last_search_cardinality=last_search_cardinality,
-                )
-                updated_list = _list_state(
-                    kind,
-                    current,
-                    output_generation,
-                    next_generation=generation_number + 1,
-                    path_ambiguous=current.path_ambiguous or filter_snapshot.path_ambiguous,
-                    generation_variants=(),
-                    search_index=post_search_index,
-                )
-                if kind is DucListKind.LOCAL:
-                    state = DucSemanticState(
-                        updated_list,
-                        state.remote_list,
-                        state.filters,
-                        state.target,
-                        state.point_target,
-                        state_revision,
-                        state.pass_id,
-                        groups=state.groups,
-                        goal_output_spans=state.goal_output_spans,
-                    )
-                else:
-                    state = DucSemanticState(
-                        state.local_list,
-                        updated_list,
-                        state.filters,
-                        state.target,
-                        state.point_target,
-                        state_revision,
-                        state.pass_id,
-                        groups=state.groups,
-                        goal_output_spans=state.goal_output_spans,
-                    )
-                searches.append(
-                    DucSearchOperation(
-                        command,
-                        kind,
-                        expression.source,
-                        args,
-                        filter_snapshot,
-                        output_generation,
-                        visible,
-                        provenance,
-                        index_before=index_before,
-                        index_after=post_search_index.offset,
-                        index_generation=post_search_index.generation,
-                        index_reset_reason=index_reset_reason,
-                        cursor_before_disposition=cursor_before_disposition,
-                        cursor_after_disposition=cursor_after_disposition,
-                        result_disposition=result_disposition,
-                        focus_player_signature=post_search_index.focus_player_signature,
-                        focus_player_provenance=post_search_index.focus_player_provenance,
-                    )
-                )
+                    continue
+                diagnostics.extend(search_diagnostics)
+                searches.append(search_operation)
                 rule_reads.add(DucStateKind.FILTER)
                 rule_writes.add(DucStateKind.LIST)
                 continue
