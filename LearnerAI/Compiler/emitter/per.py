@@ -285,54 +285,54 @@ def emit(
                     label = "; COMPLETE | ISSUED/PENDING -> COMPLETE"
                     guards = [
                         "    (or",
-                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
-                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
                         f"    {demand.witness.source}",
                     ]
                     actions = [
-                        f"    (set-goal demand-${demand.name} {lifecycle.complete.value})",
+                        f"    (set-goal demand-{demand.name} {lifecycle.complete.value})",
                     ]
                 elif transition.kind is ConstructionTransitionKind.FOUNDATION_PENDING:
                     label = "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING"
                     guards = [
                         "    (or",
-                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
-                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
                         f"    (not {demand.witness.source})",
                         f"    {construction.pending_foundation_fact.source}",
                     ]
                     actions = [
-                        f"    (set-goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                     ]
                 elif transition.kind is ConstructionTransitionKind.PLACEMENT_PENDING:
                     label = "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING"
                     guards = [
                         "    (or",
-                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
-                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
                         f"    (not {demand.witness.source})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                         f"    {construction.pending_placement_fact.source}",
                     ]
                     actions = [
-                        f"    (set-goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"    (set-goal demand-{demand.name} {lifecycle.pending.value})",
                     ]
                 else:
                     label = "; RETRY | ISSUED/PENDING -> ACTIVE"
                     guards = [
                         "    (or",
-                        f"        (goal demand-${demand.name} {lifecycle.issued.value})",
-                        f"        (goal demand-${demand.name} {lifecycle.pending.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.issued.value})",
+                        f"        (goal demand-{demand.name} {lifecycle.pending.value})",
                         "    )",
                         f"    (not {demand.witness.source})",
                         f"    (up-pending-objects c: {construction.native_building_id} == 0)",
                         f"    (not {construction.pending_placement_fact.source})",
                     ]
                     actions = [
-                        f"    (set-goal demand-${demand.name} {lifecycle.active.value})",
+                        f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
                     ]
                     if demand.construction_retry_barrier is None:
                         raise CompileError(
@@ -340,7 +340,7 @@ def emit(
                             "has no retry barrier storage"
                         )
                     actions.append(
-                        f"    (set-goal construction-retry-barrier-${demand.name} 1)"
+                        f"    (set-goal construction-retry-barrier-{demand.name} 1)"
                     )
                 out += [label, "(defrule", *guards, "=>", *actions, ")", ""]
         else:
