@@ -80,6 +80,36 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(catalog.parameter_ranges_for("goal", "GoalId"), (parameter,))
         self.assertEqual(catalog.parameter_ranges_for("set-goal", "GoalId"), (parameter,))
 
+    def test_shared_catalog_exposes_duc_search_index_transition_contracts(self):
+        catalog = default_native_contract_catalog()
+
+        query = catalog.duc_search_index_transition("QUERY_CHANGE")
+        self.assertEqual(query.affected_lists, ("SEARCHED_LIST",))
+        self.assertTrue(query.reset_offset_to_zero)
+        self.assertTrue(query.preserves_search_list_contents)
+        self.assertTrue(query.preserves_filters)
+        self.assertEqual(query.preserves_targets, "UNKNOWN")
+        self.assertTrue(query.evidence_ids)
+        self.assertTrue(query.engine_version_scope.engine_targets)
+
+        filters = catalog.duc_search_index_transition("FILTER_CHANGE")
+        self.assertEqual(filters.affected_lists, ("BOTH",))
+        self.assertTrue(filters.reset_offset_to_zero)
+        self.assertTrue(filters.preserves_search_list_contents)
+        self.assertTrue(filters.preserves_filters)
+        self.assertEqual(filters.preserves_targets, "UNKNOWN")
+
+        focus = catalog.duc_search_index_transition("FOCUS_PLAYER_CHANGE")
+        self.assertEqual(focus.affected_lists, ("REMOTE",))
+        self.assertTrue(focus.reset_offset_to_zero)
+        self.assertTrue(focus.preserves_search_list_contents)
+        self.assertTrue(focus.preserves_filters)
+        self.assertEqual(focus.preserves_targets, "UNKNOWN")
+
+        explicit = catalog.duc_search_index_transition("EXPLICIT_RESET")
+        self.assertEqual(explicit.affected_lists, ("LOCAL", "REMOTE"))
+        self.assertTrue(explicit.reset_offset_to_zero)
+
     def test_shared_catalog_exposes_duc_contracts_and_evidence_ids(self):
         catalog = default_native_contract_catalog()
 
