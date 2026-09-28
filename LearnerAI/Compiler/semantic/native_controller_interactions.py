@@ -285,18 +285,19 @@ class NativeControllerInteractionCatalog:
             self._validate_endpoint(item.target, controller_catalog)
             self._validate_relation_shape(item, controller_catalog)
 
+            if not set(item.engine_version_scope.engine_targets).intersection(
+                target_engine_families
+            ):
+                raise ValueError(
+                    f"interaction '{item.identity}' engine-version scope does not "
+                    "cover target engine families"
+                )
+
             if item.status is NativeInteractionSupportState.ENGINE_SEMANTICS_MAPPED:
                 if item.evidence is not EvidenceClass.ENGINE_FACT:
                     raise ValueError(
                         f"interaction '{item.identity}' cannot be engine-semantics-mapped "
                         "without engine-fact evidence"
-                    )
-                if not set(item.engine_version_scope.engine_targets).intersection(
-                    target_engine_families
-                ):
-                    raise ValueError(
-                        f"interaction '{item.identity}' engine-version scope does not "
-                        "cover target engine families"
                     )
 
         directional_keys: dict[
