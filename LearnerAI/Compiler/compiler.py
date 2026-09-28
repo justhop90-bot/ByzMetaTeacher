@@ -157,7 +157,11 @@ def _storage_requests(ir, control_plan=None):
         for request in (
             demand.lifecycle.slot,
             demand.construction_retry_barrier,
-            demand.production_retry_barrier,
+            (
+                demand.production_lifecycle.retry_barrier
+                if demand.production_lifecycle is not None
+                else None
+            ),
             demand.research_retry_barrier,
             demand.action.arbitration_request,
             *(state.request for state in demand.strategic_number_states),

@@ -281,9 +281,9 @@ def emit(
                 f"(defconst construction-retry-barrier-{demand.name} "
                 f"{barrier_slot.id.value})"
             )
-        if demand.production_retry_barrier is not None:
+        if demand.production_lifecycle is not None:
             barrier_slot = bindings.binding_for(
-                demand.production_retry_barrier.request_id
+                demand.production_lifecycle.retry_barrier.request_id
             )
             if not isinstance(barrier_slot, GoalSlot):
                 raise CompileError(
@@ -422,7 +422,7 @@ def emit(
             ]
 
     production_barrier_demands = tuple(
-        demand for demand in demands if demand.production_retry_barrier is not None
+        demand for demand in demands if demand.production_lifecycle is not None
     )
     if production_barrier_demands:
         out.append("; Per-pass production retry barriers")
@@ -666,7 +666,7 @@ def emit(
                 "=>",
                 f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
             ]
-            if demand.production_retry_barrier is None:
+            if production.retry_barrier is None:
                 raise CompileError(
                     f"PRODUCTION-BARRIER-MISSING: production demand '{demand.name}' "
                     "has no retry barrier storage"

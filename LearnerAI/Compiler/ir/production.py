@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..ast import Expression
+from .model import GoalRole, GoalSlotRequest
 
 
 @dataclass(frozen=True)
@@ -13,6 +14,8 @@ class ProductionLifecycle:
     unit: str
     native_unit_id: int
     pending_fact: Expression
+    completion_witness: Expression
+    retry_barrier: GoalSlotRequest
 
     def __post_init__(self) -> None:
         if not self.unit:
@@ -22,6 +25,26 @@ class ProductionLifecycle:
         if self.pending_fact.head != "up-pending-objects":
             raise ValueError(
                 "production pending fact must use up-pending-objects"
+            )
+        if self.completion_witness.head != "unit-type-count":
+            raise ValueError(
+                "production completion witness must use unit-type-count"
+            )
+        if (
+            not self.completion_witness.args
+            or str(self.completion_witness.args[0]) != self.unit
+        ):
+            raise ValueError(
+                f"production completion witness must target unit '{self.unit}'"
+            )
+        if self.retry_barrier.request_id.purpose != "production-retry-barrier":
+            raise ValueError(
+                "production retry barrier must use the "
+                "'production-retry-barrier' purpose"
+            )
+        if self.retry_barrier.role is not GoalRole.EXECUTION_MEMORY:
+            raise ValueError(
+                "production retry barrier must use EXECUTION_MEMORY role"
             )
 
 

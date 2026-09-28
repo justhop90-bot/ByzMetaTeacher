@@ -400,6 +400,19 @@ def analyze(
                     "must have one literal unit target"
                 )
             unit = action.args[0]
+            if witness.head != "unit-type-count":
+                raise CompileError(
+                    f"PRODUCTION-COMPLETION-WITNESS: demand '{demand.name}' "
+                    "production completion witness must use unit-type-count"
+                )
+            if (
+                not witness.args
+                or str(witness.args[0]) != unit
+            ):
+                raise CompileError(
+                    f"PRODUCTION-COMPLETION-WITNESS: demand '{demand.name}' "
+                    f"production completion witness must target unit '{unit}'"
+                )
             try:
                 native_unit_id = resolve_unit_id(unit)
             except (NativeUnitIdError, KeyError, TypeError, ValueError) as exc:
@@ -423,6 +436,8 @@ def analyze(
                     args=("c:", str(native_unit_id), ">=", "1"),
                     location=action.location,
                 ),
+                completion_witness=witness,
+                retry_barrier=production_retry_barrier,
             )
 
         elif action.head == "research":
@@ -760,7 +775,11 @@ def analyze(
                 construction_lifecycle=construction_lifecycle,
                 construction_retry_barrier=construction_retry_barrier,
                 production_lifecycle=production_lifecycle,
-                production_retry_barrier=production_retry_barrier,
+                production_retry_barrier=(
+                    production_lifecycle.retry_barrier
+                    if production_lifecycle is not None
+                    else None
+                ),
                 research_lifecycle=research_lifecycle,
                 research_retry_barrier=research_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
