@@ -142,16 +142,6 @@ def emit(
                 )
             timer_states.append((state, binding))
 
-    for state, binding in sorted(
-        timer_states,
-        key=lambda item: (
-            item[0].request.request_id.owner.source_unit,
-            item[0].request.request_id.owner.local_name,
-            item[0].request.request_id.purpose,
-        ),
-    ):
-        out.append(f"(defconst {state.name} {binding.id})")
-
     if timer_states:
         out.extend([
             "",
