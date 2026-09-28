@@ -1101,7 +1101,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
         mutation = report.mutations[-1]
         self.assertEqual(mutation.kind, DucListMutationKind.SORT)
-        self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
+        self.assertEqual(mutation.target_transition, DucTargetTransition.UNKNOWN)
 
     def test_clean_search_duplicate_removal_makes_nonfirst_target_unknown(self):
         report = analyze_duc((
