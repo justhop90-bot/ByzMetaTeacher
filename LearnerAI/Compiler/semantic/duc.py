@@ -1486,19 +1486,6 @@ def _analyze_duc_linear(
                             )
                             continue
                         native_object_id = str(numeric_id)
-                    elif type_op == "c:" and object_id_operand.lstrip("-").isdigit() and numeric_id is not None:
-                        if numeric_id < 0:
-                            diagnostics.append(
-                                DucDiagnostic(
-                                    "DUC-005",
-                                    DiagnosticSeverity.ERROR.value,
-                                    rule.rule_order,
-                                    "up-set-target-by-id Id must be non-negative",
-                                    _location(action, rule.source_location),
-                                )
-                            )
-                            continue
-
                     provenance = _provenance(
                         rule,
                         action,
