@@ -697,7 +697,7 @@ class NativeSemanticBinder:
     def bind_attack_plan(self, plan) -> tuple[NativeAttackSemanticBinding, ...]:
         bindings: list[NativeAttackSemanticBinding] = []
         for rule in plan.rules:
-            for expression in (*rule.facts, *rule.actions):
+            for expression in rule.actions:
                 bindings.append(self.bind_attack_command(expression.head))
         return tuple(
             sorted(
