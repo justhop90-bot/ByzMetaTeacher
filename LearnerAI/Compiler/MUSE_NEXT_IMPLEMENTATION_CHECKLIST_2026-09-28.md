@@ -23,10 +23,12 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Native acceptance: `tests/fixtures/strategic_number.perdsl` is now a checked-in compiler fixture; `assert_strategic_number_native.py` compiles it twice, verifies deterministic numeric allocation against the catalog, and runs the pinned `aoe2_ai_lab` zero-findings gate. This directly addresses the Muse false assumption that fixture-only semantic tests prove emission coverage.
   - Remaining SN unknowns are now engine-knowledge questions, not allocation plumbing: per-SN defaults/auto-mutation/version scope and unknown-SN write behavior remain explicitly OPEN in `native_unknowns.md`.
 
-- [ ] Implement Timer allocation using the same symbolic-storage boundary.
-  - Muse: `compiler_coverage_baseline.md`, `implementation_map.md`, `native_unknowns.md`.
-  - Owner: `ir/recurrent.py`, `semantic/analyzer.py`, `compiler.py:_storage_requests`, `runtime_binding.py`.
-  - Gate: explicit initialization policy plus measured countdown pass granularity.
+- [~] Timer allocation using the same symbolic-storage boundary is implemented; native/CI verification is pending on the current head.
+  - Parser/IR: `timer <name>` declarations become typed `TimerState` + `TimerRequest` records with explicit `DISABLE_BEFORE_FIRST_USE` policy and deterministic stability keys.
+  - Binding: `compiler.py:_storage_requests()` now collects Timer requests; existing `TimerSlot` allocation/inventory/manifests are reused unchanged.
+  - Emission: deterministic TimerId `defconst` aliases plus one-shot `disable-timer` initialization are emitted only for declared compiler-owned timers.
+  - Acceptance: checked-in `tests/fixtures/timer_allocation.perdsl`, `tests/assert_timer_native.py`, focused `test_timer_allocation.py`, and Compiler CI native zero-findings gate are added.
+  - Remaining gate: actual engine countdown/pass granularity remains OPEN; timer reuse/lifetime remains explicitly unpromoted.
 
 ## Tier 1 — largest evidence-backed lowering gaps
 
