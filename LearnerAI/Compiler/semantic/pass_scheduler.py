@@ -488,8 +488,34 @@ class PassScheduler:
             raise SchedulerSemanticError(
                 "up-set-timer requires exactly four arguments: typeOp, TimerId, typeOp, and interval"
             )
+        timer_selector = str(expression.args[0]).lower()
+        if timer_selector not in {"c:", "c"}:
+            raise SchedulerSemanticError(
+                "up-set-timer requires a constant TimerId selector in the scheduler model"
+            )
         timer_id = self._timer_id_arg(expression, 1)
-        interval = self._parse_int(expression.args[3], "up-set-timer interval")
+        interval_type = str(expression.args[2]).lower()
+        value = expression.args[3]
+        if interval_type in {"c:", "c"}:
+            interval = self._parse_int(value, "up-set-timer interval")
+        elif interval_type in {"g:", "g"}:
+            goal_id = str(value)
+            if goal_id not in self._goals:
+                raise SchedulerSemanticError(
+                    f"up-set-timer references unknown Goal '{goal_id}'"
+                )
+            interval = self._goals[goal_id]
+        elif interval_type in {"s:", "s"}:
+            sn_id = str(value)
+            if sn_id not in self._strategic_numbers:
+                raise SchedulerSemanticError(
+                    f"up-set-timer references unknown Strategic Number '{sn_id}'"
+                )
+            interval = self._strategic_numbers[sn_id]
+        else:
+            raise SchedulerSemanticError(
+                f"up-set-timer interval typeOp '{interval_type}' is invalid"
+            )
         return timer_id, interval
 
     @staticmethod
