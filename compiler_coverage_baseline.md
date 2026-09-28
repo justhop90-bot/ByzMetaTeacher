@@ -7,18 +7,21 @@ EVIDENCE: A rows set-goal/goal/up-compare-goal/up-modify-goal; 23k corpus hits; 
 IMPLEMENTATION: runtime_binding + emitter + persistent_state. TEST: 24+40.
 REMAINING: package-collision runtime proof (minor).
 
-## SN plane — CURRENT: analysis-safe, emission-open. TARGET: executable-safe incl. emission.
-EVIDENCE: A SN rows; 10k hits; SNSEM-001..009. IMPLEMENTATION: semantics + binding infra.
-TEST: fixture-only. REMAINING: 0..511 catalog; DSL allocation; emission tests.
+## SN plane — CURRENT: executable-safe for the promoted allocation slice. TARGET: executable-safe incl. emission.
+EVIDENCE: A SN rows; ~10k hits; SNSEM-001..009. IMPLEMENTATION: versioned 0..511 catalog, DSL `sn` allocation,
+runtime binding, numeric emission, reproducibility/native fixture.
+TEST: source fixture + native zero-findings. REMAINING: engine knowledge for per-SN defaults, auto-mutation,
+version scope, and unknown-SN write behavior.
 
 ## Timers — CURRENT: model-safe, emission-open. TARGET: executable-safe.
 EVIDENCE: A timer rows; ~4k hits; staged-expiry design. IMPLEMENTATION: scheduler + recurrent IR.
 TEST: scheduler + semantics (static-true impossible by design). REMAINING: DSL alloc; granularity measure.
 
-## Construction — CURRENT: executable-safe on main; hardened in UNMERGED PR86.
-TARGET: PR86 merged + runtime-proven. EVIDENCE: A build rows; 3k hits; PR86 contracts.
-IMPLEMENTATION: validators + emitter (+PR86). TEST: issuance/witness/release suites (+PR86).
-REMAINING: merge; same-pass visibility proof; foundation/placement evidence.
+## Construction — CURRENT: executable-safe on main; lifecycle hardening integrated.
+TARGET: runtime-proven. EVIDENCE: build rows; ~3k hits; current lifecycle contracts.
+IMPLEMENTATION: validators + construction IR + emitter + native placement-pending support.
+TEST: current construction lifecycle suite + native zero-findings fixture.
+REMAINING: same-pass visibility proof; foundation/placement runtime evidence.
 
 ## Train — CURRENT: generic-safe; queue-model open. TARGET: queue-aware safe.
 EVIDENCE: A train rows; IDIOM-006. IMPLEMENTATION: registry + community_engine guards.
@@ -28,15 +31,19 @@ TEST: guard tests; witness-rejection policy test. REMAINING: queue/capacity/prov
 EVIDENCE: A research rows; 2.9k hits. IMPLEMENTATION: generic lifecycle.
 TEST: integration. REMAINING: escrow-claim lowering; in-progress signal.
 
-## Escrow/resources — CURRENT: evidence-only + build-singleton. TARGET: claim/release safe.
-EVIDENCE: A escrow rows; 10.9k hits (largest gap by volume).
-IMPLEMENTATION: feasibility facts + resource_conflicts (1-owner). TEST: 8 + feasibility tests.
-REMAINING: full op lowering; gating formula; starvation/override.
+## Escrow/resources — CURRENT: semantic-safe + release-plan plumbing; executable release lowering open.
+EVIDENCE: escrow rows; 10.9k hits (largest gap by volume).
+IMPLEMENTATION: typed escrow IR, ownership/order/lifetime validation, `NativeEscrowReleasePlan`, compiler threading,
+registry validation. TEST: escrow semantics + six-path threading + full native regression.
+REMAINING: dedicated binder/mapping/registry promotion/emission for `release-escrow`; native same-pass proof;
+starvation/handoff runtime semantics.
 
-## DUC — CURRENT: analyzer-complete, binder-unsupported. TARGET: emitted + proven.
-EVIDENCE: A DUC rows; 11.6k/11.9k hits; 124 tests fixture-only; oracle schema.
-IMPLEMENTATION: semantic/duc.py + ir/duc.py + hygiene contracts.
-TEST: fixture-only (no DSL end-to-end). REMAINING: adapters; emission; reset taxonomy; perf advisories.
+## DUC — CURRENT: narrow promoted slice emitted + proven. TARGET: broader executable DUC coverage.
+EVIDENCE: DUC rows; 11.6k/11.9k hits; typed plan/binder/emitter; pinned native fixture.
+IMPLEMENTATION: semantic/duc.py + ir/duc.py + native binder/engine mapping/registry/emitter.
+TEST: native deterministic acceptance fixture + full compiler verification.
+REMAINING: Goal-output commands, target-data readers, group output/storage, retained-filter/stale-target semantics,
+measured performance advisories, and broader source-level expressiveness.
 
 ## Controllers/attack — CURRENT: issue-executable, lifecycle incomplete. TARGET: lifecycle-complete.
 EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding; native attack-now reference and controller ownership catalog.
