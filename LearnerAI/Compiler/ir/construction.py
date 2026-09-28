@@ -32,7 +32,7 @@ class ConstructionState:
 @dataclass(frozen=True)
 class ConstructionLifecycle:
     building: str
-    completion_witness: Expression
+    completion_witness: Expression | None
     pending_foundation_fact: Expression
     pending_placement_fact: Expression
 
