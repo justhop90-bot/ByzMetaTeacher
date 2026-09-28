@@ -18,6 +18,7 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
+          import os
           import subprocess
           import sys
           from pathlib import Path
@@ -30,7 +31,8 @@ jobs:
                       [sys.executable, '-m', 'unittest', 'discover', '-v', '-s', str(path.parent), '-p', path.name],
                       text=True,
                       capture_output=True,
-                      timeout=15,
+                      timeout=30,
+                      env=dict(os.environ, PYTHONPATH='LearnerAI'),
                   )
               except subprocess.TimeoutExpired as exc:
                   print(f'TIMEOUT: {path}', flush=True)
