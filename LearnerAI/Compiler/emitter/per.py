@@ -82,6 +82,49 @@ def emit(
 
     encoded: dict[str, LifecycleEncoding] = {}
     arbitration_requests = {}
+    strategic_number_states = []
+
+    for demand in demands:
+        for state in demand.strategic_number_states:
+            if any(
+                existing_state.name == state.name
+                for existing_state, _ in strategic_number_states
+            ):
+                raise CompileError(
+                    f"EMITTER-SN-DUPLICATE: duplicate Strategic Number state '{state.name}'"
+                )
+            binding = bindings.binding_for(state.request.request_id)
+            if binding.__class__.__name__ != "StrategicNumberSlot":
+                raise CompileError(
+                    f"EMITTER-SN-BINDING: state '{state.name}' has non-SN binding "
+                    f"{type(binding).__name__}"
+                )
+            strategic_number_states.append((state, binding))
+
+    for state, binding in sorted(
+        strategic_number_states,
+        key=lambda item: (
+            item[0].request.request_id.owner.source_unit,
+            item[0].request.request_id.owner.local_name,
+            item[0].request.request_id.purpose,
+        ),
+    ):
+        out.append(f"(defconst {state.name} {binding.id})")
+
+    if strategic_number_states:
+        out.extend([
+            "",
+            "; Strategic Number state initialization",
+        ])
+        for start in range(0, len(strategic_number_states), INITIALIZATION_CHUNK):
+            chunk = strategic_number_states[start : start + INITIALIZATION_CHUNK]
+            out += ["(defrule", "    (true)", "=>"]
+            for state, _binding in chunk:
+                out.append(
+                    f"    (set-strategic-number {state.name} {state.initial_value})"
+                )
+            out.extend(["    (disable-self)", ")", ""])
+
     for demand in demands:
         slot = bindings.binding_for(demand.lifecycle.slot.request_id)
         lifecycle = LifecycleEncoding.for_goal_slot(slot)

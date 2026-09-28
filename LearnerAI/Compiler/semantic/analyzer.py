@@ -28,6 +28,8 @@ from ..ir import (
     SemanticId,
     SemanticRequirement,
     StorageRequestId,
+    StrategicNumberState,
+    StrategicNumberStorageRequest,
 )
 from ..primitives import NativeSupportState, PrimitiveRegistry
 
@@ -35,6 +37,48 @@ _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
     "xor": 2, "xnor": 2, "not": 1,
 }
+_SN_STATE_NAME_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
+_SN_RESERVED_PREFIXES = (
+    "demand-",
+    "issued-",
+    "pending-",
+    "complete-",
+    "cancelled-",
+    "action-claim-",
+    "sn-",
+)
+
+_SN_WHY_NOT_GOAL = (
+    "Strategic Number is explicitly compiler-owned native control state; "
+    "Goal storage would not preserve the declared native SN control surface."
+)
+_SN_STABILITY_PREFIX = "sn-state:v1"
+
+
+def _validate_compiler_owned_sn_reference(
+    expr: Expression,
+    declared_state_names: set[str],
+    *,
+    demand_name: str,
+) -> None:
+    if expr.head in {"up-compare-sn", "strategic-number", "up-modify-sn", "set-strategic-number"}:
+        if expr.args:
+            target = str(expr.args[0])
+            try:
+                int(target, 10)
+            except ValueError:
+                if target not in declared_state_names:
+                    raise CompileError(
+                        f"demand '{demand_name}' references undeclared compiler-owned "
+                        f"Strategic Number '{target}'"
+                    )
+    for child in expr.args:
+        if isinstance(child, Expression):
+            _validate_compiler_owned_sn_reference(
+                child,
+                declared_state_names,
+                demand_name=demand_name,
+            )
 
 
 def _tokens(expr: str) -> list[str]:
@@ -234,6 +278,7 @@ def analyze(
     source_unit: str | None = None,
 ) -> list[SemanticDemand]:
     result = []
+    seen_strategic_number_names: set[str] = set()
     for demand in demands:
         demand_source_unit = source_unit or demand.location.source_unit
         requirements = []
@@ -311,6 +356,70 @@ def analyze(
                 f"demand '{demand.name}' invalidation",
             )
         semantic_id = SemanticId(source_unit=demand_source_unit, local_name=demand.name)
+
+        strategic_number_states = []
+        for state_name, initial_value, state_location in demand.strategic_number_states:
+            if not _SN_STATE_NAME_RE.fullmatch(state_name):
+                raise CompileError(
+                    f"demand '{demand.name}' has invalid Strategic Number state name '{state_name}'"
+                )
+            if state_name.startswith(_SN_RESERVED_PREFIXES):
+                raise CompileError(
+                    f"demand '{demand.name}' Strategic Number state '{state_name}' "
+                    "uses a reserved compiler/native prefix"
+                )
+            if state_name in seen_strategic_number_names:
+                raise CompileError(
+                    f"duplicate compiler-owned Strategic Number state name '{state_name}'"
+                )
+            seen_strategic_number_names.add(state_name)
+            request_id = StorageRequestId(
+                owner=semantic_id,
+                purpose=f"strategic-number:{state_name}",
+            )
+            request = StrategicNumberStorageRequest(
+                request_id=request_id,
+                why_not_goal=_SN_WHY_NOT_GOAL,
+                stability_key=(
+                    f"{_SN_STABILITY_PREFIX}:"
+                    f"{demand_source_unit}:{demand.name}:{state_name}"
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+                native_contract_id="set-strategic-number",
+            )
+            strategic_number_states.append(
+                StrategicNumberState(
+                    name=state_name,
+                    initial_value=initial_value,
+                    request=request,
+                    location=state_location,
+                )
+            )
+
+        declared_state_names = {state.name for state in strategic_number_states}
+        for requirement in requirements:
+            _validate_compiler_owned_sn_reference(
+                requirement.expression,
+                declared_state_names,
+                demand_name=demand.name,
+            )
+        _validate_compiler_owned_sn_reference(
+            witness,
+            declared_state_names,
+            demand_name=demand.name,
+        )
+        _validate_compiler_owned_sn_reference(
+            release,
+            declared_state_names,
+            demand_name=demand.name,
+        )
+        if invalidation is not None:
+            _validate_compiler_owned_sn_reference(
+                invalidation,
+                declared_state_names,
+                demand_name=demand.name,
+            )
+
         request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
         lifecycle = LifecycleStorage(
             slot=GoalSlotRequest(request_id=request_id, role=GoalRole.LIFECYCLE_STATE),
@@ -498,6 +607,7 @@ def analyze(
                 ownership=ownership,
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
+                strategic_number_states=tuple(strategic_number_states),
                 location=demand.location,
             )
         )

@@ -1,61 +1,21 @@
 #!/usr/bin/env python3
-"""Native zero-findings acceptance gate for Strategic Number semantics."""
+"""Native zero-findings acceptance gate for compiler-owned Strategic Number state."""
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
+from Compiler.compiler import compile_source
+from Compiler.primitives.strategic_number_catalog import (
+    default_strategic_number_catalog,
+)
 
-ROOT = Path(__file__).parents[2]
-FIXTURE = ROOT / "Compiler" / "tests" / "fixtures" / "strategic_number.per"
-
-def build_fixture() -> str:
-    lines = [
-        "(defconst sn-test-a 510)",
-        "(defconst sn-test-b 509)",
-        "(defconst goal-test-a 500)",
-        "",
-        "(defrule",
-        "    (true)",
-        "=>",
-        "    (set-goal goal-test-a 3)",
-        "    (set-strategic-number sn-test-a 8)",
-        "    (set-strategic-number sn-test-b 3)",
-        "    (disable-self)",
-        ")",
-        "",
-    ]
-    domains = (
-        ("c", "3"),
-        ("g", "goal-test-a"),
-        ("s", "sn-test-b"),
-    )
-    for prefix, value in domains:
-        lines.extend(["(defrule", "    (true)", "=>"])
-        for operator in ("=", "+", "-", "*", "/", "z/", "mod", "min", "max", "neg", "%*", "%/"):
-            lines.append(
-                f"    (up-modify-sn sn-test-a {prefix}:{operator} {value})"
-            )
-        lines.extend(["    (disable-self)", ")", ""])
-    compare_domains = (
-        ("c", "3"),
-        ("g", "goal-test-a"),
-        ("s", "sn-test-b"),
-    )
-    for prefix, value in compare_domains:
-        lines.extend(["(defrule", "    (true)", "=>"])
-        for operator in (">", ">=", "<", "<=", "==", "!="):
-            lines.append(
-                f"    (up-compare-sn sn-test-a {prefix}:{operator} {value})"
-            )
-        lines.extend(["    (disable-self)", ")", ""])
-    return "\n".join(lines)
-
-EXPECTED_TEXT = build_fixture()
+FIXTURE = Path(__file__).parent / "fixtures" / "strategic_number.perdsl"
 
 
 def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
@@ -77,12 +37,24 @@ def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], 
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        raise SystemExit(
-            f"native validator did not return JSON: {exc}"
-        ) from exc
+        raise SystemExit(f"native validator did not return JSON: {exc}") from exc
     if not isinstance(payload, dict):
         raise SystemExit("native validator JSON root must be an object")
     return result, payload
+
+
+def _numeric_states(artifact: str) -> dict[str, int]:
+    pattern = re.compile(r"^\(defconst\s+([a-z][a-z0-9_-]*)\s+(\d+)\)$")
+    result: dict[str, int] = {}
+    for line in artifact.splitlines():
+        match = pattern.match(line)
+        if match:
+            result[match.group(1)] = int(match.group(2))
+    return {
+        name: result[name]
+        for name in ("posture", "secondary-posture")
+        if name in result
+    }
 
 
 def main() -> int:
@@ -91,13 +63,26 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
-    checked_in = FIXTURE.read_text(encoding="utf-8")
-    generated = build_fixture()
-    if checked_in != generated:
-        raise SystemExit("strategic-number fixture is stale or non-reproducible")
+    SOURCE = FIXTURE.read_text(encoding="utf-8")
+    first = compile_source(SOURCE)
+    second = compile_source(SOURCE)
+    if first != second:
+        raise SystemExit("compiler-owned Strategic Number artifact is non-deterministic")
+
+    states = _numeric_states(first)
+    if set(states) != {"posture", "secondary-posture"}:
+        raise SystemExit(f"expected compiler-owned SN bindings, found {sorted(states)}")
+
+    catalog = default_strategic_number_catalog()
+    if not set(states.values()).issubset(catalog.compiler_candidate_ids):
+        raise SystemExit(
+            f"compiler emitted non-candidate Strategic Number(s): {sorted(states.values())}"
+        )
+    if 511 in states.values():
+        raise SystemExit("compiler emitted reserved Strategic Number 511")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(EXPECTED_TEXT, encoding="utf-8")
+    args.output.write_text(first, encoding="utf-8")
 
     result, payload = _validate_native(args.output)
     finding_count = payload.get("finding_count")
@@ -105,10 +90,16 @@ def main() -> int:
 
     report = {
         "artifact": str(args.output.resolve()),
-        "fixture_sha256": hashlib.sha256(
-            EXPECTED_TEXT.encode("utf-8")
+        "fixture_source_sha256": hashlib.sha256(
+            SOURCE.encode("utf-8")
+        ).hexdigest(),
+        "artifact_sha256": hashlib.sha256(
+            first.encode("utf-8")
         ).hexdigest(),
         "validator_exit_code": result.returncode,
+        "strategic_number_bindings": states,
+        "strategic_number_catalog_version": catalog.version,
+        "strategic_number_inventory_sha": catalog.inventory.inventory_sha,
         "stdout": result.stdout,
         "stderr": result.stderr,
         "finding_count": finding_count,
@@ -137,8 +128,8 @@ def main() -> int:
         return 1
 
     print(
-        "strategic-number native zero-findings gate passed "
-        f"(sha256={report['fixture_sha256']})"
+        "strategic-number compiler/native zero-findings gate passed "
+        f"(sha256={report['artifact_sha256']})"
     )
     return 0
 

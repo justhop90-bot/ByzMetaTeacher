@@ -9,6 +9,7 @@ from ..ast import Expression, SourceLocation
 
 if TYPE_CHECKING:
     from .strategy import StrategicBinding
+    from .strategic_number import StrategicNumberState
 
 
 class LifecycleState(str, Enum):
@@ -249,6 +250,7 @@ class SemanticDemand:
     state_accesses: tuple[StateAccess, ...] = ()
     pending_diagnostics: tuple[PendingDiagnostic, ...] = ()
     strategic_binding: StrategicBinding | None = None
+    strategic_number_states: tuple["StrategicNumberState", ...] = ()
     location: SourceLocation | None = None
 
     @property

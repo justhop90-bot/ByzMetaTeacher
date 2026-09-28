@@ -26,6 +26,7 @@ class DemandNode:
     witness_location: SourceLocation | None = None
     release_location: SourceLocation | None = None
     invalidate_location: SourceLocation | None = None
+    strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
 
 
 @dataclass(frozen=True)

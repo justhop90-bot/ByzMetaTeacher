@@ -56,7 +56,8 @@ if __package__ in (None, ""):
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.emitter import emit
-    from Compiler.runtime_binding import BindingContext, RuntimeBinder
+    from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
+    from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from Compiler.semantic.source_graph_validation import (
         SourceGraphValidationError,
@@ -102,7 +103,8 @@ else:
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .emitter import emit
-    from .runtime_binding import BindingContext, RuntimeBinder
+    from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
+    from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
     from .semantic.source_graph_validation import (
         SourceGraphValidationError,
@@ -143,7 +145,11 @@ def _storage_requests(ir):
     requests = []
     seen = set()
     for demand in ir:
-        for request in (demand.lifecycle.slot, demand.action.arbitration_request):
+        for request in (
+            demand.lifecycle.slot,
+            demand.action.arbitration_request,
+            *(state.request for state in demand.strategic_number_states),
+        ):
             if request is None or request.request_id in seen:
                 continue
             seen.add(request.request_id)
@@ -250,10 +256,27 @@ def _compile_ir_parts(
         raise _semantic_compile_failure(semantic_diagnostics)
 
     context = binding_context or BindingContext()
+    storage_requests = _storage_requests(ir)
+    if any(
+        isinstance(request, StrategicNumberRequest)
+        for request in storage_requests
+    ) and context.strategic_number_inventory is None:
+        context = replace(
+            context,
+            strategic_number_inventory=default_strategic_number_inventory(),
+        )
     bindings = RuntimeBinder(base_goal=base_goal).bind(
-        _storage_requests(ir),
+        storage_requests,
         context,
     )
+    for demand in ir:
+        for state in demand.strategic_number_states:
+            binding = bindings.binding_for(state.request.request_id)
+            if not isinstance(binding, StrategicNumberSlot):
+                raise CompileError(
+                    f"NATIVE-SN-BINDING: compiler-owned Strategic Number state "
+                    f"'{state.name}' did not receive a StrategicNumberSlot"
+                )
     try:
         for demand in ir:
             registry.validate_demand_lowering(demand, bindings)

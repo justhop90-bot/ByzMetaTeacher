@@ -38,6 +38,146 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 0)", a)
         self.assertEqual(a.count("(defrule"), 14)
 
+    def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
+        source = """
+        demand castle-posture {
+            sn posture = 3
+            require (up-compare-sn posture >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertRegex(output, r"\(defconst posture [0-9]+\)")
+        self.assertIn("(set-strategic-number posture 3)", output)
+        self.assertIn("(up-compare-sn posture >= 1)", output)
+
+    def test_compiler_owned_strategic_number_reuses_supplied_inventory_context(self):
+        from Compiler.runtime_binding import BindingContext, StrategicNumberInventory
+
+        source = """
+        demand castle-posture {
+            sn posture = 3
+            require (up-compare-sn posture >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        inventory = StrategicNumberInventory(
+            inventory_sha="sn-test" * 8,
+            documented_ids=frozenset({511}),
+            candidate_ids=frozenset({510, 509}),
+        )
+        output = compile_source(
+            source,
+            binding_context=BindingContext(
+                strategic_number_inventory=inventory,
+            ),
+        )
+        self.assertIn("(defconst posture 510)", output)
+
+
+    def test_strategic_number_state_declaration_has_typed_request_identity(self):
+        source = """
+        demand posture {
+            sn castle-mode = 3
+            require (up-compare-sn castle-mode >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        demands = parse(source)
+        self.assertEqual(
+            demands[0].strategic_number_states[0][:2],
+            ("castle-mode", 3),
+        )
+        from Compiler.primitives import default_de_registry
+        from Compiler.semantic import analyze
+
+        semantic = analyze(demands, default_de_registry())
+        state = semantic[0].strategic_number_states[0]
+        self.assertEqual(
+            state.request.request_id.purpose,
+            "strategic-number:castle-mode",
+        )
+        self.assertEqual(state.request.role.value, "PERSISTENT_STATE")
+        self.assertTrue(state.request.why_not_goal)
+        self.assertEqual(
+            state.request.stability_key,
+            "sn-state:v1:<source>:posture:castle-mode",
+        )
+
+    def test_duplicate_compiler_owned_strategic_number_identity_is_rejected(self):
+        source = """
+        demand one {
+            sn shared = 1
+            require (up-compare-sn shared >= 0)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        demand two {
+            sn shared = 2
+            require (up-compare-sn shared >= 0)
+            action (build monastery)
+            witness (building-type-count monastery > 0)
+            release (building-type-count monastery > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "duplicate compiler-owned Strategic Number state name 'shared'",
+        ):
+            compile_source(source)
+
+
+    def test_undeclared_symbolic_strategic_number_is_rejected(self):
+        source = """
+        demand posture {
+            sn castle-mode = 3
+            require (up-compare-sn unknown-mode >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "references undeclared compiler-owned Strategic Number 'unknown-mode'",
+        ):
+            compile_source(source)
+
+    def test_numeric_native_strategic_number_reference_remains_allowed(self):
+        source = """
+        demand posture {
+            require (up-compare-sn 510 >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(up-compare-sn 510 >= 1)", output)
+
+    def test_strategic_number_state_reserved_prefix_is_rejected(self):
+        source = """
+        demand posture {
+            sn sn-posture = 3
+            require (up-compare-sn sn-posture >= 1)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "uses a reserved compiler/native prefix",
+        ):
+            compile_source(source)
+
     def test_known_typed_native_command_without_adapter_reports_support_state(self):
         source = """
         demand flare {

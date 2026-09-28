@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
+from .model import GoalRole, StorageRequestId
 
 STRATEGIC_NUMBER_MIN = -2_147_483_648
 STRATEGIC_NUMBER_MAX = 2_147_483_647
@@ -27,6 +28,11 @@ class StrategicNumberMathOp(str, Enum):
     PERCENT_DIVIDE = "%/"
 
 
+class StrategicNumberOrigin(str, Enum):
+    NATIVE_REFERENCE = "NATIVE_REFERENCE"
+    COMPILER_ALLOCATION = "COMPILER_ALLOCATION"
+
+
 class StrategicNumberOperandKind(str, Enum):
     CONSTANT = "CONSTANT"
     GOAL = "GOAL"
@@ -45,6 +51,49 @@ class StrategicNumberCompareOp(str, Enum):
     LESS_EQUAL = "<="
     GREATER_THAN = ">"
     GREATER_EQUAL = ">="
+
+
+@dataclass(frozen=True)
+class StrategicNumberStorageRequest:
+    request_id: StorageRequestId
+    why_not_goal: str
+    stability_key: str
+    role: GoalRole = GoalRole.PERSISTENT_STATE
+    native_contract_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.role is not GoalRole.PERSISTENT_STATE:
+            raise ValueError(
+                "compiler-owned Strategic Number storage must use PERSISTENT_STATE role"
+            )
+        if not self.why_not_goal.strip():
+            raise ValueError(
+                f"Strategic Number request {self.request_id} requires WHY_NOT_GOAL justification"
+            )
+        if not self.stability_key.strip():
+            raise ValueError(
+                f"Strategic Number request {self.request_id} requires a stability_key"
+            )
+
+
+@dataclass(frozen=True)
+class StrategicNumberState:
+    name: str
+    initial_value: int
+    request: StrategicNumberStorageRequest
+    location: SourceLocation | None = None
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("Strategic Number state name must not be empty")
+        if not -32768 <= self.initial_value <= 32767:
+            raise ValueError(
+                f"Strategic Number initial value {self.initial_value} is outside -32768..32767"
+            )
+        if self.request.request_id.purpose != f"strategic-number:{self.name}":
+            raise ValueError(
+                "Strategic Number request purpose must match its state name"
+            )
 
 
 @dataclass(frozen=True)
@@ -163,6 +212,7 @@ __all__ = [
     "STRATEGIC_NUMBER_MAX",
     "STRATEGIC_NUMBER_MIN",
     "StrategicNumberAccess",
+    "StrategicNumberOrigin",
     "StrategicNumberAccessKind",
     "StrategicNumberComparison",
     "StrategicNumberCompareOp",
@@ -171,4 +221,6 @@ __all__ = [
     "StrategicNumberMutation",
     "StrategicNumberOperand",
     "StrategicNumberOperandKind",
+    "StrategicNumberState",
+    "StrategicNumberStorageRequest",
 ]
