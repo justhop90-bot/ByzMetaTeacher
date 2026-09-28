@@ -242,6 +242,7 @@ class SemanticDemand:
     release: Expression
     completion_witness: CompletionWitnessContract | None = None
     release_state: ReleaseStateContract | None = None
+    construction_lifecycle: "ConstructionLifecycle | None" = None
     invalidation: InvalidationContract | None = None
     cancellation: CancellationStateContract | None = None
     action_issuance: ActionIssuance | None = None
