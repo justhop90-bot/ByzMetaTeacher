@@ -2340,11 +2340,11 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "https://airef.github.io/tables/up-patch-notes.html",
                 "https://airef.github.io/tables/up-patch-notes.html",
                 LocatorType.PATCH_RELEASE,
-                "20130305-140519",
+                "20130305-140519:up-set-target-object-failure",
                 excerpt=SourceExcerpt.capture(
                     "If the index is out of range, up-set-target-object now returns false as a Fact.",
                     ExcerptKind.PATCH_NOTE,
-                    locator_text="20130305-140519",
+                    locator_text="20130305-140519:up-set-target-object-failure",
                 ),
                 semantic_scope=CitationSemanticScope.GENERAL_NATIVE_FACT,
                 source_hash=patch_notes_hash,
@@ -2366,7 +2366,4 @@ def validate_goal_span_non_overlap(uses: Tuple[NativeStorageUse, ...]) -> None:
     for index, left in enumerate(spans):
         for right in spans[index + 1:]:
             if max(left[0], right[0]) <= min(left[1], right[1]):
-                raise ValueError(f"overlapping Goal spans: {left[2]} and {right[2]}")
-
-
-__all__ = [name for name in globals() if not name.startswith("_")]
+                raise ValueError(f"overlapping Goal spans: {leals() if not name.startswith("_")]
