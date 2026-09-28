@@ -15,7 +15,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 
 - [x] Close the Strategic Number binding persistence boundary.
   - Muse: `compiler_coverage_baseline.md` says SN is analysis-safe/emission-open and explicitly calls out inventory, DSL allocation, and emission; `implementation_map.md` assigns SN allocation to `semantic/analyzer.py`, `compiler.py:_storage_requests`, and `runtime_binding.py`; `compiler_false_assumptions.md` warns that typed-native support is not executable support.
-  - Implemented in this tranche: v4 manifest schema, request fingerprinting, integrity validation, migration rules, and manifest-focused regression tests.
+  - Implemented in this tranche: v4 manifest schema (`schemas/binding-manifest-v4.schema.json`), request fingerprinting, integrity validation, migration rules, and manifest-focused regression tests.
   - Remaining SN work: compiler-owned request construction, explicit inventory/catalog, end-to-end allocation, numeric binding resolution, emitted fixture, native zero-findings gate.
 
 - [ ] Implement Timer allocation using the same symbolic-storage boundary.
