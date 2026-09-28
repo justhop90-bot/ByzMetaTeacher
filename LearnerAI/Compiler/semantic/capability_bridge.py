@@ -38,6 +38,7 @@ _ROLE_TO_KIND = {
     "FEASIBILITY": PredicateKind.FEASIBILITY,
     "RESOURCE_ARBITRATION": PredicateKind.RESOURCE,
     "WITNESS": PredicateKind.WITNESS,
+    "PERSISTENT_STATE": PredicateKind.STRATEGY,
 }
 
 _ACTION_TYPES = {
