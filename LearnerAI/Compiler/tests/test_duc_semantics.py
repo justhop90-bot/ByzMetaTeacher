@@ -1530,7 +1530,7 @@ class DucSemanticTests(unittest.TestCase):
         report = analyze_duc((
             _rule(1, (
                 ("up-set-target-by-id", ("c:", "12345")),
-                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
             )),
         ))
 
