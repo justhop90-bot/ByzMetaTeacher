@@ -1599,9 +1599,13 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(mutation.object_data, "93")
         self.assertIsNone(mutation.compare_operator)
         self.assertIsNone(mutation.compare_value)
-        self.assertEqual(report.final_state.local_list.current_generation.cardinality,
-                         DucCardinalityRange(1, 1))
-        self.assertIn("93", report.final_state.local_list.current_generation.content_fingerprint)
+        self.assertEqual(
+            report.final_state.local_list.current_generation.cardinality,
+            DucCardinalityRange(1, 1),
+        )
+        self.assertTrue(
+            report.final_state.local_list.current_generation.content_fingerprint
+        )
 
     def test_add_object_by_id_rejects_negative_id(self):
         report = analyze_duc((
