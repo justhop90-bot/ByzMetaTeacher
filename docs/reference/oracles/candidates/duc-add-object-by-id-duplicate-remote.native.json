@@ -1,0 +1,211 @@
+{
+  "fixture": {
+    "id": "DUC-ORACLE-ADD-OBJECT-DUPLICATE-REMOTE",
+    "kind": "NATIVE_OBSERVATION",
+    "command_under_test": "up-add-object-by-id",
+    "engine_scope": {
+      "game": "aoe2de",
+      "build": "RECORD-ACTUAL-ENGINE-BUILD",
+      "patch": "RECORD-ACTUAL-PATCH",
+      "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+      "platform": "RECORD-ACTUAL-PLATFORM"
+    },
+    "scenario": {
+      "name": "duplicate-present-search-remote-scope",
+      "object_set": [
+        {
+          "alias": "BASE_OBJECT",
+          "native_id": null,
+          "initial_index": 0,
+          "metadata": {
+            "role": "object first inserted into the retained list",
+            "note": "Record a real native object ID."
+          }
+        },
+        {
+          "alias": "OTHER_OBJECT",
+          "native_id": null,
+          "initial_index": 1,
+          "metadata": {
+            "role": "distinct comparator object"
+          }
+        }
+      ],
+      "object_identity": {
+        "method": "native-object-id",
+        "note": "The duplicate-present branch must use one exact native object ID twice."
+      }
+    },
+    "setup": [
+      {
+        "label": "reset",
+        "source": "(up-full-reset-search)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "populate-base-search",
+        "source": "REPLACE-WITH-SEARCH-THAT-ESTABLISHES-BASE-OBJECT",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "record-list-before-add",
+        "source": "(up-get-search-state 100)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "select-base-target",
+        "source": "REPLACE-WITH-TARGET-ESTABLISHMENT-FOR-BASE-OBJECT",
+        "expect_native_result": "SUCCESS"
+      }
+    ],
+    "probe": [
+      {
+        "label": "add-fresh-id",
+        "source": "(up-add-object-by-id search-remote c: BASE-ID)",
+        "expect_native_result": "UNKNOWN"
+      },
+      {
+        "label": "add-same-id-again",
+        "source": "(up-add-object-by-id search-remote c: BASE-ID)",
+        "expect_native_result": "UNKNOWN"
+      },
+      {
+        "label": "record-list-after-duplicate",
+        "source": "(up-get-search-state 101)",
+        "expect_native_result": "UNKNOWN"
+      },
+      {
+        "label": "probe-target-after-duplicate",
+        "source": "REPLACE-WITH-TARGET-DATA-READ-AFTER-DUPLICATE",
+        "expect_native_result": "UNKNOWN"
+      }
+    ],
+    "assertions": [
+      {
+        "id": "duplicate-policy",
+        "description": "Determine whether re-adding an already-retained native object ID appends another copy, is a no-op, repositions/refreshes the object, or produces another native outcome.",
+        "expected": "RECORD-ACTUAL-DUPLICATE-POLICY",
+        "observation_path": "/fixture/observation/probe/duplicate_policy",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "post-duplicate-cardinality",
+        "description": "Record the retained-list cardinality after the duplicate-present invocation.",
+        "expected": "RECORD-ACTUAL-CARDINALITY",
+        "observation_path": "/fixture/observation/search_state/after/local_total",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "target-identity",
+        "description": "Determine whether the selected target remains the same native object and whether its list index remains stable after the duplicate-present invocation.",
+        "expected": "RECORD-ACTUAL-TARGET-OUTCOME",
+        "observation_path": "/fixture/observation/target/after/native_id",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      }
+    ],
+    "observation": {
+      "engine": {
+        "build": "RECORD-ACTUAL-ENGINE-BUILD",
+        "patch": "RECORD-ACTUAL-PATCH",
+        "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+        "platform": "RECORD-ACTUAL-PLATFORM"
+      },
+      "result": "UNVERIFIED",
+      "list": {
+        "before": {
+          "ids": [
+            "RECORD-ACTUAL-BASE-ID"
+          ],
+          "source": "search-remote"
+        },
+        "after": {
+          "ids": [
+            "RECORD-ACTUAL-POST-DUPLICATE-ID-LIST"
+          ],
+          "source": "search-remote"
+        }
+      },
+      "target": {
+        "before": {
+          "selected": true,
+          "source": "search-remote",
+          "index": 0,
+          "native_id": "RECORD-ACTUAL-BASE-ID",
+          "access_result": "SUCCESS"
+        },
+        "after": {
+          "selected": true,
+          "source": "search-remote",
+          "index": null,
+          "native_id": "RECORD-ACTUAL-TARGET-ID",
+          "access_result": "UNKNOWN"
+        }
+      },
+      "cursor": {
+        "before": null,
+        "after": null,
+        "transition": "UNOBSERVABLE",
+        "observability": "REQUIRE-CAPTURE",
+        "probe_method": "up-get-search-state"
+      },
+      "search_state": {
+        "before": {
+          "local_total": null,
+          "local_last_search": 0,
+          "remote_total": null,
+          "remote_last_search": 0
+        },
+        "after": {
+          "local_total": null,
+          "local_last_search": null,
+          "remote_total": null,
+          "remote_last_search": null
+        }
+      },
+      "probe": {
+        "commands": [
+          {
+            "source": "(up-add-object-by-id search-remote c: BASE-ID)",
+            "result": "UNKNOWN",
+            "native_error": null
+          },
+          {
+            "source": "(up-add-object-by-id search-remote c: BASE-ID)",
+            "result": "UNKNOWN",
+            "native_error": null
+          }
+        ]
+      },
+      "assertions": [
+        {
+          "id": "duplicate-policy",
+          "result": "UNVERIFIED",
+          "message": "Requires native runtime capture."
+        },
+        {
+          "id": "post-duplicate-cardinality",
+          "result": "UNVERIFIED",
+          "message": "Requires native runtime capture."
+        },
+        {
+          "id": "target-identity",
+          "result": "UNVERIFIED",
+          "message": "Requires native runtime capture."
+        }
+      ],
+      "notes": "Template only. Replace placeholders with a real AoE2DE build, concrete object IDs, a search that deterministically establishes BASE_OBJECT, and captured search-state/list/target observations. This fixture must not be promoted from UNVERIFIED until the duplicate-present branch is directly observed."
+    }
+  }
+}
