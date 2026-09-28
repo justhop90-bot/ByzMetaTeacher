@@ -79,9 +79,9 @@ class NativeDucPlanTests(unittest.TestCase):
                     order=1,
                     facts=(
                         _expr(
-                            "(up-target-objects 1 action-default -1 -1)",
+                            "(up-target-objects 1 0 -1 -1)",
                             "up-target-objects",
-                            ("1", "action-default", "-1", "-1"),
+                            ("1", "0", "-1", "-1"),
                         ),
                     ),
                     actions=(),
@@ -154,7 +154,7 @@ class NativeDucBinderTests(unittest.TestCase):
         self.assertEqual(binding.support_state.value, "executable-safe")
 
     def test_unpromoted_duc_command_fails_closed(self):
-        with self.assertRaisesRegex(ValueError, "not executable"):
+        with self.assertRaisesRegex(ValueError, "no contracted engine semantic mapping"):
             self.binder.bind_duc_command("up-get-search-state")
 
 
