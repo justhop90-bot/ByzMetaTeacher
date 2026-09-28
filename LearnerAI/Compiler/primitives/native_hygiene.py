@@ -2366,4 +2366,4 @@ def validate_goal_span_non_overlap(uses: Tuple[NativeStorageUse, ...]) -> None:
     for index, left in enumerate(spans):
         for right in spans[index + 1:]:
             if max(left[0], right[0]) <= min(left[1], right[1]):
-                raise ValueError(f"overlapping Goal spans: {leals() if not name.startswith("_")]
+                raise ValueError(f"overlapping Goal spans: {left[2]} and {right[2]}")
