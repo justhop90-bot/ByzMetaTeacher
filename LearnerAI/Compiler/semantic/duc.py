@@ -996,6 +996,13 @@ def _apply_duc_search(
     DucSearchOperation,
     tuple[DucDiagnostic, ...],
 ]:
+    """Apply one native find operation without fabricating runtime scan positions.
+
+    The index is a scan frontier. A normal search advances it, but the exact
+    numeric endpoint depends on the runtime object universe and visibility.
+    Known end-of-scan and known-full-list states are the only statically
+    guaranteed zero-result cases in this model.
+    """
     command = action.expression.head
     diagnostics: list[DucDiagnostic] = []
     kind = DucListKind(search_contract.list_kind)
