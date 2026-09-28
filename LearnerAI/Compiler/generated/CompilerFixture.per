@@ -10,6 +10,7 @@
 (defconst issued-castle 44)
 (defconst pending-castle 42)
 (defconst complete-castle 43)
+(defconst construction-retry-barrier-castle 45)
 (defconst demand-defensive-spearmen 42)
 (defconst issued-defensive-spearmen 45)
 (defconst pending-defensive-spearmen 43)
@@ -25,6 +26,13 @@
     (true)
 =>
     (set-goal action-claim-build-pass-singleton 0)
+)
+
+; Per-pass construction retry barriers
+(defrule
+    (true)
+=>
+    (set-goal construction-retry-barrier-castle 0)
 )
 
 ; Demand initialization
@@ -61,7 +69,7 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (building-type-count castle > 0)
+    (building-type-count castle >= 1)
 =>
     (set-goal demand-castle 43)
 )
@@ -72,8 +80,8 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle > 0))
-    (up-pending-objects c: castle >= 1)
+    (not (building-type-count castle >= 1))
+    (up-pending-objects c: 82 >= 1)
 =>
     (set-goal demand-castle 42)
 )
@@ -84,9 +92,9 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle > 0))
-    (up-pending-objects c: castle == 0)
-    (up-pending-placement c: castle)
+    (not (building-type-count castle >= 1))
+    (up-pending-objects c: 82 == 0)
+    (up-pending-placement c: 82)
 =>
     (set-goal demand-castle 42)
 )
@@ -97,19 +105,21 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle > 0))
-    (up-pending-objects c: castle == 0)
-    (not (up-pending-placement c: castle))
+    (not (building-type-count castle >= 1))
+    (up-pending-objects c: 82 == 0)
+    (not (up-pending-placement c: 82))
 =>
     (set-goal demand-castle 1)
+    (set-goal construction-retry-barrier-castle 1)
 )
 
 ; Action issuance: castle | ACTIVE -> ISSUED
 (defrule
     (goal demand-castle 1)
-    (not (building-type-count castle > 0))
-    (up-pending-objects c: castle == 0)
-    (not (up-pending-placement c: castle))
+    (not (building-type-count castle >= 1))
+    (goal construction-retry-barrier-castle 0)
+    (up-pending-objects c: 82 == 0)
+    (not (up-pending-placement c: 82))
     (not (building-type-count castle > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle)
