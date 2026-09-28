@@ -1,8 +1,8 @@
 import unittest
 
-from Compiler.semantic.duc import analyze_duc
-from Compiler.ast import Expression, SourceLocation
-from Compiler.semantic.rule_execution import (
+from LearnerAI.Compiler.semantic.duc import analyze_duc
+from LearnerAI.Compiler.ast import Expression, SourceLocation
+from LearnerAI.Compiler.semantic.rule_execution import (
     EffectiveRule,
     RuleAction,
     RulePassBehavior,
