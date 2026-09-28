@@ -390,19 +390,28 @@ Promotion additionally requires:
 
 ## 9. Current status
 
-Escrow is the active MUSE repair area on `main`; PR #94 merged the compiler plumbing needed by the release-only executable slice.
+Escrow is the active MUSE repair area on \`main\`; the release-only compiler plumbing is already implemented and verified.
 
 Closed:
 - native command existence and basic syntax for the core escrow controls;
 - typed resource-control IR surface;
 - separation between transient arbitration and escrow semantics;
-- corpus justification for implementation.
+- corpus justification for implementation;
+- release-only dedicated native binding/mapping/registry/emission;
+- source-to-\`.per\` release fixture and pinned native zero-findings acceptance;
+- compiler-side ordering/ownership/lifetime semantic gate.
 
 Open:
-- executable binder/mapping/registry/emission for `release-escrow`;
-- direct native same-pass visibility proof;
+- direct native same-pass visibility proof for \`release-escrow -> ordinary action\`;
 - starvation/emergency semantics;
 - multi-owner handoff;
 - remaining action-family-specific runtime details.
 
-The compiler will not promote those unknowns by optimism. Humans have already produced enough software that confidently emitting a wrong financial state machine is no longer an acceptable innovation.
+Repository-side same-pass evidence implementation is now tracked by:
+- \`docs/plans/2026-09-28-native-escrow-same-pass-visibility.md\`;
+- \`docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md\`;
+- \`docs/reference/oracles/escrow-same-pass-research.schema.json\`;
+- \`docs/reference/oracles/candidates/escrow-same-pass-research.native.json\`;
+- \`LearnerAI/Compiler/tests/test_escrow_same_pass_oracle_spec.py\`.
+
+The native fact remains OPEN until the populated candidate carries actual DE runtime observations satisfying the promotion gate. Runtime execution is intentionally external to compiler CI.
