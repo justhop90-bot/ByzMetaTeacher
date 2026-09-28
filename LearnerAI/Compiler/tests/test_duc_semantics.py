@@ -1701,6 +1701,22 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_get_object_data_requires_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-get-object-data", ("38", "41")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "up-get-object-data" in item.message
+            and "target" in item.message
+            for item in report.diagnostics
+        ))
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
