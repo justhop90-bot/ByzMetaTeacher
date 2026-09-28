@@ -1063,7 +1063,7 @@ class NativeDucSearchContract:
     supports_fact: bool = True
     cursor_model: str = "SCAN_FRONTIER"
     returns_false_on_zero_results: bool = True
-    stops_on_result_limit_or_capacity: bool = True
+    stops_on_capacity: bool = True
 
     def __post_init__(self) -> None:
         if self.cursor_model != "SCAN_FRONTIER":
