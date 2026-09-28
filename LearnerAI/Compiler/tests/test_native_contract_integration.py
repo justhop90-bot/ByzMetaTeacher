@@ -165,7 +165,13 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(mutation.evidence_ids, ("airef:duc:remove-objects",))
 
         self.assertIsNotNone(target)
-        self.assertEqual(target.evidence_ids, ("airef:duc:set-target-object",))
+        self.assertEqual(
+            target.evidence_ids,
+            (
+                "airef:duc:set-target-object",
+                "airef:duc:set-target-object-failure",
+            ),
+        )
 
         citation_ids = set(catalog.citation_ids())
         self.assertIn("airef:duc:find-local", citation_ids)
