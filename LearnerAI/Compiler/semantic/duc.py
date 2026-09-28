@@ -39,8 +39,10 @@ from ..ir.duc import (
     DucResetKind,
     DucSearchListState,
     DucSearchOperation,
+    DucSearchCursorDisposition,
     DucSearchIndexResetReason,
     DucSearchIndexState,
+    DucSearchResultDisposition,
     DucSearchStateObservation,
     DucSemanticState,
     DucStateKind,
@@ -409,6 +411,7 @@ def _reset_search_index(
         generation=index.generation + 1,
         known=True,
         last_reset_reason=reason,
+        cursor_disposition=DucSearchCursorDisposition.RESET_START,
     )
 
 
@@ -527,7 +530,12 @@ def _apply_focus_player_mutation(
 def _prepare_search_index_for_query(
     index: DucSearchIndexState,
     query_signature: tuple[str, ...],
-) -> tuple[DucSearchIndexState, Optional[DucSearchIndexResetReason], Optional[int]]:
+) -> tuple[
+    DucSearchIndexState,
+    Optional[DucSearchIndexResetReason],
+    Optional[int],
+    DucSearchCursorDisposition,
+]:
     reset_reason = index.last_reset_reason
     prepared = index
     if (
@@ -540,38 +548,89 @@ def _prepare_search_index_for_query(
         )
         reset_reason = DucSearchIndexResetReason.QUERY_CHANGED
     index_before = prepared.offset
+    cursor_before = prepared.cursor_disposition
     after_search = replace(
         prepared,
-        offset=None,
-        known=False,
         query_signature=query_signature,
         last_reset_reason=None,
     )
-    return after_search, reset_reason, index_before
+    return after_search, reset_reason, index_before, cursor_before
 
 
 def _search_cardinality(
     current: DucListGeneration | None,
     *,
     capacity: int,
+    requested_max: int,
+    guaranteed_empty: bool = False,
 ) -> tuple[DucCardinalityRange, DucCardinalityRange]:
-    """Conservatively model retained-list append and the most recent search delta."""
     previous = (
         current.cardinality
         if current is not None and current.cardinality is not None
         else DucCardinalityRange(0, 0)
     )
-    maximum_added = max(0, capacity - previous.minimum)
-    last_search = DucCardinalityRange(0, maximum_added)
+    available_maximum = max(0, capacity - previous.minimum)
+    maximum_added = min(max(0, requested_max), available_maximum)
+    last_search = (
+        DucCardinalityRange(0, 0)
+        if guaranteed_empty
+        else DucCardinalityRange(0, maximum_added)
+    )
     total = DucCardinalityRange(
         previous.minimum,
-        min(capacity, previous.maximum + maximum_added),
+        min(capacity, previous.maximum + last_search.maximum),
     )
     return total, last_search
 
 
-def _zero_cardinality() -> DucCardinalityRange:
-    return DucCardinalityRange(0, 0)
+def _search_limit(arguments: tuple[str, ...], capacity: int) -> int:
+    requested = _int_or_none(arguments[-1]) if arguments else None
+    return capacity if requested is None else max(0, min(capacity, requested))
+
+
+def _search_cursor_transition(
+    prepared_index: DucSearchIndexState,
+    *,
+    guaranteed_empty: bool,
+    blocked_by_capacity: bool,
+) -> tuple[
+    DucSearchIndexState,
+    DucSearchCursorDisposition,
+    DucSearchResultDisposition,
+]:
+    if blocked_by_capacity:
+        disposition = DucSearchCursorDisposition.BLOCKED_BY_CAPACITY
+        return (
+            replace(
+                prepared_index,
+                cursor_disposition=disposition,
+            ),
+            disposition,
+            DucSearchResultDisposition.GUARANTEED_EMPTY,
+        )
+    if guaranteed_empty:
+        disposition = DucSearchCursorDisposition.AT_END
+        return (
+            replace(
+                prepared_index,
+                offset=None,
+                known=False,
+                cursor_disposition=disposition,
+            ),
+            disposition,
+            DucSearchResultDisposition.GUARANTEED_EMPTY,
+        )
+    disposition = DucSearchCursorDisposition.RUNTIME_ADVANCED
+    return (
+        replace(
+            prepared_index,
+            offset=None,
+            known=False,
+            cursor_disposition=disposition,
+        ),
+        disposition,
+        DucSearchResultDisposition.RUNTIME_DEPENDENT,
+    )
 
 
 def _preceding_index_can_match(
