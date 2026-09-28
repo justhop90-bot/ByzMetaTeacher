@@ -1,7 +1,7 @@
 """Minimal recurrent .per pass scheduler for timer/control-flow semantics."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from ..ast import Expression
@@ -384,7 +384,7 @@ class PassScheduler:
     ) -> None:
         try:
             mutation = parse_strategic_number_mutation(
-                expression,
+                replace(expression, head="up-modify-sn"),
                 rule_order=rule_order,
                 within_rule_order=within_rule_order,
                 section=section,
@@ -436,7 +436,9 @@ class PassScheduler:
 
     def _evaluate_goal_comparison_fact(self, expression: Expression) -> bool:
         try:
-            comparison = parse_strategic_number_comparison(expression)
+            comparison = parse_strategic_number_comparison(
+                replace(expression, head="up-compare-sn")
+            )
             return evaluate_strategic_number_comparison(
                 comparison,
                 current_value=self._goals.get(comparison.target, -1),
