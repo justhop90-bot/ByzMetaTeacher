@@ -185,6 +185,7 @@ _AOERF_PER = "https://airef.github.io/resources/articles/intro-to-commands.html"
 _AOE2AI = "https://github.com/lewisc64/aoe2ai"
 _DUKE = "https://github.com/niektb/AI"
 _DUC_COMMAND_SPECS = (
+    ("up-can-search", "duc.search.availability"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
