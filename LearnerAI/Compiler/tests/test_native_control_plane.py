@@ -37,7 +37,6 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             initialization_policy="DISABLE_BEFORE_FIRST_USE",
             stability_key="control.fixture.cooldown",
         )
-        true = Expression("(true)", "true", ())
         plan = NativeControlPlan(
             states=(
                 NativeControlState("strategy-goal", goal_request),
@@ -47,7 +46,7 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             rules=(
                 NativeControlRule(
                     "initialize",
-                    facts=(true,),
+                    facts=(),
                     actions=(
                         Expression("(set-goal strategy-goal 1)", "set-goal", ("strategy-goal", "1")),
                         Expression("(set-strategic-number resource-control 50)", "set-strategic-number", ("resource-control", "50")),
