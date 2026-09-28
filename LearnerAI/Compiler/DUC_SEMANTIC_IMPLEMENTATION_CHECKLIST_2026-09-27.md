@@ -165,6 +165,28 @@ Primary tests:
 - `LearnerAI/Compiler/tests/test_native_contract_integration.py`
 - `LearnerAI/Compiler/tests/test_native_hygiene.py`
 
+## Vertical slice J: target consumer mode semantics
+
+- [x] Model `up-target-objects` Option 0 and Option 1 as distinct native consumer modes.
+- [x] Require an initialized local search list only for Option 0.
+- [x] Require an object target only for Option 1.
+- [x] Preserve direct native object-ID identity for Option 1 while keeping runtime liveness UNKNOWN.
+- [x] Validate the native Option range and bind pinned evidence.
+- [x] Degrade list-index target identity after retained-list SORT.
+- [x] Preserve existing DEDUPE and REMOVE_MATCHES target analysis.
+- [x] Emit deterministic consumer provenance/effect metadata.
+- [x] Add hostile regressions for option routing, invalid options, sort invalidation, and direct-ID consumption.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/primitives/native_hygiene.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+
+Primary tests:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+- `LearnerAI/Compiler/tests/test_native_contract_integration.py`
+- `LearnerAI/Compiler/tests/test_native_hygiene.py`
+
 ## Integration order
 
 1. [x] Create typed DUC IR.

@@ -44,6 +44,8 @@ from ..ir.duc import (
     DucSearchStateObservation,
     DucSemanticState,
     DucStateKind,
+    DucTargetConsumerEffect,
+    DucTargetConsumerMode,
     DucTargetKind,
     DucTargetProof,
     DucTargetState,
@@ -382,7 +384,16 @@ def _target_after_list_mutation(
     target_index = object_ref.list_index
 
     if mutation_kind is DucListMutationKind.SORT:
-        return _target_with_unstable_index(target), DucTargetTransition.UNCHANGED
+        if object_ref.list_kind is None or object_ref.native_object_id is not None:
+            return target, DucTargetTransition.UNCHANGED
+        return (
+            replace(
+                _target_with_unstable_index(target),
+                validity=DucTargetStatus.UNKNOWN,
+                proof=DucTargetProof.UNKNOWN,
+            ),
+            DucTargetTransition.UNKNOWN,
+        )
 
     if mutation_kind is DucListMutationKind.DEDUPE:
         return (
@@ -622,6 +633,7 @@ def _analyze_duc_linear(
     groups: list[DucGroupOperation] = []
     group_observations: list[DucGroupSizeObservation] = []
     targets: list[DucTargetState] = []
+    target_consumers: list[DucTargetConsumerEffect] = []
     observations: list[DucSearchStateObservation] = []
     effects: list[DucExecutionEffect] = []
     diagnostics: list[DucDiagnostic] = []
@@ -641,6 +653,7 @@ def _analyze_duc_linear(
             filter_contract = contracts.duc_filter(command)
             reset_contract = contracts.duc_reset(command)
             target_contract = contracts.duc_target(command)
+            target_consumer_contract = contracts.duc_target_consumer(command)
             group_contract = contracts.duc_group(command)
 
             if group_contract is not None:
@@ -1796,47 +1809,147 @@ def _analyze_duc_linear(
                 rule_writes.add(DucStateKind.LIST)
                 continue
 
-            if command in OBJECT_TARGET_CONSUMERS:
-                target = state.target
-                if target is None:
+            if target_consumer_contract is not None:
+                if len(args) != 4:
                     diagnostics.append(
                         DucDiagnostic(
                             "DUC-005",
                             DiagnosticSeverity.ERROR.value,
                             rule.rule_order,
-                            "up-target-objects executes without a current object target or known search list selection",
+                            "up-target-objects requires Option, DUCAction, Formation, and AttackStance",
                             _location(action, rule.source_location),
                         )
                     )
-                elif target.validity is DucTargetStatus.STALE:
+                    continue
+                option = _int_or_none(args[0])
+                if (
+                    option is None
+                    or option < target_consumer_contract.option_min
+                    or option > target_consumer_contract.option_max
+                ):
                     diagnostics.append(
                         DucDiagnostic(
-                            "DUC-006",
+                            "DUC-005",
                             DiagnosticSeverity.ERROR.value,
                             rule.rule_order,
-                            "up-target-objects consumes an object target invalidated by later DUC reset state",
+                            "up-target-objects Option must be 0 or 1",
                             _location(action, rule.source_location),
                         )
                     )
-                elif target.validity is DucTargetStatus.UNKNOWN:
-                    message = (
-                        "up-target-objects consumes an object target retained across a pass "
-                        "without a current-pass re-establishment; target lifetime is unknown"
-                        if target.proof is DucTargetProof.SYNTACTIC_RETENTION
-                        else "up-target-objects has a concrete native object identity, but runtime target liveness is unverified"
-                        if target.proof is DucTargetProof.NATIVE_ID_PROOF
-                        else "up-target-objects consumes an object target whose source-list identity is no longer provable"
-                    )
-                    diagnostics.append(
-                        DucDiagnostic(
-                            "DUC-007",
-                            DiagnosticSeverity.WARNING.value,
-                            rule.rule_order,
-                            message,
-                            _location(action, rule.source_location),
+                    continue
+
+                provenance = _provenance(
+                    rule,
+                    action,
+                    visibility=DucVisibility.SAME_RULE,
+                    state_revision=state_revision,
+                    pass_id=state.pass_id,
+                    inputs=(
+                        tuple(
+                            generation.generation
+                            for generation in (
+                                state.local_list.current_generation,
+                                state.remote_list.current_generation,
+                            )
+                            if generation is not None
                         )
+                        + ((state.target.generation,) if state.target is not None else ())
+                    ),
+                    contract_id="duc.target-consumer",
+                    evidence_ids=target_consumer_contract.evidence_ids,
+                )
+
+                target = state.target
+                mode = (
+                    DucTargetConsumerMode.LOCAL_SEARCH_RESULTS
+                    if option == 0
+                    else DucTargetConsumerMode.SELECTED_OBJECT_ONLY
+                )
+                if option == 0:
+                    if target_consumer_contract.option_zero_requires_local_list and (
+                        state.local_list.current_generation is None
+                        or not state.local_list.initialized
+                    ):
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-005",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-target-objects Option 0 requires an initialized local search list",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
+                    rule_reads.add(DucStateKind.LIST)
+                else:
+                    if target is None and target_consumer_contract.option_one_requires_object_target:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-005",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-target-objects Option 1 requires a current object target",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
+                    if target is not None and target.validity is DucTargetStatus.STALE:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-006",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                "up-target-objects consumes an object target invalidated by later DUC reset state",
+                                _location(action, rule.source_location),
+                            )
+                        )
+                    elif target is not None and target.validity is DucTargetStatus.UNKNOWN:
+                        message = (
+                            "up-target-objects consumes an object target retained across a pass "
+                            "without a current-pass re-establishment; target lifetime is unknown"
+                            if target.proof is DucTargetProof.SYNTACTIC_RETENTION
+                            else "up-target-objects has a concrete native object identity, but runtime target liveness is unverified"
+                            if target.proof is DucTargetProof.NATIVE_ID_PROOF
+                            else "up-target-objects consumes an object target whose source-list identity is no longer provable"
+                        )
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-007",
+                                DiagnosticSeverity.WARNING.value,
+                                rule.rule_order,
+                                message,
+                                _location(action, rule.source_location),
+                            )
+                        )
+                    rule_reads.add(DucStateKind.TARGET)
+
+                target_consumers.append(
+                    DucTargetConsumerEffect(
+                        command=command,
+                        mode=mode,
+                        provenance=provenance,
+                        local_list_generation=(
+                            state.local_list.current_generation.generation
+                            if state.local_list.current_generation is not None
+                            else None
+                        ),
+                        remote_list_generation=(
+                            state.remote_list.current_generation.generation
+                            if state.remote_list.current_generation is not None
+                            else None
+                        ),
+                        target_validity=(
+                            target.validity
+                            if target is not None
+                            else DucTargetStatus.UNKNOWN
+                        ),
+                        target_proof=(
+                            target.proof
+                            if target is not None
+                            else DucTargetProof.UNKNOWN
+                        ),
                     )
-                rule_reads.add(DucStateKind.TARGET)
+                )
                 continue
 
             if command in POINT_TARGET_CONSUMERS:
@@ -1895,6 +2008,7 @@ def _analyze_duc_linear(
         resets=tuple(resets),
         mutations=tuple(mutations),
         targets=tuple(targets),
+        target_consumers=tuple(target_consumers),
         observations=tuple(observations),
         effects=tuple(effects),
         diagnostics=tuple(diagnostics),
@@ -1968,6 +2082,36 @@ def _join_search_indices(
     )
 
 
+def _widen_search_index(
+    previous: DucSearchIndexState,
+    current: DucSearchIndexState,
+) -> DucSearchIndexState:
+    if _search_index_key(previous) == _search_index_key(current):
+        return previous
+    same_query = previous.query_signature == current.query_signature
+    same_focus = previous.focus_player_signature == current.focus_player_signature
+    same_offset = previous.offset == current.offset
+    return DucSearchIndexState(
+        offset=previous.offset if same_offset else None,
+        generation=0,
+        query_signature=previous.query_signature if same_query else None,
+        focus_player_signature=(
+            previous.focus_player_signature if same_focus else None
+        ),
+        known=(
+            previous.known
+            and current.known
+            and same_offset
+        ),
+        last_reset_reason=(
+            previous.last_reset_reason
+            if previous.last_reset_reason is current.last_reset_reason
+            else DucSearchIndexResetReason.UNKNOWN
+        ),
+        path_ambiguous=True,
+    )
+
+
 def _list_semantic_key(state: DucSearchListState) -> tuple[object, ...]:
     if state.current_generation is not None:
         return (
@@ -1988,8 +2132,9 @@ def _widen_list_state(
     if _list_semantic_key(previous) == _list_semantic_key(current):
         return replace(
             previous,
-            search_index=_join_search_indices(
-                (previous.search_index, current.search_index)
+            search_index=_widen_search_index(
+                previous.search_index,
+                current.search_index,
             ),
         )
     candidates: dict[tuple[object, ...], DucListGeneration] = {}
@@ -2024,8 +2169,9 @@ def _widen_list_state(
         initialized=previous.initialized or current.initialized,
         path_ambiguous=True,
         generation_variants=(representative,) if representative is not None else (),
-        search_index=_join_search_indices(
-            (previous.search_index, current.search_index)
+        search_index=_widen_search_index(
+            previous.search_index,
+            current.search_index,
         ),
     )
 
