@@ -15,6 +15,7 @@ FIXTURE_DIR = (
     / "oracles"
     / "fixtures"
 )
+CANDIDATE_DIR = FIXTURE_DIR.parent / "candidates"
 
 EXPECTED_FIXTURES = {
     "duc-remove-after-target.pass.json": "PASS",
@@ -111,6 +112,39 @@ class DucNativeOracleFixtureTests(unittest.TestCase):
             observed = observed_by_id[assertion["id"]]
             self.assertEqual(observed["actual"], actual)
             self.assertNotEqual(assertion["expected"], actual)
+
+    def test_failed_target_action_candidate_is_explicitly_unpromoted(self):
+        with (CANDIDATE_DIR / "duc-failed-target-action.native.json").open(
+            encoding="utf-8"
+        ) as handle:
+            document = json.load(handle)
+
+        fixture = document["fixture"]
+        observation = fixture["observation"]
+        probe_sources = [item["source"] for item in fixture["probe"]]
+
+        self.assertEqual(fixture["kind"], "NATIVE_OBSERVATION")
+        self.assertEqual(observation["result"], "UNVERIFIED")
+        self.assertEqual(
+            fixture["engine_scope"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            observation["engine"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            [assertion["result"] for assertion in observation["assertions"]],
+            ["UNVERIFIED", "UNVERIFIED", "UNVERIFIED"],
+        )
+        self.assertIn(
+            "(up-set-target-object search-local c: 240)",
+            probe_sources,
+        )
+        self.assertIn(
+            "(up-get-object-target-data object-data-id 101)",
+            probe_sources,
+        )
 
 
 if __name__ == "__main__":
