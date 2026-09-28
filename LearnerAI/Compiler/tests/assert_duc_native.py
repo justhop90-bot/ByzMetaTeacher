@@ -25,9 +25,9 @@ def _plan() -> NativeDucPlan:
                 order=100,
                 facts=(
                     Expression(
-                        "(up-find-local c: villager c: 1)",
+                        "(up-find-local c: 83 c: 1)",
                         "up-find-local",
-                        ("c:", "villager", "c:", "1"),
+                        ("c:", "83", "c:", "1"),
                     ),
                 ),
                 actions=(
@@ -50,9 +50,9 @@ def _plan() -> NativeDucPlan:
                 ),
                 actions=(
                     Expression(
-                        "(up-target-objects 1 action-default -1 -1)",
+                        "(up-target-objects 1 0 -1 -1)",
                         "up-target-objects",
-                        ("1", "action-default", "-1", "-1"),
+                        ("1", "0", "-1", "-1"),
                     ),
                 ),
             ),
@@ -106,9 +106,9 @@ def main() -> int:
         raise SystemExit("typed NativeDucPlan artifact is non-deterministic")
 
     required_fragments = (
-        "(up-find-local c: villager c: 1)",
+        "(up-find-local c: 83 c: 1)",
         "(up-set-target-object search-local c: 0)",
-        "(up-target-objects 1 action-default -1 -1)",
+        "(up-target-objects 1 0 -1 -1)",
     )
     missing = tuple(
         fragment for fragment in required_fragments if fragment not in first
