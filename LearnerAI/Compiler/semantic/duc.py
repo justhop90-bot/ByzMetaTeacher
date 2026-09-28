@@ -39,6 +39,8 @@ from ..ir.duc import (
     DucResetKind,
     DucSearchListState,
     DucSearchOperation,
+    DucSearchIndexResetReason,
+    DucSearchIndexState,
     DucSearchStateObservation,
     DucSemanticState,
     DucStateKind,
@@ -202,6 +204,45 @@ def _int_or_none(value: str) -> int | None:
         return int(value, 10)
     except ValueError:
         return None
+
+
+def _reset_search_index(
+    index: DucSearchIndexState,
+    reason: DucSearchIndexResetReason,
+) -> DucSearchIndexState:
+    return replace(
+        index,
+        offset=0,
+        generation=index.generation + 1,
+        known=True,
+        last_reset_reason=reason,
+    )
+
+
+def _prepare_search_index_for_query(
+    index: DucSearchIndexState,
+    query_signature: tuple[str, ...],
+) -> tuple[DucSearchIndexState, Optional[DucSearchIndexResetReason], Optional[int]]:
+    reset_reason = index.last_reset_reason
+    prepared = index
+    if (
+        index.query_signature is not None
+        and index.query_signature != query_signature
+    ):
+        prepared = _reset_search_index(
+            index,
+            DucSearchIndexResetReason.QUERY_CHANGED,
+        )
+        reset_reason = DucSearchIndexResetReason.QUERY_CHANGED
+    index_before = prepared.offset
+    after_search = replace(
+        prepared,
+        offset=None,
+        known=False,
+        query_signature=query_signature,
+        last_reset_reason=None,
+    )
+    return after_search, reset_reason, index_before
 
 
 def _search_cardinality(
@@ -401,6 +442,7 @@ def _list_state(
     next_generation: int | None = None,
     path_ambiguous: bool = False,
     generation_variants: tuple[DucListGeneration, ...] = (),
+    search_index: DucSearchIndexState | None = None,
 ) -> DucSearchListState:
     return DucSearchListState(
         list_kind=kind,
@@ -409,6 +451,7 @@ def _list_state(
         initialized=generation is not None,
         path_ambiguous=path_ambiguous,
         generation_variants=generation_variants,
+        search_index=state.search_index if search_index is None else search_index,
     )
 
 
