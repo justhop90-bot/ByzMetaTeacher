@@ -16,6 +16,7 @@ from .ir import (
     SemanticId,
     StorageRequestId,
     StrategicNumberStorageRequest,
+    TimerRequest,
 )
 
 
@@ -434,18 +435,6 @@ def _strategic_number_binding_metadata(
         native_contract_id=request.native_contract_id,
         request_fingerprint=strategic_number_request_fingerprint(request),
     )
-
-
-@dataclass(frozen=True)
-class TimerRequest:
-    request_id: StorageRequestId
-    initialization_policy: str
-    stability_key: str
-    role: GoalRole = GoalRole.EXECUTION_MEMORY
-
-    def __post_init__(self) -> None:
-        if not self.initialization_policy.strip():
-            raise ValueError("TimerRequest initialization_policy must not be empty")
 
 
 @dataclass(frozen=True)
