@@ -128,7 +128,17 @@ def main() -> int:
         )
 
     attack_section = first.split("; Native attack lifecycle plan", 1)[1]
-    attack_section = attack_section.split("; Native persistent control plane", 1)[0]
+    for marker in (
+        "\n; Native persistent control plane",
+        "\n; Per-pass transient action arbitration",
+        "\n; Per-pass construction retry barriers",
+        "\n; Demand initialization",
+        '\n; Invalidation:',
+        '\n; Pending diagnostics:',
+    ):
+        if marker in attack_section:
+            attack_section = attack_section.split(marker, 1)[0]
+            break
     if "(set-goal " in attack_section:
         raise SystemExit("attack lifecycle section emitted synthetic goal lifecycle state")
     if "COMPLETE" in attack_section or "RELEASE" in attack_section:
