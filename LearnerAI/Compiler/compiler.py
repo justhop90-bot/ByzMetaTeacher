@@ -58,7 +58,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.emitter import emit
-    from Compiler.ir import NativeDucPlan
+    from Compiler.ir import NativeAttackLifecyclePlan, NativeDucPlan
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -108,7 +108,7 @@ else:
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
-    from .ir import NativeDucPlan
+    from .ir import NativeAttackLifecyclePlan, NativeDucPlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -208,6 +208,7 @@ def _compile_ir_parts(
     binding_context: BindingContext | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ):
     reports = []
 
@@ -315,6 +316,7 @@ def _compile_ir_parts(
             registry=registry,
             control_plan=control_plan,
             duc_plan=duc_plan,
+            attack_plan=attack_plan,
         ),
         bindings,
         context,
@@ -355,6 +357,7 @@ def _compile_source_parts(
         binding_context=binding_context,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
 
 
@@ -381,6 +384,7 @@ def _compile_package_parts(
         binding_context=binding_context,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
     return result, bindings, context, graph
 
@@ -405,6 +409,7 @@ def compile_semantic_demands(
         binding_context=binding_context,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
     return result
 
@@ -504,6 +509,7 @@ def compile_package_with_report(
             registry=registry,
             control_plan=control_plan,
             duc_plan=duc_plan,
+            attack_plan=attack_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -633,6 +639,7 @@ def compile_source_with_report(
             registry=registry,
             control_plan=control_plan,
             duc_plan=duc_plan,
+            attack_plan=attack_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -756,6 +763,7 @@ def compile_to_file(
         registry=registry,
         control_plan=control_plan,
         duc_plan=duc_plan,
+        attack_plan=attack_plan,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
