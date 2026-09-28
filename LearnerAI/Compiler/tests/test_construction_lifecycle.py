@@ -253,7 +253,7 @@ class ConstructionTransitionTests(unittest.TestCase):
         markers = (
             "; Invalidation: castle",
             "; COMPLETE | ISSUED/PENDING -> COMPLETE",
-            "; FOUNDATION_PENDING | ISSUED/PENDING -> PENDING",
+            "; Pending admission: castle | ISSUED/PENDING -> PENDING",
             "; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING",
             "; RETRY | ISSUED/PENDING -> ACTIVE",
             "; Action issuance: castle | ACTIVE -> ISSUED",
