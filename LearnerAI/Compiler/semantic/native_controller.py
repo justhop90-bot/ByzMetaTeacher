@@ -12,6 +12,7 @@ import hashlib
 import json
 from typing import Iterable
 
+from ..ir.strategic_number import StrategicNumberAccess
 from .community_engine import EvidenceClass, PracticeStatus
 
 
