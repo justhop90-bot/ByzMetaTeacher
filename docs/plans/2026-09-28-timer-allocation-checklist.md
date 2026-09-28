@@ -132,8 +132,8 @@
   - Feed the complete artifact through the existing artifact-budget validator.
 
 - [x] **Step 3: Add checked-in source fixture and acceptance gate**
-  - Fixture declares a timer symbol and consumes it through `up-timer-status`.
-  - Acceptance compiles the fixture twice, compares bytes/SHA-256, checks the emitted alias and symbolic use, writes binding-manifest evidence, and invokes the pinned `aoe2_ai_lab` validator.
+  - Fixture declares a timer symbol; emitted initialization consumes the allocated symbolic TimerId through `disable-timer`. Unsupported `up-timer-status` remains outside executable-safe promotion.
+  - Acceptance compiles the fixture twice, compares bytes/SHA-256, checks the emitted alias and initialization action, writes binding-manifest evidence, and invokes the pinned `aoe2_ai_lab` validator.
   - Require `finding_count == 0` and `findings == []`.
 
 - [~] **Step 4: Verify focused/native acceptance**
