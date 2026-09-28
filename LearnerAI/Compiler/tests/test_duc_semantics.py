@@ -8,6 +8,7 @@ from Compiler.ir.duc import (
     DucListKind,
     DucListMutationKind,
     DucLoopWidening,
+    DucTargetConsumerMode,
     DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
@@ -1096,8 +1097,8 @@ class DucSemanticTests(unittest.TestCase):
 
         target = report.final_state.target
         self.assertIsNotNone(target)
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
-        self.assertEqual(target.proof, DucTargetProof.CURRENT_PASS_PROOF)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.UNKNOWN)
         mutation = report.mutations[-1]
         self.assertEqual(mutation.kind, DucListMutationKind.SORT)
         self.assertEqual(mutation.target_transition, DucTargetTransition.UNCHANGED)
@@ -1624,6 +1625,75 @@ class DucSemanticTests(unittest.TestCase):
         self.assertTrue(any(
             item.code == "DUC-007"
             and "source-list identity" in item.message
+            for item in report.diagnostics
+        ))
+
+
+
+
+    def test_target_objects_option_zero_records_local_search_consumer_effect(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertEqual(len(report.target_consumers), 1)
+        consumer = report.target_consumers[0]
+        self.assertEqual(consumer.mode, DucTargetConsumerMode.LOCAL_SEARCH_RESULTS)
+        self.assertEqual(consumer.local_list_generation, 1)
+        self.assertEqual(consumer.remote_list_generation, 1)
+        self.assertEqual(consumer.target_proof, DucTargetProof.UNKNOWN)
+
+
+    def test_target_objects_option_one_records_selected_target_consumer_effect(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertEqual(len(report.target_consumers), 1)
+        consumer = report.target_consumers[0]
+        self.assertEqual(consumer.mode, DucTargetConsumerMode.SELECTED_OBJECT_ONLY)
+        self.assertEqual(consumer.target_proof, DucTargetProof.CURRENT_PASS_PROOF)
+
+
+    def test_target_objects_option_one_allows_direct_native_id_but_warns_liveness(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "liveness is unverified" in item.message
+            for item in report.diagnostics
+        ))
+        self.assertEqual(
+            report.target_consumers[0].target_proof,
+            DucTargetProof.NATIVE_ID_PROOF,
+        )
+
+
+    def test_target_objects_option_zero_requires_local_search_but_not_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-target-objects", ("0", "action-default", "-1", "-1")),
+            )),
+        ))
+
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "initialized local search list" in item.message
             for item in report.diagnostics
         ))
 
