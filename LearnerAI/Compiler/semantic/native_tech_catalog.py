@@ -1,0 +1,98 @@
+"""Authoritative native technology-id binding from the checked-in AIRef tech inventory."""
+from __future__ import annotations
+
+from functools import lru_cache
+import json
+from pathlib import Path
+import re
+
+
+_INVENTORY = (
+    Path(__file__).resolve().parents[3]
+    / "docs"
+    / "reference"
+    / "inventories"
+    / "airef-tech-inventory.json"
+)
+
+
+class NativeTechIdError(ValueError):
+    """Raised when a research target cannot be bound to a native TechId."""
+
+
+def _aliases(value: str) -> tuple[str, ...]:
+    return tuple(
+        token.strip().lower()
+        for token in value.split(",")
+        if token.strip()
+    )
+
+
+def _canonical_alias(value: str) -> str:
+    return re.sub(r"(?<=[a-z0-9])-(?=[a-z0-9])", "", value.lower())
+
+
+@lru_cache(maxsize=1)
+def _techs() -> tuple[dict, ...]:
+    if not _INVENTORY.is_file():
+        raise NativeTechIdError(
+            f"native AIRef tech inventory is unavailable at {_INVENTORY}"
+        )
+
+    payload = json.loads(_INVENTORY.read_text(encoding="utf-8"))
+    return tuple(
+        entry
+        for entry in payload.get("techs", ())
+        if isinstance(entry, dict)
+        and isinstance(entry.get("tech_id"), int)
+        and (entry.get("versions") or {}).get("de") == 1
+    )
+
+
+def _matches(token: str) -> tuple[int, ...]:
+    exact: set[int] = set()
+    canonical: set[int] = set()
+    canonical_token = _canonical_alias(token)
+
+    for entry in _techs():
+        ai_name = entry.get("ai_name")
+        if not isinstance(ai_name, str):
+            continue
+        aliases = _aliases(ai_name)
+        if token in aliases:
+            exact.add(entry["tech_id"])
+        elif canonical_token in {_canonical_alias(alias) for alias in aliases}:
+            canonical.add(entry["tech_id"])
+
+    matches = exact or canonical
+    return tuple(sorted(matches))
+
+
+def resolve_tech_id(symbol: str) -> int:
+    """Resolve a source research target to one deterministic native TechId."""
+    token = symbol.strip().lower()
+    if not token or not re.fullmatch(r"[a-z][a-z0-9-]*|[0-9]+", token):
+        raise NativeTechIdError(f"invalid TechId symbol '{symbol}'")
+    if token.isdigit():
+        tech_id = int(token)
+        known_ids = {entry["tech_id"] for entry in _techs()}
+        if tech_id not in known_ids:
+            raise NativeTechIdError(
+                f"numeric TechId '{symbol}' is not a known DE technology"
+            )
+        return tech_id
+
+    matches = _matches(token)
+    if not matches:
+        raise NativeTechIdError(
+            f"unknown native TechId symbol '{symbol}'"
+        )
+    if len(matches) > 1:
+        raise NativeTechIdError(
+            f"native TechId symbol '{symbol}' maps to multiple DE technologies: "
+            + ", ".join(str(item) for item in matches)
+        )
+    return matches[0]
+
+
+__all__ = ["NativeTechIdError", "resolve_tech_id"]
