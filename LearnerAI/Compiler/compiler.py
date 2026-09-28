@@ -108,7 +108,7 @@ else:
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
-    from .ir import NativeAttackLifecyclePlan, NativeDucPlan
+    from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -209,6 +209,7 @@ def _compile_ir_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ):
     reports = []
 
@@ -283,6 +284,8 @@ def _compile_ir_parts(
     context = binding_context or BindingContext()
     if duc_plan is not None and not isinstance(duc_plan, NativeDucPlan):
         raise TypeError("duc_plan must be a NativeDucPlan")
+    if escrow_plan is not None and not isinstance(escrow_plan, NativeEscrowReleasePlan):
+        raise TypeError("escrow_plan must be a NativeEscrowReleasePlan")
     storage_requests = _storage_requests(ir, control_plan)
     if any(
         isinstance(request, StrategicNumberRequest)
@@ -317,6 +320,7 @@ def _compile_ir_parts(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
         ),
         bindings,
         context,
@@ -347,6 +351,7 @@ def _compile_source_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
@@ -359,6 +364,7 @@ def _compile_source_parts(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
 
 
@@ -371,6 +377,7 @@ def _compile_package_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -387,6 +394,7 @@ def _compile_package_parts(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
     return result, bindings, context, graph
 
@@ -402,6 +410,7 @@ def compile_semantic_demands(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -413,6 +422,7 @@ def compile_semantic_demands(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
     return result
 
@@ -453,6 +463,7 @@ def compile_package(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
         request,
@@ -462,6 +473,7 @@ def compile_package(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
     return result
 
@@ -476,6 +488,7 @@ def compile_source(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
@@ -486,6 +499,7 @@ def compile_source(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
     return result
 
@@ -502,6 +516,7 @@ def compile_package_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> CombinedValidationReport:
     if native_backend is None:
         return backend_failure_report(
@@ -518,6 +533,7 @@ def compile_package_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -631,6 +647,7 @@ def compile_source_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -649,6 +666,7 @@ def compile_source_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -758,6 +776,7 @@ def compile_to_file(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | None = None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
@@ -774,6 +793,7 @@ def compile_to_file(
         control_plan=control_plan,
         duc_plan=duc_plan,
         attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
