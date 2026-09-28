@@ -1365,7 +1365,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(second.index_reset_reason.value, "QUERY_CHANGED")
 
 
-    def test_focus_player_reset_remains_explicitly_unknown(self):
+    def test_focus_player_search_index_starts_at_native_default(self):
         report = analyze_duc((
             _rule(1, (
                 ("up-find-remote", ("c:", "town-center", "c:", "1")),
@@ -1373,7 +1373,8 @@ class DucSemanticTests(unittest.TestCase):
         ))
 
         index = report.final_state.remote_list.search_index
-        self.assertIsNone(index.focus_player_signature)
+        self.assertEqual(index.focus_player_signature, "0")
+        self.assertIsNone(index.focus_player_provenance)
 
 
 
@@ -2004,6 +2005,136 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(second.focus_player_provenance.command, "set-strategic-number")
         self.assertEqual(second.focus_player_provenance.within_rule_order, 1)
         self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_same_focus_player_assignment_does_not_reset_remote_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "0")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertIsNone(second.index_before)
+        self.assertIsNone(second.index_reset_reason)
+        self.assertEqual(second.focus_player_signature, "0")
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 0)
+        self.assertEqual(
+            second.focus_player_provenance.command,
+            "set-strategic-number",
+        )
+
+
+    def test_up_modify_sn_constant_assignment_resets_remote_index_and_tracks_provenance(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-modify-sn", ("sn-focus-player-number", "c:=", "3")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[-1]
+        self.assertEqual(search.index_before, 0)
+        self.assertEqual(
+            search.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(search.focus_player_signature, "3")
+        self.assertEqual(search.focus_player_provenance.command, "up-modify-sn")
+        self.assertEqual(search.focus_player_provenance.within_rule_order, 1)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_local_search_index_is_not_reset_by_focus_player_change(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertIsNone(second.index_reset_reason)
+        self.assertIsNone(second.index_before)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+        self.assertEqual(report.final_state.remote_list.search_index.focus_player_signature, "2")
+
+
+    def test_dynamic_focus_player_mutation_resets_remote_index_but_preserves_unknown_value(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-goal", ("focus-goal", "4")),
+                ("up-modify-sn", ("sn-focus-player-number", "g:=", "focus-goal")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        search = report.searches[-1]
+        self.assertEqual(search.index_before, 0)
+        self.assertEqual(
+            search.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertIsNone(search.focus_player_signature)
+        self.assertEqual(search.focus_player_provenance.command, "up-modify-sn")
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
+    def test_focus_player_provenance_survives_next_pass(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("set-strategic-number", ("sn-focus-player-number", "5")),
+            )),
+        ))
+        second = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        self.assertEqual(
+            second.final_state.remote_list.search_index.focus_player_signature,
+            "5",
+        )
+        self.assertEqual(
+            second.final_state.remote_list.search_index.focus_player_provenance.command,
+            "set-strategic-number",
+        )
+
+
+    def test_branch_divergence_makes_focus_player_context_ambiguous(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+            )),
+            _rule(3, (("up-do-nothing", ()),)),
+            _rule(4, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3, 4),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1,)), (3, (1,)), (4, (2, 3))),
+                outgoing_rule_orders=((1, (2, 3)), (2, (4,)), (3, (4,)), (4, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+        index = report.final_state.remote_list.search_index
+        self.assertIsNone(index.focus_player_signature)
+        self.assertTrue(index.path_ambiguous)
+        self.assertIsNone(index.focus_player_provenance)
 
 
 
