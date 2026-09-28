@@ -37,8 +37,8 @@ def _attack_rule(identity="attack", order=1, *, facts=None, actions=None, lifecy
         order=order,
         facts=(
             (_expr("(true)", "true"),)
-            if facts is None
-            else tuple(facts)
+            if facts is not None
+            else (_expr("(true)", "true"),)
         ),
         actions=(
             _expr("(attack-now)", "attack-now")
