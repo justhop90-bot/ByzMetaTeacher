@@ -44,9 +44,11 @@ class NativeDucPlan:
         identities = tuple(rule.identity for rule in self.rules)
         if len(identities) != len(set(identities)):
             raise ValueError("duplicate native DUC rule identity")
-        orders = tuple(rule.order for rule in self.rules)
-        if orders != tuple(sorted(orders)):
-            raise ValueError("native DUC rules must be declared in non-decreasing order")
+        keys = tuple((rule.order, rule.identity) for rule in self.rules)
+        if keys != tuple(sorted(keys)):
+            raise ValueError(
+                "native DUC rules must be declared in deterministic order"
+            )
 
     @property
     def expressions(self) -> tuple[Expression, ...]:
