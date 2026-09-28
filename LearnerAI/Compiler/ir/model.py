@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .strategic_number import StrategicNumberState
     from .recurrent import TimerState
     from .production import ProductionLifecycle
+    from .research import ResearchLifecycle
 
 
 class LifecycleState(str, Enum):
@@ -249,6 +250,8 @@ class SemanticDemand:
     construction_retry_barrier: GoalSlotRequest | None = None
     production_lifecycle: "ProductionLifecycle | None" = None
     production_retry_barrier: GoalSlotRequest | None = None
+    research_lifecycle: "ResearchLifecycle | None" = None
+    research_retry_barrier: GoalSlotRequest | None = None
     invalidation: InvalidationContract | None = None
     cancellation: CancellationStateContract | None = None
     action_issuance: ActionIssuance | None = None
