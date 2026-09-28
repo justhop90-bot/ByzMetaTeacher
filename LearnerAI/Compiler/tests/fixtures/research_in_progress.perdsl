@@ -1,0 +1,6 @@
+demand research-wheelbarrow {
+    require (can-research ri-wheelbarrow)
+    action (research ri-wheelbarrow)
+    witness (research-completed ri-wheelbarrow)
+    release (research-completed ri-wheelbarrow)
+}
