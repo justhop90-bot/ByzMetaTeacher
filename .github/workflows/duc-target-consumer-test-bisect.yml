@@ -1,0 +1,52 @@
+name: DUC semantic test bisect
+
+on:
+  push:
+    branches:
+      - compiler-duc-target-consumer
+
+jobs:
+  bisect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bisect DUC semantic tests
+        shell: bash
+        run: |
+          set -o pipefail
+          PYTHONPATH=LearnerAI python - <<'PY'
+          import os
+          import subprocess
+          import sys
+          from LearnerAI.Compiler.tests import test_duc_semantics
+          import unittest
+          suite = unittest.defaultTestLoader.loadTestsFromModule(test_duc_semantics)
+          ids = []
+          for case in suite:
+              if isinstance(case, unittest.TestSuite):
+                  for nested in case:
+                      ids.append(nested.id())
+              else:
+                  ids.append(case.id())
+          failures = 0
+          for test_id in ids:
+              print(f'=== {test_id} ===', flush=True)
+              try:
+                  result = subprocess.run([sys.executable, '-m', 'unittest', '-v', test_id], text=True, capture_output=True, timeout=10, env=dict(os.environ, PYTHONPATH='LearnerAI'))
+              except subprocess.TimeoutExpired as exc:
+                  print(f'TIMEOUT: {test_id}', flush=True)
+                  print((exc.stdout or '')[-5000:], flush=True)
+                  failures += 1
+                  continue
+              print((result.stdout or '')[-2500:], flush=True)
+              print((result.stderr or '')[-1500:], flush=True)
+              if result.returncode != 0:
+                  print(f'FAILURE: {test_id} rc={result.returncode}', flush=True)
+                  failures += 1
+          if failures:
+              raise SystemExit(f'{failures} DUC semantic tests failed or timed out')
+          PY
