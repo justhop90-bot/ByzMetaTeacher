@@ -7,6 +7,8 @@ from enum import Enum
 from ..ast import SourceLocation
 from ..diagnostics import DiagnosticSeverity
 from ..ir.resource_control import (
+    EscrowOperation,
+    EscrowOperationKind,
     EscrowAdmissionMode,
     EscrowConsumptionMode,
     EscrowContract,
@@ -49,6 +51,16 @@ class ResourceControlErrorCode(str, Enum):
     TRANSIENT_MISSING_CONFLICT_CLASS = "RCTRL-023"
     TRANSIENT_NATIVE_SURFACE_ALIAS = "RCTRL-024"
     TRANSIENT_ESCROW_ALIAS = "RCTRL-025"
+    ESCROW_RESOURCE_OWNER_CONFLICT = "RCTRL-026"
+    ESCROW_RELEASE_ORDER = "RCTRL-027"
+    ESCROW_POST_RELEASE_OPERATION = "RCTRL-028"
+    ESCROW_OPERATION_OWNER_MISMATCH = "RCTRL-029"
+    ESCROW_OPERATION_RESOURCE_MISMATCH = "RCTRL-030"
+    ESCROW_RELEASE_AFTER_CONSUMPTION = "RCTRL-031"
+    ESCROW_OPEN_LOOP = "RCTRL-032"
+    ESCROW_DUPLICATE_TERMINAL = "RCTRL-033"
+    ESCROW_OPERATION_COMMAND_MISMATCH = "RCTRL-034"
+    ESCROW_OPERATION_CONTRACT_MISMATCH = "RCTRL-035"
 
 
 @dataclass(frozen=True)
@@ -366,6 +378,260 @@ def validate_escrow_contract(
     return tuple(errors)
 
 
+def validate_escrow_contract_set(
+    contracts: tuple[EscrowContract, ...] | list[EscrowContract],
+) -> ResourceControlValidationReport:
+    """Validate ownership exclusivity across concurrently active escrow contracts."""
+
+    errors: list[ResourceControlValidationError] = []
+    ordered_contracts = tuple(
+        sorted(
+            contracts,
+            key=lambda contract: (contract.identity, contract.owner.source_unit, contract.owner.local_name),
+        )
+    )
+
+    for contract in ordered_contracts:
+        errors.extend(validate_escrow_contract(contract))
+
+    identities: dict[str, EscrowContract] = {}
+    resources: dict[str, list[EscrowContract]] = {}
+    for contract in ordered_contracts:
+        prior = identities.get(contract.identity)
+        if prior is not None:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RESOURCE_OWNER_CONFLICT,
+                    f"escrow contract identity '{contract.identity}' is declared more than once",
+                    subject=contract.identity,
+                    location=contract.location or prior.location,
+                )
+            )
+        else:
+            identities[contract.identity] = contract
+        for resource in contract.resources:
+            resources.setdefault(resource, []).append(contract)
+
+    for resource in sorted(resources):
+        claimants = resources[resource]
+        identities_for_resource = {item.identity for item in claimants}
+        if len(identities_for_resource) <= 1:
+            continue
+        owners = tuple(
+            sorted(
+                {
+                    f"{item.owner.source_unit}:{item.owner.local_name}"
+                    for item in claimants
+                }
+            )
+        )
+        owner_text = ", ".join(owners)
+        contract_text = ", ".join(sorted(identities_for_resource))
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_RESOURCE_OWNER_CONFLICT,
+                f"resource '{resource}' is claimed by multiple active escrow contracts "
+                f"({contract_text}) with semantic owners: {owner_text}",
+                subject=resource,
+                location=claimants[0].location,
+            )
+        )
+
+    return ResourceControlValidationReport(
+        errors=tuple(
+            sorted(
+                errors,
+                key=lambda item: (
+                    item.code.value,
+                    item.subject,
+                    item.message,
+                ),
+            )
+        )
+    )
+
+
+def _escrow_operation_key(operation):
+    return (operation.rule_order, operation.within_rule_order)
+
+
+def validate_escrow_execution(
+    contract: EscrowContract,
+    operations: tuple["EscrowOperation", ...] | list["EscrowOperation"],
+) -> ResourceControlValidationReport:
+    """Validate ordering, ownership, and terminal lifetime of one escrow package."""
+
+    errors: list[ResourceControlValidationError] = list(
+        validate_escrow_contract(contract)
+    )
+    ordered_operations = tuple(sorted(operations, key=_escrow_operation_key))
+    release_operations = tuple(
+        operation
+        for operation in ordered_operations
+        if operation.kind is EscrowOperationKind.RELEASE
+    )
+    consume_operations = tuple(
+        operation
+        for operation in ordered_operations
+        if operation.kind is EscrowOperationKind.CONSUME
+    )
+
+    for operation in ordered_operations:
+        subject = contract.identity
+        location = operation.location or contract.location
+
+        if operation.contract_identity != contract.identity:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_CONTRACT_MISMATCH,
+                    f"escrow operation belongs to contract '{operation.contract_identity}', "
+                    f"not '{contract.identity}'",
+                    subject=subject,
+                    location=location,
+                )
+            )
+            continue
+
+        if operation.owner != contract.owner:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_OWNER_MISMATCH,
+                    f"escrow operation owner "
+                    f"'{operation.owner.source_unit}:{operation.owner.local_name}' does not "
+                    f"match contract owner "
+                    f"'{contract.owner.source_unit}:{contract.owner.local_name}'",
+                    subject=subject,
+                    location=location,
+                )
+            )
+
+        if operation.resource not in contract.resources:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_RESOURCE_MISMATCH,
+                    f"escrow operation resource '{operation.resource}' is not claimed by "
+                    f"contract '{contract.identity}'",
+                    subject=subject,
+                    location=location,
+                )
+            )
+
+        expected_command = {
+            EscrowOperationKind.RELEASE: contract.release.command,
+            EscrowOperationKind.CONSUME: contract.consumption.action_primitive,
+            EscrowOperationKind.POLICY_RESET: contract.reserve.command,
+        }[operation.kind]
+        if operation.command != expected_command:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_COMMAND_MISMATCH,
+                    f"escrow operation '{operation.kind.value}' uses command "
+                    f"'{operation.command}', expected '{expected_command}'",
+                    subject=subject,
+                    location=location,
+                )
+            )
+
+    if len(release_operations) > 1:
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                f"escrow contract '{contract.identity}' releases its balance more than once",
+                subject=contract.identity,
+                location=release_operations[1].location or contract.location,
+            )
+        )
+
+    if len(consume_operations) > 1:
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                f"escrow contract '{contract.identity}' consumes its protected balance more than once",
+                subject=contract.identity,
+                location=consume_operations[1].location or contract.location,
+            )
+        )
+
+    release_operation = release_operations[0] if release_operations else None
+    consume_operation = consume_operations[0] if consume_operations else None
+
+    if release_operation is not None and consume_operation is not None:
+        release_key = _escrow_operation_key(release_operation)
+        consume_key = _escrow_operation_key(consume_operation)
+
+        if release_key >= consume_key:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RELEASE_AFTER_CONSUMPTION,
+                    f"escrow contract '{contract.identity}' releases after or at the same "
+                    "position as its protected consumption",
+                    subject=contract.identity,
+                    location=release_operation.location or contract.location,
+                )
+            )
+        elif (
+            release_operation.rule_order != consume_operation.rule_order
+            and contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION
+        ):
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
+                    f"non-escrow action for escrow contract '{contract.identity}' must "
+                    "consume in the same emitted rule after its release",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
+                )
+            )
+        elif (
+            release_operation.rule_order != consume_operation.rule_order
+            and contract.consumption.mode is EscrowConsumptionMode.ESCROW_AWARE_ACTION
+        ):
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_POST_RELEASE_OPERATION,
+                    f"escrow-aware action for escrow contract '{contract.identity}' cannot "
+                    "consume from a prior-rule released balance",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
+                )
+            )
+
+    elif consume_operation is not None:
+        if contract.consumption.mode is EscrowConsumptionMode.NON_ESCROW_ACTION:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
+                    f"non-escrow action '{consume_operation.command}' requires release-escrow "
+                    f"before consumption for contract '{contract.identity}'",
+                    subject=contract.identity,
+                    location=consume_operation.location or contract.location,
+                )
+            )
+
+    if not release_operations and not consume_operations:
+        errors.append(
+            _error(
+                ResourceControlErrorCode.ESCROW_OPEN_LOOP,
+                f"escrow contract '{contract.identity}' has no terminal release or consumption operation",
+                subject=contract.identity,
+                location=contract.location,
+            )
+        )
+
+    return ResourceControlValidationReport(
+        errors=tuple(
+            sorted(
+                errors,
+                key=lambda item: (
+                    item.code.value,
+                    item.subject,
+                    item.message,
+                ),
+            )
+        )
+    )
+
+
 def validate_transient_action_exclusion_claim(
     claim: TransientActionExclusionClaim,
 ) -> tuple[ResourceControlValidationError, ...]:
@@ -567,6 +833,8 @@ __all__ = [
     "ResourceControlErrorCode",
     "ResourceControlValidationError",
     "ResourceControlValidationReport",
+    "validate_escrow_contract_set",
+    "validate_escrow_execution",
     "validate_escrow_against_arbitration",
     "validate_escrow_contract",
     "validate_native_arbitration_against_escrow",

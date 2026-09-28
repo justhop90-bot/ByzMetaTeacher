@@ -174,6 +174,8 @@ from .native_control import (
 from .resource_control import (
     EscrowAdmissionMode,
     EscrowConsumption,
+    EscrowOperation,
+    EscrowOperationKind,
     EscrowConsumptionMode,
     EscrowContract,
     EscrowRelease,
