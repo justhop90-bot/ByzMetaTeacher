@@ -19,7 +19,7 @@ SN_ID_MIN = 0
 SN_ID_MAX = 511
 TIMER_ID_MIN = 1
 TIMER_ID_MAX = 50
-ALLOCATOR_VERSION = "native-storage-v4"
+ALLOCATOR_VERSION = "native-storage-v5"
 BINDING_MANIFEST_SCHEMA = "aoe2.compiler.binding-manifest"
 BINDING_MANIFEST_VERSION = 4
 GoalStorageShape = GoalSpanKind
@@ -1454,6 +1454,8 @@ class RuntimeBinder:
                 "Strategic Number allocation requires an explicit AIRef inventory"
             )
         for candidate in sorted(inventory.candidate_ids, reverse=True):
+            if candidate == 511:
+                continue
             if candidate not in occupied_sn_ids:
                 return candidate
         raise ValueError("unable to allocate a Strategic Number from the supplied inventory")
