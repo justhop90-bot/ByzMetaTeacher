@@ -1,6 +1,10 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 from Compiler.ast import Expression, SourceLocation
+from Compiler.semantic.rule_execution import analyze_effective_rules
+from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 from Compiler.semantic.strategic_number_semantics import (
     StrategicNumberSemanticError,
     evaluate_strategic_number_comparison,
@@ -17,6 +21,34 @@ class StrategicNumberSemanticsTests(unittest.TestCase):
             head="up-modify-sn",
             args=tuple(args),
             location=SourceLocation(1, 1, "sn-test"),
+        )
+
+
+    def test_known_controller_surface_is_bound_without_promoting_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "controller.per"
+            entry.write_text(
+                "(defrule (true) => "
+                "(set-strategic-number sn-number-explore-groups 1) "
+                "(set-strategic-number 510 2))\\n",
+                encoding="utf-8",
+            )
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(entrypoint=entry)
+            )
+
+        rules = analyze_effective_rules(graph)
+        report = analyze_strategic_number_expressions(rules)
+
+        self.assertEqual(len(report.controller_bindings), 1)
+        binding = report.controller_bindings[0]
+        self.assertEqual(binding.access_identifier, "sn-number-explore-groups")
+        self.assertEqual(binding.controller_id, "exploration-control")
+        self.assertEqual(binding.status.value, "EVIDENCE_ONLY")
+        self.assertEqual(
+            binding.surface_identity,
+            "exploration-control:strategic_number:sn-number-explore-groups",
         )
 
     def test_operand_domains_are_typed(self):
