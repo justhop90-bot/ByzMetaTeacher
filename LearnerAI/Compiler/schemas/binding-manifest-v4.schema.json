@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/justhop90-bot/ByzMetaTeacher/schemas/binding-manifest-v4.schema.json",
+  "title": "AoE2 Compiler Binding Manifest v4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "schema",
+    "package_inventory_sha",
+    "allocator_version",
+    "records",
+    "integrity"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 4
+    },
+    "schema": {
+      "const": "aoe2.compiler.binding-manifest"
+    },
+    "package_inventory_sha": {
+      "type": "string"
+    },
+    "allocator_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "title": "GoalSlot",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_unit",
+              "local_name",
+              "purpose",
+              "role",
+              "provenance_id",
+              "binding_kind",
+              "goal_id"
+            ],
+            "properties": {
+              "source_unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "local_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "enum": [
+                  "LIFECYCLE_STATE",
+                  "PERSISTENT_STATE",
+                  "DERIVED_SCALAR",
+                  "NATIVE_OUTPUT",
+                  "EXECUTION_MEMORY"
+                ]
+              },
+              "provenance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "binding_kind": {
+                "const": "GOAL_SLOT"
+              },
+              "goal_id": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16000
+              }
+            }
+          },
+          {
+            "title": "GoalSpan",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_unit",
+              "local_name",
+              "purpose",
+              "role",
+              "provenance_id",
+              "binding_kind",
+              "start_goal_id",
+              "width",
+              "shape"
+            ],
+            "properties": {
+              "source_unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "local_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "enum": [
+                  "LIFECYCLE_STATE",
+                  "PERSISTENT_STATE",
+                  "DERIVED_SCALAR",
+                  "NATIVE_OUTPUT",
+                  "EXECUTION_MEMORY"
+                ]
+              },
+              "provenance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "binding_kind": {
+                "const": "GOAL_SPAN"
+              },
+              "start_goal_id": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16000
+              },
+              "width": {
+                "type": "integer",
+                "enum": [
+                  2,
+                  4
+                ]
+              },
+              "shape": {
+                "enum": [
+                  "POINT_PAIR",
+                  "EXTENDED_4"
+                ]
+              }
+            }
+          },
+          {
+            "title": "StrategicNumber",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_unit",
+              "local_name",
+              "purpose",
+              "role",
+              "provenance_id",
+              "binding_kind",
+              "strategic_number_id",
+              "request_contract",
+              "provenance"
+            ],
+            "properties": {
+              "source_unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "local_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "const": "PERSISTENT_STATE"
+              },
+              "provenance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "binding_kind": {
+                "const": "STRATEGIC_NUMBER"
+              },
+              "strategic_number_id": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 511
+              },
+              "request_contract": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "role",
+                  "stability_key",
+                  "why_not_goal",
+                  "native_contract_id"
+                ],
+                "properties": {
+                  "role": {
+                    "const": "PERSISTENT_STATE"
+                  },
+                  "stability_key": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "why_not_goal": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "native_contract_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "strategic_number_inventory_sha",
+                  "request_fingerprint"
+                ],
+                "properties": {
+                  "strategic_number_inventory_sha": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "request_fingerprint": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "title": "Timer",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_unit",
+              "local_name",
+              "purpose",
+              "role",
+              "provenance_id",
+              "binding_kind",
+              "timer_id",
+              "initialization_policy"
+            ],
+            "properties": {
+              "source_unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "local_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "const": "EXECUTION_MEMORY"
+              },
+              "provenance_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "binding_kind": {
+                "const": "TIMER"
+              },
+              "timer_id": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "initialization_policy": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "content_sha256"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "SHA-256"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
