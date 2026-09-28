@@ -19,6 +19,7 @@ from Compiler.primitives import (
 from Compiler.primitives.engine_semantics import default_engine_semantic_mapping_registry
 from Compiler.primitives.native_hygiene import (
     AIRefProvenance,
+    AIRefVersionFamily,
     CitationRecord,
     CitationRecordCatalog,
     CitationState,
@@ -171,6 +172,52 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:object-target-data", citation_ids)
         self.assertIn("airef:duc:get-object-target-data", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
+
+    def test_missing_duc_search_index_transition_evidence_blocks_catalog(self):
+        base = default_native_contract_catalog()
+        bad = replace(
+            base.duc_search_index_transition("QUERY_CHANGE"),
+            evidence_ids=("airef:duc:missing-transition",),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "unresolved citation 'airef:duc:missing-transition'",
+        ):
+            NativeContractCatalog(
+                duc_search_index_transitions=(
+                    bad,
+                    *(
+                        item
+                        for item in base.duc_search_index_transitions
+                        if item.trigger_kind != "QUERY_CHANGE"
+                    ),
+                ),
+            )
+
+    def test_duc_search_index_transition_scope_must_match_pinned_evidence(self):
+        base = default_native_contract_catalog()
+        transition = base.duc_search_index_transition("QUERY_CHANGE")
+        mismatched_scope = replace(
+            transition.engine_version_scope,
+            source_families=(AIRefVersionFamily.DE,),
+            engine_targets=(AIRefVersionFamily.DE,),
+            introduced_family=AIRefVersionFamily.DE,
+        )
+        bad = replace(transition, engine_version_scope=mismatched_scope)
+        with self.assertRaisesRegex(
+            ValueError,
+            "engine-version scope inconsistent with citation",
+        ):
+            NativeContractCatalog(
+                duc_search_index_transitions=(
+                    bad,
+                    *(
+                        item
+                        for item in base.duc_search_index_transitions
+                        if item.trigger_kind != "QUERY_CHANGE"
+                    ),
+                ),
+            )
 
     def test_shared_catalog_exposes_first_class_duc_group_contracts(self):
         catalog = default_native_contract_catalog()
