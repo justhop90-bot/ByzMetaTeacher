@@ -1237,6 +1237,148 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_search_index_starts_at_zero_and_becomes_unknown_after_search(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        initial = report.initial_state.local_list.search_index
+        final = report.final_state.local_list.search_index
+        self.assertEqual(initial.offset, 0)
+        self.assertTrue(initial.known)
+        self.assertEqual(initial.generation, 0)
+        self.assertIsNone(final.offset)
+        self.assertFalse(final.known)
+        self.assertEqual(final.generation, 0)
+        self.assertEqual(final.query_signature, ("c:", "villager", "c:", "1"))
+        search = report.searches[0]
+        self.assertEqual(search.index_before, 0)
+        self.assertIsNone(search.index_after)
+        self.assertIsNone(search.index_reset_reason)
+
+
+    def test_changed_local_query_signature_resets_local_search_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "archer-line", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_after)
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(second.index_reset_reason.value, "QUERY_CHANGED")
+        self.assertEqual(report.final_state.local_list.search_index.generation, 1)
+        self.assertEqual(
+            report.final_state.local_list.search_index.query_signature,
+            ("c:", "archer-line", "c:", "1"),
+        )
+
+
+    def test_unchanged_local_query_does_not_spuriously_reset_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertIsNone(second.index_reset_reason)
+        self.assertIsNone(second.index_after)
+
+
+    def test_up_reset_search_can_reset_local_and_remote_indices_independently(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-reset-search", ("1", "0", "0", "0")),
+            )),
+            _rule(2, (
+                ("up-reset-search", ("0", "0", "1", "0")),
+            )),
+        ))
+
+        self.assertEqual(report.final_state.local_list.search_index.offset, 0)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 1)
+        self.assertEqual(report.final_state.remote_list.search_index.offset, 0)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+        self.assertFalse(report.resets[0].invalidates_lists)
+        self.assertEqual(report.resets[0].invalidates_local_index, True)
+        self.assertEqual(report.resets[0].invalidates_remote_index, False)
+        self.assertEqual(report.resets[1].invalidates_local_index, False)
+        self.assertEqual(report.resets[1].invalidates_remote_index, True)
+
+
+    def test_up_reset_filters_resets_both_indices_without_clearing_lists(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-reset-filters", ()),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.local_list.current_generation)
+        self.assertIsNotNone(report.final_state.remote_list.current_generation)
+        self.assertEqual(report.final_state.local_list.search_index.offset, 0)
+        self.assertEqual(report.final_state.remote_list.search_index.offset, 0)
+        self.assertTrue(report.resets[-1].invalidates_local_index)
+        self.assertTrue(report.resets[-1].invalidates_remote_index)
+
+
+    def test_filter_distance_resets_both_search_indices_without_clearing_lists(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-filter-distance", ("c:", "0", "c:", "30")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.local_list.current_generation)
+        self.assertIsNotNone(report.final_state.remote_list.current_generation)
+        self.assertEqual(report.final_state.local_list.search_index.offset, 0)
+        self.assertEqual(report.final_state.remote_list.search_index.offset, 0)
+
+
+    def test_changed_remote_query_signature_resets_remote_search_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-find-remote", ("c:", "villager-class", "c:", "4")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(second.index_reset_reason.value, "QUERY_CHANGED")
+
+
+    def test_focus_player_reset_remains_explicitly_unknown(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        index = report.final_state.remote_list.search_index
+        self.assertIsNone(index.focus_player_signature)
+        self.assertTrue(any(
+            item.code == "DUC-018"
+            and "focus-player" in item.message
+            for item in report.diagnostics
+        ))
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
