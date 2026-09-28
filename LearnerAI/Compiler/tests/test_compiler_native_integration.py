@@ -22,6 +22,7 @@ from Compiler.backends.models import (
 )
 from Compiler.compiler import (
     compile_package_with_report,
+    compile_source,
     compile_source_with_report,
     compile_to_file,
 )
