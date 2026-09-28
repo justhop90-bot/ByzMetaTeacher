@@ -34,6 +34,25 @@ class NativeDucPlanTests(unittest.TestCase):
             ("duc-b", "duc-c"),
         )
 
+    def test_plan_rejects_non_deterministic_rule_order(self):
+        with self.assertRaisesRegex(ValueError, "deterministic order"):
+            NativeDucPlan(
+                (
+                    NativeDucRule(
+                        identity="duc-b",
+                        order=2,
+                        facts=(_expr("(true)", "true"),),
+                        actions=(),
+                    ),
+                    NativeDucRule(
+                        identity="duc-a",
+                        order=1,
+                        facts=(_expr("(true)", "true"),),
+                        actions=(),
+                    ),
+                )
+            )
+
     def test_plan_rejects_duplicate_rule_identity(self):
         with self.assertRaisesRegex(ValueError, "duplicate native DUC rule identity"):
             NativeDucPlan(
