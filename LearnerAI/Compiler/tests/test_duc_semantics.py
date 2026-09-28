@@ -7,6 +7,7 @@ from Compiler.ir.duc import (
     DucGroupStatus,
     DucSearchCursorDisposition,
     DucSearchFactResult,
+    DucSearchAvailabilityResult,
     DucSearchResultDisposition,
     DucStateKind,
     DucListKind,
@@ -224,6 +225,75 @@ class DucSemanticTests(unittest.TestCase):
 
         self.assertFalse(any(item.code == "DUC-015" for item in report.diagnostics))
 
+
+    def test_can_search_uninitialized_local_is_runtime_dependent(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-can-search", ("search-local",)),
+            )),
+        ))
+
+        observation = report.search_availability[-1]
+        self.assertEqual(observation.source_list, DucListKind.LOCAL)
+        self.assertEqual(
+            observation.result,
+            DucSearchAvailabilityResult.RUNTIME_DEPENDENT,
+        )
+        self.assertEqual(
+            observation.cursor_disposition,
+            DucSearchCursorDisposition.INITIAL,
+        )
+
+    def test_can_search_proven_end_is_guaranteed_false(self):
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("up-can-search", ("search-local",)),
+                )),
+            ),
+            initial_state=initial,
+        )
+
+        observation = report.search_availability[-1]
+        self.assertEqual(
+            observation.result,
+            DucSearchAvailabilityResult.GUARANTEED_FALSE,
+        )
+        self.assertEqual(
+            observation.cursor_disposition,
+            DucSearchCursorDisposition.AT_END,
+        )
+
+    def test_can_search_remote_reads_only_remote_search_state(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-can-search", ("search-remote",)),
+            )),
+        ))
+
+        observation = report.search_availability[-1]
+        self.assertEqual(observation.source_list, DucListKind.REMOTE)
+        self.assertEqual(
+            observation.result,
+            DucSearchAvailabilityResult.RUNTIME_DEPENDENT,
+        )
+        self.assertEqual(
+            observation.cursor_disposition,
+            DucSearchCursorDisposition.RUNTIME_ADVANCED,
+        )
 
     def test_set_target_object_action_rejects_first_remote_out_of_range_index(self):
         report = analyze_duc(
