@@ -81,9 +81,9 @@
     "assertions": [
       {
         "id": "target-index-actually-moves",
-        "description": "The selected target must occupy a different search-local index after sorting; otherwise this fixture does not test the disputed lifetime behavior.",
-        "expected": true,
-        "observation_path": "/fixture/observation/asserted_setup/target_index_changed",
+        "description": "The selected target must move from initial index 0 to index 2 after descending sort; otherwise the fixture does not exercise the disputed target-lifetime behavior.",
+        "expected": 2,
+        "observation_path": "/fixture/observation/target/after/index",
         "allowed_results": [
           "PASS",
           "FAIL",
@@ -93,7 +93,7 @@
       {
         "id": "target-identity-preserved",
         "description": "After up-clean-search moves the selected object's list coordinate, the target remains the same native object.",
-        "expected": "TARGET_A",
+        "expected": "RECORD-TARGET-NATIVE-ID",
         "observation_path": "/fixture/observation/target/after/native_id",
         "allowed_results": [
           "PASS",
@@ -104,7 +104,7 @@
       {
         "id": "target-does-not-follow-old-index",
         "description": "After the selected object moves, the engine target must not silently resolve to the object occupying the former target index.",
-        "expected": "TARGET_A",
+        "expected": "RECORD-TARGET-NATIVE-ID",
         "observation_path": "/fixture/observation/target/after/native_id",
         "allowed_results": [
           "PASS",
@@ -134,34 +134,36 @@
       "result": "UNVERIFIED",
       "list": {
         "before": {
-          "ids": [],
+          "ids": [
+            "RECORD-A",
+            "RECORD-B",
+            "RECORD-C"
+          ],
           "source": "search-local"
         },
         "after": {
-          "ids": [],
+          "ids": [
+            "RECORD-C",
+            "RECORD-B",
+            "RECORD-A"
+          ],
           "source": "search-local"
         }
-      },
-      "asserted_setup": {
-        "target_native_id": null,
-        "target_index_before": null,
-        "target_index_after": null,
-        "target_index_changed": false
       },
       "target": {
         "before": {
           "selected": true,
           "source": "search-local",
-          "index": null,
-          "native_id": null,
-          "access_result": "UNKNOWN"
+          "index": 0,
+          "native_id": "RECORD-TARGET-NATIVE-ID",
+          "access_result": "SUCCESS"
         },
         "after": {
-          "selected": false,
-          "source": null,
-          "index": null,
-          "native_id": null,
-          "access_result": "UNKNOWN"
+          "selected": true,
+          "source": "search-local",
+          "index": 2,
+          "native_id": "RECORD-TARGET-NATIVE-ID",
+          "access_result": "SUCCESS"
         }
       },
       "cursor": {
@@ -221,7 +223,7 @@
           "message": "Capture required from a real AoE2DE runtime before target-preservation or retarget-by-index semantics can be promoted."
         }
       ],
-      "notes": "Capture template only. Placeholder engine scope and empty observations are intentional. Do not promote this artifact until the runtime proves that TARGET_A moves to a different index and the post-sort target identity is directly observed."
+      "notes": "Capture template only. Placeholder engine scope, object IDs, and list IDs are intentional. The candidate is valid only when the selected target actually moves from index 0 to index 2 after sorting; the native observation then determines whether its native ID remains the same or the old index retargets to another object."
     }
   }
 }
