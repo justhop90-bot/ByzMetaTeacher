@@ -66,7 +66,7 @@ def load_strategic_number_catalog(
             raise ValueError(f"Strategic Number id {sn_id} is outside 0..511")
         if sn_id in documented:
             raise ValueError(f"duplicate documented Strategic Number id {sn_id}")
-        if sn_id in names.values():
+        if name in names.values():
             raise ValueError(f"duplicate Strategic Number name '{name}'")
         documented.add(sn_id)
         names[sn_id] = name
