@@ -346,6 +346,7 @@ def _compile_source_parts(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
@@ -369,6 +370,7 @@ def _compile_package_parts(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -399,6 +401,7 @@ def compile_semantic_demands(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -449,6 +452,7 @@ def compile_package(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
         request,
@@ -470,6 +474,7 @@ def compile_source(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
@@ -494,6 +499,7 @@ def compile_package_with_report(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> CombinedValidationReport:
     if native_backend is None:
         return backend_failure_report(
@@ -622,6 +628,7 @@ def compile_source_with_report(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -748,6 +755,7 @@ def compile_to_file(
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | None = None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
