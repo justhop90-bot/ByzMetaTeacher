@@ -171,8 +171,12 @@ class DucNativeOracleFixtureTests(unittest.TestCase):
             ["UNVERIFIED", "UNVERIFIED", "UNVERIFIED", "UNVERIFIED"],
         )
         self.assertEqual(
-            observation["asserted_setup"]["target_index_changed"],
-            False,
+            observation["target"]["before"]["index"],
+            0,
+        )
+        self.assertEqual(
+            observation["target"]["after"]["index"],
+            2,
         )
         self.assertIn(
             "(up-clean-search search-local object-data-id search-order-desc)",
