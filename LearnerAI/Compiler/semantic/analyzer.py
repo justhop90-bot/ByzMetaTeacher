@@ -356,7 +356,6 @@ def analyze(
                     f"CONSTRUCTION-BUILD-ID: demand '{demand.name}' cannot resolve "
                     f"BuildingId '{building}'"
                 ) from exc
-            witness = canonical_build_completion_witness(building, witness)
             native_token = str(native_building_id)
             construction_retry_barrier = GoalSlotRequest(
                 request_id=StorageRequestId(
