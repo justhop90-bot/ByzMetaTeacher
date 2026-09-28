@@ -57,7 +57,8 @@
           "type": "string",
           "enum": [
             "up-remove-objects",
-            "up-clean-search"
+            "up-clean-search",
+            "up-set-target-object"
           ]
         },
         "engine_scope": {
