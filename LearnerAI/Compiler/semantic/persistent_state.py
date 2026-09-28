@@ -13,6 +13,11 @@ from enum import Enum
 
 from ..ast import Expression, SourceLocation
 from ..diagnostics import DiagnosticSeverity
+from ..primitives.native_engine_effects import (
+    NativeEffectKind,
+    NativeStateDomain,
+    default_native_engine_effect_catalog,
+)
 from .rule_execution import (
     EffectiveRule,
     RuleExecutionReport,
@@ -119,67 +124,14 @@ class PersistentStateReport:
         )
 
 
-# These command identities and operand positions are taken from the checked-in
-# AIRef command inventory. They are deliberately narrow: this tranche does not
-# infer persistent state from arbitrary command names.
-_STATE_SPECS = {
-    "set-goal": (PersistentStateKind.GOAL, PersistentStateAccessKind.WRITE, 0, None),
-    "goal": (PersistentStateKind.GOAL, PersistentStateAccessKind.READ, 0, "="),
-    "up-compare-goal": (PersistentStateKind.GOAL, PersistentStateAccessKind.READ, 0, None),
-    "set-strategic-number": (
-        PersistentStateKind.STRATEGIC_NUMBER,
-        PersistentStateAccessKind.WRITE,
-        0,
-        None,
-    ),
-    "up-modify-sn": (
-        PersistentStateKind.STRATEGIC_NUMBER,
-        PersistentStateAccessKind.WRITE,
-        0,
-        None,
-    ),
-    "strategic-number": (
-        PersistentStateKind.STRATEGIC_NUMBER,
-        PersistentStateAccessKind.READ,
-        0,
-        None,
-    ),
-    "up-compare-sn": (
-        PersistentStateKind.STRATEGIC_NUMBER,
-        PersistentStateAccessKind.READ,
-        0,
-        None,
-    ),
-    "enable-timer": (
-        PersistentStateKind.TIMER,
-        PersistentStateAccessKind.WRITE,
-        0,
-        None,
-    ),
-    "disable-timer": (
-        PersistentStateKind.TIMER,
-        PersistentStateAccessKind.WRITE,
-        0,
-        None,
-    ),
-    "timer-triggered": (
-        PersistentStateKind.TIMER,
-        PersistentStateAccessKind.READ,
-        0,
-        None,
-    ),
-    "up-set-timer": (
-        PersistentStateKind.TIMER,
-        PersistentStateAccessKind.WRITE,
-        1,
-        None,
-    ),
-    "up-timer-status": (
-        PersistentStateKind.TIMER,
-        PersistentStateAccessKind.READ,
-        0,
-        None,
-    ),
+# Persistent-state command identity is owned by the native engine-effect catalog.
+# This analyzer consumes that contract rather than maintaining a second command list.
+_NATIVE_ENGINE_EFFECTS = default_native_engine_effect_catalog()
+
+_DOMAIN_TO_STATE_KIND = {
+    NativeStateDomain.GOAL: PersistentStateKind.GOAL,
+    NativeStateDomain.STRATEGIC_NUMBER: PersistentStateKind.STRATEGIC_NUMBER,
+    NativeStateDomain.TIMER: PersistentStateKind.TIMER,
 }
 
 
@@ -198,15 +150,21 @@ def _state_access(
     section: str,
     within_rule_order: int,
 ) -> PersistentStateAccess | None:
-    spec = _STATE_SPECS.get(expression.head)
-    if spec is None:
+    contract = _NATIVE_ENGINE_EFFECTS.get(expression.head)
+    if contract is None or contract.domain not in _DOMAIN_TO_STATE_KIND:
+        return None
+    if contract.effect not in {NativeEffectKind.READ, NativeEffectKind.WRITE}:
+        return None
+    if contract.identifier_arg is None or len(expression.args) <= contract.identifier_arg:
         return None
 
-    kind, effect, identifier_index, _default_operator = spec
-    if len(expression.args) <= identifier_index:
-        return None
-
-    identifier = expression.args[identifier_index]
+    kind = _DOMAIN_TO_STATE_KIND[contract.domain]
+    effect = (
+        PersistentStateAccessKind.READ
+        if contract.effect is NativeEffectKind.READ
+        else PersistentStateAccessKind.WRITE
+    )
+    identifier = expression.args[contract.identifier_arg]
     if not isinstance(identifier, str) or not identifier:
         return None
 
@@ -230,7 +188,8 @@ def _operand_state_accesses(
     section: str,
     within_rule_order: int,
 ) -> tuple[PersistentStateAccess, ...]:
-    if expression.head not in {"up-modify-sn", "up-compare-sn"}:
+    contract = _NATIVE_ENGINE_EFFECTS.get(expression.head)
+    if contract is None or not contract.typed_operand_dependency:
         return ()
     if len(expression.args) != 3:
         return ()

@@ -5,6 +5,13 @@ from .native_binder import (
     NativeSupportDiagnostic,
     NativeSupportState,
 )
+from .native_engine_effects import (
+    NativeEffectKind,
+    NativeEngineEffectCatalog,
+    NativeEngineEffectContract,
+    NativeStateDomain,
+    default_native_engine_effect_catalog,
+)
 from .engine_semantics import (
     EngineSemanticMapping,
     EngineSemanticMappingRegistry,
