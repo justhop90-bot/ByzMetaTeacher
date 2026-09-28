@@ -740,6 +740,7 @@ def compile_to_file(
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
     control_plan=None,
+    duc_plan: NativeDucPlan | None = None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
@@ -754,6 +755,7 @@ def compile_to_file(
         binding_context=binding_context,
         registry=registry,
         control_plan=control_plan,
+        duc_plan=duc_plan,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
