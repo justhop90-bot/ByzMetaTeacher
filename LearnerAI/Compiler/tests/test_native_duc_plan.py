@@ -81,7 +81,10 @@ class NativeDucPlanTests(unittest.TestCase):
                         _expr(
                             "(up-target-objects 1 0 -1 -1)",
                             "up-target-objects",
-                            ("1", "0", "-1", "-1"),
+                            "1",
+                            "0",
+                            "-1",
+                            "-1",
                         ),
                     ),
                     actions=(),
