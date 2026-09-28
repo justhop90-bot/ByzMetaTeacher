@@ -56,4 +56,21 @@ The acceptance fixture requires byte-identical duplicate compilation and invokes
 
 Static repository audit: complete.
 
-Local runtime test execution is not available in the current execution container because the repository itself is not mounted and outbound GitHub network access is unavailable. Native/compiler execution evidence must therefore come from the repository's CI environment. A temporary pull-request verification probe is used only to execute the existing CI job against the already-implemented main state; the implementation itself remains on `main`.
+Native/compiler verification was executed by the repository's Compiler tests workflow through temporary PR #93, then the probe was closed without merging. Final verified workflow: Compiler tests run 2026 / run ID 36411703900.
+
+The final green evidence includes:
+- pinned native parser import;
+- generic compiler fixture reproducibility;
+- all existing native zero-findings fixtures;
+- dedicated attack lifecycle zero-findings acceptance;
+- focused persistent-state regression suite;
+- full compiler regression suite: 914 tests;
+- all 9 OS/Python native-support determinism jobs;
+- cross-platform native-support snapshot comparison;
+- aggregate Compiler verification gate: success.
+
+The attack artifact gate specifically proved duplicate compilation is byte-identical, required attack-now fragments are present, forbidden controller/timer/reset/completion machinery is absent from the attack section, and the pinned native validator reports finding_count = 0 with findings = [].
+
+The first verification attempt exposed a real executable-inventory regression: the dedicated attack.execution.issue mapping was not included in default_de_registry()'s exact contracted inventory. The second attempt exposed a real compiler threading defect: public compile_source() and compile_package() accepted attack_plan but failed to forward it. The final regression pass also caught three test-contract defects, all corrected before the green run. No validation was weakened to obtain the passing result.
+
+The implementation is on main; the temporary verification PR was closed and not merged. Local runtime execution remained unavailable in the current container, so the authoritative execution evidence is the GitHub Actions run above.
