@@ -118,11 +118,11 @@ up-jump-rule
 
 ## Verification gates
 
-- [ ] Run the full compiler unit suite on the branch.
-- [ ] Run the native zero-findings fixtures.
-- [ ] Run the deterministic support-state/inventory gate.
-- [ ] Inspect changed-file diff for semantic duplication or accidental client-specific dependencies.
-- [ ] Review the resulting Actions run logs before treating the tranche as verified.
+- [x] Run the full compiler unit suite on the branch: 735 tests, 0 failures, GitHub Actions run 1706.
+- [x] Run the native zero-findings fixtures: generic, strategy/runtime, strategic-number, and invalidation fixtures all returned 0 findings.
+- [x] Run the deterministic support-state/inventory gate: all 9 OS/Python replay jobs and the aggregate comparison passed.
+- [x] Inspect changed-file diff: the change is confined to generic compiler primitives/semantic analysis/tests plus this plan; no client-specific implementation was added.
+- [x] Review the resulting Actions run logs: compiler verification gate passed on merge ref 7f189b6eb06c476a455d73e0a0e8d4fe90d212c3, testing branch head c360e85f6d31df02400d7f247a76fa3be3537919.
 
 ## Intentionally not in this tranche
 
