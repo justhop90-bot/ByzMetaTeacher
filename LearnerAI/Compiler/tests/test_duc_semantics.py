@@ -1982,6 +1982,29 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
 
 
+    def test_focus_player_change_resets_remote_search_index(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "2")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertIsNone(first.index_reset_reason)
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(
+            second.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(second.focus_player_signature, "2")
+        self.assertIsNotNone(second.focus_player_provenance)
+        self.assertEqual(second.focus_player_provenance.command, "set-strategic-number")
+        self.assertEqual(second.focus_player_provenance.within_rule_order, 1)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 1)
+
+
 
 if __name__ == "__main__":
     unittest.main()
