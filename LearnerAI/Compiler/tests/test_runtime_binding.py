@@ -532,20 +532,11 @@ class NativeMemoryBindingTests(unittest.TestCase):
         self.assertEqual(result.binding_for(request.request_id).id, 508)
 
     def test_strategic_number_rejects_empty_why_not_goal(self):
-        request = StrategicNumberRequest(
-            self._request_id('sn'),
-            why_not_goal='',
-            stability_key='sn-test',
-        )
-        inventory = StrategicNumberInventory(
-            inventory_sha='inventory-test',
-            documented_ids=frozenset(),
-            candidate_ids=frozenset({510}),
-        )
         with self.assertRaisesRegex(ValueError, 'WHY_NOT_GOAL'):
-            RuntimeBinder().bind(
-                (request,),
-                BindingContext(strategic_number_inventory=inventory),
+            StrategicNumberRequest(
+                self._request_id('sn'),
+                why_not_goal='',
+                stability_key='sn-test',
             )
 
     def test_timer_allocates_lowest_free_id_and_records_initialization_policy(self):
