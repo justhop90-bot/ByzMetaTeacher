@@ -58,6 +58,7 @@
           "enum": [
             "up-remove-objects",
             "up-clean-search",
+            "up-add-object-by-id",
             "up-set-target-object"
           ]
         },
