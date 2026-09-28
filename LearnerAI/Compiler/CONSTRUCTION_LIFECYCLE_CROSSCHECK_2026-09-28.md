@@ -31,15 +31,15 @@
 
 ## Compiler implementation
 
-- [ ] Add executable native adapter for `up-pending-placement`.
-- [ ] Add contracted engine-semantic mapping for `up-pending-placement`.
-- [ ] Add typed construction IR and deterministic transition function.
-- [ ] Attach construction lifecycle metadata to `build` demands.
-- [ ] Emit construction-specific observation rules instead of unconditional `ISSUED -> PENDING` for build demands.
-- [ ] Emit retry guards using both pending facts.
-- [ ] Preserve existing generic lifecycle behavior for train/research/non-construction actions.
-- [ ] Add native zero-findings fixture covering all construction phase predicates.
-- [ ] Add deterministic emitter regression coverage for construction rule ordering.
+- [x] Add executable native adapter for `up-pending-placement`.
+- [x] Add contracted engine-semantic mapping for `up-pending-placement`.
+- [x] Add typed construction IR and deterministic transition function.
+- [x] Attach construction lifecycle metadata to `build` demands.
+- [x] Emit construction-specific observation rules instead of unconditional `ISSUED -> PENDING` for build demands.
+- [x] Emit retry guards using both pending facts.
+- [x] Preserve existing generic lifecycle behavior for train/research/non-construction actions.
+- [x] Add native zero-findings fixture covering all construction phase predicates.
+- [x] Add deterministic emitter regression coverage for construction rule ordering.
 - [ ] Keep `up-build`, builder allocation, controlled placement policy, and `up-reset-placement` as the next execution-control surface; do not silently invent them in the phase-observation tranche.
 
 ## Explicit non-goals
