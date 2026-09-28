@@ -75,7 +75,7 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIn("local", cost[0].message)
         self.assertIn("240", cost[0].message)
         self.assertIn("MEDIUM", cost[0].message)
-        self.assertEqual(cost[0].severity, "WARNING")
+        self.assertEqual(cost[0].severity, "warning")
 
 
     def test_recurrent_remote_search_reports_evidence_backed_cost(self):
