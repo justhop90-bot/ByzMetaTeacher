@@ -14,6 +14,7 @@ from Compiler.ir.duc import (
     DucLoopWidening,
     DucTargetConsumerMode,
     DucTargetDataRelation,
+    DucTargetFactResult,
     DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
@@ -61,6 +62,76 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_set_target_object_fact_records_runtime_dependent_result_without_fabricating_target(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        find_fact = Expression(
+            "(up-find-local c: villager c: 1)",
+            "up-find-local",
+            ("c:", "villager", "c:", "1"),
+            location,
+        )
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 0)",
+            "up-set-target-object",
+            ("search-local", "c:", "0"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(find_fact, target_fact)),
+        ))
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.RUNTIME_DEPENDENT,
+        )
+        self.assertIsNone(report.target_fact_observations[-1].target)
+        self.assertIsNone(report.final_state.target)
+
+    def test_set_target_object_fact_out_of_range_is_guaranteed_false(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        find_fact = Expression(
+            "(up-find-local c: villager c: 1)",
+            "up-find-local",
+            ("c:", "villager", "c:", "1"),
+            location,
+        )
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 240)",
+            "up-set-target-object",
+            ("search-local", "c:", "240"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(find_fact, target_fact)),
+        ))
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.GUARANTEED_FALSE,
+        )
+        self.assertIsNone(report.final_state.target)
+
+    def test_failed_target_action_preserves_existing_target_when_native_effect_is_open(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+        second = analyze_duc((
+            _rule(1, (
+                ("up-set-target-object", ("search-local", "c:", "240")),
+            )),
+        ), initial_state=first.next_pass_state)
+
+        self.assertIsNotNone(second.final_state.target)
+        self.assertEqual(second.final_state.target.validity, DucTargetStatus.VALID)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "failed target establishment Action" in item.message
+            for item in second.diagnostics
+        ))
+
 
     def test_duc_state_effects_ignore_rule_that_recurrent_analysis_proves_never_runnable(self):
         rules = (
