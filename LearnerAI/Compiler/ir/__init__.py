@@ -1,4 +1,9 @@
 from .native_duc import NativeDucPlan, NativeDucRule
+from .native_attack import (
+    AttackLifecycleObservation,
+    NativeAttackLifecyclePlan,
+    NativeAttackRule,
+)
 from .capability import (
     ActionSpec,
     Capability,
