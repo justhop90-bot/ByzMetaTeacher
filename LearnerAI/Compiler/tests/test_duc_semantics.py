@@ -250,6 +250,15 @@ class DucSemanticTests(unittest.TestCase):
         )
 
     def test_can_search_proven_end_is_guaranteed_false(self):
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
         location = SourceLocation(2, 1, "fixture.per")
         fact = Expression(
             "(up-can-search search-local)",
@@ -257,12 +266,15 @@ class DucSemanticTests(unittest.TestCase):
             ("search-local",),
             location,
         )
-        report = analyze_duc((
-            _rule(1, (
-                ("up-find-local", ("c:", "villager", "c:", "1")),
-            )),
-            replace(_rule(2, ()), facts=(fact,)),
-        ))
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                )),
+                replace(_rule(2, ()), facts=(fact,)),
+            ),
+            initial_state=initial,
+        )
 
         observation = report.search_availability[-1]
         self.assertEqual(
