@@ -12,6 +12,10 @@ from enum import Enum
 from typing import Callable
 
 from .engine_semantics import EngineSemanticMappingStatus
+from .native_engine_effects import (
+    NativeEngineEffectCatalog,
+    default_native_engine_effect_catalog,
+)
 
 
 class NativeSupportState(str, Enum):
@@ -72,15 +76,17 @@ class NativeSemanticBinder:
         semantic_mappings,
         native_contracts,
         adapter_lookup: Callable[[str], object | None],
+        engine_effects: NativeEngineEffectCatalog | None = None,
     ) -> None:
         self.native_registry = native_registry
         self.semantic_mappings = semantic_mappings
         self.native_contracts = native_contracts
         self.adapter_lookup = adapter_lookup
+        self.engine_effects = engine_effects or default_native_engine_effect_catalog()
 
     @classmethod
     def _native_typed(cls, native) -> bool:
-        if not native.version or native.command_type not in {"Fact", "Action"}:
+        if not native.version or native.command_type not in {"Fact", "Action", "Fact/Action"}:
             return False
         if native.parameter_count > 4:
             return False
@@ -277,12 +283,49 @@ class NativeSemanticBinder:
 
         primitive = self.adapter_lookup(name)
         if primitive is None:
+            engine_effect = self.engine_effects.get(name)
+            if engine_effect is not None:
+                effect_ok, effect_message = self.engine_effects.validate_effect(
+                    name,
+                    self.native_registry,
+                )
+                if not effect_ok:
+                    diagnostic = self._diagnostic(
+                        name,
+                        NativeSupportState.UNSUPPORTED,
+                        "NATIVE-SUPPORT-006",
+                        "error",
+                        effect_message,
+                    )
+                    diagnostics.append(diagnostic)
+                    return NativeSupportAssessment(
+                        name,
+                        NativeSupportState.UNSUPPORTED,
+                        diagnostic.message,
+                        tuple(diagnostics),
+                    )
+                diagnostic = self._diagnostic(
+                    name,
+                    NativeSupportState.ENGINE_SEMANTICS_MAPPED,
+                    "NATIVE-SUPPORT-004",
+                    "info",
+                    f"native engine effect contract registered: {engine_effect.command}",
+                )
+                diagnostics.append(diagnostic)
+                return NativeSupportAssessment(
+                    name,
+                    NativeSupportState.ENGINE_SEMANTICS_MAPPED,
+                    "native command has an explicit engine-state/control effect contract",
+                    tuple(diagnostics),
+                    None,
+                )
+
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-SUPPORT-006",
                 "error",
-                "native command is known and typed but has no semantic adapter",
+                "native command is known and typed but has no semantic adapter or engine-effect contract",
             )
             diagnostics.append(diagnostic)
             return NativeSupportAssessment(
