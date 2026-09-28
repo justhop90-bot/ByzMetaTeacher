@@ -36,12 +36,12 @@ Scope: bounded semantic support for the native Fact `up-can-search`.
 - [x] Proven end-of-scan produces guaranteed false.
 - [x] Remote source reads only remote search state.
 - [x] Invalid SearchSource is rejected deterministically.
-- [ ] Focused test suite verified on the final implementation head.
-- [ ] Full Compiler workflow verified on the final implementation head.
-- [ ] Native zero-findings acceptance verified on the final implementation head.
-- [ ] All nine native-support determinism jobs verified on the final implementation head.
-- [ ] Aggregate native snapshot comparison verified on the final implementation head.
-- [ ] Compiler verification gate verified on the final implementation head.
+- [x] Focused DUC semantic tests are covered by the full Compiler regression on the verified code head.
+- [x] Compiler workflow #2134 passed on the verified code head.
+- [x] Native zero-findings acceptance passed.
+- [x] All nine native-support determinism jobs passed.
+- [x] Aggregate native-support snapshot comparison passed.
+- [x] Compiler verification gate passed.
 
 ## Explicitly open
 
@@ -52,16 +52,17 @@ Scope: bounded semantic support for the native Fact `up-can-search`.
 
 ## Verification record
 
-Implementation commits:
-- `24fa0586b3045912d6baea918421c0ec77226a2a`
-- `4b8ab886a82996cbc0614f4b62347fc0d4e06e63`
-- `de761a5749f45fcaae3dfe3ba223e14a66a141fa`
-- `a6d814aca5f6da0634dd8a2ddf86616237961581`
-- `6089edad03849d82802f3233b622ae37639da632`
-- `ae5592fe83a011086a23ebb6ac86f98d419e1ca8`
-- `6900032b52d1184f6591757156fb797660fb28f2`
-- `313bfe487d4e5dcf335349f33726870f93965fd8`
-- `bf5e60eb3a1055dc77ce75aab697ded8b6f77754`
-- `2a2db4c086ffb910e8cce12554093a0d03320086`
+Verified code-bearing main SHA: `5b4352cb2d0b4d7a7dacc117b9b9634affa185c9`.
 
-Verification is intentionally left open until the Compiler workflow for the final head produces fresh evidence.
+Compiler workflow: **#2134**
+Workflow result:
+- 958 compiler tests passed.
+- Native zero-findings acceptance passed.
+- Focused persistent-state regression passed.
+- All nine native-support determinism jobs passed.
+- Aggregate native-support snapshot comparison passed.
+- Compiler verification gate passed.
+
+The implementation sequence included the DUC IR, native contract catalog, engine-semantic registry, DUC analyzer, semantic tests, and the native citation inventory repair required by the full hygiene suite.
+
+Main may move ahead of this verified code SHA with documentation-only bookkeeping commits; no code change is required for verification evidence already recorded here.
