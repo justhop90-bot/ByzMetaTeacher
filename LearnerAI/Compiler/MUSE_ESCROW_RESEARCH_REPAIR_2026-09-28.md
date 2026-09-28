@@ -1,7 +1,7 @@
 # MUSE Escrow / Resource-Control Research Repair — 2026-09-28
 
-Research basis: the checked-in MUSE forensic package and current compiler main after PR #90.
-Implementation base: `2e104374bb543d900be8406b7854f465097701cb`.
+Research basis: the checked-in MUSE forensic package plus current compiler main after PR #94.
+Implementation base: `dca0458986d0e50e2ae26889d89f863a3c2ff923`.
 Research is deliberately separated from executable promotion: unresolved native semantics remain OPEN rather than being converted into compiler policy.
 
 ## 1. Why this is the next repair
@@ -12,7 +12,7 @@ Repository evidence:
 - `compiler_undercoverage.md`: escrow has 10.9k hits and explicitly identifies escrow operation lowering as justified by the corpus.
 - `compiler_coverage_baseline.md`: current state is evidence-only plus build singleton; remaining work is escrow-claim lowering, gating formula, and starvation/override behavior.
 - `E-compiler_gap_matrix.md`: corpus evidence is strong, but runtime timing proof, claim/release lowering, gating formula, and starvation/emergency semantics remain incomplete.
-- `native_unknowns.md`: exact escrow gating formula and release-vs-admission order remain OPEN.
+- `native_unknowns.md`: same-pass release visibility, starvation/emergency semantics, multi-owner handoff, and remaining family-specific runtime behavior remain OPEN.
 - `MUSE_NEXT_IMPLEMENTATION_CHECKLIST_2026-09-28.md`: Tier 1 places escrow/resource-control executable lowering before DUC and attack lifecycle work.
 
 ## 2. Native facts that are already strong enough to preserve
@@ -42,18 +42,28 @@ Secondary candidate:
 Do not use as initial executable authority:
 - IDIOM-008 commodity/market balancing. The repository itself marks it PARTIAL/NO for compiler support and calls out weak or historical corroboration. It is a research reference, not a native semantic contract.
 
-## 4. Current implementation state after PR #90
+## 4. Current implementation state after PR #94
 
 PR #90 added typed resource-control IR in `LearnerAI/Compiler/ir/resource_control.py` and validation in `LearnerAI/Compiler/semantic/resource_control.py`.
 
-Those additions currently describe:
-- persistent native arbitration;
-- escrow admission/reserve/release/consumption;
-- transient action-exclusion claims.
+The semantic substrate and first compiler plumbing seam are now on main.
 
-The important audit result is that this layer is not yet the executable lowering path. It is not wired into the main compiler pipeline, analyzer, or emitter. That is correct for the current state, because the exact engine gating/release semantics are still OPEN.
+Implemented:
+- typed ordered `EscrowOperation` IR;
+- `NativeEscrowReleasePlan` restricted to RELEASE/`release-escrow` over food, wood, stone, gold;
+- semantic release-plan validation for order, duplicate identity, kind, command, and resource domain;
+- registry validation requiring the native `release-escrow` Action with exactly one parameter;
+- compiler forwarding from all six public entry points through the convergent `emit()` path;
+- emitter validation of the typed release plan.
 
-Therefore the next repair must not simply turn these dataclasses into emitted `.per` commands. Doing that now would convert research assumptions into fake engine truth.
+Not yet implemented:
+- dedicated native semantic binding for `release-escrow`;
+- engine-semantics mapping owned by an escrow-specific contract;
+- dedicated executable registry inventory;
+- actual deterministic release-rule emission;
+- source-to-`.per` fixture and pinned native zero-findings acceptance.
+
+The next repair is therefore deliberately narrow: promote only the release-only native slice. Do not broaden it into `set-escrow-percentage`, UP escrow mutation, starvation scheduling, multi-owner handoff, or ordinary-action same-pass coupling.
 
 ## 5. Exact research questions that must close before executable promotion
 
@@ -372,7 +382,7 @@ Promotion additionally requires:
 
 ## 9. Current status
 
-Escrow is now the active MUSE repair branch.
+Escrow is the active MUSE repair area on `main`; PR #94 merged the compiler plumbing needed by the release-only executable slice.
 
 Closed:
 - native command existence and basic syntax for the core escrow controls;
@@ -381,10 +391,10 @@ Closed:
 - corpus justification for implementation.
 
 Open:
-- exact gating formula;
-- mutation ordering;
-- escrow ownership/lifetime;
+- executable binder/mapping/registry/emission for `release-escrow`;
+- direct native same-pass visibility proof;
 - starvation/emergency semantics;
-- executable lowering.
+- multi-owner handoff;
+- remaining action-family-specific runtime details.
 
 The compiler will not promote those unknowns by optimism. Humans have already produced enough software that confidently emitting a wrong financial state machine is no longer an acceptable innovation.
