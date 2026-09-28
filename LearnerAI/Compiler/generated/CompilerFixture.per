@@ -175,7 +175,7 @@
         (goal demand-defensive-spearmen 43)
     )
     (not (unit-type-count spearman >= 2))
-    (up-pending-objects c: spearman >= 1)
+    (up-pending-objects c: 93 >= 1)
 =>
     (set-goal demand-defensive-spearmen 43)
 )
@@ -187,7 +187,7 @@
         (goal demand-defensive-spearmen 43)
     )
     (not (unit-type-count spearman >= 2))
-    (not (up-pending-objects c: spearman >= 1))
+    (not (up-pending-objects c: 93 >= 1))
 =>
     (set-goal demand-defensive-spearmen 1)
     (set-goal production-retry-barrier-defensive-spearmen 1)
@@ -198,7 +198,7 @@
     (goal demand-defensive-spearmen 1)
     (not (unit-type-count spearman >= 2))
     (goal production-retry-barrier-defensive-spearmen 0)
-    (not (up-pending-objects c: spearman >= 1))
+    (not (up-pending-objects c: 93 >= 1))
     (not (unit-type-count spearman >= 2))
     (current-age >= feudal)
     (unit-type-count-total spearman < 2)
