@@ -145,6 +145,25 @@ Still required:
 Primary test file:
 - `LearnerAI/Compiler/tests/test_duc_semantics.py`
 
+## Vertical slice H: search-index semantics
+
+- [x] Model per-list search-index state separately from retained list generations.
+- [x] Preserve zero-based index initialization and explicit local/remote reset selection.
+- [x] Model filter-triggered index resets without clearing retained list generations.
+- [x] Detect authored search query/type transitions and conservatively reset the relevant index.
+- [x] Preserve search-index provenance through list fingerprints and control-flow joins.
+- [x] Keep exact post-search cursor advancement unresolved where native evidence does not establish it.
+- [x] Keep remote focus-player mutation unresolved until an authoritative compiler-visible writer/state contract exists.
+- [x] Add hostile tests for explicit reset, filter reset, query transition, unchanged query, and recurrent loop widening.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+- `LearnerAI/Compiler/primitives/native_hygiene.py`
+
+Primary test file:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+
 ## Integration order
 
 1. [x] Create typed DUC IR.
