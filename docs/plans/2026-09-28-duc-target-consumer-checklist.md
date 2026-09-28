@@ -23,14 +23,14 @@ Base: main at eef52a4c0fc302864c577879eb801ae78d218050
 
 ## Scope
 
-- [ ] Add a first-class native contract for `up-target-objects` consumer mode.
-- [ ] Validate Option 0/1 in DUC semantics.
-- [ ] Require initialized local search state for Option 0.
-- [ ] Require an object target only for Option 1.
-- [ ] Preserve direct native-ID target handling for Option 1.
-- [ ] Degrade list-index targets to UNKNOWN after SORT.
-- [ ] Keep DEDUPE and REMOVE_MATCHES behavior unchanged except where the consumer now distinguishes mode.
-- [ ] Add deterministic consumer provenance/effect metadata.
+- [x] Add a first-class native contract for `up-target-objects` consumer mode.
+- [x] Validate Option 0/1 in DUC semantics.
+- [x] Require initialized local search state for Option 0.
+- [x] Require an object target only for Option 1.
+- [x] Preserve direct native-ID target handling for Option 1.
+- [x] Degrade list-index targets to UNKNOWN after SORT.
+- [x] Keep DEDUPE and REMOVE_MATCHES behavior unchanged except where the consumer now distinguishes mode.
+- [x] Add deterministic consumer provenance/effect metadata.
 
 ## Hostile tests
 
@@ -39,12 +39,12 @@ Base: main at eef52a4c0fc302864c577879eb801ae78d218050
 - [x] Option 1 accepts a selected search-derived target.
 - [x] Invalid Option is rejected.
 - [x] SORT before Option 1 degrades a list-index target to UNKNOWN.
-- [ ] Option 1 with a directly specified native object ID remains a liveness-unknown target rather than a list-index failure.
-- [ ] Same behavior survives recurrent/branch analysis.
+- [x] Option 1 with a directly specified native object ID remains a liveness-unknown target rather than a list-index failure.
+- [x] Same behavior survives recurrent/branch analysis.
 
 ## Verification
 
-- [ ] Observed red CI run on the tests-only commit.
+- [x] Observed real red phase in focused workflow run `36369718073`: Option 0 incorrectly emitted `DUC-005`.
 - [ ] Focused DUC tests pass after implementation.
 - [ ] Full compiler test suite passes.
 - [ ] Native zero-findings acceptance passes.
