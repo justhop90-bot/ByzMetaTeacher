@@ -230,6 +230,39 @@ Primary tests:
 Native evidence:
 - UserPatch 20130305 documents focus-player changes as remote search-index reset boundaries.
 - UserPatch 20110723 documents `sn-focus-player-number` as the `focus-player` source.
+## Vertical slice M: post-search cursor lifecycle
+
+- [x] Model the DUC search index as a scan frontier rather than result-list cardinality.
+- [x] Preserve the initial zero-based local and remote cursor state.
+- [x] Apply query/type/class reset semantics before a new scan.
+- [x] Apply focus-player reset semantics to remote searches only.
+- [x] Preserve explicit reset-to-zero behavior.
+- [x] Record runtime-advanced post-search state without fabricating a numeric endpoint.
+- [x] Represent proven end-of-scan as a guaranteed-empty result and `AT_END` cursor state.
+- [x] Represent a destination list already proven full as a guaranteed-empty result and `BLOCKED_BY_CAPACITY`.
+- [x] Preserve path ambiguity through later searches and recurrent widening.
+- [x] Expose compiler-side cursor disposition through `DucSearchStateObservation` while preserving the native four-cardinality outputs of `up-get-search-state`.
+- [x] Model `up-find-local` and `up-find-remote` in Fact context as well as Action context.
+- [x] Record runtime-dependent Fact truth versus guaranteed-false Fact truth.
+- [x] Remove invented result-count semantics from the four-operand `up-find-*` predicate.
+- [x] Add hostile tests for success/failure boundary, repetition, reset, focus reset, `up-get-search-state`, Fact use, capacity exhaustion, and path ambiguity.
+- [ ] Execute the focused suite on the exact final head.
+- [ ] Execute the full compiler/native/determinism verification gate on the exact final head.
+
+Primary modules:
+- `LearnerAI/Compiler/ir/duc.py`
+- `LearnerAI/Compiler/primitives/native_hygiene.py`
+- `LearnerAI/Compiler/semantic/duc.py`
+
+Primary tests:
+- `LearnerAI/Compiler/tests/test_duc_semantics.py`
+- `LearnerAI/Compiler/tests/test_native_contract_integration.py`
+
+Native/runtime boundary:
+- UserPatch establishes zero-result false behavior, persistent/resettable search-index offsets, and end-of-list handling.
+- AIRef establishes local/remote list capacities.
+- Runtime object ordering, visibility, exact scan endpoint, and unconstrained live-world success/failure remain runtime-dependent unless the abstract state already proves exhaustion or capacity blockage.
+
 ## Integration order
 
 1. [x] Create typed DUC IR.
