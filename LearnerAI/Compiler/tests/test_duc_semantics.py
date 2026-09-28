@@ -1374,6 +1374,32 @@ class DucSemanticTests(unittest.TestCase):
 
 
 
+    def test_search_index_state_survives_recurrent_loop_widening(self):
+        rules = (
+            _rule(1, (("up-find-local", ("c:", "villager", "c:", "1")),)),
+            _rule(2, (("up-jump-rule", ("-1",)),)),
+            _rule(3, (("up-do-nothing", ()),)),
+        )
+        execution = RuleExecutionReport(
+            rules=rules,
+            reachability=RuleReachabilityReport(
+                reachable_rule_orders=(1, 2, 3),
+                unreachable_rule_orders=(),
+                incoming_rule_orders=((1, ()), (2, (1, 2)), (3, (2,))),
+                outgoing_rule_orders=((1, (2,)), (2, (1, 3)), (3, ())),
+            ),
+        )
+
+        report = analyze_duc(execution)
+        loop_state = next(state for order, state in report.states if order == 1)
+        index = loop_state.local_list.search_index
+        self.assertFalse(index.known)
+        self.assertEqual(index.query_signature, ("c:", "villager", "c:", "1"))
+        self.assertTrue(index.path_ambiguous)
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
