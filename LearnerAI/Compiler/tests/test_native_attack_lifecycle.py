@@ -217,7 +217,7 @@ class NativeAttackBinderTests(unittest.TestCase):
                 _attack_rule(
                     facts=(_expr("(attack-now)", "attack-now"),),
                     actions=(
-                        _expr("(true)", "true"),
+                        _expr("(attack-now)", "attack-now"),
                     ),
                 ),
             )
