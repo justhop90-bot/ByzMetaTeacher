@@ -686,13 +686,12 @@ def analyze_strategic_number_expressions(
         )
         deduped[key] = diagnostic
 
+    controller_bindings = bind_strategic_number_accesses(accesses)
     return StrategicNumberSemanticReport(
         mutations=tuple(mutations),
         comparisons=tuple(comparisons),
-        controller_bindings=bind_strategic_number_accesses(accesses),
-        controller_interactions=bind_strategic_number_interactions(
-            bind_strategic_number_accesses(accesses)
-        ),
+        controller_bindings=controller_bindings,
+        controller_interactions=bind_strategic_number_interactions(controller_bindings),
         accesses=tuple(
             sorted(
                 accesses,
