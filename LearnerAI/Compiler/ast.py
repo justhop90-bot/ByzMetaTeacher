@@ -21,12 +21,12 @@ class DemandNode:
     release: str
     location: SourceLocation
     invalidate: str | None = None
-    strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
     requirement_locations: tuple[SourceLocation, ...] = ()
     action_location: SourceLocation | None = None
     witness_location: SourceLocation | None = None
     release_location: SourceLocation | None = None
     invalidate_location: SourceLocation | None = None
+    strategic_number_states: tuple[tuple[str, int, SourceLocation], ...] = ()
 
 
 @dataclass(frozen=True)
