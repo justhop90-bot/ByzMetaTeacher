@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable
 
+from ..ir.native_attack import AttackLifecycleObservation
+from ..semantic.native_controller import (
+    NativeControlSurfaceKind,
+    default_native_controller_catalog,
+)
 from .engine_semantics import EngineSemanticMappingStatus
 from .native_engine_effects import (
     NativeEngineEffectCatalog,
@@ -25,6 +30,20 @@ class NativeSupportState(str, Enum):
     ENGINE_SEMANTICS_MAPPED = "engine-semantics-mapped"
     EXECUTABLE_SAFE = "executable-safe"
     UNSUPPORTED = "unsupported"
+
+
+@dataclass(frozen=True)
+class NativeAttackSemanticBinding:
+    command: str
+    native_version: str
+    native_kind: str
+    parameter_count: int
+    controller_id: str
+    surface_identity: str
+    semantic_mapping_id: str
+    support_state: NativeSupportState
+    completion_state: AttackLifecycleObservation
+    evidence_sources: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -469,6 +488,222 @@ class NativeSemanticBinder:
             "command is executable-safe",
             tuple(diagnostics),
             binding,
+        )
+
+    def assess_attack_command(self, name: str) -> NativeSupportAssessment:
+        if name != "attack-now":
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                f"attack lifecycle command '{name}' is not supported by the native attack lifecycle slice",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        native = self.native_registry.get(name)
+        if native is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                "attack lifecycle command is not present in the checked-in native schema",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        if not self._native_typed(native):
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                "attack lifecycle native metadata is not typed",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        if native.parameter_count != 0:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                f"attack lifecycle command 'attack-now' expects exactly 0 argument(s), "
+                f"native schema reports {native.parameter_count}",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        if native.command_type != "Action":
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                f"attack lifecycle command 'attack-now' must be an Action, "
+                f"native schema reports '{native.command_type}'",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        catalog = default_native_controller_catalog()
+        try:
+            surface = catalog.resolve_surface(
+                NativeControlSurfaceKind.COMMAND,
+                name,
+            )
+            controller = catalog.controller(surface.controller_id)
+        except KeyError as exc:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                f"attack lifecycle ownership lookup failed for 'attack-now': {exc.args[0]}",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        if controller.identity != "attack-group-control":
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                f"attack-now is owned by unexpected controller '{controller.identity}'",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        mapping = self.semantic_mappings.for_command(name)
+        if mapping is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                "attack lifecycle command has no contracted engine semantic mapping",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        mapping_ok, mapping_message = self.semantic_mappings.validate_primitive(
+            command=name,
+            native_kind=native.command_type,
+            identity=mapping.identity,
+        )
+        if not mapping_ok or mapping.identity != "attack.execution.issue":
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-ATTACK-006",
+                "error",
+                mapping_message
+                if not mapping_ok
+                else "attack-now is mapped to an unsupported semantic contract",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+
+        diagnostic = self._diagnostic(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "NATIVE-ATTACK-005",
+            "info",
+            "attack-now has native schema, controller ownership, exact arity, and a contracted issue-only semantic mapping",
+        )
+        binding = NativeAttackSemanticBinding(
+            command=name,
+            native_version=native.version,
+            native_kind=native.command_type,
+            parameter_count=native.parameter_count,
+            controller_id=controller.identity,
+            surface_identity=surface.identity,
+            semantic_mapping_id=mapping.identity,
+            support_state=NativeSupportState.EXECUTABLE_SAFE,
+            completion_state=AttackLifecycleObservation.COMPLETION_UNOBSERVED,
+            evidence_sources=tuple(mapping.evidence_sources),
+        )
+        return NativeSupportAssessment(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "attack-now is executable-safe for issue-only lifecycle lowering",
+            (diagnostic,),
+            binding=None,
+        )
+
+    def bind_attack_command(self, name: str) -> NativeAttackSemanticBinding:
+        assessment = self.assess_attack_command(name)
+        if assessment.state is not NativeSupportState.EXECUTABLE_SAFE:
+            raise ValueError(assessment.message)
+        native = self.native_registry.get(name)
+        mapping = self.semantic_mappings.for_command(name)
+        catalog = default_native_controller_catalog()
+        assert native is not None and mapping is not None
+        surface = catalog.resolve_surface(NativeControlSurfaceKind.COMMAND, name)
+        controller = catalog.controller(surface.controller_id)
+        return NativeAttackSemanticBinding(
+            command=name,
+            native_version=native.version,
+            native_kind=native.command_type,
+            parameter_count=native.parameter_count,
+            controller_id=controller.identity,
+            surface_identity=surface.identity,
+            semantic_mapping_id=mapping.identity,
+            support_state=NativeSupportState.EXECUTABLE_SAFE,
+            completion_state=AttackLifecycleObservation.COMPLETION_UNOBSERVED,
+            evidence_sources=tuple(mapping.evidence_sources),
+        )
+
+    def bind_attack_plan(self, plan) -> tuple[NativeAttackSemanticBinding, ...]:
+        bindings: list[NativeAttackSemanticBinding] = []
+        for rule in plan.rules:
+            for expression in (*rule.facts, *rule.actions):
+                bindings.append(self.bind_attack_command(expression.head))
+        return tuple(
+            sorted(
+                bindings,
+                key=lambda item: (item.command, item.controller_id, item.surface_identity),
+            )
         )
 
     def assess_duc_command(self, name: str) -> NativeSupportAssessment:
