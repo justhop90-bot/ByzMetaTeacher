@@ -22,6 +22,7 @@ from Compiler.semantic.native_controller_interactions import (
     NativeInteractionMutationOwner,
     NativeInteractionSupportState,
     NativeInteractionVisibility,
+    default_native_controller_interaction_catalog,
 )
 
 
@@ -245,6 +246,65 @@ class NativeControllerInteractionTests(unittest.TestCase):
     def test_invalid_cardinality_range_is_rejected(self):
         with self.assertRaises(ValueError):
             NativeInteractionCardinality(10, 1)
+
+
+    def test_wrong_control_surface_owner_is_rejected(self):
+        item = self.interaction(
+            "wrong-owner",
+            self.surface("exploration-control:strategic_number:sn-number-explore-groups"),
+            self.controller("attack-group-control"),
+            NativeControllerInteractionKind.CONTROLLED_BY,
+        )
+        with self.assertRaises(ValueError):
+            NativeControllerInteractionCatalog((item,)).validate(self.controllers)
+
+    def test_seeded_interaction_corpus_is_explicit_and_evidence_bearing(self):
+        catalog = default_native_controller_interaction_catalog(self.controllers)
+        expected = {
+            "attack-groups-gated-by-exploration",
+            "town-size-affects-attack-targeting",
+            "civilian-allocation-coupled-with-resource-escrow",
+            "escrow-gates-production-admission",
+            "escrow-gates-research-admission",
+            "duc-local-search-feeds-target-control",
+            "duc-remote-search-feeds-target-control",
+            "duc-filter-include-auto-resets-local-index",
+            "duc-filter-include-auto-resets-remote-index",
+            "duc-filter-exclude-auto-resets-local-index",
+            "duc-filter-exclude-auto-resets-remote-index",
+            "duc-filter-range-auto-resets-local-index",
+            "duc-filter-range-auto-resets-remote-index",
+            "duc-reset-filters-auto-resets-local-index",
+            "duc-reset-filters-auto-resets-remote-index",
+        }
+        self.assertEqual(
+            {item.identity for item in catalog.interactions},
+            expected,
+        )
+        self.assertTrue(
+            all(
+                item.status is NativeInteractionSupportState.EVIDENCE_ONLY
+                for item in catalog.interactions
+            )
+        )
+
+    def test_seeded_duc_interactions_carry_cardinality_and_performance_metadata(self):
+        catalog = default_native_controller_interaction_catalog(self.controllers)
+        local = catalog.resolve("duc-local-search-feeds-target-control")
+        remote = catalog.resolve("duc-remote-search-feeds-target-control")
+        self.assertEqual((local.cardinality.minimum, local.cardinality.maximum), (0, 240))
+        self.assertEqual((remote.cardinality.minimum, remote.cardinality.maximum), (0, 40))
+        self.assertIs(local.performance_class, PerformanceClass.MEDIUM)
+        self.assertIs(remote.performance_class, PerformanceClass.FAST)
+
+    def test_feedback_relations_are_not_in_seeded_dependency_edges(self):
+        catalog = default_native_controller_interaction_catalog(self.controllers)
+        self.assertTrue(
+            all(
+                item.relation is not NativeControllerInteractionKind.FEEDBACK
+                for item in catalog.dependency_edges()
+            )
+        )
 
     def test_performance_metadata_is_advisory(self):
         item = self.interaction(
