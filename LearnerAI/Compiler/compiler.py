@@ -325,6 +325,7 @@ def _compile_source_parts(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
@@ -334,6 +335,7 @@ def _compile_source_parts(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
 
 
@@ -343,6 +345,7 @@ def _compile_package_parts(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -356,6 +359,7 @@ def _compile_package_parts(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
     return result, bindings, context, graph
 
@@ -368,6 +372,7 @@ def compile_semantic_demands(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -376,6 +381,7 @@ def compile_semantic_demands(
         registry,
         base_goal,
         binding_context=binding_context,
+        control_plan=control_plan,
     )
     return result
 
@@ -413,12 +419,14 @@ def compile_package(
     *,
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
         request,
         base_goal,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     return result
 
@@ -430,6 +438,7 @@ def compile_source(
     source_unit: str = "<source>",
     binding_context: BindingContext | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
@@ -437,6 +446,7 @@ def compile_source(
         source_unit=source_unit,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     return result
 
@@ -450,6 +460,7 @@ def compile_package_with_report(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> CombinedValidationReport:
     if native_backend is None:
         return backend_failure_report(
@@ -463,6 +474,7 @@ def compile_package_with_report(
             base_goal,
             binding_context=binding_context,
             registry=registry,
+        control_plan=control_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -573,6 +585,7 @@ def compile_source_with_report(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -588,6 +601,7 @@ def compile_source_with_report(
             source_unit=source_unit,
             binding_context=binding_context,
             registry=registry,
+        control_plan=control_plan,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -694,6 +708,7 @@ def compile_to_file(
     binding_context: BindingContext | None = None,
     binding_manifest: Path | None = None,
     registry: PrimitiveRegistry | None = None,
+    control_plan=None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
@@ -707,6 +722,7 @@ def compile_to_file(
         source_unit=source_unit,
         binding_context=binding_context,
         registry=registry,
+        control_plan=control_plan,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
