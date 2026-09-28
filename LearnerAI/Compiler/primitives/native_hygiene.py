@@ -1060,6 +1060,19 @@ class NativeDucSearchContract:
     appends_to_current_list: bool
     consumes_retained_filters: bool
     evidence_ids: Tuple[str, ...]
+    cursor_model: str = "SCAN_FRONTIER"
+    returns_false_on_zero_results: bool = True
+    stops_on_result_limit_or_capacity: bool = True
+
+    def __post_init__(self) -> None:
+        if self.cursor_model != "SCAN_FRONTIER":
+            raise ValueError("unsupported DUC search cursor model")
+        if not self.command or self.list_kind not in {"LOCAL", "REMOTE"}:
+            raise ValueError("DUC search contract requires command and list kind")
+        if self.capacity <= 0:
+            raise ValueError("DUC search capacity must be positive")
+        if not self.evidence_ids:
+            raise ValueError("DUC search contract requires evidence")
 
 
 @dataclass(frozen=True)
