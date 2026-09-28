@@ -888,6 +888,14 @@ def default_native_duc_mutation_contracts() -> Tuple[NativeDucMutationContract, 
             "-1",
             ("airef:duc:remove-objects",),
         ),
+        NativeDucMutationContract(
+            "up-add-object-by-id",
+            ("LOCAL", "REMOTE"),
+            "-1",
+            ("airef:duc:add-object-by-id",),
+            "ADD_OBJECT",
+            False,
+        ),
     )
 
 
@@ -1217,6 +1225,18 @@ class NativeDucMutationContract:
     list_kinds: Tuple[str, ...]
     sentinel_object_data: str
     evidence_ids: Tuple[str, ...]
+    mutation_kind: str = "LEGACY"
+    supports_fact: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.command or not self.evidence_ids:
+            raise ValueError("DUC mutation contract requires command and evidence")
+        if not self.list_kinds or any(kind not in {"LOCAL", "REMOTE"} for kind in self.list_kinds):
+            raise ValueError("DUC mutation contract requires LOCAL/REMOTE list kinds")
+        if self.mutation_kind not in {"LEGACY", "ADD_OBJECT"}:
+            raise ValueError(f"unknown DUC mutation kind: {self.mutation_kind}")
+        if self.mutation_kind == "LEGACY" and self.supports_fact:
+            raise ValueError("legacy DUC mutation contracts cannot opt into Fact semantics")
 
 
 @dataclass(frozen=True)
@@ -2203,6 +2223,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:reset-search", "up-reset-search", "(up-reset-search <LocalIndex> <LocalList> <RemoteIndex> <RemoteList>)"),
         ("airef:duc:full-reset-search", "up-full-reset-search", "(up-full-reset-search)"),
         ("airef:duc:clean-search", "up-clean-search", "(up-clean-search <SearchSource> <ObjectData> <SearchOrder>)"),
+        ("airef:duc:add-object-by-id", "up-add-object-by-id", "(up-add-object-by-id <SearchSource> <typeOp> <Id>)"),
         ("airef:duc:remove-objects", "up-remove-objects", "(up-remove-objects <SearchSource> <ObjectData> <compareOp> <Value>)"),
         ("airef:duc:set-target-by-id", "up-set-target-by-id", "(up-set-target-by-id <typeOp> <Id>)"),
         ("airef:duc:object-data", "up-object-data", "(up-object-data <ObjectData> <compareOp> <Value>)"),
