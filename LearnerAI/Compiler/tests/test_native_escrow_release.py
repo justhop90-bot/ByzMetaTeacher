@@ -14,7 +14,6 @@ from Compiler.primitives.engine_semantics import (
 )
 from Compiler.primitives.native_binder import NativeSemanticBinder
 from Compiler.primitives.native_schema import load_default_native_schema
-from Compiler.primitives.native_hygiene import default_native_goal_storage_contracts, NativeContractCatalog, default_native_goal_span_contracts, default_native_goal_parameter_ranges
 
 
 class NativeEscrowReleaseTests(unittest.TestCase):
