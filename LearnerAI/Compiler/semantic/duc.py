@@ -7,6 +7,7 @@ target lifetime cannot be established.
 from __future__ import annotations
 
 from collections import deque
+from functools import lru_cache
 from dataclasses import dataclass, replace
 from hashlib import sha256
 
@@ -68,6 +69,7 @@ from .strategic_number_semantics import (
     evaluate_strategic_number_mutation,
     parse_strategic_number_mutation,
 )
+from .native_controller_interactions import default_native_controller_interaction_catalog
 from .recurrent_execution import (
     RecurrentExecutionReport,
     RecurrentExecutionStatus,
@@ -109,6 +111,62 @@ FOCUS_PLAYER_MUTATORS = frozenset({"set-strategic-number", "up-modify-sn"})
 DUC_LOOP_WIDENING_LIMIT = 3
 DUC_GROUP_COUNT = 20
 DUC_GROUP_CAPACITY = 40
+
+
+@lru_cache(maxsize=1)
+def _duc_search_cost_interactions():
+    catalog = default_native_controller_interaction_catalog()
+    return {
+        DucListKind.LOCAL: catalog.resolve("duc-local-search-feeds-target-control"),
+        DucListKind.REMOTE: catalog.resolve("duc-remote-search-feeds-target-control"),
+    }
+
+
+def _append_recurrent_search_cost_diagnostic(
+    diagnostics: list[DucDiagnostic],
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    kind: DucListKind,
+    current: DucSearchListState,
+    rule_reset_lists: set[DucListKind],
+) -> None:
+    if (
+        rule.pass_behavior is not RulePassBehavior.RECURRENT
+        or current.current_generation is None
+        or kind in rule_reset_lists
+    ):
+        return
+
+    cardinality = current.current_generation.cardinality
+    if cardinality is None:
+        return
+
+    try:
+        interaction = _duc_search_cost_interactions()[kind]
+    except (KeyError, TypeError, ValueError):
+        return
+
+    evidence_cardinality = interaction.cardinality
+    performance_class = interaction.performance_class
+    if evidence_cardinality is None or performance_class is None:
+        return
+
+    diagnostics.append(
+        DucDiagnostic(
+            "DUC-015",
+            DiagnosticSeverity.WARNING.value,
+            rule.rule_order,
+            (
+                f"recurrent {action.expression.head} reuses retained "
+                f"{kind.value.lower()} DUC search state with retained cardinality "
+                f"upper bound {cardinality.maximum}; native capacity bound is "
+                f"{evidence_cardinality.maximum} and AIRef benchmark class is "
+                f"{performance_class.value}; performance diagnostic is advisory only"
+            ),
+            _location(action, rule.source_location),
+        )
+    )
 
 
 @dataclass(frozen=True)
@@ -1067,6 +1125,14 @@ def _apply_duc_search(
 
     if rule.pass_behavior is RulePassBehavior.RECURRENT and current.current_generation is not None:
         if kind not in rule_reset_lists:
+            _append_recurrent_search_cost_diagnostic(
+                diagnostics,
+                rule=rule,
+                action=action,
+                kind=kind,
+                current=current,
+                rule_reset_lists=rule_reset_lists,
+            )
             diagnostics.append(
                 DucDiagnostic(
                     "DUC-008",
