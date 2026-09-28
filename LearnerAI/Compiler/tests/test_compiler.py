@@ -286,6 +286,7 @@ class CompilerTests(unittest.TestCase):
             "(up-research-status c: ri-wheelbarrow >= research-pending)",
             output,
         )
+        self.assertIn("(defconst ri-wheelbarrow 213)", output)
 
     def test_native_expression_parser_exposes_root_primitive(self):
         expr = parse_expression("(current-age >= castle)")
