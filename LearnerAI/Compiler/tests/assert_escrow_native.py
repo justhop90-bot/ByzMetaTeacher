@@ -89,7 +89,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
-    source_path = ROOT / "tests" / "fixtures" / "escrow_release.perdsl"
+    source_path = Path(__file__).parent / "fixtures" / "escrow_release.perdsl"
     source = source_path.read_text(encoding="utf-8")
     plan = _plan()
 
