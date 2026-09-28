@@ -55,8 +55,14 @@ from ..ir.duc import (
     DucTargetTransition,
     DucVisibility,
 )
+from ..ir.strategic_number import StrategicNumberMathOp, StrategicNumberOperandKind
 from ..primitives.native_hygiene import NativeContractCatalog
 from ..primitives.registry import default_native_contract_catalog
+from .strategic_number_semantics import (
+    StrategicNumberSemanticError,
+    evaluate_strategic_number_mutation,
+    parse_strategic_number_mutation,
+)
 from .recurrent_execution import (
     RecurrentExecutionReport,
     RecurrentExecutionStatus,
@@ -93,6 +99,8 @@ SET_POINT_TARGET = "up-set-target-point"
 OBJECT_TARGET_CONSUMERS = frozenset({"up-target-objects"})
 POINT_TARGET_CONSUMERS = frozenset({"up-target-point"})
 OBJECT_LIST_MUTATORS = frozenset({"up-clean-search", "up-remove-objects"})
+FOCUS_PLAYER_SN = "sn-focus-player-number"
+FOCUS_PLAYER_MUTATORS = frozenset({"set-strategic-number", "up-modify-sn"})
 DUC_LOOP_WIDENING_LIMIT = 3
 DUC_GROUP_COUNT = 20
 DUC_GROUP_CAPACITY = 40
@@ -401,6 +409,118 @@ def _reset_search_index(
         generation=index.generation + 1,
         known=True,
         last_reset_reason=reason,
+    )
+
+
+def _focus_player_signature_after_mutation(
+    index: DucSearchIndexState,
+    action: RuleAction,
+) -> str | None:
+    command = action.expression.head
+    arguments = _canonical_arguments(action.expression)
+    if command == "set-strategic-number":
+        if len(arguments) != 2 or arguments[0] != FOCUS_PLAYER_SN:
+            return index.focus_player_signature
+        try:
+            return str(int(arguments[1], 10))
+        except ValueError:
+            return None
+
+    if (
+        command != "up-modify-sn"
+        or len(arguments) != 3
+        or arguments[0] != FOCUS_PLAYER_SN
+    ):
+        return index.focus_player_signature
+
+    try:
+        mutation = parse_strategic_number_mutation(
+            action.expression,
+        )
+    except StrategicNumberSemanticError:
+        return None
+
+    if mutation.operand.kind is not StrategicNumberOperandKind.CONSTANT:
+        return None
+
+    current = index.focus_player_signature
+    if current is None:
+        if mutation.operator is StrategicNumberMathOp.ASSIGN:
+            return str(int(mutation.operand.value))
+        if mutation.operator is StrategicNumberMathOp.NEGATE:
+            return str(-int(mutation.operand.value))
+        return None
+
+    try:
+        result = evaluate_strategic_number_mutation(
+            mutation,
+            current_value=int(current),
+            goals={},
+            strategic_numbers={},
+        )
+    except (StrategicNumberSemanticError, ValueError):
+        return None
+    return str(result)
+
+
+def _apply_focus_player_mutation(
+    state: DucSemanticState,
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    state_revision: int,
+) -> DucSemanticState:
+    command = action.expression.head
+    arguments = _canonical_arguments(action.expression)
+    if (
+        command not in FOCUS_PLAYER_MUTATORS
+        or not arguments
+        or arguments[0] != FOCUS_PLAYER_SN
+    ):
+        return state
+
+    previous_index = state.remote_list.search_index
+    next_signature = _focus_player_signature_after_mutation(
+        previous_index,
+        action,
+    )
+    previous_signature = previous_index.focus_player_signature
+    proven_unchanged = (
+        previous_signature is not None
+        and next_signature is not None
+        and previous_signature == next_signature
+    )
+    provenance = _provenance(
+        rule,
+        action,
+        visibility=DucVisibility.SAME_RULE,
+        state_revision=state_revision,
+        pass_id=state.pass_id,
+        inputs=(previous_index.generation,),
+        contract_id="duc.search-index.focus-player",
+        evidence_ids=(),
+    )
+    if proven_unchanged:
+        updated_index = replace(
+            previous_index,
+            focus_player_signature=next_signature,
+            focus_player_provenance=provenance,
+        )
+    else:
+        updated_index = replace(
+            _reset_search_index(
+                previous_index,
+                DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+            ),
+            focus_player_signature=next_signature,
+            focus_player_provenance=provenance,
+        )
+    return replace(
+        state,
+        remote_list=replace(
+            state.remote_list,
+            search_index=updated_index,
+        ),
     )
 
 
@@ -775,7 +895,16 @@ def _group_validity(
 def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
-        remote_list=DucSearchListState(DucListKind.REMOTE, None, 1, False),
+        remote_list=DucSearchListState(
+            DucListKind.REMOTE,
+            None,
+            1,
+            False,
+            search_index=replace(
+                DucSearchIndexState(),
+                focus_player_signature="0",
+            ),
+        ),
         filters=DucFilterState(0, (), "", True, False, None),
         target=None,
         point_target=None,
@@ -850,6 +979,15 @@ def _analyze_duc_linear(
             expression = action.expression
             command = expression.head
             args = _canonical_arguments(expression)
+
+            if command in FOCUS_PLAYER_MUTATORS and args and args[0] == FOCUS_PLAYER_SN:
+                state = _apply_focus_player_mutation(
+                    state,
+                    rule=rule,
+                    action=action,
+                    state_revision=state_revision,
+                )
+                continue
 
             search_contract = contracts.duc_search(command)
             filter_contract = contracts.duc_filter(command)
@@ -1346,6 +1484,8 @@ def _analyze_duc_linear(
                         index_after=prepared_index.offset,
                         index_generation=prepared_index.generation,
                         index_reset_reason=index_reset_reason,
+                        focus_player_signature=prepared_index.focus_player_signature,
+                        focus_player_provenance=prepared_index.focus_player_provenance,
                     )
                 )
                 rule_reads.add(DucStateKind.FILTER)
@@ -2291,6 +2431,14 @@ def _search_index_key(index: DucSearchIndexState) -> tuple[object, ...]:
     )
 
 
+def _focus_provenance_if_equal(
+    indices: tuple[DucSearchIndexState, ...],
+) -> Optional[DucProvenance]:
+    provenances = tuple(index.focus_player_provenance for index in indices)
+    first = provenances[0]
+    return first if all(item == first for item in provenances[1:]) else None
+
+
 def _join_search_indices(
     indices: tuple[DucSearchIndexState, ...],
 ) -> DucSearchIndexState:
@@ -2305,6 +2453,11 @@ def _join_search_indices(
         generation=max(index.generation for index in indices),
         query_signature=first.query_signature if same_query else None,
         focus_player_signature=first.focus_player_signature if same_focus else None,
+        focus_player_provenance=(
+            _focus_provenance_if_equal(indices)
+            if same_focus
+            else None
+        ),
         known=all(index.known for index in indices) and all(index.offset == first.offset for index in indices),
         last_reset_reason=first.last_reset_reason if same_reason else DucSearchIndexResetReason.UNKNOWN,
         path_ambiguous=True,
@@ -2326,6 +2479,11 @@ def _widen_search_index(
         query_signature=previous.query_signature if same_query else None,
         focus_player_signature=(
             previous.focus_player_signature if same_focus else None
+        ),
+        focus_player_provenance=(
+            previous.focus_player_provenance
+            if same_focus and previous.focus_player_provenance == current.focus_player_provenance
+            else None
         ),
         known=(
             previous.known
