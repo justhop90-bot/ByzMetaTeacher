@@ -1436,6 +1436,7 @@ class NativeContractCatalog:
             evidence_id
             for contract in (
                 *self.duc_searches,
+                *self.duc_search_index_transitions,
                 *self.duc_filters,
                 *self.duc_resets,
                 *self.duc_mutations,
