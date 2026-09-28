@@ -1630,12 +1630,15 @@ class DucSemanticTests(unittest.TestCase):
     def test_add_object_by_id_remote_has_same_unknown_post_state_boundary(self):
         report = analyze_duc((
             _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
                 ("up-add-object-by-id", ("search-remote", "c:", "93")),
             )),
         ))
 
         generation = report.final_state.remote_list.current_generation
-        self.assertIsNone(generation)
+        self.assertIsNotNone(generation)
+        self.assertIsNone(generation.cardinality)
+        self.assertIsNone(generation.content_fingerprint)
         mutation = report.mutations[-1]
         self.assertEqual(mutation.list_kind, DucListKind.REMOTE)
         self.assertEqual(mutation.kind, DucListMutationKind.ADD_OBJECT)
