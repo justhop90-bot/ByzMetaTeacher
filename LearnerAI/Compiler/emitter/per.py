@@ -223,7 +223,7 @@ def emit(
 
         if construction is not None:
             out += [
-                f"    {construction.pending_foundation_fact.source.replace('>= 1', '== 0')}",
+                f"    (up-pending-objects c: {construction.building} == 0)",
                 f"    (not {construction.pending_placement_fact.source})",
             ]
 
