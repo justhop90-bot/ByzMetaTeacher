@@ -190,10 +190,10 @@ class DucSearchIndexState:
     generation: int = 0
     query_signature: Optional[tuple[str, ...]] = None
     focus_player_signature: Optional[str] = None
-    focus_player_provenance: Optional["DucProvenance"] = None
     known: bool = True
     last_reset_reason: Optional[DucSearchIndexResetReason] = None
     path_ambiguous: bool = False
+    focus_player_provenance: Optional["DucProvenance"] = None
 
     def __post_init__(self) -> None:
         if self.offset is not None and self.offset < 0:
