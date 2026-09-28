@@ -81,27 +81,6 @@ jobs:
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
-      - name: Capture generated generic fixture for forensic repair
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from LearnerAI.Compiler.compiler import compile_source
-          source = (Path("LearnerAI/Compiler/examples/basics.perdsl")).read_text(encoding="utf-8")
-          Path("/tmp/CompilerFixture.generated.per").write_text(
-              compile_source(source),
-              encoding="utf-8",
-          )
-          PY
-      - name: Upload generated generic fixture for forensic repair
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: debug-generated-compiler-fixture
-          path: /tmp/CompilerFixture.generated.per
-          if-no-files-found: error
-          retention-days: 1
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
