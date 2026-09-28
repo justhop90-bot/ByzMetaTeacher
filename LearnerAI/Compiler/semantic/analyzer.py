@@ -55,6 +55,32 @@ _SN_WHY_NOT_GOAL = (
 _SN_STABILITY_PREFIX = "sn-state:v1"
 
 
+def _validate_compiler_owned_sn_reference(
+    expr: Expression,
+    declared_state_names: set[str],
+    *,
+    demand_name: str,
+) -> None:
+    if expr.head in {"up-compare-sn", "strategic-number", "up-modify-sn", "set-strategic-number"}:
+        if expr.args:
+            target = str(expr.args[0])
+            try:
+                int(target, 10)
+            except ValueError:
+                if target not in declared_state_names:
+                    raise CompileError(
+                        f"demand '{demand_name}' references undeclared compiler-owned "
+                        f"Strategic Number '{target}'"
+                    )
+    for child in expr.args:
+        if isinstance(child, Expression):
+            _validate_compiler_owned_sn_reference(
+                child,
+                declared_state_names,
+                demand_name=demand_name,
+            )
+
+
 def _tokens(expr: str) -> list[str]:
     if not expr.startswith("(") or not expr.endswith(")"):
         raise CompileError("expression must be a parenthesized native .per expression")
@@ -368,6 +394,30 @@ def analyze(
                     request=request,
                     location=state_location,
                 )
+            )
+
+        declared_state_names = {state.name for state in strategic_number_states}
+        for requirement in requirements:
+            _validate_compiler_owned_sn_reference(
+                requirement.expression,
+                declared_state_names,
+                demand_name=demand.name,
+            )
+        _validate_compiler_owned_sn_reference(
+            witness,
+            declared_state_names,
+            demand_name=demand.name,
+        )
+        _validate_compiler_owned_sn_reference(
+            release,
+            declared_state_names,
+            demand_name=demand.name,
+        )
+        if invalidation is not None:
+            _validate_compiler_owned_sn_reference(
+                invalidation,
+                declared_state_names,
+                demand_name=demand.name,
             )
 
         request_id = StorageRequestId(owner=semantic_id, purpose="lifecycle")
