@@ -449,6 +449,7 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
 
 def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
+        "up-can-search": "Fact",
         "up-find-local": "Fact/Action",
         "up-find-status-local": "Fact/Action",
         "up-find-remote": "Fact/Action",
