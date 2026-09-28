@@ -1,0 +1,20 @@
+name: DUC target consumer focused
+
+on:
+  push:
+    branches:
+      - compiler-duc-target-consumer
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run focused DUC target consumer test
+        run: python -m unittest LearnerAI.Compiler.tests.test_000_duc_target_consumer_red_phase
