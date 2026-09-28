@@ -325,7 +325,7 @@ class NativeSemanticBinder:
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-SUPPORT-006",
                 "error",
-                "native command is known and typed but has no semantic adapter or engine-effect contract",
+                "native command is known and typed but has no semantic adapter",
             )
             diagnostics.append(diagnostic)
             return NativeSupportAssessment(
