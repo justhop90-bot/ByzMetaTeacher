@@ -356,7 +356,7 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
         "https://forums.ageofempires.com/t/three-ways-to-get-the-ai-to-attack/205476"
     )
     patch_notes = "https://airef.github.io/tables/up-patch-notes.html"
-    can_train_docs = "https://airef.github.io/resources/articles/command-performance.html"
+    can_train_docs = "https://airef.github.io/commands/commands-details.html#can-train"
     can_research_docs = "https://airef.github.io/commands/commands-details.html#can-research"
 
     controller_sources = {
