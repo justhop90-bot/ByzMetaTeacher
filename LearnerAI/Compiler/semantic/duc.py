@@ -603,6 +603,18 @@ def _search_cursor_transition(
             disposition,
             DucSearchResultDisposition.GUARANTEED_EMPTY,
         )
+    if prepared_index.path_ambiguous:
+        disposition = DucSearchCursorDisposition.PATH_AMBIGUOUS
+        return (
+            replace(
+                prepared_index,
+                offset=None,
+                known=False,
+                cursor_disposition=disposition,
+            ),
+            disposition,
+            DucSearchResultDisposition.RUNTIME_DEPENDENT,
+        )
     if guaranteed_empty:
         disposition = DucSearchCursorDisposition.AT_END
         return (
