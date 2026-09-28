@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from ..ast import Expression, SourceLocation
+from ..ast import Expression, SourceLocation\nfrom .construction import ConstructionLifecycle
 
 if TYPE_CHECKING:
     from .strategy import StrategicBinding
