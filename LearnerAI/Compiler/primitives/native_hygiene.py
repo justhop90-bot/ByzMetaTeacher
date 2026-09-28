@@ -1398,7 +1398,7 @@ class NativeContractCatalog:
     def duc_target(self, command: str) -> Optional[NativeDucTargetContract]:
         return next((item for item in self.duc_targets if item.command == command), None)
 
-    def duc_target_data(self, command: str) -> Optional[NativeDucTargetDataContract]:
+    def duc_target_data_contract(self, command: str) -> Optional[NativeDucTargetDataContract]:
         return next((item for item in self.duc_target_data if item.command == command), None)
 
     def duc_target_consumer(self, command: str) -> Optional[NativeDucTargetConsumerContract]:
