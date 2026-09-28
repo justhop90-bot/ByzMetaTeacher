@@ -187,19 +187,30 @@ class PrimitiveRegistry:
         bindings = binder.bind_attack_plan(plan)
         binding_by_command = {binding.command: binding for binding in bindings}
         for rule in plan.rules:
-            for expression in (*rule.facts, *rule.actions):
-                binding = binding_by_command[expression.head]
+            for expression in rule.facts:
+                native = self.require_native(expression.head)
+                if len(expression.args) != native.parameter_count:
+                    raise ValueError(
+                        f"attack lifecycle fact '{expression.head}' expects exactly "
+                        f"{native.parameter_count} argument(s), got {len(expression.args)}"
+                    )
+                if native.command_type not in {"Fact", "Fact/Action"}:
+                    raise ValueError(
+                        f"attack lifecycle command '{expression.head}' is an Action and cannot be emitted as a Fact"
+                    )
+            for expression in rule.actions:
+                binding = binding_by_command.get(expression.head)
+                if binding is None:
+                    raise ValueError(
+                        f"attack lifecycle command '{expression.head}' was not promoted by the dedicated binder"
+                    )
                 if len(expression.args) != binding.parameter_count:
                     raise ValueError(
                         f"attack lifecycle command '{expression.head}' expects exactly "
                         f"{binding.parameter_count} argument(s), got {len(expression.args)}"
                     )
                 native = self.require_native(expression.head)
-                if expression in rule.facts and native.command_type not in {"Fact", "Fact/Action"}:
-                    raise ValueError(
-                        f"attack lifecycle command '{expression.head}' is an Action and cannot be emitted as a Fact"
-                    )
-                if expression in rule.actions and native.command_type not in {"Action", "Fact/Action"}:
+                if native.command_type not in {"Action", "Fact/Action"}:
                     raise ValueError(
                         f"attack lifecycle command '{expression.head}' is a Fact and cannot be emitted as an Action"
                     )
