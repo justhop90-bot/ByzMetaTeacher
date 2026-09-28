@@ -763,6 +763,75 @@ def _preceding_index_can_match(
     return None
 
 
+def _append_object_by_id(
+    state: DucSemanticState,
+    *,
+    list_kind: DucListKind,
+    type_op: str,
+    object_id: str,
+    provenance: DucProvenance,
+    capacity: int,
+) -> DucSemanticState:
+    current = state.local_list if list_kind is DucListKind.LOCAL else state.remote_list
+    previous = current.current_generation
+
+    if previous is None:
+        cardinality = DucCardinalityRange(1, 1) if type_op == "c:" else None
+        fingerprint = _fingerprint(
+            ("add-object-by-id", list_kind.value, type_op, object_id)
+        )
+        generation = DucListGeneration(
+            list_kind=list_kind,
+            generation=current.next_generation,
+            produced_by=provenance,
+            cardinality=cardinality,
+            capacity=capacity,
+            content_fingerprint=fingerprint,
+            last_search_cardinality=None,
+        )
+    else:
+        old_cardinality = previous.cardinality
+        if type_op == "c:" and old_cardinality is not None:
+            minimum = old_cardinality.minimum
+            maximum = old_cardinality.maximum
+            if minimum >= capacity:
+                return state
+            cardinality = DucCardinalityRange(
+                minimum + 1,
+                min(maximum + 1, capacity),
+            )
+        else:
+            cardinality = None
+
+        generation = replace(
+            previous,
+            cardinality=cardinality,
+            content_fingerprint=_fingerprint(
+                (
+                    "add-object-by-id",
+                    previous.content_fingerprint or "",
+                    list_kind.value,
+                    type_op,
+                    object_id,
+                )
+            ),
+        )
+
+    updated = _list_state(
+        list_kind,
+        current,
+        generation,
+        next_generation=(
+            current.next_generation + 1
+            if previous is None
+            else current.next_generation
+        ),
+    )
+    if list_kind is DucListKind.LOCAL:
+        return replace(state, local_list=updated)
+    return replace(state, remote_list=updated)
+
+
 def _mutate_list_generation(
     state: DucSearchListState,
     *,
@@ -1637,6 +1706,22 @@ def _analyze_duc_linear(
                 if availability_observation is not None:
                     search_availability.append(availability_observation)
                     rule_reads.add(DucStateKind.LIST)
+                continue
+
+            fact_object_append_contract = contracts.duc_mutation(fact.head)
+            if (
+                fact_object_append_contract is not None
+                and fact_object_append_contract.mutation_kind == "ADD_OBJECT"
+            ):
+                diagnostics.append(
+                    DucDiagnostic(
+                        "DUC-005",
+                        DiagnosticSeverity.ERROR.value,
+                        rule.rule_order,
+                        "up-add-object-by-id Fact semantics are unresolved; Action evaluation only",
+                        _location(fact_action, rule.source_location),
+                    )
+                )
                 continue
 
             fact_search_contract = contracts.duc_search(fact.head)
@@ -2792,6 +2877,118 @@ def _analyze_duc_linear(
                 continue
 
             mutation_contract = contracts.duc_mutation(command)
+            if (
+                mutation_contract is not None
+                and mutation_contract.mutation_kind == "ADD_OBJECT"
+            ):
+                if len(args) != 3:
+                    raise ValueError(
+                        "up-add-object-by-id requires SearchSource, typeOp, and Id"
+                    )
+                source = (
+                    DucListKind.LOCAL
+                    if args[0] == "search-local"
+                    else DucListKind.REMOTE
+                    if args[0] == "search-remote"
+                    else None
+                )
+                if source is None or source.value not in mutation_contract.list_kinds:
+                    raise ValueError("up-add-object-by-id requires search-local or search-remote")
+                type_op = args[1]
+                if type_op not in {"c:", "g:", "s:"}:
+                    raise ValueError(
+                        "up-add-object-by-id typeOp must be c:, g:, or s:"
+                    )
+                object_id = args[2]
+                if type_op == "c:":
+                    object_id_value = _int_or_none(object_id)
+                    if object_id_value is None:
+                        raise ValueError("up-add-object-by-id c: Id must be an integer")
+                    if object_id_value < 0:
+                        raise ValueError("up-add-object-by-id c: Id must be non-negative")
+                search_contract = contracts.duc_search(
+                    "up-find-local" if source is DucListKind.LOCAL else "up-find-remote"
+                )
+                if search_contract is None:
+                    raise ValueError(
+                        f"no native DUC capacity contract exists for {source.value.lower()} object append"
+                    )
+
+                provenance = _provenance(
+                    rule,
+                    action,
+                    visibility=DucVisibility.SAME_RULE,
+                    state_revision=state_revision,
+                    pass_id=state.pass_id,
+                    inputs=(
+                        (
+                            current.generation,
+                        )
+                        if (
+                            current := (
+                                state.local_list
+                                if source is DucListKind.LOCAL
+                                else state.remote_list
+                            ).current_generation
+                        ) is not None
+                        else ()
+                    ),
+                    contract_id="duc.mutation.add-object-by-id",
+                    evidence_ids=mutation_contract.evidence_ids,
+                )
+                current = (
+                    state.local_list
+                    if source is DucListKind.LOCAL
+                    else state.remote_list
+                )
+                if (
+                    current.current_generation is not None
+                    and current.current_generation.cardinality is not None
+                    and current.current_generation.cardinality.minimum >= search_contract.capacity
+                ):
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-014",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            (
+                                f"up-add-object-by-id cannot append to the full "
+                                f"{source.value.lower()} DUC list at capacity "
+                                f"{search_contract.capacity}"
+                            ),
+                            _location(action, rule.source_location),
+                        )
+                    )
+                    continue
+
+                previous_target = state.target
+                state = _append_object_by_id(
+                    state,
+                    list_kind=source,
+                    type_op=type_op,
+                    object_id=object_id,
+                    provenance=provenance,
+                    capacity=search_contract.capacity,
+                )
+                mutations.append(
+                    DucListMutationEffect(
+                        command=command,
+                        list_kind=source,
+                        kind=DucListMutationKind.ADD_OBJECT,
+                        object_data=object_id,
+                        compare_operator=None,
+                        compare_value=None,
+                        target_transition=DucTargetTransition.UNCHANGED,
+                        provenance=provenance,
+                    )
+                )
+                if state.target is not previous_target:
+                    raise AssertionError(
+                        "up-add-object-by-id must not rewrite an existing target"
+                    )
+                rule_writes.add(DucStateKind.LIST)
+                continue
+
             if mutation_contract is not None:
                 if command == "up-clean-search" and len(args) != 3:
                     raise ValueError("up-clean-search requires SearchSource, ObjectData, and SearchOrder")
