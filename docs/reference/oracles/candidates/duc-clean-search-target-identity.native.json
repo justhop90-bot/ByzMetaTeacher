@@ -1,0 +1,229 @@
+{
+  "fixture": {
+    "id": "DUC-ORACLE-CLEAN-SEARCH-TARGET-IDENTITY-CAPTURE",
+    "kind": "NATIVE_OBSERVATION",
+    "command_under_test": "up-clean-search",
+    "engine_scope": {
+      "game": "aoe2de",
+      "build": "RECORD-ACTUAL-ENGINE-BUILD",
+      "patch": "RECORD-ACTUAL-PATCH",
+      "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+      "platform": "RECORD-ACTUAL-PLATFORM"
+    },
+    "scenario": {
+      "name": "clean-search-moves-selected-object-to-different-index",
+      "object_set": [
+        {
+          "alias": "TARGET_A",
+          "native_id": null,
+          "initial_index": 0,
+          "metadata": {
+            "role": "selected target",
+            "sort_constraint": "TARGET_A must move from index 0 to a different index after clean-search"
+          }
+        },
+        {
+          "alias": "OTHER_B",
+          "native_id": null,
+          "initial_index": 1,
+          "metadata": {
+            "role": "non-target comparator"
+          }
+        },
+        {
+          "alias": "OTHER_C",
+          "native_id": null,
+          "initial_index": 2,
+          "metadata": {
+            "role": "non-target comparator"
+          }
+        }
+      ],
+      "object_identity": {
+        "method": "native-object-id",
+        "note": "Record actual map object IDs. The capture is valid only when TARGET_A's list index changes after the sort."
+      }
+    },
+    "setup": [
+      {
+        "label": "reset",
+        "source": "(up-full-reset-search)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "populate-local-search",
+        "source": "(up-find-local c: unit c: 3)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "select-target-at-initial-index",
+        "source": "(up-set-target-object search-local c: 0)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "record-target-before-clean",
+        "source": "(up-get-object-target-data object-data-id 100)",
+        "expect_native_result": "SUCCESS"
+      }
+    ],
+    "probe": [
+      {
+        "label": "sort-local-list-by-object-id-descending",
+        "source": "(up-clean-search search-local object-data-id search-order-desc)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "record-target-after-clean",
+        "source": "(up-get-object-target-data object-data-id 101)",
+        "expect_native_result": "UNKNOWN"
+      }
+    ],
+    "assertions": [
+      {
+        "id": "target-index-actually-moves",
+        "description": "The selected target must move from initial index 0 to index 2 after descending sort; otherwise the fixture does not exercise the disputed target-lifetime behavior.",
+        "expected": 2,
+        "observation_path": "/fixture/observation/target/after/index",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "target-identity-preserved",
+        "description": "After up-clean-search moves the selected object's list coordinate, the target remains the same native object.",
+        "expected": "RECORD-TARGET-NATIVE-ID",
+        "observation_path": "/fixture/observation/target/after/native_id",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "target-does-not-follow-old-index",
+        "description": "After the selected object moves, the engine target must not silently resolve to the object occupying the former target index.",
+        "expected": "RECORD-TARGET-NATIVE-ID",
+        "observation_path": "/fixture/observation/target/after/native_id",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "target-remains-addressable",
+        "description": "Target-data access after sorting succeeds for the selected native object.",
+        "expected": "SUCCESS",
+        "observation_path": "/fixture/observation/target/after/access_result",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      }
+    ],
+    "observation": {
+      "engine": {
+        "build": "RECORD-ACTUAL-ENGINE-BUILD",
+        "patch": "RECORD-ACTUAL-PATCH",
+        "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+        "platform": "RECORD-ACTUAL-PLATFORM"
+      },
+      "result": "UNVERIFIED",
+      "list": {
+        "before": {
+          "ids": [
+            "RECORD-A",
+            "RECORD-B",
+            "RECORD-C"
+          ],
+          "source": "search-local"
+        },
+        "after": {
+          "ids": [
+            "RECORD-C",
+            "RECORD-B",
+            "RECORD-A"
+          ],
+          "source": "search-local"
+        }
+      },
+      "target": {
+        "before": {
+          "selected": true,
+          "source": "search-local",
+          "index": 0,
+          "native_id": "RECORD-TARGET-NATIVE-ID",
+          "access_result": "SUCCESS"
+        },
+        "after": {
+          "selected": true,
+          "source": "search-local",
+          "index": 2,
+          "native_id": "RECORD-TARGET-NATIVE-ID",
+          "access_result": "SUCCESS"
+        }
+      },
+      "cursor": {
+        "before": null,
+        "after": null,
+        "transition": "UNOBSERVABLE",
+        "observability": "UNOBSERVABLE",
+        "probe_method": "next-search"
+      },
+      "search_state": {
+        "before": {
+          "local_total": null,
+          "local_last_search": null,
+          "remote_total": 0,
+          "remote_last_search": 0
+        },
+        "after": {
+          "local_total": null,
+          "local_last_search": null,
+          "remote_total": 0,
+          "remote_last_search": 0
+        }
+      },
+      "probe": {
+        "commands": [
+          {
+            "source": "(up-clean-search search-local object-data-id search-order-desc)",
+            "result": "UNKNOWN",
+            "native_error": null
+          },
+          {
+            "source": "(up-get-object-target-data object-data-id 101)",
+            "result": "UNKNOWN",
+            "native_error": null
+          }
+        ]
+      },
+      "assertions": [
+        {
+          "id": "target-index-actually-moves",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime with TARGET_A moving to a different list index."
+        },
+        {
+          "id": "target-identity-preserved",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before target-preservation or retarget-by-index semantics can be promoted."
+        },
+        {
+          "id": "target-does-not-follow-old-index",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before target-preservation or retarget-by-index semantics can be promoted."
+        },
+        {
+          "id": "target-remains-addressable",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before target-preservation or retarget-by-index semantics can be promoted."
+        }
+      ],
+      "notes": "Capture template only. Placeholder engine scope, object IDs, and list IDs are intentional. The candidate is valid only when the selected target actually moves from index 0 to index 2 after sorting; the native observation then determines whether its native ID remains the same or the old index retargets to another object."
+    }
+  }
+}

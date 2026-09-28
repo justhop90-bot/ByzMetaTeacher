@@ -15,6 +15,7 @@ FIXTURE_DIR = (
     / "oracles"
     / "fixtures"
 )
+CANDIDATE_DIR = FIXTURE_DIR.parent / "candidates"
 
 EXPECTED_FIXTURES = {
     "duc-remove-after-target.pass.json": "PASS",
@@ -111,6 +112,84 @@ class DucNativeOracleFixtureTests(unittest.TestCase):
             observed = observed_by_id[assertion["id"]]
             self.assertEqual(observed["actual"], actual)
             self.assertNotEqual(assertion["expected"], actual)
+
+    def test_failed_target_action_candidate_is_explicitly_unpromoted(self):
+        with (CANDIDATE_DIR / "duc-failed-target-action.native.json").open(
+            encoding="utf-8"
+        ) as handle:
+            document = json.load(handle)
+
+        fixture = document["fixture"]
+        observation = fixture["observation"]
+        probe_sources = [item["source"] for item in fixture["probe"]]
+
+        self.assertEqual(fixture["kind"], "NATIVE_OBSERVATION")
+        self.assertEqual(observation["result"], "UNVERIFIED")
+        self.assertEqual(
+            fixture["engine_scope"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            observation["engine"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            [assertion["result"] for assertion in observation["assertions"]],
+            ["UNVERIFIED", "UNVERIFIED", "UNVERIFIED"],
+        )
+        self.assertIn(
+            "(up-set-target-object search-local c: 240)",
+            probe_sources,
+        )
+        self.assertIn(
+            "search-local capacity is 240; index 240 is invalid",
+            fixture["scenario"]["object_set"][0]["metadata"]["capacity_boundary"],
+        )
+        self.assertIn(
+            "(up-get-object-target-data object-data-id 101)",
+            probe_sources,
+        )
+
+    def test_clean_search_target_identity_candidate_is_explicitly_unpromoted(self):
+        with (CANDIDATE_DIR / "duc-clean-search-target-identity.native.json").open(
+            encoding="utf-8"
+        ) as handle:
+            document = json.load(handle)
+
+        fixture = document["fixture"]
+        observation = fixture["observation"]
+        probe_sources = [item["source"] for item in fixture["probe"]]
+
+        self.assertEqual(fixture["kind"], "NATIVE_OBSERVATION")
+        self.assertEqual(observation["result"], "UNVERIFIED")
+        self.assertEqual(
+            fixture["engine_scope"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            observation["engine"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            [assertion["result"] for assertion in observation["assertions"]],
+            ["UNVERIFIED", "UNVERIFIED", "UNVERIFIED", "UNVERIFIED"],
+        )
+        self.assertEqual(
+            observation["target"]["before"]["index"],
+            0,
+        )
+        self.assertEqual(
+            observation["target"]["after"]["index"],
+            2,
+        )
+        self.assertIn(
+            "(up-clean-search search-local object-data-id search-order-desc)",
+            probe_sources,
+        )
+        self.assertIn(
+            "(up-get-object-target-data object-data-id 101)",
+            probe_sources,
+        )
 
 
 if __name__ == "__main__":

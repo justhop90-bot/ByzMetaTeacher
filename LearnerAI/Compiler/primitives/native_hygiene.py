@@ -749,6 +749,58 @@ def default_native_duc_search_contracts() -> Tuple[NativeDucSearchContract, ...]
     )
 
 
+def default_native_duc_search_index_transition_contracts() -> Tuple[NativeDucSearchIndexTransitionContract, ...]:
+    scope = EngineVersionScope(
+        source_families=(AIRefVersionFamily.UP,),
+        engine_targets=(AIRefVersionFamily.DE,),
+        introduced_family=AIRefVersionFamily.UP,
+        release="UserPatch 1.1 DUC search-index transitions",
+    )
+    evidence = ("airef:duc:search-index-transition",)
+    return (
+        NativeDucSearchIndexTransitionContract(
+            "EXPLICIT_RESET",
+            ("LOCAL", "REMOTE"),
+            True,
+            None,
+            None,
+            "UNKNOWN",
+            evidence,
+            scope,
+        ),
+        NativeDucSearchIndexTransitionContract(
+            "QUERY_CHANGE",
+            ("SEARCHED_LIST",),
+            True,
+            True,
+            True,
+            "UNKNOWN",
+            evidence,
+            scope,
+        ),
+        NativeDucSearchIndexTransitionContract(
+            "FILTER_CHANGE",
+            ("BOTH",),
+            True,
+            True,
+            True,
+            "UNKNOWN",
+            evidence,
+            scope,
+        ),
+        NativeDucSearchIndexTransitionContract(
+            "FOCUS_PLAYER_CHANGE",
+            ("REMOTE",),
+            True,
+            True,
+            True,
+            "UNKNOWN",
+            evidence,
+            scope,
+        ),
+    )
+
+
 def default_native_duc_filter_contracts() -> Tuple[NativeDucFilterContract, ...]:
     commands = (
         "up-filter-distance",
@@ -898,8 +950,11 @@ def default_native_duc_target_contracts() -> Tuple[NativeDucTargetContract, ...]
             "OBJECT",
             True,
             False,
-            ("airef:duc:set-target-object",),
+            ("airef:duc:set-target-object", "airef:duc:set-target-object-failure"),
             "LIST_INDEX",
+            True,
+            True,
+            None,
         ),
         NativeDucTargetContract(
             "up-set-target-point",
@@ -1077,6 +1132,33 @@ class NativeDucSearchContract:
 
 
 @dataclass(frozen=True)
+class NativeDucSearchIndexTransitionContract:
+    trigger_kind: str
+    affected_lists: Tuple[str, ...]
+    reset_offset_to_zero: bool
+    preserves_search_list_contents: Optional[bool]
+    preserves_filters: Optional[bool]
+    preserves_targets: str
+    evidence_ids: Tuple[str, ...]
+    engine_version_scope: EngineVersionScope
+
+    def __post_init__(self) -> None:
+        if self.trigger_kind not in {"EXPLICIT_RESET", "QUERY_CHANGE", "FILTER_CHANGE", "FOCUS_PLAYER_CHANGE"}:
+            raise ValueError(f"unknown DUC search-index transition trigger: {self.trigger_kind}")
+        if not self.affected_lists or any(
+            item not in {"LOCAL", "REMOTE", "BOTH", "SEARCHED_LIST"}
+            for item in self.affected_lists
+        ):
+            raise ValueError("DUC search-index transition requires valid affected-list scopes")
+        if self.preserves_targets not in {"PRESERVED", "INVALIDATED", "UNKNOWN"}:
+            raise ValueError("DUC search-index transition requires a valid target-preservation state")
+        if not self.evidence_ids:
+            raise ValueError("DUC search-index transition requires evidence")
+        if not self.engine_version_scope.source_families:
+            raise ValueError("DUC search-index transition requires engine-version scope")
+
+
+@dataclass(frozen=True)
 class NativeDucFilterContract:
     command: str
     retained: bool
@@ -1172,10 +1254,17 @@ class NativeDucTargetContract:
     requires_current_point: bool
     evidence_ids: Tuple[str, ...]
     identity_kind: str = "LIST_INDEX"
+    supports_fact: bool = False
+    returns_false_on_invalid_index: bool = False
+    failed_action_preserves_previous_target: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.identity_kind not in {"LIST_INDEX", "NATIVE_ID", "POINT"}:
             raise ValueError(f"unknown DUC target identity kind: {self.identity_kind}")
+        if self.returns_false_on_invalid_index and not self.supports_fact:
+            raise ValueError(
+                "DUC target contracts with invalid-index Fact failure semantics must support Fact evaluation"
+            )
 
 
 @dataclass(frozen=True)
@@ -1187,6 +1276,7 @@ class NativeContractCatalog:
     goal_span_contracts: Tuple[NativeGoalSpanContract, ...] = ()
     parameter_ranges: Tuple[NativeGoalParameterRangeContract, ...] = ()
     duc_searches: Tuple[NativeDucSearchContract, ...] = ()
+    duc_search_index_transitions: Tuple[NativeDucSearchIndexTransitionContract, ...] = ()
     duc_filters: Tuple[NativeDucFilterContract, ...] = ()
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
     duc_mutations: Tuple[NativeDucMutationContract, ...] = ()
@@ -1210,6 +1300,12 @@ class NativeContractCatalog:
             object.__setattr__(self, "parameter_ranges", default_native_goal_parameter_ranges())
         if not self.duc_searches:
             object.__setattr__(self, "duc_searches", default_native_duc_search_contracts())
+        if not self.duc_search_index_transitions:
+            object.__setattr__(
+                self,
+                "duc_search_index_transitions",
+                default_native_duc_search_index_transition_contracts(),
+            )
         if not self.duc_filters:
             object.__setattr__(self, "duc_filters", default_native_duc_filter_contracts())
         if not self.duc_resets:
@@ -1224,6 +1320,8 @@ class NativeContractCatalog:
             object.__setattr__(self, "duc_target_consumers", default_native_duc_target_consumer_contracts())
         if not self.duc_groups:
             object.__setattr__(self, "duc_groups", default_native_duc_group_contracts())
+        if len({item.trigger_kind for item in self.duc_search_index_transitions}) != len(self.duc_search_index_transitions):
+            raise ValueError("duplicate DUC search-index transition trigger")
         for values, label in (
             (self.witnesses, "native witness"),
             (self.storage_uses, "native storage use"),
@@ -1348,6 +1446,7 @@ class NativeContractCatalog:
             evidence_id
             for contract in (
                 *self.duc_searches,
+                *self.duc_search_index_transitions,
                 *self.duc_filters,
                 *self.duc_resets,
                 *self.duc_mutations,
@@ -1399,6 +1498,12 @@ class NativeContractCatalog:
 
     def duc_search(self, command: str) -> Optional[NativeDucSearchContract]:
         return next((item for item in self.duc_searches if item.command == command), None)
+
+    def duc_search_index_transition(self, trigger_kind: str) -> Optional[NativeDucSearchIndexTransitionContract]:
+        return next(
+            (item for item in self.duc_search_index_transitions if item.trigger_kind == trigger_kind),
+            None,
+        )
 
     def duc_filter(self, command: str) -> Optional[NativeDucFilterContract]:
         return next((item for item in self.duc_filters if item.command == command), None)
@@ -1481,11 +1586,35 @@ class NativeContractCatalog:
                     f"native contract '{owner}' has invalid citation provenance: {exc}"
                 ) from exc
 
+        for contract in self.duc_search_index_transitions:
+            for evidence_id in contract.evidence_ids:
+                record = self.citation_catalog.resolve(evidence_id)
+                evidence_scope = record.engine_version_scope
+                if evidence_scope is None:
+                    raise ValueError(
+                        f"native contract 'DUC search-index transition {contract.trigger_kind}' "
+                        f"has citation '{evidence_id}' without engine-version scope"
+                    )
+                target_scope = contract.engine_version_scope
+                if (
+                    evidence_scope.source_families != target_scope.source_families
+                    or evidence_scope.engine_targets != target_scope.engine_targets
+                    or evidence_scope.introduced_family != target_scope.introduced_family
+                ):
+                    raise ValueError(
+                        f"native contract 'DUC search-index transition {contract.trigger_kind}' "
+                        f"has engine-version scope inconsistent with citation '{evidence_id}'"
+                    )
+
         for owner, evidence_ids in (
             ("DUC output", self.duc_output_evidence_ids),
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_searches
+            ),
+            *(
+                (f"DUC search-index transition {contract.trigger_kind}", contract.evidence_ids)
+                for contract in self.duc_search_index_transitions
             ),
             *(
                 (contract.command, contract.evidence_ids)
@@ -2184,6 +2313,40 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                     "only 1 build/up-build command is allowed to succeed per AI rule pass.",
                     ExcerptKind.PATCH_NOTE,
                 ),
+                source_hash=patch_notes_hash,
+                retrieval=patch_notes_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_build_scope,
+            ),
+            CitationRecord(
+                "airef:duc:search-index-transition",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                LocatorType.PATCH_RELEASE,
+                "20130305-140519",
+                excerpt=SourceExcerpt.capture(
+                    "Changing direct unit search filters should reset the search index offsets. Now, filter-include, filter-exclude, and filter-range will automatically reset the local and remote search index offsets, which is equivalent to (up-reset-search 1 0 1 0), to ensure that the lists are checked from the beginning with the new filter state, for subsequent find commands. A similar index offset reset occurs if you find-local or find-remote with a different type/class from last time, or the focus-player has changed for find-remote.",
+                    ExcerptKind.PATCH_NOTE,
+                    locator_text="20130305-140519",
+                ),
+                semantic_scope=CitationSemanticScope.GENERAL_NATIVE_FACT,
+                source_hash=patch_notes_hash,
+                retrieval=patch_notes_retrieval,
+                state=CitationState.PINNED,
+                engine_version_scope=up_build_scope,
+            ),
+            CitationRecord(
+                "airef:duc:set-target-object-failure",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                "https://airef.github.io/tables/up-patch-notes.html",
+                LocatorType.PATCH_RELEASE,
+                "20130302-150016:up-set-target-object-failure",
+                excerpt=SourceExcerpt.capture(
+                    "If the index is out of range, up-set-target-object now returns false as a Fact.",
+                    ExcerptKind.PATCH_NOTE,
+                    locator_text="20130302-150016:up-set-target-object-failure",
+                ),
+                semantic_scope=CitationSemanticScope.GENERAL_NATIVE_FACT,
                 source_hash=patch_notes_hash,
                 retrieval=patch_notes_retrieval,
                 state=CitationState.PINNED,

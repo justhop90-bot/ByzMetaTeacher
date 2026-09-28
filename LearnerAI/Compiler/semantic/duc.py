@@ -48,6 +48,8 @@ from ..ir.duc import (
     DucSemanticState,
     DucStateKind,
     DucTargetConsumerEffect,
+    DucTargetFactObservation,
+    DucTargetFactResult,
     DucTargetConsumerMode,
     DucTargetDataObservation,
     DucTargetDataRelation,
@@ -402,6 +404,20 @@ def _int_or_none(value: str) -> int | None:
         return None
 
 
+def _transition_affects_list(
+    transition_contract,
+    list_kind: DucListKind,
+) -> bool:
+    if transition_contract is None or not transition_contract.reset_offset_to_zero:
+        return False
+    scopes = set(transition_contract.affected_lists)
+    return (
+        "BOTH" in scopes
+        or list_kind.value in scopes
+        or "SEARCHED_LIST" in scopes
+    )
+
+
 def _reset_search_index(
     index: DucSearchIndexState,
     reason: DucSearchIndexResetReason,
@@ -473,6 +489,7 @@ def _apply_focus_player_mutation(
     rule: EffectiveRule,
     action: RuleAction,
     state_revision: int,
+    transition_contract,
 ) -> DucSemanticState:
     command = action.expression.head
     arguments = _canonical_arguments(action.expression)
@@ -504,7 +521,10 @@ def _apply_focus_player_mutation(
         contract_id="duc.search-index.focus-player",
         evidence_ids=(),
     )
-    if proven_unchanged:
+    if proven_unchanged or not _transition_affects_list(
+        transition_contract,
+        DucListKind.REMOTE,
+    ):
         updated_index = replace(
             previous_index,
             focus_player_signature=next_signature,
@@ -531,6 +551,9 @@ def _apply_focus_player_mutation(
 def _prepare_search_index_for_query(
     index: DucSearchIndexState,
     query_signature: tuple[str, ...],
+    *,
+    list_kind: DucListKind,
+    transition_contract,
 ) -> tuple[
     DucSearchIndexState,
     Optional[DucSearchIndexResetReason],
@@ -542,6 +565,7 @@ def _prepare_search_index_for_query(
     if (
         index.query_signature is not None
         and index.query_signature != query_signature
+        and _transition_affects_list(transition_contract, list_kind)
     ):
         prepared = _reset_search_index(
             index,
@@ -968,6 +992,16 @@ def _group_validity(
     return DucGroupStatus.VALID
 
 
+def _search_list_proven_empty(state: DucSearchListState) -> bool:
+    generation = state.current_generation
+    return (
+        generation is not None
+        and generation.cardinality is not None
+        and generation.cardinality.maximum == 0
+        and not state.path_ambiguous
+    )
+
+
 def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
@@ -998,6 +1032,7 @@ def _apply_duc_search(
     action: RuleAction,
     args: tuple[str, ...],
     search_contract,
+    query_transition_contract,
     state_revision: int,
     rule_reset_lists: set[DucListKind],
     source_kind: str,
@@ -1058,6 +1093,8 @@ def _apply_duc_search(
     ) = _prepare_search_index_for_query(
         current.search_index,
         query_signature,
+        list_kind=kind,
+        transition_contract=query_transition_contract,
     )
     blocked_by_capacity = (
         current.current_generation is not None
@@ -1225,6 +1262,95 @@ def _apply_duc_search(
     return state, operation, tuple(diagnostics)
 
 
+def _analyze_target_object_fact(
+    state: DucSemanticState,
+    *,
+    rule: EffectiveRule,
+    action: RuleAction,
+    args: tuple[str, ...],
+    contract,
+    state_revision: int,
+) -> DucTargetFactObservation:
+    provenance = _provenance(
+        rule,
+        action,
+        visibility=DucVisibility.SAME_RULE,
+        state_revision=state_revision,
+        pass_id=state.pass_id,
+        inputs=(
+            state.filters.generation,
+            state.local_list.current_generation.generation
+            if state.local_list.current_generation is not None
+            else -1,
+            state.remote_list.current_generation.generation
+            if state.remote_list.current_generation is not None
+            else -1,
+        ),
+        contract_id="duc.target.object.fact",
+        evidence_ids=contract.evidence_ids,
+    )
+    if len(args) != 3:
+        raise ValueError(
+            "up-set-target-object requires SearchSource, typeOp, and Index"
+        )
+    source = (
+        DucListKind.LOCAL
+        if args[0] == "search-local"
+        else DucListKind.REMOTE
+        if args[0] == "search-remote"
+        else None
+    )
+    current = (
+        state.local_list
+        if source is DucListKind.LOCAL
+        else state.remote_list
+        if source is DucListKind.REMOTE
+        else None
+    )
+    if source is None or current is None or not current.initialized:
+        return DucTargetFactObservation(
+            command=SET_OBJECT_TARGET,
+            result=DucTargetFactResult.GUARANTEED_FALSE,
+            target=None,
+            provenance=provenance,
+        )
+    if _search_list_proven_empty(current):
+        return DucTargetFactObservation(
+            command=SET_OBJECT_TARGET,
+            result=DucTargetFactResult.GUARANTEED_FALSE,
+            target=None,
+            provenance=provenance,
+        )
+    try:
+        index = int(args[2], 10)
+    except ValueError:
+        return DucTargetFactObservation(
+            command=SET_OBJECT_TARGET,
+            result=DucTargetFactResult.RUNTIME_DEPENDENT,
+            target=None,
+            provenance=provenance,
+        )
+    generation = current.current_generation
+    capacity = (
+        generation.capacity
+        if generation is not None
+        else max((item.capacity for item in current.generation_variants), default=0)
+    )
+    if index < 0 or index >= capacity:
+        return DucTargetFactObservation(
+            command=SET_OBJECT_TARGET,
+            result=DucTargetFactResult.GUARANTEED_FALSE,
+            target=None,
+            provenance=provenance,
+        )
+    return DucTargetFactObservation(
+        command=SET_OBJECT_TARGET,
+        result=DucTargetFactResult.RUNTIME_DEPENDENT,
+        target=None,
+        provenance=provenance,
+    )
+
+
 def _analyze_duc_linear(
     rules: tuple[EffectiveRule, ...],
     contracts: NativeContractCatalog | None = None,
@@ -1241,6 +1367,7 @@ def _analyze_duc_linear(
     groups: list[DucGroupOperation] = []
     group_observations: list[DucGroupSizeObservation] = []
     targets: list[DucTargetState] = []
+    target_fact_observations: list[DucTargetFactObservation] = []
     target_consumers: list[DucTargetConsumerEffect] = []
     target_data_observations: list[DucTargetDataObservation] = []
     observations: list[DucSearchStateObservation] = []
@@ -1286,6 +1413,44 @@ def _analyze_duc_linear(
                     rule_writes.add(DucStateKind.OUTPUT)
                 continue
 
+            fact_target_contract = contracts.duc_target(fact.head)
+            if fact_target_contract is not None:
+                if not fact_target_contract.supports_fact:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-005",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            f"{fact.head} is not a valid DUC Fact under its native target contract",
+                            _location(fact_action, rule.source_location),
+                        )
+                    )
+                elif fact_target_contract.identity_kind == "LIST_INDEX":
+                    try:
+                        observation = _analyze_target_object_fact(
+                            state,
+                            rule=rule,
+                            action=fact_action,
+                            args=fact_args,
+                            contract=fact_target_contract,
+                            state_revision=state_revision,
+                        )
+                    except ValueError as exc:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-017",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                str(exc),
+                                _location(fact_action, rule.source_location),
+                            )
+                        )
+                    else:
+                        target_fact_observations.append(observation)
+                        rule_reads.add(DucStateKind.LIST)
+                        rule_reads.add(DucStateKind.FILTER)
+                continue
+
             fact_search_contract = contracts.duc_search(fact.head)
             if fact_search_contract is not None:
                 try:
@@ -1299,6 +1464,7 @@ def _analyze_duc_linear(
                         action=fact_action,
                         args=fact_args,
                         search_contract=fact_search_contract,
+                        query_transition_contract=contracts.duc_search_index_transition("QUERY_CHANGE"),
                         state_revision=state_revision,
                         rule_reset_lists=rule_reset_lists,
                         source_kind="FACT",
@@ -1330,6 +1496,7 @@ def _analyze_duc_linear(
                     rule=rule,
                     action=action,
                     state_revision=state_revision,
+                    transition_contract=contracts.duc_search_index_transition("FOCUS_PLAYER_CHANGE"),
                 )
                 continue
 
@@ -1696,6 +1863,7 @@ def _analyze_duc_linear(
                         action=action,
                         args=args,
                         search_contract=search_contract,
+                        query_transition_contract=contracts.duc_search_index_transition("QUERY_CHANGE"),
                         state_revision=state_revision,
                         rule_reset_lists=rule_reset_lists,
                         source_kind="ACTION",
@@ -1743,20 +1911,23 @@ def _analyze_duc_linear(
                 local_list = state.local_list
                 remote_list = state.remote_list
                 if filter_contract.resets_search_indices:
-                    local_list = replace(
-                        local_list,
-                        search_index=_reset_search_index(
-                            local_list.search_index,
-                            DucSearchIndexResetReason.FILTER_CHANGED,
-                        ),
-                    )
-                    remote_list = replace(
-                        remote_list,
-                        search_index=_reset_search_index(
-                            remote_list.search_index,
-                            DucSearchIndexResetReason.FILTER_CHANGED,
-                        ),
-                    )
+                    transition_contract = contracts.duc_search_index_transition("FILTER_CHANGE")
+                    if _transition_affects_list(transition_contract, DucListKind.LOCAL):
+                        local_list = replace(
+                            local_list,
+                            search_index=_reset_search_index(
+                                local_list.search_index,
+                                DucSearchIndexResetReason.FILTER_CHANGED,
+                            ),
+                        )
+                    if _transition_affects_list(transition_contract, DucListKind.REMOTE):
+                        remote_list = replace(
+                            remote_list,
+                            search_index=_reset_search_index(
+                                remote_list.search_index,
+                                DucSearchIndexResetReason.FILTER_CHANGED,
+                            ),
+                        )
                 state = DucSemanticState(
                     local_list,
                     remote_list,
@@ -2195,6 +2366,37 @@ def _analyze_duc_linear(
                             default=0,
                         )
                     )
+                    if index is not None and _search_list_proven_empty(current):
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-014",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                (
+                                    f"DUC object index {index} cannot be established because "
+                                    f"{source.value.lower()} search list has proven zero cardinality"
+                                ),
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        if (
+                            state.target is not None
+                            and target_contract.failed_action_preserves_previous_target is None
+                        ):
+                            diagnostics.append(
+                                DucDiagnostic(
+                                    "DUC-007",
+                                    DiagnosticSeverity.WARNING.value,
+                                    rule.rule_order,
+                                    (
+                                        "up-set-target-object failed target establishment Action; "
+                                        "native effect on the previous target is unresolved, so the "
+                                        "compiler preserves the existing target without claiming runtime preservation"
+                                    ),
+                                    _location(action, rule.source_location),
+                                )
+                            )
+                        continue
                     if index is not None and not 0 <= index < capacity:
                         diagnostics.append(
                             DucDiagnostic(
@@ -2205,6 +2407,23 @@ def _analyze_duc_linear(
                                 _location(action, rule.source_location),
                             )
                         )
+                        if (
+                            state.target is not None
+                            and target_contract.failed_action_preserves_previous_target is None
+                        ):
+                            diagnostics.append(
+                                DucDiagnostic(
+                                    "DUC-007",
+                                    DiagnosticSeverity.WARNING.value,
+                                    rule.rule_order,
+                                    (
+                                        "up-set-target-object failed target establishment Action; "
+                                        "native effect on the previous target is unresolved, so the "
+                                        "compiler preserves the existing target without claiming runtime preservation"
+                                    ),
+                                    _location(action, rule.source_location),
+                                )
+                            )
                         continue
                     provenance = _provenance(
                         rule,
@@ -2607,6 +2826,7 @@ def _analyze_duc_linear(
         resets=tuple(resets),
         mutations=tuple(mutations),
         targets=tuple(targets),
+        target_fact_observations=tuple(target_fact_observations),
         target_consumers=tuple(target_consumers),
         target_data_observations=tuple(target_data_observations),
         observations=tuple(observations),

@@ -1,0 +1,186 @@
+{
+  "fixture": {
+    "id": "DUC-ORACLE-FAILED-TARGET-ACTION-CAPTURE",
+    "kind": "NATIVE_OBSERVATION",
+    "command_under_test": "up-set-target-object",
+    "engine_scope": {
+      "game": "aoe2de",
+      "build": "RECORD-ACTUAL-ENGINE-BUILD",
+      "patch": "RECORD-ACTUAL-PATCH",
+      "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+      "platform": "RECORD-ACTUAL-PLATFORM"
+    },
+    "scenario": {
+      "name": "existing-target-followed-by-failed-target-establishment-action",
+      "object_set": [
+        {
+          "alias": "TARGET_A",
+          "native_id": null,
+          "initial_index": 0,
+          "metadata": {
+            "role": "object selected before failed Action",
+            "capacity_boundary": "search-local capacity is 240; index 240 is invalid because valid indices are 0..239"
+          }
+        }
+      ],
+      "object_identity": {
+        "method": "native-object-id",
+        "note": "Record the actual map object ID observed before and after the failed Action."
+      }
+    },
+    "setup": [
+      {
+        "label": "reset",
+        "source": "(up-full-reset-search)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "populate-local-search",
+        "source": "(up-find-local c: unit c: 1)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "select-existing-target",
+        "source": "(up-set-target-object search-local c: 0)",
+        "expect_native_result": "SUCCESS"
+      },
+      {
+        "label": "probe-existing-target",
+        "source": "(up-get-object-target-data object-data-id 100)",
+        "expect_native_result": "SUCCESS"
+      }
+    ],
+    "probe": [
+      {
+        "label": "failed-target-establishment-action-at-capacity",
+        "source": "(up-set-target-object search-local c: 240)",
+        "expect_native_result": "FAILURE"
+      },
+      {
+        "label": "probe-target-after-failed-action",
+        "source": "(up-get-object-target-data object-data-id 101)",
+        "expect_native_result": "UNKNOWN"
+      }
+    ],
+    "assertions": [
+      {
+        "id": "failed-action-preserves-previous-target",
+        "description": "An invalid-index up-set-target-object Action leaves the pre-existing selected object target intact.",
+        "observation_path": "/fixture/observation/target/after/native_id",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "failed-action-does-not-select-replacement",
+        "description": "The failed Action does not replace the previous target with another object.",
+        "observation_path": "/fixture/observation/target/after/native_id",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      },
+      {
+        "id": "failed-action-target-access",
+        "description": "Target-data access after the failed Action directly reports whether a target remains addressable.",
+        "observation_path": "/fixture/observation/target/after/access_result",
+        "allowed_results": [
+          "PASS",
+          "FAIL",
+          "UNVERIFIED"
+        ]
+      }
+    ],
+    "observation": {
+      "engine": {
+        "build": "RECORD-ACTUAL-ENGINE-BUILD",
+        "patch": "RECORD-ACTUAL-PATCH",
+        "ai_layer": "RECORD-ACTUAL-AI-LAYER",
+        "platform": "RECORD-ACTUAL-PLATFORM"
+      },
+      "result": "UNVERIFIED",
+      "list": {
+        "before": {
+          "ids": [],
+          "source": "search-local"
+        },
+        "after": {
+          "ids": [],
+          "source": "search-local"
+        }
+      },
+      "target": {
+        "before": {
+          "selected": true,
+          "source": "search-local",
+          "index": 0,
+          "native_id": null,
+          "access_result": "UNKNOWN"
+        },
+        "after": {
+          "selected": false,
+          "source": null,
+          "index": null,
+          "native_id": null,
+          "access_result": "UNKNOWN"
+        }
+      },
+      "cursor": {
+        "before": null,
+        "after": null,
+        "transition": "UNOBSERVABLE",
+        "observability": "UNOBSERVABLE",
+        "probe_method": "none"
+      },
+      "search_state": {
+        "before": {
+          "local_total": null,
+          "local_last_search": null,
+          "remote_total": null,
+          "remote_last_search": null
+        },
+        "after": {
+          "local_total": null,
+          "local_last_search": null,
+          "remote_total": null,
+          "remote_last_search": null
+        }
+      },
+      "probe": {
+        "commands": [
+          {
+            "source": "(up-set-target-object search-local c: 240)",
+            "result": "UNKNOWN",
+            "native_error": null
+          },
+          {
+            "source": "(up-get-object-target-data object-data-id 101)",
+            "result": "UNKNOWN",
+            "native_error": null
+          }
+        ]
+      },
+      "assertions": [
+        {
+          "id": "failed-action-preserves-previous-target",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before contract promotion."
+        },
+        {
+          "id": "failed-action-does-not-select-replacement",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before contract promotion."
+        },
+        {
+          "id": "failed-action-target-access",
+          "result": "UNVERIFIED",
+          "message": "Capture required from a real AoE2DE runtime before contract promotion."
+        }
+      ],
+      "notes": "Capture template only. The failed Action deliberately uses index 240, exactly equal to the documented search-local capacity of 240 and therefore outside the valid index range 0..239. Placeholder engine scope and empty observations are intentional. This is not native evidence until executed against the exact AoE2DE runtime."
+    }
+  }
+}

@@ -19,6 +19,7 @@ from Compiler.primitives import (
 from Compiler.primitives.engine_semantics import default_engine_semantic_mapping_registry
 from Compiler.primitives.native_hygiene import (
     AIRefProvenance,
+    AIRefVersionFamily,
     CitationRecord,
     CitationRecordCatalog,
     CitationState,
@@ -80,6 +81,36 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(catalog.parameter_ranges_for("goal", "GoalId"), (parameter,))
         self.assertEqual(catalog.parameter_ranges_for("set-goal", "GoalId"), (parameter,))
 
+    def test_shared_catalog_exposes_duc_search_index_transition_contracts(self):
+        catalog = default_native_contract_catalog()
+
+        query = catalog.duc_search_index_transition("QUERY_CHANGE")
+        self.assertEqual(query.affected_lists, ("SEARCHED_LIST",))
+        self.assertTrue(query.reset_offset_to_zero)
+        self.assertTrue(query.preserves_search_list_contents)
+        self.assertTrue(query.preserves_filters)
+        self.assertEqual(query.preserves_targets, "UNKNOWN")
+        self.assertTrue(query.evidence_ids)
+        self.assertTrue(query.engine_version_scope.engine_targets)
+
+        filters = catalog.duc_search_index_transition("FILTER_CHANGE")
+        self.assertEqual(filters.affected_lists, ("BOTH",))
+        self.assertTrue(filters.reset_offset_to_zero)
+        self.assertTrue(filters.preserves_search_list_contents)
+        self.assertTrue(filters.preserves_filters)
+        self.assertEqual(filters.preserves_targets, "UNKNOWN")
+
+        focus = catalog.duc_search_index_transition("FOCUS_PLAYER_CHANGE")
+        self.assertEqual(focus.affected_lists, ("REMOTE",))
+        self.assertTrue(focus.reset_offset_to_zero)
+        self.assertTrue(focus.preserves_search_list_contents)
+        self.assertTrue(focus.preserves_filters)
+        self.assertEqual(focus.preserves_targets, "UNKNOWN")
+
+        explicit = catalog.duc_search_index_transition("EXPLICIT_RESET")
+        self.assertEqual(explicit.affected_lists, ("LOCAL", "REMOTE"))
+        self.assertTrue(explicit.reset_offset_to_zero)
+
     def test_shared_catalog_exposes_duc_contracts_and_evidence_ids(self):
         catalog = default_native_contract_catalog()
 
@@ -112,6 +143,12 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertTrue(consumer.option_one_requires_object_target)
         self.assertEqual(consumer.evidence_ids, ("airef:duc:target-objects",))
 
+        object_target = catalog.duc_target("up-set-target-object")
+        self.assertTrue(object_target.supports_fact)
+        self.assertTrue(object_target.returns_false_on_invalid_index)
+        self.assertIsNone(object_target.failed_action_preserves_previous_target)
+        self.assertIn("airef:duc:set-target-object-failure", object_target.evidence_ids)
+
         direct_target = catalog.duc_target("up-set-target-by-id")
         self.assertIsNotNone(direct_target)
         self.assertEqual(direct_target.identity_kind, "NATIVE_ID")
@@ -128,7 +165,13 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertEqual(mutation.evidence_ids, ("airef:duc:remove-objects",))
 
         self.assertIsNotNone(target)
-        self.assertEqual(target.evidence_ids, ("airef:duc:set-target-object",))
+        self.assertEqual(
+            target.evidence_ids,
+            (
+                "airef:duc:set-target-object",
+                "airef:duc:set-target-object-failure",
+            ),
+        )
 
         citation_ids = set(catalog.citation_ids())
         self.assertIn("airef:duc:find-local", citation_ids)
@@ -141,6 +184,52 @@ class NativeContractIntegrationTests(unittest.TestCase):
         self.assertIn("airef:duc:object-target-data", citation_ids)
         self.assertIn("airef:duc:get-object-target-data", citation_ids)
         self.assertIn("airef:duc:get-search-state", citation_ids)
+
+    def test_missing_duc_search_index_transition_evidence_blocks_catalog(self):
+        base = default_native_contract_catalog()
+        bad = replace(
+            base.duc_search_index_transition("QUERY_CHANGE"),
+            evidence_ids=("airef:duc:missing-transition",),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "unresolved citation 'airef:duc:missing-transition'",
+        ):
+            NativeContractCatalog(
+                duc_search_index_transitions=(
+                    bad,
+                    *(
+                        item
+                        for item in base.duc_search_index_transitions
+                        if item.trigger_kind != "QUERY_CHANGE"
+                    ),
+                ),
+            )
+
+    def test_duc_search_index_transition_scope_must_match_pinned_evidence(self):
+        base = default_native_contract_catalog()
+        transition = base.duc_search_index_transition("QUERY_CHANGE")
+        mismatched_scope = replace(
+            transition.engine_version_scope,
+            source_families=(AIRefVersionFamily.DE,),
+            engine_targets=(AIRefVersionFamily.DE,),
+            introduced_family=AIRefVersionFamily.DE,
+        )
+        bad = replace(transition, engine_version_scope=mismatched_scope)
+        with self.assertRaisesRegex(
+            ValueError,
+            "engine-version scope inconsistent with citation",
+        ):
+            NativeContractCatalog(
+                duc_search_index_transitions=(
+                    bad,
+                    *(
+                        item
+                        for item in base.duc_search_index_transitions
+                        if item.trigger_kind != "QUERY_CHANGE"
+                    ),
+                ),
+            )
 
     def test_shared_catalog_exposes_first_class_duc_group_contracts(self):
         catalog = default_native_contract_catalog()

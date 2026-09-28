@@ -14,13 +14,14 @@ from Compiler.ir.duc import (
     DucLoopWidening,
     DucTargetConsumerMode,
     DucTargetDataRelation,
+    DucTargetFactResult,
     DucTargetKind,
     DucTargetProof,
     DucTargetStatus,
     DucTargetTransition,
 )
 from Compiler.primitives import NativeContractCatalog, default_native_contract_catalog
-from Compiler.semantic.duc import analyze_duc
+from Compiler.semantic.duc import _empty_state, analyze_duc
 from Compiler.semantic.recurrent_execution import (
     RecurrentExecutionStatus,
     analyze_recurrent_execution,
@@ -61,6 +62,180 @@ def _rule(order, actions, *, pass_behavior=RulePassBehavior.RECURRENT):
 
 
 class DucSemanticTests(unittest.TestCase):
+    def test_set_target_object_action_rejects_first_remote_out_of_range_index(self):
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                        ("up-set-target-object", ("search-remote", "c:", "40")),
+                    ),
+                ),
+            ),
+        )
+
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(
+            any(
+                item.code == "DUC-014"
+                and "remote list capacity 40" in item.message
+                for item in report.diagnostics
+            )
+        )
+
+    def test_set_target_object_fact_on_proven_empty_search_list_is_guaranteed_false(self):
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
+        location = SourceLocation(1, 1, "fixture.per")
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 0)",
+            "up-set-target-object",
+            ("search-local", "c:", "0"),
+            location,
+        )
+
+        report = analyze_duc(
+            (
+                replace(
+                    _rule(1, ()),
+                    facts=(target_fact,),
+                ),
+            ),
+            initial_state=initial,
+        )
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.GUARANTEED_FALSE,
+        )
+        self.assertIsNone(report.target_fact_observations[-1].target)
+
+    def test_set_target_object_action_rejects_proven_empty_search_list(self):
+        from Compiler.semantic.duc import _empty_state
+
+        initial = _empty_state()
+        local = replace(
+            initial.local_list,
+            search_index=replace(
+                initial.local_list.search_index,
+                cursor_disposition=DucSearchCursorDisposition.AT_END,
+            ),
+        )
+        initial = replace(initial, local_list=local)
+
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-set-target-object", ("search-local", "c:", "0")),
+                    ),
+                ),
+            ),
+            initial_state=initial,
+        )
+
+        self.assertEqual(
+            report.searches[-1].output_generation.cardinality,
+            DucCardinalityRange(0, 0),
+        )
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(
+            any(
+                item.code == "DUC-014"
+                and "proven zero cardinality" in item.message
+                for item in report.diagnostics
+            )
+        )
+
+    def test_failed_target_action_on_uninitialized_search_list_does_not_establish_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+
+        self.assertIsNone(report.final_state.target)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "no initialized search list" in item.message
+            for item in report.diagnostics
+        ))
+
+    def test_set_target_object_fact_records_runtime_dependent_result_without_fabricating_target(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        find_fact = Expression(
+            "(up-find-local c: villager c: 1)",
+            "up-find-local",
+            ("c:", "villager", "c:", "1"),
+            location,
+        )
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 0)",
+            "up-set-target-object",
+            ("search-local", "c:", "0"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(find_fact, target_fact)),
+        ))
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.RUNTIME_DEPENDENT,
+        )
+        self.assertIsNone(report.target_fact_observations[-1].target)
+        self.assertIsNone(report.final_state.target)
+
+    def test_set_target_object_fact_out_of_range_is_guaranteed_false(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        find_fact = Expression(
+            "(up-find-local c: villager c: 1)",
+            "up-find-local",
+            ("c:", "villager", "c:", "1"),
+            location,
+        )
+        target_fact = Expression(
+            "(up-set-target-object search-local c: 240)",
+            "up-set-target-object",
+            ("search-local", "c:", "240"),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(find_fact, target_fact)),
+        ))
+
+        self.assertEqual(
+            report.target_fact_observations[-1].result,
+            DucTargetFactResult.GUARANTEED_FALSE,
+        )
+        self.assertIsNone(report.final_state.target)
+
+    def test_failed_target_action_preserves_existing_target_when_native_effect_is_open(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-set-target-object", ("search-local", "c:", "240")),
+            )),
+        ))
+
+        self.assertIsNotNone(report.final_state.target)
+        self.assertEqual(report.final_state.target.validity, DucTargetStatus.VALID)
+        self.assertTrue(any(
+            item.code == "DUC-007"
+            and "failed target establishment Action" in item.message
+            for item in report.diagnostics
+        ))
 
     def test_duc_state_effects_ignore_rule_that_recurrent_analysis_proves_never_runnable(self):
         rules = (
@@ -255,6 +430,25 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.goal_output_spans, ())
 
 
+    def test_goal_output_branch_join_widens_conflicting_search_and_group_writers(self):
+        rules = (
+            _rule(1, (("up-jump-rule", ("1",)),)),
+            _rule(2, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+                ("up-get-search-state", ("41",)),
+            )),
+            _rule(3, (("up-get-group-size", ("c:", "0", "41")),)),
+            _rule(4, (("up-do-nothing", ()),)),
+        )
+        report = analyze_duc(self._branched_execution(rules))
+
+        span = report.final_state.goal_output_spans[0]
+        self.assertEqual(span.start_goal_id, 41)
+        self.assertEqual(span.width, 4)
+        self.assertTrue(span.path_ambiguous)
+        self.assertIsNone(span.provenance)
+        self.assertIsNone(span.overwritten_provenance)
+        self.assertIsNone(span.overwritten_generation)
     def test_search_state_branch_join_preserves_width_four_output_span(self):
         rules = (
             _rule(1, (("up-jump-rule", ("1",)),)),
@@ -2296,6 +2490,104 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(observation.output_span.start_goal_id, 41)
         self.assertEqual(report.final_state.goal_output_spans, (observation.output_span,))
 
+
+    def test_query_change_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        query = replace(
+            base.duc_search_index_transition("QUERY_CHANGE"),
+            affected_lists=("REMOTE",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                query,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "QUERY_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-find-local", ("c:", "archer", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+
+    def test_filter_change_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        filter_change = replace(
+            base.duc_search_index_transition("FILTER_CHANGE"),
+            affected_lists=("REMOTE",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                filter_change,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "FILTER_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                        ("up-filter-range", ("0", "100", "0", "100")),
+                        ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.local_list.search_index.generation, 0)
+
+    def test_focus_player_reset_uses_shared_native_transition_contract(self):
+        base = default_native_contract_catalog()
+        focus_change = replace(
+            base.duc_search_index_transition("FOCUS_PLAYER_CHANGE"),
+            affected_lists=("LOCAL",),
+        )
+        catalog = NativeContractCatalog(
+            duc_search_index_transitions=(
+                focus_change,
+                *(
+                    item
+                    for item in base.duc_search_index_transitions
+                    if item.trigger_kind != "FOCUS_PLAYER_CHANGE"
+                ),
+            ),
+        )
+        report = analyze_duc(
+            (
+                _rule(
+                    1,
+                    (
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                        ("set-strategic-number", ("sn-focus-player-number", "2")),
+                        ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                    ),
+                ),
+            ),
+            contracts=catalog,
+        )
+
+        self.assertIsNone(report.searches[-1].index_reset_reason)
+        self.assertEqual(report.final_state.remote_list.search_index.generation, 0)
 
     def test_focus_player_change_resets_remote_search_index(self):
         report = analyze_duc((
