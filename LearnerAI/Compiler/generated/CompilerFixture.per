@@ -10,17 +10,14 @@
 (defconst issued-castle 44)
 (defconst pending-castle 42)
 (defconst complete-castle 43)
-(defconst construction-retry-barrier-castle 45)
 (defconst demand-defensive-spearmen 42)
 (defconst issued-defensive-spearmen 45)
 (defconst pending-defensive-spearmen 43)
 (defconst complete-defensive-spearmen 44)
-(defconst construction-retry-barrier-defensive-spearmen 46)
 (defconst demand-wheelbarrow 43)
 (defconst issued-wheelbarrow 46)
 (defconst pending-wheelbarrow 44)
 (defconst complete-wheelbarrow 45)
-(defconst construction-retry-barrier-wheelbarrow 47)
 (defconst action-claim-build-pass-singleton 44)
 
 ; Per-pass transient action arbitration
@@ -28,25 +25,6 @@
     (true)
 =>
     (set-goal action-claim-build-pass-singleton 0)
-)
-
-; Per-pass construction retry barriers
-(defrule
-    (true)
-=>
-    (set-goal construction-retry-barrier-castle 0)
-)
-
-(defrule
-    (true)
-=>
-    (set-goal construction-retry-barrier-defensive-spearmen 0)
-)
-
-(defrule
-    (true)
-=>
-    (set-goal construction-retry-barrier-wheelbarrow 0)
 )
 
 ; Demand initialization
@@ -83,7 +61,7 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (building-type-count castle >= 1)
+    (building-type-count castle > 0)
 =>
     (set-goal demand-castle 43)
 )
@@ -94,8 +72,8 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle >= 1))
-    (up-pending-objects c: 82 >= 1)
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle >= 1)
 =>
     (set-goal demand-castle 42)
 )
@@ -106,9 +84,9 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle >= 1))
-    (up-pending-objects c: 82 == 0)
-    (up-pending-placement c: 82)
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (up-pending-placement c: castle)
 =>
     (set-goal demand-castle 42)
 )
@@ -119,22 +97,20 @@
         (goal demand-castle 44)
         (goal demand-castle 42)
     )
-    (not (building-type-count castle >= 1))
-    (up-pending-objects c: 82 == 0)
-    (not (up-pending-placement c: 82))
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
 =>
     (set-goal demand-castle 1)
-    (set-goal construction-retry-barrier-castle 1)
 )
 
 ; Action issuance: castle | ACTIVE -> ISSUED
 (defrule
     (goal demand-castle 1)
-    (not (building-type-count castle >= 1))
-    (goal construction-retry-barrier-castle 0)
-    (up-pending-objects c: 82 == 0)
-    (not (up-pending-placement c: 82))
-    (not (building-type-count castle >= 1))
+    (not (building-type-count castle > 0))
+    (up-pending-objects c: castle == 0)
+    (not (up-pending-placement c: castle))
+    (not (building-type-count castle > 0))
     (goal action-claim-build-pass-singleton 0)
     (current-age >= castle)
     (building-available castle)
