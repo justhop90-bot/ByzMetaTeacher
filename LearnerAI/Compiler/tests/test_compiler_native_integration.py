@@ -36,7 +36,13 @@ from Compiler.primitives.engine_semantics import (
 )
 from Compiler.diagnostics import DiagnosticSeverity, ReportStatus
 from Compiler.ast import SourceLocation, Expression
-from Compiler.ir import NativeDucPlan, NativeDucRule
+from Compiler.ir import (
+    AttackLifecycleObservation,
+    NativeAttackLifecyclePlan,
+    NativeAttackRule,
+    NativeDucPlan,
+    NativeDucRule,
+)
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.perdsl").read_text(encoding="utf-8")
 
@@ -87,6 +93,41 @@ class FakeBackend:
 
 class CompilerNativeIntegrationTests(unittest.TestCase):
     @staticmethod
+    def _attack_plan():
+        lifecycle = (
+            AttackLifecycleObservation.ADMISSION_REQUIRED,
+            AttackLifecycleObservation.ISSUE,
+            AttackLifecycleObservation.COMPLETION_UNOBSERVED,
+            AttackLifecycleObservation.REASSESS_REQUIRED,
+        )
+        return NativeAttackLifecyclePlan(
+            (
+                NativeAttackRule(
+                    identity="attack-first",
+                    order=10,
+                    facts=(
+                        Expression("(true)", "true", ()),
+                    ),
+                    actions=(
+                        Expression("(attack-now)", "attack-now", ()),
+                    ),
+                    lifecycle=lifecycle,
+                ),
+                NativeAttackRule(
+                    identity="attack-second",
+                    order=20,
+                    facts=(
+                        Expression("(true)", "true", ()),
+                    ),
+                    actions=(
+                        Expression("(attack-now)", "attack-now", ()),
+                    ),
+                    lifecycle=lifecycle,
+                ),
+            )
+        )
+
+    @staticmethod
     def _duc_plan():
         return NativeDucPlan(
             (
@@ -128,6 +169,54 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 ),
             )
         )
+
+    def test_internal_attack_plan_survives_binding_and_emission(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            first = tmp / "first.per"
+            second = tmp / "second.per"
+
+            first_backend = FakeBackend(
+                fake_result(first, ValidationStatus.VALIDATED)
+            )
+            second_backend = FakeBackend(
+                fake_result(second, ValidationStatus.VALIDATED)
+            )
+
+            first_report = compile_to_file(
+                source,
+                first,
+                native_backend=first_backend,
+                attack_plan=self._attack_plan(),
+            )
+            second_report = compile_to_file(
+                source,
+                second,
+                native_backend=second_backend,
+                attack_plan=self._attack_plan(),
+            )
+
+            self.assertEqual(first_report.status, ValidationStatus.VALIDATED)
+            self.assertEqual(second_report.status, ValidationStatus.VALIDATED)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            artifact = first.read_text(encoding="utf-8")
+            self.assertIn("; Native attack lifecycle plan", artifact)
+            self.assertLess(
+                artifact.index("; Native attack rule: attack-first"),
+                artifact.index("; Native attack rule: attack-second"),
+            )
+            self.assertEqual(artifact.count("(attack-now)"), 2)
+            self.assertNotIn("(up-reset-attack-now)", artifact)
+            self.assertNotIn("(timer-triggered", artifact)
+            self.assertIn("(attack-now)", first_backend.seen_artifact_text)
 
     def test_internal_duc_plan_survives_binding_and_emission(self):
         source = """
