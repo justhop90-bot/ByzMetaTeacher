@@ -274,6 +274,26 @@ class DucSemanticTests(unittest.TestCase):
             DucSearchCursorDisposition.AT_END,
         )
 
+    def test_can_search_rejects_invalid_source_shape(self):
+        location = SourceLocation(1, 1, "fixture.per")
+        fact = Expression(
+            "(up-can-search search-third)",
+            "up-can-search",
+            ("search-third",),
+            location,
+        )
+        report = analyze_duc((
+            replace(_rule(1, ()), facts=(fact,)),
+        ))
+
+        self.assertFalse(report.search_availability)
+        self.assertTrue(any(
+            item.code == "DUC-005"
+            and "search-local or search-remote" in item.message
+            for item in report.diagnostics
+        ))
+
+
     def test_can_search_remote_reads_only_remote_search_state(self):
         location = SourceLocation(2, 1, "fixture.per")
         fact = Expression(
