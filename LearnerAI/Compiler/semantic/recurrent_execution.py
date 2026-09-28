@@ -6,7 +6,7 @@ native rule control transfer. Unknown world facts branch conservatively.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Mapping
 
@@ -143,18 +143,34 @@ def _stateful_fact(
             expected = _int(expression.args[1])
             if expected is None:
                 return _Truth.UNKNOWN
-            return _compare(values.get(("GOAL", ident), 0), "==", expected)
+            return _compare(values.get(("GOAL", ident), -1), "==", expected)
         if len(expression.args) == 3:
             ident = str(expression.args[0])
             expected = _int(expression.args[2])
             if expected is None:
                 return _Truth.UNKNOWN
             return _compare(
-                values.get(("GOAL", ident), 0),
+                values.get(("GOAL", ident), -1),
                 str(expression.args[1]),
                 expected,
             )
         return _Truth.UNKNOWN
+
+    if expression.head == "up-compare-goal":
+        if len(expression.args) != 3:
+            return _Truth.UNKNOWN
+        ident = str(expression.args[0])
+        expected = _int(expression.args[2])
+        if expected is None:
+            return _Truth.UNKNOWN
+        operator = str(expression.args[1])
+        if operator.startswith("c:"):
+            operator = operator[2:]
+        return _compare(
+            values.get(("GOAL", ident), -1),
+            operator,
+            expected,
+        )
 
     if expression.head in {"strategic-number", "up-compare-sn"}:
         if len(expression.args) != 3:
@@ -234,6 +250,30 @@ def _apply_action(
         values[("GOAL", str(expression.args[0]))] = _int(expression.args[1])
     elif expression.head == "set-strategic-number" and len(expression.args) == 2:
         values[("SN", str(expression.args[0]))] = _int(expression.args[1])
+    elif expression.head == "up-modify-goal" and expression.args:
+        try:
+            mutation = parse_strategic_number_mutation(
+                replace(expression, head="up-modify-sn")
+            )
+            goals = {
+                key[1]: value
+                for key, value in values.items()
+                if key[0] == "GOAL" and value is not None
+            }
+            strategic_numbers = {
+                key[1]: value
+                for key, value in values.items()
+                if key[0] == "SN" and value is not None
+            }
+            values[("GOAL", str(expression.args[0]))] = evaluate_strategic_number_mutation(
+                mutation,
+                current_value=values.get(("GOAL", str(expression.args[0])), -1),
+                goals=goals,
+                strategic_numbers=strategic_numbers,
+            )
+        except StrategicNumberSemanticError:
+            values[("GOAL", str(expression.args[0]))] = None
+
     elif expression.head == "up-modify-sn" and expression.args:
         values[("SN", str(expression.args[0]))] = None
     elif expression.head == "enable-timer" and len(expression.args) == 2:
@@ -241,10 +281,25 @@ def _apply_action(
     elif expression.head == "disable-timer" and len(expression.args) == 1:
         values[("TIMER", str(expression.args[0]))] = "timer-disabled"
     elif expression.head == "up-set-timer" and len(expression.args) == 4:
-        interval = _int(expression.args[3])
+        timer_selector = str(expression.args[0]).lower()
+        if timer_selector not in {"c:", "c"}:
+            values[("TIMER", str(expression.args[1]))] = None
+            return
+        interval_type = str(expression.args[2]).lower()
+        interval_value = str(expression.args[3])
+        if interval_type in {"c:", "c"}:
+            interval = _int(expression.args[3])
+        elif interval_type in {"g:", "g"}:
+            interval = values.get(("GOAL", interval_value))
+        elif interval_type in {"s:", "s"}:
+            interval = values.get(("SN", interval_value))
+        else:
+            interval = None
         values[("TIMER", str(expression.args[1]))] = (
-            "timer-disabled"
-            if interval is not None and interval < 0
+            None
+            if interval is None
+            else "timer-disabled"
+            if interval < 0
             else "timer-running"
         )
 
