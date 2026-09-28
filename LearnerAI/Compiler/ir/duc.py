@@ -85,6 +85,7 @@ class DucSearchIndexResetReason(str, Enum):
     EXPLICIT = "EXPLICIT"
     FILTER_CHANGED = "FILTER_CHANGED"
     QUERY_CHANGED = "QUERY_CHANGED"
+    FOCUS_PLAYER_CHANGED = "FOCUS_PLAYER_CHANGED"
     UNKNOWN = "UNKNOWN"
 
 
@@ -189,6 +190,7 @@ class DucSearchIndexState:
     generation: int = 0
     query_signature: Optional[tuple[str, ...]] = None
     focus_player_signature: Optional[str] = None
+    focus_player_provenance: Optional["DucProvenance"] = None
     known: bool = True
     last_reset_reason: Optional[DucSearchIndexResetReason] = None
     path_ambiguous: bool = False
@@ -356,6 +358,8 @@ class DucSearchOperation:
     index_after: Optional[int] = None
     index_generation: int = 0
     index_reset_reason: Optional[DucSearchIndexResetReason] = None
+    focus_player_signature: Optional[str] = None
+    focus_player_provenance: Optional["DucProvenance"] = None
 
 
 @dataclass(frozen=True)
