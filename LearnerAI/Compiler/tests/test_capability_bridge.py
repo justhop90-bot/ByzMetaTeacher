@@ -73,6 +73,26 @@ class CapabilityBridgeTests(unittest.TestCase):
             },
         )
 
+    def test_persistent_strategic_number_predicate_projects_as_strategy(self):
+        registry = default_de_registry()
+        source = """
+        demand strategic-posture {
+            sn posture = 3
+            require (up-compare-sn posture >= 1)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        ir = analyze(parse(source), registry, source_unit="test")
+        graph = project_capability_graph(ir, registry)
+        provider = graph.providers[0]
+        kinds = {atom.kind for atom in _atoms(provider.admissibility)}
+
+        self.assertIn(PredicateKind.STRATEGY, kinds)
+        self.assertTrue(validate_projected_capabilities(ir, registry).valid)
+
     def test_projected_valid_demand_has_no_capability_diagnostics(self):
         registry = default_de_registry()
         ir = analyze(parse(VALID), registry, source_unit="test")

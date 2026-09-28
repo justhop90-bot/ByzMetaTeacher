@@ -10,6 +10,9 @@ import re
 import subprocess
 import sys
 
+ROOT = Path(__file__).parents[2]
+sys.path.insert(0, str(ROOT))
+
 from Compiler.compiler import compile_source
 from Compiler.primitives.strategic_number_catalog import (
     default_strategic_number_catalog,

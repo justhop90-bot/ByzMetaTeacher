@@ -81,7 +81,7 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
         payload = json.loads(self._manifest().to_json())
         payload["records"][0]["request_contract"]["stability_key"] = "controller.posture.v2"
         text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
-        with self.assertRaisesRegex(ValueError, "integrity"):
+        with self.assertRaisesRegex(ValueError, "fingerprint mismatch"):
             BindingManifest.from_json(text)
 
     def test_v4_external_digest_detects_coordinated_tamper(self):
@@ -96,10 +96,20 @@ class StrategicNumberManifestV4Tests(unittest.TestCase):
         payload["records"][0] = dict(payload["records"][0])
         payload["records"][0]["strategic_number_id"] = 508
 
+        payload["integrity"] = {
+            "algorithm": "SHA-256",
+            "content_sha256": "0" * 64,
+        }
+        tampered_manifest_seed = BindingManifest.from_json(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            verify_integrity=False,
+        )
+        tampered_content_sha256 = tampered_manifest_seed.content_sha256()
+        payload["integrity"]["content_sha256"] = tampered_content_sha256
         tampered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
         tampered_manifest = BindingManifest.from_json(
             tampered,
-            verify_integrity=False,
+            verify_integrity=True,
         )
         with self.assertRaisesRegex(ValueError, "expected external digest"):
             tampered_manifest.verify_integrity(expected_content_sha256=expected)
