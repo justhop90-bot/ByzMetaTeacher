@@ -155,6 +155,12 @@ class PassScheduler:
                     )
                 elif head == "set-goal":
                     self._set_goal_action(expression)
+                elif head == "up-modify-goal":
+                    self._apply_goal_mutation(
+                        expression,
+                        rule.rule_order,
+                        action.within_rule_order,
+                    )
                 elif head == "set-strategic-number":
                     self._set_strategic_number_action(expression)
                 elif head == "up-modify-sn":
@@ -273,6 +279,16 @@ class PassScheduler:
             return True
         if head in {"strategic-number", "up-compare-sn"}:
             return self._evaluate_strategic_number_comparison_fact(expression)
+        if head == "up-compare-goal":
+            return self._evaluate_goal_comparison_fact(expression)
+        if head == "up-modify-goal":
+            self._apply_goal_mutation(
+                expression,
+                None,
+                -1,
+                section="GUARD",
+            )
+            return True
         if head == "up-modify-sn":
             self._apply_strategic_number_mutation(
                 expression,
@@ -286,7 +302,7 @@ class PassScheduler:
                 raise SchedulerSemanticError(
                     "goal requires GoalId and expected value"
                 )
-            return self._goals.get(str(expression.args[0]), 0) == self._parse_int(
+            return self._goals.get(str(expression.args[0]), -1) == self._parse_int(
                 expression.args[1],
                 "goal value",
             )
@@ -358,6 +374,31 @@ class PassScheduler:
             "goal value",
         )
 
+    def _apply_goal_mutation(
+        self,
+        expression: Expression,
+        rule_order: int | None,
+        within_rule_order: int,
+        *,
+        section: str = "ACTION",
+    ) -> None:
+        try:
+            mutation = parse_strategic_number_mutation(
+                expression,
+                rule_order=rule_order,
+                within_rule_order=within_rule_order,
+                section=section,
+            )
+            result = evaluate_strategic_number_mutation(
+                mutation,
+                current_value=self._goals.get(mutation.target, -1),
+                goals=self._goals,
+                strategic_numbers=self._strategic_numbers,
+            )
+        except StrategicNumberSemanticError as exc:
+            raise SchedulerSemanticError(str(exc)) from exc
+        self._goals[mutation.target] = result
+
     def _set_strategic_number_action(self, expression: Expression) -> None:
         if len(expression.args) != 2:
             raise SchedulerSemanticError(
@@ -392,6 +433,18 @@ class PassScheduler:
         except StrategicNumberSemanticError as exc:
             raise SchedulerSemanticError(str(exc)) from exc
         self._strategic_numbers[mutation.target] = result
+
+    def _evaluate_goal_comparison_fact(self, expression: Expression) -> bool:
+        try:
+            comparison = parse_strategic_number_comparison(expression)
+            return evaluate_strategic_number_comparison(
+                comparison,
+                current_value=self._goals.get(comparison.target, -1),
+                goals=self._goals,
+                strategic_numbers=self._strategic_numbers,
+            )
+        except StrategicNumberSemanticError as exc:
+            raise SchedulerSemanticError(str(exc)) from exc
 
     def _evaluate_strategic_number_comparison_fact(self, expression: Expression) -> bool:
         try:
