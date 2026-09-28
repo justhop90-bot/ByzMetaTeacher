@@ -54,7 +54,7 @@ class ReleaseStateTests(unittest.TestCase):
         """
         output = compile_source(source)
         release = output.index("; Release: castle | COMPLETE -> RELEASED")
-        witness = output.index("; Completion witness: castle | PENDING -> COMPLETE")
+        witness = output.index("; Completion witness: castle | PENDING/ISSUED -> COMPLETE")
         block = output[release:witness]
 
         self.assertIn("(goal demand-castle 43)", block)

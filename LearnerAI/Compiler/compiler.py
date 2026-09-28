@@ -41,6 +41,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.source_order import validate_non_lifecycle_source_order
     from Compiler.semantic.action_issuance import validate_action_issuance
     from Compiler.semantic.completion_witness import validate_completion_witnesses
+    from Compiler.semantic.construction import canonicalize_construction_witnesses
     from Compiler.semantic.release_state import validate_release_states
     from Compiler.semantic.invalidation import validate_invalidation_contracts
     from Compiler.semantic.capability_bridge import project_capability_graph
@@ -89,6 +90,7 @@ else:
     from .semantic.source_order import validate_non_lifecycle_source_order
     from .semantic.action_issuance import validate_action_issuance
     from .semantic.completion_witness import validate_completion_witnesses
+    from .semantic.construction import canonicalize_construction_witnesses
     from .semantic.release_state import validate_release_states
     from .semantic.invalidation import validate_invalidation_contracts
     from .semantic.capability_bridge import project_capability_graph
@@ -137,6 +139,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
                 "complete-",
                 "cancelled-",
                 "action-claim-",
+                "construction-retry-barrier-",
             )
         ):
             ignored.add(identifier)
@@ -149,6 +152,7 @@ def _storage_requests(ir, control_plan=None):
     for demand in ir:
         for request in (
             demand.lifecycle.slot,
+            demand.construction_retry_barrier,
             demand.action.arbitration_request,
             *(state.request for state in demand.strategic_number_states),
         ):
@@ -218,6 +222,8 @@ def _compile_ir_parts(
 
     witness_report = validate_completion_witnesses(ir, registry)
     reports.append(witness_report)
+    if witness_report.valid:
+        ir = canonicalize_construction_witnesses(ir)
 
     release_report = validate_release_states(ir, registry)
     reports.append(release_report)

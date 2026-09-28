@@ -14,6 +14,7 @@ from ..ir import (
     InvalidationContract,
     InvalidationEvidenceKind,
     CancellationStateContract,
+    ConstructionLifecycle,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -32,6 +33,8 @@ from ..ir import (
     StrategicNumberStorageRequest,
 )
 from ..primitives import NativeSupportState, PrimitiveRegistry
+from .construction import canonical_build_completion_witness
+from .native_building_catalog import NativeBuildingIdError, resolve_building_id
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -276,6 +279,8 @@ def analyze(
     demands: list[DemandNode],
     registry: PrimitiveRegistry,
     source_unit: str | None = None,
+    *,
+    building_id_resolver=resolve_building_id,
 ) -> list[SemanticDemand]:
     result = []
     seen_strategic_number_names: set[str] = set()
@@ -333,6 +338,50 @@ def analyze(
             {"OBSERVATION", "WITNESS", "TIMING", "ACTION"},
             f"demand '{demand.name}' witness",
         )
+
+        semantic_id = SemanticId(source_unit=demand_source_unit, local_name=demand.name)
+        construction_lifecycle = None
+        construction_retry_barrier = None
+        if action.head == "build":
+            if len(action.args) != 1 or not isinstance(action.args[0], str):
+                raise CompileError(
+                    f"CONSTRUCTION-BUILD-TARGET: demand '{demand.name}' build action "
+                    "must have one literal BuildingId argument"
+                )
+            building = action.args[0]
+            try:
+                native_building_id = building_id_resolver(building)
+            except (NativeBuildingIdError, KeyError, TypeError, ValueError) as exc:
+                raise CompileError(
+                    f"CONSTRUCTION-BUILD-ID: demand '{demand.name}' cannot resolve "
+                    f"BuildingId '{building}'"
+                ) from exc
+            native_token = str(native_building_id)
+            construction_retry_barrier = GoalSlotRequest(
+                request_id=StorageRequestId(
+                    owner=semantic_id,
+                    purpose="construction-retry-barrier",
+                ),
+                role=GoalRole.EXECUTION_MEMORY,
+            )
+            construction_lifecycle = ConstructionLifecycle(
+                building=building,
+                native_building_id=native_building_id,
+                completion_witness=witness,
+                pending_foundation_fact=Expression(
+                    source=f"(up-pending-objects c: {native_token} >= 1)",
+                    head="up-pending-objects",
+                    args=("c:", native_token, ">=", "1"),
+                    location=action.location,
+                ),
+                pending_placement_fact=Expression(
+                    source=f"(up-pending-placement c: {native_token})",
+                    head="up-pending-placement",
+                    args=("c:", native_token),
+                    location=action.location,
+                ),
+            )
+
         release = parse_expression(
             demand.release,
             demand.release_location or demand.location,
@@ -355,8 +404,6 @@ def analyze(
                 {"OBSERVATION", "ADMISSIBILITY", "WITNESS", "TIMING", "ACTION"},
                 f"demand '{demand.name}' invalidation",
             )
-        semantic_id = SemanticId(source_unit=demand_source_unit, local_name=demand.name)
-
         strategic_number_states = []
         for state_name, initial_value, state_location in demand.strategic_number_states:
             if not _SN_STATE_NAME_RE.fullmatch(state_name):
@@ -607,6 +654,8 @@ def analyze(
                 ownership=ownership,
                 state_accesses=state_accesses,
                 pending_diagnostics=_pending_diagnostics(demand),
+                construction_lifecycle=construction_lifecycle,
+                construction_retry_barrier=construction_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
                 location=demand.location,
             )

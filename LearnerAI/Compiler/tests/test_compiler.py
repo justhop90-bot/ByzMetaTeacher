@@ -23,7 +23,7 @@ class CompilerTests(unittest.TestCase):
             Path(__file__).resolve().parents[1] / "generated" / "CompilerFixture.per"
         ).read_text(encoding="utf-8")
         self.assertEqual(generated, compile_source(EXAMPLES))
-        self.assertEqual(generated.count("(defrule"), 14)
+        self.assertEqual(generated.count("(defrule"), 17)
         init_start = generated.index("; Demand initialization")
         init_end = generated.index("; Pending diagnostics: castle")
         self.assertIn("(true)\n=>", generated[init_start:init_end])
@@ -36,7 +36,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 44)", a)
         self.assertIn("(set-goal demand-castle 43)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
-        self.assertEqual(a.count("(defrule"), 14)
+        self.assertEqual(a.count("(defrule"), 17)
 
     def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
         source = """
@@ -303,8 +303,8 @@ class CompilerTests(unittest.TestCase):
     def test_lifecycle_rule_order_prevents_same_pass_collapse(self):
         output = compile_source(EXAMPLES)
         release = output.find("; Release: castle | COMPLETE -> RELEASED")
-        witness = output.find("; Completion witness: castle | PENDING -> COMPLETE")
-        pending = output.find("; Pending admission: castle | ISSUED -> PENDING")
+        witness = output.find("; Completion witness: castle | PENDING/ISSUED -> COMPLETE")
+        pending = output.find("; Pending admission: castle | ISSUED/PENDING -> PENDING")
         action = output.find("; Action issuance: castle | ACTIVE -> ISSUED")
         self.assertGreaterEqual(release, 0)
         self.assertGreaterEqual(witness, 0)
@@ -331,8 +331,8 @@ class CompilerTests(unittest.TestCase):
 
         markers = {
             "release": output.find("; Release: castle | COMPLETE -> RELEASED"),
-            "witness": output.find("; Completion witness: castle | PENDING -> COMPLETE"),
-            "pending": output.find("; Pending admission: castle | ISSUED -> PENDING"),
+            "witness": output.find("; Completion witness: castle | PENDING/ISSUED -> COMPLETE"),
+            "pending": output.find("; Pending admission: castle | ISSUED/PENDING -> PENDING"),
             "action": output.find("; Action issuance: castle | ACTIVE -> ISSUED"),
         }
         self.assertTrue(all(index >= 0 for index in markers.values()))
@@ -705,25 +705,25 @@ class CompilerTests(unittest.TestCase):
             require (game-time >= 510)
             require (unit-type-count man-at-arms >= 2)
             require (dropsite-min-distance gold > 12)
-            require (can-build watch-tower)
-            action (build watch-tower)
-            witness (building-type-count watch-tower > 0)
-            release (building-type-count watch-tower > 0)
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
         }
         """
         output = compile_source(source)
         self.assertIn("(game-time >= 510)", output)
         self.assertIn("(unit-type-count man-at-arms >= 2)", output)
         self.assertIn("(dropsite-min-distance gold > 12)", output)
-        self.assertIn("(can-build watch-tower)", output)
+        self.assertIn("(can-build castle)", output)
 
     def test_positional_observation_cannot_be_completion_witness(self):
         source = """
         demand bad-tower {
-            require (can-build watch-tower)
-            action (build watch-tower)
+            require (can-build castle)
+            action (build castle)
             witness (dropsite-min-distance gold > 12)
-            release (building-type-count watch-tower > 0)
+            release (building-type-count castle > 0)
         }
         """
         with self.assertRaisesRegex(CompileError, "completion witness"):
