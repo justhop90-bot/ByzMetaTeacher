@@ -34,6 +34,21 @@ class NativeDucPlanTests(unittest.TestCase):
             ("duc-b", "duc-c"),
         )
 
+    def test_plan_accepts_action_only_duc_rule(self):
+        plan = NativeDucPlan(
+            (
+                NativeDucRule(
+                    identity="reset-search",
+                    order=1,
+                    facts=(),
+                    actions=(
+                        _expr("(up-reset-filters)", "up-reset-filters"),
+                    ),
+                ),
+            )
+        )
+        self.assertEqual(plan.rules[0].actions[0].head, "up-reset-filters")
+
     def test_plan_rejects_non_deterministic_rule_order(self):
         with self.assertRaisesRegex(ValueError, "deterministic order"):
             NativeDucPlan(
