@@ -21,6 +21,11 @@ from ..runtime_binding import (
     StrategicNumberRequest,
     TimerRequest,
 )
+from .strategic_number_semantics import (
+    StrategicNumberSemanticError,
+    parse_strategic_number_comparison,
+    parse_strategic_number_mutation,
+)
 
 _LOGICAL_ARITY = {
     "and": 2,
@@ -271,6 +276,24 @@ def _validate_leaf(
         "strategic-number",
     }:
         _validate_typed_operand(head, expression, states)
+        try:
+            semantic_expression = expression
+            if head in {"up-compare-goal"}:
+                from dataclasses import replace
+                semantic_expression = replace(expression, head="up-compare-sn")
+                parse_strategic_number_comparison(semantic_expression)
+            elif head == "up-modify-goal":
+                from dataclasses import replace
+                semantic_expression = replace(expression, head="up-modify-sn")
+                parse_strategic_number_mutation(semantic_expression)
+            elif head in {"up-compare-sn", "strategic-number"}:
+                parse_strategic_number_comparison(semantic_expression)
+            elif head == "up-modify-sn":
+                parse_strategic_number_mutation(semantic_expression)
+        except StrategicNumberSemanticError as exc:
+            raise ValueError(
+                f"native control command '{head}' has invalid typed arithmetic: {exc}"
+            ) from exc
 
     if head == "up-set-timer":
         timer_selector = str(expression.args[0])
