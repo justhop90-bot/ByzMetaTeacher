@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Implementation base for escrow lowering: main adec462b420f87bc66c2868908058c0e272baf7c
-Post-merge compiler verification: 922 tests; escrow native zero-findings; deterministic cross-platform matrix; aggregate gate green.
+Current compiler main verification basis: release/DUC/escrow compiler code verified at e9dd1106fbd6255b35e06ef7195826f3998a8576; latest MUSE doc refresh tip is 9c1cba88d2bfac2102cb7d0de1e519b2317deecf.
+Post-merge compiler verification: 963 tests; escrow native zero-findings; deterministic cross-platform matrix; aggregate gate green (Compiler #2149 / Actions 36497398646).
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
@@ -35,11 +35,13 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 - [~] Escrow/resource-control executable lowering.
   - **Release-only promoted slice is complete and independently re-verified by Compiler workflow #2149.** Added dedicated native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic `release-escrow` emission, source-to-.per fixture, pinned native zero-findings acceptance, and cross-platform determinism coverage.
   - The family remains partial: `set-escrow-percentage`, UP escrow mutations, starvation/emergency release, multi-owner handoff, and direct native proof of same-pass `release-escrow -> ordinary action` remain outside executable-safe promotion.
+  - Repository-side same-pass evidence package is now specified and machine-checked: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`, `docs/reference/oracles/escrow-same-pass-research.schema.json`, candidate `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`, and `tests/test_escrow_same_pass_oracle_spec.py`. The DE runtime gate remains user-owned and OPEN.
 - [x] Escrow ownership/order/lifetime semantic gate.
   - Added typed ordered `EscrowOperation` IR plus contract-set ownership validation and execution-order validation.
   - Acceptance coverage: same-rule release-before-consume, reversed ordering, escrow-aware consume, post-release stale consumption, policy-reset cleanup, and hostile owner mismatch/resource contention.
   - Deliberately does not claim native DE same-pass visibility or starvation/handoff runtime proof.
   - Checklist: `LearnerAI/Compiler/MUSE_ESCROW_EXECUTION_CHECKLIST_2026-09-28.md`.
+  - Same-pass runtime checklist/oracle: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`; native candidate remains UNVERIFIED until DE execution.
   
   - Muse: `compiler_undercoverage.md` identifies 10.9k escrow hits as the largest volume gap. The affordability/resource-view formula and mutation/ownership/lifetime model are now closed in the research repair; same-pass visibility, starvation recovery, and multi-owner handoff remain open runtime questions.
   - Owner: `semantic/resource_conflicts.py`, analyzer/emitter escrow paths, native contracts.
