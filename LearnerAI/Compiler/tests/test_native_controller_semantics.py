@@ -1,6 +1,6 @@
 import unittest
 
-from Compiler.semantic.community_engine import PracticeStatus
+from Compiler.semantic.community_engine import EvidenceClass, PracticeStatus
 from Compiler.semantic.native_controller import (
     NativeControllerDomain,
     NativeControllerRelation,
@@ -26,6 +26,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
         controller = NativeController(
             identity="duplicate",
             domain=NativeControllerDomain.ECONOMY,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
             status=PracticeStatus.EVIDENCE_ONLY,
             sources=("test",),
             description="duplicate test controller",
@@ -44,6 +45,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
             controller_id="economy",
             kind=NativeControlSurfaceKind.STRATEGIC_NUMBER,
             native_identifier="sn-test",
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
             status=PracticeStatus.EVIDENCE_ONLY,
             sources=("test",),
         )
@@ -67,6 +69,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
             source_controller="attack",
             target_controller="missing",
             relation=NativeControllerRelation.COUPLED_WITH,
+            evidence=EvidenceClass.COMMUNITY_PRACTICE,
             status=PracticeStatus.EVIDENCE_ONLY,
             sources=("test",),
         )
@@ -196,6 +199,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
                 NativeController(
                     identity="engine",
                     domain=NativeControllerDomain.ECONOMY,
+                    evidence=EvidenceClass.ENGINE_FACT,
                     status=PracticeStatus.CONTRACTED,
                     sources=("native",),
                     description="test",
@@ -207,6 +211,7 @@ class NativeControllerSemanticsTests(unittest.TestCase):
                     controller_id="engine",
                     kind=NativeControlSurfaceKind.STRATEGIC_NUMBER,
                     native_identifier="sn-test",
+                    evidence=EvidenceClass.ENGINE_FACT,
                     status=PracticeStatus.PARTIAL,
                     sources=("native",),
                 ),
