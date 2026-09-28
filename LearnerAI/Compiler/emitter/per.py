@@ -157,6 +157,22 @@ def emit(
         ):
             out.append(f"(defconst {state.name} {binding.id})")
 
+        out.extend([
+            "",
+            "; Timer state initialization",
+        ])
+        for start in range(0, len(timer_states), INITIALIZATION_CHUNK):
+            chunk = timer_states[start : start + INITIALIZATION_CHUNK]
+            out += ["(defrule", "    (true)", "=>"]
+            for state, _binding in chunk:
+                if state.request.initialization_policy != "DISABLE_BEFORE_FIRST_USE":
+                    raise CompileError(
+                        f"EMITTER-TIMER-INIT-POLICY: unsupported initialization policy "
+                        f"'{state.request.initialization_policy}' for timer '{state.name}'"
+                    )
+                out.append(f"    (disable-timer {state.name})")
+            out.extend(["    (disable-self)", ")", ""])
+
     for state, binding in sorted(
         strategic_number_states,
         key=lambda item: (
