@@ -130,6 +130,26 @@ jobs:
       - name: Native zero-findings acceptance - strategic number semantics fixture
         run: |
           python LearnerAI/Compiler/tests/assert_strategic_number_native.py             --output /tmp/strategic-number.per             --report /tmp/native-reports/strategic-number.json
+      - name: Native zero-findings acceptance - construction lifecycle fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.compiler import compile_source
+          source = """
+          demand castle {
+              require (can-build castle)
+              action (build castle)
+              witness (building-type-count castle > 0)
+              release (building-type-count castle > 0)
+          }
+          """
+          Path("/tmp/construction-lifecycle.per").write_text(
+              compile_source(source),
+              encoding="utf-8",
+          )
+          PY
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/construction-lifecycle.per --report /tmp/native-reports/construction-lifecycle.json
+
       - name: Native zero-findings acceptance - explicit invalidation fixture
         run: |
           python - <<'PY'
@@ -150,6 +170,7 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-invalidation.per --report /tmp/native-reports/invalidation.json
+            /tmp/native-reports/construction-lifecycle.json
       - name: Upload native validation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
