@@ -1535,7 +1535,7 @@ class NativeContractCatalog:
 
     def duc_search_availability(self, command: str) -> Optional[NativeDucSearchAvailabilityContract]:
         return next(
-            (item for item in self.duc_search_availability if item.command == command),
+            (item for item in self.duc_search_availability_contracts if item.command == command),
             None,
         )
 
