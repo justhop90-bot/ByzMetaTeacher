@@ -375,6 +375,32 @@ def _persistent_state_mapping(command: str, identity: str) -> EngineSemanticMapp
         practice_references=(),
     )
 
+def _attack_issue_mapping() -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity="attack.execution.issue",
+        native_command="attack-now",
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(
+            "https://airef.github.io/commands/commands-details.html#attack-now",
+            "https://github.com/justhop90-bot/ByzMetaTeacher/blob/main/docs/reference/engine/commands/attack-now.md",
+        ),
+        state_effects=(
+            "issues the documented native attack-now command against currently "
+            "available attack units; the compiler does not infer a completion state"
+        ),
+        lifetime=(
+            "one-shot native action request; no compiler-owned completion lifetime "
+            "is claimed by this contract"
+        ),
+        ordering="native action executes in emitted action order within the containing rule",
+        admission="native attack-now command contract with exact zero-argument arity",
+        completion="unobserved; no contracted native attack completion witness exists in this slice",
+        recovery="reassess through future native evidence; no synthetic timer, release, or reset is emitted",
+        practice_references=(),
+    )
+
 def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
         "up-find-local": "Fact/Action",
@@ -494,6 +520,7 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         _duc_mapping(command, identity)
         for command, identity in _DUC_COMMAND_SPECS
     )
+    mappings.append(_attack_issue_mapping())
     mappings.extend(
         (
             EngineSemanticMapping(
@@ -545,5 +572,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _WITNESS_SPECS)
         + ("up-pending-objects", "up-pending-placement")
         + tuple(command for command, _identity in _ACTION_SPECS)
+        + ("attack-now",)
     )
     return registry
