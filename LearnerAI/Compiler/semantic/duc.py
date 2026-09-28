@@ -2520,6 +2520,7 @@ def _search_index_key(index: DucSearchIndexState) -> tuple[object, ...]:
         index.focus_player_signature,
         index.known,
         index.last_reset_reason,
+        index.cursor_disposition,
         index.path_ambiguous,
     )
 
@@ -2587,6 +2588,11 @@ def _widen_search_index(
             previous.last_reset_reason
             if previous.last_reset_reason is current.last_reset_reason
             else DucSearchIndexResetReason.UNKNOWN
+        ),
+        cursor_disposition=(
+            previous.cursor_disposition
+            if previous.cursor_disposition is current.cursor_disposition
+            else DucSearchCursorDisposition.PATH_AMBIGUOUS
         ),
         path_ambiguous=True,
     )
