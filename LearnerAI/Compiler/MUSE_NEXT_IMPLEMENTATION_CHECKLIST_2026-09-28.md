@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Current compiler main verification basis: release/DUC/escrow compiler code verified at e9dd1106fbd6255b35e06ef7195826f3998a8576; latest MUSE doc refresh tip is 9c1cba88d2bfac2102cb7d0de1e519b2317deecf.
-Post-merge compiler verification: 963 tests; escrow native zero-findings; deterministic cross-platform matrix; aggregate gate green (Compiler #2149 / Actions 36497398646).
+Current verified compiler code SHA: e9dd1106fbd6255b35e06ef7195826f3998a8576; current main tip after documentation reconciliation: 053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d.
+Latest main verification: 974 tests; escrow/DUC/attack/timer/research native zero-findings; all 9 native-support determinism jobs; aggregate snapshot comparison; Compiler #2158 / Actions 36499275902 green.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
