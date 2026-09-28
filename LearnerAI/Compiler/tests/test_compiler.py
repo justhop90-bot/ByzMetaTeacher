@@ -23,7 +23,7 @@ class CompilerTests(unittest.TestCase):
             Path(__file__).resolve().parents[1] / "generated" / "CompilerFixture.per"
         ).read_text(encoding="utf-8")
         self.assertEqual(generated, compile_source(EXAMPLES))
-        self.assertEqual(generated.count("(defrule"), 19)
+        self.assertEqual(generated.count("(defrule"), 21)
         init_start = generated.index("; Demand initialization")
         init_end = generated.index("; Pending diagnostics: castle")
         self.assertIn("(true)\n=>", generated[init_start:init_end])
@@ -36,7 +36,7 @@ class CompilerTests(unittest.TestCase):
         self.assertIn("(set-goal demand-castle 44)", a)
         self.assertIn("(set-goal demand-castle 43)", a)
         self.assertIn("(set-goal demand-castle 0)", a)
-        self.assertEqual(a.count("(defrule"), 19)
+        self.assertEqual(a.count("(defrule"), 21)
 
     def test_compiler_owned_strategic_number_is_allocated_and_emitted(self):
         source = """
