@@ -765,6 +765,13 @@ def default_native_duc_filter_contracts() -> Tuple[NativeDucFilterContract, ...]
             True,
             True,
             (f"airef:duc:{command}:retained",),
+            command in {
+                "up-filter-distance",
+                "up-filter-exclude",
+                "up-filter-garrison",
+                "up-filter-include",
+                "up-filter-range",
+            },
         )
         for command in commands
     )
@@ -999,6 +1006,13 @@ class NativeDucFilterContract:
     affects_next_search: bool
     resettable: bool
     evidence_ids: Tuple[str, ...]
+    resets_search_indices: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.command or not self.evidence_ids:
+            raise ValueError("DUC filter contract requires command and evidence")
+        if self.resets_search_indices and not self.affects_next_search:
+            raise ValueError("index-resetting DUC filters must affect the next search")
 
 
 @dataclass(frozen=True)
