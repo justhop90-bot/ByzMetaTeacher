@@ -48,6 +48,25 @@ Status legend: `[x]` verified; `[~]` partially implemented but not fully connect
 - [ ] [UNFINISHED] Add order-sensitive emitter regression coverage asserting COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY > ACTION ISSUANCE and explicitly testing same-pass Goal visibility.
 - [ ] [x] Keep `up-build`, builder allocation, controlled placement policy, and `up-reset-placement` as the next execution-control surface; do not silently invent them in the phase-observation tranche.
 
+## AIRef and community cross-reference implementation checklist
+
+- [x] `build` remains gated by native feasibility (`can-build`/`up-can-build`) before action issuance; the compiler does not treat the action itself as feasibility.
+- [x] `up-pending-objects` is used as the native duplicate-construction/queue-state witness; community scripts use the same comparison pattern.
+- [x] `up-pending-placement` is modeled as a Boolean placement-attempt witness with no invented comparator or numeric threshold.
+- [x] Completed construction is separated from queue/placement state and witnessed by completed building world state.
+- [x] Native `BuildingId` operands for construction Facts are bound from the checked-in engine catalog and emitted numerically, matching the native typed `c:` operand contract.
+- [x] Builder assignment remains outside the lifecycle demand state; community `up-assign-builders` usage is treated as execution policy rather than persistent demand ownership.
+- [x] The one-success-per-rule-pass `build` constraint is treated as a native pass constraint, not as a persistent construction lock.
+- [x] Retry preserves the original demand identity and uses a per-pass execution-memory barrier instead of a retry counter or replacement scheduler.
+- [~] Controlled placement (`up-build`, placement data, `up-reset-placement`) remains a separate execution-control surface; it is cross-referenced but intentionally not invented in this observation tranche.
+- [~] Community examples often use named `c: castle`/`c: house` operands; the compiler's native gate requires typed binding, so the implementation emits the resolved numeric BuildingId rather than silencing identifier findings.
+
+Evidence basis:
+- Checked-in AIRef command schema: `docs/reference/inventories/airef-command-schema.json`.
+- Checked-in engine catalog: `docs/reference/engine/catalog/build.md`, `castle.md`, `blacksmith.md`, and related building symbol pages.
+- Checked-in AIRef object inventory: `docs/reference/inventories/airef-object-inventory.json`.
+- Community `.per` precedent: `Promi/dawn.per`, `LSR.per`, `Castles.per`, and existing repository construction/validator notes.
+
 ## Acceptance criteria and verification commands for open construction items
 
 ### 1. Native `ObjectId` typing/binding
