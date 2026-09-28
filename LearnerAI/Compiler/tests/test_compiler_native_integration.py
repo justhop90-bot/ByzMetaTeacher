@@ -373,7 +373,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(result.status, ValidationStatus.VALIDATED)
             payload = json.loads(manifest.read_text(encoding="utf-8"))
             self.assertEqual(payload["format_version"], 4)
-            self.assertEqual(len(payload["records"]), 4)
+            self.assertEqual(len(payload["records"]), 5)
             self.assertTrue(all("goal_id" in record for record in payload["records"]))
             self.assertEqual(payload["integrity"]["algorithm"], "SHA-256")
             self.assertEqual(len(payload["integrity"]["content_sha256"]), 64)
