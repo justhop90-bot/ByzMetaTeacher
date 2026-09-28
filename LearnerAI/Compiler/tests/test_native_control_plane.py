@@ -11,11 +11,13 @@ from Compiler.ir import (
 from Compiler.ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from Compiler.runtime_binding import (
     BindingContext,
-    RuntimeBinder,
     StrategicNumberInventory,
     StrategicNumberRequest,
     TimerRequest,
 )
+from Compiler.semantic.native_control import validate_native_control_plan
+from Compiler.semantic.pass_scheduler import PassScheduler
+from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePassBehavior
 
 
 class NativePersistentControlPlaneTests(unittest.TestCase):
@@ -154,9 +156,6 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
 
     def test_control_plane_requires_declared_symbolic_storage(self):
         from Compiler.primitives.registry import default_de_registry
-        from Compiler.semantic.native_control import validate_native_control_plan
-from Compiler.semantic.pass_scheduler import PassScheduler
-from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePassBehavior
 
         plan = NativeControlPlan(
             states=(),
