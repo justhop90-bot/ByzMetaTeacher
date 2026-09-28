@@ -135,6 +135,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
                 "complete-",
                 "cancelled-",
                 "action-claim-",
+                "construction-retry-barrier-",
             )
         ):
             ignored.add(identifier)
@@ -145,7 +146,11 @@ def _storage_requests(ir, control_plan=None):
     requests = []
     seen = set()
     for demand in ir:
-        for request in (demand.lifecycle.slot, demand.action.arbitration_request):
+        for request in (
+            demand.lifecycle.slot,
+            demand.construction_retry_barrier,
+            demand.action.arbitration_request,
+        ):
             if request is None or request.request_id in seen:
                 continue
             seen.add(request.request_id)
