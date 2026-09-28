@@ -27,7 +27,10 @@ jobs:
             "LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_target_objects_option_zero_records_local_search_consumer_effect"
             "LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_target_objects_option_one_records_selected_target_consumer_effect"
             "LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_target_objects_option_one_allows_direct_native_id_but_warns_liveness"
-            "LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_target_objects_option_zero_requires_local_search_but_not_selected_target"
+            "LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_target_objects_option_zero_requires_local_search_but_not_selected_target",
+"LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_direct_target_consumption_reports_liveness_boundary",
+"LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_loop_widening_abstracts_retained_filter_lineage",
+"LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_loop_widening_emits_multi_field_diagnostic"
           )
           for test_id in "${tests[@]}"; do
             echo "=== $test_id ==="
