@@ -4,9 +4,11 @@ This directory is the canonical home for black-box DUC engine-oracle artifacts.
 
 ## Layout
 
-- `duc-native-oracle.schema.json`: portable JSON Schema Draft 2020-12 for fixture and observation shape.
+- `duc-native-oracle.schema.json`: portable JSON Schema Draft 2020-12 for DUC fixture and observation shape.
+- `escrow-same-pass-research.schema.json`: portable JSON Schema Draft 2020-12 for the capture-ready DE escrow/research same-pass oracle.
 - `fixtures/`: only pinned, reviewable native observations and synthetic semantic examples.
 - `candidates/`: capture-ready native fixture candidates that are not evidence and are never eligible for native-contract promotion.
+- `candidates/escrow-same-pass-research.native.json`: five-variant, ten-runs-per-variant candidate for `release-escrow -> research`; it remains UNVERIFIED until populated from an actual DE run.
 - `README.md`: boundary and maintenance rules.
 
 Do not create parallel schemas under compiler tests, plans, or inventories.
