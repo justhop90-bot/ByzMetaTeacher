@@ -170,6 +170,24 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             )
         )
 
+    def test_public_compile_source_forwards_attack_plan(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        artifact = compile_source(
+            source,
+            attack_plan=self._attack_plan(),
+        )
+        self.assertIn("; Native attack lifecycle plan", artifact)
+        self.assertIn("; Native attack rule: attack-first", artifact)
+        self.assertIn("; Native attack rule: attack-second", artifact)
+        self.assertEqual(artifact.count("(attack-now)"), 2)
+
     def test_internal_attack_plan_survives_binding_and_emission(self):
         source = """
         demand marker {
