@@ -60,11 +60,12 @@ Must NOT become a universal scheduler.
 native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
 emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |
 tests OK (native deterministic acceptance) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
-GAP: retained-filter/stale-target semantics, broader source expressiveness, and non-promoted output/storage surfaces.
+GAP: retained-filter/stale-target semantics and broader source expressiveness remain open.
 
 ## DUC TargetSession/groups/outputs/costs
-Same as SearchSession, plus: target liveness remains OPEN; runtime cost measurement remains OPEN; cardinality/performance diagnostics are now IMPLEMENTED as advisory evidence consumers.
-The compiler reports existing native local/remote cardinality bounds and AIRef benchmark classes for recurrent retained DUC searches without imposing correctness thresholds.
+Same as SearchSession, plus: target liveness remains OPEN; runtime cost measurement remains OPEN; cardinality/performance diagnostics are IMPLEMENTED as advisory evidence consumers.
+The compiler now also models up-get-cost-delta as the existing native four-Goal cost-data-4-goal-span output state, including 41..15996 bounds and writer provenance/generation.
+Open boundaries remain cost-data mutation/arithmetic semantics, numeric delta values, and any runtime liveness/performance claims.
 
 ## Controllers (9) + interactions (15) incl. attack
 native-fact MISSING (no per-controller causal proof) | IR EVIDENCE-ONLY catalog |
