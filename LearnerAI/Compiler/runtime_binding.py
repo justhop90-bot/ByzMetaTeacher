@@ -376,7 +376,11 @@ class StrategicNumberInventory:
     @classmethod
     def from_records(cls, records: Iterable[dict], *, inventory_sha: str) -> "StrategicNumberInventory":
         documented = {int(record["sn_id"]) for record in records if record.get("de") == 1}
-        candidates = frozenset(value for value in range(SN_ID_MIN, SN_ID_MAX + 1) if value not in documented)
+        candidates = frozenset(
+            value
+            for value in range(SN_ID_MIN, SN_ID_MAX + 1)
+            if value not in documented and value != SN_ID_MAX
+        )
         return cls(
             inventory_sha=inventory_sha,
             documented_ids=frozenset(documented),
