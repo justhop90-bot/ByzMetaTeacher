@@ -30,6 +30,7 @@ def main() -> int:
 
     required = (
         "(up-research-status c: ri-wheelbarrow >= research-pending)",
+        "(defconst ri-wheelbarrow 213)",
         "research-retry-barrier-research-wheelbarrow",
         "(research ri-wheelbarrow)",
         "(research-completed ri-wheelbarrow)",
