@@ -2,7 +2,7 @@
 
 Research basis: the checked-in MUSE forensic package plus current compiler main after PR #94.
 Implementation base: `dca0458986d0e50e2ae26889d89f863a3c2ff923`.
-Research is deliberately separated from executable promotion: unresolved native semantics remain OPEN rather than being converted into compiler policy.
+Research is deliberately separated from executable promotion: unresolved native semantics remain OPEN rather than being converted into compiler policy. The release-only executable slice is already promoted; this document now tracks the remaining runtime-evidence boundary.
 
 ## 1. Why this is the next repair
 
@@ -56,14 +56,21 @@ Implemented:
 - compiler forwarding from all six public entry points through the convergent `emit()` path;
 - emitter validation of the typed release plan.
 
-Not yet implemented:
+Promoted and verified on current main:
 - dedicated native semantic binding for `release-escrow`;
-- engine-semantics mapping owned by an escrow-specific contract;
-- dedicated executable registry inventory;
-- actual deterministic release-rule emission;
-- source-to-`.per` fixture and pinned native zero-findings acceptance.
+- `escrow.execution.release` engine-semantics mapping;
+- dedicated executable command inventory and resource-domain validation;
+- deterministic release-rule emission;
+- source-to-`.per` fixture and pinned native zero-findings acceptance;
+- current Compiler #2149 re-verification with 963 tests and the escrow native gate green.
 
-The next repair is therefore deliberately narrow: promote only the release-only native slice. Do not broaden it into `set-escrow-percentage`, UP escrow mutation, starvation scheduling, multi-owner handoff, or ordinary-action same-pass coupling.
+Still outside executable-safe promotion:
+- `set-escrow-percentage` and UP escrow mutations;
+- starvation/emergency release;
+- multi-owner handoff;
+- direct native same-pass `release-escrow -> ordinary action` proof.
+
+The repository-side same-pass evidence package is now specified and machine-checked in `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`; DE execution remains external and the native fact remains OPEN.
 
 ## 5. Exact research questions that must close before executable promotion
 
@@ -317,15 +324,16 @@ Still OPEN:
 - formal native proof for starvation/emergency preemption semantics;
 - multi-demand escrow handoff rules.
 
-### Required closure fixture
+### Required closure evidence
 
-Before promoting the first executable escrow slice, add a source-to-`.per` fixture that distinguishes all three cases:
+The original release-only source-to-`.per` closure is complete. The remaining same-pass closure fixture is intentionally runtime-facing and is captured by:
 
-1. `set-escrow-percentage 100 -> research` without release: must be rejected or blocked by feasibility semantics.
-2. `release-escrow -> research`: must emit in that order.
-3. `release-escrow -> set-escrow-percentage 0 -> research`: must emit in that order and prove that the policy reset is distinct from the balance release.
+- `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`;
+- `docs/reference/oracles/escrow-same-pass-research.schema.json`;
+- `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`;
+- `LearnerAI/Compiler/tests/test_escrow_same_pass_oracle_spec.py`.
 
-A separate negative fixture must prove that two semantic demands cannot both own and mutate the same resource escrow contract without an explicit handoff.
+The candidate remains unverified. Native promotion requires the user-side DE run matrix and ten-run repetition gate defined by the checklist.
 
 ## 6. Proposed first executable slice
 
