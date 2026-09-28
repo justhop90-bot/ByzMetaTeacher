@@ -99,6 +99,60 @@ class EscrowResourceControlTests(unittest.TestCase):
             (ResourceControlErrorCode.ESCROW_RESOURCE_OWNER_CONFLICT,),
         )
 
+    def test_non_escrow_consumption_without_release_is_rejected(self):
+        contract = self._contract("research", SemanticId("test", "research"))
+
+        report = validate_escrow_execution(
+            contract,
+            (
+                self._op(contract, contract.owner, EscrowOperationKind.CONSUME),
+            ),
+        )
+
+        self.assertEqual(
+            tuple(error.code for error in report.errors),
+            (ResourceControlErrorCode.ESCROW_RELEASE_ORDER,),
+        )
+
+    def test_policy_reset_alone_does_not_terminate_escrow(self):
+        contract = self._contract("research", SemanticId("test", "research"))
+
+        report = validate_escrow_execution(
+            contract,
+            (
+                self._op(contract, contract.owner, EscrowOperationKind.POLICY_RESET),
+            ),
+        )
+
+        self.assertEqual(
+            tuple(error.code for error in report.errors),
+            (ResourceControlErrorCode.ESCROW_OPEN_LOOP,),
+        )
+
+    def test_canonical_release_policy_reset_then_consume_sequence_is_valid(self):
+        contract = self._contract("research", SemanticId("test", "research"))
+
+        report = validate_escrow_execution(
+            contract,
+            (
+                self._op(contract, contract.owner, EscrowOperationKind.RELEASE, within_rule_order=0),
+                self._op(
+                    contract,
+                    contract.owner,
+                    EscrowOperationKind.POLICY_RESET,
+                    within_rule_order=1,
+                ),
+                self._op(
+                    contract,
+                    contract.owner,
+                    EscrowOperationKind.CONSUME,
+                    within_rule_order=2,
+                ),
+            ),
+        )
+
+        self.assertTrue(report.valid)
+
     def test_non_escrow_consumption_requires_release_before_action(self):
         contract = self._contract("research", SemanticId("test", "research"))
 
