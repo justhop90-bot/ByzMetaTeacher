@@ -7,6 +7,7 @@ from Compiler.ir.duc import (
     DucGroupStatus,
     DucSearchCursorDisposition,
     DucSearchFactResult,
+    DucSearchResultDisposition,
     DucListKind,
     DucListMutationKind,
     DucSearchIndexResetReason,
@@ -1559,15 +1560,16 @@ class DucSemanticTests(unittest.TestCase):
 
         first, second = report.searches
         self.assertEqual(first.cursor_after_disposition.value, "RUNTIME_ADVANCED")
+        self.assertEqual(
+            second.index_reset_reason,
+            DucSearchIndexResetReason.FOCUS_PLAYER_CHANGED,
+        )
+        self.assertEqual(
+            second.cursor_before_disposition,
+            DucSearchCursorDisposition.RESET_START,
+        )
+        self.assertEqual(second.focus_player_signature, "2")
         self.assertEqual(second.index_before, 0)
-        self.assertEqual(
-            second.index_reset_reason.value,
-            "FOCUS_PLAYER_CHANGED",
-        )
-        self.assertEqual(
-            second.cursor_before_disposition.value,
-            "RESET_START",
-        )
         self.assertEqual(
             second.cursor_after_disposition.value,
             "RUNTIME_ADVANCED",
