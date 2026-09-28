@@ -30,6 +30,11 @@ class NativeInteractionEndpointKind(str, Enum):
     CONTROL_SURFACE = "CONTROL_SURFACE"
 
 
+class NativeInteractionEndpointRole(str, Enum):
+    SOURCE = "SOURCE"
+    TARGET = "TARGET"
+
+
 class NativeControllerInteractionKind(str, Enum):
     CONTROLLED_BY = "CONTROLLED_BY"
     COUPLED_WITH = "COUPLED_WITH"
@@ -382,6 +387,7 @@ class NativeControllerInteractionBinding:
     controller_id: str
     interaction_id: str
     relation: NativeControllerInteractionKind
+    endpoint_role: NativeInteractionEndpointRole
     status: NativeInteractionSupportState
     rule_order: int
     within_rule_order: int
@@ -395,13 +401,33 @@ def bind_strategic_number_interactions(
     output: list[NativeControllerInteractionBinding] = []
     for binding in bindings:
         for interaction in catalog.interactions:
-            if interaction.source.kind is NativeInteractionEndpointKind.CONTROLLER and interaction.source.identity == binding.controller_id:
+            if (
+                interaction.source.kind is NativeInteractionEndpointKind.CONTROLLER
+                and interaction.source.identity == binding.controller_id
+            ):
                 output.append(
                     NativeControllerInteractionBinding(
                         access_identifier=binding.access_identifier,
                         controller_id=binding.controller_id,
                         interaction_id=interaction.identity,
                         relation=interaction.relation,
+                        endpoint_role=NativeInteractionEndpointRole.SOURCE,
+                        status=interaction.status,
+                        rule_order=binding.rule_order,
+                        within_rule_order=binding.within_rule_order,
+                    )
+                )
+            if (
+                interaction.target.kind is NativeInteractionEndpointKind.CONTROLLER
+                and interaction.target.identity == binding.controller_id
+            ):
+                output.append(
+                    NativeControllerInteractionBinding(
+                        access_identifier=binding.access_identifier,
+                        controller_id=binding.controller_id,
+                        interaction_id=interaction.identity,
+                        relation=interaction.relation,
+                        endpoint_role=NativeInteractionEndpointRole.TARGET,
                         status=interaction.status,
                         rule_order=binding.rule_order,
                         within_rule_order=binding.within_rule_order,
@@ -415,6 +441,7 @@ def bind_strategic_number_interactions(
                 item.within_rule_order,
                 item.access_identifier,
                 item.interaction_id,
+                item.endpoint_role.value,
             ),
         )
     )
@@ -717,6 +744,7 @@ __all__ = [
     "NativeControllerInteractionKind",
     "NativeInteractionCardinality",
     "NativeInteractionEndpoint",
+    "NativeInteractionEndpointRole",
     "NativeInteractionEndpointKind",
     "NativeInteractionLifetime",
     "NativeInteractionMutationOwner",
