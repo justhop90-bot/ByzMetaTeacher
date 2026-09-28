@@ -69,6 +69,7 @@ class DucGroupFlagState(str, Enum):
 class DucTargetProof(str, Enum):
     CURRENT_PASS_PROOF = "CURRENT_PASS_PROOF"
     PRESERVED_PROOF = "PRESERVED_PROOF"
+    NATIVE_ID_PROOF = "NATIVE_ID_PROOF"
     SYNTACTIC_RETENTION = "SYNTACTIC_RETENTION"
     UNKNOWN = "UNKNOWN"
 
@@ -189,12 +190,21 @@ class DucSearchListState:
 
 @dataclass(frozen=True)
 class DucObjectRef:
-    list_kind: DucListKind
+    list_kind: Optional[DucListKind]
     list_generation: Optional[int]
     list_index: Optional[int]
     native_object_id: Optional[str]
     provenance: DucProvenance
     index_stable: bool = True
+
+    def __post_init__(self) -> None:
+        if self.list_kind is None:
+            if self.list_generation is not None or self.list_index is not None:
+                raise ValueError("direct DUC object identity cannot carry list coordinates")
+            if self.native_object_id is None:
+                raise ValueError("direct DUC object identity requires a native object id")
+        elif self.list_index is None and self.native_object_id is None:
+            raise ValueError("list-backed DUC object identity requires an index or native id")
 
 
 @dataclass(frozen=True)
