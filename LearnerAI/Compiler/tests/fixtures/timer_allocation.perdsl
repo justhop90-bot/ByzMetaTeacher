@@ -1,6 +1,5 @@
 demand timer-gated-castle {
     timer cooldown
-    require (up-timer-status cooldown = timer-disabled)
     require (can-build castle)
     action (build castle)
     witness (building-type-count castle > 0)
