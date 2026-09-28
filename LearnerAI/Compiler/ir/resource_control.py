@@ -65,6 +65,53 @@ class EscrowOperation:
             raise ValueError("escrow operation order values must be non-negative")
 
 
+NATIVE_ESCROW_RELEASE_COMMAND = "release-escrow"
+NATIVE_ESCROW_RELEASE_RESOURCES = ("food", "wood", "stone", "gold")
+
+
+@dataclass(frozen=True)
+class NativeEscrowReleasePlan:
+    """Typed compiler-owned plan for the promoted release-escrow slice."""
+
+    operations: tuple[EscrowOperation, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.operations, tuple):
+            raise TypeError("native escrow release plan operations must be a tuple")
+        identities = tuple(operation.contract_identity for operation in self.operations)
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate native escrow release contract identity")
+        keys = tuple(
+            (operation.rule_order, operation.within_rule_order, operation.contract_identity)
+            for operation in self.operations
+        )
+        if keys != tuple(sorted(keys)):
+            raise ValueError(
+                "native escrow release operations must be declared in deterministic order"
+            )
+        for operation in self.operations:
+            if operation.kind is not EscrowOperationKind.RELEASE:
+                raise ValueError(
+                    "native escrow release plan accepts only RELEASE operations"
+                )
+            if operation.command != NATIVE_ESCROW_RELEASE_COMMAND:
+                raise ValueError(
+                    "native escrow release operations must use release-escrow"
+                )
+            if operation.resource not in NATIVE_ESCROW_RELEASE_RESOURCES:
+                raise ValueError(
+                    f"unsupported native escrow release resource '{operation.resource}'"
+                )
+
+    @property
+    def empty(self) -> bool:
+        return not self.operations
+
+    @property
+    def commands(self) -> tuple[str, ...]:
+        return tuple(sorted({operation.command for operation in self.operations}))
+
+
 class EscrowReserveKind(str, Enum):
     SET_PERCENTAGE = "SET_PERCENTAGE"
     MODIFY_AMOUNT = "MODIFY_AMOUNT"
@@ -178,6 +225,9 @@ class TransientActionExclusionClaim:
 
 __all__ = [
     "EscrowAdmissionMode",
+    "NATIVE_ESCROW_RELEASE_COMMAND",
+    "NATIVE_ESCROW_RELEASE_RESOURCES",
+    "NativeEscrowReleasePlan",
     "EscrowOperation",
     "EscrowOperationKind",
     "EscrowConsumption",

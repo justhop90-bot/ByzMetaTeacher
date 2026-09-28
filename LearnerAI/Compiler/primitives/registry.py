@@ -22,6 +22,8 @@ from .engine_semantics import (
     default_native_controller_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
+from ..ir.resource_control import NativeEscrowReleasePlan, NATIVE_ESCROW_RELEASE_COMMAND
+from ..semantic.resource_control import validate_escrow_release_plan
 from .native_hygiene import (
     AIRefProvenance,
     ConfidenceBasis,
@@ -177,6 +179,25 @@ class PrimitiveRegistry:
             adapter_lookup=self.get,
         )
         return binder.bind_attack_plan(plan)
+
+    def validate_escrow_release_plan(self, plan: NativeEscrowReleasePlan) -> None:
+        if not isinstance(plan, NativeEscrowReleasePlan):
+            raise TypeError("escrow_plan must be a NativeEscrowReleasePlan")
+        report = validate_escrow_release_plan(plan)
+        if not report.valid:
+            summary = "; ".join(
+                f"{error.code.value}: {error.message}" for error in report.errors
+            )
+            raise ValueError(f"escrow release plan validation failed: {summary}")
+        native = self.require_native(NATIVE_ESCROW_RELEASE_COMMAND)
+        if native.command_type not in {"Action", "Fact/Action"}:
+            raise ValueError(
+                "release-escrow is not declared as an executable native Action"
+            )
+        if native.parameter_count != 1:
+            raise ValueError(
+                f"release-escrow expects exactly 1 native parameter, got {native.parameter_count}"
+            )
 
     def validate_attack_plan(self, plan) -> None:
         binder = NativeSemanticBinder(
