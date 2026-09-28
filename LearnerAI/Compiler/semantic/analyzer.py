@@ -400,6 +400,19 @@ def analyze(
                     "must have one literal unit target"
                 )
             unit = action.args[0]
+            if witness.head != "unit-type-count":
+                raise CompileError(
+                    f"PRODUCTION-COMPLETION-WITNESS: demand '{demand.name}' "
+                    "production completion witness must use unit-type-count"
+                )
+            if (
+                not witness.args
+                or str(witness.args[0]) != unit
+            ):
+                raise CompileError(
+                    f"PRODUCTION-COMPLETION-WITNESS: demand '{demand.name}' "
+                    f"production completion witness must target unit '{unit}'"
+                )
             try:
                 native_unit_id = resolve_unit_id(unit)
             except (NativeUnitIdError, KeyError, TypeError, ValueError) as exc:
