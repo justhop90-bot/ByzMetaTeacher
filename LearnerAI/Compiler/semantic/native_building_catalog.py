@@ -48,9 +48,9 @@ def resolve_building_id(symbol: str) -> int:
     token = symbol.strip().lower()
     if token.isdigit():
         object_id = int(token)
-        if object_id < 0:
+        if object_id not in _building_ids().values():
             raise NativeBuildingIdError(
-                f"numeric BuildingId '{symbol}' is negative"
+                f"numeric BuildingId '{symbol}' is not a known DE building"
             )
         return object_id
 
