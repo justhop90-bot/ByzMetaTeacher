@@ -2961,7 +2961,6 @@ def _analyze_duc_linear(
                     )
                     continue
 
-                previous_target = state.target
                 state = _append_object_by_id(
                     state,
                     list_kind=source,
@@ -2982,10 +2981,6 @@ def _analyze_duc_linear(
                         provenance=provenance,
                     )
                 )
-                if state.target is not previous_target:
-                    raise AssertionError(
-                        "up-add-object-by-id must not rewrite an existing target"
-                    )
                 rule_writes.add(DucStateKind.LIST)
                 continue
 
