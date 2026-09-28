@@ -279,10 +279,25 @@ def _apply_action(
     elif expression.head == "disable-timer" and len(expression.args) == 1:
         values[("TIMER", str(expression.args[0]))] = "timer-disabled"
     elif expression.head == "up-set-timer" and len(expression.args) == 4:
-        interval = _int(expression.args[3])
+        timer_selector = str(expression.args[0]).lower()
+        if timer_selector not in {"c:", "c"}:
+            values[("TIMER", str(expression.args[1]))] = None
+            return
+        interval_type = str(expression.args[2]).lower()
+        interval_value = str(expression.args[3])
+        if interval_type in {"c:", "c"}:
+            interval = _int(expression.args[3])
+        elif interval_type in {"g:", "g"}:
+            interval = values.get(("GOAL", interval_value))
+        elif interval_type in {"s:", "s"}:
+            interval = values.get(("SN", interval_value))
+        else:
+            interval = None
         values[("TIMER", str(expression.args[1]))] = (
-            "timer-disabled"
-            if interval is not None and interval < 0
+            None
+            if interval is None
+            else "timer-disabled"
+            if interval < 0
             else "timer-running"
         )
 
