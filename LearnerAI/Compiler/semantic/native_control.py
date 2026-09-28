@@ -272,6 +272,36 @@ def _validate_leaf(
     }:
         _validate_typed_operand(head, expression, states)
 
+    if head == "up-set-timer":
+        timer_selector = str(expression.args[0])
+        if timer_selector not in {"c:", "c"}:
+            raise ValueError(
+                "native control plan requires up-set-timer to use a constant TimerId selector"
+            )
+        interval_type = str(expression.args[2]).lower()
+        interval_value = str(expression.args[3])
+        if interval_type in {"g:", "g"}:
+            _require_state(
+                interval_value,
+                "GOAL",
+                states,
+                command=head,
+                argument_index=3,
+            )
+        elif interval_type in {"s:", "s"}:
+            _require_state(
+                interval_value,
+                "STRATEGIC_NUMBER",
+                states,
+                command=head,
+                argument_index=3,
+            )
+        elif interval_type not in {"c:", "c"}:
+            raise ValueError(
+                f"native control command '{head}' has invalid interval typeOp "
+                f"'{interval_type}'"
+            )
+
     if head == "up-jump-rule":
         try:
             int(str(expression.args[0]), 10)
