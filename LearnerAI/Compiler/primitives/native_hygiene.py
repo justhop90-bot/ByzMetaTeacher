@@ -2340,11 +2340,11 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
                 "https://airef.github.io/tables/up-patch-notes.html",
                 "https://airef.github.io/tables/up-patch-notes.html",
                 LocatorType.PATCH_RELEASE,
-                "20130305-140519:up-set-target-object-failure",
+                "20130302-150016:up-set-target-object-failure",
                 excerpt=SourceExcerpt.capture(
                     "If the index is out of range, up-set-target-object now returns false as a Fact.",
                     ExcerptKind.PATCH_NOTE,
-                    locator_text="20130305-140519:up-set-target-object-failure",
+                    locator_text="20130302-150016:up-set-target-object-failure",
                 ),
                 semantic_scope=CitationSemanticScope.GENERAL_NATIVE_FACT,
                 source_hash=patch_notes_hash,
