@@ -94,6 +94,22 @@ class DucTargetTransition(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class DucTargetConsumerMode(str, Enum):
+    LOCAL_SEARCH_RESULTS = "LOCAL_SEARCH_RESULTS"
+    SELECTED_OBJECT_ONLY = "SELECTED_OBJECT_ONLY"
+
+
+@dataclass(frozen=True)
+class DucTargetConsumerEffect:
+    command: str
+    mode: DucTargetConsumerMode
+    provenance: DucProvenance
+    local_list_generation: Optional[int]
+    remote_list_generation: Optional[int]
+    target_validity: DucTargetStatus
+    target_proof: DucTargetProof
+
+
 @dataclass(frozen=True)
 class DucProvenance:
     command: str
@@ -449,6 +465,7 @@ class DucAnalysisReport:
     resets: tuple[DucResetEffect, ...] = ()
     mutations: tuple[DucListMutationEffect, ...] = ()
     targets: tuple[DucTargetState, ...] = ()
+    target_consumers: tuple[DucTargetConsumerEffect, ...] = ()
     observations: tuple[DucSearchStateObservation, ...] = ()
     effects: tuple[DucExecutionEffect, ...] = ()
     diagnostics: tuple[DucDiagnostic, ...] = ()
@@ -469,6 +486,8 @@ __all__ = [
     "DucBranchMerge",
     "DucDiagnostic",
     "DucExecutionEffect",
+    "DucTargetConsumerEffect",
+    "DucTargetConsumerMode",
     "DucFilterPredicate",
     "DucFilterSnapshot",
     "DucFilterState",
