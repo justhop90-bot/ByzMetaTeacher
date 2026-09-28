@@ -146,6 +146,43 @@ class DucNativeOracleFixtureTests(unittest.TestCase):
             probe_sources,
         )
 
+    def test_clean_search_target_identity_candidate_is_explicitly_unpromoted(self):
+        with (CANDIDATE_DIR / "duc-clean-search-target-identity.native.json").open(
+            encoding="utf-8"
+        ) as handle:
+            document = json.load(handle)
+
+        fixture = document["fixture"]
+        observation = fixture["observation"]
+        probe_sources = [item["source"] for item in fixture["probe"]]
+
+        self.assertEqual(fixture["kind"], "NATIVE_OBSERVATION")
+        self.assertEqual(observation["result"], "UNVERIFIED")
+        self.assertEqual(
+            fixture["engine_scope"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            observation["engine"]["build"],
+            "RECORD-ACTUAL-ENGINE-BUILD",
+        )
+        self.assertEqual(
+            [assertion["result"] for assertion in observation["assertions"]],
+            ["UNVERIFIED", "UNVERIFIED", "UNVERIFIED", "UNVERIFIED"],
+        )
+        self.assertEqual(
+            observation["asserted_setup"]["target_index_changed"],
+            False,
+        )
+        self.assertIn(
+            "(up-clean-search search-local object-data-id search-order-desc)",
+            probe_sources,
+        )
+        self.assertIn(
+            "(up-get-object-target-data object-data-id 101)",
+            probe_sources,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
