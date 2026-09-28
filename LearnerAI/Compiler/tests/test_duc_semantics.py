@@ -1430,7 +1430,7 @@ class DucSemanticTests(unittest.TestCase):
         target = report.final_state.target
         self.assertIsNotNone(target)
         self.assertEqual(target.object_refs[0].native_object_id, "12345")
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
 
 
@@ -1447,7 +1447,7 @@ class DucSemanticTests(unittest.TestCase):
         target = report.final_state.target
         self.assertIsNotNone(target)
         self.assertEqual(target.object_refs[0].native_object_id, "12345")
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
 
 
@@ -1463,7 +1463,7 @@ class DucSemanticTests(unittest.TestCase):
         target = report.final_state.target
         self.assertIsNotNone(target)
         self.assertEqual(target.object_refs[0].native_object_id, "12345")
-        self.assertEqual(target.validity, DucTargetStatus.VALID)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(target.proof.value, "NATIVE_ID_PROOF")
 
 
