@@ -2295,6 +2295,67 @@ def _analyze_duc_linear(
                 rule_writes.add(DucStateKind.OUTPUT)
                 continue
 
+            if command == "up-get-cost-delta":
+                cost_span_contract = contracts.goal_span_contract(
+                    "cost-data-4-goal-span"
+                )
+                if len(args) != 1:
+                    diagnostics.append(
+                        DucDiagnostic(
+                            "DUC-017",
+                            DiagnosticSeverity.ERROR.value,
+                            rule.rule_order,
+                            "up-get-cost-delta requires exactly one OutputGoalId",
+                            _location(action, rule.source_location),
+                        )
+                    )
+                    continue
+                output_goal_id = _int_or_none(args[0])
+                if output_goal_id is not None:
+                    try:
+                        cost_span_contract.validate_shape(
+                            output_goal_id,
+                            output_goal_id + cost_span_contract.width - 1,
+                        )
+                    except ValueError as exc:
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-017",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                str(exc),
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        continue
+                    output_provenance = _provenance(
+                        rule,
+                        action,
+                        visibility=DucVisibility.SAME_RULE,
+                        state_revision=state_revision,
+                        pass_id=state.pass_id,
+                        contract_id=cost_span_contract.identity,
+                        evidence_ids=tuple(
+                            item.citation_id
+                            for item in cost_span_contract.provenance
+                        ),
+                    )
+                    _, output_spans = _write_goal_output_span(
+                        state,
+                        goal_id=output_goal_id,
+                        width=cost_span_contract.width,
+                        minimum_start=cost_span_contract.minimum_start,
+                        maximum_start=cost_span_contract.maximum_start,
+                        cardinality=DucCardinalityRange(0, 1),
+                        provenance=output_provenance,
+                    )
+                    state = replace(
+                        state,
+                        goal_output_spans=output_spans,
+                    )
+                rule_writes.add(DucStateKind.OUTPUT)
+                continue
+
             if target_contract is not None:
                 if target_contract.identity_kind == "NATIVE_ID":
                     if len(args) != 2:
