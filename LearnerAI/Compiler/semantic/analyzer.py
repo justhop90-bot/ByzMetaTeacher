@@ -38,6 +38,7 @@ from ..ir import (
 from ..primitives import NativeSupportState, PrimitiveRegistry
 from .construction import canonical_build_completion_witness
 from .native_building_catalog import NativeBuildingIdError, resolve_building_id
+from .native_unit_catalog import NativeUnitIdError, resolve_unit_id
 
 _LOGICAL_ARITY = {
     "and": 2, "or": 2, "nand": 2, "nor": 2,
@@ -395,6 +396,13 @@ def analyze(
                     "must have one literal unit target"
                 )
             unit = action.args[0]
+            try:
+                native_unit_id = resolve_unit_id(unit)
+            except (NativeUnitIdError, KeyError, TypeError, ValueError) as exc:
+                raise CompileError(
+                    f"PRODUCTION-TRAIN-ID: demand '{demand.name}' cannot resolve "
+                    f"UnitId '{unit}'"
+                ) from exc
             production_retry_barrier = GoalSlotRequest(
                 request_id=StorageRequestId(
                     owner=semantic_id,
@@ -404,10 +412,11 @@ def analyze(
             )
             production_lifecycle = ProductionLifecycle(
                 unit=unit,
+                native_unit_id=native_unit_id,
                 pending_fact=Expression(
-                    source=f"(up-pending-objects c: {unit} >= 1)",
+                    source=f"(up-pending-objects c: {native_unit_id} >= 1)",
                     head="up-pending-objects",
-                    args=("c:", unit, ">=", "1"),
+                    args=("c:", str(native_unit_id), ">=", "1"),
                     location=action.location,
                 ),
             )
