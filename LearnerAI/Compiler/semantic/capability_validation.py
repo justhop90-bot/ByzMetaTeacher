@@ -577,7 +577,7 @@ class AdmissibilityValidationPass:
             PredicateKind.ARBITRATION: {"RESOURCE_ARBITRATION"},
             PredicateKind.TIMING: {"TIMING"},
             PredicateKind.OWNERSHIP: {"OWNERSHIP"},
-            PredicateKind.STRATEGY: {"STRATEGY", "OBSERVATION"},
+            PredicateKind.STRATEGY: {"STRATEGY", "OBSERVATION", "PERSISTENT_STATE"},
             PredicateKind.DEPENDENCY: {"OBSERVATION"},
             PredicateKind.ADMISSIBILITY: {"ADMISSIBILITY"},
             PredicateKind.WITNESS: {"WITNESS"},
