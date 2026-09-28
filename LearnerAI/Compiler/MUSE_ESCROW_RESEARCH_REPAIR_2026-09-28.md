@@ -187,6 +187,136 @@ Still OPEN:
 - starvation/emergency override semantics;
 - whether the DE implementation introduces any family-specific cost exceptions beyond the documented resource-view rule.
 
+
+## 5B. R3/R4 closure — mutation ordering, ownership, and lifetime
+
+### Mutation ordering
+
+The native escrow state has three distinct mutation classes. They must not be collapsed into one "escrow claim" operation.
+
+1. **Accrual-policy mutation** — `set-escrow-percentage(resource, p)`.
+   This changes the percentage of future resource income routed into escrow. It does not, by itself, release the escrow balance already accumulated. Community guidance explicitly uses `release-escrow` and then `set-escrow-percentage ... 0` when both the existing reserve and future accrual policy must be cleared. citeturn169190search0turn449732search44
+
+2. **Balance mutation** — `release-escrow(resource)`.
+   This immediately transfers the named resource's escrowed amount back into the normal resource stockpile and sets that escrow amount to zero. The native command index defines it as a state-changing Action, not a Fact. citeturn449732search1
+
+3. **Escrow-consuming action** — ordinary `build/train/research` consumes the normal view; an UP action with `escrow-included` consumes the combined view. UserPatch's explicit example shows the resource view switching from (T-E) to (T) when the escrow state is changed. citeturn834084search0
+
+**Executable ordering invariant ESC-011:** within one emitted rule, escrow mutations are ordered left-to-right and later actions may rely on earlier mutations in that same action sequence. The compiler's safe canonical sequence for ordinary commands is therefore:
+
+`release-escrow(r*) -> set-escrow-percentage(r*, 0) -> ordinary action`
+
+when the intent is both "make the currently escrowed balance spendable" and "stop future accumulation."
+
+There is strong independent community evidence for exactly this sequence. The Duke builder library, AI Script corpora, and AoE2 scripting examples routinely place `release-escrow` immediately before `research`; this is not an accidental formatting convention. citeturn834084search2turn115112search0turn115112search3
+
+**Executable ordering invariant ESC-012:** `set-escrow-percentage(r, 0)` alone is not a release operation. A compiler must never treat percentage-zero as escrow-balance-zero. Existing scripts explicitly perform both operations when they intend both effects. citeturn169190search0turn169190search1
+
+**Executable ordering invariant ESC-013:** a `can-*-with-escrow` Fact must be evaluated before the rule's resource mutations are relied upon unless the compiler has an engine-proven same-rule re-evaluation model. Conditions are matched against the pre-fire state; the mutation sequence is the action-side execution contract. Therefore the canonical research pattern is:
+
+`can-research-with-escrow(T) -> release required escrow -> research(T)`
+
+not a post-release re-check hidden in the same action block.
+
+**Executable ordering invariant ESC-014:** a release occurring in an earlier rule is persistent into later rule passes because escrow is engine-managed player state. A later rule may consume the released normal stockpile subject to the ordinary `can-*` predicate. Rule order therefore creates a real economic dependency and is not merely source-order decoration. The forensic corpus explicitly records that earlier resource actions can leave later rules unable to spend the same resources; there is no proven universal fairness scheduler. citeturn449732search3
+
+### Ownership
+
+The native engine does **not** expose per-demand escrow ownership. Escrow is a per-player, per-resource balance/policy surface. Historical community scripts therefore layer purpose/ownership in ordinary persistent state, for example an `escrow-purpose-goal`, alongside the native escrow balance. citeturn449732search3turn558675search0
+
+This gives the compiler a strict separation:
+
+- **Native owner:** none. The engine owns the actual resource/escrow stockpiles.
+- **Semantic owner:** exactly one compiler demand/strategic identity for each active escrow protection contract.
+- **Execution claimant:** the action that is authorized to consume that protection.
+- **Transient arbitration owner:** optional and distinct from escrow ownership. The existing build-pass arbitration model must not be reused as if it were escrow ownership.
+
+**Executable invariant ESC-015:** one escrow contract must have exactly one semantic owner. Two demands must not independently mutate the same resource's escrow policy or release the same protected balance unless an explicit arbitration/ownership handoff contract exists.
+
+**ESC-016:** ownership is attached to the *purpose of protection*, not to the percentage value. Percentage 0 does not mean "unowned"; it means "stop routing new income into escrow." Existing escrow can still belong to the active protection contract.
+
+**ESC-017:** shared resources are a conflict surface. If demand A protects food/gold for a research package and demand B independently attempts to release or repurpose those same escrow balances, the compiler must diagnose the ownership conflict rather than silently merge the demands.
+
+**ESC-018:** escrow ownership cannot be inferred from resource amount alone. A positive escrow balance proves stored resources exist, not which strategic demand is entitled to consume or release them.
+
+### Lifetime
+
+The lifetime model is therefore two-dimensional:
+
+**Policy lifetime**
+`set-escrow-percentage(r,p)` establishes or changes the future-accrual policy for resource (r). The policy remains active until another percentage mutation changes it.
+
+**Balance lifetime**
+Escrow balance for (r) exists independently of the percentage policy. It terminates when the engine consumes it through an escrow-included action, or when `release-escrow(r)` transfers it to the normal stockpile. UserPatch also documents the special runtime correction where escrow can temporarily exceed current resource amount and is corrected on the next resource drop, so balance arithmetic itself must remain engine-owned. citeturn834084search0turn449732search0
+
+This yields the following semantic lifetime:
+
+`UNOWNED -> PROTECTED -> CONSUMING/RELEASING -> RELEASED`
+
+with an important side channel:
+
+`PROTECTED --set-percentage(0)--> PROTECTED`
+
+because percentage zero changes the accrual policy but does not release the current balance.
+
+**Executable invariant ESC-019:** protection cannot be cleared by changing the percentage alone.
+
+**ESC-020:** normal completion of the protected action does not automatically prove that all escrow state is released. The compiler needs an explicit release/consumption contract for every resource in the escrow contract.
+
+**ESC-021:** an escrow contract may end by **consumption** or **release**, but those are semantically different terminal paths:
+- consumption means the protected resources were actually spent by an escrow-authorized action;
+- release means the protection was cancelled/relaxed and the resources became ordinary stockpile again.
+
+**ESC-022:** after terminal release/consumption, the semantic owner must relinquish the contract. Re-entry requires a new explicit acquisition decision, not an implicit continuation of stale ownership.
+
+**ESC-023:** starvation/emergency release is preemption of an active protection contract, not ordinary completion. The protected strategic demand survives unless it is separately invalidated. Reassertion, if desired, occurs on a later admissible pass.
+
+### Canonical research-state machine
+
+For the first executable research slice, the compiler should model:
+
+`UNPROTECTED`
+-> **ACQUIRE**: set escrow policy / establish owner
+-> `PROTECTED`
+-> **ADMISSIBLE**: `can-research-with-escrow`
+-> **RELEASE**: release required escrow
+-> **ISSUE**: ordinary `research`
+-> `PENDING`
+-> **COMPLETE**: `research-completed`
+-> **RELEASED**: semantic ownership ends.
+
+The critical point is that RELEASE occurs before ISSUE for an ordinary `research` action. The community evidence independently demonstrates this sequence across multiple script families, while UserPatch supplies the underlying resource-view semantics. citeturn115112search0turn115112search1turn115112search47turn834084search0
+
+The compiler must not emit a hidden "release when complete" operation merely because the research demand has completed. The resources were already made spendable before research issuance; any subsequent escrow policy is a separate state decision.
+
+### What is now closed
+
+Closed with strong evidence:
+- accrual policy and escrow balance are separate state dimensions;
+- percentage zero is not release;
+- release-escrow zeroes the named escrow balance;
+- community executable practice consistently releases required escrow before ordinary research/build/train commands;
+- escrow ownership is not a native engine field and must be compiler-owned semantic state;
+- ownership must not be conflated with transient action arbitration;
+- a protection contract ends through explicit consumption or release;
+- starvation release is preemption/recovery, not successful completion.
+
+Still OPEN:
+- whether DE guarantees same-pass visibility of a release to a subsequent ordinary action as a formal engine contract, rather than merely the strongly corroborated community idiom;
+- exact cost/provider behavior for each escrow-aware action family beyond the resource-view contract already closed;
+- formal native proof for starvation/emergency preemption semantics;
+- multi-demand escrow handoff rules.
+
+### Required closure fixture
+
+Before promoting the first executable escrow slice, add a source-to-`.per` fixture that distinguishes all three cases:
+
+1. `set-escrow-percentage 100 -> research` without release: must be rejected or blocked by feasibility semantics.
+2. `release-escrow -> research`: must emit in that order.
+3. `release-escrow -> set-escrow-percentage 0 -> research`: must emit in that order and prove that the policy reset is distinct from the balance release.
+
+A separate negative fixture must prove that two semantic demands cannot both own and mutate the same resource escrow contract without an explicit handoff.
+
 ## 6. Proposed first executable slice
 
 Do not begin with commodity balancing.
