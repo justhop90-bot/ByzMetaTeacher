@@ -5,6 +5,7 @@ from Compiler.ir.duc import (
     DucCardinalityRange,
     DucGoalOutputSpan,
     DucGroupStatus,
+    DucSearchCursorDisposition,
     DucListKind,
     DucListMutationKind,
     DucSearchIndexResetReason,
@@ -1316,6 +1317,122 @@ class DucSemanticTests(unittest.TestCase):
             report.final_state.local_list.search_index.offset,
             0,
         )
+
+    def test_search_at_proven_end_is_guaranteed_empty_and_does_not_rewind(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        seed_index = replace(
+            first.final_state.local_list.search_index,
+            cursor_disposition=DucSearchCursorDisposition.AT_END,
+            offset=None,
+            known=False,
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                search_index=seed_index,
+            ),
+        )
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                    ("up-get-search-state", ("41",)),
+                )),
+            ),
+            initial_state=seed,
+        )
+
+        search = report.searches[0]
+        self.assertEqual(search.result_disposition.value, "GUARANTEED_EMPTY")
+        self.assertEqual(search.cursor_before_disposition.value, "AT_END")
+        self.assertEqual(search.cursor_after_disposition.value, "AT_END")
+        self.assertEqual(
+            report.final_state.local_list.current_generation.last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+        observation = report.observations[0]
+        self.assertEqual(
+            observation.local_search_cursor_disposition.value,
+            "AT_END",
+        )
+        self.assertEqual(
+            observation.local_last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+
+
+    def test_search_on_full_destination_list_is_guaranteed_empty_and_cursor_blocked(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "1")),
+            )),
+        ))
+        full_generation = replace(
+            first.final_state.local_list.current_generation,
+            cardinality=DucCardinalityRange(240, 240),
+            last_search_cardinality=DucCardinalityRange(240, 240),
+        )
+        seed = replace(
+            first.final_state,
+            local_list=replace(
+                first.final_state.local_list,
+                current_generation=full_generation,
+            ),
+        )
+
+        report = analyze_duc(
+            (
+                _rule(1, (
+                    ("up-find-local", ("c:", "villager", "c:", "1")),
+                )),
+            ),
+            initial_state=seed,
+        )
+
+        search = report.searches[0]
+        self.assertEqual(search.result_disposition.value, "GUARANTEED_EMPTY")
+        self.assertEqual(search.cursor_after_disposition.value, "BLOCKED_BY_CAPACITY")
+        self.assertEqual(
+            report.final_state.local_list.search_index.cursor_disposition.value,
+            "BLOCKED_BY_CAPACITY",
+        )
+        self.assertEqual(
+            report.final_state.local_list.current_generation.last_search_cardinality,
+            DucCardinalityRange(0, 0),
+        )
+
+
+    def test_remote_cursor_advancement_and_focus_reset_are_independent(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("set-strategic-number", ("sn-focus-player-number", "c:", "2")),
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+            )),
+        ))
+
+        first, second = report.searches
+        self.assertEqual(first.cursor_after_disposition.value, "RUNTIME_ADVANCED")
+        self.assertEqual(second.index_before, 0)
+        self.assertEqual(
+            second.index_reset_reason.value,
+            "FOCUS_PLAYER_CHANGED",
+        )
+        self.assertEqual(
+            second.cursor_before_disposition.value,
+            "RESET_START",
+        )
+        self.assertEqual(
+            second.cursor_after_disposition.value,
+            "RUNTIME_ADVANCED",
+        )
+
 
     def test_changed_local_query_signature_resets_local_search_index(self):
         report = analyze_duc((
