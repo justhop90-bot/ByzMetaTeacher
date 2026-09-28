@@ -67,12 +67,16 @@ class SemanticSupportStateTests(unittest.TestCase):
         from Compiler.semantic.community_engine import default_community_engine_registry
 
         mapping_registry = default_engine_semantic_mapping_registry()
-        from Compiler.primitives.engine_semantics import default_duc_executable_commands
+        from Compiler.primitives.engine_semantics import (
+            default_duc_executable_commands,
+            default_native_controller_executable_commands,
+        )
 
         expected_commands = tuple(
             sorted(
                 tuple(default_de_registry().names())
                 + tuple(default_duc_executable_commands())
+                + tuple(default_native_controller_executable_commands())
             )
         )
         self.assertEqual(
