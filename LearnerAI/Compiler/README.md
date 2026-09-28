@@ -385,3 +385,14 @@ The compiler now has a typed descriptive control-plane layer in semantic/native_
 This layer is deliberately not an engine simulator and is not an executable promotion mechanism. Evidence-only controller relationships cannot become executable native semantics merely because they are common community practice. Strategic Number analysis can attach deterministic controller-binding metadata for known surfaces while leaving unmapped native SNs valid and untouched.
 
 The initial corpus covers civilian task allocation, exploration, attack-group control, town-size defense/targeting, resource escrow control, and DUC search state. Detailed attack, DUC, performance, and versioned controller semantics remain separate expansion tranches.
+
+
+## Native Controller Interaction Semantics
+
+`semantic/native_controller_interactions.py` is the second control-plane layer above `native_controller.py`. The controller graph establishes ownership: which native subsystem a Goal, Strategic Number, Timer, command, or DUC surface belongs to. The interaction graph establishes relationship: what one controller gates, feeds, affects, automatically mutates, couples with, or costs another.
+
+Interaction records are evidence-bearing and version-scoped. The validator rejects unknown endpoints, contradictory reverse-direction dependencies, invalid endpoint shapes, mutation-owner mismatches, and target-engine scope mismatches. Feedback is deliberately excluded from dependency edges because feedback is a control relationship, not an acyclic prerequisite. Performance/cardinality metadata is advisory and does not silently become a blocking diagnostic.
+
+The initial interaction corpus covers attack/exploration gating, town-size/attack targeting, civilian/resource coupling, escrow-aware production/research admission, DUC search-to-target flow, and documented automatic DUC search-index resets. Strategic Number semantics attach deterministic inbound and outbound interaction bindings to already-known controller bindings. Unknown Strategic Numbers remain unmapped. Lowering and native artifact generation are unchanged.
+
+The next semantic expansion is staged in `docs/plans/2026-09-28-duc-search-session-semantics.md` and covers SearchSession generations, retained filters, target provenance, Goal-output provenance, recurrent eligibility, and DUC cardinality/performance evidence.
