@@ -66,9 +66,10 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`, `native_unknowns.md`; current+queued is corroborated but queue capacity/provider-idle/birth timing remain open.
   - Owner: production async semantics and witness layer.
 
-- [ ] Research escrow/in-progress semantics.
-  - Muse: `compiler_coverage_baseline.md`, `community_knowledge_coverage.md`, `native_unknowns.md`.
-  - Owner: research lifecycle plus resource-control integration.
+- [~] Research escrow/in-progress semantics.
+  - The repository now has a machine-checked same-pass escrow/research evidence specification and capture candidate: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`, `docs/reference/oracles/escrow-same-pass-research.schema.json`, `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`, and `tests/test_escrow_same_pass_oracle_spec.py`.
+  - The compiler-side release-only escrow slice and research in-progress lifecycle remain statically verified; direct DE same-pass visibility, escrow ownership acquisition, starvation/recovery, and provider-loss/runtime details remain open.
+  - Owner: research lifecycle plus resource-control integration; runtime execution remains user-owned.
 
 - [ ] Source-graph `load-random` and explicit .xs boundary.
   - Muse: `implementation_map.md`, `community_knowledge_coverage.md`, `native_unknowns.md`.
