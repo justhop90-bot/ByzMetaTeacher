@@ -32,33 +32,33 @@ Files:
 
 Interfaces:
 - Produces NativeInteractionEndpointKind, NativeControllerInteractionKind, NativeInteractionLifetime, NativeInteractionVisibility, NativeInteractionMutationOwner, NativeInteractionSupportState.
-- Produces immutable NativeInteractionEndpoint, NativeInteractionCardinality, NativeControllerInteraction, and NativeControllerInteractionCatalog.
+- Produces immutable NativeInteractionEndpoint, NativeInteractionCardinality, NativeControllerInteraction, NativeControllerInteractionCatalog, and endpoint-role-aware Strategic Number interaction bindings.
 - Produces NativeControllerInteractionCatalog.validate(controller_catalog, target_engine_families=(AIRefVersionFamily.DE,)).
-- Produces NativeControllerInteractionCatalog.resolve(interaction_id), fingerprint(), dependency_edges(), and require_engine_semantics_mapped(interaction_id).
+- Produces NativeControllerInteractionCatalog.resolve(interaction_id), fingerprint(), dependency_edges(), and require_engine_semantics_mapped(interaction_id). Version scope is enforced at catalog validation for all interaction records.
 - Produces default_native_controller_interaction_catalog(controller_catalog=None).
 
-- [ ] Step 1: Add the focused failing test
+- [x] Step 1: Add the focused failing test
 
 Cover controller gating, surface ownership, automatic mutation, unknown controller/surface endpoints, duplicate identity, self-interaction, contradictory reverse-direction relations, bidirectional feedback, feedback exclusion from dependency edges, evidence-only promotion rejection, mapped interaction evidence requirements, version-scope mismatch, mutation-owner confusion, deterministic ordering/fingerprint, explicit lifetime/visibility, and invalid cardinality ranges.
 
-- [ ] Step 2: Verify the relevant failure
+- [x] Step 2: Verify the relevant failure
 
 Run: python -m unittest LearnerAI/Compiler/tests/test_native_controller_interactions.py
 Expected: import failure for Compiler.semantic.native_controller_interactions caused by the missing production module.
 
-- [ ] Step 3: Implement the minimum contract
+- [x] Step 3: Implement the minimum contract
 
 Implement endpoint validation, relation compatibility, contradiction rules, feedback non-dependency classification, evidence/status promotion gate, version-scope compatibility, mutation-owner rules, deterministic ordering/fingerprinting, and cardinality validation. Do not seed community interactions yet.
 
-- [ ] Step 4: Verify the focused pass
+- [x] Step 4: Verify the focused pass
 Run the same focused command and require all interaction contract tests to pass.
 
-- [ ] Step 5: Run affected integration checks
+- [x] Step 5: Run affected integration checks
 Run: python -m unittest LearnerAI/Compiler/tests/test_native_controller_semantics.py
 Run: python -m unittest LearnerAI/Compiler/tests/test_native_engine_effects.py
 Run: python -m unittest LearnerAI/Compiler/tests/test_recurrent_execution.py
 
-- [ ] Step 6: Commit the passing deliverable
+- [x] Step 6: Commit the passing deliverable
 Commit: feat(compiler): add native controller interaction contract
 
 ### Task 2: Seed the first evidence-backed interaction corpus
@@ -72,22 +72,22 @@ Seed the audited relationships: attack gating by exploration, town-size/response
 
 Every seeded interaction must retain EVIDENCE_ONLY unless native evidence supports ENGINE_SEMANTICS_MAPPED. Do not infer symmetric causality from co-occurrence in a community script.
 
-- [ ] Step 1: Add failing seeded-corpus assertions
+- [x] Step 1: Add failing seeded-corpus assertions
 Assert exact interaction IDs, endpoint kinds, relation kinds, mutation owners, visibility/lifetime, engine-version scope, evidence status, and representative performance/cardinality metadata.
 
-- [ ] Step 2: Verify red
+- [x] Step 2: Verify red
 Run the focused interaction suite. Expected: seeded interaction lookups fail because the corpus is not yet present.
 
-- [ ] Step 3: Implement the evidence corpus
+- [x] Step 3: Implement the evidence corpus
 Add only relationships supported by the cross-referenced evidence. Omit uncertain directions or retain them as evidence-only.
 
-- [ ] Step 4: Verify focused green
+- [x] Step 4: Verify focused green
 Run the focused interaction suite and require all seeded and hostile tests to pass.
 
-- [ ] Step 5: Cross-check existing controller corpus
+- [x] Step 5: Cross-check existing controller corpus
 Run: python -m unittest LearnerAI/Compiler/tests/test_native_controller_semantics.py
 
-- [ ] Step 6: Commit the passing deliverable
+- [x] Step 6: Commit the passing deliverable
 Commit: feat(compiler): seed native controller interaction corpus
 
 ### Task 3: Attach typed interaction metadata to known Strategic Number bindings
@@ -105,22 +105,22 @@ Interfaces:
 
 Known SN accesses gain interaction metadata only through existing controller bindings. Unknown SNs remain untouched. Interaction metadata never changes mutation evaluation, comparison evaluation, diagnostics, or emission.
 
-- [ ] Step 1: Add failing integration assertions
+- [x] Step 1: Add failing integration assertions
 Use rules containing sn-number-explore-groups, sn-number-attack-groups, sn-maximum-town-size, and one unmapped SN. Assert known controller bindings, relevant interaction IDs, and absence of fabricated interaction metadata for the unmapped SN.
 
-- [ ] Step 2: Verify red
+- [x] Step 2: Verify red
 Run: python -m unittest LearnerAI/Compiler/tests/test_strategic_number_semantics.py
 
-- [ ] Step 3: Implement the minimum hookup
+- [x] Step 3: Implement the minimum hookup
 Resolve interaction metadata by controller identity only. Do not re-parse SN semantics or add another source-order pass.
 
-- [ ] Step 4: Verify focused green
+- [x] Step 4: Verify focused green
 Run the same Strategic Number suite.
 
-- [ ] Step 5: Run interaction and recurrent suites
+- [x] Step 5: Run interaction and recurrent suites
 Run: python -m unittest LearnerAI/Compiler/tests/test_native_controller_interactions.py LearnerAI/Compiler/tests/test_recurrent_execution.py
 
-- [ ] Step 6: Commit the passing deliverable
+- [x] Step 6: Commit the passing deliverable
 Commit: feat(compiler): bind Strategic Number accesses to controller interactions
 
 ### Task 4: Close the documentation boundary and stage the DUC SearchSession tranche
@@ -134,12 +134,12 @@ Files:
 
 Documentation must distinguish controller ownership, interaction semantics, and executable native mappings. The gap map must record interaction coverage separately from controller corpus coverage.
 
-- [ ] Step 1: Add documentation assertions where existing contract tests already exist. Do not create brittle markdown line-number tests.
-- [ ] Step 2: Write the DUC SearchSession implementation plan covering search-index state, retained filters, local/remote list generations, focus-player/query/filter resets, zero-result facts, capacity widening, target establishment and invalidation, same-rule versus later-pass visibility, Goal output spans, recurrent firing gates, cardinality/performance evidence, target-session handoff, and hostile branch/join tests.
-- [ ] Step 3: Update the semantic gap/checklist with status INTERACTION SUBSTRATE IMPLEMENTED / INTERACTION CORPUS PARTIAL.
-- [ ] Step 4: Run focused suites, full compiler regression, native zero-findings acceptance, and all nine OS/Python determinism jobs through GitHub Actions.
-- [ ] Step 5: Reconcile the plan against actual implementation and leave every remaining partial area explicitly marked.
-- [ ] Step 6: Commit the passing deliverable
+- [x] Step 1: Add documentation assertions where existing contract tests already exist. Do not create brittle markdown line-number tests.
+- [x] Step 2: Write the DUC SearchSession implementation plan covering search-index state, retained filters, local/remote list generations, focus-player/query/filter resets, zero-result facts, capacity widening, target establishment and invalidation, same-rule versus later-pass visibility, Goal output spans, recurrent firing gates, cardinality/performance evidence, target-session handoff, and hostile branch/join tests.
+- [x] Step 3: Update the semantic gap/checklist with status INTERACTION SUBSTRATE IMPLEMENTED / INTERACTION CORPUS PARTIAL.
+- [x] Step 4: Run focused suites, full compiler regression, native zero-findings acceptance, and all nine OS/Python determinism jobs through GitHub Actions.
+- [x] Step 5: Reconcile the plan against actual implementation and leave every remaining partial area explicitly marked.
+- [x] Step 6: Commit the passing deliverable
 Commit: docs(compiler): close native controller interaction boundary
 
 ## Unresolved externally observable decisions
