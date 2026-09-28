@@ -992,6 +992,16 @@ def _group_validity(
     return DucGroupStatus.VALID
 
 
+def _search_list_proven_empty(state: DucSearchListState) -> bool:
+    generation = state.current_generation
+    return (
+        generation is not None
+        and generation.cardinality is not None
+        and generation.cardinality.maximum == 0
+        and not state.path_ambiguous
+    )
+
+
 def _empty_state(pass_id: int = 0) -> DucSemanticState:
     return DucSemanticState(
         local_list=DucSearchListState(DucListKind.LOCAL, None, 1, False),
@@ -1298,6 +1308,13 @@ def _analyze_target_object_fact(
         else None
     )
     if source is None or current is None or not current.initialized:
+        return DucTargetFactObservation(
+            command=SET_OBJECT_TARGET,
+            result=DucTargetFactResult.GUARANTEED_FALSE,
+            target=None,
+            provenance=provenance,
+        )
+    if _search_list_proven_empty(current):
         return DucTargetFactObservation(
             command=SET_OBJECT_TARGET,
             result=DucTargetFactResult.GUARANTEED_FALSE,
@@ -2349,6 +2366,37 @@ def _analyze_duc_linear(
                             default=0,
                         )
                     )
+                    if index is not None and _search_list_proven_empty(current):
+                        diagnostics.append(
+                            DucDiagnostic(
+                                "DUC-014",
+                                DiagnosticSeverity.ERROR.value,
+                                rule.rule_order,
+                                (
+                                    f"DUC object index {index} cannot be established because "
+                                    f"{source.value.lower()} search list has proven zero cardinality"
+                                ),
+                                _location(action, rule.source_location),
+                            )
+                        )
+                        if (
+                            state.target is not None
+                            and target_contract.failed_action_preserves_previous_target is None
+                        ):
+                            diagnostics.append(
+                                DucDiagnostic(
+                                    "DUC-007",
+                                    DiagnosticSeverity.WARNING.value,
+                                    rule.rule_order,
+                                    (
+                                        "up-set-target-object failed target establishment Action; "
+                                        "native effect on the previous target is unresolved, so the "
+                                        "compiler preserves the existing target without claiming runtime preservation"
+                                    ),
+                                    _location(action, rule.source_location),
+                                )
+                            )
+                        continue
                     if index is not None and not 0 <= index < capacity:
                         diagnostics.append(
                             DucDiagnostic(
