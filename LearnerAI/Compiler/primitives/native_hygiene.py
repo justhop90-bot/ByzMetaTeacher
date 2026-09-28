@@ -749,6 +749,16 @@ def default_native_duc_search_contracts() -> Tuple[NativeDucSearchContract, ...]
     )
 
 
+def default_native_duc_search_availability_contracts() -> Tuple[NativeDucSearchAvailabilityContract, ...]:
+    return (
+        NativeDucSearchAvailabilityContract(
+            "up-can-search",
+            ("LOCAL", "REMOTE"),
+            ("airef:duc:can-search",),
+        ),
+    )
+
+
 def default_native_duc_search_index_transition_contracts() -> Tuple[NativeDucSearchIndexTransitionContract, ...]:
     scope = EngineVersionScope(
         source_families=(AIRefVersionFamily.UP,),
@@ -1132,6 +1142,21 @@ class NativeDucSearchContract:
 
 
 @dataclass(frozen=True)
+class NativeDucSearchAvailabilityContract:
+    command: str
+    list_kinds: Tuple[str, ...]
+    evidence_ids: Tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not self.command:
+            raise ValueError("DUC search-availability contract requires a command")
+        if not self.list_kinds or any(kind not in {"LOCAL", "REMOTE"} for kind in self.list_kinds):
+            raise ValueError("DUC search-availability contract requires LOCAL/REMOTE list kinds")
+        if not self.evidence_ids:
+            raise ValueError("DUC search-availability contract requires evidence")
+
+
+@dataclass(frozen=True)
 class NativeDucSearchIndexTransitionContract:
     trigger_kind: str
     affected_lists: Tuple[str, ...]
@@ -1276,6 +1301,7 @@ class NativeContractCatalog:
     goal_span_contracts: Tuple[NativeGoalSpanContract, ...] = ()
     parameter_ranges: Tuple[NativeGoalParameterRangeContract, ...] = ()
     duc_searches: Tuple[NativeDucSearchContract, ...] = ()
+    duc_search_availability: Tuple[NativeDucSearchAvailabilityContract, ...] = ()
     duc_search_index_transitions: Tuple[NativeDucSearchIndexTransitionContract, ...] = ()
     duc_filters: Tuple[NativeDucFilterContract, ...] = ()
     duc_resets: Tuple[NativeDucResetContract, ...] = ()
@@ -1300,6 +1326,12 @@ class NativeContractCatalog:
             object.__setattr__(self, "parameter_ranges", default_native_goal_parameter_ranges())
         if not self.duc_searches:
             object.__setattr__(self, "duc_searches", default_native_duc_search_contracts())
+        if not self.duc_search_availability:
+            object.__setattr__(
+                self,
+                "duc_search_availability",
+                default_native_duc_search_availability_contracts(),
+            )
         if not self.duc_search_index_transitions:
             object.__setattr__(
                 self,
@@ -1335,6 +1367,7 @@ class NativeContractCatalog:
                 raise ValueError(f"duplicate {label} identity")
         for values, label in (
             (self.duc_searches, "DUC search contract"),
+            (self.duc_search_availability, "DUC search-availability contract"),
             (self.duc_filters, "DUC filter contract"),
             (self.duc_resets, "DUC reset contract"),
             (self.duc_mutations, "DUC mutation contract"),
@@ -1446,6 +1479,7 @@ class NativeContractCatalog:
             evidence_id
             for contract in (
                 *self.duc_searches,
+                *self.duc_search_availability,
                 *self.duc_search_index_transitions,
                 *self.duc_filters,
                 *self.duc_resets,
@@ -1498,6 +1532,12 @@ class NativeContractCatalog:
 
     def duc_search(self, command: str) -> Optional[NativeDucSearchContract]:
         return next((item for item in self.duc_searches if item.command == command), None)
+
+    def duc_search_availability(self, command: str) -> Optional[NativeDucSearchAvailabilityContract]:
+        return next(
+            (item for item in self.duc_search_availability if item.command == command),
+            None,
+        )
 
     def duc_search_index_transition(self, trigger_kind: str) -> Optional[NativeDucSearchIndexTransitionContract]:
         return next(
@@ -1611,6 +1651,10 @@ class NativeContractCatalog:
             *(
                 (contract.command, contract.evidence_ids)
                 for contract in self.duc_searches
+            ),
+            *(
+                (contract.command, contract.evidence_ids)
+                for contract in self.duc_search_availability
             ),
             *(
                 (f"DUC search-index transition {contract.trigger_kind}", contract.evidence_ids)
@@ -2143,6 +2187,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
     )
 
     duc_command_specs = (
+        ("airef:duc:can-search", "up-can-search", "(up-can-search <SearchSource>)"),
         ("airef:duc:find-local", "up-find-local", "(up-find-local <typeOp> <UnitId> <typeOp> <Value>)"),
         ("airef:duc:find-status-local", "up-find-status-local", "(up-find-status-local <typeOp> <UnitId> <typeOp> <Value>)"),
         ("airef:duc:find-remote", "up-find-remote", "(up-find-remote <typeOp> <UnitId> <typeOp> <Value>)"),
