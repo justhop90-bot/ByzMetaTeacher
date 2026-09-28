@@ -55,6 +55,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.duc import analyze_duc
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
+    from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.emitter import emit
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -102,6 +103,7 @@ else:
     from .semantic.duc import analyze_duc
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
+    from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -141,7 +143,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir):
+def _storage_requests(ir, control_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -151,6 +153,12 @@ def _storage_requests(ir):
             *(state.request for state in demand.strategic_number_states),
         ):
             if request is None or request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
+    if control_plan is not None:
+        for request in control_plan.storage_requests:
+            if request.request_id in seen:
                 continue
             seen.add(request.request_id)
             requests.append(request)
@@ -192,6 +200,7 @@ def _compile_ir_parts(
     base_goal: int = 41,
     *,
     binding_context: BindingContext | None = None,
+    control_plan=None,
 ):
     reports = []
 
@@ -255,8 +264,14 @@ def _compile_ir_parts(
     if semantic_diagnostics:
         raise _semantic_compile_failure(semantic_diagnostics)
 
+    if control_plan is not None:
+        try:
+            validate_native_control_plan(control_plan, registry)
+        except (TypeError, ValueError) as exc:
+            raise CompileError(f"CONTROL-PLANE-VALIDATION: {exc}") from exc
+
     context = binding_context or BindingContext()
-    storage_requests = _storage_requests(ir)
+    storage_requests = _storage_requests(ir, control_plan)
     if any(
         isinstance(request, StrategicNumberRequest)
         for request in storage_requests
@@ -282,7 +297,11 @@ def _compile_ir_parts(
             registry.validate_demand_lowering(demand, bindings)
     except (KeyError, ValueError) as exc:
         raise CompileError(f"NATIVE-CONTRACT-LOWERING: {exc}") from exc
-    return emit(ir, bindings, registry=registry), bindings, context
+    return (
+        emit(ir, bindings, registry=registry, control_plan=control_plan),
+        bindings,
+        context,
+    )
 
 
 def _parse_source_slices(slices) -> list:
