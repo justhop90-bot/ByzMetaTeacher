@@ -1,0 +1,17 @@
+name: DUC search index hostile
+
+on:
+  push:
+    branches:
+      - compiler-duc-search-index-focus-hostile
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hostile focus-player search-index test
+        run: PYTHONPATH=LearnerAI python -m unittest -v LearnerAI.Compiler.tests.test_duc_semantics.DucSemanticTests.test_focus_player_change_resets_remote_search_index
