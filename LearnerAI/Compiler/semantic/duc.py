@@ -1847,14 +1847,49 @@ def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
     )
 
 
+def _search_index_key(index: DucSearchIndexState) -> tuple[object, ...]:
+    return (
+        index.offset,
+        index.generation,
+        index.query_signature,
+        index.focus_player_signature,
+        index.known,
+        index.last_reset_reason,
+        index.path_ambiguous,
+    )
+
+
+def _join_search_indices(
+    indices: tuple[DucSearchIndexState, ...],
+) -> DucSearchIndexState:
+    first = indices[0]
+    if all(_search_index_key(index) == _search_index_key(first) for index in indices[1:]):
+        return first
+    same_query = all(index.query_signature == first.query_signature for index in indices)
+    same_focus = all(index.focus_player_signature == first.focus_player_signature for index in indices)
+    same_reason = all(index.last_reset_reason is first.last_reset_reason for index in indices)
+    return DucSearchIndexState(
+        offset=first.offset if all(index.offset == first.offset for index in indices) else None,
+        generation=max(index.generation for index in indices),
+        query_signature=first.query_signature if same_query else None,
+        focus_player_signature=first.focus_player_signature if same_focus else None,
+        known=all(index.known for index in indices) and all(index.offset == first.offset for index in indices),
+        last_reset_reason=first.last_reset_reason if same_reason else DucSearchIndexResetReason.UNKNOWN,
+        path_ambiguous=True,
+    )
+
+
 def _list_semantic_key(state: DucSearchListState) -> tuple[object, ...]:
+    index_key = _search_index_key(state.search_index)
     if state.current_generation is not None:
         return (
             _generation_key(state.current_generation),
+            index_key,
             state.path_ambiguous,
         )
     return (
         "AMBIGUOUS",
+        index_key,
         state.path_ambiguous,
         tuple(_generation_key(item) for item in state.generation_variants),
     )
@@ -2030,6 +2065,7 @@ def _join_list_states(states: tuple[DucSearchListState, ...]) -> DucSearchListSt
             unique_generations[key]
             for key in sorted(unique_generations, key=str)
         ),
+        search_index=_join_search_indices(tuple(state.search_index for state in states)),
     )
 
 
