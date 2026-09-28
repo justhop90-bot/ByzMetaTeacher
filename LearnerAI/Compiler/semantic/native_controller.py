@@ -13,7 +13,6 @@ import json
 from typing import Iterable
 
 from ..ir.strategic_number import StrategicNumberAccess
-from ..ir.strategic_number import StrategicNumberAccess
 from .community_engine import EvidenceClass, PracticeStatus
 
 
@@ -32,6 +31,7 @@ class NativeControlSurfaceKind(str, Enum):
     TIMER = "TIMER"
     GOAL = "GOAL"
     COMMAND = "COMMAND"
+    DUC_SEARCH_INDEX = "DUC_SEARCH_INDEX"
 
 
 class NativeControllerRelation(str, Enum):
@@ -317,6 +317,7 @@ def _surface(
     *,
     sources: tuple[str, ...],
     description: str,
+    evidence: EvidenceClass | None = None,
 ) -> NativeControlSurface:
     identity = f"{controller_id}:{kind.value.lower()}:{native_identifier}"
     return NativeControlSurface(
@@ -324,9 +325,15 @@ def _surface(
         controller_id=controller_id,
         kind=kind,
         native_identifier=native_identifier,
-        evidence=EvidenceClass.ENGINE_FACT
-        if kind is NativeControlSurfaceKind.STRATEGIC_NUMBER
-        else EvidenceClass.COMMUNITY_PRACTICE,
+        evidence=(
+            evidence
+            if evidence is not None
+            else (
+                EvidenceClass.ENGINE_FACT
+                if kind is NativeControlSurfaceKind.STRATEGIC_NUMBER
+                else EvidenceClass.COMMUNITY_PRACTICE
+            )
+        ),
         status=PracticeStatus.EVIDENCE_ONLY,
         sources=sources,
         description=description,
@@ -479,6 +486,20 @@ def default_native_controller_catalog() -> NativeControllerCatalog:
                 "up-find-remote",
                 "up-full-reset-search",
                 "up-get-search-state",
+            )
+        ),
+        *(
+            _surface(
+                "duc-search-state",
+                NativeControlSurfaceKind.DUC_SEARCH_INDEX,
+                identifier,
+                sources=controller_sources["duc-search-state"],
+                description="Persistent DUC search cursor/index state.",
+                evidence=EvidenceClass.ENGINE_FACT,
+            )
+            for identifier in (
+                "local",
+                "remote",
             )
         ),
         *(
