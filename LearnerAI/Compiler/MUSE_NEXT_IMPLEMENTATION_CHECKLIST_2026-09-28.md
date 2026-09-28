@@ -49,12 +49,12 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
   - Full compiler/native verification: compiler regression suite 895 tests OK on the final implementation head; all native-support determinism jobs and the aggregate compiler verification gate pass.
 
-- [ ] Native controller attack lifecycle.
+- [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
   - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `native_unknowns.md`; `attack-now` is only 47 corpus hits and the corpus says attack is largely mediated by persistent SN/town-size/group state.
-  - Owner: `semantic/native_controller.py`, `semantic/native_controller_interactions.py`, new attack lifecycle validator.
-  - Gate: admission/completion/release/reassess model before executable promotion.
-
-## Tier 2 — compiler completeness after the control plane
+  - Connected issue path: typed `ir/native_attack.py`, dedicated attack binder promotion, deterministic `emitter/per.py` lowering, compiler threading, and pinned native artifact gate `tests/assert_attack_native.py`.
+  - Deliberate open boundary: attack completion, release, target acquisition, group membership, exploration/town-size coupling, and attack Strategic Number control remain non-executable.
+  - Owner: `semantic/native_controller.py`, `semantic/native_controller_interactions.py`, typed attack IR/binder/emitter.
+  - Gate: admission/completion/release/reassess model before lifecycle-complete promotion; current tranche proves only issue connectivity with completion `UNOBSERVED`.
 
 - [ ] Production queue semantics.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`, `native_unknowns.md`; current+queued is corroborated but queue capacity/provider-idle/birth timing remain open.
