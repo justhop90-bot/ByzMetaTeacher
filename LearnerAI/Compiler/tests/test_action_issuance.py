@@ -170,7 +170,7 @@ class ActionIssuanceTests(unittest.TestCase):
         pending_end = output.index("; Action issuance: spears", pending_start)
         pending_block = output[pending_start:pending_end]
 
-        self.assertIn("(up-pending-objects c: spearman >= 1)", pending_block)
+        self.assertIn("(up-pending-objects c: 93 >= 1)", pending_block)
         self.assertIn("(goal demand-spears 42)", pending_block)
         self.assertIn("(set-goal demand-spears 42)", pending_block)
 
@@ -193,7 +193,7 @@ class ActionIssuanceTests(unittest.TestCase):
         self.assertLess(reset, retry)
         self.assertLess(retry, set_barrier)
         self.assertLess(set_barrier, issuance)
-        self.assertIn("(not (up-pending-objects c: spearman >= 1))", output[retry:issuance])
+        self.assertIn("(not (up-pending-objects c: 93 >= 1))", output[retry:issuance])
         self.assertIn("(goal production-retry-barrier-spears 0)", output[issuance:])
 
     def test_train_uses_production_retry_storage_but_build_does_not(self):
