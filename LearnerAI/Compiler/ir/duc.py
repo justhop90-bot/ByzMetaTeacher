@@ -237,8 +237,10 @@ class DucGoalOutputSpan:
     def __post_init__(self) -> None:
         if not 1 <= self.start_goal_id <= 16000:
             raise ValueError("DUC Goal output must use GoalId range 1..16000")
-        if self.width != 1:
-            raise ValueError("DUC group-size Goal output span must have width 1")
+        if self.width not in {1, 4}:
+            raise ValueError("DUC Goal output span must have width 1 or 4")
+        if self.start_goal_id + self.width - 1 > 16000:
+            raise ValueError("DUC Goal output span exceeds the native GoalId range")
         if self.generation < 1:
             raise ValueError("DUC Goal output generation must be positive")
         if self.overwritten_generation is None:
@@ -322,6 +324,7 @@ class DucSearchStateObservation:
     local_last_search_cardinality: Optional[DucCardinalityRange] = None
     remote_total_cardinality: Optional[DucCardinalityRange] = None
     remote_last_search_cardinality: Optional[DucCardinalityRange] = None
+    output_span: Optional[DucGoalOutputSpan] = None
 
 
 @dataclass(frozen=True)
