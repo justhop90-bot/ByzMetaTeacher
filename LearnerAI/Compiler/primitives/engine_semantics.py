@@ -186,6 +186,7 @@ _AOE2AI = "https://github.com/lewisc64/aoe2ai"
 _DUKE = "https://github.com/niektb/AI"
 _DUC_COMMAND_SPECS = (
     ("up-can-search", "duc.search.availability"),
+    ("up-get-search-state", "duc.search.state"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
@@ -453,6 +454,7 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
 def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
         "up-can-search": "Fact",
+        "up-get-search-state": "Action",
         "up-find-local": "Fact/Action",
         "up-find-status-local": "Fact/Action",
         "up-find-remote": "Fact/Action",
