@@ -842,6 +842,27 @@ def _materialized_manifest_units(
     )
 
 
+def _materialized_manifest_unit_identities(
+    evidence_by_id: dict[UnitId, tuple[EvidenceRef, ...]],
+) -> tuple[UnitDef, ...]:
+    return tuple(
+        _unit(
+            int(seed.id),
+            seed.name,
+            str(seed.line),
+            seed.available_age,
+            int(seed.provider_building),
+            seed.base_cost,
+            classes=(),
+            train_time_seconds=seed.train_time_seconds,
+            upgrades_from=int(seed.upgrades_from) if seed.upgrades_from is not None else None,
+            upgrades_to=int(seed.upgrades_to) if seed.upgrades_to is not None else None,
+            provenance=evidence_by_id[seed.id],
+        )
+        for seed in BYZANTINE_MANIFEST_UNIT_IDENTITY_SEEDS
+    )
+
+
 def _materialized_manifest_unit_supplements(
     manifest_evidence: EvidenceRef,
     evidence: tuple[EvidenceRef, ...],
