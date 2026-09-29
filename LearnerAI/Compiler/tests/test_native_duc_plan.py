@@ -268,12 +268,12 @@ class NativeDucPlanTests(unittest.TestCase):
             (
                 "up-get-object-data",
                 "object-data-output",
-                "(up-get-object-data object-data-type 41)",
+                "(up-get-object-data 38 41)",
             ),
             (
                 "up-get-object-target-data",
                 "object-target-data-output",
-                "(up-get-object-target-data object-data-type 41)",
+                "(up-get-object-target-data 38 41)",
             ),
         ):
             plan = NativeDucPlan(
@@ -283,7 +283,7 @@ class NativeDucPlanTests(unittest.TestCase):
                         order=1,
                         facts=(_expr("(true)", "true"),),
                         actions=(
-                            _expr(source, command, "object-data-type", "41"),
+                            _expr(source, command, "38", "41"),
                         ),
                     ),
                 ),
@@ -430,12 +430,12 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
             (
                 "up-get-object-data",
                 "object-data-output",
-                "(up-get-object-data object-data-type 41)",
+                "(up-get-object-data 38 41)",
             ),
             (
                 "up-get-object-target-data",
                 "object-target-data-output",
-                "(up-get-object-target-data object-data-type 41)",
+                "(up-get-object-target-data 38 41)",
             ),
         ):
             plan = NativeDucPlan(
@@ -445,7 +445,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
                         order=100,
                         facts=(_expr("(true)", "true"),),
                         actions=(
-                            _expr(source_text, command, "object-data-type", "41"),
+                            _expr(source_text, command, "38", "41"),
                         ),
                     ),
                 ),
@@ -455,11 +455,11 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
             )
             artifact = compile_source(source, duc_plan=plan)
             self.assertIn(
-                f"({command} object-data-type 42)",
+                f"({command} 38 42)",
                 artifact,
             )
             self.assertNotIn(
-                f"({command} object-data-type 41)",
+                f"({command} 38 41)",
                 artifact,
             )
 
