@@ -905,7 +905,7 @@ class PrimitiveRegistry:
         target = str(expression.args[1])
         if target not in {str(native_unit_id)}:
             try:
-                from ..semantic.unit_ids import resolve_unit_id
+                from ..semantic.native_unit_catalog import resolve_unit_id
                 resolved = resolve_unit_id(target)
             except (ImportError, KeyError, TypeError, ValueError):
                 resolved = None
