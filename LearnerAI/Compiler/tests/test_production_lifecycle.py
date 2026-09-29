@@ -7,7 +7,10 @@ from Compiler.semantic import analyze
 from Compiler.ir import (
     GoalRole,
     GoalSlotRequest,
+    ProductionFactDisposition,
     ProductionLifecycle,
+    ProductionQueueProtection,
+    ProductionTargetAdmission,
     SemanticId,
     StorageRequestId,
 )
@@ -19,17 +22,34 @@ def _expression(source, head, *args):
 
 def _lifecycle(*, witness=None, retry_purpose="production-retry-barrier"):
     owner = SemanticId("test", "spears")
+    pending = _expression(
+        "(up-pending-objects c: 93 >= 1)",
+        "up-pending-objects",
+        "c:",
+        "93",
+        ">=",
+        "1",
+    )
+    target_admission = ProductionTargetAdmission(
+        disposition=ProductionFactDisposition.SUPPORTED,
+        primitive="can-train",
+        expression=_expression(
+            "(can-train 93)",
+            "can-train",
+            "93",
+        ),
+        native_unit_id=93,
+        semantic_id="execution.train.feasibility",
+    )
+    queue_protection = ProductionQueueProtection(
+        disposition=ProductionFactDisposition.SUPPORTED,
+        pending_fact=pending,
+        native_unit_id=93,
+    )
     return ProductionLifecycle(
         unit="spearman",
         native_unit_id=93,
-        pending_fact=_expression(
-            "(up-pending-objects c: 93 >= 1)",
-            "up-pending-objects",
-            "c:",
-            "93",
-            ">=",
-            "1",
-        ),
+        target_admission=target_admission,
         completion_witness=witness
         or _expression(
             "(unit-type-count spearman >= 1)",
@@ -45,6 +65,7 @@ def _lifecycle(*, witness=None, retry_purpose="production-retry-barrier"):
             ),
             role=GoalRole.EXECUTION_MEMORY,
         ),
+        queue_protection=queue_protection,
     )
 
 
@@ -52,6 +73,9 @@ class ProductionLifecycleContractTests(unittest.TestCase):
     def test_production_lifecycle_owns_canonical_completion_and_retry_contract(self):
         lifecycle = _lifecycle()
 
+        self.assertEqual(lifecycle.target_admission.primitive, "can-train")
+        self.assertEqual(lifecycle.target_admission.native_unit_id, 93)
+        self.assertEqual(lifecycle.queue_protection.pending_fact.head, "up-pending-objects")
         self.assertEqual(lifecycle.completion_witness.head, "unit-type-count")
         self.assertEqual(lifecycle.completion_witness.args[0], "spearman")
         self.assertEqual(
