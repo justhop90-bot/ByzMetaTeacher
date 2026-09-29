@@ -271,6 +271,27 @@ class LoadEventPayload:
 
 
 @dataclass(frozen=True)
+class LoadRandomSelection:
+    """Explicit compiler-owned deterministic materialization for one load-random event."""
+
+    source_path: Path
+    line: int
+    column: int
+    target_text: str
+
+    def __post_init__(self) -> None:
+        canonical = self.source_path.resolve()
+        if canonical != self.source_path:
+            object.__setattr__(self, "source_path", canonical)
+        if self.line < 1 or self.column < 1:
+            raise ValueError("load-random selection location must be positive")
+        if not self.target_text:
+            raise ValueError("load-random selection target cannot be empty")
+
+    def key(self) -> tuple[str, int, int]:
+        return (self.source_path.as_posix(), self.line, self.column)
+
+@dataclass(frozen=True)
 class LoadRandomEntry:
     target_text: str
     weight: int | None = None
@@ -774,6 +795,7 @@ __all__ = [
     "EffectiveSourceSlice",
     "LoadEventPayload",
     "LoadKind",
+    "LoadRandomSelection",
     "LoadRandomEntry",
     "LoadRandomEventPayload",
     "LoadSymbolEnvironment",
