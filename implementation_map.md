@@ -61,9 +61,10 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 ## Research lifecycle status
 - `ir/research.py` owns the pinned six-value `ResearchState` family (-1 disabled, 0 unavailable, 1 available, 2 pending, 3 complete, 4 queued) and validates the typed pending-status fact shape.
 - `semantic/analyzer.py` resolves the literal technology to its native TechId and emits numeric `up-research-status c: <TechId> >= 2` evidence into the lifecycle.
-- `emitter/per.py` retains the existing research pending/retry lifecycle; `research-completed` remains the only completion witness.
-- Tests: `test_action_issuance.py` typed status contract plus source-to-.per numeric canonicalization; native `research_in_progress.perdsl` gate remains authoritative.
-- Remaining: escrow-claim lowering and runtime/provider semantics outside the documented ResearchState value contract.
+- `emitter/per.py` retains the existing research pending/retry lifecycle; `research-completed` remains the only completion witness. Explicit targeted `release-escrow` operations are validated against `can-research-with-escrow` for the same technology and emitted immediately before ordinary `research`.
+- The targeted release path reuses the existing `escrow_plan` API and `NativeEscrowReleasePlan`; no second public compiler channel is introduced.
+- Tests: `test_action_issuance.py`, `test_native_escrow_release.py`, `test_escrow_resource_control.py`, and native `assert_research_escrow_native.py`.
+- Remaining: same-pass runtime visibility, provider/busy runtime semantics, starvation/emergency behavior, handoff semantics, and the protected-research pattern catalog.
 
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py
