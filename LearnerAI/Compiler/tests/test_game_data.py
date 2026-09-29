@@ -352,6 +352,68 @@ class GameDataTests(unittest.TestCase):
             },
         )
 
+    def test_manifest_technology_conflicts_materialize_from_explicit_override_sources(self):
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+
+        treadmill = effective.tech(54)
+        siphons = effective.tech(909)
+
+        self.assertEqual(treadmill.name, "Treadmill Crane")
+        self.assertEqual(
+            treadmill.base_cost,
+            ResourceCost(wood=200, stone=50),
+        )
+        self.assertEqual(treadmill.research_time_seconds, 20)
+        self.assertEqual(treadmill.providers[0].building, BuildingId(209))
+
+        self.assertEqual(siphons.name, "Siphons")
+        self.assertEqual(
+            siphons.base_cost,
+            ResourceCost(food=100, gold=175),
+        )
+        self.assertEqual(siphons.research_time_seconds, 45)
+        self.assertEqual(siphons.providers[0].building, BuildingId(209))
+
+        self.assertIn(
+            EvidenceKind.REPOSITORY_MANIFEST,
+            {ref.kind for ref in treadmill.provenance},
+        )
+        self.assertIn(
+            EvidenceKind.COMMUNITY_REFERENCE,
+            {ref.kind for ref in treadmill.provenance},
+        )
+        self.assertIn(
+            EvidenceKind.REPOSITORY_MANIFEST,
+            {ref.kind for ref in siphons.provenance},
+        )
+        self.assertIn(
+            EvidenceKind.OFFICIAL_PATCH,
+            {ref.kind for ref in siphons.provenance},
+        )
+
+        report = classify_byzantine_manifest_coverage(
+            parse_byzantine_manifest(
+                (
+                    Path(__file__).parents[3]
+                    / "docs"
+                    / "reference"
+                    / "BYZANTINES_manifest.txt"
+                ).read_text(encoding="utf-8")
+            ),
+            effective,
+        )
+        self.assertEqual(report.modeled_count, 155)
+        self.assertEqual(report.unmodeled_count, 4)
+        self.assertEqual(
+            {
+                int(node.id)
+                for node in report.unmodeled_nodes
+                if node.kind is ManifestNodeKind.TECHNOLOGY
+            },
+            {408},
+        )
+
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
         from pathlib import Path
         import json
