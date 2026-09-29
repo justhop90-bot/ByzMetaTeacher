@@ -17,15 +17,15 @@ class ByzantineManifestUnitSupplementSeed:
     available_age: Age
     provider_building: BuildingId
     line: UnitLineId
-    base_cost: ResourceCost
-    train_time_seconds: int
+    base_cost: ResourceCost | None
+    train_time_seconds: int | None
     upgrades_from: UnitId | None = None
     upgrades_to: UnitId | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise ValueError("unit supplement name must not be empty")
-        if self.train_time_seconds < 0:
+        if self.train_time_seconds is not None and self.train_time_seconds < 0:
             raise ValueError("unit supplement train time must be non-negative")
 
 
@@ -39,6 +39,27 @@ BYZANTINE_MANIFEST_UNIT_SUPPLEMENT_SEEDS = (
         ResourceCost(wood=75, gold=35),
         27,
         upgrades_from=UnitId(2627),
+    ),
+    ByzantineManifestUnitSupplementSeed(
+        UnitId(527),
+        "Demolition Ship",
+        Age.CASTLE,
+        BuildingId(45),
+        UnitLineId("demolition-raft-line"),
+        None,
+        None,
+        upgrades_from=UnitId(1104),
+        upgrades_to=UnitId(528),
+    ),
+    ByzantineManifestUnitSupplementSeed(
+        UnitId(528),
+        "Heavy Demolition Ship",
+        Age.IMPERIAL,
+        BuildingId(45),
+        UnitLineId("demolition-raft-line"),
+        None,
+        None,
+        upgrades_from=UnitId(527),
     ),
 )
 
