@@ -44,7 +44,7 @@ GAP: prove current DE SN 264 enforcement, `up-train-site-ready` busy/queued inte
 native-fact OK-typed (up-research-status arity/value family pinned) | IR OK-typed | validator OK-generic |
 binding OK-generic | emitter OK-typed | acceptance OK | runtime-evidence PARTIAL |
 tests OK | corpus OK | strategy OK (feudal-age escrow example).
-GAP: protected-research pattern catalog; direct DE runtime provider/busy behavior beyond the documented ResearchState value contract; same-pass runtime visibility of targeted `release-escrow` before ordinary `research` remains an evidence-only boundary.
+GAP: direct DE runtime provider/busy behavior beyond the documented ResearchState value contract; same-pass runtime visibility of targeted `release-escrow` before ordinary `research` remains an evidence-only boundary. Protected-research strategy lowering is now explicit, typed, and executable through the existing `escrow_plan` channel.
 
 ## Resource/escrow/arbitration
 native-fact PARTIAL (resource-view formula closed; same-pass release timing OPEN) |
