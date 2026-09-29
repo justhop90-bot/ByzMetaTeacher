@@ -196,6 +196,8 @@ class GameDataTests(unittest.TestCase):
                 tech_id,
                 {int(node.id) for node in report.unmodeled_nodes if node.kind is ManifestNodeKind.TECHNOLOGY},
             )
+        self.assertEqual(report.modeled_count, 86 + 3)
+        self.assertEqual(report.unmodeled_count, 73 - 3)
         self.assertEqual(report.verified_unavailable_count, 14)
 
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
@@ -231,10 +233,16 @@ class GameDataTests(unittest.TestCase):
         semantic_conflicts = {54, 408, 909}
 
         expected = []
+        modeled_ids = {int(item.id) for item in effective.technologies}
         for node in manifest.nodes:
             if node.kind is not ManifestNodeKind.TECHNOLOGY:
                 continue
-            if node.id in unavailable or node.id in native_age_advances or node.id in semantic_conflicts:
+            if (
+                node.id in modeled_ids
+                or node.id in unavailable
+                or node.id in native_age_advances
+                or node.id in semantic_conflicts
+            ):
                 continue
             if node.id not in snapshot_by_id:
                 continue
