@@ -46,6 +46,7 @@ class StrategicObservationType(str, Enum):
     ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
     PERSISTENT_CONTROL_STATE = "PERSISTENT_CONTROL_STATE"
     PRODUCTION_QUEUE_CAPACITY_CONTROL = "PRODUCTION_QUEUE_CAPACITY_CONTROL"
+    TRAIN_PROVIDER_READINESS = "TRAIN_PROVIDER_READINESS"
     TIMING = "TIMING"
 
 
@@ -317,6 +318,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
     "up-compare-sn": StrategicObservationType.PERSISTENT_CONTROL_STATE,
+    "up-train-site-ready": StrategicObservationType.TRAIN_PROVIDER_READINESS,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
     "can-afford-building": StrategicObservationType.CAPABILITY_STATE,
     "can-afford-building-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,

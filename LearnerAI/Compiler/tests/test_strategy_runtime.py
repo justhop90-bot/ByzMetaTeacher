@@ -59,6 +59,35 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_up_train_site_ready_binds_to_provider_readiness_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-train-site-ready c: 358)",
+            "training-provider-readiness",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.TRAIN_PROVIDER_READINESS,
+        )
+        self.assertEqual(
+            binding.observations[0].primitive,
+            "up-train-site-ready",
+        )
+        self.assertNotEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.UNIT_CAPABILITY,
+        )
+
+    def test_up_train_site_ready_rejects_non_c_type_operator(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-train-site-ready g: 358)",
+            "bad-training-provider-type",
+        )
+        with self.assertRaisesRegex(ValueError, "literal c:"):
+            bind_strategic_evidence(evidence, self.effective)
+
     def test_up_compare_sn_binds_to_persistent_control_state_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,

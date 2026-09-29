@@ -73,6 +73,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
+## Strategy provider-readiness observations
+- `ir/strategy_runtime.py` binds `up-train-site-ready` as `TRAIN_PROVIDER_READINESS`, preserving its native ADMISSIBILITY role.
+- The observation validates the existing native schema and canonical `c:` UnitId without promoting provider readiness to `can-train` feasibility or completion.
+- Runtime busy/queued provider behavior remains OPEN; this observation is descriptive/admissibility evidence only.
+
 ## Strategy persistent-control observations
 - `ir/strategy_runtime.py` binds generic `up-compare-sn` as `PERSISTENT_CONTROL_STATE` for unresolved SNs, validating the native Strategic Number identifier in 0..511 and comparison operator family.
 - Exact SN 264 (`sn-enable-training-queue`) now binds as `PRODUCTION_QUEUE_CAPACITY_CONTROL` only when the documented equality form and additional-slot value 0..15 are present.
