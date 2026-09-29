@@ -177,7 +177,15 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
 def _is_open_production_queue_capacity_control(expr: Expression) -> bool:
     if expr.head != "up-compare-sn" or len(expr.args) != 3:
         return False
-    return str(expr.args[0]) in {"264", "sn-enable-training-queue"}
+    if str(expr.args[0]) not in {"264", "sn-enable-training-queue"}:
+        return False
+    if str(expr.args[1]) != "==":
+        return False
+    try:
+        value = int(str(expr.args[2]), 10)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= value <= 15
 
 
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
