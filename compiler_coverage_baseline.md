@@ -65,7 +65,8 @@ REMAINING: runtime RNG/weight semantics are intentionally not modeled. Active .x
 ## Game data — CURRENT: Byzantine subset with manifest coverage audit. TARGET: 145-node factual model + overlays.
 EVIDENCE: civ_profile patch 185872; authoritative 28-building + 145-unit/tech manifest; coverage parser and 39+ tests.
 IMPLEMENTATION: typed manifest parser/classifier distinguishes 86 modeled nodes, 14 explicitly unavailable nodes, and 73 unmodeled nodes without inventing missing values.
-REMAINING: model the 73 currently unmodeled nodes where DAT-derived cost/time/effect/provider evidence is available; broader civs; replayable patch overlays; native ID provenance.
+IMPLEMENTATION: deterministic DAT technology snapshot parser/merger now exists, with exact patch matching, TechId/name guards, immutable ENGINE_DATA provenance, and non-destructive fill of unresolved cost/research-time fields. No live DAT snapshot is committed yet.
+REMAINING: populate the boundary from a verified current DAT extraction for the 73 unmodeled nodes; broader civs; replayable patch overlays; native ID provenance.
 
 ## Strategy runtime — CURRENT: observation binding partially closed. TARGET: observation-complete.
 EVIDENCE: strategy runtime suite plus native observation contracts. Promoted: Fact-only `up-can-search` as `DUC_SEARCH_AVAILABILITY`; escrow-aware affordability/build/research predicates as `ESCROW_CAPABILITY`; `attack-now` remains fail-closed as an Action.

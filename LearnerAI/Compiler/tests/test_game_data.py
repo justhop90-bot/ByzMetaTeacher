@@ -1,3 +1,11 @@
+from LearnerAI.Compiler.ir.game_data_dat_snapshot import (
+    DatTechnologySnapshot,
+    DatTechnologyRecord,
+    enrich_game_data_from_dat_snapshot,
+    parse_dat_technologies_json,
+)
+from LearnerAI.Compiler.ir.versioning import EvidenceKind, EvidenceRef, PatchId
+
 from dataclasses import replace
 import unittest
 
@@ -91,6 +99,131 @@ class GameDataTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "declared building count"):
             parse_byzantine_manifest(raw)
+
+
+    def test_dat_technology_snapshot_parser_normalizes_cost_and_time(self):
+        raw = """
+        [
+          {"id": 101, "name": "Feudal Age", "research_time": 130, "civ": -1,
+           "effect_id": 0, "required_tech": -1, "required_tech_count": 0,
+           "research_location": 109,
+           "cost": {"food": 500, "gold": 0}},
+          {"id": 102, "name": "Castle Age", "research_time": 160, "civ": -1,
+           "effect_id": 1, "required_tech": 101, "required_tech_count": 1,
+           "research_location": 109,
+           "cost": {"food": 800, "gold": 200}}
+        ]
+        """
+        snapshot = parse_dat_technologies_json(
+            raw,
+            source="dat://empires2_x2_p1.dat",
+            revision="test-dat-build-185872",
+            patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+            content_hash="sha256:test-snapshot",
+        )
+
+        self.assertEqual(snapshot.records[0].base_cost, ResourceCost(food=500))
+        self.assertEqual(snapshot.records[1].research_time_seconds, 160)
+        self.assertEqual(snapshot.records[0].native_civ, -1)
+
+    def test_dat_snapshot_merge_fills_only_unresolved_technology_fields(self):
+        profile = ByzantineProfile.for_update_185872()
+        data = profile.base_data
+        source_patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
+        tech = data.technologies[0]
+        data = replace(
+            data,
+            technologies=tuple(
+                replace(
+                    item,
+                    base_cost=None,
+                    research_time_seconds=None,
+                )
+                if item.id == tech.id
+                else item
+                for item in data.technologies
+            ),
+        )
+        snapshot = DatTechnologySnapshot(
+            patch=source_patch,
+            evidence=EvidenceRef(
+                EvidenceKind.ENGINE_DATA,
+                "dat://empires2_x2_p1.dat",
+                "test-dat-build-185872",
+                "technologies.json",
+                source_patch,
+                content_hash="sha256:test-snapshot",
+                extraction_version="aoe2dat-json-v1",
+            ),
+            records=(
+                DatTechnologyRecord(
+                    tech_id=tech.id,
+                    name=tech.name,
+                    native_civ=-1,
+                    base_cost=ResourceCost(food=123),
+                    research_time_seconds=77,
+                    research_location=109,
+                    effect_id=0,
+                    required_tech_ids=(),
+                ),
+            ),
+        )
+
+        merged = enrich_game_data_from_dat_snapshot(data, snapshot)
+        merged_tech = merged.tech(int(tech.id))
+        self.assertEqual(merged_tech.base_cost, ResourceCost(food=123))
+        self.assertEqual(merged_tech.research_time_seconds, 77)
+        self.assertIn(snapshot.evidence, merged_tech.provenance)
+
+    def test_dat_snapshot_merge_rejects_name_mismatch(self):
+        profile = ByzantineProfile.for_update_185872()
+        data = profile.base_data
+        tech = data.technologies[0]
+        patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
+        snapshot = DatTechnologySnapshot(
+            patch=patch,
+            evidence=EvidenceRef(
+                EvidenceKind.ENGINE_DATA,
+                "dat://empires2_x2_p1.dat",
+                "test-dat-build-185872",
+                "technologies.json",
+                patch,
+                content_hash="sha256:test-snapshot",
+            ),
+            records=(
+                DatTechnologyRecord(
+                    tech_id=tech.id,
+                    name="NOT " + tech.name,
+                    native_civ=-1,
+                    base_cost=ResourceCost(food=1),
+                    research_time_seconds=1,
+                    research_location=109,
+                    effect_id=0,
+                    required_tech_ids=(),
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "name mismatch"):
+            enrich_game_data_from_dat_snapshot(data, snapshot)
+
+    def test_dat_snapshot_merge_rejects_snapshot_patch_newer_than_game_data(self):
+        profile = ByzantineProfile.for_update_185872()
+        data = resolve_effective_civ(profile)
+        newer = PatchId("AOE2DE", "999999", None, "2027-01-01")
+        snapshot = DatTechnologySnapshot(
+            patch=newer,
+            evidence=EvidenceRef(
+                EvidenceKind.ENGINE_DATA,
+                "dat://empires2_x2_p1.dat",
+                "future-build",
+                "technologies.json",
+                newer,
+                content_hash="sha256:test-snapshot",
+            ),
+            records=(),
+        )
+        with self.assertRaisesRegex(ValueError, "does not exactly match"):
+            enrich_game_data_from_dat_snapshot(data, snapshot)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
         profile = ByzantineProfile.for_update_185872()
