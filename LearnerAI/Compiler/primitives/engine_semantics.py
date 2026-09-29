@@ -190,6 +190,8 @@ _DUC_COMMAND_SPECS = (
     ("up-get-group-size", "duc.group.get-size"),
     ("up-get-cost-delta", "duc.output.cost-delta"),
     ("up-get-point", "duc.output.point"),
+    ("up-get-object-data", "duc.output.object-data"),
+    ("up-get-object-target-data", "duc.output.object-target-data"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
@@ -454,6 +456,44 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
         practice_references=(),
     )
 
+def _duc_target_data_output_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    selected = command == "up-get-object-data"
+    subject = "the selected target object" if selected else "the selected target object's target"
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Fact/Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER),
+        state_effects=(
+            f"reads documented object-data state for {subject} and writes one "
+            "result value into the caller-supplied GoalId"
+        ),
+        lifetime=(
+            "one-shot native read/output operation; the result remains in the "
+            "supplied GoalId until another command changes it"
+        ),
+        ordering=(
+            "the native read observes the current selected-target state at evaluation "
+            "time; this mapping makes no claim about cross-pass target liveness"
+        ),
+        admission=(
+            "native Fact/Action command with its documented ObjectData selector and "
+            "OutputGoalId parameters"
+        ),
+        completion=(
+            "the output write is the contracted event; the compiler does not infer "
+            "the returned numeric/object-data value"
+        ),
+        recovery=(
+            "reassess selected-target state and reissue the native reader when needed; "
+            "runtime target liveness remains separate evidence"
+        ),
+        practice_references=(),
+    )
+
+
 def _duc_point_mapping(command: str, identity: str) -> EngineSemanticMapping:
     return EngineSemanticMapping(
         identity=identity,
@@ -625,9 +665,13 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
         (
-            _duc_point_mapping(command, identity)
-            if command == "up-get-point"
-            else _duc_mapping(command, identity)
+            _duc_target_data_output_mapping(command, identity)
+            if command in {"up-get-object-data", "up-get-object-target-data"}
+            else (
+                _duc_point_mapping(command, identity)
+                if command == "up-get-point"
+                else _duc_mapping(command, identity)
+            )
         )
         for command, identity in _DUC_COMMAND_SPECS
     )
