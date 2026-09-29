@@ -35,9 +35,9 @@ BYZANTINE_MANIFEST_TECHNOLOGY_IDENTITY_SEEDS = (
         "Demolition Ship",
         Age.CASTLE,
         BuildingId(45),
-        ResourceCost(wood=150, gold=100),
-        None,
-        "official 2026 naval update",
+        ResourceCost(wood=25, gold=75),
+        20,
+        "official Update 185872 + 2026 naval overhaul",
     ),
     ByzantineManifestTechnologyIdentitySeed(
         TechId(244),
