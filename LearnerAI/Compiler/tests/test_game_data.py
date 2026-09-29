@@ -229,6 +229,18 @@ class GameDataTests(unittest.TestCase):
         )
         manifest = parse_byzantine_manifest(source_path.read_text(encoding="utf-8"))
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["schema"], "aoe2techtree-unit-snapshot-v1")
+        self.assertEqual(
+            payload["source_revision"],
+            "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        )
+        self.assertEqual(
+            payload["source_blob_sha"],
+            "c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        )
+        self.assertEqual(payload["patch"], "AOE2DE:185872:2026-09-22")
+        self.assertEqual(payload["unit_count"], 12)
+        self.assertEqual(len(payload["units"]), 12)
         snapshot_ids = {int(item["id"]) for item in payload["units"]}
 
         seed_ids = {int(seed.id) for seed in BYZANTINE_MANIFEST_UNIT_SEEDS}
@@ -333,8 +345,8 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 140)
-        self.assertEqual(report.unmodeled_count, 19)
+        self.assertEqual(report.modeled_count, 152)
+        self.assertEqual(report.unmodeled_count, 7)
         self.assertEqual(report.verified_unavailable_count, 14)
         self.assertEqual(
             {
