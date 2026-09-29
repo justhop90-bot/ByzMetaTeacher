@@ -40,6 +40,7 @@ from LearnerAI.Compiler.ir.game_data import (
     TechId,
     UnitDef,
     UnitId,
+    UnitLineId,
 )
 from LearnerAI.Compiler.ir.versioning import PatchId
 
@@ -263,7 +264,6 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
             },
             {
-                (ManifestNodeKind.UNIT, 2628),
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
                 (ManifestNodeKind.TECHNOLOGY, 408),
@@ -341,7 +341,6 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(
             {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
             {
-                (ManifestNodeKind.UNIT, 2628),
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
                 (ManifestNodeKind.TECHNOLOGY, 408),
@@ -468,8 +467,8 @@ class GameDataTests(unittest.TestCase):
             ),
             effective,
         )
-        self.assertEqual(report.modeled_count, 155)
-        self.assertEqual(report.unmodeled_count, 4)
+        self.assertEqual(report.modeled_count, 156)
+        self.assertEqual(report.unmodeled_count, 3)
         self.assertEqual(
             {
                 int(node.id)
@@ -540,8 +539,8 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 155)
-        self.assertEqual(report.unmodeled_count, 4)
+        self.assertEqual(report.modeled_count, 156)
+        self.assertEqual(report.unmodeled_count, 3)
         self.assertEqual(report.verified_unavailable_count, 14)
         self.assertEqual(
             {
