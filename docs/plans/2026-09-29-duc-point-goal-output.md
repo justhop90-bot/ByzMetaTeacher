@@ -12,7 +12,9 @@ Compiler scope:
 - Rewrite only the OutputGoalId during emission.
 - Do not infer or compute point coordinates, source-point semantics, or same-pass numeric visibility.
 
+Implementation status: semantic analyzer lowering is now connected to the existing typed GoalSpan writer; the native binder, registry, and emitter were already promoted.
+
 Acceptance:
-- Focused DUC registry/binder/emission tests.
+- Focused DUC registry/binder/emission tests plus semantic GoalSpan tests.
 - Native DUC zero-findings fixture.
 - Full Compiler regression, 9-way determinism, snapshot comparison, and aggregate verification gate.
