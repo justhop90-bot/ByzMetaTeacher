@@ -34,15 +34,16 @@ REMAINING: current-build queue-capacity enforcement, provider busy/queued behavi
 EVIDENCE: A research rows; 2.9k hits; pinned ResearchState value family. IMPLEMENTATION: generic lifecycle plus typed numeric `up-research-status` observation and retry barrier.
 TEST: integration + source-to-.per research-in-progress native fixture. REMAINING: escrow-claim lowering; protected-research pattern catalog; runtime provider/busy semantics.
 
-## Escrow/resources — CURRENT: release-only executable-safe; family remains incomplete.
+## Escrow/resources — CURRENT: release + explicit percentage-policy executable-safe; family remains incomplete.
 EVIDENCE: escrow rows; 10.9k hits (largest gap by volume).
-IMPLEMENTATION: typed escrow IR, ownership/order/lifetime validation, `NativeEscrowReleasePlan`, dedicated
-native binder, `escrow.execution.release` mapping, executable registry inventory, deterministic emission,
-compiler threading.
+IMPLEMENTATION: typed escrow IR, ownership/order/lifetime validation, `NativeEscrowReleasePlan` and
+`NativeEscrowPolicyPlan`, dedicated native binder, `escrow.execution.release` and
+`escrow.execution.set-percentage` mappings, executable registry inventory, deterministic emission,
+compiler threading through the shared `escrow_plan` channel.
 TEST: escrow semantics + six-path threading + checked-in source-to-.per fixture + pinned native zero-findings +
 cross-platform native-support determinism + full compiler regression.
 REMAINING: same-pass release→ordinary-action proof, starvation/emergency release, multi-owner handoff,
-`set-escrow-percentage`/UP escrow mutations, research in-progress integration.
+UP escrow mutation surfaces, research-claim integration.
 
 ## DUC — CURRENT: narrow promoted slice emitted + proven. TARGET: broader executable DUC coverage.
 EVIDENCE: DUC rows; 11.6k/11.9k hits; typed plan/binder/emitter; pinned native fixture.
