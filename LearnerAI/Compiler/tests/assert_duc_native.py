@@ -256,8 +256,68 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
+                identity="group-create",
+                order=108,
+                facts=(),
+                actions=(
+                    Expression(
+                        "(up-create-group 0 40 c: 0)",
+                        "up-create-group",
+                        ("0", "40", "c:", "0"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="group-size-fact",
+                order=109,
+                facts=(
+                    Expression(
+                        "(up-group-size c: 0 > 0)",
+                        "up-group-size",
+                        ("c:", "0", ">", "0"),
+                    ),
+                ),
+                actions=(),
+            ),
+            NativeDucRule(
+                identity="group-set",
+                order=110,
+                facts=(),
+                actions=(
+                    Expression(
+                        "(up-set-group search-local c: 0)",
+                        "up-set-group",
+                        ("search-local", "c:", "0"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="group-flag",
+                order=111,
+                facts=(),
+                actions=(
+                    Expression(
+                        "(up-modify-group-flag 1 c: 0)",
+                        "up-modify-group-flag",
+                        ("1", "c:", "0"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="group-reset",
+                order=112,
+                facts=(),
+                actions=(
+                    Expression(
+                        "(up-reset-group c: 0)",
+                        "up-reset-group",
+                        ("c:", "0"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
                 identity="target-action",
-                order=107,
+                order=113,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",

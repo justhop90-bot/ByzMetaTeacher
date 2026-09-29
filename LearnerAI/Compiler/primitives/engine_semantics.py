@@ -191,6 +191,11 @@ _DUC_COMMAND_SPECS = (
     ("up-get-cost-delta", "duc.output.cost-delta"),
     ("up-get-point", "duc.output.point"),
     ("up-get-object-data", "duc.output.object-data"),
+    ("up-create-group", "duc.group.create"),
+    ("up-reset-group", "duc.group.reset"),
+    ("up-set-group", "duc.group.set"),
+    ("up-group-size", "duc.group.size"),
+    ("up-modify-group-flag", "duc.group.flag"),
     ("up-get-object-target-data", "duc.output.object-target-data"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
@@ -456,6 +461,82 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
         practice_references=(),
     )
 
+def _duc_group_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    native_kind = "Fact" if command == "up-group-size" else "Action"
+    state_effects = {
+        "up-create-group": (
+            "creates or refreshes one engine-managed DUC group from the current local "
+            "search result window; group membership remains native state"
+        ),
+        "up-reset-group": (
+            "clears one engine-managed DUC group and invalidates its current membership"
+        ),
+        "up-set-group": (
+            "replaces the selected local or remote search list with the current engine "
+            "group membership and consequently affects downstream DUC target/list reads"
+        ),
+        "up-group-size": (
+            "reads the current engine-managed DUC group cardinality as a Fact without "
+            "mutating group state"
+        ),
+        "up-modify-group-flag": (
+            "sets or clears the native control flag associated with one engine-managed "
+            "DUC group"
+        ),
+    }[command]
+    lifetime = {
+        "up-create-group": (
+            "group membership persists in engine state until reset, replacement, or "
+            "another native invalidation"
+        ),
+        "up-reset-group": (
+            "the group remains empty until a later native group creation/set operation"
+        ),
+        "up-set-group": (
+            "the selected search list persists as engine state until another DUC "
+            "search/list mutation replaces or resets it"
+        ),
+        "up-group-size": (
+            "one Fact evaluation; the returned cardinality is not retained by the compiler"
+        ),
+        "up-modify-group-flag": (
+            "the control flag persists as native group state until another flag update "
+            "or group reset"
+        ),
+    }[command]
+    ordering = (
+        "native group state is evaluated or mutated at the command's emitted position; "
+        "the compiler does not claim same-pass numeric visibility beyond ordinary native "
+        "source ordering"
+    )
+    completion = (
+        "the native group operation itself is the contracted command event; no generic "
+        "world-state completion witness is synthesized"
+    )
+    recovery = (
+        "reassess current group/search state and reissue the corresponding native "
+        "group operation; no synthetic scheduler or hidden retry state is introduced"
+    )
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind=native_kind,
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER, _AOE2AI, _DUKE),
+        state_effects=state_effects,
+        lifetime=lifetime,
+        ordering=ordering,
+        admission=(
+            "native DUC group command is present in the pinned AIRef schema with the "
+            "documented arity and parameter roles"
+        ),
+        completion=completion,
+        recovery=recovery,
+        practice_references=(),
+    )
+
+
 def _duc_target_data_output_mapping(command: str, identity: str) -> EngineSemanticMapping:
     selected = command == "up-get-object-data"
     subject = "the selected target object" if selected else "the selected target object's target"
@@ -665,12 +746,22 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
         (
-            _duc_target_data_output_mapping(command, identity)
-            if command in {"up-get-object-data", "up-get-object-target-data"}
+            _duc_group_mapping(command, identity)
+            if command in {
+                "up-create-group",
+                "up-reset-group",
+                "up-set-group",
+                "up-group-size",
+                "up-modify-group-flag",
+            }
             else (
-                _duc_point_mapping(command, identity)
-                if command == "up-get-point"
-                else _duc_mapping(command, identity)
+                _duc_target_data_output_mapping(command, identity)
+                if command in {"up-get-object-data", "up-get-object-target-data"}
+                else (
+                    _duc_point_mapping(command, identity)
+                    if command == "up-get-point"
+                    else _duc_mapping(command, identity)
+                )
             )
         )
         for command, identity in _DUC_COMMAND_SPECS
