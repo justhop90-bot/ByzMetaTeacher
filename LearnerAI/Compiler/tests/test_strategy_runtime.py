@@ -59,6 +59,27 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_sn42_binds_to_exploration_group_control_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 42 == 3)",
+            "exploration-group-control",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.EXPLORATION_GROUP_CONTROL,
+        )
+
+    def test_sn42_rejects_negative_exploration_group_count(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 42 >= -1)",
+            "bad-exploration-group-count",
+        )
+        with self.assertRaisesRegex(ValueError, "0..Max"):
+            bind_strategic_evidence(evidence, self.effective)
+
     def test_sn74_binds_to_town_size_control_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
