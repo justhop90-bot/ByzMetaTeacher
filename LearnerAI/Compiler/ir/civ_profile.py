@@ -1419,6 +1419,8 @@ def _byzantine_game_data(
         TechId(257): (UnitId(550),),
         TechId(34): (UnitId(21), UnitId(2627)),
         TechId(35): (UnitId(442), UnitId(2628)),
+        TechId(905): (UnitId(527),),
+        TechId(244): (UnitId(528),),
     }
     techs = tuple(
         replace(
@@ -1446,6 +1448,8 @@ def _byzantine_game_data(
         UpgradeRelation(UnitId(1258), UnitId(422), TechId(96), (evidence,)),
         UpgradeRelation(UnitId(422), UnitId(548), TechId(255), (evidence,)),
         UpgradeRelation(UnitId(529), UnitId(532), TechId(246), (evidence,)),
+        UpgradeRelation(UnitId(1104), UnitId(527), TechId(905), (demolition_ship_official, demolition_ship_airef)),
+        UpgradeRelation(UnitId(527), UnitId(528), TechId(244), (demolition_ship_official, demolition_ship_airef)),
         UpgradeRelation(UnitId(40), UnitId(553), TechId(361), (evidence,)),
         UpgradeRelation(UnitId(2703), UnitId(2704), TechId(1454), (evidence, controller)),
         UpgradeRelation(UnitId(280), UnitId(550), TechId(257), (evidence,)),
