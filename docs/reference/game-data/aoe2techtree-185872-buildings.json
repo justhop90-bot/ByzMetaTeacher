@@ -1,0 +1,29 @@
+{
+  "schema": "aoe2techtree-building-snapshot-v1",
+  "source": "https://github.com/SiegeEngineers/aoe2techtree/blob/3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f/data/data.json",
+  "source_revision": "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+  "source_blob_sha": "c4f7da961e82a8231b1ba49459949c4d6",
+  "patch": "AOE2DE:185872:2026-09-22",
+  "extraction_version": "compiler-building-seed-v1",
+  "building_count": 1,
+  "buildings": [
+    {
+      "id": 199,
+      "name": "Fish Trap",
+      "snapshot_name": "Fish Trap",
+      "internal_name": "FTRAP",
+      "available_age": "2",
+      "provider_building": 45,
+      "link": 13,
+      "trigger": null,
+      "base_cost": {
+        "food": 0,
+        "wood": 100,
+        "stone": 0,
+        "gold": 0
+      },
+      "hp": 250,
+      "train_time_seconds": 40
+    }
+  ]
+}
