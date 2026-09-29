@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import re
-from typing import Iterable
-
 from .civ_profile import EffectiveCivData
 
 
