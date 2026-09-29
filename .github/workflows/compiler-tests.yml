@@ -169,6 +169,12 @@ jobs:
         run: |
           python LearnerAI/Compiler/tests/assert_timer_native.py             --output /tmp/timer-allocation.per             --manifest /tmp/timer-allocation-binding.json             --report /tmp/native-reports/timer-allocation.json
 
+      - name: Native zero-findings acceptance - Production queue capacity fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_production_queue_capacity_native.py \
+            --output /tmp/production-queue-capacity.per \
+            --report /tmp/native-reports/production-queue-capacity.json
+
       - name: Native zero-findings acceptance - Research in-progress fixture
         run: |
           python LearnerAI/Compiler/tests/assert_research_in_progress_native.py             --output /tmp/research-in-progress.per             --report /tmp/native-reports/research-in-progress.json
