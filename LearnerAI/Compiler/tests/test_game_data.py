@@ -92,8 +92,8 @@ class GameDataTests(unittest.TestCase):
             (Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt").read_text(encoding="utf-8")
         )
         report = classify_byzantine_manifest_coverage(manifest, effective)
-        self.assertEqual(report.modeled_count, 157)
-        self.assertEqual(report.unmodeled_count, 2)
+        self.assertEqual(report.modeled_count, 159)
+        self.assertEqual(report.unmodeled_count, 0)
         self.assertEqual(
             {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
             {(ManifestNodeKind.UNIT, 527), (ManifestNodeKind.UNIT, 528)},
@@ -316,10 +316,7 @@ class GameDataTests(unittest.TestCase):
                 (node.kind, int(node.id))
                 for node in report.unmodeled_nodes
             },
-            {
-                (ManifestNodeKind.UNIT, 527),
-                (ManifestNodeKind.UNIT, 528),
-            },
+            set(),
         )
 
     def test_pinned_snapshot_materializes_safe_manifest_units(self):
@@ -392,10 +389,7 @@ class GameDataTests(unittest.TestCase):
         report = classify_byzantine_manifest_coverage(manifest, effective)
         self.assertEqual(
             {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
-            {
-                (ManifestNodeKind.UNIT, 527),
-                (ManifestNodeKind.UNIT, 528),
-            },
+            set(),
         )
 
     def test_manifest_carrack_materializes_from_explicit_unit_source(self):
@@ -451,17 +445,14 @@ class GameDataTests(unittest.TestCase):
             ),
             effective,
         )
-        self.assertEqual(report.modeled_count, 157)
-        self.assertEqual(report.unmodeled_count, 2)
+        self.assertEqual(report.modeled_count, 159)
+        self.assertEqual(report.unmodeled_count, 0)
         self.assertEqual(
             {
                 (node.kind, int(node.id))
                 for node in report.unmodeled_nodes
             },
-            {
-                (ManifestNodeKind.UNIT, 527),
-                (ManifestNodeKind.UNIT, 528),
-            },
+            set(),
         )
 
     def test_manifest_technology_conflicts_materialize_from_explicit_override_sources(self):
@@ -517,8 +508,8 @@ class GameDataTests(unittest.TestCase):
             ),
             effective,
         )
-        self.assertEqual(report.modeled_count, 157)
-        self.assertEqual(report.unmodeled_count, 2)
+        self.assertEqual(report.modeled_count, 159)
+        self.assertEqual(report.unmodeled_count, 0)
         self.assertEqual(
             {
                 int(node.id)
@@ -589,8 +580,8 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 157)
-        self.assertEqual(report.unmodeled_count, 2)
+        self.assertEqual(report.modeled_count, 159)
+        self.assertEqual(report.unmodeled_count, 0)
         self.assertEqual(report.verified_unavailable_count, 14)
         self.assertEqual(
             {
