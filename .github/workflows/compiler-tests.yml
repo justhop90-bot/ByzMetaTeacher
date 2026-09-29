@@ -165,6 +165,10 @@ jobs:
         run: |
           python LearnerAI/Compiler/tests/assert_escrow_native.py             --output /tmp/escrow-release.per             --report /tmp/native-reports/escrow-release.json
 
+      - name: Native zero-findings acceptance - escrow percentage policy fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_escrow_policy_native.py             --output /tmp/escrow-policy.per             --report /tmp/native-reports/escrow-policy.json
+
       - name: Native zero-findings acceptance - Timer allocation fixture
         run: |
           python LearnerAI/Compiler/tests/assert_timer_native.py             --output /tmp/timer-allocation.per             --manifest /tmp/timer-allocation-binding.json             --report /tmp/native-reports/timer-allocation.json
@@ -231,6 +235,7 @@ jobs:
             /tmp/duc-binder-emission.per
             /tmp/attack-lifecycle.per
             /tmp/escrow-release.per
+            /tmp/escrow-policy.per
             /tmp/timer-allocation.per
             /tmp/timer-allocation-binding.json
             /tmp/research-in-progress.per

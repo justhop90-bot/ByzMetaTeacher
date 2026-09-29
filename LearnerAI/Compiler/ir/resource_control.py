@@ -52,6 +52,7 @@ class EscrowOperation:
     command: str
     rule_order: int
     within_rule_order: int = 0
+    percentage: int | None = None
     location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
@@ -67,6 +68,59 @@ class EscrowOperation:
 
 NATIVE_ESCROW_RELEASE_COMMAND = "release-escrow"
 NATIVE_ESCROW_RELEASE_RESOURCES = ("food", "wood", "stone", "gold")
+NATIVE_ESCROW_POLICY_COMMAND = "set-escrow-percentage"
+NATIVE_ESCROW_POLICY_RESOURCES = NATIVE_ESCROW_RELEASE_RESOURCES
+
+
+@dataclass(frozen=True)
+class NativeEscrowPolicyPlan:
+    """Typed compiler-owned plan for explicit escrow percentage policy mutation."""
+
+    operations: tuple[EscrowOperation, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.operations, tuple):
+            raise TypeError("native escrow policy plan operations must be a tuple")
+        identities = tuple(operation.contract_identity for operation in self.operations)
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate native escrow policy contract identity")
+        keys = tuple(
+            (operation.rule_order, operation.within_rule_order, operation.contract_identity)
+            for operation in self.operations
+        )
+        if keys != tuple(sorted(keys)):
+            raise ValueError(
+                "native escrow policy operations must be declared in deterministic order"
+            )
+        for operation in self.operations:
+            if operation.kind is not EscrowOperationKind.POLICY_RESET:
+                raise ValueError(
+                    "native escrow policy plan accepts only POLICY_RESET operations"
+                )
+            if operation.command != NATIVE_ESCROW_POLICY_COMMAND:
+                raise ValueError(
+                    "native escrow policy operations must use set-escrow-percentage"
+                )
+            if operation.resource not in NATIVE_ESCROW_POLICY_RESOURCES:
+                raise ValueError(
+                    f"unsupported native escrow policy resource '{operation.resource}'"
+                )
+            if (
+                not isinstance(operation.percentage, int)
+                or isinstance(operation.percentage, bool)
+                or not 0 <= operation.percentage <= 100
+            ):
+                raise ValueError(
+                    "native escrow policy percentage must be an integer in 0..100"
+                )
+
+    @property
+    def empty(self) -> bool:
+        return not self.operations
+
+    @property
+    def commands(self) -> tuple[str, ...]:
+        return tuple(sorted({operation.command for operation in self.operations}))
 
 
 @dataclass(frozen=True)
@@ -227,6 +281,9 @@ __all__ = [
     "EscrowAdmissionMode",
     "NATIVE_ESCROW_RELEASE_COMMAND",
     "NATIVE_ESCROW_RELEASE_RESOURCES",
+    "NATIVE_ESCROW_POLICY_COMMAND",
+    "NATIVE_ESCROW_POLICY_RESOURCES",
+    "NativeEscrowPolicyPlan",
     "NativeEscrowReleasePlan",
     "EscrowOperation",
     "EscrowOperationKind",

@@ -40,20 +40,19 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_timer_allocation.py`, `tests/fixtures/timer_allocation.perdsl`, `tests/assert_timer_native.py`, plus Compiler CI native zero-findings and determinism.
 - Remaining: engine countdown/pass granularity and explicit TimerId reuse/lifetime model.
 
-## Escrow lowering — release-only executable slice
-- Status: **integrated and verified on main; release-only slice re-verified by Compiler #2149 / Actions `36497398646`.**
-- IR/semantic seam: `ir/resource_control.py` `NativeEscrowReleasePlan`; `semantic/resource_control.py`
-  release-plan validator; compiler threading through all six public surfaces.
-- Native promotion: `primitives/native_binder.py` dedicated `NativeEscrowSemanticBinding`;
-  `primitives/engine_semantics.py` `escrow.execution.release`; `primitives/registry.py`
-  executable command inventory and resource-domain validation.
-- Emission: `emitter/per.py` deterministic rule grouping by `rule_order` and preserving
-  `within_rule_order`.
-- Acceptance: `tests/fixtures/escrow_release.perdsl`, `tests/assert_escrow_native.py`,
-  `tests/test_native_escrow_release.py`, `tests/test_native_semantic_binder.py`,
-  `tests/test_semantic_support_state.py`, plus CI native zero-findings and 9-way determinism.
-- Non-goals preserved: `set-escrow-percentage`, UP escrow mutation, starvation scheduling,
-  multi-owner handoff, and same-pass release→ordinary-action coupling remain OPEN.
+## Escrow lowering — release + explicit percentage policy
+- Release slice: integrated and previously re-verified on main.
+- Percentage policy slice: typed `NativeEscrowPolicyPlan` is now connected through the existing
+  `escrow_plan` compiler channel, validated by the resource-control semantic pass and primitive
+  registry, promoted through the dedicated native escrow binder, and emitted deterministically as
+  `set-escrow-percentage` actions.
+- Native contracts: `escrow.execution.release` and `escrow.execution.set-percentage`; policy values
+  are constrained to integer 0..100 and resource domain food/wood/stone/gold.
+- Acceptance: focused binder/validator tests, six public compiler paths, checked-in
+  `tests/fixtures/escrow_policy.perdsl`, dedicated `tests/assert_escrow_policy_native.py`,
+  Compiler native zero-findings, cross-platform determinism, and full regression.
+- Remaining: same-pass release→ordinary-action runtime proof, starvation/emergency release,
+  multi-owner handoff, UP escrow mutation surfaces, and research-claim integration.
 - Runtime-evidence specification: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`,
   `docs/reference/oracles/escrow-same-pass-research.schema.json`, candidate
   `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`.

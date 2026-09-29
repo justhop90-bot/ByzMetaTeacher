@@ -20,6 +20,12 @@ from Compiler.compiler import (
     compile_to_file,
 )
 from Compiler.diagnostics import ReportStatus
+from Compiler.ir import (
+    EscrowOperation,
+    EscrowOperationKind,
+    NativeEscrowPolicyPlan,
+    SemanticId,
+)
 from Compiler.source_graph import SourceGraphRequest
 
 
@@ -139,6 +145,41 @@ class NativeEscrowPlanCompilerThreadingTests(unittest.TestCase):
                 ValidationStatus.VALIDATED,
             ),
         )
+
+    def test_every_public_compiler_path_accepts_policy_plan(self):
+        policy_plan = NativeEscrowPolicyPlan(
+            (
+                EscrowOperation(
+                    contract_identity="policy-food",
+                    owner=SemanticId("test", "policy"),
+                    kind=EscrowOperationKind.POLICY_RESET,
+                    resource="food",
+                    command="set-escrow-percentage",
+                    percentage=50,
+                    rule_order=10,
+                ),
+            )
+        )
+
+        with (
+            patch(
+                "Compiler.compiler.emit",
+                return_value=MINIMAL_ARTIFACT,
+            ) as emitted,
+            tempfile.TemporaryDirectory() as tmp_dir,
+        ):
+            tmp = Path(tmp_dir)
+            for name, invoke, expected_status in self._cases(tmp):
+                with self.subTest(path=name):
+                    result = invoke(policy_plan)
+                    self.assertEqual(
+                        emitted.call_args.kwargs["escrow_plan"],
+                        policy_plan,
+                    )
+                    if expected_status is not None:
+                        status = result.status if hasattr(result, "status") else result
+                        self.assertEqual(status, expected_status)
+                    emitted.reset_mock()
 
     def test_every_public_compiler_path_forwards_same_escrow_plan_once(self):
         def capture_emit(*_args, **kwargs):
