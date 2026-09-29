@@ -38,9 +38,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
                 "600",
             ),
             _expression(
-                "(unit-type-count spearman >= 1)",
+                "(unit-type-count 93 >= 1)",
                 "unit-type-count",
-                "spearman",
+                "93",
                 ">=",
                 "1",
             ),
@@ -57,7 +57,7 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         self.assertEqual(evidence.time_expression.args, (">=", "600"))
         self.assertEqual(
             evidence.birth_expression.args,
-            ("spearman", ">=", "1"),
+            ("93", ">=", "1"),
         )
 
     def test_birth_timing_rejects_timing_as_completion_or_wrong_unit(self):
@@ -79,9 +79,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
             registry.resolve_production_birth_timing(
                 _expression("(game-time >= 600)", "game-time", ">=", "600"),
                 _expression(
-                    "(unit-type-count knight >= 1)",
+                    "(unit-type-count 38 >= 1)",
                     "unit-type-count",
-                    "knight",
+                    "38",
                     ">=",
                     "1",
                 ),
@@ -93,9 +93,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         evidence = registry.resolve_production_queue_exit_timing(
             _expression("(game-time >= 700)", "game-time", ">=", "700"),
             _expression(
-                "(unit-type-count-total spearman >= 2)",
+                "(unit-type-count-total 93 >= 2)",
                 "unit-type-count-total",
-                "spearman",
+                "93",
                 ">=",
                 "2",
             ),
@@ -119,7 +119,7 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         )
         self.assertEqual(
             evidence.queue_total_expression.args,
-            ("spearman", ">=", "2"),
+            ("93", ">=", "2"),
         )
         self.assertEqual(
             evidence.pending_expression.args,
