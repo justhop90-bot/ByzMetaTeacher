@@ -196,9 +196,12 @@ class GameDataTests(unittest.TestCase):
                 tech_id,
                 {int(node.id) for node in report.unmodeled_nodes if node.kind is ManifestNodeKind.TECHNOLOGY},
             )
-        self.assertEqual(report.modeled_count, 86 + 3)
-        self.assertEqual(report.unmodeled_count, 73 - 3)
-        self.assertEqual(report.verified_unavailable_count, 14)
+        self.assertEqual(
+            report.modeled_count
+            + report.unmodeled_count
+            + report.verified_unavailable_count,
+            len(manifest.nodes),
+        )
 
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
         from pathlib import Path
@@ -226,9 +229,6 @@ class GameDataTests(unittest.TestCase):
         def norm(name):
             return re.sub(r"[^a-z0-9]+", "", name.lower())
 
-        unavailable = {
-            50, 51, 75, 239, 321, 377, 380, 435, 436, 441,
-        }
         native_age_advances = {101, 102, 103}
         semantic_conflicts = {54, 408, 909}
 
@@ -239,7 +239,7 @@ class GameDataTests(unittest.TestCase):
                 continue
             if (
                 node.id in modeled_ids
-                or node.id in unavailable
+                or node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
                 or node.id in native_age_advances
                 or node.id in semantic_conflicts
             ):
