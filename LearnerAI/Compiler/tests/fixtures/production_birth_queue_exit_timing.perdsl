@@ -1,0 +1,10 @@
+demand timed-spears {
+    require (game-time >= 600)
+    require (unit-type-count spearman >= 1)
+    require (unit-type-count-total spearman >= 2)
+    require (up-pending-objects c: spearman == 0)
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 1)
+    release (unit-type-count spearman >= 1)
+}

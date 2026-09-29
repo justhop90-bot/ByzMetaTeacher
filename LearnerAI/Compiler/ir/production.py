@@ -284,6 +284,119 @@ class ProductionProviderReadinessEvidence:
 
 
 @dataclass(frozen=True)
+class ProductionBirthTimingEvidence:
+    """Open timing sample tying game-time to the observed unit birth boundary."""
+
+    disposition: ProductionFactDisposition
+    time_expression: Expression
+    birth_expression: Expression
+    native_unit_id: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError("production birth timing evidence must remain OPEN")
+        if self.time_expression.head != "game-time":
+            raise ValueError(
+                "production birth timing evidence must use game-time"
+            )
+        if self.birth_expression.head != "unit-type-count":
+            raise ValueError(
+                "production birth timing evidence must use unit-type-count"
+            )
+        if len(self.time_expression.args) != 2:
+            raise ValueError(
+                "production birth timing evidence requires compareOp and Value"
+            )
+        if len(self.birth_expression.args) != 3:
+            raise ValueError(
+                "production birth timing evidence requires UnitId, compareOp, and Value"
+            )
+        if self.native_unit_id <= 0:
+            raise ValueError(
+                "production birth timing evidence native_unit_id must be positive"
+            )
+        if str(self.birth_expression.args[0]) != str(self.native_unit_id):
+            raise ValueError(
+                f"production birth timing evidence does not target UnitId "
+                f"{self.native_unit_id}"
+            )
+        if self.semantic_id != "timing.production.birth-boundary":
+            raise ValueError(
+                "production birth timing evidence must use "
+                "timing.production.birth-boundary semantic identity"
+            )
+
+
+@dataclass(frozen=True)
+class ProductionQueueExitTimingEvidence:
+    """Open timing sample tying game-time to observed queue-exit state."""
+
+    disposition: ProductionFactDisposition
+    time_expression: Expression
+    queue_total_expression: Expression
+    pending_expression: Expression
+    native_unit_id: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                "production queue-exit timing evidence must remain OPEN"
+            )
+        if self.time_expression.head != "game-time":
+            raise ValueError(
+                "production queue-exit timing evidence must use game-time"
+            )
+        if self.queue_total_expression.head != "unit-type-count-total":
+            raise ValueError(
+                "production queue-exit timing evidence must use "
+                "unit-type-count-total"
+            )
+        if self.pending_expression.head != "up-pending-objects":
+            raise ValueError(
+                "production queue-exit timing evidence must use up-pending-objects"
+            )
+        if len(self.time_expression.args) != 2:
+            raise ValueError(
+                "production queue-exit timing evidence requires compareOp and Value"
+            )
+        if len(self.queue_total_expression.args) != 3:
+            raise ValueError(
+                "production queue-exit timing evidence requires UnitId, compareOp, and Value"
+            )
+        if len(self.pending_expression.args) != 4:
+            raise ValueError(
+                "production queue-exit timing evidence requires typeOp, UnitId, "
+                "compareOp, and Value"
+            )
+        if self.native_unit_id <= 0:
+            raise ValueError(
+                "production queue-exit timing evidence native_unit_id must be positive"
+            )
+        if str(self.queue_total_expression.args[0]) != str(self.native_unit_id):
+            raise ValueError(
+                f"production queue-exit timing evidence queue-total does not target "
+                f"UnitId {self.native_unit_id}"
+            )
+        if str(self.pending_expression.args[0]) != "c:":
+            raise ValueError(
+                "production queue-exit timing evidence must use literal c: for "
+                "pending object typeOp"
+            )
+        if str(self.pending_expression.args[1]) != str(self.native_unit_id):
+            raise ValueError(
+                f"production queue-exit timing evidence pending state does not target "
+                f"UnitId {self.native_unit_id}"
+            )
+        if self.semantic_id != "timing.production.queue-exit-boundary":
+            raise ValueError(
+                "production queue-exit timing evidence must use "
+                "timing.production.queue-exit-boundary semantic identity"
+            )
+
+
+@dataclass(frozen=True)
 class ProductionQueueCapacityControlEvidence:
     """Open native control evidence for the DE training queue capacity."""
 
@@ -360,6 +473,8 @@ class ProductionLifecycle:
     queue_capacity_evidence: ProductionQueueCapacityEvidence | None = None
     provider_availability_evidence: ProductionProviderAvailabilityEvidence | None = None
     provider_readiness_evidence: ProductionProviderReadinessEvidence | None = None
+    birth_timing_evidence: ProductionBirthTimingEvidence | None = None
+    queue_exit_timing_evidence: ProductionQueueExitTimingEvidence | None = None
     queue_capacity_control: ProductionQueueCapacityControlEvidence | None = None
 
     def __post_init__(self) -> None:
@@ -395,6 +510,20 @@ class ProductionLifecycle:
         ):
             raise ValueError(
                 "production provider-readiness evidence must target the lifecycle unit"
+            )
+        if (
+            self.birth_timing_evidence is not None
+            and self.birth_timing_evidence.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production birth timing evidence must target the lifecycle unit"
+            )
+        if (
+            self.queue_exit_timing_evidence is not None
+            and self.queue_exit_timing_evidence.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production queue-exit timing evidence must target the lifecycle unit"
             )
         if (
             self.provider_state is not None
@@ -447,6 +576,8 @@ __all__ = [
     "ProductionTargetAdmission",
     "ProductionProviderAvailabilityEvidence",
     "ProductionProviderReadinessEvidence",
+    "ProductionBirthTimingEvidence",
+    "ProductionQueueExitTimingEvidence",
     "ProductionQueueCapacityControlEvidence",
     "ProductionProviderStateObservation",
     "ProductionQueueStateObservation",

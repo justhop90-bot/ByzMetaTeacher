@@ -25,9 +25,10 @@ IMPLEMENTATION: validators + construction IR + emitter + native placement-pendin
 TEST: current construction lifecycle suite + native zero-findings fixture.
 REMAINING: same-pass visibility proof; foundation/placement runtime evidence.
 
-## Train — CURRENT: generic-safe; queue-model open. TARGET: queue-aware safe.
-EVIDENCE: A train rows; IDIOM-006. IMPLEMENTATION: registry + community_engine guards.
-TEST: guard tests; witness-rejection policy test. REMAINING: queue/capacity/provider/birth.
+## Train — CURRENT: generic-safe; queue-model typed/OPEN. TARGET: queue-aware safe.
+EVIDENCE: A train rows; IDIOM-006. IMPLEMENTATION: production lifecycle registry + community_engine guards + typed queue-capacity/provider-readiness/birth/queue-exit evidence.
+TEST: guard tests; witness-rejection policy test; focused queue-capacity/provider-readiness/birth/queue-exit timing fixtures; full native verification.
+REMAINING: current-build queue-capacity enforcement, provider busy/queued behavior, birth timing, queue-exit timing, next-pass visibility, and runtime recovery evidence.
 
 ## Research — CURRENT: generic-safe. TARGET: escrow-claim safe.
 EVIDENCE: A research rows; 2.9k hits. IMPLEMENTATION: generic lifecycle.

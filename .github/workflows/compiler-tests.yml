@@ -181,6 +181,12 @@ jobs:
             --output /tmp/production-provider-readiness.per \
             --report /tmp/native-reports/production-provider-readiness.json
 
+      - name: Native zero-findings acceptance - Production birth and queue-exit timing fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_production_birth_queue_exit_timing_native.py \
+            --output /tmp/production-birth-queue-exit-timing.per \
+            --report /tmp/native-reports/production-birth-queue-exit-timing.json
+
       - name: Native zero-findings acceptance - Research in-progress fixture
         run: |
           python LearnerAI/Compiler/tests/assert_research_in_progress_native.py             --output /tmp/research-in-progress.per             --report /tmp/native-reports/research-in-progress.json

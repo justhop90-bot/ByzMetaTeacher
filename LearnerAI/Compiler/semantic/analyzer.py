@@ -554,6 +554,111 @@ def analyze(
                     for requirement in requirements
                 ]
 
+
+            production_time_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head == "game-time"
+            ]
+            birth_timing_evidence = None
+            queue_exit_timing_evidence = None
+            if len(production_time_requirements) == 1:
+                time_expression = production_time_requirements[0]
+                birth_requirements = [
+                    requirement.expression
+                    for requirement in requirements
+                    if requirement.expression.head == "unit-type-count"
+                    and requirement.expression.args
+                    and str(requirement.expression.args[0]) == unit
+                ]
+                queue_total_requirements = [
+                    requirement.expression
+                    for requirement in requirements
+                    if requirement.expression.head == "unit-type-count-total"
+                    and requirement.expression.args
+                    and str(requirement.expression.args[0]) == unit
+                ]
+                pending_requirements = [
+                    requirement.expression
+                    for requirement in requirements
+                    if requirement.expression.head == "up-pending-objects"
+                    and len(requirement.expression.args) >= 2
+                    and str(requirement.expression.args[1]) == unit
+                ]
+                canonical_time = Expression(
+                    source=f"(game-time {' '.join(str(arg) for arg in time_expression.args)})",
+                    head="game-time",
+                    args=tuple(str(arg) for arg in time_expression.args),
+                    location=time_expression.location,
+                )
+
+                if len(birth_requirements) == 1:
+                    birth_expression = birth_requirements[0]
+                    canonical_birth = Expression(
+                        source=(
+                            f"(unit-type-count {native_unit_id} "
+                            f"{' '.join(str(arg) for arg in birth_expression.args[1:])})"
+                        ),
+                        head="unit-type-count",
+                        args=(
+                            str(native_unit_id),
+                            *tuple(str(arg) for arg in birth_expression.args[1:]),
+                        ),
+                        location=birth_expression.location,
+                    )
+                    try:
+                        birth_timing_evidence = registry.resolve_production_birth_timing(
+                            canonical_time,
+                            canonical_birth,
+                            native_unit_id=native_unit_id,
+                        )
+                    except (KeyError, TypeError, ValueError) as exc:
+                        raise CompileError(
+                            f"PRODUCTION-BIRTH-TIMING: demand '{demand.name}' "
+                            f"cannot resolve birth timing evidence: {exc}"
+                        ) from exc
+
+                if len(queue_total_requirements) == 1 and len(pending_requirements) == 1:
+                    queue_total_expression = queue_total_requirements[0]
+                    pending_expression = pending_requirements[0]
+                    canonical_queue_total = Expression(
+                        source=(
+                            f"(unit-type-count-total {native_unit_id} "
+                            f"{' '.join(str(arg) for arg in queue_total_expression.args[1:])})"
+                        ),
+                        head="unit-type-count-total",
+                        args=(
+                            str(native_unit_id),
+                            *tuple(str(arg) for arg in queue_total_expression.args[1:]),
+                        ),
+                        location=queue_total_expression.location,
+                    )
+                    canonical_pending = Expression(
+                        source=(
+                            f"(up-pending-objects c: {native_unit_id} "
+                            f"{' '.join(str(arg) for arg in pending_expression.args[2:])})"
+                        ),
+                        head="up-pending-objects",
+                        args=(
+                            "c:",
+                            str(native_unit_id),
+                            *tuple(str(arg) for arg in pending_expression.args[2:]),
+                        ),
+                        location=pending_expression.location,
+                    )
+                    try:
+                        queue_exit_timing_evidence = registry.resolve_production_queue_exit_timing(
+                            canonical_time,
+                            canonical_queue_total,
+                            canonical_pending,
+                            native_unit_id=native_unit_id,
+                        )
+                    except (KeyError, TypeError, ValueError) as exc:
+                        raise CompileError(
+                            f"PRODUCTION-QUEUE-EXIT-TIMING: demand '{demand.name}' "
+                            f"cannot resolve queue-exit timing evidence: {exc}"
+                        ) from exc
+
             matching_queue_states = [
                 requirement.expression
                 for requirement in requirements
@@ -693,6 +798,8 @@ def analyze(
                     queue_capacity_evidence=queue_capacity_evidence,
                     provider_availability_evidence=provider_availability_evidence,
                     provider_readiness_evidence=provider_readiness_evidence,
+                    birth_timing_evidence=birth_timing_evidence,
+                    queue_exit_timing_evidence=queue_exit_timing_evidence,
                     queue_capacity_control=queue_capacity_control,
                 )
 

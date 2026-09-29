@@ -320,6 +320,16 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
             "A queue entry or command issuance does not itself establish object birth.",
         ),
         EnginePractice(
+            "train.birth-queue-timing",
+            "object-lineage",
+            "DE observations expose current unit counts, current+queued totals, pending work, and game time, but their exact pass-to-pass birth and queue-exit ordering requires runtime measurement.",
+            EvidenceClass.ENGINE_FACT,
+            PracticeStatus.PARTIAL,
+            ("https://www.ageofempires.com/news/aoe2de-update-36202/", scripting, airef),
+            "Record timing samples as separate world-state observations; do not infer event timing, same-pass ordering, or completion from pending disappearance.",
+            "Current-build birth timing, queue-exit timing, and pass visibility remain OPEN until a controlled DE experiment records them.",
+        ),
+        EnginePractice(
             "recovery.failure-reassertion",
             "recovery",
             "Execution failure can require reassessment and bounded reassertion while retaining a still-valid strategic demand.",
