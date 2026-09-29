@@ -32,13 +32,13 @@ tests OK | corpus OK (2977 can-build; buildings.per 88KB Duke) | strategy OK.
 GAP: same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
 
 ## Train/production (queue/capacity/provider/birth)
-native-fact PARTIAL (SN 264 queue-capacity control is documented; runtime enforcement/provider-idle/birth-timing remain unproven) |
-IR PARTIAL (typed current+queued/provider-presence observations plus OPEN queue-capacity/provider-availability/control evidence now exist) | validator PARTIAL |
-binding PARTIAL (native-ID queue/provider bindings plus exact SN 264 control binding are implemented; unresolved engine semantics fail closed as OPEN) | emitter PARTIAL (no capacity guard) | acceptance OK |
-runtime-evidence MISSING for current-build capacity enforcement |
-tests OK (full existing suite plus focused hostile SN 264 contract coverage) |
+native-fact PARTIAL (SN 264 control and UP `up-train-site-ready` readiness fact are documented; current runtime enforcement/interaction/birth timing remain unproven) |
+IR PARTIAL (typed current+queued/provider-presence/provider-readiness observations plus OPEN queue-capacity/provider-availability/readiness/control evidence now exist) | validator PARTIAL |
+binding PARTIAL (native-ID queue/provider bindings, exact SN 264 control binding, and canonical `up-train-site-ready` binding are implemented; unresolved engine semantics fail closed as OPEN) | emitter PARTIAL (no capacity guard) | acceptance OK |
+runtime-evidence MISSING for current-build capacity enforcement and provider busy/queued behavior |
+tests OK (full existing suite plus focused SN 264 and provider-readiness contract coverage) |
 corpus OK (current+queued idiom IDIOM-006) | strategy PARTIAL.
-GAP: prove current DE enforcement of SN 264 capacity, then provider-idle/readiness signal + birth timing + explicit recovery semantics.
+GAP: prove current DE SN 264 enforcement, `up-train-site-ready` busy/queued interaction, birth timing, and explicit recovery semantics.
 
 ## Research (availability/prereq/escrow/completion)
 native-fact PARTIAL (in-progress signal unknown) | IR OK-generic | validator OK-generic |
