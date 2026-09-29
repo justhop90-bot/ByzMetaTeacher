@@ -32,7 +32,7 @@ REMAINING: current-build queue-capacity enforcement, provider busy/queued behavi
 
 ## Research — CURRENT: explicit escrow-claim safe for ordinary research. TARGET: runtime/provider-complete.
 EVIDENCE: A research rows; 2.9k hits; pinned ResearchState value family. IMPLEMENTATION: generic lifecycle plus typed numeric `up-research-status` observation, retry barrier, and explicit targeted `release-escrow` lowering before matching ordinary `research`.
-TEST: research-in-progress + research escrow-claim native fixtures; 1,083-test Compiler gate green. REMAINING: native same-pass release visibility, provider/busy runtime semantics, and protected-research pattern catalog.
+TEST: research-in-progress + research escrow-claim native fixtures; 1,083-test Compiler gate green. REMAINING: native same-pass release visibility and provider/busy runtime semantics. The protected-research strategy pattern is now catalogued as explicit execution-template policy and lowered through `escrow_plan`.
 
 ## Escrow/resources — CURRENT: release + explicit percentage-policy executable-safe; family remains incomplete.
 EVIDENCE: escrow rows; 10.9k hits (largest gap by volume).
