@@ -268,7 +268,7 @@ class NativeDucPlanTests(unittest.TestCase):
             (
                 "up-get-object-data",
                 "object-data-output",
-                "(up-get-object-data object-data-type 41)",
+                "(up-get-object-data 38 41)",
             ),
             (
                 "up-get-object-target-data",
@@ -283,7 +283,7 @@ class NativeDucPlanTests(unittest.TestCase):
                         order=1,
                         facts=(_expr("(true)", "true"),),
                         actions=(
-                            _expr(source, command, "object-data-type", "41"),
+                            _expr(source, command, "38", "41"),
                         ),
                     ),
                 ),
