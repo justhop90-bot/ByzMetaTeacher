@@ -223,6 +223,8 @@ class ActionIssuanceTests(unittest.TestCase):
 
 
     def test_research_lifecycle_uses_native_in_progress_status(self):
+        from Compiler.semantic.native_tech_catalog import resolve_tech_id
+
         output = compile_source(
             """
             demand wheelbarrow {
@@ -233,18 +235,20 @@ class ActionIssuanceTests(unittest.TestCase):
             }
             """
         )
+        native_tech_id = resolve_tech_id("ri-wheelbarrow")
         self.assertIn("research-retry-barrier-wheelbarrow", output)
         pending_start = output.index("; Completion witness: wheelbarrow")
         action_start = output.index("; Action issuance: wheelbarrow")
         lifecycle = output[pending_start:action_start]
         self.assertIn(
-            "(up-research-status c: ri-wheelbarrow >= research-pending)",
+            f"(up-research-status c: {native_tech_id} >= 2)",
             lifecycle,
         )
         self.assertIn(
-            "(not (up-research-status c: ri-wheelbarrow >= research-pending))",
+            f"(not (up-research-status c: {native_tech_id} >= 2))",
             lifecycle,
         )
+
 
     def test_research_lifecycle_has_typed_native_status_contract(self):
         from Compiler.ir.research import ResearchState
