@@ -1147,7 +1147,7 @@ def _byzantine_game_data(
         "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
         "data.data.Building",
         patch,
-        content_hash="c4f7da961e82a8231b1ba49459949c4d6",
+        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="compiler-building-seed-v1",
     )
     technology_snapshot_evidence = EvidenceRef(
