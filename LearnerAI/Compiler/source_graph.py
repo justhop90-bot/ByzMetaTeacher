@@ -150,6 +150,12 @@ class SourceGraphResolver:
 
         search_roots = tuple(path.resolve() for path in request.search_roots)
         entrypoint = request.entrypoint.resolve()
+        self._reject_unsupported_source_type(
+            entrypoint,
+            containing_source=entrypoint,
+            error_line=1,
+            error_column=1,
+        )
         root_file = self._load_unit(
             entrypoint,
             containing_source=entrypoint,
@@ -176,6 +182,26 @@ class SourceGraphResolver:
             slices=tuple(self._slices),
             symbols=request.load_symbols,
         )
+
+    @staticmethod
+    def _reject_unsupported_source_type(
+        target: Path,
+        *,
+        containing_source: Path,
+        error_line: int,
+        error_column: int,
+    ) -> None:
+        if target.suffix.lower() == ".xs":
+            raise SourceGraphError(
+                "SOURCE-GRAPH-017",
+                (
+                    "XS source is outside the compiler boundary; "
+                    "the .xs↔.per state bridge is not modeled"
+                ),
+                path=containing_source,
+                line=error_line,
+                column=error_column,
+            )
 
     def _load_unit(
         self,
@@ -351,6 +377,12 @@ class SourceGraphResolver:
 
             if event.kind is SourceAssemblyEventKind.LOAD:
                 if active:
+                    self._reject_unsupported_source_type(
+                        Path(target_text),
+                        containing_source=physical.path,
+                        error_line=event.span.start_line,
+                        error_column=event.span.start_column,
+                    )
                     target_source = self._load_unit(
                         Path(target_text),
                         containing_source=physical.path,

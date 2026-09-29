@@ -80,7 +80,7 @@ native-fact OK | IR OK (EffectiveSourceGraph + fingerprints) | validator OK (171
 binding n/a | emitter n/a | acceptance OK | runtime-evidence OK (deterministic fingerprints) |
 tests OK (67 across 4 files) | corpus OK (Duke map loads; single-load vendored AI) |
 strategy n/a.
-GAP: explicit selection must be supplied by the caller for active `load-random`; engine RNG semantics and weighted runtime selection remain OPEN.
+GAP: compiler source-graph boundary is closed for active `.xs` inputs; runtime RNG/weight semantics for `load-random` remain OPEN, but deterministic source selection is compiler-policy complete.
 
 ## Game data (Byzantine 145-node + broader)
 native-fact PARTIAL (Byzantine subset FACTUAL_SUBSET; costs/times missing in places) |

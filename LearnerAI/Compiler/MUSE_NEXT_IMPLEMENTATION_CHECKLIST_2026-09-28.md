@@ -76,7 +76,10 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - The compiler-side release-only escrow slice and research in-progress lifecycle remain statically verified; direct DE same-pass visibility, escrow ownership acquisition, starvation/recovery, and provider-loss/runtime details remain open.
   - Owner: research lifecycle plus resource-control integration; runtime execution remains user-owned.
 
-- [ ] Source-graph `load-random` and explicit .xs boundary.
+- [x] Source-graph `load-random` and explicit .xs boundary.
+  - Active `load-random` now requires explicit deterministic target materialization; runtime RNG/weight behavior remains OPEN.
+  - Active `.xs` entrypoints and `#load` targets fail closed with `SOURCE-GRAPH-017`; no .xs↔.per state bridge is modeled.
+  - Focused source-graph coverage plus the full Compiler verification gate cover the boundary.
   - Muse: `implementation_map.md`, `community_knowledge_coverage.md`, `native_unknowns.md`.
   - Gate: deterministic compiler policy for load-random and an explicit unsupported/typed boundary for .xs.
 

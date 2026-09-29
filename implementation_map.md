@@ -77,6 +77,7 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - source_graph_validation.py accepts RANDOM edges as materialized when an active edge has a target; unmaterialized RANDOM edges remain rejected.
 - Acceptance: focused source-graph event/edge tests plus full Compiler verification.
 - Runtime boundary: actual DE weighted/random selection semantics remain OPEN.
+- .xs boundary: active `.xs` entrypoints and active `#load` targets fail closed with `SOURCE-GRAPH-017`; no telemetry/state bridge is inferred.
 
 ## Source graph / game data / strategy
 - load-random: ir/source_graph.py LoadKind + explicit resolver materialization policy.
