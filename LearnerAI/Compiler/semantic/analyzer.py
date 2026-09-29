@@ -820,6 +820,8 @@ def analyze(
                     queue_capacity_evidence=queue_capacity_evidence,
                     provider_availability_evidence=provider_availability_evidence,
                     provider_readiness_evidence=provider_readiness_evidence,
+                    birth_timing_evidence=birth_timing_evidence,
+                    queue_exit_timing_evidence=queue_exit_timing_evidence,
                     queue_capacity_control=queue_capacity_control,
                 )
 
