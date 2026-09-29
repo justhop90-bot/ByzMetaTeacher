@@ -61,6 +61,7 @@ class NativeDucSemanticBinding:
     evidence_class: str
     evidence_sources: tuple[str, ...]
     support_state: NativeSupportState
+    integer_range: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -525,20 +526,18 @@ class NativeSemanticBinder:
         )
 
     def assess_escrow_command(self, name: str) -> NativeSupportAssessment:
-        if name != NATIVE_ESCROW_RELEASE_COMMAND:
+        if name not in {
+            NATIVE_ESCROW_RELEASE_COMMAND,
+            NATIVE_ESCROW_POLICY_COMMAND,
+        }:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                f"escrow release command '{name}' is not supported by the promoted release-only slice",
+                f"escrow command '{name}' is not supported by the promoted native escrow slices",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
         native = self.native_registry.get(name)
         if native is None:
@@ -547,14 +546,9 @@ class NativeSemanticBinder:
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                "release-escrow is not present in the checked-in native schema",
+                f"{name} is not present in the checked-in native schema",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
         if not self._native_typed(native):
             diagnostic = self._diagnostic(
@@ -562,14 +556,9 @@ class NativeSemanticBinder:
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                "release-escrow native metadata is not typed",
+                f"{name} native metadata is not typed",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
         if native.command_type != "Action":
             diagnostic = self._diagnostic(
@@ -577,49 +566,53 @@ class NativeSemanticBinder:
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                f"release-escrow must be an Action, native schema reports '{native.command_type}'",
+                f"{name} must be an Action, native schema reports '{native.command_type}'",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
-        if native.parameter_count != 1 or len(native.parameters) != 1:
+        expected_count = 1 if name == NATIVE_ESCROW_RELEASE_COMMAND else 2
+        if native.parameter_count != expected_count or len(native.parameters) != expected_count:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                "release-escrow requires exactly one native parameter",
+                f"{name} requires exactly {expected_count} native parameter(s)",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
-        parameter = native.parameters[0]
+        first = native.parameters[0]
         if (
-            parameter.name != "Resource"
-            or parameter.type != "Const"
-            or parameter.direction != "in"
+            first.name != "Resource"
+            or first.type != "Const"
+            or first.direction != "in"
         ):
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                "release-escrow requires an input parameter named Resource with type Const",
+                f"{name} requires an input parameter named Resource with type Const",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
+
+        integer_range = None
+        if name == NATIVE_ESCROW_POLICY_COMMAND:
+            second = native.parameters[1]
+            if (
+                second.name != "Value"
+                or second.type != "Const"
+                or second.direction != "in"
+            ):
+                diagnostic = self._diagnostic(
+                    name,
+                    NativeSupportState.UNSUPPORTED,
+                    "NATIVE-ESCROW-006",
+                    "error",
+                    "set-escrow-percentage requires an input parameter named Value with type Const",
+                )
+                return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
+            integer_range = (0, 100)
 
         mapping = self.semantic_mappings.for_command(name)
         if mapping is None:
@@ -628,63 +621,73 @@ class NativeSemanticBinder:
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                "release-escrow has no contracted engine semantic mapping",
+                f"{name} has no contracted engine semantic mapping",
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
         mapping_ok, mapping_message = self.semantic_mappings.validate_primitive(
             command=name,
             native_kind=native.command_type,
             identity=mapping.identity,
         )
-        if not mapping_ok or mapping.identity != "escrow.execution.release":
+        expected_mapping = (
+            "escrow.execution.release"
+            if name == NATIVE_ESCROW_RELEASE_COMMAND
+            else "escrow.execution.set-percentage"
+        )
+        if not mapping_ok or mapping.identity != expected_mapping:
             diagnostic = self._diagnostic(
                 name,
                 NativeSupportState.UNSUPPORTED,
                 "NATIVE-ESCROW-006",
                 "error",
-                mapping_message
-                if not mapping_ok
-                else "release-escrow is mapped to an unsupported semantic contract",
+                mapping_message if not mapping_ok else (
+                    f"{name} is mapped to an unsupported semantic contract"
+                ),
             )
-            return NativeSupportAssessment(
-                name,
-                NativeSupportState.UNSUPPORTED,
-                diagnostic.message,
-                (diagnostic,),
-            )
+            return NativeSupportAssessment(name, NativeSupportState.UNSUPPORTED, diagnostic.message, (diagnostic,))
 
         binding = NativeEscrowSemanticBinding(
             command=name,
             native_version=native.version,
             native_kind=native.command_type,
             parameter_count=native.parameter_count,
-            parameter_name=parameter.name,
-            parameter_type=parameter.type,
-            parameter_direction=parameter.direction,
-            resource_domain=tuple(NATIVE_ESCROW_RELEASE_RESOURCES),
+            parameter_name=first.name,
+            parameter_type=first.type,
+            parameter_direction=first.direction,
+            resource_domain=(
+                tuple(NATIVE_ESCROW_RELEASE_RESOURCES)
+                if name == NATIVE_ESCROW_RELEASE_COMMAND
+                else tuple(NATIVE_ESCROW_POLICY_RESOURCES)
+            ),
             semantic_mapping_id=mapping.identity,
             mapping_status=mapping.status,
             evidence_class=mapping.evidence_class,
             evidence_sources=tuple(mapping.evidence_sources),
             support_state=NativeSupportState.EXECUTABLE_SAFE,
+            integer_range=integer_range,
+        )
+        code = (
+            "NATIVE-ESCROW-005"
+            if name == NATIVE_ESCROW_RELEASE_COMMAND
+            else "NATIVE-ESCROW-007"
+        )
+        message = (
+            "release-escrow is executable-safe for the promoted release-only slice"
+            if name == NATIVE_ESCROW_RELEASE_COMMAND
+            else "set-escrow-percentage is executable-safe for explicit policy mutation"
         )
         diagnostic = self._diagnostic(
             name,
             NativeSupportState.EXECUTABLE_SAFE,
-            "NATIVE-ESCROW-005",
+            code,
             "info",
-            "release-escrow has native schema, exact Resource parameter typing, contracted engine semantics, and executable-safe promotion",
+            message,
         )
         return NativeSupportAssessment(
             name,
             NativeSupportState.EXECUTABLE_SAFE,
-            "release-escrow is executable-safe for the promoted release-only slice",
+            message,
             (diagnostic,),
             binding=None,
         )
@@ -705,12 +708,17 @@ class NativeSemanticBinder:
             parameter_name=parameter.name,
             parameter_type=parameter.type,
             parameter_direction=parameter.direction,
-            resource_domain=tuple(NATIVE_ESCROW_RELEASE_RESOURCES),
+            resource_domain=(
+                tuple(NATIVE_ESCROW_RELEASE_RESOURCES)
+                if name == NATIVE_ESCROW_RELEASE_COMMAND
+                else tuple(NATIVE_ESCROW_POLICY_RESOURCES)
+            ),
             semantic_mapping_id=mapping.identity,
             mapping_status=mapping.status,
             evidence_class=mapping.evidence_class,
             evidence_sources=tuple(mapping.evidence_sources),
             support_state=NativeSupportState.EXECUTABLE_SAFE,
+            integer_range=(0, 100) if name == NATIVE_ESCROW_POLICY_COMMAND else None,
         )
 
     def bind_escrow_plan(self, plan) -> tuple[NativeEscrowSemanticBinding, ...]:
