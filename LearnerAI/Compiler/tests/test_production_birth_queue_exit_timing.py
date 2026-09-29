@@ -66,9 +66,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
             registry.resolve_production_birth_timing(
                 _expression("(game-time >= 600)", "game-time", ">=", "600"),
                 _expression(
-                    "(unit-type-count-total spearman >= 1)",
+                    "(unit-type-count-total 93 >= 1)",
                     "unit-type-count-total",
-                    "spearman",
+                    "93",
                     ">=",
                     "1",
                 ),
@@ -132,9 +132,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
             registry.resolve_production_queue_exit_timing(
                 _expression("(game-time >= 700)", "game-time", ">=", "700"),
                 _expression(
-                    "(unit-type-count spearman >= 2)",
+                    "(unit-type-count 93 >= 2)",
                     "unit-type-count",
-                    "spearman",
+                    "93",
                     ">=",
                     "2",
                 ),
@@ -153,9 +153,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
             registry.resolve_production_queue_exit_timing(
                 _expression("(game-time >= 700)", "game-time", ">=", "700"),
                 _expression(
-                    "(unit-type-count-total spearman >= 2)",
+                    "(unit-type-count-total 93 >= 2)",
                     "unit-type-count-total",
-                    "spearman",
+                    "93",
                     ">=",
                     "2",
                 ),
@@ -174,9 +174,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         birth = registry.resolve_production_birth_timing(
             _expression("(game-time >= 600)", "game-time", ">=", "600"),
             _expression(
-                "(unit-type-count spearman >= 1)",
+                "(unit-type-count 93 >= 1)",
                 "unit-type-count",
-                "spearman",
+                "93",
                 ">=",
                 "1",
             ),
@@ -185,9 +185,9 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         queue_exit = registry.resolve_production_queue_exit_timing(
             _expression("(game-time >= 700)", "game-time", ">=", "700"),
             _expression(
-                "(unit-type-count-total spearman >= 2)",
+                "(unit-type-count-total 93 >= 2)",
                 "unit-type-count-total",
-                "spearman",
+                "93",
                 ">=",
                 "2",
             ),
