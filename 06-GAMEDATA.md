@@ -15,8 +15,11 @@ rejects (`:282-286` + `test_game_data:767-796`).
 - AUTHORITATIVE EVIDENCE: `UNIT NODE 527 … UNIT:YES|TECH:YES; UNIT:class=22; COSTS:type=1,45;type=3,80; TECH:name='[FTT] Disable Paladin' civ=8 effect=583` (`:555-557`). COSTS bytes identical to raft 1104 but TECH identity is recycled-scenario cruft — idiom/corrupt reuse, NOT engine guarantee.
 - IR CAPABILITY: shape exists (`UnitDef` + `UpgradeRelation(1104->527 via 905)` + `ProductionProvider(BuildingId(45))`).
 - FIXED-COST TRAP: must NOT copy raft cost `ResourceCost(wood=45,gold=80)` (`game_data_manifest_units:149-160`, raft only) into 527 despite identical DAT COSTS line. That is synthesis.
-- SMALLEST GENERAL IR EXTENSION: none for shape. Needed is DATA: authoritative TRIGGER=905 materialization + identity-safe join (conflict-seed pattern `game_data_manifest_technology_conflicts:1-7,38-57`). Do NOT merge by numeric ID through `enrich_game_data_from_dat_snapshot`.
-- FORBIDDEN: inventing `UpgradeRelation(1104,527,905)`, `train_time_seconds`, `base_cost`, civ availability.
+- CURRENT IR: 
+  - `UnitDef` carries provider `BuildingId(45)`, age, demolition-raft line, `upgrades_from=1104`, `upgrades_to=528`, and unresolved `base_cost/train_time_seconds=None`.
+  - `UpgradeRelation(1104,527,905)` is now explicit and verified through manifest identity plus Update 185872/AIRef provenance.
+  - Tech 905 is typed as `Demolition Ship`, Dock-provided, Castle-age, `25 wood + 75 gold`, `20s` on Update 185872.
+- SAFETY: no recycled DAT unit cost is copied into 527. Fixed-cost APIs fail closed for unresolved unit cost.
 
 ## A2 — UNIT 528 Heavy Demolition Ship — identity and upgrade chain modeled
 
