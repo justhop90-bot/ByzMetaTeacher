@@ -114,6 +114,24 @@ class NativeEscrowReleaseTests(unittest.TestCase):
         self.assertEqual(binding.integer_range, (0, 100))
         self.registry.validate_escrow_policy_plan(plan)
 
+    def test_percentage_policy_rejects_boolean_value(self):
+        from Compiler.ir import EscrowOperation, EscrowOperationKind
+
+        with self.assertRaisesRegex(ValueError, "integer in 0..100"):
+            NativeEscrowPolicyPlan(
+                (
+                    EscrowOperation(
+                        contract_identity="boolean-percentage",
+                        owner=SemanticId("test", "research"),
+                        kind=EscrowOperationKind.POLICY_RESET,
+                        resource="food",
+                        command="set-escrow-percentage",
+                        percentage=True,
+                        rule_order=1,
+                    ),
+                )
+            )
+
     def test_percentage_policy_rejects_out_of_range(self):
         from Compiler.ir import EscrowOperation, EscrowOperationKind
 
