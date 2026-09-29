@@ -1264,7 +1264,7 @@ def _validate_edges(
             )
 
         if edge.kind is LoadKind.RANDOM:
-            if edge.active and policy.reject_random_loads and edge.target is None:
+            if edge.active and policy.reject_random_loads and (edge.target is None or edge.child is None):
                 diagnostics.append(
                     _diag(
                         SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
