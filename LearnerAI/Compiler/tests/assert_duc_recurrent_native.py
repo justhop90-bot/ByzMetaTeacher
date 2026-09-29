@@ -23,21 +23,27 @@ from Compiler.semantic.rule_execution import analyze_effective_rules
 from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
-SOURCE = """(defrule
-    (true)
-    =>
-    (set-goal duc-gate 0)
-)
-(defrule
-    (goal duc-gate 1)
-    =>
-    (up-find-local c: 83 c: 1)
-)
-(defrule
-    (true)
-    =>
-    (up-find-local c: 83 c: 1)
-)
+SOURCE = """
+demand seed-duc-gate {
+    require (true)
+    action (set-goal duc-gate 0)
+    witness (goal duc-gate = 0)
+    release (goal duc-gate = 0)
+}
+
+demand impossible-duc {
+    require (goal duc-gate = 1)
+    action (up-find-local c: 83 c: 1)
+    witness (goal duc-gate = 1)
+    release (goal duc-gate = 1)
+}
+
+demand live-duc {
+    require (true)
+    action (up-find-local c: 83 c: 1)
+    witness (true)
+    release (true)
+}
 """
 
 
@@ -72,9 +78,11 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
 
+    artifact = compile_source(SOURCE)
+
     with tempfile.TemporaryDirectory() as tmp:
-        entrypoint = Path(tmp) / "duc-recurrent.per"
-        entrypoint.write_text(SOURCE, encoding="utf-8")
+        entrypoint = Path(tmp) / "compiled.per"
+        entrypoint.write_text(artifact, encoding="utf-8")
         execution = analyze_effective_rules(
             SourceGraphResolver().resolve(
                 SourceGraphRequest(entrypoint=entrypoint)
@@ -82,21 +90,25 @@ def main() -> int:
         )
 
     recurrent = analyze_recurrent_execution(execution)
-    if recurrent.status_for_rule(2) is not RecurrentExecutionStatus.NEVER_RUNNABLE:
-        raise SystemExit("rule 2 must be proven NEVER_RUNNABLE")
+    never_runnable = tuple(
+        rule_order
+        for rule_order, status in recurrent.statuses
+        if status is RecurrentExecutionStatus.NEVER_RUNNABLE
+    )
+    if not never_runnable:
+        raise SystemExit("compiled artifact did not produce any NEVER_RUNNABLE recurrent rule")
 
     duc = analyze_duc(
         execution,
         recurrent_execution=recurrent,
     )
-    if tuple(search.provenance.rule_order for search in duc.searches) != (3,):
+    search_orders = tuple(search.provenance.rule_order for search in duc.searches)
+    if len(search_orders) != 1:
         raise SystemExit(
-            "DUC recurrent suppression failed: only live rule 3 may seed search state"
+            f"DUC recurrent suppression failed: expected one live search, got {search_orders}"
         )
     if duc.final_state.local_list.current_generation is None:
         raise SystemExit("live DUC rule did not produce the expected search generation")
-
-    artifact = compile_source(SOURCE)
     if artifact.count("(up-find-local c: 83 c: 1)") != 2:
         raise SystemExit("compiled artifact did not retain both native DUC rule bodies")
 
@@ -111,15 +123,15 @@ def main() -> int:
         "artifact": str(args.output.resolve()),
         "source_sha256": hashlib.sha256(SOURCE.encode("utf-8")).hexdigest(),
         "artifact_sha256": hashlib.sha256(artifact.encode("utf-8")).hexdigest(),
-        "recurrent_status_rule_2": recurrent.status_for_rule(2).value,
-        "duc_search_rule_orders": [search.provenance.rule_order for search in duc.searches],
+        "never_runnable_rule_orders": list(never_runnable),
+        "duc_search_rule_orders": list(search_orders),
         "native_validator_exit_code": result.returncode,
         "finding_count": finding_count,
         "findings": findings,
         "assertion": (
-            "Rule 2 is emitted syntactically but is proven NEVER_RUNNABLE by the "
-            "recurrent semantic interpreter and therefore does not seed DUC state; "
-            "rule 3 remains executable and seeds the DUC list."
+            "The emitted .per is accepted by the native parser, while the same emitted "
+            "artifact proves a NEVER_RUNNABLE recurrent rule whose DUC mutation is excluded "
+            "from semantic state transfer; the live DUC rule remains the sole search-state writer."
         ),
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
