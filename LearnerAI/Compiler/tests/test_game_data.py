@@ -46,7 +46,7 @@ class GameDataTests(unittest.TestCase):
     def test_byzantine_manifest_declares_complete_node_counts(self):
         from pathlib import Path
 
-        manifest_path = Path(__file__).parents[2] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        manifest_path = Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt"
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
 
         self.assertEqual(manifest.building_count, 28)
@@ -82,13 +82,12 @@ class GameDataTests(unittest.TestCase):
 
     def test_manifest_rejects_declared_count_drift(self):
         raw = (
-            "Buildings: 28\\n"
-            "Units/tech nodes: 145\\n"
-            "BUILDINGS\\n"
-            "12 | Barracks | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>\\n"
-            "AVAILABLE UNIT / TECH NODES\\n"
-            "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\\n"
-        )
+            "Buildings: 28\n"
+            "Units/tech nodes: 145\n"
+            "BUILDINGS\n"
+            "12 | Barracks | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>\n"
+            "AVAILABLE UNIT / TECH NODES\n"
+            "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\n        )
         with self.assertRaisesRegex(ValueError, "declared unit/tech count"):
             parse_byzantine_manifest(raw)
 
