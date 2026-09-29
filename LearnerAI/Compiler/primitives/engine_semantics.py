@@ -280,6 +280,7 @@ _ACTION_SPECS = (
 
 _ESCROW_COMMAND_SPECS = (
     ("release-escrow", "escrow.execution.release"),
+    ("set-escrow-percentage", "escrow.execution.set-percentage"),
 )
 
 
@@ -435,6 +436,46 @@ def _persistent_state_mapping(command: str, identity: str) -> EngineSemanticMapp
         recovery="re-evaluate the comparison after the underlying Goal or Strategic Number state changes",
         practice_references=(),
     )
+
+def _escrow_percentage_mapping() -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity="escrow.execution.set-percentage",
+        native_command="set-escrow-percentage",
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(
+            "https://airef.github.io/commands/commands-details.html#set-escrow-percentage",
+            "https://airef.github.io/commands/commands-details.html#escrow-amount",
+            _DUKE,
+        ),
+        state_effects=(
+            "mutates the native escrow-routing percentage for one resource; "
+            "the resulting percentage persists until another native policy mutation"
+        ),
+        lifetime=(
+            "persistent native resource-control policy state; this slice does not "
+            "claim automatic restoration, ownership transfer, or scheduler behavior"
+        ),
+        ordering=(
+            "the policy mutation executes in emitted action order; this compiler "
+            "contract does not claim same-pass visibility to a later ordinary action"
+        ),
+        admission=(
+            "native set-escrow-percentage Action with exactly two constant inputs: "
+            "Resource and Value, where Value is restricted to 0..100"
+        ),
+        completion=(
+            "the native policy mutation itself is the contracted operation; no "
+            "compiler-generated completion witness is synthesized"
+        ),
+        recovery=(
+            "re-evaluate the owning explicit escrow policy; no starvation or "
+            "emergency-release scheduler is emitted by this slice"
+        ),
+        practice_references=(),
+    )
+
 
 def _escrow_release_mapping() -> EngineSemanticMapping:
     return EngineSemanticMapping(
@@ -811,10 +852,8 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         _native_output_reader_mapping(command, identity)
         for command, identity in _NATIVE_OUTPUT_READER_SPECS
     )
-    mappings.extend(
-        _escrow_release_mapping()
-        for _command, _identity in _ESCROW_COMMAND_SPECS
-    )
+    mappings.append(_escrow_release_mapping())
+    mappings.append(_escrow_percentage_mapping())
     mappings.append(_attack_issue_mapping())
     mappings.extend(
         (
