@@ -33,7 +33,7 @@ def main() -> int:
         )
 
     required_fragments = (
-        "(strategic-number sn-enable-training-queue == 3)",
+        "(up-compare-sn sn-enable-training-queue == 3)",
         "(train spearman)",
     )
     missing = [fragment for fragment in required_fragments if fragment not in first]
