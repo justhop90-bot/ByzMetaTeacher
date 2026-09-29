@@ -242,6 +242,25 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         )
         self.assertEqual(lifecycle.target_admission.primitive, "can-train")
 
+    def test_analyzer_does_not_promote_ambiguous_timing_samples(self):
+        source = """
+        demand timed-spears {
+            require (game-time >= 600)
+            require (game-time < 900)
+            require (unit-type-count spearman >= 1)
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        demand = analyze(parse(source), default_de_registry(), source_unit="test")[0]
+        lifecycle = demand.production_lifecycle
+
+        self.assertIsNotNone(lifecycle)
+        self.assertIsNone(lifecycle.birth_timing_evidence)
+        self.assertIsNone(lifecycle.queue_exit_timing_evidence)
+
     def test_analyzer_preserves_open_birth_and_queue_exit_timing(self):
         source = """
         demand timed-spears {
