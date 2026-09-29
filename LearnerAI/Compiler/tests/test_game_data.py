@@ -128,7 +128,7 @@ class GameDataTests(unittest.TestCase):
 
     def test_dat_snapshot_merge_fills_only_unresolved_technology_fields(self):
         profile = ByzantineProfile.for_update_185872()
-        data = resolve_effective_civ(profile)
+        data = profile.base_data
         source_patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
         tech = data.technologies[0]
         data = replace(
@@ -177,7 +177,7 @@ class GameDataTests(unittest.TestCase):
 
     def test_dat_snapshot_merge_rejects_name_mismatch(self):
         profile = ByzantineProfile.for_update_185872()
-        data = resolve_effective_civ(profile)
+        data = profile.base_data
         tech = data.technologies[0]
         patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
         snapshot = DatTechnologySnapshot(
