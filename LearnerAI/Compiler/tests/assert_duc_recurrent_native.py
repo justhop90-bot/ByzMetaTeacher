@@ -24,13 +24,6 @@ from Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
 SOURCE = """
-demand seed-duc-gate {
-    require (true)
-    action (set-goal duc-gate 0)
-    witness (goal duc-gate = 0)
-    release (goal duc-gate = 0)
-}
-
 demand impossible-duc {
     require (goal duc-gate = 1)
     action (up-find-local c: 83 c: 1)
@@ -39,12 +32,13 @@ demand impossible-duc {
 }
 
 demand live-duc {
-    require (true)
+    require (can-build castle)
     action (up-find-local c: 83 c: 1)
-    witness (true)
-    release (true)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
 }
 """
+
 
 
 def _validate_native(artifact: Path) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
