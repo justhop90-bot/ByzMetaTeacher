@@ -281,9 +281,17 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 86)
-        self.assertEqual(report.unmodeled_count, 73)
+        self.assertEqual(report.modeled_count, 140)
+        self.assertEqual(report.unmodeled_count, 19)
         self.assertEqual(report.verified_unavailable_count, 14)
+        self.assertEqual(
+            {
+                int(node.id)
+                for node in report.unmodeled_nodes
+                if node.kind is ManifestNodeKind.TECHNOLOGY
+            },
+            {54, 408, 909},
+        )
         self.assertEqual(
             report.modeled_count
             + report.unmodeled_count
