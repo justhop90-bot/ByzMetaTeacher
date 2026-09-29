@@ -14,6 +14,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     PostureTransition,
     StrategicCapabilityObservation,
     StrategicCapabilityObservationKind,
+    StrategicTargetKind,
     StrategicEvidence,
     StrategicEvidenceKind,
     StrategicEvidenceSource,
@@ -715,7 +716,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             identity="cataphract-recovery-demand",
             capability_intent=capability.capability,
             target=base.target.__class__(
-                base.target.kind.EXACT,
+                StrategicTargetKind.EXACT,
                 "unit-line",
                 "cataphract",
             ),
@@ -820,6 +821,34 @@ class StrategyRuntimeTests(unittest.TestCase):
             "cataphract-recovery-demand",
             runtime.active_strategic_demands,
         )
+
+    def test_capability_recovery_contract_rejects_opportunity_cost_release_on_loss(self):
+        demand = self.profile.demand("castle-commitment")
+        bad = replace(
+            demand,
+            recovery=CapabilityRecoveryContract(
+                preserve_opportunity_cost=False,
+            ),
+        )
+        profile = replace(
+            self.profile,
+            demands=(
+                bad,
+                *(item for item in self.profile.demands if item.identity != bad.identity),
+            ),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "cannot release opportunity-cost protection",
+        ):
+            evaluate_strategy_runtime(
+                profile,
+                self.effective,
+                self.snapshot(
+                    facts=(("(current-age >= feudal-age)", True),),
+                    previous=StrategyPosture.BOOM,
+                ),
+            )
 
     def test_feasibility_false_is_not_capability_loss(self):
         observation = self.profile.capability_observations[0]
