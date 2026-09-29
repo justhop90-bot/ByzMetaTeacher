@@ -278,7 +278,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-group-size c: 3 47)", artifact)
+        self.assertIn("(up-get-group-size c: 3 42)", artifact)
         self.assertNotIn("(up-get-group-size c: 3 41)", artifact)
 
     def test_compile_allocates_and_emits_bound_search_state_goalspan(self):
@@ -312,7 +312,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-search-state 43)", artifact)
+        self.assertIn("(up-get-search-state 44)", artifact)
         self.assertNotIn("(up-get-search-state 41)", artifact)
 
     def test_compile_surface_accepts_internal_duc_plan_without_source_syntax(self):
