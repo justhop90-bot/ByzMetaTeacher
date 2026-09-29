@@ -1,3 +1,10 @@
+from .game_data_dat_snapshot import (
+    DatTechnologyRecord,
+    DatTechnologySnapshot,
+    enrich_game_data_from_dat_snapshot,
+    parse_dat_technologies_json,
+)
+
 from .game_data_manifest import ByzantineManifest, ByzantineManifestCoverage, ManifestNode, ManifestNodeKind, ManifestNodeStatus, classify_byzantine_manifest_coverage, parse_byzantine_manifest
 from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from .native_attack import (
