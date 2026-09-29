@@ -363,6 +363,7 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(carrack.train_time_seconds, 27)
         self.assertEqual(carrack.upgrades_from, UnitId(2627))
         self.assertIsNone(carrack.upgrades_to)
+        self.assertEqual(effective.unit(2627).upgrades_to, UnitId(2628))
 
         self.assertIn(UnitId(2628), effective.unit_line("hulk-line").members)
 
