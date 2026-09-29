@@ -13,7 +13,7 @@ def _expr(source, head, *args):
     return Expression(source, head, tuple(args))
 
 
-def _search_state_output_request(rule_identity="search-state-output", section="FACT", expression_index=0):
+def _search_state_output_request(rule_identity="search-state-output", section="ACTION", expression_index=0):
     request = GoalSpanRequest(
         StorageRequestId(
             SemanticId("native.duc", rule_identity),
@@ -129,14 +129,14 @@ class NativeDucPlanTests(unittest.TestCase):
                 NativeDucRule(
                     identity="search-state-output",
                     order=1,
-                    facts=(
+                    facts=(),
+                    actions=(
                         _expr(
                             "(up-get-search-state 41)",
                             "up-get-search-state",
                             "41",
                         ),
                     ),
-                    actions=(),
                 ),
             ),
             output_requests=(
