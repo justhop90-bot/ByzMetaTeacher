@@ -1,7 +1,9 @@
 from .game_data_dat_snapshot import (
     DatTechnologyRecord,
     DatTechnologySnapshot,
+    enrich_game_data_from_aoe2techtree_json,
     enrich_game_data_from_dat_snapshot,
+    parse_aoe2techtree_technologies_json,
     parse_dat_technologies_json,
 )
 
