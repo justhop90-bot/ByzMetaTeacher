@@ -82,6 +82,29 @@ def _cost_delta_output_request() -> NativeDucOutputRequest:
     )
 
 
+def _point_output_request() -> NativeDucOutputRequest:
+    request = GoalSpanRequest(
+        StorageRequestId(
+            SemanticId("native.duc", "point-output"),
+            "up-get-point",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+        width=2,
+        shape=GoalSpanKind.POINT_PAIR,
+        contract_id="up-get-point.Point",
+        start_min=41,
+        start_max=15998,
+    )
+    return NativeDucOutputRequest(
+        rule_identity="point",
+        section="ACTION",
+        expression_index=0,
+        request=request,
+        command="up-get-point",
+        argument_index=1,
+    )
+
+
 def _plan() -> NativeDucPlan:
     return NativeDucPlan(
         (
@@ -122,6 +145,24 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
+                identity="point",
+                order=102,
+                facts=(
+                    Expression(
+                        "(true)",
+                        "true",
+                        (),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-point position-center 41)",
+                        "up-get-point",
+                        ("position-center", "41"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
                 identity="cost-delta",
                 order=102,
                 facts=(
@@ -141,7 +182,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="group-size",
-                order=103,
+                order=104,
                 facts=(
                     Expression(
                         "(true)",
@@ -159,7 +200,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="target-action",
-                order=104,
+                order=105,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",
@@ -180,6 +221,7 @@ def _plan() -> NativeDucPlan:
             _search_state_output_request(),
             _group_size_output_request(),
             _cost_delta_output_request(),
+            _point_output_request(),
         ),
     )
 
@@ -234,6 +276,7 @@ def main() -> int:
         "(up-get-search-state 48)",
         "(up-get-group-size c: 3 42)",
         "(up-get-cost-delta 44)",
+        "(up-get-point position-center 48)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )
