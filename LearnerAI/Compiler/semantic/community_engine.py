@@ -220,6 +220,16 @@ def default_community_engine_registry() -> CommunityEngineSemanticsRegistry:
             "Queue acceptance does not mean the requested unit already exists.",
         ),
         EnginePractice(
+            "train.provider-readiness",
+            "lifecycle",
+            "UP exposes a training-site readiness fact that distinguishes provider readiness from can-train feasibility and world-state completion.",
+            EvidenceClass.ENGINE_FACT,
+            PracticeStatus.EVIDENCE_ONLY,
+            (airef, scripting),
+            "Treat provider readiness as native admissibility evidence; keep can-train as execution feasibility and unit count as completion evidence.",
+            "The documented fact does not establish current-build behavior under busy or queued provider conditions.",
+        ),
+        EnginePractice(
             "research.can-complete-witness",
             "lifecycle",
             "Research issuance is feasibility-gated and completion is observed through research state, not timer expiry.",
