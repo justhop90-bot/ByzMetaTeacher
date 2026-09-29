@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 from .game_data_manifest_technologies import BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
+from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
 from .game_data import (
     Age,
     AgeAdvanceDef,
