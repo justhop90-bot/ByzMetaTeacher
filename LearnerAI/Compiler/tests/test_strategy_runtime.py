@@ -775,7 +775,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             identity="cataphract-recovery-demand",
             capability_intent=capability.capability,
             target=base.target.__class__(
-                base.target.kind.EXACT,
+                StrategicTargetKind.EXACT,
                 "unit-line",
                 "cataphract",
             ),
