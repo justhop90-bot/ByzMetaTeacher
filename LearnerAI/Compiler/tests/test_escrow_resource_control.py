@@ -14,6 +14,7 @@ from Compiler.ir import (
     EscrowContract,
     EscrowOperation,
     EscrowOperationKind,
+    NativeEscrowReleasePlan,
     EscrowRelease,
     EscrowReleaseKind,
     EscrowReserve,
