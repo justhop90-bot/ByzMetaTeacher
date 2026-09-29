@@ -20,15 +20,15 @@
         "gold": 135
       },
       "train_time_seconds": 46,
+      "internal_name": "ONAGR",
       "upgrades_from": 280,
-      "upgrades_to": null,
-      "internal_name": "ONAGR"
+      "upgrades_to": null
     },
     {
       "id": 13,
-      "manifest_name": "Heavy Plow",
-      "available_age": "CASTLE",
-      "provider_building": 68,
+      "manifest_name": "Fishing Ship",
+      "available_age": "DARK",
+      "provider_building": 45,
       "line": "fishing-ship-line",
       "base_cost": {
         "food": 0,
@@ -37,9 +37,9 @@
         "gold": 0
       },
       "train_time_seconds": 40,
+      "internal_name": "FSHSP",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "FSHSP"
+      "upgrades_to": null
     },
     {
       "id": 545,
@@ -54,9 +54,9 @@
         "gold": 0
       },
       "train_time_seconds": 46,
+      "internal_name": "XPORT",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "XPORT"
+      "upgrades_to": null
     },
     {
       "id": 539,
@@ -71,9 +71,9 @@
         "gold": 30
       },
       "train_time_seconds": 45,
+      "internal_name": "SGALY",
       "upgrades_from": null,
-      "upgrades_to": 21,
-      "internal_name": "SGALY"
+      "upgrades_to": 21
     },
     {
       "id": 21,
@@ -88,9 +88,9 @@
         "gold": 30
       },
       "train_time_seconds": 27,
+      "internal_name": "GALLY",
       "upgrades_from": 539,
-      "upgrades_to": 442,
-      "internal_name": "GALLY"
+      "upgrades_to": 442
     },
     {
       "id": 442,
@@ -105,9 +105,9 @@
         "gold": 30
       },
       "train_time_seconds": 27,
+      "internal_name": "WARGA",
       "upgrades_from": 21,
-      "upgrades_to": null,
-      "internal_name": "WARGA"
+      "upgrades_to": null
     },
     {
       "id": 2626,
@@ -122,9 +122,9 @@
         "gold": 35
       },
       "train_time_seconds": 42,
+      "internal_name": "Hulk",
       "upgrades_from": null,
-      "upgrades_to": 2627,
-      "internal_name": "Hulk"
+      "upgrades_to": 2627
     },
     {
       "id": 2627,
@@ -139,9 +139,9 @@
         "gold": 35
       },
       "train_time_seconds": 27,
+      "internal_name": "War hulk",
       "upgrades_from": 2626,
-      "upgrades_to": null,
-      "internal_name": "War hulk"
+      "upgrades_to": null
     },
     {
       "id": 1104,
@@ -156,15 +156,15 @@
         "gold": 80
       },
       "train_time_seconds": 45,
+      "internal_name": "SDGAL",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "SDGAL"
+      "upgrades_to": null
     },
     {
       "id": 17,
-      "manifest_name": "Banking",
-      "available_age": "IMPERIAL",
-      "provider_building": 84,
+      "manifest_name": "Trade Cog",
+      "available_age": "FEUDAL",
+      "provider_building": 45,
       "line": "trade-cog-line",
       "base_cost": {
         "food": 0,
@@ -173,9 +173,9 @@
         "gold": 50
       },
       "train_time_seconds": 36,
+      "internal_name": "COGXX",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "COGXX"
+      "upgrades_to": null
     },
     {
       "id": 83,
@@ -190,9 +190,9 @@
         "gold": 0
       },
       "train_time_seconds": 25,
+      "internal_name": "VMBAS",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "VMBAS"
+      "upgrades_to": null
     },
     {
       "id": 128,
@@ -207,9 +207,9 @@
         "gold": 50
       },
       "train_time_seconds": 51,
+      "internal_name": "TCART",
       "upgrades_from": null,
-      "upgrades_to": null,
-      "internal_name": "TCART"
+      "upgrades_to": null
     }
   ]
 }
