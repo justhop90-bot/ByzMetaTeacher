@@ -9,6 +9,7 @@ from ...ir.civ_profile import ByzantineProfile, resolve_effective_civ
 from ...ir.strategy import (
     CapabilityIntent,
     CapabilityIntentKind,
+    CapabilityRecoveryContract,
     ExecutionDemandTemplate,
     OpportunityCostPolicy,
     PostureTransition,
@@ -60,6 +61,7 @@ __all__ = (
     "compile_strategy_runtime_profile",
     "CapabilityIntent",
     "CapabilityIntentKind",
+    "CapabilityRecoveryContract",
     "ExecutionDemandTemplate",
     "OpportunityCostPolicy",
     "PostureTransition",
