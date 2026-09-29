@@ -36,6 +36,10 @@ class AttackExecutionMode(str, Enum):
     TOWN_SIZE_ATTACK = "TOWN_SIZE_ATTACK"
     DUC_TARGETED = "DUC_TARGETED"
 
+    @property
+    def requires_duc_target(self) -> bool:
+        return self is AttackExecutionMode.DUC_TARGETED
+
 
 class AttackCapabilityRole(str, Enum):
     PRIMARY_FORCE = "PRIMARY_FORCE"
@@ -74,6 +78,21 @@ class AttackTargetRef:
     source_list_generation: int | None = None
     source_filter_generation: int | None = None
     provenance: DucProvenance | None = None
+
+    @classmethod
+    def from_duc(
+        cls,
+        target: DucTargetState,
+        *,
+        required_validity: tuple[DucTargetStatus, ...] = (DucTargetStatus.VALID,),
+    ) -> "AttackTargetRef":
+        return cls(
+            target=target,
+            required_validity=required_validity,
+            source_list_generation=target.source_list_generation,
+            source_filter_generation=target.source_filter_generation,
+            provenance=target.provenance,
+        )
 
     def __post_init__(self) -> None:
         if not self.required_validity:
@@ -265,17 +284,22 @@ class AttackExecution:
         if len(roles) != len(set(roles)):
             raise ValueError("attack execution cannot assign multiple capabilities to one role")
 
-        target_required = self.mode is not AttackExecutionMode.TOWN_SIZE_ATTACK
-
-        if self.state in {
+        target_dependent_states = {
+            AttackExecutionState.ASSEMBLE,
             AttackExecutionState.ATTACK,
             AttackExecutionState.PRESS,
             AttackExecutionState.REINFORCE,
-        } and target_required:
+        }
+
+        if self.mode.requires_duc_target and self.state in target_dependent_states:
             if self.target is None:
-                raise ValueError(f"{self.state.value} requires a target")
+                raise ValueError(
+                    f"{self.state.value} for {self.mode.value} requires a DUC target"
+                )
             if not self.target.valid_for_execution:
-                raise ValueError(f"{self.state.value} requires a valid target")
+                raise ValueError(
+                    f"{self.state.value} for {self.mode.value} requires a valid DUC target"
+                )
 
         if self.state in {
             AttackExecutionState.ATTACK,
