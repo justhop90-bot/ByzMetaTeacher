@@ -1,5 +1,7 @@
 import unittest
 
+from Compiler.errors import CompileError
+
 from Compiler.ir import (
     EscrowOperation,
     EscrowOperationKind,
@@ -188,6 +190,103 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             ("release-escrow",),
         )
         self.registry.validate_escrow_release_plan(plan)
+
+    def test_targeted_release_lowers_inline_before_research(self):
+        from Compiler.compiler import compile_source
+
+        owner = SemanticId("test", "research")
+        plan = NativeEscrowReleasePlan(
+            (
+                EscrowOperation(
+                    contract_identity="research-food",
+                    owner=owner,
+                    kind=EscrowOperationKind.RELEASE,
+                    resource="food",
+                    command="release-escrow",
+                    rule_order=100,
+                    within_rule_order=0,
+                    target_demand=owner,
+                ),
+            )
+        )
+        source = """
+        demand research {
+            require (can-research-with-escrow feudal-age)
+            action (research feudal-age)
+            witness (current-age >= feudal-age)
+            release (current-age >= feudal-age)
+        }
+        """
+        artifact = compile_source(source, source_unit="test", escrow_plan=plan)
+        action_start = artifact.index("; Action issuance: research")
+        action_block = artifact[action_start:]
+        self.assertLess(
+            action_block.index("(release-escrow food)"),
+            action_block.index("(research feudal-age)"),
+        )
+        self.assertNotIn("; Native escrow release plan", action_block)
+
+    def test_targeted_release_requires_escrow_aware_research_admission(self):
+        from Compiler.compiler import compile_source
+
+        owner = SemanticId("test", "research")
+        plan = NativeEscrowReleasePlan(
+            (
+                EscrowOperation(
+                    contract_identity="research-food",
+                    owner=owner,
+                    kind=EscrowOperationKind.RELEASE,
+                    resource="food",
+                    command="release-escrow",
+                    rule_order=100,
+                    target_demand=owner,
+                ),
+            )
+        )
+        source = """
+        demand research {
+            require (can-research feudal-age)
+            action (research feudal-age)
+            witness (current-age >= feudal-age)
+            release (current-age >= feudal-age)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "requires can-research-with-escrow",
+        ):
+            compile_source(source, source_unit="test", escrow_plan=plan)
+
+    def test_targeted_release_requires_research_action(self):
+        from Compiler.compiler import compile_source
+
+        owner = SemanticId("test", "train")
+        plan = NativeEscrowReleasePlan(
+            (
+                EscrowOperation(
+                    contract_identity="train-food",
+                    owner=owner,
+                    kind=EscrowOperationKind.RELEASE,
+                    resource="food",
+                    command="release-escrow",
+                    rule_order=100,
+                    target_demand=owner,
+                ),
+            )
+        )
+        source = """
+        demand train {
+            require (can-train-with-escrow spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "may target only research actions",
+        ):
+            compile_source(source, source_unit="test", escrow_plan=plan)
 
     def test_percentage_policy_emits_deterministically(self):
         from Compiler.compiler import compile_source

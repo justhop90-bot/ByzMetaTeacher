@@ -699,6 +699,18 @@ def validate_escrow_release_plan(
                     location=operation.location,
                 )
             )
+        if (
+            operation.target_demand is not None
+            and operation.owner != operation.target_demand
+        ):
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_OWNER_MISMATCH,
+                    "targeted escrow release owner must match target demand identity",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
     return ResourceControlValidationReport(
         errors=tuple(
             sorted(
