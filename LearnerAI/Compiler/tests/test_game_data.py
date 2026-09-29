@@ -453,8 +453,8 @@ class GameDataTests(unittest.TestCase):
             ),
             effective,
         )
-        self.assertEqual(report.modeled_count, 156)
-        self.assertEqual(report.unmodeled_count, 3)
+        self.assertEqual(report.modeled_count, 157)
+        self.assertEqual(report.unmodeled_count, 2)
         self.assertEqual(
             {
                 (node.kind, int(node.id))
@@ -528,7 +528,7 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
                 if node.kind is ManifestNodeKind.TECHNOLOGY
             },
-            {408},
+            set(),
         )
 
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
@@ -579,7 +579,7 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
                 if node.kind is ManifestNodeKind.TECHNOLOGY
             },
-            {408},
+            set(),
         )
 
 
@@ -601,7 +601,7 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
                 if node.kind is ManifestNodeKind.TECHNOLOGY
             },
-            {408},
+            set(),
         )
         self.assertEqual(
             report.modeled_count
