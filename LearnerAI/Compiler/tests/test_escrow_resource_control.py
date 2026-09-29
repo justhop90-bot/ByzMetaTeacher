@@ -105,11 +105,17 @@ class EscrowResourceControlTests(unittest.TestCase):
         demand = SemanticId("test", "research")
         contract = self._contract("research", demand)
         first = replace(
-            self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=0),
+            replace(
+                self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=0),
+                contract_identity="research-food-a",
+            ),
             target_demand=demand,
         )
         second = replace(
-            self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=1),
+            replace(
+                self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=1),
+                contract_identity="research-food-b",
+            ),
             target_demand=demand,
         )
         with self.assertRaisesRegex(
