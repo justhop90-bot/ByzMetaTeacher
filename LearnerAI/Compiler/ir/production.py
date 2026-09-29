@@ -70,8 +70,6 @@ class ProductionQueueProtection:
     disposition: ProductionFactDisposition
     pending_fact: Expression
     native_unit_id: int
-    queue_state: ProductionQueueStateObservation | None = None
-    provider_state: ProductionProviderStateObservation | None = None
 
     def __post_init__(self) -> None:
         if self.disposition is not ProductionFactDisposition.SUPPORTED:
@@ -91,14 +89,6 @@ class ProductionQueueProtection:
             raise ValueError(
                 f"production queue protection does not target UnitId "
                 f"{self.native_unit_id}"
-            )
-        if (
-            self.queue_state is not None
-            and self.queue_state.native_unit_id != self.native_unit_id
-        ):
-            raise ValueError(
-                "production queue protection queue-state observation must target "
-                "the lifecycle unit"
             )
 
 @dataclass(frozen=True)
@@ -185,6 +175,8 @@ class ProductionLifecycle:
     completion_witness: Expression
     retry_barrier: GoalSlotRequest
     queue_protection: ProductionQueueProtection
+    queue_state: ProductionQueueStateObservation | None = None
+    provider_state: ProductionProviderStateObservation | None = None
 
     def __post_init__(self) -> None:
         if not self.unit:
@@ -198,6 +190,20 @@ class ProductionLifecycle:
         if self.queue_protection.native_unit_id != self.native_unit_id:
             raise ValueError(
                 "production queue protection must target the lifecycle unit"
+            )
+        if (
+            self.queue_state is not None
+            and self.queue_state.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production queue-state observation must target the lifecycle unit"
+            )
+        if (
+            self.provider_state is not None
+            and self.provider_state.native_building_id <= 0
+        ):
+            raise ValueError(
+                "production provider-state observation native_building_id must be positive"
             )
         if self.completion_witness.head != "unit-type-count":
             raise ValueError(
@@ -223,22 +229,6 @@ class ProductionLifecycle:
     @property
     def pending_fact(self) -> Expression:
         return self.queue_protection.pending_fact
-
-    @property
-    def queue_state(self) -> ProductionQueueStateObservation | None:
-        return self.queue_protection.queue_state
-
-    @property
-    def provider_state(self) -> ProductionProviderStateObservation | None:
-        return self.queue_protection.provider_state
-
-        if (
-            self.queue_state is not None
-            and self.queue_state.native_unit_id != self.native_unit_id
-        ):
-            raise ValueError(
-                "production queue-state observation must target the lifecycle unit"
-            )
 
 
 __all__ = [
