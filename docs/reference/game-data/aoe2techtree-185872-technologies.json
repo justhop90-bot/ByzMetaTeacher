@@ -1,0 +1,1807 @@
+{
+  "schema": "aoe2techtree-technology-snapshot-v1",
+  "source": "https://github.com/SiegeEngineers/aoe2techtree/blob/3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f/data/data.json",
+  "source_revision": "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+  "source_blob_sha": "c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+  "patch": "AOE2DE:185872:2026-09-22",
+  "extraction_version": "compiler-game-data-v3",
+  "technology_count": 201,
+  "technologies": [
+    {
+      "id": 3,
+      "name": "British Yeoman",
+      "cost": {
+        "gold": 450,
+        "wood": 750
+      },
+      "research_time": 60
+    },
+    {
+      "id": 4,
+      "name": "Mayan El Dorado",
+      "cost": {
+        "food": 750,
+        "gold": 450
+      },
+      "research_time": 70
+    },
+    {
+      "id": 5,
+      "name": "Celtic Furor Celtica",
+      "cost": {
+        "food": 750,
+        "gold": 450
+      },
+      "research_time": 50
+    },
+    {
+      "id": 6,
+      "name": "Mongol Siege Drill",
+      "cost": {
+        "gold": 450,
+        "wood": 500
+      },
+      "research_time": 60
+    },
+    {
+      "id": 7,
+      "name": "Citadels",
+      "cost": {
+        "gold": 300,
+        "wood": 600
+      },
+      "research_time": 50
+    },
+    {
+      "id": 8,
+      "name": "Town Watch",
+      "cost": {
+        "food": 75
+      },
+      "research_time": 25
+    },
+    {
+      "id": 10,
+      "name": "Turkish Artillery",
+      "cost": {
+        "food": 600,
+        "gold": 650
+      },
+      "research_time": 40
+    },
+    {
+      "id": 11,
+      "name": "Teuton Crenellations",
+      "cost": {
+        "food": 600,
+        "stone": 400
+      },
+      "research_time": 60
+    },
+    {
+      "id": 12,
+      "name": "Crop rotation",
+      "cost": {
+        "food": 250,
+        "wood": 250
+      },
+      "research_time": 70
+    },
+    {
+      "id": 13,
+      "name": "Heavy plow",
+      "cost": {
+        "food": 125,
+        "wood": 125
+      },
+      "research_time": 40
+    },
+    {
+      "id": 14,
+      "name": "Horse collar",
+      "cost": {
+        "food": 75,
+        "wood": 75
+      },
+      "research_time": 20
+    },
+    {
+      "id": 15,
+      "name": "Guilds",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 50
+    },
+    {
+      "id": 16,
+      "name": "Gothic Anarchy",
+      "cost": {
+        "food": 450,
+        "gold": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 17,
+      "name": "Banking",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 70
+    },
+    {
+      "id": 19,
+      "name": "Cartography",
+      "cost": {
+        "food": 0,
+        "gold": 0
+      },
+      "research_time": 1
+    },
+    {
+      "id": 21,
+      "name": "Hun Atheism",
+      "cost": {
+        "food": 500,
+        "wood": 300
+      },
+      "research_time": 60
+    },
+    {
+      "id": 22,
+      "name": "Loom",
+      "cost": {
+        "gold": 50
+      },
+      "research_time": 25
+    },
+    {
+      "id": 23,
+      "name": "Coinage",
+      "cost": {
+        "food": 200,
+        "gold": 100
+      },
+      "research_time": 70
+    },
+    {
+      "id": 24,
+      "name": "Aztec Garland Wars",
+      "cost": {
+        "food": 450,
+        "gold": 750
+      },
+      "research_time": 60
+    },
+    {
+      "id": 28,
+      "name": "Bimaristan",
+      "cost": {
+        "gold": 200,
+        "wood": 300
+      },
+      "research_time": 50
+    },
+    {
+      "id": 34,
+      "name": "War Galley",
+      "cost": {
+        "gold": 100,
+        "wood": 150
+      },
+      "research_time": 50
+    },
+    {
+      "id": 35,
+      "name": "Galleon",
+      "cost": {
+        "gold": 315,
+        "wood": 400
+      },
+      "research_time": 65
+    },
+    {
+      "id": 39,
+      "name": "Husbandry",
+      "cost": {
+        "food": 150
+      },
+      "research_time": 40
+    },
+    {
+      "id": 45,
+      "name": "Faith",
+      "cost": {
+        "food": 550,
+        "gold": 750
+      },
+      "research_time": 60
+    },
+    {
+      "id": 46,
+      "name": "Devotion",
+      "cost": {
+        "food": 100,
+        "gold": 200
+      },
+      "research_time": 40
+    },
+    {
+      "id": 47,
+      "name": "Chemistry",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 100
+    },
+    {
+      "id": 48,
+      "name": "Caravan",
+      "cost": {
+        "food": 200,
+        "gold": 200
+      },
+      "research_time": 40
+    },
+    {
+      "id": 49,
+      "name": "Bogsveigar",
+      "cost": {
+        "food": 650,
+        "gold": 500
+      },
+      "research_time": 40
+    },
+    {
+      "id": 50,
+      "name": "Masonry",
+      "cost": {
+        "food": 150,
+        "wood": 175
+      },
+      "research_time": 50
+    },
+    {
+      "id": 51,
+      "name": "Architecture",
+      "cost": {
+        "food": 300,
+        "wood": 200
+      },
+      "research_time": 70
+    },
+    {
+      "id": 52,
+      "name": "Chinese Rocketry",
+      "cost": {
+        "food": 1100,
+        "gold": 900
+      },
+      "research_time": 60
+    },
+    {
+      "id": 54,
+      "name": "Stone cutting",
+      "cost": {
+        "stone": 50,
+        "wood": 200
+      },
+      "research_time": 20
+    },
+    {
+      "id": 55,
+      "name": "Gold Mining",
+      "cost": {
+        "food": 100,
+        "wood": 75
+      },
+      "research_time": 30
+    },
+    {
+      "id": 59,
+      "name": "Japanese Kataparuto",
+      "cost": {
+        "gold": 300,
+        "wood": 550
+      },
+      "research_time": 60
+    },
+    {
+      "id": 61,
+      "name": "Byzantine Logistica",
+      "cost": {
+        "food": 800,
+        "gold": 600
+      },
+      "research_time": 50
+    },
+    {
+      "id": 63,
+      "name": "Keep",
+      "cost": {
+        "food": 500,
+        "wood": 350
+      },
+      "research_time": 75
+    },
+    {
+      "id": 64,
+      "name": "Bombard Tower",
+      "cost": {
+        "food": 800,
+        "wood": 400
+      },
+      "research_time": 60
+    },
+    {
+      "id": 65,
+      "name": "Gillnets",
+      "cost": {
+        "food": 100,
+        "wood": 125
+      },
+      "research_time": 30
+    },
+    {
+      "id": 67,
+      "name": "Forging",
+      "cost": {
+        "food": 150
+      },
+      "research_time": 50
+    },
+    {
+      "id": 68,
+      "name": "Iron casting",
+      "cost": {
+        "food": 220,
+        "gold": 120
+      },
+      "research_time": 75
+    },
+    {
+      "id": 74,
+      "name": "Scale Mail Armor",
+      "cost": {
+        "food": 100
+      },
+      "research_time": 40
+    },
+    {
+      "id": 75,
+      "name": "Blast Furnace",
+      "cost": {
+        "food": 275,
+        "gold": 225
+      },
+      "research_time": 100
+    },
+    {
+      "id": 76,
+      "name": "Chain Mail Armor",
+      "cost": {
+        "food": 200,
+        "gold": 100
+      },
+      "research_time": 55
+    },
+    {
+      "id": 77,
+      "name": "Plate Mail Armor",
+      "cost": {
+        "food": 300,
+        "gold": 150
+      },
+      "research_time": 70
+    },
+    {
+      "id": 80,
+      "name": "Plate Barding Armor",
+      "cost": {
+        "food": 350,
+        "gold": 200
+      },
+      "research_time": 75
+    },
+    {
+      "id": 81,
+      "name": "Scale Barding Armor",
+      "cost": {
+        "food": 150
+      },
+      "research_time": 45
+    },
+    {
+      "id": 82,
+      "name": "Chain Barding Armor",
+      "cost": {
+        "food": 250,
+        "gold": 150
+      },
+      "research_time": 60
+    },
+    {
+      "id": 90,
+      "name": "Tracking",
+      "cost": {},
+      "research_time": 0
+    },
+    {
+      "id": 93,
+      "name": "Ballistics",
+      "cost": {
+        "gold": 175,
+        "wood": 300
+      },
+      "research_time": 60
+    },
+    {
+      "id": 101,
+      "name": "Middle Age",
+      "cost": {
+        "food": 500
+      },
+      "research_time": 130
+    },
+    {
+      "id": 102,
+      "name": "Feudal Age",
+      "cost": {
+        "food": 800,
+        "gold": 200
+      },
+      "research_time": 160
+    },
+    {
+      "id": 103,
+      "name": "Imperial Age",
+      "cost": {
+        "food": 1000,
+        "gold": 800
+      },
+      "research_time": 190
+    },
+    {
+      "id": 140,
+      "name": "Guard Tower",
+      "cost": {
+        "food": 100,
+        "wood": 250
+      },
+      "research_time": 30
+    },
+    {
+      "id": 182,
+      "name": "Gold Shaft Mining",
+      "cost": {
+        "food": 175,
+        "wood": 75
+      },
+      "research_time": 75
+    },
+    {
+      "id": 194,
+      "name": "Fortified Wall",
+      "cost": {
+        "food": 200,
+        "wood": 100
+      },
+      "research_time": 50
+    },
+    {
+      "id": 199,
+      "name": "Fletching",
+      "cost": {
+        "food": 100,
+        "gold": 50
+      },
+      "research_time": 30
+    },
+    {
+      "id": 200,
+      "name": "Bodkin Arrow",
+      "cost": {
+        "food": 200,
+        "gold": 100
+      },
+      "research_time": 35
+    },
+    {
+      "id": 201,
+      "name": "Bracer",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 40
+    },
+    {
+      "id": 202,
+      "name": "Double Bit Axe",
+      "cost": {
+        "food": 100,
+        "wood": 50
+      },
+      "research_time": 25
+    },
+    {
+      "id": 203,
+      "name": "Bow Saw",
+      "cost": {
+        "food": 150,
+        "wood": 100
+      },
+      "research_time": 50
+    },
+    {
+      "id": 211,
+      "name": "Padded Archer Armor",
+      "cost": {
+        "food": 100
+      },
+      "research_time": 40
+    },
+    {
+      "id": 212,
+      "name": "Leather Archer Armor",
+      "cost": {
+        "food": 150,
+        "gold": 150
+      },
+      "research_time": 55
+    },
+    {
+      "id": 213,
+      "name": "Wheel Barrow",
+      "cost": {
+        "food": 175,
+        "wood": 50
+      },
+      "research_time": 75
+    },
+    {
+      "id": 215,
+      "name": "Squires",
+      "cost": {
+        "food": 100
+      },
+      "research_time": 40
+    },
+    {
+      "id": 219,
+      "name": "Ring Archer Armor",
+      "cost": {
+        "food": 250,
+        "gold": 250
+      },
+      "research_time": 70
+    },
+    {
+      "id": 221,
+      "name": "Two Man Saw",
+      "cost": {
+        "food": 300,
+        "wood": 200
+      },
+      "research_time": 100
+    },
+    {
+      "id": 230,
+      "name": "Block Printing",
+      "cost": {
+        "food": 0,
+        "gold": 200
+      },
+      "research_time": 55
+    },
+    {
+      "id": 231,
+      "name": "Sanctity",
+      "cost": {
+        "food": 0,
+        "gold": 175
+      },
+      "research_time": 60
+    },
+    {
+      "id": 233,
+      "name": "Illumination",
+      "cost": {
+        "food": 0,
+        "gold": 120
+      },
+      "research_time": 65
+    },
+    {
+      "id": 249,
+      "name": "Hand Cart",
+      "cost": {
+        "food": 300,
+        "wood": 200
+      },
+      "research_time": 55
+    },
+    {
+      "id": 252,
+      "name": "Fervor",
+      "cost": {
+        "food": 0,
+        "gold": 140
+      },
+      "research_time": 50
+    },
+    {
+      "id": 278,
+      "name": "Stone Mining",
+      "cost": {
+        "food": 100,
+        "wood": 75
+      },
+      "research_time": 30
+    },
+    {
+      "id": 279,
+      "name": "Stone Shaft Mining",
+      "cost": {
+        "food": 175,
+        "wood": 75
+      },
+      "research_time": 75
+    },
+    {
+      "id": 280,
+      "name": "Town Patrol",
+      "cost": {
+        "food": 300,
+        "gold": 100
+      },
+      "research_time": 40
+    },
+    {
+      "id": 315,
+      "name": "Conscription",
+      "cost": {
+        "food": 150,
+        "gold": 150
+      },
+      "research_time": 60
+    },
+    {
+      "id": 316,
+      "name": "Redemption",
+      "cost": {
+        "food": 0,
+        "gold": 475
+      },
+      "research_time": 50
+    },
+    {
+      "id": 319,
+      "name": "Atonement",
+      "cost": {
+        "food": 0,
+        "gold": 325
+      },
+      "research_time": 40
+    },
+    {
+      "id": 321,
+      "name": "Sappers",
+      "cost": {
+        "food": 400,
+        "wood": 200
+      },
+      "research_time": 10
+    },
+    {
+      "id": 322,
+      "name": "Murder Holes",
+      "cost": {
+        "food": 200,
+        "stone": 100
+      },
+      "research_time": 35
+    },
+    {
+      "id": 373,
+      "name": "Shipwright",
+      "cost": {
+        "food": 1000,
+        "gold": 300
+      },
+      "research_time": 60
+    },
+    {
+      "id": 374,
+      "name": "Careening",
+      "cost": {
+        "food": 100,
+        "gold": 200
+      },
+      "research_time": 50
+    },
+    {
+      "id": 375,
+      "name": "Dry Dock",
+      "cost": {
+        "food": 200,
+        "gold": 400
+      },
+      "research_time": 60
+    },
+    {
+      "id": 377,
+      "name": "Siege Engineers",
+      "cost": {
+        "food": 500,
+        "wood": 600
+      },
+      "research_time": 45
+    },
+    {
+      "id": 379,
+      "name": "Hoardings",
+      "cost": {
+        "food": 400,
+        "wood": 400
+      },
+      "research_time": 75
+    },
+    {
+      "id": 380,
+      "name": "Heated Shot",
+      "cost": {
+        "food": 350,
+        "gold": 100
+      },
+      "research_time": 30
+    },
+    {
+      "id": 408,
+      "name": "Spy Technology",
+      "cost": {
+        "gold": 200
+      },
+      "research_time": 1
+    },
+    {
+      "id": 435,
+      "name": "Bloodlines",
+      "cost": {
+        "food": 150,
+        "gold": 100
+      },
+      "research_time": 50
+    },
+    {
+      "id": 436,
+      "name": "Parthian Tactics",
+      "cost": {
+        "food": 200,
+        "gold": 250
+      },
+      "research_time": 65
+    },
+    {
+      "id": 437,
+      "name": "Thumb Ring",
+      "cost": {
+        "food": 300,
+        "wood": 250
+      },
+      "research_time": 45
+    },
+    {
+      "id": 438,
+      "name": "Theocracy",
+      "cost": {
+        "food": 0,
+        "gold": 200
+      },
+      "research_time": 75
+    },
+    {
+      "id": 439,
+      "name": "Heresy",
+      "cost": {
+        "food": 0,
+        "gold": 1000
+      },
+      "research_time": 60
+    },
+    {
+      "id": 440,
+      "name": "Spanish Supremacy",
+      "cost": {
+        "food": 400,
+        "gold": 250
+      },
+      "research_time": 60
+    },
+    {
+      "id": 441,
+      "name": "Herbal Medicine",
+      "cost": {
+        "food": 0,
+        "gold": 200
+      },
+      "research_time": 35
+    },
+    {
+      "id": 445,
+      "name": "Korean catapults",
+      "cost": {
+        "food": 1100,
+        "gold": 800
+      },
+      "research_time": 60
+    },
+    {
+      "id": 454,
+      "name": "Counterweights",
+      "cost": {
+        "food": 650,
+        "gold": 500
+      },
+      "research_time": 50
+    },
+    {
+      "id": 455,
+      "name": "Detinets",
+      "cost": {
+        "gold": 200,
+        "wood": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 457,
+      "name": "Gothic Perfusion",
+      "cost": {
+        "gold": 600,
+        "wood": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 460,
+      "name": "Aztec Sacrifice",
+      "cost": {
+        "food": 400,
+        "gold": 350
+      },
+      "research_time": 40
+    },
+    {
+      "id": 461,
+      "name": "Britons City Rights",
+      "cost": {
+        "gold": 400,
+        "wood": 800
+      },
+      "research_time": 40
+    },
+    {
+      "id": 462,
+      "name": "Chinese Great Wall",
+      "cost": {
+        "stone": 200,
+        "wood": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 463,
+      "name": "Viking Chieftains",
+      "cost": {
+        "food": 600,
+        "gold": 450
+      },
+      "research_time": 40
+    },
+    {
+      "id": 464,
+      "name": "Byzantines Greek Fire",
+      "cost": {
+        "food": 250,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 482,
+      "name": "Stronghold",
+      "cost": {
+        "food": 250,
+        "gold": 200
+      },
+      "research_time": 30
+    },
+    {
+      "id": 483,
+      "name": "Huns UT",
+      "cost": {
+        "gold": 200,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 484,
+      "name": "Japanese UT",
+      "cost": {
+        "food": 300,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 485,
+      "name": "Mayans UT",
+      "cost": {
+        "food": 300,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 486,
+      "name": "Koreans UT",
+      "cost": {
+        "food": 300,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 487,
+      "name": "Mongols UT",
+      "cost": {
+        "gold": 150,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 488,
+      "name": "Persians UT",
+      "cost": {
+        "food": 400,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 489,
+      "name": "Teutons UT",
+      "cost": {
+        "gold": 350,
+        "wood": 400
+      },
+      "research_time": 60
+    },
+    {
+      "id": 491,
+      "name": "Sipahi",
+      "cost": {
+        "food": 350,
+        "gold": 150
+      },
+      "research_time": 60
+    },
+    {
+      "id": 492,
+      "name": "Spanish UT",
+      "cost": {
+        "food": 100,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 493,
+      "name": "Franks UT",
+      "cost": {
+        "gold": 500,
+        "wood": 600
+      },
+      "research_time": 40
+    },
+    {
+      "id": 499,
+      "name": "Silk Route",
+      "cost": {
+        "food": 250,
+        "gold": 250
+      },
+      "research_time": 60
+    },
+    {
+      "id": 506,
+      "name": "Indians UT",
+      "cost": {
+        "food": 250,
+        "wood": 200
+      },
+      "research_time": 40
+    },
+    {
+      "id": 507,
+      "name": "Indians UT2",
+      "cost": {
+        "food": 500,
+        "gold": 650
+      },
+      "research_time": 40
+    },
+    {
+      "id": 513,
+      "name": "Slavs UT",
+      "cost": {
+        "food": 900,
+        "gold": 500
+      },
+      "research_time": 40
+    },
+    {
+      "id": 514,
+      "name": "Magyars UT",
+      "cost": {
+        "food": 200,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 515,
+      "name": "Indians UT",
+      "cost": {
+        "gold": 400,
+        "wood": 600
+      },
+      "research_time": 40
+    },
+    {
+      "id": 516,
+      "name": "Incas UT",
+      "cost": {
+        "food": 200,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 517,
+      "name": "Indians UT",
+      "cost": {
+        "food": 600,
+        "gold": 600
+      },
+      "research_time": 40
+    },
+    {
+      "id": 573,
+      "name": "Portuguese UT",
+      "cost": {
+        "food": 700,
+        "gold": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 574,
+      "name": "Ethiopian UT",
+      "cost": {
+        "food": 300,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 575,
+      "name": "Ethiopian UT",
+      "cost": {
+        "food": 1000,
+        "gold": 600
+      },
+      "research_time": 40
+    },
+    {
+      "id": 576,
+      "name": "Malian UT",
+      "cost": {
+        "food": 200,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 577,
+      "name": "Malian UT",
+      "cost": {
+        "food": 650,
+        "gold": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 578,
+      "name": "Berber UT",
+      "cost": {
+        "food": 250,
+        "gold": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 579,
+      "name": "Berber UT",
+      "cost": {
+        "food": 700,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 602,
+      "name": "Arson",
+      "cost": {
+        "food": 75,
+        "gold": 25
+      },
+      "research_time": 25
+    },
+    {
+      "id": 608,
+      "name": "Arrowslits",
+      "cost": {
+        "food": 250,
+        "wood": 250
+      },
+      "research_time": 25
+    },
+    {
+      "id": 622,
+      "name": "Khmer UT",
+      "cost": {
+        "gold": 450,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 623,
+      "name": "Khmer UT",
+      "cost": {
+        "food": 700,
+        "gold": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 624,
+      "name": "Malay UT",
+      "cost": {
+        "food": 300,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 625,
+      "name": "Malay UT",
+      "cost": {
+        "food": 850,
+        "gold": 500
+      },
+      "research_time": 40
+    },
+    {
+      "id": 626,
+      "name": "Burmese UT",
+      "cost": {
+        "food": 400,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 627,
+      "name": "Burmese UT",
+      "cost": {
+        "food": 300,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 628,
+      "name": "Vietnamese UT",
+      "cost": {
+        "food": 250,
+        "gold": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 629,
+      "name": "Vietnamese UT",
+      "cost": {
+        "food": 550,
+        "wood": 200
+      },
+      "research_time": 60
+    },
+    {
+      "id": 685,
+      "name": "Khmer UT",
+      "cost": {
+        "food": 400,
+        "gold": 200
+      },
+      "research_time": 35
+    },
+    {
+      "id": 686,
+      "name": "Khmer UT",
+      "cost": {
+        "food": 900,
+        "gold": 450
+      },
+      "research_time": 40
+    },
+    {
+      "id": 687,
+      "name": "Malay UT",
+      "cost": {
+        "gold": 300,
+        "wood": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 688,
+      "name": "Malay UT",
+      "cost": {
+        "gold": 400,
+        "wood": 500
+      },
+      "research_time": 50
+    },
+    {
+      "id": 689,
+      "name": "Burmese UT",
+      "cost": {
+        "food": 200,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 690,
+      "name": "Burmese UT",
+      "cost": {
+        "food": 650,
+        "gold": 400
+      },
+      "research_time": 40
+    },
+    {
+      "id": 691,
+      "name": "Vietnamese UT",
+      "cost": {
+        "food": 250,
+        "gold": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 692,
+      "name": "Vietnamese UT",
+      "cost": {
+        "food": 500,
+        "gold": 200
+      },
+      "research_time": 40
+    },
+    {
+      "id": 754,
+      "name": "Burgundian Vineyards",
+      "cost": {
+        "food": 400,
+        "gold": 300
+      },
+      "research_time": 45
+    },
+    {
+      "id": 755,
+      "name": "Flemish Revolution",
+      "cost": {
+        "food": 200,
+        "gold": 150
+      },
+      "research_time": 10
+    },
+    {
+      "id": 756,
+      "name": "First Crusade",
+      "cost": {
+        "food": 400,
+        "gold": 300
+      },
+      "research_time": 60
+    },
+    {
+      "id": 757,
+      "name": "Hauberk",
+      "cost": {
+        "food": 700,
+        "gold": 600
+      },
+      "research_time": 45
+    },
+    {
+      "id": 782,
+      "name": "Szlachta Privileges",
+      "cost": {
+        "food": 500,
+        "gold": 300
+      },
+      "research_time": 45
+    },
+    {
+      "id": 783,
+      "name": "Lechitic Legacy",
+      "cost": {
+        "food": 750,
+        "gold": 550
+      },
+      "research_time": 60
+    },
+    {
+      "id": 784,
+      "name": "Wagenburg Tactics",
+      "cost": {
+        "food": 300,
+        "gold": 300
+      },
+      "research_time": 45
+    },
+    {
+      "id": 785,
+      "name": "Hussite Reforms",
+      "cost": {
+        "food": 500,
+        "gold": 450
+      },
+      "research_time": 45
+    },
+    {
+      "id": 831,
+      "name": "Medical Corps",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 45
+    },
+    {
+      "id": 832,
+      "name": "Wootz Steel",
+      "cost": {
+        "food": 650,
+        "gold": 550
+      },
+      "research_time": 60
+    },
+    {
+      "id": 833,
+      "name": "Paiks",
+      "cost": {
+        "gold": 275,
+        "wood": 375
+      },
+      "research_time": 45
+    },
+    {
+      "id": 834,
+      "name": "Mahayana",
+      "cost": {
+        "gold": 650,
+        "wood": 800
+      },
+      "research_time": 60
+    },
+    {
+      "id": 835,
+      "name": "Kshatriyas",
+      "cost": {
+        "food": 500,
+        "gold": 450
+      },
+      "research_time": 45
+    },
+    {
+      "id": 836,
+      "name": "Frontier Guards",
+      "cost": {
+        "food": 800,
+        "gold": 700
+      },
+      "research_time": 60
+    },
+    {
+      "id": 875,
+      "name": "Gambesons",
+      "cost": {
+        "food": 50,
+        "gold": 100
+      },
+      "research_time": 25
+    },
+    {
+      "id": 883,
+      "name": "Ballistas",
+      "cost": {
+        "gold": 300,
+        "wood": 400
+      },
+      "research_time": 45
+    },
+    {
+      "id": 884,
+      "name": "Comitatenses",
+      "cost": {
+        "food": 700,
+        "gold": 800
+      },
+      "research_time": 60
+    },
+    {
+      "id": 902,
+      "name": "Pirotecnia",
+      "cost": {
+        "food": 650,
+        "gold": 500
+      },
+      "research_time": 50
+    },
+    {
+      "id": 906,
+      "name": "Fishing Lines",
+      "cost": {
+        "food": 50,
+        "wood": 100
+      },
+      "research_time": 20
+    },
+    {
+      "id": 907,
+      "name": "Carvel Hull",
+      "cost": {
+        "food": 350,
+        "wood": 200
+      },
+      "research_time": 60
+    },
+    {
+      "id": 908,
+      "name": "Clinker Construction",
+      "cost": {
+        "food": 150,
+        "wood": 100
+      },
+      "research_time": 50
+    },
+    {
+      "id": 909,
+      "name": "Carvel Hull",
+      "cost": {
+        "food": 100,
+        "gold": 175
+      },
+      "research_time": 45
+    },
+    {
+      "id": 910,
+      "name": "Clinker Construction",
+      "cost": {
+        "food": 200,
+        "gold": 325
+      },
+      "research_time": 50
+    },
+    {
+      "id": 921,
+      "name": "Fereters",
+      "cost": {
+        "food": 550,
+        "gold": 400
+      },
+      "research_time": 45
+    },
+    {
+      "id": 922,
+      "name": "Cilician Fleet",
+      "cost": {
+        "gold": 300,
+        "wood": 350
+      },
+      "research_time": 45
+    },
+    {
+      "id": 923,
+      "name": "Svan Towers",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 45
+    },
+    {
+      "id": 924,
+      "name": "Aznauri Cavalry",
+      "cost": {
+        "food": 550,
+        "gold": 250
+      },
+      "research_time": 45
+    },
+    {
+      "id": 996,
+      "name": "Fortifed Bastions",
+      "cost": {
+        "food": 350,
+        "wood": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 997,
+      "name": "Thunderclap Bombs",
+      "cost": {
+        "food": 900,
+        "gold": 600
+      },
+      "research_time": 50
+    },
+    {
+      "id": 1006,
+      "name": "Lamellar Armor",
+      "cost": {
+        "food": 450,
+        "gold": 300
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1007,
+      "name": "Ordo Cavalry",
+      "cost": {
+        "food": 600,
+        "gold": 300
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1012,
+      "name": "Grazing Grasslands",
+      "cost": {
+        "food": 175,
+        "wood": 325
+      },
+      "research_time": 70
+    },
+    {
+      "id": 1013,
+      "name": "Enclosures",
+      "cost": {
+        "food": 100,
+        "wood": 150
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1014,
+      "name": "Livestock Husbandry",
+      "cost": {
+        "food": 50,
+        "wood": 100
+      },
+      "research_time": 20
+    },
+    {
+      "id": 1061,
+      "name": "Tuntian",
+      "cost": {
+        "food": 250,
+        "wood": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1062,
+      "name": "Ming-Kuang Armor",
+      "cost": {
+        "food": 600,
+        "gold": 450
+      },
+      "research_time": 65
+    },
+    {
+      "id": 1069,
+      "name": "Bolt Magazine",
+      "cost": {
+        "food": 650,
+        "gold": 750
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1070,
+      "name": "Coiled Serpent Array",
+      "cost": {
+        "food": 350,
+        "gold": 300
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1080,
+      "name": "Red Cliffs Tactics",
+      "cost": {
+        "food": 400,
+        "gold": 250
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1081,
+      "name": "Ming-Kuang Armor",
+      "cost": {
+        "gold": 300,
+        "wood": 600
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1365,
+      "name": "Herbalism",
+      "cost": {
+        "food": 300,
+        "gold": 350
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1366,
+      "name": "Huaracas",
+      "cost": {
+        "gold": 350,
+        "wood": 450
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1379,
+      "name": "Malon",
+      "cost": {
+        "food": 300,
+        "gold": 350
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1380,
+      "name": "Butalmapu",
+      "cost": {
+        "food": 500,
+        "gold": 450
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1392,
+      "name": "Caciques",
+      "cost": {
+        "food": 400,
+        "gold": 200
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1393,
+      "name": "Curare",
+      "cost": {
+        "food": 650,
+        "gold": 600
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1404,
+      "name": "Circumnavigation",
+      "cost": {
+        "food": 250,
+        "wood": 150
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1452,
+      "name": "Cranequins",
+      "cost": {
+        "food": 300,
+        "gold": 200
+      },
+      "research_time": 70
+    },
+    {
+      "id": 1464,
+      "name": "Shield Wall",
+      "cost": {
+        "food": 525,
+        "gold": 475
+      },
+      "research_time": 45
+    },
+    {
+      "id": 1473,
+      "name": "Vendel Legacy",
+      "cost": {
+        "food": 500,
+        "gold": 300
+      },
+      "research_time": 35
+    },
+    {
+      "id": 1474,
+      "name": "Gothikon",
+      "cost": {
+        "food": 475,
+        "gold": 400
+      },
+      "research_time": 50
+    },
+    {
+      "id": 1483,
+      "name": "Northmen's Fury",
+      "cost": {
+        "gold": 900,
+        "wood": 950
+      },
+      "research_time": 40
+    },
+    {
+      "id": 1484,
+      "name": "Hamask",
+      "cost": {
+        "food": 250,
+        "gold": 450
+      },
+      "research_time": 35
+    },
+    {
+      "id": 1491,
+      "name": "Clerical Recruitment",
+      "cost": {
+        "food": 350,
+        "gold": 200
+      },
+      "research_time": 35
+    },
+    {
+      "id": 1496,
+      "name": "Ordonnance Companies",
+      "cost": {
+        "food": 400,
+        "gold": 250
+      },
+      "research_time": 40
+    }
+  ]
+}
