@@ -1,8 +1,9 @@
 # MUSE Escrow Execution Checklist — 2026-09-28
 
 Historical promotion base: `adec462b420f87bc66c2868908058c0e272baf7c`.
-Verified compiler code SHA: `e9dd1106fbd6255b35e06ef7195826f3998a8576`; later main changes in this checklist tranche are documentation-only.
-Working state: release-only `release-escrow` lowering remains executable-safe and was re-verified as part of Compiler workflow #2149; broader escrow semantics remain open.
+Verified main SHA: `1a30b77a351bee90d1e7d92cb6484c6df8db86af`.
+Current mainline verification: Compiler workflow #2213 / Actions run 36505641609 is green at that exact SHA with 1,003 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
+Working state: release-only `release-escrow` lowering remains executable-safe; broader escrow semantics remain open.
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
 
@@ -114,7 +115,7 @@ Until that evidence exists, `NATIVE_ESCROW_SAME_PASS_VISIBILITY = OPEN`.
 The promoted command is exactly `release-escrow`, with the native Action signature `(release-escrow <Resource>)` and Resource domain `food|wood|stone|gold`. The compiler emits only the explicitly supplied release operations, grouped deterministically by rule order and preserving within-rule order. It emits no implicit percentage reset, research/build/train action, retry loop, starvation scheduler, or ownership handoff.
 
 Original promotion acceptance: Compiler tests #2036 / Actions run `36481020162` on `adec462b420f87bc66c2868908058c0e272baf7c` passed the release-only native gate and full regression.
-Current re-verification: Compiler workflow #2158 / Actions run `36499275902` at main tip `053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d` passed the escrow-release native zero-findings step, full 974-test compiler regression, all 9 native-support determinism jobs, aggregate snapshot comparison, and the compiler verification gate. This is the authoritative current verification record.
+Historical re-verification: Compiler workflow #2158 / Actions run `36499275902` at main tip `053f465ddc8c94c3b0869e2ca0bdd6e1a340c35d` passed the escrow-release native zero-findings step, full 974-test compiler regression, all 9 native-support determinism jobs, aggregate snapshot comparison, and the compiler verification gate. The authoritative current mainline record is now Compiler workflow #2213 at `1a30b77a351bee90d1e7d92cb6484c6df8db86af`.
 
 ## Non-goals
 

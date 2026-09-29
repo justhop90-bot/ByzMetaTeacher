@@ -21,11 +21,9 @@ GAP: engine knowledge for per-SN defaults/auto-mutation/version behavior and unk
 
 ## Timers (50 slots)
 native-fact OK (arm/disarm/trigger/staged-expiry) | IR OK (TimerRuntimeState) |
-validator OK (scheduler + recurrent) | binding OK-infra / MISSING-from-DSL |
-emitter MISSING | acceptance n/a | runtime-evidence PARTIAL (granularity unmeasured) |
-tests PARTIAL (7 semantics + scheduler; triggered never statically true by design) |
-corpus OK (1782 enable + 2278 triggered) | strategy PARTIAL (cooldown patterns undescribed).
-GAP: DSL allocation; trigger-granularity measurement.
+validator OK (scheduler + recurrent) | binding OK | emitter OK | acceptance OK | runtime-evidence PARTIAL (granularity unmeasured) |
+tests OK (allocation + semantics + native deterministic acceptance) | corpus OK (1782 enable + 2278 triggered) | strategy PARTIAL (cooldown patterns undescribed).
+GAP: runtime countdown/pass granularity and full timer reuse/lifetime semantics.
 
 ## Construction (build/can-build/pending/placement/retry)
 native-fact OK | IR OK | validator OK | binding OK | emitter OK | acceptance OK |
@@ -35,11 +33,11 @@ GAP: same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
 
 ## Train/production (queue/capacity/provider/birth)
 native-fact PARTIAL (queue exists; capacity/provider-idle/birth-timing unproven) |
-IR PARTIAL (generic lifecycle; no queue-state/provider-state) | validator PARTIAL |
-binding PARTIAL | emitter PARTIAL (no capacity guard) | acceptance OK |
-runtime-evidence MISSING | tests PARTIAL (pending-as-witness rejected by policy) |
+IR PARTIAL (typed current+queued observation and provider-state observation now exist; unresolved semantics remain OPEN) | validator PARTIAL |
+binding PARTIAL (native-ID queue/provider bindings are implemented; open semantics fail closed) | emitter PARTIAL (no capacity guard) | acceptance OK |
+runtime-evidence MISSING | tests OK for current queue/provider binding; semantic witness coverage remains bounded |
 corpus OK (current+queued idiom IDIOM-006) | strategy PARTIAL.
-GAP: queue-state + provider-state + capacity + birth + explicit recovery model.
+GAP: queue capacity + provider-idle signal + birth timing + explicit recovery semantics.
 
 ## Research (availability/prereq/escrow/completion)
 native-fact PARTIAL (in-progress signal unknown) | IR OK-generic | validator OK-generic |
@@ -53,14 +51,14 @@ IR OK for typed escrow contracts + release plan | validator OK | binding OK for 
 emitter OK for promoted release-only slice | acceptance OK (native zero-findings) | runtime-evidence SPECIFIED but MISSING (native escrow timing) |
 tests OK for semantic ownership/order/lifetime + release-only compiler/native acceptance + oracle-spec regression | corpus STRONG (10859 hits) |
 strategy PARTIAL.
-GAP: dedicated release binder/mapping/registry/emitter/fixture; native same-pass timing; starvation/handoff.
+GAP: native same-pass timing; starvation/emergency release; multi-owner handoff; remaining UP escrow mutation lowering.
 Must NOT become a universal scheduler.
 
 ## DUC SearchSession (promoted narrow slice)
 native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
 emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |
-tests OK (native deterministic acceptance) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
-The promoted source slice now includes semantic observation support for Fact-only `up-can-search` and conservative Action-side handling for `up-add-object-by-id`. `up-can-search` proves FALSE only at compiler-proven end/capacity states; `up-add-object-by-id` invalidates affected-list cardinality and content fingerprint, downgrades list-index targets to UNKNOWN, preserves cursor/filter state without claiming a native cursor transition, and refuses to prove liveness, uniqueness, duplicate handling, append position, or full-list behavior. The corrected slice is verified by Compiler workflow #2149 at code SHA `e9dd1106fbd6255b35e06ef7195826f3998a8576`: 963 tests passed, native zero-findings passed, focused persistent-state regression passed, all 9 native-support determinism jobs passed, aggregate snapshot comparison passed, and the Compiler verification gate passed.
+tests OK (native deterministic acceptance + composite recurrent/mutation/branch/target fixture) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
+The promoted source slice now includes semantic observation support for Fact-only `up-can-search` and conservative Action-side handling for `up-add-object-by-id`. `up-can-search` proves FALSE only at compiler-proven end/capacity states; `up-add-object-by-id` invalidates affected-list cardinality and content fingerprint, downgrades list-index targets to UNKNOWN, preserves cursor/filter state without claiming a native cursor transition, and refuses to prove liveness, uniqueness, duplicate handling, append position, or full-list behavior. The corrected slice is verified on current main by Compiler workflow #2213 at code SHA `1a30b77a351bee90d1e7d92cb6484c6df8db86af`: 1,003 tests passed, native zero-findings passed, all 9 native-support determinism jobs passed, aggregate snapshot comparison passed, and the Compiler verification gate passed.
 GAP: remaining unpromoted DUC source/selection surfaces remain open. Exact native `up-can-search` truth outside proven exhaustion/capacity and `up-add-object-by-id` runtime liveness, duplicate handling, append/reposition semantics, full-list behavior, and Fact truth remain runtime-dependent. Retained list-derived target proof now invalidates across filter-generation changes while runtime object liveness remains open.
 
 ## DUC TargetSession/groups/outputs/costs
@@ -70,13 +68,11 @@ Filter-generation changes now downgrade list-derived target validity/proof to UN
 Open boundaries remain cost-data mutation/arithmetic semantics, numeric delta values, runtime object liveness, and any runtime liveness/performance claims.
 
 ## Controllers (9) + interactions (15) incl. attack
-native-fact MISSING (no per-controller causal proof) | IR EVIDENCE-ONLY catalog |
-validator EVIDENCE-ONLY (gates always raise) | binding MISSING | emitter MISSING |
-acceptance n/a | runtime-evidence MISSING | tests EVIDENCE-ONLY (21+11) |
+native-fact MISSING for causal controller behavior | IR SUBSTRATE IMPLEMENTED / evidence-only catalog |
+validator EVIDENCE-ONLY for executable promotion | binding intentionally missing | emitter intentionally missing |
+acceptance n/a | runtime-evidence MISSING | tests OK for graph/interactions (hostile contract coverage) |
 corpus STRONG (SN clusters, TSA, parity, toggles) | strategy MISSING.
-GAP: entire executable controller plane. Attack lifecycle (admission/completion/release/
-reassess) is the critical missing semantic; corpus proves demand (47 attack-now but
-1455 town-size + posture SNs = mediated control).
+GAP: executable controller plane remains blocked on native causal/runtime proof. Attack lifecycle (admission/completion/release/reassess) remains the critical missing semantic; the compiler now has typed controller and interaction contracts without promoting them into emitted behavior.
 
 ## Source graph/loads/fingerprint
 native-fact OK | IR OK (EffectiveSourceGraph + fingerprints) | validator OK (1715-line module) |

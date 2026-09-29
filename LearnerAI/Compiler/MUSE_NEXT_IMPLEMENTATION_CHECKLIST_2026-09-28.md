@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Verified compiler code SHA: e9dd1106fbd6255b35e06ef7195826f3998a8576; later main changes in this checklist tranche are documentation-only.
-Latest main verification: 974 tests; escrow/DUC/attack/timer/research native zero-findings; all 9 native-support determinism jobs; aggregate snapshot comparison; Compiler #2158 / Actions 36499275902 green.
+Verified main SHA: 1a30b77a351bee90d1e7d92cb6484c6df8db86af.
+Latest main verification: Compiler workflow #2213 / Actions run 36505641609 at that exact SHA is green: 1,003 tests, native zero-findings, all 9 native-support determinism jobs, aggregate snapshot comparison, and the Compiler verification gate.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
@@ -53,7 +53,8 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
   - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
   - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
-  - Full compiler/native verification: current verified mainline baseline is 963 tests OK; all native-support determinism jobs and the aggregate compiler verification gate pass.
+  - Full mainline verification: Compiler workflow #2213 at `1a30b77a351bee90d1e7d92cb6484c6df8db86af` passed 1,003 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
+  - PR #101 added the composite recurrent + branch + mutation + target fixture, covering unreachable-branch state seeding, clean-search target-proof degradation, remove-objects preservation/invalidation, and stale-target consumer diagnostics.
 
 - [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
   - Muse: `implementation_map.md`, `compiler_undercoverage.md`, `native_unknowns.md`; `attack-now` is only 47 corpus hits and the corpus says attack is largely mediated by persistent SN/town-size/group state.
@@ -62,8 +63,9 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Owner: `semantic/native_controller.py`, `semantic/native_controller_interactions.py`, typed attack IR/binder/emitter.
   - Gate: admission/completion/release/reassess model before lifecycle-complete promotion; current tranche proves only issue connectivity with completion `UNOBSERVED`.
 
-- [ ] Production queue semantics.
-  - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`, `native_unknowns.md`; current+queued is corroborated but queue capacity/provider-idle/birth timing remain open.
+- [~] Production queue semantics.
+  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, with native-ID binding and fail-closed OPEN handling for unresolved queue/provider semantics. PR #98/#99 are merged on `main`.
+  - Remaining native questions are unchanged: queue capacity, provider-idle state, and birth timing remain OPEN. `unit-type-count-total` is observation, not completion, and provider presence is not provider idleness.
   - Owner: production async semantics and witness layer.
 
 - [~] Research escrow/in-progress semantics.
@@ -86,7 +88,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 ## Mandatory verification discipline
 
 - [x] Every new emitted capability gets an actual source-to-.per test. The release-only escrow slice uses a checked-in source fixture plus a pinned native validator; synthetic semantic fixtures are supplementary only.
-- [ ] Every native promotion must pass NATIVE_KNOWN → NATIVE_TYPED → SEMANTICALLY_ADAPTED → ENGINE_SEMANTICS_MAPPED → EXECUTABLE_SAFE.
-- [ ] Open engine facts remain fail-closed and explicitly labeled OPEN/UNKNOWN.
+- [x] Every native promotion must pass NATIVE_KNOWN → NATIVE_TYPED → SEMANTICALLY_ADAPTED → ENGINE_SEMANTICS_MAPPED → EXECUTABLE_SAFE.
+- [x] Open engine facts remain fail-closed and explicitly labeled OPEN/UNKNOWN.
 - [ ] Community lineage is discounted when evidence is duplicated through snapshots.
 - [ ] Reproducibility is measured from artifact bytes and binding manifests, not test counts or provisional coverage percentages.
