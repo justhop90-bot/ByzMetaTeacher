@@ -277,13 +277,13 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
 
     def test_analyzer_binds_provider_state_to_exact_native_building_id(self):
         source = """
-        demand spears {
-            require (unit-type-count-total spearman < 2)
-            require (building-type-count barracks >= 1)
-            require (can-train spearman)
-            action (train spearman)
-            witness (unit-type-count spearman >= 2)
-            release (unit-type-count spearman >= 2)
+        demand archers {
+            require (unit-type-count-total archer < 2)
+            require (building-type-count archery-range >= 1)
+            require (can-train archer)
+            action (train archer)
+            witness (unit-type-count archer >= 2)
+            release (unit-type-count archer >= 2)
         }
         """
         demand = analyze(
@@ -296,8 +296,8 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         self.assertIsNotNone(lifecycle)
         self.assertIsNotNone(lifecycle.provider_state)
         self.assertEqual(lifecycle.provider_state.primitive, "building-type-count")
-        self.assertEqual(lifecycle.provider_state.native_building_id, 12)
-        self.assertEqual(lifecycle.provider_state.expression.args[0], "12")
+        self.assertEqual(lifecycle.provider_state.native_building_id, 87)
+        self.assertEqual(lifecycle.provider_state.expression.args[0], "87")
 
     def test_analyzer_rejects_train_without_target_admission(self):
         source = """
