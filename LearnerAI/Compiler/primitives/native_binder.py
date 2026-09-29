@@ -1037,9 +1037,11 @@ class NativeSemanticBinder:
         )
 
     def bind_duc_plan(self, plan) -> tuple[NativeDucSemanticBinding, ...]:
+        duc_commands = set(self.native_contracts.duc_command_names)
         bindings = tuple(
             self.bind_duc_command(command)
             for command in plan.commands
+            if command in duc_commands
         )
         return tuple(sorted(bindings, key=lambda item: item.command))
 
