@@ -451,7 +451,7 @@ class SourceGraphResolver:
                     search_roots=search_roots,
                     symbols=symbols,
                     load_random_selections=load_random_selections,
-                allow_load_random=allow_load_random,
+                    allow_load_random=allow_load_random,
                 )
 
             edge = SourceEdge(
