@@ -74,9 +74,10 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
 ## Strategy persistent-control observations
-- `ir/strategy_runtime.py` now binds `up-compare-sn` as `StrategicObservationType.PERSISTENT_CONTROL_STATE`.
-- The binding validates the native Strategic Number identifier in 0..511 and the documented comparison operator family, while preserving the persistent-state role.
-- No specific SN is interpreted as attack, exploration, production, or another controller without separate native/controller evidence.
+- `ir/strategy_runtime.py` binds generic `up-compare-sn` as `PERSISTENT_CONTROL_STATE` for unresolved SNs, validating the native Strategic Number identifier in 0..511 and comparison operator family.
+- Exact SN 264 (`sn-enable-training-queue`) now binds as `PRODUCTION_QUEUE_CAPACITY_CONTROL` only when the documented equality form and additional-slot value 0..15 are present.
+- This specialized observation does not promote current DE enforcement or turn queue occupancy into an action authorization; those remain the existing OPEN production runtime boundary.
+- Other Strategic Numbers retain the generic persistent-control observation and are not attributed to attack, exploration, or other controllers without separate evidence.
 
 ## Generic/client strategy policy boundary
 - `tests/test_basilisk_client_boundary.py` now audits both public re-exports and source-level Python imports.
