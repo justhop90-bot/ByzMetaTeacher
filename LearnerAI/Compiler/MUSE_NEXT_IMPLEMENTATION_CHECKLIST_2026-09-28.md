@@ -51,9 +51,10 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Muse evidence remains the same: `implementation_map.md`, `compiler_undercoverage.md`, `compiler_coverage_baseline.md`; corpus gives 11.6k `up-find` and 11.9k `up-set-target` hits.
   - Typed internal path implemented with no new source syntax: `ir/native_duc.py`, `primitives/native_binder.py`, `primitives/engine_semantics.py`, `primitives/registry.py`, `emitter/per.py`, compiler threading in `compiler.py`.
   - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
-  - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
-  - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
-  - Full mainline verification: Compiler workflow #2219 at `c1064aaea324394275bcad43864537fe80a03d58` passed 1,009 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
+  - Promoted output slice now includes `up-get-search-state` four-Goal output binding plus `up-get-group-size` width-1 Goal output binding through the existing GoalSpan/GoalSlot storage allocator and emitter.
+  - Remaining boundary: point/cost output spans, target-data readers, and broader group output/storage surfaces remain unpromoted.
+  - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks deterministic search-state and group-size output binding, and runs the pinned native parser zero-findings gate.
+  - Mainline verification for the prior search-state tranche is green on 1,034 tests; the group-size tranche in this branch remains pending final CI verification.
   - PR #101 added the composite recurrent + branch + mutation + target fixture, covering unreachable-branch state seeding, clean-search target-proof degradation, remove-objects preservation/invalidation, and stale-target consumer diagnostics.
 
 - [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
