@@ -71,6 +71,7 @@ Evidence classes are intentionally separate:
 - [x] Track action sequencing inside one emitted rule without inventing a false pass boundary.
 - [x] Represent statically parseable `up-jump-rule` control transfers against effective rule order.
 - [x] Diagnose out-of-range control transfers and informational forward bypasses.
+- [x] Diagnose the statically provable case where `disable-self` precedes a backward `up-jump-rule` to the same rule (`RULE-CF-005`); preserve action-order semantics so a jump occurring before `disable-self` is not flagged.
 - [x] Track the effective source graph before claiming global rule order once load/load-if-* is supported.
 
 ## Gate 3 — asynchronous build/train/research lifecycles
