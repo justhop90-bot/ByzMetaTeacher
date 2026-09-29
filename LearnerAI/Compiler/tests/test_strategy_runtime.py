@@ -681,32 +681,14 @@ class StrategyRuntimeTests(unittest.TestCase):
         self.assertTrue(demand.recovery.reopen_on_recovery)
 
     def test_capability_recovery_contract_rejects_intent_destroying_policy(self):
-        demand = self.profile.demand("castle-commitment")
-        bad = replace(
-            demand,
-            recovery=CapabilityRecoveryContract(
-                preserve_strategic_demand=False,
-            ),
-        )
-        profile = replace(
-            self.profile,
-            demands=(
-                bad,
-                *(item for item in self.profile.demands if item.identity != bad.identity),
-            ),
-        )
         with self.assertRaisesRegex(
             ValueError,
-            "must preserve intent across capability loss",
+            "must preserve the original strategic demand",
         ):
-            evaluate_strategy_runtime(
-                profile,
-                self.effective,
-                self.snapshot(
-                    facts=(("(current-age >= feudal-age)", True),),
-                    previous=StrategyPosture.BOOM,
-                ),
+            CapabilityRecoveryContract(
+                preserve_strategic_demand=False,
             )
+
 
     def test_capability_loss_preserves_same_demand_and_enters_blocked_state(self):
         capability = self.profile.capability_observations[0]
@@ -718,7 +700,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             target=base.target.__class__(
                 StrategicTargetKind.EXACT,
                 "unit-line",
-                "cataphract",
+                "cataphract-line",
             ),
             execution=replace(
                 base.execution,
@@ -777,7 +759,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             target=base.target.__class__(
                 StrategicTargetKind.EXACT,
                 "unit-line",
-                "cataphract",
+                "cataphract-line",
             ),
             execution=replace(
                 base.execution,
