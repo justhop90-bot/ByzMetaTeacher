@@ -433,6 +433,38 @@ def analyze(
                 if expression.args and str(expression.args[0]) == unit
             ]
             target_admission = None
+            matching_queue_states = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head == "unit-type-count-total"
+                and requirement.expression.args
+                and str(requirement.expression.args[0]) == unit
+            ]
+            queue_state = None
+            if matching_queue_states:
+                queue_expression = matching_queue_states[0]
+                canonical_queue_state = Expression(
+                    source=(
+                        f"(unit-type-count-total {native_unit_id} "
+                        f"{' '.join(str(arg) for arg in queue_expression.args[1:])})"
+                    ),
+                    head="unit-type-count-total",
+                    args=(
+                        str(native_unit_id),
+                        *tuple(str(arg) for arg in queue_expression.args[1:]),
+                    ),
+                    location=queue_expression.location,
+                )
+                try:
+                    queue_state = registry.resolve_production_queue_state(
+                        canonical_queue_state,
+                        native_unit_id=native_unit_id,
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-QUEUE-STATE: demand '{demand.name}' "
+                        f"cannot resolve queue-state observation for unit '{unit}': {exc}"
+                    ) from exc
             if matching_admissions:
                 admission_expression = matching_admissions[0]
                 canonical_admission = Expression(
@@ -483,6 +515,7 @@ def analyze(
                     completion_witness=witness,
                     retry_barrier=production_retry_barrier,
                     queue_protection=queue_protection,
+                    queue_state=queue_state,
                 )
 
         elif action.head == "research":
