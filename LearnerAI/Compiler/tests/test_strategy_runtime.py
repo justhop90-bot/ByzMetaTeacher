@@ -90,7 +90,10 @@ class StrategyRuntimeTests(unittest.TestCase):
             "(attack-now)",
             "attack-action-is-not-observation",
         )
-        with self.assertRaisesRegex(ValueError, "action primitive"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "unsupported strategic native primitive 'attack-now'",
+        ):
             bind_strategic_evidence(evidence, self.effective)
 
     def test_persistent_castle_reason_survives_blocked_can_build(self):
