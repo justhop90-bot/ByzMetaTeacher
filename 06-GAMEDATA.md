@@ -9,7 +9,8 @@ IR shape: `UnitDef{id,line,providers,base_cost,train_time,upgrades_from/to,valid
 providers/prereqs/effects (`game_data_dat_snapshot:282-306`); patch must match exactly (`:267-271`); name mismatch
 rejects (`:282-286` + `test_game_data:767-796`).
 
-## A1 — UNIT 527 Demolition Ship — CONFLICTING IDENTITY (primary) + INSUFFICIENT AUTHORITATIVE DATA
+## A1 — UNIT 527 Demolition Ship — identity and upgrade chain modeled
+
 - MANIFEST IDENTITY: `527 | Demolition Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=45 | LINK=1104 | TRIGGER=905` (`docs/reference/BYZANTINES_manifest.txt:111`).
 - AUTHORITATIVE EVIDENCE: `UNIT NODE 527 … UNIT:YES|TECH:YES; UNIT:class=22; COSTS:type=1,45;type=3,80; TECH:name='[FTT] Disable Paladin' civ=8 effect=583` (`:555-557`). COSTS bytes identical to raft 1104 but TECH identity is recycled-scenario cruft — idiom/corrupt reuse, NOT engine guarantee.
 - IR CAPABILITY: shape exists (`UnitDef` + `UpgradeRelation(1104->527 via 905)` + `ProductionProvider(BuildingId(45))`).
