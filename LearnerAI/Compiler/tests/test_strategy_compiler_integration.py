@@ -4,6 +4,7 @@ from pathlib import Path
 
 from LearnerAI.Compiler.clients.basilisk import compile_strategy_profile
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.ir.game_data import Resource
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_castle_strategy,
@@ -20,7 +21,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         demand = self.profile.demand("feudal-transition")
         self.assertEqual(
             demand.execution.escrow_release_resources,
-            ("food", "gold"),
+            (Resource.FOOD, Resource.GOLD),
         )
 
     def test_strategy_lowering_produces_targeted_escrow_release_plan(self):
