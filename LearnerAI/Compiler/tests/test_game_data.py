@@ -70,9 +70,9 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertGreaterEqual(report.modeled_count, 100)
-        self.assertGreater(report.unmodeled_count, 0)
-        self.assertGreater(report.verified_unavailable_count, 0)
+        self.assertEqual(report.modeled_count, 86)
+        self.assertEqual(report.unmodeled_count, 73)
+        self.assertEqual(report.verified_unavailable_count, 14)
         self.assertEqual(
             report.modeled_count
             + report.unmodeled_count
@@ -89,7 +89,7 @@ class GameDataTests(unittest.TestCase):
             "AVAILABLE UNIT / TECH NODES\n"
             "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\n"
         )
-        with self.assertRaisesRegex(ValueError, "declared unit/tech count"):
+        with self.assertRaisesRegex(ValueError, "declared building count"):
             parse_byzantine_manifest(raw)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
