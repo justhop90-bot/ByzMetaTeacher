@@ -439,6 +439,7 @@ def analyze(
                 if requirement.expression.head == "building-type-count"
             ]
             provider_state = None
+            provider_availability_evidence = None
             if len(provider_state_requirements) > 1:
                 raise CompileError(
                     f"PRODUCTION-PROVIDER-STATE: demand '{demand.name}' "
@@ -479,6 +480,12 @@ def analyze(
                         canonical_provider_state,
                         native_building_id=native_building_id,
                     )
+                    provider_availability_evidence = (
+                        registry.resolve_production_provider_availability_evidence(
+                            canonical_provider_state,
+                            native_building_id=native_building_id,
+                        )
+                    )
                 except (KeyError, TypeError, ValueError) as exc:
                     raise CompileError(
                         f"PRODUCTION-PROVIDER-STATE: demand '{demand.name}' "
@@ -493,6 +500,7 @@ def analyze(
                 and str(requirement.expression.args[0]) == unit
             ]
             queue_state = None
+            queue_capacity_evidence = None
             if matching_queue_states:
                 queue_expression = matching_queue_states[0]
                 canonical_queue_state = Expression(
@@ -511,6 +519,12 @@ def analyze(
                     queue_state = registry.resolve_production_queue_state(
                         canonical_queue_state,
                         native_unit_id=native_unit_id,
+                    )
+                    queue_capacity_evidence = (
+                        registry.resolve_production_queue_capacity_evidence(
+                            canonical_queue_state,
+                            native_unit_id=native_unit_id,
+                        )
                     )
                 except (KeyError, TypeError, ValueError) as exc:
                     raise CompileError(

@@ -689,6 +689,98 @@ class PrimitiveRegistry:
             )
         return primitive_name, semantic_id
 
+
+    def classify_production_queue_capacity_evidence(self, expression):
+        from ..ir.production import ProductionFactDisposition
+
+        if self.get(expression.head) is None:
+            return ProductionFactDisposition.REJECTED
+        if expression.head == "unit-type-count-total":
+            return ProductionFactDisposition.OPEN
+        return ProductionFactDisposition.REJECTED
+
+    def resolve_production_queue_capacity_evidence(
+        self,
+        expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionQueueCapacityEvidence,
+        )
+
+        disposition = self.classify_production_queue_capacity_evidence(expression)
+        if self.get(expression.head) is None:
+            raise ValueError(
+                f"production queue-capacity evidence '{expression.head}' is REJECTED: "
+                "not a registered native fact"
+            )
+        if disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                f"production queue-capacity evidence '{expression.head}' is REJECTED"
+            )
+        _, semantic_id = self._resolve_production_observation(
+            expression,
+            observation_name="queue-capacity evidence",
+            expected_primitive="unit-type-count-total",
+            target_label="UnitId",
+            target_id=native_unit_id,
+        )
+        return ProductionQueueCapacityEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            expression=expression,
+            native_unit_id=native_unit_id,
+            source_semantic_id=semantic_id,
+        )
+
+    def classify_production_provider_availability_evidence(self, expression):
+        from ..ir.production import ProductionFactDisposition
+
+        if self.get(expression.head) is None:
+            return ProductionFactDisposition.REJECTED
+        if expression.head == "building-type-count":
+            return ProductionFactDisposition.OPEN
+        return ProductionFactDisposition.REJECTED
+
+    def resolve_production_provider_availability_evidence(
+        self,
+        expression,
+        *,
+        native_building_id: int,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionProviderAvailabilityEvidence,
+        )
+
+        disposition = self.classify_production_provider_availability_evidence(
+            expression
+        )
+        if self.get(expression.head) is None:
+            raise ValueError(
+                f"production provider-availability evidence '{expression.head}' "
+                "is REJECTED: not a registered native fact"
+            )
+        if disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                f"production provider-availability evidence '{expression.head}' "
+                "is REJECTED"
+            )
+        _, semantic_id = self._resolve_production_observation(
+            expression,
+            observation_name="provider-availability evidence",
+            expected_primitive="building-type-count",
+            target_label="BuildingId",
+            target_id=native_building_id,
+        )
+        return ProductionProviderAvailabilityEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            expression=expression,
+            native_building_id=native_building_id,
+            source_semantic_id=semantic_id,
+        )
+
     def resolve_production_queue_state(
         self,
         expression,

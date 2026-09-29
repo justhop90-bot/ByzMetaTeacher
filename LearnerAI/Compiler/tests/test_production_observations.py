@@ -367,6 +367,33 @@ class ProductionObservationTests(unittest.TestCase):
             ProductionFactDisposition.OPEN,
         )
 
+    def test_analyzer_preserves_open_queue_and_provider_evidence(self):
+        from Compiler.semantic import analyze
+        from Compiler.parser import parse
+
+        source = """
+        demand spears {
+            require (unit-type-count-total spearman < 2)
+            require (building-type-count archery-range >= 1)
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        demand = analyze(parse(source), default_de_registry(), source_unit="test")[0]
+        lifecycle = demand.production_lifecycle
+
+        self.assertIsNotNone(lifecycle)
+        self.assertEqual(
+            lifecycle.queue_capacity_evidence.disposition,
+            ProductionFactDisposition.OPEN,
+        )
+        self.assertEqual(
+            lifecycle.provider_availability_evidence.disposition,
+            ProductionFactDisposition.OPEN,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
