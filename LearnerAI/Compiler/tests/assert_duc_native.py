@@ -164,7 +164,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="cost-delta",
-                order=102,
+                order=103,
                 facts=(
                     Expression(
                         "(true)",
