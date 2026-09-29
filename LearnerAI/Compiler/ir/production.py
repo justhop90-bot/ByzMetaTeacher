@@ -290,7 +290,17 @@ class ProductionLifecycle:
             raise ValueError(
                 "production provider-state observation native_building_id must be positive"
             )
-        if self.completion_witness.head != "unit-type-count":
+        if (
+            self.provider_availability_evidence is not None
+            and self.provider_availability_evidence.native_building_id <= 0
+        ):
+            raise ValueError(
+                "production provider-availability evidence native_building_id "
+                "must be positive"
+            )
+        if (
+            self.completion_witness.head != "unit-type-count"
+        ):
             raise ValueError(
                 "production completion witness must use unit-type-count"
             )
