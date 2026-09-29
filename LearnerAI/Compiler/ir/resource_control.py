@@ -105,7 +105,11 @@ class NativeEscrowPolicyPlan:
                 raise ValueError(
                     f"unsupported native escrow policy resource '{operation.resource}'"
                 )
-            if operation.percentage is None or not 0 <= operation.percentage <= 100:
+            if (
+                not isinstance(operation.percentage, int)
+                or isinstance(operation.percentage, bool)
+                or not 0 <= operation.percentage <= 100
+            ):
                 raise ValueError(
                     "native escrow policy percentage must be an integer in 0..100"
                 )
