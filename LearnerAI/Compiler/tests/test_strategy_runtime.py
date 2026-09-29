@@ -58,6 +58,35 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_up_compare_sn_binds_to_persistent_control_state_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 264 >= 1)",
+            "persistent-sn-state",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.PERSISTENT_CONTROL_STATE,
+        )
+        self.assertEqual(binding.observations[0].primitive, "up-compare-sn")
+        self.assertEqual(
+            evaluate_binding(
+                binding,
+                self.snapshot(facts=(("(up-compare-sn 264 >= 1)", True),)),
+            ),
+            EvidenceTruth.TRUE,
+        )
+
+    def test_up_compare_sn_rejects_out_of_range_strategic_number_id(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 512 >= 1)",
+            "bad-persistent-sn",
+        )
+        with self.assertRaisesRegex(ValueError, "0..511"):
+            bind_strategic_evidence(evidence, self.effective)
+
     def test_up_can_search_binds_to_duc_search_observation_type(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.EXECUTION,

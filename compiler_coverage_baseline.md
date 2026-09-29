@@ -71,4 +71,4 @@ REMAINING: complete the 73 unmodeled Byzantine manifest nodes; broader civs; rep
 
 ## Strategy runtime — CURRENT: observation binding + capability recovery contract closed. TARGET: observation-complete.
 EVIDENCE: strategy runtime suite plus native observation contracts. Promoted: Fact-only `up-can-search` as `DUC_SEARCH_AVAILABILITY`; escrow-aware affordability/build/research predicates as `ESCROW_CAPABILITY`; `attack-now` remains fail-closed as an Action; capability loss/recovery now has an explicit typed contract.
-REMAINING: attack/controller observation remains OPEN; deeper DUC retained-state and escrow same-pass/runtime semantics remain OPEN; broader corpus recovery evidence remains. Generic/client policy separation is covered by the source-level import boundary plus public re-export audit.
+REMAINING: controller-specific attack/exploration/town-size observation remains OPEN; deeper DUC retained-state and escrow same-pass/runtime semantics remain OPEN; broader corpus recovery evidence remains. Generic persistent Strategic Number state is now bound as `PERSISTENT_CONTROL_STATE` with 0..511 SN validation and no controller attribution.
