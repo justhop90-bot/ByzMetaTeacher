@@ -827,6 +827,7 @@ def build_land_castle_strategy(
                 action="(research feudal-age)",
                 witness="(current-age >= feudal-age)",
                 release="(current-age >= feudal-age)",
+                escrow_release_resources=(Resource.FOOD, Resource.GOLD),
             ),
         ),
         StrategicDemandSpec(
