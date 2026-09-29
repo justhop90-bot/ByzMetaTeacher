@@ -84,6 +84,15 @@ class StrategyRuntimeTests(unittest.TestCase):
             "can-build-with-escrow",
         )
 
+    def test_attack_action_remains_closed_to_strategic_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.EXECUTION,
+            "(attack-now)",
+            "attack-action-is-not-observation",
+        )
+        with self.assertRaisesRegex(ValueError, "action primitive"):
+            bind_strategic_evidence(evidence, self.effective)
+
     def test_persistent_castle_reason_survives_blocked_can_build(self):
         runtime = evaluate_strategy_runtime(
             self.profile,
