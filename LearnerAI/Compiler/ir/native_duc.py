@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..ast import Expression, SourceLocation
-from .model import GoalSpanRequest
+from .model import GoalSlotRequest, GoalSpanRequest
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,7 @@ class NativeDucOutputRequest:
     rule_identity: str
     section: str
     expression_index: int
-    request: GoalSpanRequest
+    request: GoalSlotRequest | GoalSpanRequest
     command: str
     argument_index: int = 0
 
