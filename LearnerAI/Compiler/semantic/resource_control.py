@@ -769,7 +769,11 @@ def validate_escrow_policy_plan(
                     location=operation.location,
                 )
             )
-        if operation.percentage is None or not 0 <= operation.percentage <= 100:
+        if (
+            not isinstance(operation.percentage, int)
+            or isinstance(operation.percentage, bool)
+            or not 0 <= operation.percentage <= 100
+        ):
             errors.append(
                 _error(
                     ResourceControlErrorCode.ESCROW_POLICY_PERCENTAGE,
