@@ -214,6 +214,31 @@ class SourceGraphTests(unittest.TestCase):
                     )
                 )
 
+    def test_xs_entrypoint_is_rejected_at_source_boundary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = Path(tmp) / "telemetry.xs"
+            entry.write_text("void telemetry() {}\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                CompileError,
+                "SOURCE-GRAPH-017: XS source is outside the compiler boundary",
+            ):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
+    def test_active_xs_load_is_rejected_at_source_boundary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = root / "root.perdsl"
+            entry.write_text('(load "telemetry.xs")\n', encoding="utf-8")
+            (root / "telemetry.xs").write_text(
+                "void telemetry() {}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                CompileError,
+                "SOURCE-GRAPH-017: XS source is outside the compiler boundary",
+            ):
+                SourceGraphResolver().resolve(SourceGraphRequest(entrypoint=entry))
+
     def test_random_load_is_rejected_without_selection_policy(self):
         with self.assertRaisesRegex(CompileError, "SOURCE-GRAPH-007"):
             self._resolve("random/root.perdsl")
