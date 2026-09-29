@@ -74,14 +74,18 @@ class NativeEscrowReleaseTests(unittest.TestCase):
         self.assertEqual(mapping.native_kind, "Action")
         self.assertGreaterEqual(len(mapping.evidence_sources), 3)
 
-    def test_executable_inventory_includes_release_only_once(self):
+    def test_executable_inventory_includes_promoted_escrow_actions_once(self):
         self.assertEqual(
             default_escrow_executable_commands(),
-            ("release-escrow",),
+            ("release-escrow", "set-escrow-percentage"),
         )
         self.assertEqual(
             self.mappings.for_command("release-escrow").native_command,
             "release-escrow",
+        )
+        self.assertEqual(
+            self.mappings.for_command("set-escrow-percentage").native_command,
+            "set-escrow-percentage",
         )
 
     def test_percentage_policy_binds_all_resources_and_range(self):
