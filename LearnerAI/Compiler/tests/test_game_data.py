@@ -266,9 +266,7 @@ class GameDataTests(unittest.TestCase):
                 (ManifestNodeKind.UNIT, 2628),
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
-                (ManifestNodeKind.TECHNOLOGY, 54),
                 (ManifestNodeKind.TECHNOLOGY, 408),
-                (ManifestNodeKind.TECHNOLOGY, 909),
             },
         )
 
@@ -346,9 +344,7 @@ class GameDataTests(unittest.TestCase):
                 (ManifestNodeKind.UNIT, 2628),
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
-                (ManifestNodeKind.TECHNOLOGY, 54),
                 (ManifestNodeKind.TECHNOLOGY, 408),
-                (ManifestNodeKind.TECHNOLOGY, 909),
             },
         )
 
@@ -464,7 +460,7 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
                 if node.kind is ManifestNodeKind.TECHNOLOGY
             },
-            {54, 408, 909},
+            {408},
         )
 
 
@@ -477,8 +473,8 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 153)
-        self.assertEqual(report.unmodeled_count, 6)
+        self.assertEqual(report.modeled_count, 155)
+        self.assertEqual(report.unmodeled_count, 4)
         self.assertEqual(report.verified_unavailable_count, 14)
         self.assertEqual(
             {
