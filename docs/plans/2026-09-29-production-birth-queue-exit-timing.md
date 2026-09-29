@@ -23,8 +23,8 @@ Implementation boundary:
 - [x] Thread timing evidence through `ProductionLifecycle`.
 - [x] Add deterministic source fixture and native zero-findings gate.
 - [x] Record the timing practice as PARTIAL/OPEN runtime evidence.
-- [ ] Run the focused suite and full Compiler verification on the exact final main SHA.
-- [ ] Merge after verification.
+- [x] Run the focused suite and full Compiler verification on the verified implementation mainline.
+- [x] Merge after verification.
 
 ## Explicit non-goals
 
@@ -48,5 +48,7 @@ The experiment must distinguish:
 4. object birth,
 5. queue exit,
 6. next-pass visibility.
+
+Compiler verification is green for the implementation mainline; runtime birth/queue-exit ordering remains OPEN until a controlled DE experiment confirms it.
 
 Until that evidence exists, all timing records in the compiler remain OPEN.
