@@ -25,6 +25,8 @@ class IssuanceStatus(str, Enum):
 class IssuanceDiagnosticCode(str, Enum):
     MISSING_CONTRACT = "ISS-001"
     FEASIBILITY_MISSING = "ISS-002"
+    PRODUCTION_ADMISSION_MISSING = "ISS-007"
+    PRODUCTION_ADMISSION_MISMATCH = "ISS-008"
     ISSUED_PENDING_COLLAPSE = "ISS-003"
     FAILURE_PENDING_COLLAPSE = "ISS-004"
     INVALID_PHASE = "ISS-005"
@@ -95,6 +97,29 @@ def _diag(code, status, message, demand, *, location=None):
     )
 
 
+def _production_admission_status(demand: SemanticDemand):
+    if demand.action.expression.head != "train":
+        return None
+    unit = (
+        demand.action.expression.args[0]
+        if demand.action.expression.args
+        else None
+    )
+    admissions = tuple(
+        requirement.expression
+        for requirement in demand.requirements
+        if requirement.expression.head in {"can-train", "can-train-with-escrow"}
+    )
+    if not admissions:
+        return "MISSING"
+    matching = tuple(
+        expression
+        for expression in admissions
+        if expression.args and str(expression.args[0]) == str(unit)
+    )
+    return None if matching else "MISMATCH"
+
+
 def validate_action_issuance(
     demands: tuple[SemanticDemand, ...] | list[SemanticDemand],
     registry: PrimitiveRegistry,
@@ -115,7 +140,30 @@ def validate_action_issuance(
             )
             continue
 
-        if not _has_feasibility_guard(demand, registry):
+        production_admission_status = _production_admission_status(demand)
+        if production_admission_status == "MISSING":
+            diagnostics.append(
+                _diag(
+                    IssuanceDiagnosticCode.PRODUCTION_ADMISSION_MISSING,
+                    IssuanceStatus.BLOCKED,
+                    f"PRODUCTION-TARGET-ADMISSION-MISSING: demand '{demand.name}' "
+                    "train action requires can-train or can-train-with-escrow",
+                    demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
+                )
+            )
+        elif production_admission_status == "MISMATCH":
+            diagnostics.append(
+                _diag(
+                    IssuanceDiagnosticCode.PRODUCTION_ADMISSION_MISMATCH,
+                    IssuanceStatus.BLOCKED,
+                    f"PRODUCTION-TARGET-ADMISSION: demand '{demand.name}' "
+                    "target admission does not match the train target",
+                    demand.identity,
+                    location=issuance.location or demand.action.location or demand.location,
+                )
+            )
+        elif not _has_feasibility_guard(demand, registry):
             diagnostics.append(
                 _diag(
                     IssuanceDiagnosticCode.FEASIBILITY_MISSING,
