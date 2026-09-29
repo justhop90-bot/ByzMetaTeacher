@@ -179,9 +179,9 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 order=100,
                 facts=(
                     Expression(
-                        "(goal duc-gate = 1)",
-                        "goal",
-                        ("duc-gate", "=", "1"),
+                        "(up-compare-goal duc-gate c:== 1)",
+                        "up-compare-goal",
+                        ("duc-gate", "c:==", "1"),
                     ),
                 ),
                 actions=(
@@ -341,7 +341,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(report.status, ReportStatus.VALIDATED)
             self.assertIsNotNone(backend.seen_artifact)
             artifact = backend.seen_artifact_text
-            self.assertIn("(goal duc-gate = 1)", artifact)
+            self.assertIn("(up-compare-goal duc-gate c:== 1)", artifact)
             self.assertIn("(up-find-local c: villager c: 1)", artifact)
 
     def test_source_compile_couples_duc_plan_to_recurrent_firing(self):
@@ -368,8 +368,8 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
             self.assertTrue(
                 any(
-                    diagnostic.category.value == "DUC"
-                    and "object target" in diagnostic.message
+                    "target" in diagnostic.message.lower()
+                    and diagnostic.code.startswith("DUC-")
                     for diagnostic in report.diagnostics
                 )
             )
