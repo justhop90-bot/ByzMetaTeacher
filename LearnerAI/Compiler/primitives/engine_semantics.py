@@ -221,6 +221,11 @@ _DUC_COMMAND_SPECS = (
 )
 
 
+_NATIVE_OUTPUT_READER_SPECS = (
+    ("up-get-fact", "output.reader.fact"),
+)
+
+
 _PERSISTENT_STATE_SPECS = (
     ("up-compare-sn", "state.compare.strategic-number"),
 )
@@ -375,6 +380,42 @@ def _action_mapping(command: str, identity: str) -> EngineSemanticMapping:
         completion=f"completion requires world-state witness '{witness}'",
         recovery="preserve strategic demand and reassess through native feasibility after temporary blockage or failure",
         practice_references=("actions.request-not-completion",),
+    )
+
+
+def _native_output_reader_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Fact/Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER, _AOE2AI, _DUKE),
+        state_effects=(
+            "evaluates the documented native Fact/Action reader and writes the "
+            "requested result into the caller-supplied GoalId"
+        ),
+        lifetime=(
+            "one native output evaluation; the resulting Goal value persists until "
+            "another Goal write changes it"
+        ),
+        ordering=(
+            "the native read occurs at its emitted rule position; the compiler does "
+            "not claim the returned numeric value is known at compile time"
+        ),
+        admission=(
+            "native schema provides the documented Fact/Action command, exact arity, "
+            "FactId/parameter inputs, and one output Goal"
+        ),
+        completion=(
+            "the native output write is the contracted event; it is not a completion "
+            "witness for any separate strategic demand"
+        ),
+        recovery=(
+            "re-evaluate or reissue the native reader as needed; no synthetic cache "
+            "or retry state is introduced"
+        ),
+        practice_references=(),
     )
 
 
@@ -767,6 +808,10 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         for command, identity in _DUC_COMMAND_SPECS
     )
     mappings.extend(
+        _native_output_reader_mapping(command, identity)
+        for command, identity in _NATIVE_OUTPUT_READER_SPECS
+    )
+    mappings.extend(
         _escrow_release_mapping()
         for _command, _identity in _ESCROW_COMMAND_SPECS
     )
@@ -813,7 +858,8 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     }
     registry.validate_practice_references(practice_ids)
     registry.validate_exact_executable_commands(
-        default_duc_executable_commands()
+        tuple(command for command, _identity in _NATIVE_OUTPUT_READER_SPECS)
+        + default_duc_executable_commands()
         + tuple(command for command, _identity in _PERSISTENT_STATE_SPECS)
         + tuple(command for command, _identity in _OBSERVATION_SPECS)
         + tuple(command for command, _identity in _ADMISSIBILITY_SPECS)
