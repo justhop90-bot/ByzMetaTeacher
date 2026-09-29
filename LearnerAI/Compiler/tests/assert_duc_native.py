@@ -59,6 +59,29 @@ def _group_size_output_request() -> NativeDucOutputRequest:
     )
 
 
+def _cost_delta_output_request() -> NativeDucOutputRequest:
+    request = GoalSpanRequest(
+        StorageRequestId(
+            SemanticId("native.duc", "cost-delta-output"),
+            "up-get-cost-delta",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+        width=4,
+        shape=GoalSpanKind.EXTENDED_4,
+        contract_id="up-get-cost-delta.OutputGoalId",
+        start_min=41,
+        start_max=15996,
+    )
+    return NativeDucOutputRequest(
+        rule_identity="cost-delta",
+        section="ACTION",
+        expression_index=0,
+        request=request,
+        command="up-get-cost-delta",
+        argument_index=0,
+    )
+
+
 def _plan() -> NativeDucPlan:
     return NativeDucPlan(
         (
@@ -99,8 +122,26 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
-                identity="group-size",
+                identity="cost-delta",
                 order=102,
+                facts=(
+                    Expression(
+                        "(true)",
+                        "true",
+                        (),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-cost-delta 41)",
+                        "up-get-cost-delta",
+                        ("41",),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="group-size",
+                order=103,
                 facts=(
                     Expression(
                         "(true)",
@@ -118,7 +159,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="target-action",
-                order=103,
+                order=104,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",
@@ -138,6 +179,7 @@ def _plan() -> NativeDucPlan:
         output_requests=(
             _search_state_output_request(),
             _group_size_output_request(),
+            _cost_delta_output_request(),
         ),
     )
 
@@ -189,8 +231,9 @@ def main() -> int:
 
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
-        "(up-get-search-state 44)",
+        "(up-get-search-state 48)",
         "(up-get-group-size c: 3 42)",
+        "(up-get-cost-delta 44)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )
