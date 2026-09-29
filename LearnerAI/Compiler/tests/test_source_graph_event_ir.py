@@ -313,6 +313,9 @@ class SourceAssemblyEventTests(unittest.TestCase):
                 [item.text for item in graph.slices],
                 ["b-body\n"],
             )
+            report = validate_effective_source_graph(graph)
+            self.assertTrue(report.valid)
+            self.assertFalse(report.errors)
 
     def test_random_load_policy_rejects_target_not_in_event(self):
         with tempfile.TemporaryDirectory() as tmp:
