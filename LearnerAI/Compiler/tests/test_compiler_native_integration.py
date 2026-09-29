@@ -344,6 +344,38 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertIn("(goal duc-gate = 1)", artifact)
             self.assertIn("(up-find-local c: villager c: 1)", artifact)
 
+    def test_source_compile_couples_duc_plan_to_recurrent_firing(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Path(tmp_dir) / "guarded-duc.per"
+            output.write_text("KEEP THIS\n", encoding="utf-8")
+            backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            report = compile_source_with_report(
+                source,
+                output,
+                native_backend=backend,
+                duc_plan=self._guarded_duc_plan(include_consumer=True),
+            )
+
+            self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
+            self.assertTrue(
+                any(
+                    diagnostic.category.value == "DUC"
+                    and "object target" in diagnostic.message
+                    for diagnostic in report.diagnostics
+                )
+            )
+            self.assertIsNone(backend.seen_artifact)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
+
     def test_compile_to_file_requires_native_validation(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             output = Path(tmp_dir) / "CompilerFixture.per"
