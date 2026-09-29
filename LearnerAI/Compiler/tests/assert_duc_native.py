@@ -105,6 +105,27 @@ def _point_output_request() -> NativeDucOutputRequest:
     )
 
 
+def _target_data_output_request(
+    command: str,
+    rule_identity: str,
+) -> NativeDucOutputRequest:
+    request = GoalSlotRequest(
+        StorageRequestId(
+            SemanticId("native.duc", rule_identity),
+            command,
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
+    return NativeDucOutputRequest(
+        rule_identity=rule_identity,
+        section="ACTION",
+        expression_index=0,
+        request=request,
+        command=command,
+        argument_index=1,
+    )
+
+
 def _plan() -> NativeDucPlan:
     return NativeDucPlan(
         (
@@ -145,8 +166,44 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
-                identity="point",
+                identity="object-data",
                 order=102,
+                facts=(
+                    Expression(
+                        "(true)",
+                        "true",
+                        (),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-object-data object-data-type 41)",
+                        "up-get-object-data",
+                        ("object-data-type", "41"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="object-target-data",
+                order=103,
+                facts=(
+                    Expression(
+                        "(true)",
+                        "true",
+                        (),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-object-target-data object-data-type 41)",
+                        "up-get-object-target-data",
+                        ("object-data-type", "41"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="point",
+                order=104,
                 facts=(
                     Expression(
                         "(true)",
@@ -164,7 +221,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="cost-delta",
-                order=103,
+                order=105,
                 facts=(
                     Expression(
                         "(true)",
@@ -182,7 +239,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="group-size",
-                order=104,
+                order=106,
                 facts=(
                     Expression(
                         "(true)",
@@ -200,7 +257,7 @@ def _plan() -> NativeDucPlan:
             ),
             NativeDucRule(
                 identity="target-action",
-                order=105,
+                order=107,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",
@@ -222,6 +279,14 @@ def _plan() -> NativeDucPlan:
             _group_size_output_request(),
             _cost_delta_output_request(),
             _point_output_request(),
+            _target_data_output_request(
+                "up-get-object-data",
+                "object-data",
+            ),
+            _target_data_output_request(
+                "up-get-object-target-data",
+                "object-target-data",
+            ),
         ),
     )
 
@@ -275,6 +340,8 @@ def main() -> int:
         "(up-find-local c: 83 c: 1)",
         "(up-get-search-state 50)",
         "(up-get-group-size c: 3 42)",
+        "(up-get-object-data object-data-type 43)",
+        "(up-get-object-target-data object-data-type 44)",
         "(up-get-cost-delta 44)",
         "(up-get-point position-center 48)",
         "(up-set-target-object search-local c: 0)",
