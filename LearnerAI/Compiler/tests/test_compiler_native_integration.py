@@ -368,9 +368,9 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
             self.assertTrue(
                 any(
-                    "target" in diagnostic.message.lower()
-                    and diagnostic.code.startswith("DUC-")
-                    for diagnostic in report.diagnostics
+                    diagnostic.code == "DUC-005"
+                    and "up-target-objects" in diagnostic.message
+                    for diagnostic in report.rule_diagnostics
                 )
             )
             self.assertIsNone(backend.seen_artifact)
