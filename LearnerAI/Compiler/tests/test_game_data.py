@@ -482,7 +482,7 @@ class GameDataTests(unittest.TestCase):
                 for node in report.unmodeled_nodes
                 if node.kind is ManifestNodeKind.TECHNOLOGY
             },
-            {54, 408, 909},
+            {408},
         )
         self.assertEqual(
             report.modeled_count
