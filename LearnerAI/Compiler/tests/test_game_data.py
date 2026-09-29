@@ -40,6 +40,7 @@ from LearnerAI.Compiler.ir.game_data import (
     TechId,
     UnitDef,
     UnitId,
+    UnitLineId,
 )
 from LearnerAI.Compiler.ir.versioning import PatchId
 
