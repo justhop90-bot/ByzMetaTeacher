@@ -1057,7 +1057,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("fishing-ship-line"), "Fishing Ship line", (UnitId(13),), (evidence,)),
         UnitLineDef(UnitLineId("transport-ship-line"), "Transport Ship line", (UnitId(545),), (evidence,)),
         UnitLineDef(UnitLineId("galley-line"), "Galley line", (UnitId(539), UnitId(21), UnitId(442)), (evidence,)),
-        UnitLineDef(UnitLineId("hulk-line"), "Hulk line", (UnitId(2626), UnitId(2627)), (evidence,)),
+        UnitLineDef(UnitLineId("hulk-line"), "Hulk line", (UnitId(2626), UnitId(2627), UnitId(2628)), (evidence,)),
         UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104),), (evidence,)),
         UnitLineDef(UnitLineId("trade-cog-line"), "Trade Cog line", (UnitId(17),), (evidence,)),
         UnitLineDef(UnitLineId("villager-line"), "Villager line", (UnitId(83),), (evidence,)),
