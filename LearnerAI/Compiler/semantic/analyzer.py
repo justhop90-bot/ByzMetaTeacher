@@ -442,6 +442,36 @@ def analyze(
                     f"UnitId '{unit}'"
                 ) from exc
 
+            canonical_pending_requirements = []
+            for requirement in requirements:
+                expression = requirement.expression
+                if (
+                    expression.head == "up-pending-objects"
+                    and len(expression.args) >= 2
+                    and str(expression.args[0]) == "c:"
+                    and str(expression.args[1]) == unit
+                ):
+                    canonical_expression = Expression(
+                        source=(
+                            f"(up-pending-objects c: {native_unit_id} "
+                            f"{' '.join(str(arg) for arg in expression.args[2:])})"
+                        ),
+                        head="up-pending-objects",
+                        args=(
+                            "c:",
+                            str(native_unit_id),
+                            *tuple(str(arg) for arg in expression.args[2:]),
+                        ),
+                        location=expression.location,
+                    )
+                    requirement = SemanticRequirement(
+                        canonical_expression,
+                        _stored_role(canonical_expression, registry),
+                        location=requirement.location,
+                    )
+                canonical_pending_requirements.append(requirement)
+            requirements = canonical_pending_requirements
+
             admission_requirements = [
                 requirement.expression
                 for requirement in requirements

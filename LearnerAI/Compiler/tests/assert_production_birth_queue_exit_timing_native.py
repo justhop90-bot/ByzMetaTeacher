@@ -36,7 +36,7 @@ def main() -> int:
         "(game-time >= 600)",
         "(unit-type-count spearman >= 1)",
         "(unit-type-count-total spearman >= 2)",
-        "(up-pending-objects c: spearman == 0)",
+        "(up-pending-objects c: 93 == 0)",
         "(can-train spearman)",
         "(train spearman)",
     )

@@ -261,6 +261,31 @@ class ProductionBirthQueueExitTimingTests(unittest.TestCase):
         self.assertIsNone(lifecycle.birth_timing_evidence)
         self.assertIsNone(lifecycle.queue_exit_timing_evidence)
 
+    def test_analyzer_canonicalizes_symbolic_pending_unit_for_native_output(self):
+        source = """
+        demand timed-spears {
+            require (game-time >= 600)
+            require (unit-type-count-total spearman >= 2)
+            require (up-pending-objects c: spearman == 0)
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        demand = analyze(parse(source), default_de_registry(), source_unit="test")[0]
+        pending = [
+            requirement.expression
+            for requirement in demand.requirements
+            if requirement.expression.head == "up-pending-objects"
+        ]
+
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(
+            pending[0].args,
+            ("c:", "93", "==", "0"),
+        )
+
     def test_analyzer_preserves_open_birth_and_queue_exit_timing(self):
         source = """
         demand timed-spears {
