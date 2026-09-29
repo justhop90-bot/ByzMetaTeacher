@@ -199,13 +199,15 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
                     identity="search-state-output",
                     order=100,
                     facts=(
+                        _expr("(true)", "true"),
+                    ),
+                    actions=(
                         _expr(
                             "(up-get-search-state 41)",
                             "up-get-search-state",
                             "41",
                         ),
                     ),
-                    actions=(),
                 ),
             ),
             output_requests=(
