@@ -92,6 +92,10 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Owner: `ir/civ_profile.py`, patch overlays, 145-node manifest.
 
 - [ ] Strategy runtime observation closure.
+  - [x] Fact-only `up-can-search` is bound as `DUC_SEARCH_AVAILABILITY`.
+  - [x] Escrow-aware affordability/build/research facts are bound as `ESCROW_CAPABILITY`.
+  - [x] `attack-now` remains fail-closed as an Action, not a strategic observation.
+  - Remaining: attack/controller observations, retained DUC state, escrow same-pass/runtime semantics, and broader observation policy audit.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: DUC/attack/escrow observation primitives plus policy-vs-semantics audit of native token validation.
 
