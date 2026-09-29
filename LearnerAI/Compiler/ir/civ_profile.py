@@ -958,27 +958,6 @@ def _byzantine_game_data(
         BuildingDef(BuildingId(621), "Town Center", Age.CASTLE, ResourceCost(wood=275, stone=100)),
         BuildingDef(BuildingId(792), "Palisade Gate", Age.DARK, None),
     )
-    buildings = tuple(
-        replace(
-            building,
-            trainable_lines=building.trainable_lines + (
-                UnitLineId("fishing-ship-line"),
-                UnitLineId("transport-ship-line"),
-                UnitLineId("galley-line"),
-                UnitLineId("hulk-line"),
-                UnitLineId("demolition-raft-line"),
-                UnitLineId("trade-cog-line"),
-            ),
-        )
-        if building.id == BuildingId(45)
-        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("trade-cart-line"),))
-        if building.id == BuildingId(84)
-        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("villager-line"),))
-        if building.id == BuildingId(109)
-        else building
-    for building in buildings
-)
-
     lines = (
         UnitLineDef(UnitLineId("militia-line"), "Militia line", (UnitId(74), UnitId(75), UnitId(77), UnitId(473), UnitId(567)), (evidence,)),
         UnitLineDef(UnitLineId("spearman-line"), "Spearman line", (UnitId(93), UnitId(358), UnitId(359)), (evidence,)),
@@ -1004,6 +983,27 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("fire-ship-line"), "Fire Ship line", (UnitId(529), UnitId(532)), (evidence,)),
         UnitLineDef(UnitLineId("dromon-line"), "Dromon line", (UnitId(1795),), (evidence,)),
     )
+    buildings = tuple(
+        replace(
+            building,
+            trainable_lines=building.trainable_lines + (
+                UnitLineId("fishing-ship-line"),
+                UnitLineId("transport-ship-line"),
+                UnitLineId("galley-line"),
+                UnitLineId("hulk-line"),
+                UnitLineId("demolition-raft-line"),
+                UnitLineId("trade-cog-line"),
+            ),
+        )
+        if building.id == BuildingId(45)
+        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("trade-cart-line"),))
+        if building.id == BuildingId(84)
+        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("villager-line"),))
+        if building.id == BuildingId(109)
+        else building
+    for building in buildings
+)
+
     units = (
         _unit(4, "Archer", "archer-line", Age.FEUDAL, 87, ResourceCost(wood=25, gold=45), classes=("RANGED",), upgrades_to=24),
         _unit(5, "Hand Cannoneer", "hand-cannoneer-line", Age.IMPERIAL, 87, ResourceCost(food=45, gold=50), classes=("RANGED",)),
