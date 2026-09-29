@@ -206,7 +206,10 @@ class GameDataTests(unittest.TestCase):
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
         from pathlib import Path
         import json
-        import re
+
+        from LearnerAI.Compiler.ir.game_data_manifest_technologies import (
+            BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS,
+        )
 
         profile = ByzantineProfile.for_update_185872()
         effective = resolve_effective_civ(profile)
@@ -221,56 +224,36 @@ class GameDataTests(unittest.TestCase):
         )
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
-        snapshot_by_id = {
-            int(item["id"]): item
-            for item in payload["technologies"]
-        }
+        snapshot_ids = {int(item["id"]) for item in payload["technologies"]}
 
-        def norm(name):
-            return re.sub(r"[^a-z0-9]+", "", name.lower())
+        seed_ids = {int(seed.id) for seed in BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS}
+        self.assertEqual(len(seed_ids), 51)
+        self.assertTrue(seed_ids.issubset(snapshot_ids))
+        self.assertTrue(seed_ids.issubset({int(item.id) for item in effective.technologies}))
 
-        native_age_advances = {101, 102, 103}
-        semantic_conflicts = {54, 408, 909}
-
-        expected = []
-        modeled_ids = {int(item.id) for item in effective.technologies}
-        for node in manifest.nodes:
-            if node.kind is not ManifestNodeKind.TECHNOLOGY:
-                continue
-            if (
-                node.id in modeled_ids
-                or node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
-                or node.id in native_age_advances
-                or node.id in semantic_conflicts
-            ):
-                continue
-            if node.id not in snapshot_by_id:
-                continue
-            snapshot_name = snapshot_by_id[node.id]["name"]
-            self.assertEqual(
-                norm(node.name),
-                norm(snapshot_name),
-                msg=f"snapshot identity mismatch for TechId {node.id}: "
-                f"{node.name!r} vs {snapshot_name!r}",
-            )
-            expected.append(node.id)
-
-        modeled_ids = {int(item.id) for item in effective.technologies}
-        self.assertTrue(expected)
-        self.assertTrue(set(expected).issubset(modeled_ids))
-        self.assertGreaterEqual(len(expected), 50)
-
-        for tech_id in expected:
-            tech = effective.tech(tech_id)
+        for seed in BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS:
+            tech = effective.tech(seed.id)
             self.assertIsNotNone(tech.base_cost)
             self.assertIsNotNone(tech.research_time_seconds)
+            self.assertIn(
+                EvidenceKind.ENGINE_DATA,
+                {ref.kind for ref in tech.provenance},
+            )
+            self.assertIn(
+                EvidenceKind.REPOSITORY_MANIFEST,
+                {ref.kind for ref in tech.provenance},
+            )
 
-        self.assertTrue(
-            {int(node.id) for node in classify_byzantine_manifest_coverage(
-                manifest, effective
-            ).unmodeled_nodes if node.kind is ManifestNodeKind.TECHNOLOGY}
-            >= semantic_conflicts
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+        self.assertEqual(
+            {
+                int(node.id)
+                for node in report.unmodeled_nodes
+                if node.kind is ManifestNodeKind.TECHNOLOGY
+            },
+            {54, 408, 909},
         )
+
 
     def test_byzantine_manifest_coverage_distinguishes_modeled_and_unmodeled(self):
         profile = ByzantineProfile.for_update_185872()
