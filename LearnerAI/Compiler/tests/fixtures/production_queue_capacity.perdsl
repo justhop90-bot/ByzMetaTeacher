@@ -1,0 +1,8 @@
+demand queued-spears {
+    require (strategic-number sn-enable-training-queue == 3)
+    require (unit-type-count-total spearman < 4)
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 1)
+    release (unit-type-count spearman >= 1)
+}
