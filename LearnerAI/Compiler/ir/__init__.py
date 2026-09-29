@@ -216,9 +216,12 @@ from .construction import (
 )
 
 from .production import (
+    ProductionFactDisposition,
     ProductionLifecycle,
     ProductionProviderStateObservation,
+    ProductionQueueProtection,
     ProductionQueueStateObservation,
+    ProductionTargetAdmission,
 )
 
 from .research import ResearchLifecycle
