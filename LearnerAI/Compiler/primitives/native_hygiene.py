@@ -1769,6 +1769,7 @@ class NativeContractCatalog:
         commands = {
             "up-get-search-state",
             "up-get-cost-delta",
+            "up-get-point",
             *self.duc_consumer_commands,
         }
         for contracts in (
@@ -2255,6 +2256,7 @@ def default_native_citation_catalog() -> CitationRecordCatalog:
         ("airef:duc:target-objects", "up-target-objects", "(up-target-objects <Option> <DUCAction> <Formation> <AttackStance>)"),
         ("airef:duc:set-target-point", "up-set-target-point", "(up-set-target-point <Point>)"),
         ("airef:duc:get-search-state", "up-get-search-state", "(up-get-search-state <OutputGoalId>)"),
+        ("airef:duc:get-point", "up-get-point", "(up-get-point <Point> <OutputGoalId>)"),
         ("airef:duc:create-group", "up-create-group", "(up-create-group <GoalId> <GoalId> <typeOp> <GroupId>)"),
         ("airef:duc:reset-group", "up-reset-group", "(up-reset-group <typeOp> <GroupId>)"),
         ("airef:duc:set-group", "up-set-group", "(up-set-group <SearchSource> <typeOp> <GroupId>)"),
