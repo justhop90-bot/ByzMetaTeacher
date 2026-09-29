@@ -383,7 +383,7 @@ class SourceGraphResolver:
             elif active:
                 selection = load_random_selections.get(
                     (
-                        physical.resolve().as_posix(),
+                        physical.path.resolve().as_posix(),
                         event.span.start_line,
                         event.span.start_column,
                     )
