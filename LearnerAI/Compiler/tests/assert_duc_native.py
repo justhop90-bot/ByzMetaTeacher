@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.ast import Expression
 from Compiler.compiler import compile_source
-from Compiler.ir import GoalRole, GoalSpanKind, GoalSpanRequest, SemanticId, StorageRequestId
+from Compiler.ir import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest, SemanticId, StorageRequestId
 from Compiler.ir import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 
 
@@ -38,6 +38,24 @@ def _search_state_output_request() -> NativeDucOutputRequest:
         request=request,
         command="up-get-search-state",
         argument_index=0,
+    )
+
+
+def _group_size_output_request() -> NativeDucOutputRequest:
+    request = GoalSlotRequest(
+        StorageRequestId(
+            SemanticId("native.duc", "group-size-output"),
+            "up-get-group-size",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
+    return NativeDucOutputRequest(
+        rule_identity="group-size",
+        section="ACTION",
+        expression_index=0,
+        request=request,
+        command="up-get-group-size",
+        argument_index=2,
     )
 
 
@@ -81,8 +99,26 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
-                identity="target-action",
+                identity="group-size",
                 order=102,
+                facts=(
+                    Expression(
+                        "(true)",
+                        "true",
+                        (),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-group-size c: 3 41)",
+                        "up-get-group-size",
+                        ("c:", "3", "41"),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="target-action",
+                order=103,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",
@@ -101,6 +137,7 @@ def _plan() -> NativeDucPlan:
         ),
         output_requests=(
             _search_state_output_request(),
+            _group_size_output_request(),
         ),
     )
 
@@ -153,6 +190,7 @@ def main() -> int:
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
         "(up-get-search-state 43)",
+        "(up-get-group-size c: 3 47)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )

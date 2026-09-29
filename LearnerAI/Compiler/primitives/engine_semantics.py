@@ -187,6 +187,7 @@ _DUKE = "https://github.com/niektb/AI"
 _DUC_COMMAND_SPECS = (
     ("up-can-search", "duc.search.availability"),
     ("up-get-search-state", "duc.search.state"),
+    ("up-get-group-size", "duc.group.get-size"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
@@ -455,6 +456,7 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
         "up-can-search": "Fact",
         "up-get-search-state": "Action",
+        "up-get-group-size": "Action",
         "up-find-local": "Fact/Action",
         "up-find-status-local": "Fact/Action",
         "up-find-remote": "Fact/Action",

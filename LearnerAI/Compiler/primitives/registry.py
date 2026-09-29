@@ -24,6 +24,7 @@ from .engine_semantics import (
 )
 from .native_engine_effects import default_native_engine_effect_catalog
 from ..ir.resource_control import NativeEscrowReleasePlan
+from ..ir.model import GoalSlotRequest, GoalSpanRequest
 from ..semantic.resource_control import validate_escrow_release_plan
 from .native_hygiene import (
     AIRefProvenance,
@@ -298,12 +299,16 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"DUC command '{expression.head}' is a Fact and cannot be emitted as an Action"
                     )
+        output_commands = {
+            "up-get-search-state",
+            "up-get-group-size",
+        }
         output_sites = {
             (rule.identity, section, index): expression
             for rule in plan.rules
             for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
             for index, expression in enumerate(expressions)
-            if expression.head == "up-get-search-state"
+            if expression.head in output_commands
         }
         request_sites = {
             output_request.site_key: output_request
@@ -313,46 +318,98 @@ class PrimitiveRegistry:
             missing = sorted(set(output_sites) - set(request_sites))
             extra = sorted(set(request_sites) - set(output_sites))
             raise ValueError(
-                "DUC up-get-search-state output binding sites do not match plan writers: "
+                "DUC output binding sites do not match plan writers: "
                 f"missing={missing}, extra={extra}"
             )
         for site, output_request in sorted(request_sites.items()):
             expression = output_sites[site]
-            if output_request.command != "up-get-search-state":
+            if output_request.command != expression.head:
                 raise ValueError(
-                    f"DUC output request '{site}' targets unsupported command "
-                    f"'{output_request.command}'"
+                    f"DUC output request '{site}' targets '{output_request.command}', "
+                    f"but writer is '{expression.head}'"
                 )
-            if output_request.argument_index != 0:
+            if output_request.argument_index < 0 or output_request.argument_index >= len(expression.args):
                 raise ValueError(
-                    f"DUC up-get-search-state output request '{site}' must bind argument 0"
+                    f"DUC output request '{site}' argument index is outside the expression"
                 )
-            if output_request.request.width != 4:
-                raise ValueError(
-                    f"DUC up-get-search-state output request '{site}' requires width 4"
-                )
-            if output_request.request.shape.value != "EXTENDED_4":
-                raise ValueError(
-                    f"DUC up-get-search-state output request '{site}' requires EXTENDED_4 shape"
-                )
-            if output_request.request.contract_id != "up-get-search-state.OutputGoalId":
-                raise ValueError(
-                    f"DUC up-get-search-state output request '{site}' requires "
-                    "contract up-get-search-state.OutputGoalId"
-                )
-            if (
-                output_request.request.start_min != 41
-                or output_request.request.start_max != 15996
-            ):
-                raise ValueError(
-                    f"DUC up-get-search-state output request '{site}' has invalid "
-                    "GoalSpan bounds"
-                )
-            if len(expression.args) != 1:
-                raise ValueError(
-                    "up-get-search-state native expression must have exactly one "
-                    "OutputGoalId argument"
-                )
+
+            if expression.head == "up-get-search-state":
+                if output_request.argument_index != 0:
+                    raise ValueError(
+                        f"DUC up-get-search-state output request '{site}' must bind argument 0"
+                    )
+                if not isinstance(output_request.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC up-get-search-state output request '{site}' requires GoalSpanRequest"
+                    )
+                request = output_request.request
+                if (
+                    request.width != 4
+                    or request.shape.value != "EXTENDED_4"
+                    or request.contract_id != "up-get-search-state.OutputGoalId"
+                    or request.start_min != 41
+                    or request.start_max != 15996
+                ):
+                    raise ValueError(
+                        f"DUC up-get-search-state output request '{site}' has invalid GoalSpan contract"
+                    )
+                if len(expression.args) != 1:
+                    raise ValueError(
+                        "up-get-search-state native expression must have exactly one OutputGoalId argument"
+                    )
+
+            elif expression.head == "up-get-group-size":
+                if output_request.argument_index != 2:
+                    raise ValueError(
+                        f"DUC up-get-group-size output request '{site}' must bind argument 2"
+                    )
+                if not isinstance(output_request.request, GoalSlotRequest):
+                    raise ValueError(
+                        f"DUC up-get-group-size output request '{site}' requires GoalSlotRequest"
+                    )
+                request = output_request.request
+                if request.role.value != "NATIVE_OUTPUT":
+                    raise ValueError(
+                        f"DUC up-get-group-size output request '{site}' must use NATIVE_OUTPUT role"
+                    )
+                if (
+                    request.request_id.purpose != "up-get-group-size"
+                ):
+                    raise ValueError(
+                        f"DUC up-get-group-size output request '{site}' has invalid request purpose"
+                    )
+                contract = self._native_contracts.duc_group("up-get-group-size")
+                if contract is None or contract.output_width != 1:
+                    raise ValueError(
+                        "missing typed up-get-group-size output contract"
+                    )
+                if (
+                    contract.output_contract_id != "up-get-group-size.output-goal"
+                    or contract.output_goal_min != 1
+                    or contract.output_goal_max != 16000
+                ):
+                    raise ValueError(
+                        "up-get-group-size native output contract bounds are invalid"
+                    )
+                if len(expression.args) != 3:
+                    raise ValueError(
+                        "up-get-group-size native expression must have exactly three arguments"
+                    )
+                if str(expression.args[0]) != "c:":
+                    raise ValueError(
+                        "up-get-group-size output lowering requires literal c: typeOp"
+                    )
+                try:
+                    group_id = int(str(expression.args[1]))
+                except ValueError as exc:
+                    raise ValueError(
+                        "up-get-group-size output lowering requires a numeric GroupId"
+                    ) from exc
+                if not 0 <= group_id <= 19:
+                    raise ValueError(
+                        "up-get-group-size output lowering GroupId must be in 0..19"
+                    )
+
 
         identities = tuple(rule.identity for rule in plan.rules)
         if identities != tuple(sorted(identities, key=lambda identity: next(

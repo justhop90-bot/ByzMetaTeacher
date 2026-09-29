@@ -48,8 +48,8 @@ REMAINING: same-pass release→ordinary-action proof, starvation/emergency relea
 EVIDENCE: DUC rows; 11.6k/11.9k hits; typed plan/binder/emitter; pinned native fixture.
 IMPLEMENTATION: semantic/duc.py + ir/duc.py + native binder/engine mapping/registry/emitter.
 TEST: native deterministic acceptance fixture + full compiler verification.
-REMAINING: Goal-output commands, target-data readers, group output/storage, retained-filter/stale-target semantics,
-measured performance advisories, and broader source-level expressiveness.
+REMAINING: point/cost output spans, target-data readers, broader group output/storage surfaces, retained-filter/stale-target semantics,
+measured performance advisories, and broader source-level expressiveness. Search-state four-Goal and group-size one-Goal output bindings are promoted through typed storage requests.
 
 ## Controllers/attack — CURRENT: issue-executable, lifecycle incomplete. TARGET: lifecycle-complete.
 EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding; native attack-now reference and controller ownership catalog.
