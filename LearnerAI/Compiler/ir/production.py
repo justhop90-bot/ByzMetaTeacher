@@ -390,6 +390,13 @@ class ProductionLifecycle:
                 "production queue-capacity evidence must target the lifecycle unit"
             )
         if (
+            self.provider_readiness_evidence is not None
+            and self.provider_readiness_evidence.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production provider-readiness evidence must target the lifecycle unit"
+            )
+        if (
             self.provider_state is not None
             and self.provider_state.native_building_id <= 0
         ):
