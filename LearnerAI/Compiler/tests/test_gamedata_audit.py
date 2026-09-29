@@ -154,9 +154,9 @@ class GameDataAuditTests(unittest.TestCase):
         )
         self.assertEqual(
             self.data.tech(905).base_cost,
-            ResourceCost(wood=150, gold=100),
+            ResourceCost(wood=25, gold=75),
         )
-        self.assertIsNone(self.data.tech(905).research_time_seconds)
+        self.assertEqual(self.data.tech(905).research_time_seconds, 20)
         self.assertEqual(
             self.data.tech(244).name,
             "Heavy Demolition Ship",
