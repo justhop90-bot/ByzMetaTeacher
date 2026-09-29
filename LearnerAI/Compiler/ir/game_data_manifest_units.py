@@ -199,4 +199,4 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
     ),
 )
 
-__all__ = ["BYZANTINE_MANIFEST_UNIT_SEEDS", "ByzantineManifestUnitSeed"]\
+__all__ = ["BYZANTINE_MANIFEST_UNIT_SEEDS", "ByzantineManifestUnitSeed"]
