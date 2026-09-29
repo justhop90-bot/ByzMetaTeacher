@@ -48,8 +48,8 @@ REMAINING: same-pass release→ordinary-action proof, starvation/emergency relea
 EVIDENCE: DUC rows; 11.6k/11.9k hits; typed plan/binder/emitter; pinned native fixture.
 IMPLEMENTATION: semantic/duc.py + ir/duc.py + native binder/engine mapping/registry/emitter.
 TEST: native deterministic acceptance fixture + full compiler verification.
-REMAINING: broader group output/storage surfaces, retained-filter/stale-target semantics,
-measured performance advisories, and broader source-level expressiveness. Search-state, group-size, cost-delta, point, and target-data output bindings are promoted through typed storage requests; returned target-data values and object liveness remain engine-produced/runtime-dependent.
+REMAINING: retained-filter/stale-target semantics,
+measured performance advisories, and broader source-level expressiveness. DUC group create/reset/set/size/flag commands now have contracted native engine mappings and zero-findings acceptance coverage; runtime group membership and flag effects remain engine state. Search-state, group-size, cost-delta, point, and target-data output bindings are promoted through typed storage requests; returned target-data values and object liveness remain engine-produced/runtime-dependent.
 
 ## Controllers/attack — CURRENT: issue-executable, lifecycle incomplete. TARGET: lifecycle-complete.
 EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding; native attack-now reference and controller ownership catalog.
