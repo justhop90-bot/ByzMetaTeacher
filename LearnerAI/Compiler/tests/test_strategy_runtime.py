@@ -787,6 +787,7 @@ class StrategyRuntimeTests(unittest.TestCase):
         )
         profile = replace(
             self.profile,
+            capability_observations=(capability,),
             demands=(
                 recovery_demand,
                 *(item for item in self.profile.demands if item.identity != base.identity),
