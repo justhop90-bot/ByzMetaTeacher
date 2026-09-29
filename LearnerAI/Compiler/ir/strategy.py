@@ -142,6 +142,25 @@ class StrategicBinding:
 
 
 @dataclass(frozen=True)
+class CapabilityRecoveryContract:
+    """Compiler-policy contract for temporary capability loss and recovery."""
+
+    preserve_strategic_demand: bool = True
+    preserve_opportunity_cost: bool = True
+    reopen_on_recovery: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.preserve_strategic_demand:
+            raise ValueError(
+                "capability recovery must preserve the original strategic demand"
+            )
+        if not self.reopen_on_recovery:
+            raise ValueError(
+                "capability recovery must reopen the original strategic demand"
+            )
+
+
+@dataclass(frozen=True)
 class StrategicDemandSpec:
     identity: str
     owner: str
@@ -156,6 +175,7 @@ class StrategicDemandSpec:
     execution: ExecutionDemandTemplate
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
+    recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
@@ -481,6 +501,20 @@ def resolve_strategy_profile(
                     raise ValueError(
                         f"strategic demand '{demand.identity}' cannot use timing as strategic truth"
                     )
+
+        if not demand.recovery.preserve_strategic_demand:
+            raise ValueError(
+                f"strategic demand '{demand.identity}' must preserve intent across capability loss"
+            )
+        if not demand.recovery.reopen_on_recovery:
+            raise ValueError(
+                f"strategic demand '{demand.identity}' must reopen on capability recovery"
+            )
+        if demand.opportunity_cost is not None and not demand.recovery.preserve_opportunity_cost:
+            raise ValueError(
+                f"strategic demand '{demand.identity}' cannot release opportunity-cost protection "
+                "merely because capability was temporarily lost"
+            )
 
         _validate_factual_coverage(demand, effective)
         _validate_capability_intent(demand, effective)
