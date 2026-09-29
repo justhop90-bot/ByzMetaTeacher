@@ -210,6 +210,7 @@ from .resource_control import (
     EscrowRetentionPolicy,
     NATIVE_ESCROW_RELEASE_COMMAND,
     NATIVE_ESCROW_RELEASE_RESOURCES,
+    NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     NativeArbitrationContract,
     NativeArbitrationRecovery,
