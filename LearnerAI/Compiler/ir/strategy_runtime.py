@@ -46,6 +46,7 @@ class StrategicObservationType(str, Enum):
     ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
     PERSISTENT_CONTROL_STATE = "PERSISTENT_CONTROL_STATE"
     PRODUCTION_QUEUE_CAPACITY_CONTROL = "PRODUCTION_QUEUE_CAPACITY_CONTROL"
+    EXPLORATION_GROUP_CONTROL = "EXPLORATION_GROUP_CONTROL"
     TOWN_SIZE_CONTROL = "TOWN_SIZE_CONTROL"
     TRAIN_PROVIDER_READINESS = "TRAIN_PROVIDER_READINESS"
     TIMING = "TIMING"
@@ -532,6 +533,16 @@ def _validate_expression(
                     "SN 264 sn-enable-training-queue requires equality against a value in 0..15"
                 )
             semantic_type = StrategicObservationType.PRODUCTION_QUEUE_CAPACITY_CONTROL
+        elif sn_id == 42:
+            try:
+                configured_value = int(str(expression.args[2]))
+            except (IndexError, ValueError, TypeError):
+                configured_value = None
+            if configured_value is None or configured_value < 0:
+                raise ValueError(
+                    "SN 42 sn-number-explore-groups requires a comparison value in 0..Max"
+                )
+            semantic_type = StrategicObservationType.EXPLORATION_GROUP_CONTROL
         elif sn_id == 74:
             semantic_type = StrategicObservationType.TOWN_SIZE_CONTROL
 
