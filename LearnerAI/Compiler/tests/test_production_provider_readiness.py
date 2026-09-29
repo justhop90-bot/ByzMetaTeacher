@@ -152,6 +152,51 @@ class ProductionProviderReadinessTests(unittest.TestCase):
         )
         self.assertEqual(lifecycle.target_admission.primitive, "can-train")
 
+    def test_lifecycle_rejects_readiness_for_different_unit(self):
+        registry = default_de_registry()
+        readiness = registry.resolve_production_provider_readiness(
+            _expression(
+                "(up-train-site-ready c: 38)",
+                "up-train-site-ready",
+                "c:",
+                "38",
+            ),
+            native_unit_id=38,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "provider-readiness evidence must target the lifecycle unit",
+        ):
+            ProductionLifecycle(
+                unit="spearman",
+                native_unit_id=93,
+                target_admission=registry.resolve_production_target_admission(
+                    _expression("(can-train 93)", "can-train", "93"),
+                    native_unit_id=93,
+                ),
+                completion_witness=_expression(
+                    "(unit-type-count spearman >= 1)",
+                    "unit-type-count",
+                    "spearman",
+                    ">=",
+                    "1",
+                ),
+                retry_barrier=_retry_barrier(),
+                queue_protection=registry.resolve_production_queue_protection(
+                    _expression(
+                        "(up-pending-objects c: 93 >= 1)",
+                        "up-pending-objects",
+                        "c:",
+                        "93",
+                        ">=",
+                        "1",
+                    ),
+                    native_unit_id=93,
+                ),
+                provider_readiness_evidence=readiness,
+            )
+
     def test_analyzer_preserves_readiness_and_train_feasibility_separately(self):
         source = """
         demand spears {
