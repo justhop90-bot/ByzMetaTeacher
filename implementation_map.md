@@ -73,6 +73,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
+## Generic/client strategy policy boundary
+- `tests/test_basilisk_client_boundary.py` now audits both public re-exports and source-level Python imports.
+- Generic compiler source excludes downstream `clients/basilisk`, `ir/strategy`, and `ir/strategy_runtime` imports; violations fail the test with source path and line number.
+- This is a compiler policy boundary only; no strategy semantics are moved into the generic compiler.
+
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py
   (ENGINE_SEMANTICS_MAPPED with binding for DUC), emitter DUC lowering, DSL surface decision.
