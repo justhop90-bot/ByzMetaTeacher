@@ -273,7 +273,7 @@ class NativeDucPlanTests(unittest.TestCase):
             (
                 "up-get-object-target-data",
                 "object-target-data-output",
-                "(up-get-object-target-data object-data-type 41)",
+                "(up-get-object-target-data 38 41)",
             ),
         ):
             plan = NativeDucPlan(
