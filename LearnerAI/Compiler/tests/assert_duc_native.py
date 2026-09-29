@@ -14,7 +14,31 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.ast import Expression
 from Compiler.compiler import compile_source
-from Compiler.ir import NativeDucPlan, NativeDucRule
+from Compiler.ir import GoalRole, GoalSpanKind, GoalSpanRequest, SemanticId, StorageRequestId
+from Compiler.ir import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+
+
+def _search_state_output_request() -> NativeDucOutputRequest:
+    request = GoalSpanRequest(
+        StorageRequestId(
+            SemanticId("native.duc", "search-state-output"),
+            "up-get-search-state",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+        width=4,
+        shape=GoalSpanKind.EXTENDED_4,
+        contract_id="up-get-search-state.OutputGoalId",
+        start_min=41,
+        start_max=15996,
+    )
+    return NativeDucOutputRequest(
+        rule_identity="search-state",
+        section="ACTION",
+        expression_index=0,
+        request=request,
+        command="up-get-search-state",
+        argument_index=0,
+    )
 
 
 def _plan() -> NativeDucPlan:
@@ -39,8 +63,26 @@ def _plan() -> NativeDucPlan:
                 ),
             ),
             NativeDucRule(
-                identity="target-action",
+                identity="search-state",
                 order=101,
+                facts=(
+                    Expression(
+                        "(up-can-search c: local-search)",
+                        "up-can-search",
+                        ("c:", "local-search"),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-get-search-state 41)",
+                        "up-get-search-state",
+                        ("41",),
+                    ),
+                ),
+            ),
+            NativeDucRule(
+                identity="target-action",
+                order=102,
                 facts=(
                     Expression(
                         "(up-set-target-object search-local c: 0)",
@@ -56,7 +98,10 @@ def _plan() -> NativeDucPlan:
                     ),
                 ),
             ),
-        )
+        ),
+        output_requests=(
+            _search_state_output_request(),
+        ),
     )
 
 
@@ -107,6 +152,7 @@ def main() -> int:
 
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
+        "(up-get-search-state 42)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )

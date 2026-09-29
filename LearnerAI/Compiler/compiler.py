@@ -150,7 +150,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir, control_plan=None):
+def _storage_requests(ir, control_plan=None, duc_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -173,6 +173,13 @@ def _storage_requests(ir, control_plan=None):
             requests.append(request)
     if control_plan is not None:
         for request in control_plan.storage_requests:
+            if request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
+    if duc_plan is not None:
+        for output_request in duc_plan.output_requests:
+            request = output_request.request
             if request.request_id in seen:
                 continue
             seen.add(request.request_id)
@@ -295,7 +302,7 @@ def _compile_ir_parts(
         raise TypeError("duc_plan must be a NativeDucPlan")
     if escrow_plan is not None and not isinstance(escrow_plan, NativeEscrowReleasePlan):
         raise TypeError("escrow_plan must be a NativeEscrowReleasePlan")
-    storage_requests = _storage_requests(ir, control_plan)
+    storage_requests = _storage_requests(ir, control_plan, duc_plan)
     if any(
         isinstance(request, StrategicNumberRequest)
         for request in storage_requests
