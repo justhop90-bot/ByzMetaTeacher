@@ -199,8 +199,9 @@ class GameDataAuditTests(unittest.TestCase):
     def test_current_snapshot_marks_itself_as_a_factual_subset(self):
         self.assertEqual(self.data.coverage.status.value, "FACTUAL_SUBSET")
         self.data.require_coverage("unit", 2703)
+        self.data.require_coverage("unit", 550)
         with self.assertRaisesRegex(ValueError, "factual coverage"):
-            self.data.require_coverage("unit", 550)
+            self.data.require_coverage("unit", 2628)
 
     def test_verified_unavailable_byzantine_entities_are_first_class_facts(self):
         for tech_id in (435, 436, 239):
