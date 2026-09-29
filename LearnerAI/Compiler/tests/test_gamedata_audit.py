@@ -201,7 +201,7 @@ class GameDataAuditTests(unittest.TestCase):
         self.data.require_coverage("unit", 2703)
         self.data.require_coverage("unit", 550)
         with self.assertRaisesRegex(ValueError, "factual coverage"):
-            self.data.require_coverage("unit", 2628)
+            self.data.require_coverage("unit", 527)
 
     def test_verified_unavailable_byzantine_entities_are_first_class_facts(self):
         for tech_id in (435, 436, 239):
