@@ -2589,7 +2589,7 @@ def _analyze_duc_linear(
 
             if command == "up-get-point":
                 point_span_contract = contracts.goal_span_contract(
-                    "up-get-point.Point"
+                    "point-goal-span"
                 )
                 if len(args) != 2:
                     diagnostics.append(
