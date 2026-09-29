@@ -182,6 +182,11 @@ def main() -> int:
     }
     """
     plan = _plan()
+    print(
+        "DUC DEBUG plan "
+        f"rules={len(plan.rules)} empty={plan.empty} "
+        f"outputs={len(plan.output_requests)} commands={plan.commands}"
+    )
     first = compile_source(source, duc_plan=plan)
     second = compile_source(source, duc_plan=plan)
     if first != second:
@@ -198,6 +203,15 @@ def main() -> int:
         fragment for fragment in required_fragments if fragment not in first
     )
     if missing:
+        duc_lines = tuple(
+            line
+            for line in first.splitlines()
+            if "Native DUC" in line or "up-get-search-state" in line or "up-get-group-size" in line
+        )
+        print(
+            "DUC DEBUG emitted="
+            + repr(duc_lines)
+        )
         raise SystemExit(
             f"DUC artifact is missing emitted commands: {missing}"
         )
