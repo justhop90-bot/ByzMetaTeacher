@@ -105,7 +105,7 @@ class ProductionQueueCapacityNativeContractTests(unittest.TestCase):
     def test_analyzer_preserves_open_capacity_control_without_authorizing_train(self):
         source = """
         demand queued-spears {
-            require (strategic-number sn-enable-training-queue == 3)
+            require (up-compare-sn sn-enable-training-queue == 3)
             require (unit-type-count-total spearman < 4)
             require (can-train spearman)
             action (train spearman)
