@@ -259,21 +259,28 @@ class PrimitiveRegistry:
             native_contracts=self._native_contracts,
             adapter_lookup=self.get,
         )
+        duc_commands = set(self._native_contracts.duc_command_names)
         for rule in plan.rules:
-            for expression in (*rule.facts, *rule.actions):
+            for expression in rule.facts:
+                native = self.require_native(expression.head)
+                self.validate_native_signature(expression.head, len(expression.args))
+                if native.command_type not in {"Fact", "Fact/Action"}:
+                    raise ValueError(
+                        f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
+                    )
+                if expression.head in duc_commands:
+                    binder.bind_duc_command(expression.head)
+            for expression in rule.actions:
+                if expression.head not in duc_commands:
+                    raise ValueError(
+                        f"DUC rule action '{expression.head}' is not a contracted DUC command"
+                    )
                 binding = binder.bind_duc_command(expression.head)
                 if len(expression.args) != binding.parameter_count:
                     raise ValueError(
                         f"DUC command '{expression.head}' expects exactly "
                         f"{binding.parameter_count} argument(s), got {len(expression.args)}"
                     )
-            for expression in rule.facts:
-                native = self.require_native(expression.head)
-                if native.command_type not in {"Fact", "Fact/Action"}:
-                    raise ValueError(
-                        f"DUC command '{expression.head}' is an Action and cannot be emitted as a Fact"
-                    )
-            for expression in rule.actions:
                 native = self.require_native(expression.head)
                 if native.command_type not in {"Action", "Fact/Action"}:
                     raise ValueError(
