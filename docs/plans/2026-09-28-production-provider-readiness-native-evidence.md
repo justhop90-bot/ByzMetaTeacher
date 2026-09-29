@@ -12,13 +12,13 @@ Cross-reference:
 ## Checklist
 
 - [x] Cross-reference pinned AIRef schema and external command description.
-- [ ] Add failing focused resolver/lifecycle/analyzer tests.
-- [ ] Register native fact and engine semantic mapping.
-- [ ] Add typed IR evidence with fail-closed invariants.
-- [ ] Add registry resolver requiring literal `c:` UnitId and canonical numeric emission.
-- [ ] Thread evidence through production analyzer/lifecycle without changing `can-train`.
-- [ ] Add deterministic source-to-.per fixture and native zero-findings acceptance.
-- [ ] Reconcile MUSE/gap/unknown documentation.
+- [x] Add failing focused resolver/lifecycle/analyzer tests.
+- [x] Register native fact and engine semantic mapping.
+- [x] Add typed IR evidence with fail-closed invariants.
+- [x] Add registry resolver requiring literal `c:` UnitId and canonical numeric emission.
+- [x] Thread evidence through production analyzer/lifecycle without changing `can-train`.
+- [x] Add deterministic source-to-.per fixture and native zero-findings acceptance.
+- [x] Reconcile MUSE/gap/unknown documentation.
 - [ ] Run focused tests and full Compiler verification.
 - [ ] Merge after verification.
 
