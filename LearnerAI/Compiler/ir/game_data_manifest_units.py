@@ -156,7 +156,7 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
         "Demolition Raft",
         "SDGAL",
         None,
-        None,
+        UnitId(527),
     ),
     ByzantineManifestUnitSeed(
         UnitId(17),
