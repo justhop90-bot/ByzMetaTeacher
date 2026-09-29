@@ -64,6 +64,19 @@ class NativeDucSemanticBinding:
 
 
 @dataclass(frozen=True)
+class NativeOutputSemanticBinding:
+    command: str
+    native_version: str
+    native_kind: str
+    parameter_count: int
+    semantic_mapping_id: str
+    mapping_status: EngineSemanticMappingStatus
+    evidence_class: str
+    evidence_sources: tuple[str, ...]
+    support_state: NativeSupportState
+
+
+@dataclass(frozen=True)
 class NativeEscrowSemanticBinding:
     command: str
     native_version: str
@@ -922,6 +935,121 @@ class NativeSemanticBinder:
                 key=lambda item: (item.command, item.controller_id, item.surface_identity),
             )
         )
+
+    def assess_native_output_command(self, name: str) -> NativeSupportAssessment:
+        native = self.native_registry.get(name)
+        if native is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-OUTPUT-006",
+                "error",
+                "native output command is not present in the checked-in native schema",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+        if not self._native_typed(native):
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-OUTPUT-006",
+                "error",
+                "native output command metadata is not typed",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+        try:
+            self.native_contracts.native_output_goal(name)
+        except KeyError:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-OUTPUT-006",
+                "error",
+                "native output command has no typed Goal output contract",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+        mapping = self.semantic_mappings.for_command(name)
+        if mapping is None:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-OUTPUT-006",
+                "error",
+                "native output command has no contracted engine semantic mapping",
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+        mapping_ok, mapping_message = self.semantic_mappings.validate_primitive(
+            command=name,
+            native_kind=native.command_type,
+            identity=mapping.identity,
+        )
+        if not mapping_ok:
+            diagnostic = self._diagnostic(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                "NATIVE-OUTPUT-006",
+                "error",
+                mapping_message,
+            )
+            return NativeSupportAssessment(
+                name,
+                NativeSupportState.UNSUPPORTED,
+                diagnostic.message,
+                (diagnostic,),
+            )
+        diagnostic = self._diagnostic(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "NATIVE-OUTPUT-005",
+            "info",
+            "native output command has schema, typed Goal contract, contracted engine semantics, and executable-safe promotion",
+        )
+        return NativeSupportAssessment(
+            name,
+            NativeSupportState.EXECUTABLE_SAFE,
+            "native output command is executable-safe",
+            (diagnostic,),
+            binding=None,
+        )
+
+    def bind_native_output_command(self, name: str) -> NativeOutputSemanticBinding:
+        assessment = self.assess_native_output_command(name)
+        if assessment.state is not NativeSupportState.EXECUTABLE_SAFE:
+            raise ValueError(assessment.message)
+        mapping = self.semantic_mappings.for_command(name)
+        native = self.native_registry.get(name)
+        assert mapping is not None and native is not None
+        return NativeOutputSemanticBinding(
+            command=name,
+            native_version=native.version,
+            native_kind=native.command_type,
+            parameter_count=native.parameter_count,
+            semantic_mapping_id=mapping.identity,
+            mapping_status=mapping.status,
+            evidence_class=mapping.evidence_class,
+            evidence_sources=tuple(mapping.evidence_sources),
+            support_state=NativeSupportState.EXECUTABLE_SAFE,
+        )
+
 
     def assess_duc_command(self, name: str) -> NativeSupportAssessment:
         native = self.native_registry.get(name)
