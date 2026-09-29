@@ -78,7 +78,15 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         self.assertEqual(resolved.pending_fact.args[1], "93")
 
     def test_queue_protection_matrix_marks_total_and_provider_state_open(self):
-        for primitive, args, message in (
+        pending = _expression(
+            "(up-pending-objects c: 93 >= 1)",
+            "up-pending-objects",
+            "c:",
+            "93",
+            ">=",
+            "1",
+        )
+        cases = (
             (
                 "unit-type-count-total",
                 ("93", "<", "2"),
@@ -89,19 +97,30 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
                 ("87", ">=", "1"),
                 "provider-state",
             ),
-        ):
+        )
+        for primitive, args, message in cases:
             with self.subTest(primitive=primitive):
+                kwargs = {
+                    "queue_state": _expression(
+                        f"({primitive} {' '.join(args)})",
+                        primitive,
+                        *args,
+                    )
+                } if message == "queue-state" else {
+                    "provider_state": _expression(
+                        f"({primitive} {' '.join(args)})",
+                        primitive,
+                        *args,
+                    )
+                }
                 with self.assertRaisesRegex(
                     ValueError,
                     f"production queue-protection {message} observation is OPEN",
                 ):
                     self.registry.resolve_production_queue_protection(
-                        _expression(
-                            f"({primitive} {' '.join(args)})",
-                            primitive,
-                            *args,
-                        ),
+                        pending,
                         native_unit_id=93,
+                        **kwargs,
                     )
 
     def test_queue_protection_matrix_rejects_target_admission_fact(self):
@@ -139,9 +158,12 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         ):
             self.registry.resolve_production_queue_protection(
                 _expression(
-                    "(provider-ready 87)",
-                    "provider-ready",
-                    "87",
+                    "(up-pending-objects c: 93 >= 1)",
+                    "up-pending-objects",
+                    "c:",
+                    "93",
+                    ">=",
+                    "1",
                 ),
                 native_unit_id=93,
                 provider_state=_expression(
@@ -149,6 +171,20 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
                     "provider-ready",
                     "87",
                 ),
+            )
+
+    def test_unresolved_provider_observation_fails_closed(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "production provider-state observation 'provider-ready' is not a registered native fact",
+        ):
+            self.registry.resolve_production_provider_state(
+                _expression(
+                    "(provider-ready 87)",
+                    "provider-ready",
+                    "87",
+                ),
+                native_building_id=87,
             )
 
     def test_analyzer_populates_separate_target_admission_and_queue_protection(self):
