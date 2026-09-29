@@ -1,6 +1,8 @@
 import unittest
 
 from Compiler.ast import Expression
+from Compiler.compiler import compile_source
+from Compiler.errors import CompileError
 from Compiler.ir.production import ProductionFactDisposition
 from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
@@ -283,10 +285,9 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
             CompileError,
             "PRODUCTION-TARGET-ADMISSION-MISSING",
         ):
-            analyze(
-                parse(source),
-                self.registry,
-                source_unit="test",
+            compile_source(
+                source,
+                registry=self.registry,
             )
 
     def test_analyzer_rejects_target_admission_for_wrong_unit(self):
@@ -302,10 +303,9 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
             CompileError,
             "PRODUCTION-TARGET-ADMISSION",
         ):
-            analyze(
-                parse(source),
-                self.registry,
-                source_unit="test",
+            compile_source(
+                source,
+                registry=self.registry,
             )
 
 
