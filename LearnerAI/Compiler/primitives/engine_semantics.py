@@ -189,6 +189,7 @@ _DUC_COMMAND_SPECS = (
     ("up-get-search-state", "duc.search.state"),
     ("up-get-group-size", "duc.group.get-size"),
     ("up-get-cost-delta", "duc.output.cost-delta"),
+    ("up-get-point", "duc.output.point"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
@@ -453,6 +454,42 @@ def _attack_issue_mapping() -> EngineSemanticMapping:
         practice_references=(),
     )
 
+def _duc_point_mapping(command: str, identity: str) -> EngineSemanticMapping:
+    return EngineSemanticMapping(
+        identity=identity,
+        native_command=command,
+        native_kind="Action",
+        status=EngineSemanticMappingStatus.CONTRACTED,
+        evidence_class="ENGINE FACT",
+        evidence_sources=(_AOERF, _AOERF_PER),
+        state_effects=(
+            "reads the documented native Point source and writes its x/y result "
+            "into two consecutive GoalIds supplied by the caller"
+        ),
+        lifetime=(
+            "one-shot native output operation; the resulting coordinate values "
+            "remain in the supplied Goals until another command changes them"
+        ),
+        ordering=(
+            "the Action executes at its emitted position; later rules may consume "
+            "the bound Goal pair, while this mapping makes no same-pass numeric-value claim"
+        ),
+        admission=(
+            "native command is present in the pinned AIRef schema with exactly "
+            "two parameters: Point input and OutputGoalId start"
+        ),
+        completion=(
+            "the operation's native output write is the contracted event; the "
+            "compiler does not infer the coordinate values themselves"
+        ),
+        recovery=(
+            "reissue or replace the point-output command through normal rule "
+            "reassessment; no synthetic geometry or stale-value clearing is emitted"
+        ),
+        practice_references=(),
+    )
+
+
 def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
     native_kind = {
         "up-can-search": "Fact",
@@ -587,7 +624,11 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.append(_pending_placement_mapping())
     mappings.extend(_action_mapping(command, identity) for command, identity in _ACTION_SPECS)
     mappings.extend(
-        _duc_mapping(command, identity)
+        (
+            _duc_point_mapping(command, identity)
+            if command == "up-get-point"
+            else _duc_mapping(command, identity)
+        )
         for command, identity in _DUC_COMMAND_SPECS
     )
     mappings.extend(

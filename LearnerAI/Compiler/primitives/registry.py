@@ -303,6 +303,7 @@ class PrimitiveRegistry:
             "up-get-search-state",
             "up-get-group-size",
             "up-get-cost-delta",
+            "up-get-point",
         }
         output_sites = {
             (rule.identity, section, index): expression
@@ -382,6 +383,31 @@ class PrimitiveRegistry:
                 if len(expression.args) != 1:
                     raise ValueError(
                         "up-get-cost-delta native expression must have exactly one OutputGoalId argument"
+                    )
+
+            elif expression.head == "up-get-point":
+                if output_request.argument_index != 1:
+                    raise ValueError(
+                        f"DUC up-get-point output request '{site}' must bind argument 1"
+                    )
+                if not isinstance(output_request.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC up-get-point output request '{site}' requires GoalSpanRequest"
+                    )
+                request = output_request.request
+                if (
+                    request.width != 2
+                    or request.shape.value != "POINT_PAIR"
+                    or request.contract_id != "up-get-point.Point"
+                    or request.start_min != 41
+                    or request.start_max != 15998
+                ):
+                    raise ValueError(
+                        f"DUC up-get-point output request '{site}' has invalid point GoalSpan contract"
+                    )
+                if len(expression.args) != 2:
+                    raise ValueError(
+                        "up-get-point native expression must have exactly one Point and one OutputGoalId argument"
                     )
 
             elif expression.head == "up-get-group-size":
