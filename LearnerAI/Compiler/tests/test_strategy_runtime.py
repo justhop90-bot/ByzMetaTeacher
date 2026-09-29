@@ -718,7 +718,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             target=base.target.__class__(
                 StrategicTargetKind.EXACT,
                 "unit-line",
-                "cataphract",
+                "cataphract-line",
             ),
             execution=replace(
                 base.execution,
