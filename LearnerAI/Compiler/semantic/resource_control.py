@@ -14,7 +14,10 @@ from ..ir.resource_control import (
     EscrowContract,
     EscrowReserveKind,
     EscrowRetentionPolicy,
+    NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
+    NATIVE_ESCROW_POLICY_COMMAND,
+    NATIVE_ESCROW_POLICY_RESOURCES,
     NATIVE_ESCROW_RELEASE_COMMAND,
     NATIVE_ESCROW_RELEASE_RESOURCES,
     NativeArbitrationContract,
@@ -64,6 +67,7 @@ class ResourceControlErrorCode(str, Enum):
     ESCROW_DUPLICATE_TERMINAL = "RCTRL-033"
     ESCROW_OPERATION_COMMAND_MISMATCH = "RCTRL-034"
     ESCROW_OPERATION_CONTRACT_MISMATCH = "RCTRL-035"
+    ESCROW_POLICY_PERCENTAGE = "RCTRL-036"
 
 
 @dataclass(frozen=True)
@@ -691,6 +695,85 @@ def validate_escrow_release_plan(
                 _error(
                     ResourceControlErrorCode.ESCROW_RESOURCES,
                     f"unsupported native escrow release resource '{operation.resource}'",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+    return ResourceControlValidationReport(
+        errors=tuple(
+            sorted(
+                errors,
+                key=lambda item: (item.code.value, item.subject, item.message),
+            )
+        )
+    )
+
+
+def validate_escrow_policy_plan(
+    plan: NativeEscrowPolicyPlan,
+) -> ResourceControlValidationReport:
+    errors: list[ResourceControlValidationError] = []
+    seen_contracts: set[str] = set()
+    previous_key = None
+    for operation in plan.operations:
+        subject = operation.contract_identity
+        key = (
+            operation.rule_order,
+            operation.within_rule_order,
+            operation.contract_identity,
+        )
+        if previous_key is not None and key < previous_key:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RELEASE_ORDER,
+                    "native escrow policy operations must be declared in deterministic order",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        previous_key = key
+        if subject in seen_contracts:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_DUPLICATE_TERMINAL,
+                    f"native escrow policy contract '{subject}' appears more than once",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        seen_contracts.add(subject)
+        if operation.kind is not EscrowOperationKind.POLICY_RESET:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_COMMAND_MISMATCH,
+                    "native escrow policy plan accepts only POLICY_RESET operations",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        if operation.command != NATIVE_ESCROW_POLICY_COMMAND:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_OPERATION_COMMAND_MISMATCH,
+                    f"native escrow policy operation uses '{operation.command}', expected '{NATIVE_ESCROW_POLICY_COMMAND}'",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        if operation.resource not in NATIVE_ESCROW_POLICY_RESOURCES:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_RESOURCES,
+                    f"unsupported native escrow policy resource '{operation.resource}'",
+                    subject=subject,
+                    location=operation.location,
+                )
+            )
+        if operation.percentage is None or not 0 <= operation.percentage <= 100:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_POLICY_PERCENTAGE,
+                    "native escrow policy percentage must be an integer in 0..100",
                     subject=subject,
                     location=operation.location,
                 )
