@@ -974,7 +974,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("varangian-guard-line"), "Varangian Guard line", (UnitId(2703), UnitId(2704)), (controller,)),
         UnitLineDef(UnitLineId("monk-line"), "Monk line", (UnitId(125),), (evidence,)),
         UnitLineDef(UnitLineId("ram-line"), "Ram line", (UnitId(1258), UnitId(422), UnitId(548)), (evidence,)),
-        UnitLineDef(UnitLineId("mangonel-line"), "Mangonel line", (UnitId(280),), (evidence,)),
+        UnitLineDef(UnitLineId("mangonel-line"), "Mangonel line", (UnitId(280), UnitId(550)), (evidence,)),
         UnitLineDef(UnitLineId("scorpion-line"), "Scorpion line", (UnitId(279),), (evidence,)),
         UnitLineDef(UnitLineId("siege-tower-line"), "Siege Tower line", (UnitId(1105),), (evidence,)),
         UnitLineDef(UnitLineId("trebuchet-line"), "Trebuchet line", (UnitId(331),), (evidence,)),
@@ -982,6 +982,14 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("fire-galley-line"), "Fire Galley line", (UnitId(1103),), (evidence,)),
         UnitLineDef(UnitLineId("fire-ship-line"), "Fire Ship line", (UnitId(529), UnitId(532)), (evidence,)),
         UnitLineDef(UnitLineId("dromon-line"), "Dromon line", (UnitId(1795),), (evidence,)),
+        UnitLineDef(UnitLineId("fishing-ship-line"), "Fishing Ship line", (UnitId(13),), (evidence,)),
+        UnitLineDef(UnitLineId("transport-ship-line"), "Transport Ship line", (UnitId(545),), (evidence,)),
+        UnitLineDef(UnitLineId("galley-line"), "Galley line", (UnitId(539), UnitId(21), UnitId(442)), (evidence,)),
+        UnitLineDef(UnitLineId("hulk-line"), "Hulk line", (UnitId(2626), UnitId(2627)), (evidence,)),
+        UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104),), (evidence,)),
+        UnitLineDef(UnitLineId("trade-cog-line"), "Trade Cog line", (UnitId(17),), (evidence,)),
+        UnitLineDef(UnitLineId("villager-line"), "Villager line", (UnitId(83),), (evidence,)),
+        UnitLineDef(UnitLineId("trade-cart-line"), "Trade Cart line", (UnitId(128),), (evidence,)),
     )
     buildings = tuple(
         replace(
