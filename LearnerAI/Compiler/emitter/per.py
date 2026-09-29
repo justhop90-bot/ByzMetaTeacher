@@ -327,54 +327,46 @@ def emit(
             request.site_key: request
             for request in duc_plan.output_requests
         }
-        for rule in duc_plan.rules:
-            out.append(f"; Native DUC rule: {rule.identity}")
-            out.append("(defrule")
-            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions)):
-                for expression_index, expression in enumerate(expressions):
-                    request = output_requests.get(
-                        (rule.identity, section, expression_index)
-                    )
-                    rendered = expression.source
-                    if request is not None:
-                        binding = bindings.binding_for(request.request.request_id)
-                        if not isinstance(binding, GoalSpan):
-                            raise CompileError(
-                                f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
-                                f"resolved to '{type(binding).__name__}', expected GoalSpan"
-                            )
-                        arguments = list(expression.args)
-                        if request.argument_index >= len(arguments):
-                            raise CompileError(
-                                f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
-                                "argument index is outside the expression"
-                            )
-                        arguments[request.argument_index] = str(binding.start.value)
-                        rendered = f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
-                    if section == "FACT":
-                        out.append(f"    {rendered}")
-            out.append("=>")
-            for expression_index, expression in enumerate(rule.actions):
-                request = output_requests.get(
-                    (rule.identity, "ACTION", expression_index)
+
+        def _render_duc_expression(section: str, expression_index: int, expression) -> str:
+            request = output_requests.get(
+                (current_rule.identity, section, expression_index)
+            )
+            rendered = expression.source
+            if request is None:
+                return rendered
+
+            binding = bindings.binding_for(request.request.request_id)
+            if isinstance(binding, GoalSpan):
+                output_goal = binding.start.value
+            elif isinstance(binding, GoalSlot):
+                output_goal = binding.id.value
+            else:
+                raise CompileError(
+                    f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
+                    f"resolved to '{type(binding).__name__}', expected GoalSlot or GoalSpan"
                 )
-                rendered = expression.source
-                if request is not None:
-                    binding = bindings.binding_for(request.request.request_id)
-                    if not isinstance(binding, GoalSpan):
-                        raise CompileError(
-                            f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
-                            f"resolved to '{type(binding).__name__}', expected GoalSpan"
-                        )
-                    arguments = list(expression.args)
-                    if request.argument_index >= len(arguments):
-                        raise CompileError(
-                            f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
-                            "argument index is outside the expression"
-                        )
-                    arguments[request.argument_index] = str(binding.start.value)
-                    rendered = f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
-                out.append(f"    {rendered}")
+            arguments = list(expression.args)
+            if request.argument_index >= len(arguments):
+                raise CompileError(
+                    f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
+                    "argument index is outside the expression"
+                )
+            arguments[request.argument_index] = str(output_goal)
+            return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
+
+        for current_rule in duc_plan.rules:
+            out.append(f"; Native DUC rule: {current_rule.identity}")
+            out.append("(defrule")
+            for expression_index, expression in enumerate(current_rule.facts):
+                out.append(
+                    f"    {_render_duc_expression('FACT', expression_index, expression)}"
+                )
+            out.append("=>")
+            for expression_index, expression in enumerate(current_rule.actions):
+                out.append(
+                    f"    {_render_duc_expression('ACTION', expression_index, expression)}"
+                )
             out += [")", ""]
 
     if attack_plan is not None and not attack_plan.empty:
