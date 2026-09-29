@@ -67,6 +67,12 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Protected-research strategy pattern: `ExecutionDemandTemplate.escrow_release_resources` explicitly declares the resources a strategy may release before ordinary `research`; `lower_strategy_profile` builds a targeted `NativeEscrowReleasePlan`, and both strategy compilation entry points forward it through the existing `escrow_plan` channel.
 - Remaining: same-pass runtime visibility, provider/busy runtime semantics, starvation/emergency behavior, and handoff semantics.
 
+## Strategy capability recovery
+- `ir/strategy.py`: `CapabilityRecoveryContract` requires strategic-demand preservation and reopening after temporary capability recovery; opportunity-cost protection cannot be configured to release merely on capability loss.
+- `ir/strategy_runtime.py`: capability-loss/recovery transitions are tied to explicit reassessment reasons; runtime validation rejects accidental invalidation or opportunity-cost release caused solely by capability loss.
+- Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
+- Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
+
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py
   (ENGINE_SEMANTICS_MAPPED with binding for DUC), emitter DUC lowering, DSL surface decision.
