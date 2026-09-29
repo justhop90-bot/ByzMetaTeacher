@@ -58,7 +58,12 @@ if __package__ in (None, ""):
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.semantic.native_control import validate_native_control_plan
     from Compiler.emitter import emit
-    from Compiler.ir import NativeAttackLifecyclePlan, NativeDucPlan
+    from Compiler.ir import (
+        NativeAttackLifecyclePlan,
+        NativeDucPlan,
+        NativeEscrowPolicyPlan,
+        NativeEscrowReleasePlan,
+    )
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
     from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
