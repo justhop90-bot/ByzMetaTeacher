@@ -338,12 +338,12 @@ def main() -> int:
 
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
-        "(up-get-search-state 50)",
+        "(up-get-search-state 52)",
         "(up-get-group-size c: 3 42)",
         "(up-get-object-data object-data-type 43)",
         "(up-get-object-target-data object-data-type 44)",
-        "(up-get-cost-delta 44)",
-        "(up-get-point position-center 48)",
+        "(up-get-cost-delta 46)",
+        "(up-get-point position-center 50)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )
