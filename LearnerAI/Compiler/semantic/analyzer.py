@@ -562,13 +562,7 @@ def analyze(
             ]
             birth_timing_evidence = None
             queue_exit_timing_evidence = None
-            if len(production_time_requirements) > 1:
-                raise CompileError(
-                    f"PRODUCTION-TIMING: demand '{demand.name}' "
-                    "has multiple game-time observations; the timing sample "
-                    "must be unambiguous"
-                )
-            if production_time_requirements:
+            if len(production_time_requirements) == 1:
                 time_expression = production_time_requirements[0]
                 birth_requirements = [
                     requirement.expression
@@ -591,22 +585,6 @@ def analyze(
                     and len(requirement.expression.args) >= 2
                     and str(requirement.expression.args[1]) == unit
                 ]
-                if len(birth_requirements) > 1:
-                    raise CompileError(
-                        f"PRODUCTION-BIRTH-TIMING: demand '{demand.name}' "
-                        "has multiple unit-type-count timing observations"
-                    )
-                if len(queue_total_requirements) > 1:
-                    raise CompileError(
-                        f"PRODUCTION-QUEUE-EXIT-TIMING: demand '{demand.name}' "
-                        "has multiple unit-type-count-total timing observations"
-                    )
-                if len(pending_requirements) > 1:
-                    raise CompileError(
-                        f"PRODUCTION-QUEUE-EXIT-TIMING: demand '{demand.name}' "
-                        "has multiple up-pending-objects timing observations"
-                    )
-
                 canonical_time = Expression(
                     source=f"(game-time {' '.join(str(arg) for arg in time_expression.args)})",
                     head="game-time",
@@ -614,7 +592,7 @@ def analyze(
                     location=time_expression.location,
                 )
 
-                if birth_requirements:
+                if len(birth_requirements) == 1:
                     birth_expression = birth_requirements[0]
                     canonical_birth = Expression(
                         source=(
@@ -640,7 +618,7 @@ def analyze(
                             f"cannot resolve birth timing evidence: {exc}"
                         ) from exc
 
-                if queue_total_requirements and pending_requirements:
+                if len(queue_total_requirements) == 1 and len(pending_requirements) == 1:
                     queue_total_expression = queue_total_requirements[0]
                     pending_expression = pending_requirements[0]
                     canonical_queue_total = Expression(
