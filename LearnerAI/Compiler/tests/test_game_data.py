@@ -66,7 +66,7 @@ class GameDataTests(unittest.TestCase):
         effective = resolve_effective_civ(profile)
         from pathlib import Path
 
-        manifest_path = Path(__file__).parents[2] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        manifest_path = Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt"
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
