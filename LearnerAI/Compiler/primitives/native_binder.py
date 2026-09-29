@@ -94,6 +94,7 @@ class NativeEscrowSemanticBinding:
     evidence_class: str
     evidence_sources: tuple[str, ...]
     support_state: NativeSupportState
+    integer_range: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
