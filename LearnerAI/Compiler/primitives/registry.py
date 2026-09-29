@@ -397,6 +397,177 @@ class PrimitiveRegistry:
                 f"{native.parameter_count} argument(s), got {arg_count}"
             )
 
+    def _resolve_production_fact(
+        self,
+        expression,
+        *,
+        semantic_family: str,
+        expected_primitives: tuple[str, ...],
+        target_label: str,
+        target_id: int,
+        expected_roles: tuple[str, ...],
+    ):
+        primitive_name = expression.head
+        primitive = self.get(primitive_name)
+        if primitive is None:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                "not a registered native fact"
+            )
+        native = self.native(primitive_name)
+        if native is None:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                "no native schema entry"
+            )
+        if primitive_name not in expected_primitives:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED"
+            )
+        if primitive.role not in expected_roles or primitive.kind != "FACT":
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED"
+            )
+        if native.command_type != "Fact":
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED"
+            )
+        try:
+            self.validate_native_signature(
+                primitive_name,
+                len(expression.args),
+            )
+            adapter = self.fact_registry.require(primitive_name)
+        except (KeyError, ValueError) as exc:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                f"native resolution failed: {exc}"
+            ) from exc
+        semantic_id = primitive.engine_semantics_id
+        if semantic_id is None:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                "no engine semantic mapping"
+            )
+        mapping = self._semantic_mappings.require(semantic_id)
+        if mapping.native_command != primitive_name or mapping.native_kind != "Fact":
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                "invalid engine semantic mapping"
+            )
+        if adapter.semantic_id != semantic_id:
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                "mismatched fact semantic adapter"
+            )
+        target_index = 0 if primitive_name.startswith("can-train") else 1
+        if (
+            len(expression.args) <= target_index
+            or str(expression.args[target_index]) != str(target_id)
+        ):
+            raise ValueError(
+                f"production {semantic_family} fact '{primitive_name}' is REJECTED: "
+                f"does not target {target_label} {target_id}"
+            )
+        return primitive_name, semantic_id
+
+    def resolve_production_target_admission(
+        self,
+        expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionTargetAdmission,
+        )
+
+        primitive = self.get(expression.head)
+        if primitive is None:
+            raise ValueError(
+                f"production target-admission fact '{expression.head}' is REJECTED: "
+                "not a registered native fact"
+            )
+        if expression.head not in {"can-train", "can-train-with-escrow"}:
+            raise ValueError(
+                f"production target-admission fact '{expression.head}' is REJECTED"
+            )
+        primitive_name, semantic_id = self._resolve_production_fact(
+            expression,
+            semantic_family="target-admission",
+            expected_primitives=("can-train", "can-train-with-escrow"),
+            target_label="UnitId",
+            target_id=native_unit_id,
+            expected_roles=("FEASIBILITY",),
+        )
+        return ProductionTargetAdmission(
+            disposition=ProductionFactDisposition.SUPPORTED,
+            primitive=primitive_name,
+            expression=expression,
+            native_unit_id=native_unit_id,
+            semantic_id=semantic_id,
+        )
+
+    def resolve_production_queue_protection(
+        self,
+        pending_fact,
+        *,
+        native_unit_id: int,
+        queue_state=None,
+        provider_state=None,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionQueueProtection,
+        )
+
+        self._resolve_production_fact(
+            pending_fact,
+            semantic_family="queue-protection",
+            expected_primitives=("up-pending-objects",),
+            target_label="UnitId",
+            target_id=native_unit_id,
+            expected_roles=("OBSERVATION",),
+        )
+
+        if queue_state is not None:
+            if self.get(queue_state.head) is None:
+                raise ValueError(
+                    f"production queue-protection queue-state fact "
+                    f"'{queue_state.head}' is REJECTED: not a registered native fact"
+                )
+            if queue_state.head != "unit-type-count-total":
+                raise ValueError(
+                    f"production queue-protection queue-state fact "
+                    f"'{queue_state.head}' is REJECTED"
+                )
+            raise ValueError(
+                "production queue-protection queue-state observation is OPEN: "
+                "queue-capacity semantics are unresolved"
+            )
+
+        if provider_state is not None:
+            if self.get(provider_state.head) is None:
+                raise ValueError(
+                    f"production queue-protection provider-state fact "
+                    f"'{provider_state.head}' is REJECTED: not a registered native fact"
+                )
+            if provider_state.head != "building-type-count":
+                raise ValueError(
+                    f"production queue-protection provider-state fact "
+                    f"'{provider_state.head}' is REJECTED"
+                )
+            raise ValueError(
+                "production queue-protection provider-state observation is OPEN: "
+                "provider-idle semantics are unresolved"
+            )
+
+        return ProductionQueueProtection(
+            disposition=ProductionFactDisposition.SUPPORTED,
+            pending_fact=pending_fact,
+            native_unit_id=native_unit_id,
+        )
+
     def _resolve_production_observation(
         self,
         expression,
