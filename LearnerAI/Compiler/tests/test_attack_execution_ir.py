@@ -112,8 +112,19 @@ class AttackExecutionIRTests(unittest.TestCase):
                 objective=SemanticId("test", "break-production"),
                 state=AttackExecutionState.ATTACK,
                 mode=AttackExecutionMode.ATTACK_NOW,
-                target=_target(),
+                target=AttackTargetRef(_target()),
             )
+
+    def test_illegal_transition_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "illegal attack execution transition"):
+            AttackExecution.validate_transition(
+                AttackExecutionState.ATTACK,
+                AttackExecutionState.READY,
+            )
+
+    def test_reassess_requires_an_explicit_reason(self):
+        with self.assertRaisesRegex(ValueError, "reassessment"):
+            _execution(state=AttackExecutionState.REASSESS)
 
     def test_complete_requires_explicit_completion_contract(self):
         with self.assertRaisesRegex(ValueError, "completion witness"):
