@@ -224,6 +224,7 @@ class GameDataTests(unittest.TestCase):
             Path(__file__).parents[3]
             / "docs"
             / "reference"
+            / "game-data"
             / "aoe2techtree-185872-buildings.json"
         )
         manifest = parse_byzantine_manifest(source_path.read_text(encoding="utf-8"))
