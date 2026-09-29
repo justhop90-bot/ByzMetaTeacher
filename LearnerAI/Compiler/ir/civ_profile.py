@@ -980,7 +980,7 @@ def _byzantine_game_data(
                 UnitLineId("fire-ship-line"),
                 UnitLineId("dromon-line"),
             ),
-            researchable_technologies=(TechId(906), TechId(65), TechId(34), TechId(35), TechId(246)),
+            researchable_technologies=(TechId(906), TechId(65), TechId(34), TechId(35), TechId(246), TechId(905), TechId(244)),
         ),
         BuildingDef(BuildingId(50), "Farm", Age.DARK, ResourceCost(wood=60)),
         BuildingDef(BuildingId(68), "Mill", Age.DARK, ResourceCost(wood=50)),
