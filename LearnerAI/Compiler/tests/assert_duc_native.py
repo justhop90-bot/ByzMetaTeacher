@@ -65,13 +65,7 @@ def _plan() -> NativeDucPlan:
             NativeDucRule(
                 identity="search-state",
                 order=101,
-                facts=(
-                    Expression(
-                        "(up-can-search c: local-search)",
-                        "up-can-search",
-                        ("c:", "local-search"),
-                    ),
-                ),
+                facts=(),
                 actions=(
                     Expression(
                         "(up-get-search-state 41)",
