@@ -6,7 +6,7 @@
 5. Production queue capacity runtime enforcement + provider-readiness runtime interaction + birth timing + queue-exit timing + next-pass visibility remain OPEN. The compiler now binds SN 264 and `up-train-site-ready` as typed OPEN evidence and carries separate OPEN timing samples built from `game-time`, `unit-type-count`, `unit-type-count-total`, and `up-pending-objects`; no event or pass-order claim is inferred.
 6. Research in-progress signal existence; provider-loss behavior (OPEN).
 7. DUC retained-filter exact rules; exhaustive stale-target triggers; measured perf costs (OPEN).
-8. load-random runtime selection semantics (OPEN).
+8. load-random runtime selection/RNG semantics (OPEN). Compiler-side deterministic materialization now requires an explicit selected entry and does not emulate runtime probability.
 9. `resource-found` latch-vs-live (OPEN).
 10. Package-collision behavior between co-loaded AIs in DE (OPEN).
 11. Timer countdown/pass granularity in the real DE rule scheduler (OPEN); compiler-side staged expiry and symbolic allocation are now connected.
