@@ -1,7 +1,9 @@
 from LearnerAI.Compiler.ir.game_data_dat_snapshot import (
     DatTechnologySnapshot,
     DatTechnologyRecord,
+    enrich_game_data_from_aoe2techtree_json,
     enrich_game_data_from_dat_snapshot,
+    parse_aoe2techtree_technologies_json,
     parse_dat_technologies_json,
 )
 from LearnerAI.Compiler.ir.versioning import EvidenceKind, EvidenceRef, PatchId
@@ -100,6 +102,63 @@ class GameDataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "declared building count"):
             parse_byzantine_manifest(raw)
 
+
+    def test_aoe2techtree_adapter_rejects_key_id_mismatch(self):
+        raw = """
+        {
+          "data": {
+            "Tech": {
+              "61": {
+                "Cost": {},
+                "ID": 62,
+                "ResearchTime": 50,
+                "internal_name": "Byzantine Logistica"
+              }
+            }
+          }
+        }
+        """
+        with self.assertRaisesRegex(ValueError, "disagrees with embedded ID"):
+            parse_aoe2techtree_technologies_json(
+                raw,
+                source="test://aoe2techtree/data.json",
+                revision="test-revision",
+                patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+                content_hash="sha256:test-aoe2techtree",
+            )
+
+    def test_aoe2techtree_adapter_parses_machine_readable_tech_shape(self):
+        raw = """
+        {
+          "data": {
+            "Tech": {
+              "61": {
+                "Cost": {"Food": 800, "Gold": 600},
+                "ID": 61,
+                "ResearchTime": 50,
+                "internal_name": "Byzantine Logistica"
+              }
+            }
+          }
+        }
+        """
+        snapshot = parse_aoe2techtree_technologies_json(
+            raw,
+            source="https://github.com/SiegeEngineers/aoe2techtree/blob/main/data/data.json",
+            revision="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+            patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+            content_hash="sha256:test-aoe2techtree",
+        )
+
+        self.assertEqual(len(snapshot.records), 1)
+        record = snapshot.records[0]
+        self.assertEqual(int(record.tech_id), 61)
+        self.assertEqual(record.name, "Byzantine Logistica")
+        self.assertEqual(record.base_cost, ResourceCost(food=800, gold=600))
+        self.assertEqual(record.research_time_seconds, 50)
+        self.assertEqual(record.native_civ, -1)
+        self.assertIsNone(record.research_location)
+        self.assertEqual(record.effect_id, -1)
 
     def test_dat_technology_snapshot_parser_normalizes_cost_and_time(self):
         raw = """

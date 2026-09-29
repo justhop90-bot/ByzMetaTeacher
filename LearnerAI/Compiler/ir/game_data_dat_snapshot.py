@@ -78,6 +78,119 @@ def _parse_cost(raw: Any) -> ResourceCost:
     return ResourceCost(**values)
 
 
+def parse_aoe2techtree_technologies_json(
+    text: str,
+    *,
+    source: str,
+    revision: str,
+    patch: PatchId,
+    content_hash: str,
+    extraction_version: str = "aoe2techtree-data-json-v1",
+) -> DatTechnologySnapshot:
+    """Adapt the machine-readable aoe2techtree data.json Tech subset into the DAT snapshot contract.
+
+    The upstream shape supplies only TechId, display/internal name, resource cost,
+    and research time. Missing civ/provider/prerequisite/effect fields remain
+    explicitly unresolved in the normalized record.
+    """
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid aoe2techtree data JSON: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError("aoe2techtree data JSON root must be an object")
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise ValueError("aoe2techtree data JSON requires a 'data' object")
+    technologies = data.get("Tech")
+    if not isinstance(technologies, dict):
+        raise ValueError("aoe2techtree data JSON requires a 'data.Tech' object")
+
+    records: list[DatTechnologyRecord] = []
+    for key, raw in technologies.items():
+        if not isinstance(raw, dict):
+            raise ValueError("aoe2techtree Tech entries must be objects")
+        tech_id = TechId(_require_int(raw.get("ID", key), "ID"))
+        try:
+            key_id = int(key)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"aoe2techtree Tech key must be numeric: {key!r}") from exc
+        if key_id != int(tech_id):
+            raise ValueError(
+                f"aoe2techtree Tech key {key!r} disagrees with embedded ID {int(tech_id)}"
+            )
+
+        cost = raw.get("Cost", {})
+        if not isinstance(cost, dict):
+            raise ValueError("aoe2techtree Tech Cost must be an object")
+        allowed = {"Food", "Wood", "Gold", "Stone"}
+        unknown = sorted(set(cost) - allowed)
+        if unknown:
+            raise ValueError(f"aoe2techtree Tech Cost has unknown resources: {unknown}")
+        base_cost = ResourceCost(
+            food=_require_int(cost.get("Food", 0), "Cost.Food"),
+            wood=_require_int(cost.get("Wood", 0), "Cost.Wood"),
+            gold=_require_int(cost.get("Gold", 0), "Cost.Gold"),
+            stone=_require_int(cost.get("Stone", 0), "Cost.Stone"),
+        )
+
+        name = str(raw.get("internal_name", "")).strip()
+        if not name:
+            raise ValueError(f"aoe2techtree Tech {int(tech_id)} lacks internal_name")
+
+        records.append(
+            DatTechnologyRecord(
+                tech_id=tech_id,
+                name=name,
+                native_civ=-1,
+                base_cost=base_cost,
+                research_time_seconds=_require_int(
+                    raw.get("ResearchTime", 0),
+                    "ResearchTime",
+                ),
+                research_location=None,
+                effect_id=-1,
+                required_tech_ids=(),
+            )
+        )
+
+    evidence = EvidenceRef(
+        EvidenceKind.ENGINE_DATA,
+        source,
+        revision,
+        "data.data.Tech",
+        patch,
+        content_hash=content_hash,
+        extraction_version=extraction_version,
+    )
+    return DatTechnologySnapshot(
+        patch=patch,
+        evidence=evidence,
+        records=tuple(sorted(records, key=lambda record: record.tech_id)),
+    )
+
+
+def enrich_game_data_from_aoe2techtree_json(
+    data: GameData,
+    text: str,
+    *,
+    source: str,
+    revision: str,
+    content_hash: str,
+    extraction_version: str = "aoe2techtree-data-json-v1",
+) -> GameData:
+    snapshot = parse_aoe2techtree_technologies_json(
+        text,
+        source=source,
+        revision=revision,
+        patch=data.patch,
+        content_hash=content_hash,
+        extraction_version=extraction_version,
+    )
+    return enrich_game_data_from_dat_snapshot(data, snapshot)
+
+
 def parse_dat_technologies_json(
     text: str,
     *,
@@ -209,6 +322,8 @@ def enrich_game_data_from_dat_snapshot(
 __all__ = [
     "DatTechnologyRecord",
     "DatTechnologySnapshot",
+    "enrich_game_data_from_aoe2techtree_json",
     "enrich_game_data_from_dat_snapshot",
+    "parse_aoe2techtree_technologies_json",
     "parse_dat_technologies_json",
 ]
