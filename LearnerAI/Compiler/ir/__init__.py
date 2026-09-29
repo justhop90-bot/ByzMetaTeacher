@@ -215,6 +215,10 @@ from .construction import (
     ConstructionTransitionRule,
 )
 
-from .production import ProductionLifecycle
+from .production import (
+    ProductionLifecycle,
+    ProductionProviderStateObservation,
+    ProductionQueueStateObservation,
+)
 
 from .research import ResearchLifecycle
