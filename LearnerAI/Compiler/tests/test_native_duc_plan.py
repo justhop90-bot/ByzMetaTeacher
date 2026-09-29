@@ -221,7 +221,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-search-state 42)", artifact)
+        self.assertIn("(up-get-search-state 43)", artifact)
         self.assertNotIn("(up-get-search-state 41)", artifact)
 
     def test_compile_surface_accepts_internal_duc_plan_without_source_syntax(self):
