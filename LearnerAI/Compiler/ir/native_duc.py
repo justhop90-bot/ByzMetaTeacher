@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..ast import Expression, SourceLocation
+from .model import GoalSpanRequest
 
 
 @dataclass(frozen=True)
@@ -35,10 +36,35 @@ class NativeDucRule:
 
 
 @dataclass(frozen=True)
+class NativeDucOutputRequest:
+    rule_identity: str
+    section: str
+    expression_index: int
+    request: GoalSpanRequest
+    command: str
+    argument_index: int = 0
+
+    def __post_init__(self) -> None:
+        if not self.rule_identity.strip():
+            raise ValueError("native DUC output request rule identity must not be empty")
+        if self.section not in {"FACT", "ACTION"}:
+            raise ValueError("native DUC output request section must be FACT or ACTION")
+        if self.expression_index < 0 or self.argument_index < 0:
+            raise ValueError("native DUC output request indexes must be non-negative")
+        if not self.command.strip():
+            raise ValueError("native DUC output request command must not be empty")
+
+    @property
+    def site_key(self) -> tuple[str, str, int]:
+        return (self.rule_identity, self.section, self.expression_index)
+
+
+@dataclass(frozen=True)
 class NativeDucPlan:
     """Ordered compiler-owned native DUC rules with no source-language surface."""
 
     rules: tuple[NativeDucRule, ...] = ()
+    output_requests: tuple[NativeDucOutputRequest, ...] = ()
 
     def __post_init__(self) -> None:
         identities = tuple(rule.identity for rule in self.rules)
@@ -49,6 +75,14 @@ class NativeDucPlan:
             raise ValueError(
                 "native DUC rules must be declared in deterministic order"
             )
+        request_sites = tuple(request.site_key for request in self.output_requests)
+        if len(request_sites) != len(set(request_sites)):
+            raise ValueError("duplicate native DUC output request site")
+        request_ids = tuple(
+            request.request.request_id for request in self.output_requests
+        )
+        if len(request_ids) != len(set(request_ids)):
+            raise ValueError("duplicate native DUC output request storage id")
 
     @property
     def expressions(self) -> tuple[Expression, ...]:
@@ -67,4 +101,4 @@ class NativeDucPlan:
         return not self.rules
 
 
-__all__ = ["NativeDucPlan", "NativeDucRule"]
+__all__ = ["NativeDucOutputRequest", "NativeDucPlan", "NativeDucRule"]
