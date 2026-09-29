@@ -18,7 +18,8 @@ rejects (`:282-286` + `test_game_data:767-796`).
 - SMALLEST GENERAL IR EXTENSION: none for shape. Needed is DATA: authoritative TRIGGER=905 materialization + identity-safe join (conflict-seed pattern `game_data_manifest_technology_conflicts:1-7,38-57`). Do NOT merge by numeric ID through `enrich_game_data_from_dat_snapshot`.
 - FORBIDDEN: inventing `UpgradeRelation(1104,527,905)`, `train_time_seconds`, `base_cost`, civ availability.
 
-## A2 — UNIT 528 Heavy Demolition Ship — CONFLICTING IDENTITY (primary) + INSUFFICIENT AUTHORITATIVE DATA
+## A2 — UNIT 528 Heavy Demolition Ship — identity and upgrade chain modeled
+
 - MANIFEST IDENTITY: `528 | Heavy Demolition Ship | TYPE=UnitUpgrade | USE=Unit | STATUS=ResearchedCompleted | AGE=4 | BUILDING=45 | LINK=527 | TRIGGER=244` (`:112`).
 - EVIDENCE: `UNIT NODE 528 … TECH:name='Slinger (make avail)' civ=-1 effect=582 required=(102,…)` (`:558-560`) — same recycled-ID conflict class.
 - IR CAPABILITY: chain `527->528 via 244` representable once endpoints+trigger exist; bidirectional-link validator (`game_data:467-484,513-520`) then applies.
