@@ -428,14 +428,14 @@ def main() -> int:
         raise SystemExit("typed NativeDucPlan artifact is non-deterministic")
 
     required_fragments = (
-        "(up-get-fact player-number 0 42)",
+        "(up-get-fact player-number 0 45)",
         "(up-find-local c: 83 c: 1)",
-        "(up-get-search-state 52)",
+        "(up-get-search-state 53)",
         "(up-get-group-size c: 3 42)",
         "(up-get-object-data 38 43)",
         "(up-get-object-target-data 38 44)",
-        "(up-get-cost-delta 46)",
-        "(up-get-point position-center 50)",
+        "(up-get-cost-delta 47)",
+        "(up-get-point position-center 51)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )
