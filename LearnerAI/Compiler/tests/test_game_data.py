@@ -6,6 +6,12 @@ from LearnerAI.Compiler.ir.civ_profile import (
     EffectiveCivData,
     resolve_effective_civ,
 )
+from LearnerAI.Compiler.ir.game_data_manifest import (
+    ManifestNodeKind,
+    ManifestNodeStatus,
+    classify_byzantine_manifest_coverage,
+    parse_byzantine_manifest,
+)
 from LearnerAI.Compiler.ir.game_data import (
     Age,
     BuildingId,
@@ -35,6 +41,56 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(data.coverage.status, CoverageStatus.FACTUAL_SUBSET)
         self.assertEqual(data.scope, GameDataScope.CIVILIZATION)
         self.assertEqual(int(data.scope_civ_id), 7)
+
+
+    def test_byzantine_manifest_declares_complete_node_counts(self):
+        from pathlib import Path
+
+        manifest_path = Path(__file__).parents[2] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest.building_count, 28)
+        self.assertEqual(manifest.unit_tech_count, 145)
+        self.assertEqual(len(manifest.nodes), 173)
+        self.assertEqual(
+            sum(node.kind is ManifestNodeKind.BUILDING for node in manifest.nodes),
+            29,
+        )
+        self.assertTrue(any(
+            node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
+            for node in manifest.nodes
+        ))
+
+    def test_byzantine_manifest_coverage_distinguishes_modeled_and_unmodeled(self):
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+        from pathlib import Path
+
+        manifest_path = Path(__file__).parents[2] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+
+        self.assertGreaterEqual(report.modeled_count, 100)
+        self.assertGreater(report.unmodeled_count, 0)
+        self.assertGreater(report.verified_unavailable_count, 0)
+        self.assertEqual(
+            report.modeled_count
+            + report.unmodeled_count
+            + report.verified_unavailable_count,
+            len(manifest.nodes),
+        )
+
+    def test_manifest_rejects_declared_count_drift(self):
+        raw = (
+            "Buildings: 28\\n"
+            "Units/tech nodes: 145\\n"
+            "BUILDINGS\\n"
+            "12 | Barracks | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>\\n"
+            "AVAILABLE UNIT / TECH NODES\\n"
+            "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\\n"
+        )
+        with self.assertRaisesRegex(ValueError, "declared unit/tech count"):
+            parse_byzantine_manifest(raw)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
         profile = ByzantineProfile.for_update_185872()

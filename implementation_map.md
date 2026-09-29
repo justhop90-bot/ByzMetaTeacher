@@ -82,6 +82,6 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 ## Source graph / game data / strategy
 - load-random: ir/source_graph.py LoadKind + explicit resolver materialization policy.
 - .xs boundary: new module (no current owner) for IDIOM-029.
-- Game data: ir/civ_profile.py (145-node manifest), patch overlays, broader civs.
+- Game data: ir/civ_profile.py plus `ir/game_data_manifest.py`; the authoritative Byzantine manifest is now parsed and coverage-classified before missing facts are modeled. Patch overlays and broader civs remain separate.
 - Strategy: ir/strategy_runtime.py observation primitives (DUC/attack/escrow) +
   policy-vs-semantics audit of _validate_native_operand token sets.
