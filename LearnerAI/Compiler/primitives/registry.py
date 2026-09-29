@@ -935,6 +935,104 @@ class PrimitiveRegistry:
             semantic_id=semantic_id,
         )
 
+    def _resolve_production_game_time(self, expression):
+        if expression.head != "game-time":
+            raise ValueError(
+                "production timing evidence must use game-time"
+            )
+        primitive = self.get("game-time")
+        native = self.native("game-time")
+        if primitive is None or native is None:
+            raise ValueError(
+                "production timing evidence 'game-time' has no native Fact schema entry"
+            )
+        if primitive.kind != "FACT" or primitive.role != "TIMING":
+            raise ValueError(
+                "production timing evidence 'game-time' must be a TIMING Fact"
+            )
+        if native.command_type != "Fact":
+            raise ValueError(
+                "production timing evidence 'game-time' is not backed by a native Fact"
+            )
+        self.validate_native_signature("game-time", len(expression.args))
+        adapter = self.fact_registry.require("game-time")
+        if adapter.semantic_id != "observation.timing.game-time":
+            raise ValueError(
+                "production timing evidence 'game-time' has mismatched semantic adapter"
+            )
+        return expression, adapter.semantic_id
+
+    def resolve_production_birth_timing(
+        self,
+        time_expression,
+        birth_expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import (
+            ProductionBirthTimingEvidence,
+            ProductionFactDisposition,
+        )
+
+        canonical_time, _ = self._resolve_production_game_time(time_expression)
+        primitive, _ = self._resolve_production_observation(
+            birth_expression,
+            observation_name="birth-boundary",
+            expected_primitive="unit-type-count",
+            target_label="UnitId",
+            target_id=native_unit_id,
+        )
+        if primitive != "unit-type-count":
+            raise ValueError(
+                "production birth timing evidence must use unit-type-count"
+            )
+        return ProductionBirthTimingEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            time_expression=canonical_time,
+            birth_expression=birth_expression,
+            native_unit_id=native_unit_id,
+            semantic_id="timing.production.birth-boundary",
+        )
+
+    def resolve_production_queue_exit_timing(
+        self,
+        time_expression,
+        queue_total_expression,
+        pending_expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionQueueExitTimingEvidence,
+        )
+
+        canonical_time, _ = self._resolve_production_game_time(time_expression)
+        queue_primitive, _ = self._resolve_production_observation(
+            queue_total_expression,
+            observation_name="queue-exit boundary",
+            expected_primitive="unit-type-count-total",
+            target_label="UnitId",
+            target_id=native_unit_id,
+        )
+        if queue_primitive != "unit-type-count-total":
+            raise ValueError(
+                "production queue-exit timing evidence must use "
+                "unit-type-count-total"
+            )
+        self.resolve_production_queue_protection(
+            pending_expression,
+            native_unit_id=native_unit_id,
+        )
+        return ProductionQueueExitTimingEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            time_expression=canonical_time,
+            queue_total_expression=queue_total_expression,
+            pending_expression=pending_expression,
+            native_unit_id=native_unit_id,
+            semantic_id="timing.production.queue-exit-boundary",
+        )
+
     def resolve_production_queue_state(
         self,
         expression,
