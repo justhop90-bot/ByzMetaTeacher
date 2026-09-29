@@ -90,7 +90,7 @@ native-fact PARTIAL (Byzantine subset FACTUAL_SUBSET; costs/times missing in pla
 IR OK (GameData + EffectiveCivData + fingerprint) | validator OK (cross-checks) |
 binding n/a | emitter n/a | acceptance n/a | runtime-evidence PARTIAL (patch 185872) |
 tests OK (7+21+8) | corpus n/a | strategy OK (Byzantine castle strategy).
-GAP: pinned 185872 machine-readable technology cost/research-time provenance is connected for exact-name existing GameData rows, and all 14 manifest `NotAvailable` rows are now explicit unavailable facts. Complete 145-node manifest coverage remains OPEN for 73 unmodeled nodes, as do broader civs, replayable patch overlays, native ID provenance, and unsupported prerequisite/provider/effect fields.
+GAP: the safe 185872 manifest technology tranche is now materialized: 51 previously unmodeled technology nodes plus native age-advance TechIds 101/102/103. Complete 145-node coverage remains OPEN for 19 nodes. TechIds 54/408/909 are blocked by source-identity conflicts; 16 unit/building nodes require separate factual sources.
 
 ## Strategy runtime (demand/posture/targets/cost/invalidation)
 native-fact n/a (COMPILER POLICY layer) | IR OK | validator OK (resolve+lower) |

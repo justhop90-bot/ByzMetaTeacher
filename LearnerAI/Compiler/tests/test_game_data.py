@@ -182,6 +182,96 @@ class GameDataTests(unittest.TestCase):
                 FactStatus.VERIFIED_UNAVAILABLE,
             )
 
+    def test_byzantine_manifest_coverage_counts_native_age_advance_nodes_as_modeled(self):
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+        from pathlib import Path
+
+        manifest_path = Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+
+        for tech_id in (101, 102, 103):
+            self.assertNotIn(
+                tech_id,
+                {int(node.id) for node in report.unmodeled_nodes if node.kind is ManifestNodeKind.TECHNOLOGY},
+            )
+        self.assertEqual(
+            report.modeled_count
+            + report.unmodeled_count
+            + report.verified_unavailable_count,
+            len(manifest.nodes),
+        )
+
+    def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
+        from pathlib import Path
+        import json
+        import re
+
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+
+        manifest_path = Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt"
+        snapshot_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "game-data"
+            / "aoe2techtree-185872-technologies.json"
+        )
+        manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        snapshot_by_id = {
+            int(item["id"]): item
+            for item in payload["technologies"]
+        }
+
+        def norm(name):
+            return re.sub(r"[^a-z0-9]+", "", name.lower())
+
+        native_age_advances = {101, 102, 103}
+        semantic_conflicts = {54, 408, 909}
+
+        expected = []
+        modeled_ids = {int(item.id) for item in effective.technologies}
+        for node in manifest.nodes:
+            if node.kind is not ManifestNodeKind.TECHNOLOGY:
+                continue
+            if (
+                node.id in modeled_ids
+                or node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
+                or node.id in native_age_advances
+                or node.id in semantic_conflicts
+            ):
+                continue
+            if node.id not in snapshot_by_id:
+                continue
+            snapshot_name = snapshot_by_id[node.id]["name"]
+            self.assertEqual(
+                norm(node.name),
+                norm(snapshot_name),
+                msg=f"snapshot identity mismatch for TechId {node.id}: "
+                f"{node.name!r} vs {snapshot_name!r}",
+            )
+            expected.append(node.id)
+
+        modeled_ids = {int(item.id) for item in effective.technologies}
+        self.assertTrue(expected)
+        self.assertTrue(set(expected).issubset(modeled_ids))
+        self.assertGreaterEqual(len(expected), 50)
+
+        for tech_id in expected:
+            tech = effective.tech(tech_id)
+            self.assertIsNotNone(tech.base_cost)
+            self.assertIsNotNone(tech.research_time_seconds)
+
+        self.assertTrue(
+            {int(node.id) for node in classify_byzantine_manifest_coverage(
+                manifest, effective
+            ).unmodeled_nodes if node.kind is ManifestNodeKind.TECHNOLOGY}
+            >= semantic_conflicts
+        )
+
     def test_byzantine_manifest_coverage_distinguishes_modeled_and_unmodeled(self):
         profile = ByzantineProfile.for_update_185872()
         effective = resolve_effective_civ(profile)
@@ -191,9 +281,17 @@ class GameDataTests(unittest.TestCase):
         manifest = parse_byzantine_manifest(manifest_path.read_text(encoding="utf-8"))
         report = classify_byzantine_manifest_coverage(manifest, effective)
 
-        self.assertEqual(report.modeled_count, 86)
-        self.assertEqual(report.unmodeled_count, 73)
+        self.assertEqual(report.modeled_count, 140)
+        self.assertEqual(report.unmodeled_count, 19)
         self.assertEqual(report.verified_unavailable_count, 14)
+        self.assertEqual(
+            {
+                int(node.id)
+                for node in report.unmodeled_nodes
+                if node.kind is ManifestNodeKind.TECHNOLOGY
+            },
+            {54, 408, 909},
+        )
         self.assertEqual(
             report.modeled_count
             + report.unmodeled_count

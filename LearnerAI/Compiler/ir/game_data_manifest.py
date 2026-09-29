@@ -192,10 +192,17 @@ def parse_byzantine_manifest(text: str) -> ByzantineManifest:
 
 
 def _modeled_ids(effective: EffectiveCivData) -> dict[ManifestNodeKind, frozenset[int]]:
+    age_advance_tech_ids = frozenset(
+        int(item.native_tech_id)
+        for item in effective.age_advances
+        if item.native_tech_id is not None
+    )
     return {
         ManifestNodeKind.BUILDING: frozenset(int(item.id) for item in effective.buildings),
         ManifestNodeKind.UNIT: frozenset(int(item.id) for item in effective.units),
-        ManifestNodeKind.TECHNOLOGY: frozenset(int(item.id) for item in effective.technologies),
+        ManifestNodeKind.TECHNOLOGY: frozenset(
+            int(item.id) for item in effective.technologies
+        ) | age_advance_tech_ids,
     }
 
 

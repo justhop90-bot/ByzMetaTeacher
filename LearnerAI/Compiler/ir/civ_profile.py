@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum
 
+from .game_data_manifest_technologies import BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
 from .game_data import (
     Age,
     AgeAdvanceDef,
@@ -782,6 +783,24 @@ def _unit(
         effects=effects,
     )
 
+def _materialized_manifest_technologies(
+    manifest_evidence: EvidenceRef,
+    snapshot_evidence: EvidenceRef,
+) -> tuple[TechnologyDef, ...]:
+    return tuple(
+        TechnologyDef(
+            seed.id,
+            seed.name,
+            seed.available_age,
+            (ResearchProvider(seed.provider_building),),
+            seed.base_cost,
+            seed.research_time_seconds,
+            provenance=(manifest_evidence, snapshot_evidence),
+        )
+        for seed in BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
+    )
+
+
 def _byzantine_game_data(
     patch: PatchId,
     evidence: EvidenceRef,
@@ -1038,6 +1057,15 @@ def _byzantine_game_data(
             provenance=(evidence, controller),
         ),
     )
+    technology_snapshot_evidence = EvidenceRef(
+        EvidenceKind.ENGINE_DATA,
+        "docs/reference/game-data/aoe2techtree-185872-technologies.json",
+        "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        "data.data.Tech",
+        patch,
+        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        extraction_version="aoe2techtree-data-json-v1",
+    )
     techs = (
         TechnologyDef(TechId(47), "Chemistry", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
         TechnologyDef(TechId(93), "Ballistics", Age.CASTLE, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
@@ -1120,6 +1148,9 @@ def _byzantine_game_data(
             TechId(906), "Fishing Lines", Age.FEUDAL, (ResearchProvider(BuildingId(45)),),
             None, None,
         ),
+    ) + _materialized_manifest_technologies(
+        evidence,
+        technology_snapshot_evidence,
     )
     upgrade_relations = (
         UpgradeRelation(UnitId(74), UnitId(75), TechId(222), (evidence,)),
