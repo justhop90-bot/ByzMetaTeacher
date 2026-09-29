@@ -98,7 +98,8 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - [x] Escrow-aware affordability/build/research facts are bound as `ESCROW_CAPABILITY`.
   - [x] `attack-now` remains fail-closed as an Action, not a strategic observation.
   - Remaining: attack/controller observations, retained DUC state, escrow same-pass/runtime semantics, and broader observation policy audit.
-  - `up-train-site-ready` is now bound as `TRAIN_PROVIDER_READINESS`; it remains distinct from `can-train` feasibility and does not claim provider busy/queued runtime behavior.
+  - `up-train-site-ready` is bound as `TRAIN_PROVIDER_READINESS`; it remains distinct from `can-train` feasibility and does not claim provider busy/queued runtime behavior.
+  - SN 74 (`sn-maximum-town-size`) is bound as `TOWN_SIZE_CONTROL` for exact `up-compare-sn` observations; controller attribution remains evidence-only and no attack semantics are promoted.
   - SN 264 is now specialized as `PRODUCTION_QUEUE_CAPACITY_CONTROL` when its exact `up-compare-sn 264 == <0..15>` contract is present; generic SN observations remain `PERSISTENT_CONTROL_STATE` and no DE enforcement is inferred.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: DUC/attack/escrow observation primitives plus policy-vs-semantics audit of native token validation.
