@@ -57,9 +57,10 @@ IMPLEMENTATION: typed ir/native_attack.py, dedicated binder promotion, contracte
 TEST: test_native_attack_lifecycle.py, compiler native integration, assert_attack_native.py pinned zero-findings artifact gate.
 REMAINING: completion witness, release semantics, group membership/admission details, exploration/town-size/targeting coupling, attack Strategic Numbers, runtime behavioral evidence.
 
-## Source graph — CURRENT: executable-safe minus load-random. TARGET: met incl. decision on load-random.
-EVIDENCE: depths/fingerprints; 67 tests; Duke + vendored-AI topology.
-IMPLEMENTATION: resolver + validation. TEST: strong. REMAINING: load-random; .xs boundary.
+## Source graph — CURRENT: deterministic policy-safe with explicit load-random materialization. TARGET: met incl. decision on load-random.
+EVIDENCE: depths/fingerprints; source assembly tests; Duke + vendored-AI topology.
+IMPLEMENTATION: resolver + validation + explicit per-directive `LoadRandomSelection` materialization. TEST: source-graph focused coverage plus full Compiler verification.
+REMAINING: runtime RNG semantics are intentionally not modeled; .xs boundary remains open.
 
 ## Game data — CURRENT: Byzantine subset. TARGET: 145-node manifest + overlays.
 EVIDENCE: civ_profile patch 185872; 36 tests. REMAINING: manifest completion; broader civs.

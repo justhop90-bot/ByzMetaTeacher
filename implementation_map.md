@@ -71,8 +71,15 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Excluded until separately contracted: attack SNs, exploration gating, town-size targeting, DUC prerequisites, completion/release, group membership, and timer/reset recovery.
 - Tests: tests/test_native_attack_lifecycle.py, tests/test_compiler_native_integration.py, tests/assert_attack_native.py plus CI native zero-findings evidence.
 
+## Source graph deterministic load-random materialization
+- LoadRandomSelection identifies an active load-random directive by canonical source path + line + column and supplies one declared target.
+- SourceGraphResolver remains fail-closed without a policy; with a policy it materializes exactly that target, records a RANDOM edge with target/child provenance, and never emulates engine RNG.
+- source_graph_validation.py accepts RANDOM edges as materialized when an active edge has a target; unmaterialized RANDOM edges remain rejected.
+- Acceptance: focused source-graph event/edge tests plus full Compiler verification.
+- Runtime boundary: actual DE weighted/random selection semantics remain OPEN.
+
 ## Source graph / game data / strategy
-- load-random: ir/source_graph.py LoadKind + resolver materialization.
+- load-random: ir/source_graph.py LoadKind + explicit resolver materialization policy.
 - .xs boundary: new module (no current owner) for IDIOM-029.
 - Game data: ir/civ_profile.py (145-node manifest), patch overlays, broader civs.
 - Strategy: ir/strategy_runtime.py observation primitives (DUC/attack/escrow) +
