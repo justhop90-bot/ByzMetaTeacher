@@ -262,8 +262,25 @@ class PrimitiveRegistry:
         )
         duc_commands = set(self._native_contracts.duc_command_names)
         for rule in plan.rules:
+            native_output_commands = {
+                contract.command
+                for contract in self._native_contracts.native_output_goal_contracts
+            }
             for expression in rule.facts:
                 native = self.require_native(expression.head)
+                if expression.head in native_output_commands:
+                    binding = binder.bind_native_output_command(expression.head)
+                    self.validate_native_signature(expression.head, len(expression.args))
+                    if native.command_type not in {"Fact", "Fact/Action"}:
+                        raise ValueError(
+                            f"native output fact '{expression.head}' is an Action and cannot be emitted as a Fact"
+                        )
+                    if len(expression.args) != binding.parameter_count:
+                        raise ValueError(
+                            f"native output command '{expression.head}' expects exactly "
+                            f"{binding.parameter_count} argument(s), got {len(expression.args)}"
+                        )
+                    continue
                 if expression.head in duc_commands:
                     binding = binder.bind_duc_command(expression.head)
                     self.validate_native_signature(expression.head, len(expression.args))
@@ -284,6 +301,19 @@ class PrimitiveRegistry:
                         f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
                     )
             for expression in rule.actions:
+                if expression.head in native_output_commands:
+                    binding = binder.bind_native_output_command(expression.head)
+                    if len(expression.args) != binding.parameter_count:
+                        raise ValueError(
+                            f"native output command '{expression.head}' expects exactly "
+                            f"{binding.parameter_count} argument(s), got {len(expression.args)}"
+                        )
+                    native = self.require_native(expression.head)
+                    if native.command_type not in {"Action", "Fact/Action"}:
+                        raise ValueError(
+                            f"native output action '{expression.head}' is a Fact and cannot be emitted as an Action"
+                        )
+                    continue
                 if expression.head not in duc_commands:
                     raise ValueError(
                         f"DUC rule action '{expression.head}' is not a contracted DUC command"
@@ -306,6 +336,7 @@ class PrimitiveRegistry:
             "up-get-point",
             "up-get-object-data",
             "up-get-object-target-data",
+            *native_output_commands,
         }
         output_sites = {
             (rule.identity, section, index): expression
@@ -336,6 +367,34 @@ class PrimitiveRegistry:
                 raise ValueError(
                     f"DUC output request '{site}' argument index is outside the expression"
                 )
+
+            if expression.head == "up-get-fact":
+                contract = self._native_contracts.native_output_goal(expression.head)
+                if output_request.argument_index != contract.output_argument_index:
+                    raise ValueError(
+                        f"native output {expression.head} request '{site}' must bind argument "
+                        f"{contract.output_argument_index}"
+                    )
+                if not isinstance(output_request.request, GoalSlotRequest):
+                    raise ValueError(
+                        f"native output {expression.head} request '{site}' requires GoalSlotRequest"
+                    )
+                request = output_request.request
+                if (
+                    request.role.value != "NATIVE_OUTPUT"
+                    or request.request_id.purpose != expression.head
+                    or contract.output_width != 1
+                    or contract.output_goal_min != 1
+                    or contract.output_goal_max != 16000
+                ):
+                    raise ValueError(
+                        f"native output {expression.head} request '{site}' has invalid "
+                        "GoalSlot contract"
+                    )
+                if len(expression.args) != 3:
+                    raise ValueError(
+                        "up-get-fact native expression must have exactly three arguments"
+                    )
 
             if expression.head == "up-get-search-state":
                 if output_request.argument_index != 0:

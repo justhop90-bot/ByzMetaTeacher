@@ -126,9 +126,39 @@ def _target_data_output_request(
     )
 
 
+def _native_get_fact_output_request() -> NativeDucOutputRequest:
+    request = GoalSlotRequest(
+        StorageRequestId(
+            SemanticId("native.output", "get-fact-output"),
+            "up-get-fact",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
+    return NativeDucOutputRequest(
+        rule_identity="get-fact",
+        section="FACT",
+        expression_index=0,
+        request=request,
+        command="up-get-fact",
+        argument_index=2,
+    )
+
+
 def _plan() -> NativeDucPlan:
     return NativeDucPlan(
         (
+            NativeDucRule(
+                identity="get-fact",
+                order=99,
+                facts=(
+                    Expression(
+                        "(up-get-fact player-number 0 41)",
+                        "up-get-fact",
+                        ("player-number", "0", "41"),
+                    ),
+                ),
+                actions=(),
+            ),
             NativeDucRule(
                 identity="search-and-select",
                 order=100,
@@ -347,6 +377,7 @@ def _plan() -> NativeDucPlan:
                 "up-get-object-target-data",
                 "object-target-data",
             ),
+            _native_get_fact_output_request(),
         ),
     )
 
@@ -397,6 +428,7 @@ def main() -> int:
         raise SystemExit("typed NativeDucPlan artifact is non-deterministic")
 
     required_fragments = (
+        "(up-get-fact player-number 0 42)",
         "(up-find-local c: 83 c: 1)",
         "(up-get-search-state 52)",
         "(up-get-group-size c: 3 42)",
