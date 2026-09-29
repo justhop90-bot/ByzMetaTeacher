@@ -1,3 +1,8 @@
+from .game_data_aoe2techtree import (
+    Aoe2TechTreeNodeKind,
+    Aoe2TechTreeNodeStatus,
+    Aoe2TechTreeSnapshot,
+)
 """Authoritative Byzantine manifest parsing and factual coverage accounting."""
 
 from __future__ import annotations
@@ -74,6 +79,32 @@ class ByzantineManifest:
             )
         if len(self.nodes) != self.building_count + self.unit_tech_count:
             raise ValueError("manifest node total does not match declared section counts")
+
+
+@dataclass(frozen=True)
+class ByzantineManifestTreeCoverage:
+    verified_count: int
+    verified_unavailable_count: int
+    unmatched_count: int
+    status_mismatch_count: int
+
+    def __post_init__(self) -> None:
+        if min(
+            self.verified_count,
+            self.verified_unavailable_count,
+            self.unmatched_count,
+            self.status_mismatch_count,
+        ) < 0:
+            raise ValueError("tree coverage counts must be non-negative")
+
+    @property
+    def total_evaluated(self) -> int:
+        return (
+            self.verified_count
+            + self.verified_unavailable_count
+            + self.unmatched_count
+            + self.status_mismatch_count
+        )
 
 
 @dataclass(frozen=True)
@@ -197,6 +228,47 @@ def _modeled_ids(effective: EffectiveCivData) -> dict[ManifestNodeKind, frozense
         ManifestNodeKind.UNIT: frozenset(int(item.id) for item in effective.units),
         ManifestNodeKind.TECHNOLOGY: frozenset(int(item.id) for item in effective.technologies),
     }
+
+
+def classify_byzantine_manifest_tree_coverage(
+    manifest: ByzantineManifest,
+    snapshot: Aoe2TechTreeSnapshot,
+) -> ByzantineManifestTreeCoverage:
+    """Compare manifest node identities/statuses against an immutable civ-tree snapshot."""
+    kind_map = {
+        ManifestNodeKind.BUILDING: Aoe2TechTreeNodeKind.BUILDING,
+        ManifestNodeKind.UNIT: Aoe2TechTreeNodeKind.UNIT,
+        ManifestNodeKind.RESEARCH: Aoe2TechTreeNodeKind.TECHNOLOGY,
+    }
+    verified = unavailable = unmatched = mismatched = 0
+
+    for node in manifest.nodes:
+        tree_kind = kind_map.get(node.kind)
+        if tree_kind is None:
+            unmatched += 1
+            continue
+        try:
+            tree_node = snapshot.node(tree_kind, node.node_id)
+        except KeyError:
+            unmatched += 1
+            continue
+
+        tree_unavailable = tree_node.status is Aoe2TechTreeNodeStatus.NOT_AVAILABLE
+        manifest_unavailable = node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
+        if tree_unavailable != manifest_unavailable:
+            mismatched += 1
+            continue
+        if tree_unavailable:
+            unavailable += 1
+        else:
+            verified += 1
+
+    return ByzantineManifestTreeCoverage(
+        verified_count=verified,
+        verified_unavailable_count=unavailable,
+        unmatched_count=unmatched,
+        status_mismatch_count=mismatched,
+    )
 
 
 def classify_byzantine_manifest_coverage(
