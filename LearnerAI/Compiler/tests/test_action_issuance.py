@@ -273,10 +273,12 @@ class ActionIssuanceTests(unittest.TestCase):
         lifecycle = semantic[0].research_lifecycle
         self.assertIsNotNone(lifecycle)
         self.assertEqual(lifecycle.pending_state, ResearchState.PENDING)
+        self.assertEqual(int(ResearchState.DISABLED), -1)
         self.assertEqual(int(ResearchState.UNAVAILABLE), 0)
         self.assertEqual(int(ResearchState.AVAILABLE), 1)
         self.assertEqual(int(ResearchState.PENDING), 2)
         self.assertEqual(int(ResearchState.COMPLETE), 3)
+        self.assertEqual(int(ResearchState.QUEUED), 4)
         self.assertEqual(lifecycle.pending_fact.args[0], "c:")
         self.assertEqual(int(lifecycle.pending_fact.args[1]), lifecycle.native_tech_id)
         self.assertEqual(lifecycle.pending_fact.args[2], ">=")
