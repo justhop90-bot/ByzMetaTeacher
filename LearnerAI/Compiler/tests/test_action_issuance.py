@@ -246,6 +246,38 @@ class ActionIssuanceTests(unittest.TestCase):
             lifecycle,
         )
 
+    def test_research_lifecycle_has_typed_native_status_contract(self):
+        from Compiler.ir.research import ResearchState
+        from Compiler.semantic.analyzer import analyze
+        from Compiler.parser import parse
+        from Compiler.primitives import default_de_registry
+
+        semantic = analyze(
+            parse(
+                """
+                demand wheelbarrow {
+                    require (can-research ri-wheelbarrow)
+                    action (research ri-wheelbarrow)
+                    witness (research-completed ri-wheelbarrow)
+                    release (research-completed ri-wheelbarrow)
+                }
+                """
+            ),
+            default_de_registry(),
+            source_unit="test",
+        )
+        lifecycle = semantic[0].research_lifecycle
+        self.assertIsNotNone(lifecycle)
+        self.assertEqual(lifecycle.pending_state, ResearchState.PENDING)
+        self.assertEqual(int(ResearchState.UNAVAILABLE), 0)
+        self.assertEqual(int(ResearchState.AVAILABLE), 1)
+        self.assertEqual(int(ResearchState.PENDING), 2)
+        self.assertEqual(int(ResearchState.COMPLETE), 3)
+        self.assertEqual(lifecycle.pending_fact.args[0], "c:")
+        self.assertEqual(int(lifecycle.pending_fact.args[1]), lifecycle.native_tech_id)
+        self.assertEqual(lifecycle.pending_fact.args[2], ">=")
+        self.assertEqual(lifecycle.pending_fact.args[3], str(int(ResearchState.PENDING)))
+
     def test_research_retry_is_barriered_to_a_later_pass(self):
         output = compile_source(
             """
