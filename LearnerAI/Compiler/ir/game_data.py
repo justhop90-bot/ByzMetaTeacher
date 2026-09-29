@@ -110,6 +110,27 @@ class Rational:
 
 
 @dataclass(frozen=True)
+class VariableCost:
+    formula_id: str
+    parameters: tuple[tuple[str, int], ...] = ()
+    provenance: tuple[EvidenceRef, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.formula_id.strip():
+            raise ValueError("variable cost formula id must not be empty")
+        names = tuple(name for name, _ in self.parameters)
+        if len(names) != len(set(names)):
+            raise ValueError("variable cost parameter names must be unique")
+        for name, value in self.parameters:
+            if not name.strip():
+                raise ValueError("variable cost parameter names must not be empty")
+            if not isinstance(value, int):
+                raise TypeError("variable cost parameter values must be integers")
+            if value < 0:
+                raise ValueError("variable cost parameter values cannot be negative")
+
+
+@dataclass(frozen=True)
 class ResourceCost:
     food: int = 0
     wood: int = 0
@@ -356,7 +377,7 @@ class TechnologyDef:
     name: str
     available_age: Age
     providers: tuple[ResearchProvider, ...]
-    base_cost: ResourceCost | None
+    base_cost: ResourceCost | VariableCost | None
     research_time_seconds: int | None
     prerequisites: tuple[Prerequisite, ...] = ()
     unlocks_units: tuple[UnitId, ...] = ()
