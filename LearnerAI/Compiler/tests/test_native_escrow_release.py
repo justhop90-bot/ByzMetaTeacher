@@ -3,6 +3,7 @@ import unittest
 from Compiler.ir import (
     EscrowOperation,
     EscrowOperationKind,
+    NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     SemanticId,
 )
@@ -27,6 +28,27 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             semantic_mappings=self.mappings,
             native_contracts=self.contracts,
             adapter_lookup=self.registry.get,
+        )
+
+    def test_set_escrow_percentage_plan_is_typed(self):
+        from Compiler.ir import EscrowOperation, EscrowOperationKind
+
+        operation = EscrowOperation(
+            contract_identity="research-food-policy",
+            owner=SemanticId("test", "research"),
+            kind=EscrowOperationKind.POLICY_RESET,
+            resource="food",
+            command="set-escrow-percentage",
+            percentage=50,
+            rule_order=10,
+        )
+        plan = NativeEscrowPolicyPlan((operation,))
+
+        self.registry.validate_escrow_policy_plan(plan)
+        bindings = self.binder.bind_escrow_plan(plan)
+        self.assertEqual(
+            tuple(binding.command for binding in bindings),
+            ("set-escrow-percentage",),
         )
 
     def test_release_mapping_is_contracted(self):
