@@ -82,5 +82,5 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 ## Source graph / game data / strategy
 - load-random: ir/source_graph.py LoadKind + explicit resolver materialization policy.
 - .xs boundary: new module (no current owner) for IDIOM-029.
-- Game data: ir/civ_profile.py plus `ir/game_data_manifest.py`; the authoritative Byzantine manifest is now parsed and coverage-classified before missing facts are modeled. Patch overlays and broader civs remain separate.
+- Game data: `ir/civ_profile.py` plus `ir/game_data_manifest.py` and `ir/game_data_dat_snapshot.py`; authoritative manifest coverage is audited, and DAT-derived technology metadata now has a deterministic provenance-checked import/merge boundary. A verified current DAT snapshot is still required before populating live missing values.
 - Strategy: ir/strategy_runtime.py now classifies `up-can-search` as `DUC_SEARCH_AVAILABILITY` and escrow-aware affordability/build/research facts as `ESCROW_CAPABILITY`. Attack controller Actions remain fail-closed as non-observations; deeper DUC/escrow runtime semantics remain separate.
