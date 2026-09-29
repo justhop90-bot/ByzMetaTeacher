@@ -4,10 +4,10 @@
 
 ## Scope
 
-- [ ] Promote `up-research-status` as an executable Fact with exact native arity and provenance.
-- [ ] Attach `up-research-status` to the typed research lifecycle as the pending/in-progress observation.
-- [ ] Allocate a compiler-owned `research-retry-barrier-*` Goal slot to prevent same-pass reissue after status loss.
-- [ ] Emit research-specific `ISSUED/PENDING -> PENDING`, `ISSUED/PENDING -> ACTIVE`, and `ACTIVE -> ISSUED` guards while retaining `research-completed` as the only completion witness.
+- [x] Promote `up-research-status` as an executable Fact with exact native arity and pinned AIRef value-family provenance.
+- [x] Attach `up-research-status` to the typed research lifecycle as a typed `ResearchState` observation; canonicalize TechId and ResearchState to numeric native operands.
+- [x] Allocate a compiler-owned `research-retry-barrier-*` Goal slot to prevent same-pass reissue after status loss.
+- [x] Emit research-specific `ISSUED/PENDING -> PENDING`, `ISSUED/PENDING -> ACTIVE`, and `ACTIVE -> ISSUED` guards while retaining `research-completed` as the only completion witness.
 - [ ] Add focused semantic/lifecycle regression tests.
 - [ ] Add a checked-in source-to-.per research acceptance fixture and pinned zero-findings validator.
 - [ ] Add the fixture to the Compiler workflow.
