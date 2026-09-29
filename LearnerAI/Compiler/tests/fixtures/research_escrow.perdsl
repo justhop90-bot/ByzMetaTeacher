@@ -1,0 +1,6 @@
+demand research {
+    require (can-research-with-escrow feudal-age)
+    action (research feudal-age)
+    witness (current-age >= feudal-age)
+    release (current-age >= feudal-age)
+}
