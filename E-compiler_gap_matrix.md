@@ -32,12 +32,13 @@ tests OK | corpus OK (2977 can-build; buildings.per 88KB Duke) | strategy OK.
 GAP: same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
 
 ## Train/production (queue/capacity/provider/birth)
-native-fact PARTIAL (queue exists; capacity/provider-idle/birth-timing unproven) |
-IR PARTIAL (typed current+queued/provider-presence observations plus explicit OPEN queue-capacity/provider-availability evidence now exist) | validator PARTIAL |
-binding PARTIAL (native-ID queue/provider bindings are implemented; unresolved capacity/availability semantics fail closed as OPEN) | emitter PARTIAL (no capacity guard) | acceptance OK |
-runtime-evidence MISSING | tests OK (1,009 full suite; hostile OPEN evidence matrix) |
+native-fact PARTIAL (SN 264 queue-capacity control is documented; runtime enforcement/provider-idle/birth-timing remain unproven) |
+IR PARTIAL (typed current+queued/provider-presence observations plus OPEN queue-capacity/provider-availability/control evidence now exist) | validator PARTIAL |
+binding PARTIAL (native-ID queue/provider bindings plus exact SN 264 control binding are implemented; unresolved engine semantics fail closed as OPEN) | emitter PARTIAL (no capacity guard) | acceptance OK |
+runtime-evidence MISSING for current-build capacity enforcement |
+tests OK (full existing suite plus focused hostile SN 264 contract coverage) |
 corpus OK (current+queued idiom IDIOM-006) | strategy PARTIAL.
-GAP: exact queue capacity + provider-idle/readiness signal + birth timing + explicit recovery semantics.
+GAP: prove current DE enforcement of SN 264 capacity, then provider-idle/readiness signal + birth timing + explicit recovery semantics.
 
 ## Research (availability/prereq/escrow/completion)
 native-fact PARTIAL (in-progress signal unknown) | IR OK-generic | validator OK-generic |
