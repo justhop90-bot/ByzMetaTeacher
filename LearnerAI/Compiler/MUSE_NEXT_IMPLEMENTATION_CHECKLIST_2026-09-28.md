@@ -87,6 +87,8 @@ This is the execution checklist derived from the Muse forensic package. Evidence
 - [ ] Game-data manifest completion.
   - [x] Authoritative manifest is parsed and count-checked at CI time.
   - [x] Coverage is explicitly classified into modeled, verified-unavailable, and unmodeled nodes.
+  - [x] Current 185872 machine-readable technology snapshot is pinned at revision `3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f` and blob `c4f7da961e82a8231b1ba49459949c4d6e479bc8`.
+  - [x] Focused enrichment proves unresolved existing technology cost/research-time fields can be filled without synthesizing providers, prerequisites, effects, or civ availability.
   - Current Byzantine snapshot: 86 modeled, 14 explicitly unavailable, 73 unmodeled.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: `ir/civ_profile.py`, patch overlays, 145-node manifest.

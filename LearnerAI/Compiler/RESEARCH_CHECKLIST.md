@@ -434,7 +434,8 @@ Runtime limitation remains explicit: the native action command does not provide 
 #### Remaining data work
 
 - [ ] Ingest the full Byzantine 145-node manifest into typed GameData.
-- [ ] Populate every verified research cost/research time and effect instead of leaving unresolved values where the source does not establish them.
+- [x] Populate verified research cost/time fields where the pinned 185872 machine-readable source establishes exact TechId/name/cost/time data, without synthesizing effects or prerequisites.
+- [ ] Populate every remaining verified research effect or other field only when an authoritative source establishes it.
 - [x] Verify and promote current-patch Varangian Guard unit numeric IDs from the authoritative Basilisk/Basilisk.per controller definitions.
 - [ ] Expand NativeEngineProfile from the two known site-specific aliases to the complete checked-in AIRef command/parameter inventory.
 - [ ] Add historical snapshot fixtures proving patch overlay replay across multiple DE revisions.
