@@ -1,7 +1,7 @@
 # 06 — GameData factual reconciliation @ `cd923b5a` (FACTUAL_SUBSET, civ-scoped)
 
-Ground truth: `test_game_data.py:403-415,542-558` → modeled 156, unmodeled exactly 3, verified_unavailable 14,
-total 173. `require_coverage` fails closed on 527 (`test_gamedata_audit:199-204`). Coverage is civilization-scoped
+Ground truth: current `test_game_data.py` coverage oracle → modeled 157, unmodeled exactly 2, verified_unavailable 14,
+total 173. `require_coverage` remains fail-closed for unresolved trigger-dependent units 527/528. Coverage is civilization-scoped
 (`ir/civ_profile:1489-1512`; `ir/game_data:46-60,272-281`).
 IR shape: `UnitDef{id,line,providers,base_cost,train_time,upgrades_from/to,validity,provenance,engine_classes,effects}`
 (`ir/game_data:320-336`); `TechnologyDef{id,providers,base_cost,research_time,prereqs,unlocks,effects,upgrades,validity,provenance}`
@@ -25,17 +25,13 @@ rejects (`:282-286` + `test_game_data:767-796`).
 - TRAP: same as A1 — identical COSTS line is not a verified 528 cost. Chain-stop precedent already in code (`game_data_manifest_units:1-6`, chains stop before unrepresented trigger techs).
 - FORBIDDEN: inventing 528 cost/train-time/`UpgradeRelation(527,528,244)`.
 
-## A3 — TECHNOLOGY 408 Spies/Treason — VARIABLE-NON-SCALAR PROPERTY (primary) + INSUFFICIENT DATA + PATCH-SENSITIVE
-- MANIFEST IDENTITY: `408 | Spies/Treason | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=315 | TRIGGER=<MISSING>` (`:140`).
-- EVIDENCE: `UNIT NODE 408 … UNIT=NO|TECH=YES; TECH:name='Spy Technology' effect=420 required=(103,…)` (`:678`). No pinned snapshot cost/time joined (seed count 51 excludes 408: `test_game_data:505,524-530`; conflict seeds only 54,909).
-- IR CAPABILITY: `TechnologyDef.base_cost:ResourceCost|None` + fixed-int `ResourceCost` only; no variable-cost slot. `CivBonusKind{COST,COST_OVERRIDE,FREE,…}` + `_cost_override/_apply_cost_modifiers` (`civ_profile:666-701`) assume fixed costs.
-- FIXED-COST TRAP (explicit): Spies/Treason cost is NOT constant — engine scales it with game state (exact coefficients require engine/DAT authority; deliberately unstated here to avoid synthesis). Assigning ANY `ResourceCost(...)` or filling via `enrich_*` creates a false fact corrupting `cost_of()`/`cost_of_age_advance()` (`civ_profile:227-254`) and fingerprint (`:612-637`). `None` (unresolved) is the only honest state.
-- SMALLEST GENERAL IR EXTENSION (no per-tech hack):
-  `VariableCost{formula_id:str (e.g. "spies-treason-gold-per-villager"), parameters:tuple[tuple[str,int],...]=(), provenance:tuple[EvidenceRef,...]=()}`;
-  change `TechnologyDef.base_cost:ResourceCost|None` → `cost:ResourceCost|VariableCost|None`;
-  `CivProfile.cost_of()` raises fail-closed on `VariableCost` (+ later `cost_model` resolver);
-  `Validity`+`PatchChange` already version the formula; forbid `COST_OVERRIDE` matching `VariableCost`.
-- FORBIDDEN: synthesizing `ResourceCost`, `research_time_seconds`, prerequisites, effects, civ availability, `LINK=315`-as-prereq.
+## A3 — TECHNOLOGY 408 Spies/Treason — VARIABLE COST (closed)
+- MANIFEST IDENTITY: `408 | Spies/Treason | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=315 | TRIGGER=<MISSING>`.
+- IMPLEMENTATION: `TechnologyDef.base_cost` now accepts typed `VariableCost`; the current materialization records formula `spies-treason-gold-per-enemy-civilian` with parameters `minimum_gold=200`, `maximum_gold=30000`, and `gold_per_civilian=200`.
+- SAFETY: `EffectiveCivData.cost_of()` rejects `VariableCost` rather than flattening a game-state-dependent cost into a false fixed `ResourceCost`.
+- EVIDENCE: the current public reference describes the dynamic gold rule; the compiler preserves it as a typed fact. Runtime evaluation against live enemy-civilian state is deliberately not part of the fixed-cost API.
+- TESTS: variable-cost determinism, exact Spies materialization, fixed-cost API rejection, provenance, and manifest-coverage regressions.
+- REMAINING: a future runtime cost resolver would require a separate live-state contract. No fixed cost, prerequisite, effect, availability, or LINK=315 semantics are inferred here.
 
 Already modeled at this SHA (plan text listing them as "remaining" is stale — see 09): Fish Trap 199, Carrack 2628, Treadmill Crane 54, Siphons 909 (`game_data_manifest_buildings:40-54`, `game_data_manifest_unit_supplements:32-43`, `game_data_manifest_technology_conflicts:38-57`, `civ_profile:795-888,1190-1222,1355-1393`; proven `test_game_data:350-479`).
 Snapshot guardrails hold: boundary `game_data_dat_snapshot:194-319`; 201-record snapshot test `:630-691`; plans "no live DAT values committed" / "do not claim completion of remaining 73 nodes" still in force.
