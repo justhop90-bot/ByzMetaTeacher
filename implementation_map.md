@@ -73,6 +73,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
+## Strategy persistent-control observations
+- `ir/strategy_runtime.py` now binds `up-compare-sn` as `StrategicObservationType.PERSISTENT_CONTROL_STATE`.
+- The binding validates the native Strategic Number identifier in 0..511 and the documented comparison operator family, while preserving the persistent-state role.
+- No specific SN is interpreted as attack, exploration, production, or another controller without separate native/controller evidence.
+
 ## Generic/client strategy policy boundary
 - `tests/test_basilisk_client_boundary.py` now audits both public re-exports and source-level Python imports.
 - Generic compiler source excludes downstream `clients/basilisk`, `ir/strategy`, and `ir/strategy_runtime` imports; violations fail the test with source path and line number.
