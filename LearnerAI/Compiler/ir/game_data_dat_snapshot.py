@@ -173,7 +173,7 @@ def enrich_game_data_from_dat_snapshot(
             )
 
         provenance = technology.provenance
-        if record.evidence not in provenance:
+        if snapshot.evidence not in provenance:
             provenance = provenance + (snapshot.evidence,)
 
         enriched.append(
