@@ -256,10 +256,9 @@ class ProductionQueueCapacityControlEvidence:
             raise ValueError(
                 "production queue-capacity control evidence must remain OPEN"
             )
-        if self.expression.head not in {"strategic-number", "up-compare-sn"}:
+        if self.expression.head != "up-compare-sn":
             raise ValueError(
-                "production queue-capacity control evidence must use "
-                "strategic-number or up-compare-sn"
+                "production queue-capacity control evidence must use up-compare-sn"
             )
         if len(self.expression.args) != 3:
             raise ValueError(
