@@ -420,6 +420,51 @@ def analyze(
                     f"PRODUCTION-TRAIN-ID: demand '{demand.name}' cannot resolve "
                     f"UnitId '{unit}'"
                 ) from exc
+
+            admission_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head
+                in {"can-train", "can-train-with-escrow"}
+            ]
+            if not admission_requirements:
+                raise CompileError(
+                    f"PRODUCTION-TARGET-ADMISSION-MISSING: demand '{demand.name}' "
+                    "train action requires can-train or can-train-with-escrow"
+                )
+            matching_admissions = [
+                expression
+                for expression in admission_requirements
+                if expression.args and str(expression.args[0]) == unit
+            ]
+            if not matching_admissions:
+                raise CompileError(
+                    f"PRODUCTION-TARGET-ADMISSION: demand '{demand.name}' "
+                    f"target admission must target unit '{unit}'"
+                )
+            if len(matching_admissions) != 1:
+                raise CompileError(
+                    f"PRODUCTION-TARGET-ADMISSION: demand '{demand.name}' "
+                    "has multiple target-admission facts"
+                )
+            admission_expression = matching_admissions[0]
+            canonical_admission = Expression(
+                source=f"({admission_expression.head} {native_unit_id})",
+                head=admission_expression.head,
+                args=(str(native_unit_id),),
+                location=admission_expression.location,
+            )
+            try:
+                target_admission = registry.resolve_production_target_admission(
+                    canonical_admission,
+                    native_unit_id=native_unit_id,
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise CompileError(
+                    f"PRODUCTION-TARGET-ADMISSION: demand '{demand.name}' "
+                    f"cannot resolve target admission for unit '{unit}': {exc}"
+                ) from exc
+
             production_retry_barrier = GoalSlotRequest(
                 request_id=StorageRequestId(
                     owner=semantic_id,
@@ -427,17 +472,29 @@ def analyze(
                 ),
                 role=GoalRole.EXECUTION_MEMORY,
             )
+            pending_fact = Expression(
+                source=f"(up-pending-objects c: {native_unit_id} >= 1)",
+                head="up-pending-objects",
+                args=("c:", str(native_unit_id), ">=", "1"),
+                location=action.location,
+            )
+            try:
+                queue_protection = registry.resolve_production_queue_protection(
+                    pending_fact,
+                    native_unit_id=native_unit_id,
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise CompileError(
+                    f"PRODUCTION-QUEUE-PROTECTION: demand '{demand.name}' "
+                    f"cannot resolve queue protection: {exc}"
+                ) from exc
             production_lifecycle = ProductionLifecycle(
                 unit=unit,
                 native_unit_id=native_unit_id,
-                pending_fact=Expression(
-                    source=f"(up-pending-objects c: {native_unit_id} >= 1)",
-                    head="up-pending-objects",
-                    args=("c:", str(native_unit_id), ">=", "1"),
-                    location=action.location,
-                ),
+                target_admission=target_admission,
                 completion_witness=witness,
                 retry_barrier=production_retry_barrier,
+                queue_protection=queue_protection,
             )
 
         elif action.head == "research":
