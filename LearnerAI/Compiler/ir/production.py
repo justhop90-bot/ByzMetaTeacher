@@ -92,6 +92,8 @@ class ProductionLifecycle:
     pending_fact: Expression
     completion_witness: Expression
     retry_barrier: GoalSlotRequest
+    queue_state: ProductionQueueStateObservation | None = None
+    provider_state: ProductionProviderStateObservation | None = None
 
     def __post_init__(self) -> None:
         if not self.unit:
