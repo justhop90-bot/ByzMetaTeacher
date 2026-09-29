@@ -1,8 +1,7 @@
 # 06 — GameData factual reconciliation @ `cd923b5a` (FACTUAL_SUBSET, civ-scoped)
 
-Ground truth: current `test_game_data.py` coverage oracle → modeled 157, unmodeled exactly 2, verified_unavailable 14,
-total 173. `require_coverage` remains fail-closed for unresolved trigger-dependent units 527/528. Coverage is civilization-scoped
-(`ir/civ_profile:1489-1512`; `ir/game_data:46-60,272-281`).
+Ground truth: current `test_game_data.py` coverage oracle → modeled 159, unmodeled 0, verified_unavailable 14,
+total 173. Coverage is civilization-scoped FACTUAL_SUBSET.(`ir/civ_profile:1489-1512`; `ir/game_data:46-60,272-281`).
 IR shape: `UnitDef{id,line,providers,base_cost,train_time,upgrades_from/to,validity,provenance,engine_classes,effects}`
 (`ir/game_data:320-336`); `TechnologyDef{id,providers,base_cost,research_time,prereqs,unlocks,effects,upgrades,validity,provenance}`
 (`:353-367`); `UpgradeRelation(previous,current,research)` (`:264-269`); `ResourceCost{food,wood,gold,stone:int>=0}`
