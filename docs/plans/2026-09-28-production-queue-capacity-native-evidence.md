@@ -37,11 +37,11 @@
 - Consumes: pinned AIRef DE Strategic Number record for `sn-enable-training-queue`
 - Produces: one auditable compiler contract and a reproducible runtime proof checklist
 
-- [ ] **Step 1: Capture the documented native facts**
+- [x] **Step 1: Capture the documented native facts**
 
 Record SN 264, name, DE support, default, range, and the documented meaning of its value. Cross-reference `unit-type-count-total`, `can-train`, `up-pending-objects`, and the separate DUC training path so the ordinary `train` path cannot inherit DUC capacity semantics accidentally.
 
-- [ ] **Step 2: Define the runtime proof boundary**
+- [x] **Step 2: Define the runtime proof boundary**
 
 Require a controlled DE test varying SN 264 across 0, a middle value, and 15 while keeping resources, housing, and provider state non-blocking. Record configured SN value, `unit-type-count-total`, `up-pending-objects`, `can-train`, successful `train` issuance count, and the first rejected queue position.
 
@@ -58,20 +58,20 @@ Require a controlled DE test varying SN 264 across 0, a middle value, and 15 whi
 - Consumes: exact `up-compare-sn` native SN observation for SN 264
 - Produces: `ProductionQueueCapacityControlEvidence` with OPEN disposition
 
-- [ ] **Step 1: Add the focused failing tests**
+- [x] **Step 1: Add the focused failing tests**
 
 Assert that `(up-compare-sn sn-enable-training-queue == 3)` resolves to typed OPEN evidence with native SN id 264, additional queue slots 3, documented total capacity 4, and semantic id `controller.production.queue-capacity.sn264`. Assert that non-exact comparisons and values outside 0..15 are rejected.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run: `python -m unittest LearnerAI.Compiler.tests.test_production_queue_capacity_native_contract`
 Expected: import/attribute failure because the typed evidence class and resolver do not yet exist.
 
-- [ ] **Step 3: Implement the minimum behavior**
+- [x] **Step 3: Implement the minimum behavior**
 
 Add `ProductionQueueCapacityControlEvidence` with fail-closed invariants. Bind only the documented SN 264 name/id, require exact equality, parse an integer 0..15, derive documented total capacity as `value + 1`, and keep disposition OPEN. Do not emit a new guard or alter `train` admission.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run the same focused unittest command.
 Expected: all new queue-capacity contract tests pass.
@@ -90,20 +90,20 @@ Expected: all new queue-capacity contract tests pass.
 - Consumes: `ProductionQueueCapacityControlEvidence`
 - Produces: `ProductionLifecycle.queue_capacity_control` with OPEN status preserved
 
-- [ ] **Step 1: Add analyzer red coverage**
+- [x] **Step 1: Add analyzer red coverage**
 
 Compile a production demand containing an exact SN 264 equality and assert the resulting `ProductionLifecycle` retains the typed evidence while the demand still uses ordinary `can-train` admission.
 
-- [ ] **Step 2: Verify the relevant failure**
+- [x] **Step 2: Verify the relevant failure**
 
 Run the focused production test suite.
 Expected: lifecycle field is absent or unresolved before implementation.
 
-- [ ] **Step 3: Implement the minimum wiring**
+- [x] **Step 3: Implement the minimum wiring**
 
 Recognize only the exact SN 264 equality expression in the production demand's requirements, resolve it through the registry, attach it to `ProductionLifecycle`, and preserve OPEN state. Unknown or non-exact SN expressions must not be silently reclassified as capacity evidence.
 
-- [ ] **Step 4: Verify the focused pass**
+- [x] **Step 4: Verify the focused pass**
 
 Run the focused production lifecycle and observation suites.
 Expected: typed evidence survives semantic analysis and never changes the emitted action guard set.
@@ -122,20 +122,20 @@ Expected: typed evidence survives semantic analysis and never changes the emitte
 - Consumes: production fixture containing exact SN 264 configuration plus normal `can-train`/train lifecycle
 - Produces: deterministic .per artifact and native zero-findings evidence showing the new source remains syntactically/semantically valid, while the runtime-capacity claim remains OPEN
 
-- [ ] **Step 1: Add the native fixture/acceptance test**
+- [x] **Step 1: Add the native fixture/acceptance test**
 
 Compile the fixture twice, assert byte-identical artifacts, assert the expected SN 264 source survives emission, and run the pinned native zero-findings validator.
 
-- [ ] **Step 2: Verify native acceptance**
+- [x] **Step 2: Verify native acceptance**
 
 Run the focused acceptance script.
 Expected: deterministic artifact plus zero native findings.
 
-- [ ] **Step 3: Update the gap/checklist state**
+- [x] **Step 3: Update the gap/checklist state**
 
 Mark only the compiler evidence-binding sub-boundary as connected. Keep actual engine-enforced capacity, provider idle/readiness, and birth timing OPEN until DE runtime evidence is recorded.
 
-- [ ] **Step 4: Run full verification**
+- [x] **Step 4: Run full verification**
 
 Run the repository's required Compiler test and native/determinism gate commands.
 Expected: no regressions, zero native findings, deterministic output, and all affected focused suites green.
