@@ -289,6 +289,13 @@ class ByzantineProfile:
             "Byzantine civilization bonuses and technology costs",
             patch,
         )
+        spies_treason = EvidenceRef(
+            EvidenceKind.COMMUNITY_REFERENCE,
+            "https://www.aoe2insights.com/civilization/byzantines/tech-tree/",
+            "current",
+            "Spies/Treason variable cost and research time",
+            patch,
+        )
         controller = EvidenceRef(
             EvidenceKind.REPOSITORY_CONTROLLER,
             "Basilisk/Basilisk.per",
@@ -1355,6 +1362,7 @@ def _byzantine_game_data(
         evidence,
         {
             TechId(54): (treadmill_crane_official, treadmill_crane_community),
+            TechId(408): (spies_treason,),
             TechId(909): (siphons_official,),
         },
     )
