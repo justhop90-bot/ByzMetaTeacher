@@ -233,6 +233,69 @@ class GameDataTests(unittest.TestCase):
         self.assertIsNone(record.research_location)
         self.assertEqual(record.effect_id, -1)
 
+    def test_pinned_185872_aoe2techtree_snapshot_fills_unresolved_byzantine_tech_fields(self):
+        from pathlib import Path
+        import json
+
+        snapshot_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "game-data"
+            / "aoe2techtree-185872-technologies.json"
+        )
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["schema"], "aoe2techtree-technology-snapshot-v1")
+        self.assertEqual(payload["source_revision"], "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f")
+        self.assertEqual(
+            payload["source_blob_sha"],
+            "c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        )
+        self.assertEqual(payload["patch"], "AOE2DE:185872:2026-09-22")
+        self.assertEqual(payload["technology_count"], 201)
+        self.assertEqual(len(payload["technologies"]), 201)
+
+        source_patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
+        snapshot = parse_dat_technologies_json(
+            json.dumps({"technologies": payload["technologies"]}),
+            source=payload["source"],
+            revision=payload["source_revision"],
+            patch=source_patch,
+            content_hash=payload["source_blob_sha"],
+            extraction_version=payload["extraction_version"],
+        )
+        tech = next(item for item in snapshot.records if int(item.tech_id) == 47)
+        self.assertEqual(tech.name, "Chemistry")
+        self.assertEqual(tech.base_cost, ResourceCost(food=300, gold=200))
+        self.assertEqual(tech.research_time_seconds, 100)
+        self.assertEqual(tech.native_civ, -1)
+
+        profile = ByzantineProfile.for_update_185872()
+        base = profile.base_data
+        original = base.tech(47)
+        self.assertIsNone(original.base_cost)
+        self.assertIsNone(original.research_time_seconds)
+
+        merged = enrich_game_data_from_dat_snapshot(
+            replace(
+                base,
+                technologies=tuple(
+                    item for item in base.technologies if item.id == TechId(47)
+                ),
+            ),
+            DatTechnologySnapshot(
+                patch=snapshot.patch,
+                evidence=snapshot.evidence,
+                records=(tech,),
+            ),
+        )
+        merged_tech = merged.tech(47)
+        self.assertEqual(merged_tech.base_cost, ResourceCost(food=300, gold=200))
+        self.assertEqual(merged_tech.research_time_seconds, 100)
+        self.assertEqual(merged_tech.providers, original.providers)
+        self.assertEqual(merged_tech.prerequisites, original.prerequisites)
+        self.assertEqual(merged_tech.effects, original.effects)
+
     def test_dat_technology_snapshot_parser_normalizes_cost_and_time(self):
         raw = """
         [
