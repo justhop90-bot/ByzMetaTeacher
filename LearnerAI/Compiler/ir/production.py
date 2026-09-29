@@ -365,10 +365,10 @@ class ProductionQueueExitTimingEvidence:
             raise ValueError(
                 "production queue-exit timing evidence requires UnitId, compareOp, and Value"
             )
-        if len(self.pending_expression.args) != 5:
+        if len(self.pending_expression.args) != 4:
             raise ValueError(
                 "production queue-exit timing evidence requires typeOp, UnitId, "
-                "compareOp, typeOp, and Value"
+                "compareOp, and Value"
             )
         if self.native_unit_id <= 0:
             raise ValueError(
