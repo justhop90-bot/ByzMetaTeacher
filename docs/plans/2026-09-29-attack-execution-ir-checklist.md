@@ -26,7 +26,7 @@ Compiler result: **SUCCESS**
 | Native plan composition | `ir/native_attack.py` / `NativeAttackLifecyclePlan` | `AttackExecution.native_plan` composes the existing native issue-only plan; native ownership remains unchanged | [x] |
 | Native package export | `ir/__init__.py` | Exported all typed AttackExecution symbols | [x] |
 | Generic compiler boundary | `tests/test_basilisk_client_boundary.py` | Strategy symbols remain referenced through private module aliases and are not re-exported by generic attack IR | [x] |
-| Invalid target protection | `ir/duc.py` + new attack tests | ATTACK/PRESS/REINFORCE reject stale/invalid target bindings | [x] |
+| Invalid target protection | `ir/duc.py` + new attack tests | DUC-dependent ATTACK/PRESS/REINFORCE reject stale/invalid target bindings; native attack-now does not require a DUC target | [x] |
 | Missing native plan protection | `ir/native_attack.py` + new attack tests | ATTACK/PRESS reject absent native attack plan | [x] |
 | Completion protection | `ir/model.py` + new attack tests | COMPLETE rejects missing completion witness | [x] |
 | Transition protection | New attack tests | Illegal transitions are rejected | [x] |
@@ -47,7 +47,7 @@ Compiler result: **SUCCESS**
 
 ## 3. Ownership boundary
 
-The completed contract preserves the intended ownership split:
+The completed contract preserves the intended ownership split, with target admission corrected by the 2026-09-29 MUSE/community reconciliation:
 
 ```
 AttackExecution
@@ -76,3 +76,8 @@ No combat simulator, generic scheduler, second DUC manager, or second capability
 This checklist is closed because every defined AttackExecution field and invariant has a concrete repository owner, an implementation path, focused regression coverage, and fresh full-compiler verification evidence.
 
 The remaining attack semantics are intentionally outside this tranche where the engine evidence is still open: broader attack-controller modes, native group-state semantics, full DUC runtime targeting behavior, and gameplay completion/replay evidence. Those remain separate research/runtime obligations rather than hidden inside the typed IR.
+
+
+## Target-policy correction
+
+The follow-up MUSE/community reconciliation established that `attack-now`, `attack-groups`, and town-size attack are native controller mechanisms whose target selection is not the same thing as DUC target acquisition. Therefore `AttackExecution.target` is optional for those modes and mandatory only for `DUC_TARGETED` execution states that actually consume a DUC target. See `docs/research/2026-09-29-muse-community-attack-reconciliation.md`.
