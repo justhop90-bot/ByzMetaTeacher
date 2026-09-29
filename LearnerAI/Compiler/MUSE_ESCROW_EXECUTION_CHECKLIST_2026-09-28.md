@@ -58,6 +58,7 @@ This checklist is the promotion gate for the escrow/resource-control tranche. It
 - [x] Post-release stale consumption rejection.
 - [x] Policy reset after release accepted as cleanup.
 - [x] Operation owner mismatch rejection.
+- [x] Compiler fixture proving explicit targeted release is lowered before matching ordinary research.
 - [ ] Native artifact fixture proving actual same-pass release visibility. **Still OPEN by design.** Concrete DE fixture and machine-checkable oracle are now specified in `docs/plans/2026-09-28-native-escrow-same-pass-visibility.md`.
 - [ ] Native artifact fixture proving competing-owner behavior under the game engine. **Still OPEN by design.**
 - [x] Native artifact fixture proves actual release emission, deterministic artifact bytes, and zero native parser findings for the promoted release-only slice.
