@@ -29,6 +29,7 @@ from .ir.source_graph import (
     ConditionalOpenPayload,
     LoadEventPayload,
     LoadRandomEntry,
+    LoadRandomSelection,
     LoadRandomEventPayload,
     SourceAssemblyEvent,
     SourceAssemblyEventId,
@@ -52,6 +53,7 @@ class SourceGraphRequest:
     entrypoint: Path
     search_roots: tuple[Path, ...] = ()
     load_symbols: LoadSymbolEnvironment = field(default_factory=LoadSymbolEnvironment)
+    load_random_selections: tuple[LoadRandomSelection, ...] = ()
     allow_load_random: bool = False
 
 
@@ -142,6 +144,9 @@ class SourceGraphResolver:
         self._edges = []
         self._slices = []
         self._files_by_id = {}
+        selections = {item.key(): item for item in request.load_random_selections}
+        if len(selections) != len(request.load_random_selections):
+            raise ValueError("duplicate load-random selection location")
 
         search_roots = tuple(path.resolve() for path in request.search_roots)
         entrypoint = request.entrypoint.resolve()
@@ -158,6 +163,7 @@ class SourceGraphResolver:
             via_edge=None,
             search_roots=search_roots,
             symbols=request.load_symbols,
+            load_random_selections=selections,
             allow_load_random=request.allow_load_random,
         )
 
@@ -265,6 +271,7 @@ class SourceGraphResolver:
         via_edge: SourceEdgeId | None,
         search_roots: tuple[Path, ...],
         symbols: LoadSymbolEnvironment,
+        load_random_selections: dict[tuple[str, int, int], LoadRandomSelection],
         allow_load_random: bool,
     ) -> SourceInstance:
         if parent is not None and physical.path in {
@@ -374,7 +381,14 @@ class SourceGraphResolver:
                         )
                         self._files_by_id[target_source.identity] = target_source
             elif active:
-                if not allow_load_random:
+                selection = load_random_selections.get(
+                    (
+                        physical.resolve().as_posix(),
+                        event.span.start_line,
+                        event.span.start_column,
+                    )
+                )
+                if selection is None:
                     raise SourceGraphError(
                         "SOURCE-GRAPH-007",
                         (
@@ -385,16 +399,27 @@ class SourceGraphResolver:
                         line=event.span.start_line,
                         column=event.span.start_column,
                     )
-                raise SourceGraphError(
-                    "SOURCE-GRAPH-007",
-                    (
-                        "load-random materialization is not implemented; "
-                        "deterministic compilation requires an explicit "
-                        "selection policy"
-                    ),
-                    path=physical.path,
-                    line=event.span.start_line,
-                    column=event.span.start_column,
+                payload = event.payload
+                assert isinstance(payload, LoadRandomEventPayload)
+                declared_targets = {item.target_text for item in payload.entries}
+                if selection.target_text not in declared_targets:
+                    raise SourceGraphError(
+                        "SOURCE-GRAPH-007",
+                        (
+                            f"explicit load-random selection '{selection.target_text}' "
+                            "is not one of the event entries"
+                        ),
+                        path=physical.path,
+                        line=event.span.start_line,
+                        column=event.span.start_column,
+                    )
+                target_text = selection.target_text
+                target_source = self._load_unit(
+                    Path(target_text),
+                    containing_source=physical.path,
+                    search_roots=search_roots,
+                    error_line=event.span.start_line,
+                    error_column=event.span.start_column,
                 )
 
             condition = event.condition_before
@@ -407,7 +432,10 @@ class SourceGraphResolver:
             )
             child: SourceInstance | None = None
 
-            if active and event.kind is SourceAssemblyEventKind.LOAD:
+            if active and event.kind in {
+                SourceAssemblyEventKind.LOAD,
+                SourceAssemblyEventKind.LOAD_RANDOM,
+            }:
                 if target_source is None:
                     raise SourceGraphError(
                         "SOURCE-GRAPH-001",
@@ -422,7 +450,8 @@ class SourceGraphResolver:
                     via_edge=edge_id,
                     search_roots=search_roots,
                     symbols=symbols,
-                    allow_load_random=allow_load_random,
+                    load_random_selections=load_random_selections,
+                allow_load_random=allow_load_random,
                 )
 
             edge = SourceEdge(
