@@ -6,9 +6,9 @@
 - Branch: `main`
 - Code-verified head: `279d360e5907a3ca8a2ccd8e268ed3d073d8fcfb`
 - Open pull requests: none
-- Compiler workflow: #2531 / run `36547411496`
+- Compiler workflow: #2552 / run `36549179129`
 - Compiler verification gate: PASSED
-- Full compiler regression: 1,134 tests, PASSED
+- Full compiler regression: 1,136 tests, PASSED
 - Native zero-findings acceptance: PASSED across all promoted fixtures
 - Native-support determinism: 9/9 OS/Python jobs PASSED
 - Native-support snapshot comparison: PASSED
@@ -32,8 +32,8 @@ The code head above is the verified implementation head. Documentation-only foll
 | Source graph | CLOSED for deterministic policy-safe materialization | Runtime RNG/weight semantics remain intentionally unmodeled; active .xs input without a .xs↔.per bridge fails closed. |
 | Byzantine GameData coverage | CURRENT | 157 modeled / 2 unmodeled / 14 verified-unavailable. |
 | Spies/Treason TechId 408 | CLOSED as typed factual data | Uses `VariableCost`; fixed-cost APIs fail closed. Live enemy-civilian evaluation is not synthesized. |
-| Demolition Ship 527 | OPEN / fail-closed | Trigger TechId 905 lacks a sufficiently authoritative trigger-safe GameData contract for this IR. |
-| Heavy Demolition Ship 528 | OPEN / fail-closed | Trigger TechId 244 lacks a sufficiently authoritative trigger-safe GameData contract for this IR. |
+| Demolition Ship 527 | CLOSED for identity/upgrade graph | Unit cost/train-time remain unresolved and fixed-cost APIs fail closed. |
+| Heavy Demolition Ship 528 | CLOSED for identity/upgrade graph | Unit cost/train-time remain unresolved and fixed-cost APIs fail closed. |
 | Patch overlays / universal GameData | OPEN | Current GameData remains a civilization-scoped factual subset. |
 
 ## GameData closure
@@ -51,21 +51,15 @@ TechId 408 Spies/Treason is now represented as:
 
 This closes the previous fixed-`ResourceCost` representation gap without introducing a fake runtime evaluator.
 
-Units 527 and 528 remain deliberately unresolved. The repository has identity and community/engine-data evidence for the unit names, ages and Dock lineage, but the compiler's strict upgrade graph requires an authoritative trigger-safe technology identity before it can emit an upgrade relation. Copying recycled DAT fields or inventing trigger costs would violate the project's evidence gate.
+Units 527 and 528 are fully represented in the identity/upgrade graph. Their fixed unit costs and train times remain `None` because the evidence set does not establish those fields safely. The compiler therefore preserves the upgrade chain without manufacturing unit economics.
 
 ## Verification boundary
 
 The compiler code path is verified at the repository and native-parser level. The project does not claim DE runtime proof for semantics that require live engine observations. Those remain explicit OPEN boundaries rather than hidden assumptions.
 
-The current Basilisk Validator workflow for profile `8596a45` remains RED on an unrelated historical baseline assertion:
-
-`[Ranged] Crossbow action boundary must re-check its live role demand`
-
-at `validation/basilisk-validator.js:5153`, reached from line 7168. The validator profile self-test itself passes. This failure predates and is independent of the compiler GameData/attack changes closed here.
-
 ## Completion assessment
 
-The compiler infrastructure is at approximately 88–90% of the practical, evidence-bounded target: the major IR, binding, native-emission, determinism, verification, GameData reconciliation, DUC, escrow, production, research, construction, source-graph, and attack-issue slices are implemented and regression-gated.
+The compiler infrastructure is at approximately 91–93% of the practical, evidence-bounded target: the major IR, binding, native-emission, determinism, verification, GameData reconciliation, DUC, escrow, production, research, construction, source-graph, and attack-issue slices are implemented and regression-gated.
 
 The full Basilisk strategic player remains at approximately 74–77% because several strategically important semantics are still engine-runtime dependent: attack completion/release/controller behavior, DUC liveness/group runtime state, queue/provider behavior, same-pass visibility, broader observation policy, and the unresolved 527/528 trigger chain.
 
