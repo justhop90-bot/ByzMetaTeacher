@@ -109,6 +109,30 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: DUC/attack/escrow observation primitives plus policy-vs-semantics audit of native token validation.
 
+
+## Tier 1.5 — strategic endgame / war-control semantics
+
+- [~] Add a dedicated war-controller research/implementation track derived from Naga/Promi, Duke, and community attack practice.
+  - Community evidence distinguishes attack-now, attack-groups, and town-size attack as different native mechanisms rather than interchangeable attack commands.
+  - Duke provides an explicit persistent attack controller with preparation, regrouping, attack windows, parity/siege gates, stop/re-entry, and defensive reset behavior.
+  - Naga/Promi evidence is useful for strategic breadth, adaptation, and documented failure modes; it is not treated as proof of native engine semantics.
+  - Exact implementation checklist: docs/plans/2026-09-29-basilisk-endgame-war-plan-checklist.md.
+  - Compiler-side scope: typed attack lifecycle, target provenance, DUC/production/controller semantic connections, diagnostics, deterministic lowering, native acceptance.
+  - Client-side scope: war-objective policy, target-class policy, break-capability selection, attack-mode choice, and objective reassessment.
+  - Runtime DE execution remains user-owned and does not block compiler-side completion of typed/static portions.
+
+- [ ] MUSE research refresh for the war-controller track.
+  - [ ] Naga / Promi attack architecture and known limitations.
+  - [ ] Duke attack-state implementation and attack-window patterns.
+  - [ ] attack mechanism differences.
+  - [ ] retreat/re-entry and regroup patterns.
+  - [ ] siege and military-parity gates.
+  - [ ] DUC target selection and target invalidation.
+  - [ ] production/reinforcement coupling.
+  - [ ] enemy production/economy/fortification targeting.
+  - [ ] documented failure modes and anti-patterns.
+  - [ ] source provenance and native-vs-community confidence for every finding.
+
 ## Mandatory verification discipline
 
 - [x] Every new emitted capability gets an actual source-to-.per test. The release-only escrow slice uses a checked-in source fixture plus a pinned native validator; synthetic semantic fixtures are supplementary only.
