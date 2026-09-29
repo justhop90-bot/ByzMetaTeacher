@@ -1,0 +1,215 @@
+{
+  "schema": "aoe2techtree-unit-snapshot-v1",
+  "source": "https://github.com/SiegeEngineers/aoe2techtree/blob/3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f/data/data.json",
+  "source_revision": "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+  "source_blob_sha": "c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+  "patch": "AOE2DE:185872:2026-09-22",
+  "extraction_version": "compiler-unit-seed-v1",
+  "unit_count": 12,
+  "units": [
+    {
+      "id": 550,
+      "manifest_name": "Onager",
+      "available_age": "IMPERIAL",
+      "provider_building": 49,
+      "line": "mangonel-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 160,
+        "stone": 0,
+        "gold": 135
+      },
+      "train_time_seconds": 46,
+      "upgrades_from": 280,
+      "upgrades_to": null,
+      "internal_name": "ONAGR"
+    },
+    {
+      "id": 13,
+      "manifest_name": "Heavy Plow",
+      "available_age": "CASTLE",
+      "provider_building": 68,
+      "line": "fishing-ship-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 75,
+        "stone": 0,
+        "gold": 0
+      },
+      "train_time_seconds": 40,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "FSHSP"
+    },
+    {
+      "id": 545,
+      "manifest_name": "Transport Ship",
+      "available_age": "DARK",
+      "provider_building": 45,
+      "line": "transport-ship-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 125,
+        "stone": 0,
+        "gold": 0
+      },
+      "train_time_seconds": 46,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "XPORT"
+    },
+    {
+      "id": 539,
+      "manifest_name": "Galley",
+      "available_age": "FEUDAL",
+      "provider_building": 45,
+      "line": "galley-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 90,
+        "stone": 0,
+        "gold": 30
+      },
+      "train_time_seconds": 45,
+      "upgrades_from": null,
+      "upgrades_to": 21,
+      "internal_name": "SGALY"
+    },
+    {
+      "id": 21,
+      "manifest_name": "War Galley",
+      "available_age": "CASTLE",
+      "provider_building": 45,
+      "line": "galley-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 90,
+        "stone": 0,
+        "gold": 30
+      },
+      "train_time_seconds": 27,
+      "upgrades_from": 539,
+      "upgrades_to": 442,
+      "internal_name": "GALLY"
+    },
+    {
+      "id": 442,
+      "manifest_name": "Galleon",
+      "available_age": "IMPERIAL",
+      "provider_building": 45,
+      "line": "galley-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 90,
+        "stone": 0,
+        "gold": 30
+      },
+      "train_time_seconds": 27,
+      "upgrades_from": 21,
+      "upgrades_to": null,
+      "internal_name": "WARGA"
+    },
+    {
+      "id": 2626,
+      "manifest_name": "Hulk",
+      "available_age": "FEUDAL",
+      "provider_building": 45,
+      "line": "hulk-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 75,
+        "stone": 0,
+        "gold": 35
+      },
+      "train_time_seconds": 42,
+      "upgrades_from": null,
+      "upgrades_to": 2627,
+      "internal_name": "Hulk"
+    },
+    {
+      "id": 2627,
+      "manifest_name": "War Hulk",
+      "available_age": "CASTLE",
+      "provider_building": 45,
+      "line": "hulk-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 75,
+        "stone": 0,
+        "gold": 35
+      },
+      "train_time_seconds": 27,
+      "upgrades_from": 2626,
+      "upgrades_to": null,
+      "internal_name": "War hulk"
+    },
+    {
+      "id": 1104,
+      "manifest_name": "Demolition Raft",
+      "available_age": "FEUDAL",
+      "provider_building": 45,
+      "line": "demolition-raft-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 45,
+        "stone": 0,
+        "gold": 80
+      },
+      "train_time_seconds": 45,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "SDGAL"
+    },
+    {
+      "id": 17,
+      "manifest_name": "Banking",
+      "available_age": "IMPERIAL",
+      "provider_building": 84,
+      "line": "trade-cog-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 100,
+        "stone": 0,
+        "gold": 50
+      },
+      "train_time_seconds": 36,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "COGXX"
+    },
+    {
+      "id": 83,
+      "manifest_name": "Villager",
+      "available_age": "DARK",
+      "provider_building": 109,
+      "line": "villager-line",
+      "base_cost": {
+        "food": 50,
+        "wood": 0,
+        "stone": 0,
+        "gold": 0
+      },
+      "train_time_seconds": 25,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "VMBAS"
+    },
+    {
+      "id": 128,
+      "manifest_name": "Trade Cart",
+      "available_age": "FEUDAL",
+      "provider_building": 84,
+      "line": "trade-cart-line",
+      "base_cost": {
+        "food": 0,
+        "wood": 100,
+        "stone": 0,
+        "gold": 50
+      },
+      "train_time_seconds": 51,
+      "upgrades_from": null,
+      "upgrades_to": null,
+      "internal_name": "TCART"
+    }
+  ]
+}
