@@ -217,7 +217,7 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             release (current-age >= feudal-age)
         }
         """
-        artifact = compile_source(source, escrow_plan=plan)
+        artifact = compile_source(source, source_unit="test", escrow_plan=plan)
         action_start = artifact.index("; Action issuance: research")
         action_block = artifact[action_start:]
         self.assertLess(
