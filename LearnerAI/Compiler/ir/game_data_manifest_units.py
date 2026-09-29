@@ -143,7 +143,7 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
         "War hulk",
         "War hulk",
         UnitId(2626),
-        None,
+        UnitId(2628),
     ),
     ByzantineManifestUnitSeed(
         UnitId(1104),
