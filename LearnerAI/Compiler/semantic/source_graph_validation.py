@@ -1264,7 +1264,9 @@ def _validate_edges(
             )
 
         if edge.kind is LoadKind.RANDOM:
-            if edge.active and policy.reject_random_loads and (edge.target is None or edge.child is None):
+            if edge.active and policy.reject_random_loads and (
+                edge.target is None or edge.child is None
+            ):
                 diagnostics.append(
                     _diag(
                         SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
@@ -1275,7 +1277,7 @@ def _validate_edges(
                         edge_id=edge.edge_id,
                     )
                 )
-            continue
+                continue
 
         if edge.target is None and edge.kind not in {
             LoadKind.CONDITIONAL_DEFINED,
@@ -1548,7 +1550,11 @@ def _validate_effective_splicing(
         return result
 
     for edge in graph.edges:
-        if not edge.active or edge.kind not in {LoadKind.FILE, LoadKind.RAW_LOAD}:
+        if not edge.active or edge.kind not in {
+            LoadKind.FILE,
+            LoadKind.RAW_LOAD,
+            LoadKind.RANDOM,
+        }:
             continue
         if edge.child is None:
             continue
