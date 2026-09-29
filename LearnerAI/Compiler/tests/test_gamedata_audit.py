@@ -128,6 +128,56 @@ class GameDataAuditTests(unittest.TestCase):
         self.assertEqual(imperial.prerequisites[0].children[0].building, BuildingId(82))
         self.assertEqual(imperial.prerequisites[0].children[1].kind, PrerequisiteKind.N_OF)
 
+    def test_demolition_ship_identity_and_upgrade_chain_are_typed_without_invented_unit_costs(self):
+        demo = self.data.unit(527)
+        heavy = self.data.unit(528)
+        self.assertEqual(demo.name, "Demolition Ship")
+        self.assertEqual(heavy.name, "Heavy Demolition Ship")
+        self.assertEqual(demo.available_age, Age.CASTLE)
+        self.assertEqual(heavy.available_age, Age.IMPERIAL)
+        self.assertEqual(demo.providers[0].building, BuildingId(45))
+        self.assertEqual(heavy.providers[0].building, BuildingId(45))
+        self.assertEqual(demo.base_cost, None)
+        self.assertEqual(heavy.base_cost, None)
+        self.assertEqual(demo.train_time_seconds, None)
+        self.assertEqual(heavy.train_time_seconds, None)
+        self.assertEqual(demo.upgrades_from, UnitId(1104))
+        self.assertEqual(demo.upgrades_to, UnitId(528))
+        self.assertEqual(heavy.upgrades_from, UnitId(527))
+        self.assertIsNone(heavy.upgrades_to)
+        self.assertEqual(self.data.unit_line("demolition-raft-line").members, (
+            UnitId(1104), UnitId(527), UnitId(528)
+        ))
+        self.assertEqual(
+            self.data.tech(905).name,
+            "Demolition Ship",
+        )
+        self.assertEqual(
+            self.data.tech(905).base_cost,
+            ResourceCost(wood=150, gold=100),
+        )
+        self.assertIsNone(self.data.tech(905).research_time_seconds)
+        self.assertEqual(
+            self.data.tech(244).name,
+            "Heavy Demolition Ship",
+        )
+        self.assertEqual(
+            self.data.tech(244).base_cost,
+            ResourceCost(wood=250, gold=350),
+        )
+        self.assertIsNone(self.data.tech(244).research_time_seconds)
+        self.assertEqual(
+            {(int(r.previous), int(r.current), int(r.research)) for r in self.data.upgrade_relations
+             if int(r.previous) in {1104, 527}},
+            {(1104, 527, 905), (527, 528, 244)},
+        )
+
+    def test_demolition_ship_fixed_cost_api_fails_closed_until_unit_cost_is_authoritative(self):
+        with self.assertRaisesRegex(ValueError, "base cost is unresolved"):
+            self.data.cost_of("unit:527")
+        with self.assertRaisesRegex(ValueError, "base cost is unresolved"):
+            self.data.cost_of("unit:528")
+
     def test_upgrade_relations_carry_native_research_triggers(self):
         expected = {
             (93, 358): 197,
