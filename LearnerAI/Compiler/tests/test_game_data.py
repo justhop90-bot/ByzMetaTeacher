@@ -348,6 +348,72 @@ class GameDataTests(unittest.TestCase):
             },
         )
 
+    def test_manifest_carrack_materializes_from_explicit_unit_source(self):
+        from pathlib import Path
+
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+
+        carrack = effective.unit(2628)
+        self.assertEqual(carrack.name, "Carrack")
+        self.assertEqual(carrack.available_age, Age.IMPERIAL)
+        self.assertEqual(carrack.providers[0].building, BuildingId(45))
+        self.assertEqual(carrack.line, UnitLineId("hulk-line"))
+        self.assertEqual(carrack.base_cost, ResourceCost(wood=75, gold=35))
+        self.assertEqual(carrack.train_time_seconds, 27)
+        self.assertEqual(carrack.upgrades_from, UnitId(2627))
+        self.assertIsNone(carrack.upgrades_to)
+
+        self.assertIn(UnitId(2628), effective.unit_line("hulk-line").members)
+
+        relation = next(
+            item
+            for item in effective.upgrade_relations
+            if item.previous == UnitId(2627)
+            and item.current == UnitId(2628)
+        )
+        self.assertEqual(relation.research, TechId(35))
+        self.assertIn(EvidenceKind.REPOSITORY_MANIFEST, {ref.kind for ref in relation.provenance})
+        self.assertIn(EvidenceKind.OFFICIAL_PATCH, {ref.kind for ref in relation.provenance})
+
+        self.assertIn(
+            EvidenceKind.REPOSITORY_MANIFEST,
+            {ref.kind for ref in carrack.provenance},
+        )
+        self.assertIn(
+            EvidenceKind.COMMUNITY_REFERENCE,
+            {ref.kind for ref in carrack.provenance},
+        )
+        self.assertIn(
+            EvidenceKind.OFFICIAL_PATCH,
+            {ref.kind for ref in carrack.provenance},
+        )
+
+        report = classify_byzantine_manifest_coverage(
+            parse_byzantine_manifest(
+                (
+                    Path(__file__).parents[3]
+                    / "docs"
+                    / "reference"
+                    / "BYZANTINES_manifest.txt"
+                ).read_text(encoding="utf-8")
+            ),
+            effective,
+        )
+        self.assertEqual(report.modeled_count, 156)
+        self.assertEqual(report.unmodeled_count, 3)
+        self.assertEqual(
+            {
+                (node.kind, int(node.id))
+                for node in report.unmodeled_nodes
+            },
+            {
+                (ManifestNodeKind.UNIT, 527),
+                (ManifestNodeKind.UNIT, 528),
+                (ManifestNodeKind.TECHNOLOGY, 408),
+            },
+        )
+
     def test_manifest_technology_conflicts_materialize_from_explicit_override_sources(self):
         from pathlib import Path
 
