@@ -353,6 +353,8 @@ class GameDataTests(unittest.TestCase):
         )
 
     def test_manifest_technology_conflicts_materialize_from_explicit_override_sources(self):
+        from pathlib import Path
+
         profile = ByzantineProfile.for_update_185872()
         effective = resolve_effective_civ(profile)
 
