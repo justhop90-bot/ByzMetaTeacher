@@ -55,6 +55,9 @@ strategy PARTIAL.
 GAP: native same-pass timing; starvation/emergency release; multi-owner handoff; remaining UP escrow mutation lowering.
 Must NOT become a universal scheduler.
 
+## Rule/pass control flow
+static control-flow diagnostics now include out-of-range/bypass/unreachable cases plus `RULE-CF-005` for statically provable same-rule re-entry after `disable-self`; broader disabled-target path dependence remains open.
+
 ## DUC SearchSession (promoted narrow slice)
 native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
 emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |

@@ -196,6 +196,7 @@ class PassSchedulerTests(unittest.TestCase):
         trace = scheduler.run_pass()
 
         self.assertEqual(trace.fired_rule_orders, (1, 2))
+        self.assertEqual(trace.skipped_rule_orders, (1,))
         self.assertEqual(
             trace.control_transfers[0].target_rule_order,
             1,

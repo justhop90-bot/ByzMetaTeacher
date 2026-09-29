@@ -58,6 +58,7 @@ class RuleDiagnosticCode(str, Enum):
     CONTROL_TRANSFER_BYPASSES_RULE = "RULE-CF-002"
     CONTROL_TRANSFER_PREEMPTS_RULE = "RULE-CF-003"
     CONTROL_TRANSFER_UNREACHABLE_RULE = "RULE-CF-004"
+    CONTROL_TRANSFER_INTO_DISABLED_RULE = "RULE-CF-005"
     RECURRENT_NEVER_RUNNABLE = "REX-001"
     RECURRENT_RUNTIME_DEPENDENT = "REX-002"
     RECURRENT_GUARANTEED_PREEMPTION = "REX-003"
@@ -342,6 +343,32 @@ def _control_flow_diagnostics(
                 )
             )
             continue
+
+        source_rule = rules_by_order[transfer.rule_order]
+        if (
+            transfer.target_rule_order == transfer.rule_order
+            and source_rule.disable_self_action_index is not None
+            and source_rule.disable_self_action_index < transfer.within_rule_order
+        ):
+            diagnostics.append(
+                RuleDiagnostic(
+                    rule_order=transfer.rule_order,
+                    code=RuleDiagnosticCode.CONTROL_TRANSFER_INTO_DISABLED_RULE,
+                    severity=DiagnosticSeverity.WARNING,
+                    eligibility=None,
+                    message=(
+                        "up-jump-rule in rule "
+                        + str(transfer.rule_order)
+                        + " targets the same rule after disable-self; "
+                        "the target is disabled on re-entry and control falls through"
+                    ),
+                    location=transfer.location,
+                    category=RuleDiagnosticCategory.CONTROL_FLOW,
+                    source_code=RuleDiagnosticCode.CONTROL_TRANSFER_INTO_DISABLED_RULE.value,
+                    related_rule_order=transfer.target_rule_order,
+                    related_operation="up-jump-rule",
+                )
+            )
 
         if transfer.target_rule_order > transfer.rule_order + 1:
             diagnostics.append(
