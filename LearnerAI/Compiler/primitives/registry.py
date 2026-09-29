@@ -304,6 +304,8 @@ class PrimitiveRegistry:
             "up-get-group-size",
             "up-get-cost-delta",
             "up-get-point",
+            "up-get-object-data",
+            "up-get-object-target-data",
         }
         output_sites = {
             (rule.identity, section, index): expression
@@ -383,6 +385,37 @@ class PrimitiveRegistry:
                 if len(expression.args) != 1:
                     raise ValueError(
                         "up-get-cost-delta native expression must have exactly one OutputGoalId argument"
+                    )
+
+            elif expression.head in {"up-get-object-data", "up-get-object-target-data"}:
+                if output_request.argument_index != 1:
+                    raise ValueError(
+                        f"DUC {expression.head} output request '{site}' must bind argument 1"
+                    )
+                if not isinstance(output_request.request, GoalSlotRequest):
+                    raise ValueError(
+                        f"DUC {expression.head} output request '{site}' requires GoalSlotRequest"
+                    )
+                request = output_request.request
+                contract = self._native_contracts.duc_target_data_contract(expression.head)
+                if contract is None or contract.output_width != 1:
+                    raise ValueError(
+                        f"missing typed {expression.head} output contract"
+                    )
+                if (
+                    request.role.value != "NATIVE_OUTPUT"
+                    or request.request_id.purpose != expression.head
+                    or contract.output_goal_min != 1
+                    or contract.output_goal_max != 16000
+                    or contract.output_contract_id is None
+                ):
+                    raise ValueError(
+                        f"DUC {expression.head} output request '{site}' has invalid "
+                        "GoalSlot contract"
+                    )
+                if len(expression.args) != 2:
+                    raise ValueError(
+                        f"{expression.head} native expression must have exactly two arguments"
                     )
 
             elif expression.head == "up-get-point":
