@@ -51,7 +51,6 @@ def composite_recurrent_mutation_branch_target_fixture():
             facts=(("(true)", "true", ()),),
             actions=(
                 ("(set-goal duc-gate 0)", "set-goal", ("duc-gate", "0")),
-                ("(up-jump-rule 3)", "up-jump-rule", ("3",)),
             ),
         ),
         _rule(
