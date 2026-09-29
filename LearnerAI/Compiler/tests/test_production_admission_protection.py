@@ -13,6 +13,8 @@ def _expression(source, head, *args):
 
 
 class ProductionAdmissionProtectionTests(unittest.TestCase):
+    """Task 3 matrix: admission, queue protection, OPEN evidence, and rejection."""
+    
     def setUp(self):
         self.registry = default_de_registry()
 
