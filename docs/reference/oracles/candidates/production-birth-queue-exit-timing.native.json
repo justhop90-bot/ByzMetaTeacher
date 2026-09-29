@@ -1,0 +1,17 @@
+{
+  "schema_version": "production-birth-queue-exit-timing/v1",
+  "status": "OPEN",
+  "engine_build": "UNVERIFIED",
+  "fixture": "UNSET",
+  "target": {
+    "unit_id": 93,
+    "unit_name": "spearman"
+  },
+  "samples": [],
+  "observed_transitions": {
+    "birth_sample_index": null,
+    "queue_exit_sample_index": null,
+    "next_pass_visibility_confirmed": false
+  },
+  "notes": "Candidate only. Populate from a controlled current-DE experiment. Do not infer birth or queue-exit event timing from a single snapshot or from pending-state disappearance alone."
+}
