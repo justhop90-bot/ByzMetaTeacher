@@ -263,13 +263,25 @@ class PrimitiveRegistry:
         for rule in plan.rules:
             for expression in rule.facts:
                 native = self.require_native(expression.head)
+                if expression.head in duc_commands:
+                    binding = binder.bind_duc_command(expression.head)
+                    self.validate_native_signature(expression.head, len(expression.args))
+                    native = self.require_native(expression.head)
+                    if native.command_type not in {"Fact", "Fact/Action"}:
+                        raise ValueError(
+                            f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
+                        )
+                    if len(expression.args) != binding.parameter_count:
+                        raise ValueError(
+                            f"DUC command '{expression.head}' expects exactly "
+                            f"{binding.parameter_count} argument(s), got {len(expression.args)}"
+                        )
+                    continue
                 self.validate_native_signature(expression.head, len(expression.args))
                 if native.command_type not in {"Fact", "Fact/Action"}:
                     raise ValueError(
                         f"DUC rule fact '{expression.head}' is an Action and cannot be emitted as a Fact"
                     )
-                if expression.head in duc_commands:
-                    binder.bind_duc_command(expression.head)
             for expression in rule.actions:
                 if expression.head not in duc_commands:
                     raise ValueError(
