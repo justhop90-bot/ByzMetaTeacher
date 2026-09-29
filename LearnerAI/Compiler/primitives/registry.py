@@ -697,10 +697,9 @@ class PrimitiveRegistry:
         )
         from .strategic_number_catalog import default_strategic_number_catalog
 
-        if expression.head not in {"strategic-number", "up-compare-sn"}:
+        if expression.head != "up-compare-sn":
             raise ValueError(
-                f"production queue-capacity control evidence '{expression.head}' "
-                "is REJECTED: expected strategic-number or up-compare-sn"
+                f"production queue-capacity control evidence must use up-compare-sn"
             )
         primitive = self.get(expression.head)
         if primitive is None:
