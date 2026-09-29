@@ -72,10 +72,14 @@ class SemanticSupportStateTests(unittest.TestCase):
             default_escrow_executable_commands,
             default_native_controller_executable_commands,
         )
+        from Compiler.primitives.native_hygiene import (
+            default_native_output_goal_contracts,
+        )
 
         expected_commands = tuple(
             sorted(
                 tuple(default_de_registry().names())
+                + tuple(item.command for item in default_native_output_goal_contracts())
                 + tuple(default_duc_executable_commands())
                 + tuple(default_escrow_executable_commands())
                 + tuple(default_native_controller_executable_commands())
