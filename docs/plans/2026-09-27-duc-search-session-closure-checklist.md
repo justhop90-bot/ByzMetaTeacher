@@ -33,4 +33,4 @@
 - [x] Model `up-get-group-size` as a width-1 Goal output with concrete GoalId bounds, writer provenance, overwrite provenance, pass persistence, and path-ambiguous joins.
 - [x] Add cardinality-aware DUC performance diagnostics using evidence-backed bounds.
 - [x] Add bounded semantic observation support for Fact-only `up-can-search`; exact native truth outside proven exhaustion/capacity remains runtime-dependent.
-- [ ] Add composite recurrent + mutation + branch + target fixtures.
+- [x] Add composite recurrent + mutation + branch + target fixture covering unreachable branch state seeding, clean-search target proof degradation, remove-objects preservation, and explicit target invalidation.
