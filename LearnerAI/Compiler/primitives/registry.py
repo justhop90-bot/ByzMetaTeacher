@@ -397,6 +397,130 @@ class PrimitiveRegistry:
                 f"{native.parameter_count} argument(s), got {arg_count}"
             )
 
+    def _resolve_production_observation(
+        self,
+        expression,
+        *,
+        observation_name: str,
+        expected_primitive: str,
+        target_label: str,
+        target_id: int,
+    ):
+        primitive_name = expression.head
+        primitive = self.get(primitive_name)
+        if primitive is None:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' is not a registered native fact"
+            )
+        native = self.native(primitive_name)
+        if native is None:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has no native schema entry"
+            )
+        if primitive_name != expected_primitive:
+            raise ValueError(
+                f"production {observation_name} observation must use "
+                f"{expected_primitive}"
+            )
+        if primitive.kind != "FACT" or primitive.role != "OBSERVATION":
+            raise ValueError(
+                f"production {observation_name} observation '{primitive_name}' "
+                "is not an observation Fact"
+            )
+        if native.command_type != "Fact":
+            raise ValueError(
+                f"production {observation_name} observation '{primitive_name}' "
+                "is not backed by a native Fact"
+            )
+        try:
+            self.validate_native_signature(
+                primitive_name,
+                len(expression.args),
+            )
+            adapter = self.fact_registry.require(primitive_name)
+        except KeyError as exc:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has no registered native fact adapter"
+            ) from exc
+        except ValueError as exc:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has invalid native signature: {exc}"
+            ) from exc
+        semantic_id = primitive.engine_semantics_id
+        if semantic_id is None:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has no engine semantic mapping"
+            )
+        mapping = self._semantic_mappings.require(semantic_id)
+        if mapping.native_command != primitive_name or mapping.native_kind != "Fact":
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has an invalid engine semantic mapping"
+            )
+        if adapter.semantic_id != semantic_id:
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"'{primitive_name}' has a mismatched fact semantic adapter"
+            )
+        if (
+            not expression.args
+            or str(expression.args[0]) != str(target_id)
+        ):
+            raise ValueError(
+                f"production {observation_name} observation "
+                f"does not target {target_label} {target_id}"
+            )
+        return primitive_name, semantic_id
+
+    def resolve_production_queue_state(
+        self,
+        expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import ProductionQueueStateObservation
+
+        primitive, semantic_id = self._resolve_production_observation(
+            expression,
+            observation_name="queue-state",
+            expected_primitive="unit-type-count-total",
+            target_label="UnitId",
+            target_id=native_unit_id,
+        )
+        return ProductionQueueStateObservation(
+            primitive=primitive,
+            expression=expression,
+            native_unit_id=native_unit_id,
+            semantic_id=semantic_id,
+        )
+
+    def resolve_production_provider_state(
+        self,
+        expression,
+        *,
+        native_building_id: int,
+    ):
+        from ..ir.production import ProductionProviderStateObservation
+
+        primitive, semantic_id = self._resolve_production_observation(
+            expression,
+            observation_name="provider-state",
+            expected_primitive="building-type-count",
+            target_label="BuildingId",
+            target_id=native_building_id,
+        )
+        return ProductionProviderStateObservation(
+            primitive=primitive,
+            expression=expression,
+            native_building_id=native_building_id,
+            semantic_id=semantic_id,
+        )
+
     def validate_adapter_contract(self, primitive: Primitive) -> None:
         native = self.require_native(primitive.name)
         expected = "Action" if primitive.kind == "ACTION" else "Fact"
