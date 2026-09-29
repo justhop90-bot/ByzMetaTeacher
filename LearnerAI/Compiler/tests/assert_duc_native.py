@@ -157,7 +157,13 @@ def _plan() -> NativeDucPlan:
                         ("player-number", "0", "41"),
                     ),
                 ),
-                actions=(),
+                actions=(
+                    Expression(
+                        "(up-reset-filters)",
+                        "up-reset-filters",
+                        (),
+                    ),
+                ),
             ),
             NativeDucRule(
                 identity="search-and-select",
