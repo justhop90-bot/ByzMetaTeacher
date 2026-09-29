@@ -59,6 +59,30 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_sn18_binds_to_total_explorer_cap_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 18 == 4)",
+            "total-explorer-cap",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.TOTAL_EXPLORER_CAP,
+        )
+
+    def test_sn18_accepts_documented_ignore_value_negative_one(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 18 == -1)",
+            "total-explorer-cap-ignore",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.TOTAL_EXPLORER_CAP,
+        )
+
     def test_sn61_binds_to_boat_exploration_group_control_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
