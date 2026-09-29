@@ -16,6 +16,17 @@ from .game_data_dat_snapshot import (
 
 from .game_data_manifest import ByzantineManifest, ByzantineManifestCoverage, ManifestNode, ManifestNodeKind, ManifestNodeStatus, classify_byzantine_manifest_coverage, parse_byzantine_manifest
 from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+from .attack import (
+    AttackCapabilityRef,
+    AttackCapabilityRole,
+    AttackCompletionContract,
+    AttackExecution,
+    AttackExecutionMode,
+    AttackExecutionState,
+    AttackExecutionTransition,
+    AttackReassessment,
+    AttackResultDisposition,
+)
 from .native_attack import (
     AttackLifecycleObservation,
     NativeAttackLifecyclePlan,
