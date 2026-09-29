@@ -738,6 +738,19 @@ def default_native_goal_span_contracts() -> Tuple[NativeGoalSpanContract, ...]:
     )
 
 
+def default_native_output_goal_contracts() -> Tuple[NativeOutputGoalContract, ...]:
+    return (
+        NativeOutputGoalContract(
+            "up-get-fact",
+            2,
+            1,
+            1,
+            16000,
+            ("airef:up-get-fact",),
+        ),
+    )
+
+
 def default_native_duc_search_contracts() -> Tuple[NativeDucSearchContract, ...]:
     airef = "airef:duc"
     return (
@@ -1126,6 +1139,28 @@ class NativeDucGroupContract:
 
 
 @dataclass(frozen=True)
+class NativeOutputGoalContract:
+    command: str
+    output_argument_index: int
+    output_width: int
+    output_goal_min: int
+    output_goal_max: int
+    evidence_ids: Tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not self.command:
+            raise ValueError("native output Goal contract requires a command")
+        if self.output_argument_index < 0:
+            raise ValueError("native output Goal argument index must be non-negative")
+        if self.output_width != 1:
+            raise ValueError("native output Goal contract width must be exactly 1")
+        if not 1 <= self.output_goal_min <= self.output_goal_max <= 16000:
+            raise ValueError("native output Goal range must be within 1..16000")
+        if not self.evidence_ids:
+            raise ValueError("native output Goal contract requires evidence")
+
+
+@dataclass(frozen=True)
 class NativeDucSearchContract:
     command: str
     list_kind: str
@@ -1331,6 +1366,7 @@ class NativeContractCatalog:
     duc_target_consumers: Tuple[NativeDucTargetConsumerContract, ...] = ()
     duc_groups: Tuple[NativeDucGroupContract, ...] = ()
     duc_output_evidence_ids: Tuple[str, ...] = ("airef:duc:get-search-state",)
+    native_output_goal_contracts: Tuple[NativeOutputGoalContract, ...] = ()
     duc_consumer_commands: Tuple[str, ...] = (
         "up-target-objects",
         "up-target-point",
@@ -1338,6 +1374,12 @@ class NativeContractCatalog:
     citation_catalog: Optional[CitationRecordCatalog] = None
 
     def __post_init__(self) -> None:
+        if not self.native_output_goal_contracts:
+            object.__setattr__(
+                self,
+                "native_output_goal_contracts",
+                default_native_output_goal_contracts(),
+            )
         if not self.goal_storage_contracts:
             object.__setattr__(self, "goal_storage_contracts", default_native_goal_storage_contracts())
         if not self.goal_span_contracts:
@@ -1381,6 +1423,7 @@ class NativeContractCatalog:
             (self.goal_storage_contracts, "Goal storage contract"),
             (self.goal_span_contracts, "Goal span contract"),
             (self.parameter_ranges, "GoalId parameter-range contract"),
+            (self.native_output_goal_contracts, "native output Goal contract"),
         ):
             identities = [item.identity for item in values]
             if len(identities) != len(set(identities)):
@@ -1736,6 +1779,13 @@ class NativeContractCatalog:
                     raise ValueError(
                         f"native contract '{owner}' has invalid citation provenance: {exc}"
                     ) from exc
+
+    def native_output_goal(self, command: str) -> NativeOutputGoalContract:
+        for item in self.native_output_goal_contracts:
+            if item.command == command:
+                return item
+        raise KeyError(command)
+
 
     def witness(self, identity: str) -> NativeWitness:
         for item in self.witnesses:
