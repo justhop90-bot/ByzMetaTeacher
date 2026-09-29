@@ -3,7 +3,8 @@
 Historical promotion base: `adec462b420f87bc66c2868908058c0e272baf7c`.
 Verified main SHA: `1a30b77a351bee90d1e7d92cb6484c6df8db86af`.
 Current mainline verification: Compiler workflow #2213 / Actions run 36505641609 is green at that exact SHA with 1,003 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
-Working state: release-only `release-escrow` lowering remains executable-safe; broader escrow semantics remain open.
+Working state: `release-escrow` and explicit `set-escrow-percentage` lowering are executable-safe;
+broader escrow runtime semantics remain open.
 
 This checklist is the promotion gate for the escrow/resource-control tranche. It distinguishes native engine facts, community practice, compiler policy, and still-open runtime questions. Community repetition is not promoted to engine truth without native evidence.
 
