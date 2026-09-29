@@ -203,6 +203,75 @@ class GameDataTests(unittest.TestCase):
             len(manifest.nodes),
         )
 
+    def test_pinned_snapshot_materializes_safe_manifest_units(self):
+        from pathlib import Path
+        import json
+
+        from LearnerAI.Compiler.ir.game_data_manifest_units import (
+            BYZANTINE_MANIFEST_UNIT_SEEDS,
+        )
+
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+
+        source_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "BYZANTINES_manifest.txt"
+        )
+        payload_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "game-data"
+            / "aoe2techtree-185872-units.json"
+        )
+        manifest = parse_byzantine_manifest(source_path.read_text(encoding="utf-8"))
+        payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        snapshot_ids = {int(item["id"]) for item in payload["units"]}
+
+        seed_ids = {int(seed.id) for seed in BYZANTINE_MANIFEST_UNIT_SEEDS}
+        self.assertEqual(len(seed_ids), 12)
+        self.assertTrue(seed_ids.issubset(snapshot_ids))
+        self.assertTrue(seed_ids.issubset({int(item.id) for item in effective.units}))
+
+        for seed in BYZANTINE_MANIFEST_UNIT_SEEDS:
+            unit = effective.unit(seed.id)
+            self.assertEqual(unit.name, seed.name)
+            self.assertEqual(unit.base_cost, seed.base_cost)
+            self.assertEqual(unit.train_time_seconds, seed.train_time_seconds)
+            self.assertEqual(unit.line, seed.line)
+            self.assertIn(EvidenceKind.ENGINE_DATA, {ref.kind for ref in unit.provenance})
+            self.assertIn(EvidenceKind.REPOSITORY_MANIFEST, {ref.kind for ref in unit.provenance})
+
+        self.assertEqual(effective.unit(550).upgrades_from, UnitId(280))
+        self.assertEqual(effective.unit(539).upgrades_to, UnitId(21))
+        self.assertEqual(effective.unit(21).upgrades_from, UnitId(539))
+        self.assertEqual(effective.unit(21).upgrades_to, UnitId(442))
+        self.assertEqual(effective.unit(442).upgrades_from, UnitId(21))
+        self.assertEqual(effective.unit(2626).upgrades_to, UnitId(2627))
+        self.assertEqual(effective.unit(2627).upgrades_from, UnitId(2626))
+
+        self.assertIn(UnitId(550), effective.unit_line("mangonel-line").members)
+        self.assertIn(UnitId(539), effective.unit_line("galley-line").members)
+        self.assertIn(UnitId(21), effective.unit_line("galley-line").members)
+        self.assertIn(UnitId(442), effective.unit_line("galley-line").members)
+
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+        self.assertEqual(
+            {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
+            {
+                (ManifestNodeKind.BUILDING, 199),
+                (ManifestNodeKind.UNIT, 2628),
+                (ManifestNodeKind.UNIT, 527),
+                (ManifestNodeKind.UNIT, 528),
+                (ManifestNodeKind.TECHNOLOGY, 54),
+                (ManifestNodeKind.TECHNOLOGY, 408),
+                (ManifestNodeKind.TECHNOLOGY, 909),
+            },
+        )
+
     def test_pinned_snapshot_materializes_safe_unmodeled_manifest_technologies(self):
         from pathlib import Path
         import json
