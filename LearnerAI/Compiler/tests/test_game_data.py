@@ -117,8 +117,8 @@ class GameDataTests(unittest.TestCase):
         snapshot = parse_dat_technologies_json(
             raw,
             source="dat://empires2_x2_p1.dat",
-            revision="build-177723",
-            patch=PatchId("AOE2DE", "177723", None, "2026-01-01"),
+            revision="test-dat-build-185872",
+            patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
             content_hash="sha256:test-snapshot",
         )
 
