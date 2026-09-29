@@ -525,7 +525,10 @@ def _validate_expression(
         )
 
     if expression.head == "up-compare-sn":
-        sn_id = _int_or_none(str(expression.args[0])) if expression.args else None
+        try:
+            sn_id = int(str(expression.args[0]))
+        except (IndexError, ValueError, TypeError):
+            sn_id = None
         if sn_id is None or not 0 <= sn_id <= 511:
             raise ValueError(
                 f"up-compare-sn requires a numeric Strategic Number id in 0..511; got "
