@@ -1256,8 +1256,7 @@ def _byzantine_game_data(
     ) + _materialized_manifest_units(
         evidence,
         unit_snapshot_evidence,
-    )
- + _materialized_manifest_unit_supplements(
+    ) + _materialized_manifest_unit_supplements(
         evidence,
         (carrack_official, carrack_community),
     )
