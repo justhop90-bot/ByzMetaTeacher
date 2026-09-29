@@ -33,6 +33,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     bind_observation_reference,
     bind_strategic_capability_observation,
     bind_strategic_evidence,
+    evaluate_binding,
     evaluate_strategy_runtime,
 )
 
