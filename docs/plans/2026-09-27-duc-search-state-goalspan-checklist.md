@@ -56,12 +56,12 @@ Target: `up-get-search-state` concrete four-Goal output-span semantics.
 - [x] Existing branch/loop/recurrent DUC tests remain unchanged.
 
 ### Verification
-- [ ] Focused DUC semantic suite passes.
-- [ ] Full compiler test suite passes.
-- [ ] Native zero-findings fixtures pass.
-- [ ] Cross-platform native-support determinism jobs pass.
-- [ ] Aggregate snapshot comparison passes.
-- [ ] Only then merge to `main`.
+- [x] Focused DUC semantic suite passes.
+- [x] Full compiler test suite passes.
+- [x] Native zero-findings fixtures pass.
+- [x] Cross-platform native-support determinism jobs pass.
+- [x] Aggregate snapshot comparison passes.
+- [x] Compiler verification gate passes.
 
 ### Additional edge coverage implemented
 
