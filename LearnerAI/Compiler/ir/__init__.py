@@ -220,6 +220,8 @@ from .production import (
     ProductionLifecycle,
     ProductionProviderAvailabilityEvidence,
     ProductionProviderReadinessEvidence,
+    ProductionBirthTimingEvidence,
+    ProductionQueueExitTimingEvidence,
     ProductionProviderStateObservation,
     ProductionQueueCapacityEvidence,
     ProductionQueueCapacityControlEvidence,
