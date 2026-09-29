@@ -289,13 +289,6 @@ class ByzantineProfile:
             "Byzantine civilization bonuses and technology costs",
             patch,
         )
-        spies_treason = EvidenceRef(
-            EvidenceKind.COMMUNITY_REFERENCE,
-            "https://www.aoe2insights.com/civilization/byzantines/tech-tree/",
-            "current",
-            "Spies/Treason variable cost and research time",
-            patch,
-        )
         controller = EvidenceRef(
             EvidenceKind.REPOSITORY_CONTROLLER,
             "Basilisk/Basilisk.per",
@@ -915,6 +908,13 @@ def _byzantine_game_data(
         patch,
         content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="compiler-building-seed-v1",
+    )
+    spies_treason = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://www.aoe2insights.com/civilization/byzantines/tech-tree/",
+        "current",
+        "Spies/Treason variable cost and research time",
+        patch,
     )
     buildings = (
         BuildingDef(
