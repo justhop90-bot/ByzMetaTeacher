@@ -64,11 +64,11 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Gate: admission/completion/release/reassess model before lifecycle-complete promotion; current tranche proves only issue connectivity with completion `UNOBSERVED`.
 
 - [~] Production queue semantics.
-  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, plus explicit `ProductionQueueCapacityEvidence`, `ProductionProviderAvailabilityEvidence`, and `ProductionQueueCapacityControlEvidence` records. All evidence remains fail-closed and OPEN where engine behavior is unresolved.
-  - The compiler now cross-references the pinned DE AIRef Strategic Number catalog and recognizes exact SN 264 (`sn-enable-training-queue`) equality, preserving its documented additional-slot value and derived documented total capacity (`value + 1`) without using that evidence to authorize `train`.
-  - PR #102 established the world-state observation seam; the current queue-capacity tranche adds the typed SN 264 control seam, hostile rejection tests, analyzer wiring, and a native zero-findings fixture/gate.
-  - Remaining native questions are exact current-build queue enforcement, provider-idle/readiness state, and birth timing. `unit-type-count-total` is observation, not completion; provider presence is not provider idleness; the SN 264 control mapping itself does not prove the engine honored the configured capacity.
-  - Owner: production async semantics and witness layer. Runtime enforcement remains OPEN and user-owned.
+  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, plus explicit `ProductionQueueCapacityEvidence`, `ProductionProviderAvailabilityEvidence`, `ProductionProviderReadinessEvidence`, and `ProductionQueueCapacityControlEvidence` records. All evidence remains fail-closed and OPEN where engine behavior is unresolved.
+  - SN 264 (`sn-enable-training-queue`) is typed as a native control input with documented queue-slot meaning; `up-train-site-ready` is now typed as a distinct train-provider readiness/admissibility fact.
+  - PR #103 connected the SN 264 control seam. PR #104 connects the AIRef/UserPatch training-site readiness seam, canonicalizes `c:` UnitIds, carries OPEN readiness through `ProductionLifecycle`, and preserves `can-train` as the sole training-feasibility authority.
+  - Remaining native questions are current-build SN 264 enforcement, exact provider busy/queued interaction of `up-train-site-ready`, and birth timing. `unit-type-count-total` is observation, not completion; provider presence is not provider idleness; readiness does not establish completion.
+  - Owner: production async semantics and witness layer. Runtime behavior remains OPEN and user-owned.
 
 - [~] Research escrow/in-progress semantics.
   - The repository now has a machine-checked same-pass escrow/research evidence specification and capture candidate: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`, `docs/reference/oracles/escrow-same-pass-research.schema.json`, `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`, and `tests/test_escrow_same_pass_oracle_spec.py`.
