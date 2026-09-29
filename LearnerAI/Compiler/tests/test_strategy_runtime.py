@@ -62,7 +62,7 @@ class StrategyRuntimeTests(unittest.TestCase):
     def test_up_compare_sn_binds_to_persistent_control_state_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
-            "(up-compare-sn 264 >= 1)",
+            "(up-compare-sn 265 >= 1)",
             "persistent-sn-state",
         )
         binding = bind_strategic_evidence(evidence, self.effective)
@@ -74,10 +74,41 @@ class StrategyRuntimeTests(unittest.TestCase):
         self.assertEqual(
             evaluate_binding(
                 binding,
-                self.snapshot(facts=(("(up-compare-sn 264 >= 1)", True),)),
+                self.snapshot(facts=(("(up-compare-sn 265 >= 1)", True),)),
             ),
             EvidenceTruth.TRUE,
         )
+
+    def test_sn264_binds_to_production_queue_capacity_control_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 264 == 3)",
+            "training-queue-capacity",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.PRODUCTION_QUEUE_CAPACITY_CONTROL,
+        )
+        self.assertEqual(binding.observations[0].primitive, "up-compare-sn")
+
+    def test_sn264_rejects_value_outside_documented_control_range(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 264 == 16)",
+            "bad-training-queue-capacity",
+        )
+        with self.assertRaisesRegex(ValueError, "0..15"):
+            bind_strategic_evidence(evidence, self.effective)
+
+    def test_sn264_rejects_non_equality_comparison(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 264 >= 3)",
+            "bad-training-queue-operator",
+        )
+        with self.assertRaisesRegex(ValueError, "equality"):
+            bind_strategic_evidence(evidence, self.effective)
 
     def test_up_compare_sn_rejects_out_of_range_strategic_number_id(self):
         evidence = StrategicEvidence(

@@ -45,6 +45,7 @@ class StrategicObservationType(str, Enum):
     DUC_SEARCH_AVAILABILITY = "DUC_SEARCH_AVAILABILITY"
     ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
     PERSISTENT_CONTROL_STATE = "PERSISTENT_CONTROL_STATE"
+    PRODUCTION_QUEUE_CAPACITY_CONTROL = "PRODUCTION_QUEUE_CAPACITY_CONTROL"
     TIMING = "TIMING"
 
 
@@ -505,6 +506,23 @@ def _validate_expression(
     semantic_type = _OBSERVATION_PRIMITIVES.get(expression.head)
     if semantic_type is None:
         raise ValueError(f"native primitive '{expression.head}' has no strategic observation binding")
+
+    if expression.head == "up-compare-sn":
+        try:
+            sn_id = int(str(expression.args[0]))
+        except (IndexError, ValueError, TypeError):
+            sn_id = None
+        if sn_id == 264:
+            compare_operator = str(expression.args[1]).removeprefix("c:")
+            try:
+                configured_value = int(str(expression.args[2]))
+            except (IndexError, ValueError, TypeError):
+                configured_value = None
+            if compare_operator != "==" or configured_value is None or not 0 <= configured_value <= 15:
+                raise ValueError(
+                    "SN 264 sn-enable-training-queue requires equality against a value in 0..15"
+                )
+            semantic_type = StrategicObservationType.PRODUCTION_QUEUE_CAPACITY_CONTROL
 
     if evidence.kind is StrategicEvidenceKind.PERSISTENT and primitive.role in {
         "ACTION",
