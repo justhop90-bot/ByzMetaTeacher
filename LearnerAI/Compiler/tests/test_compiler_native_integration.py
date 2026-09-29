@@ -171,6 +171,45 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             )
         )
 
+    @staticmethod
+    def _guarded_duc_plan(include_consumer=True):
+        rules = [
+            NativeDucRule(
+                identity="guarded-search",
+                order=100,
+                facts=(
+                    Expression(
+                        "(up-compare-goal duc-gate c:== 1)",
+                        "up-compare-goal",
+                        ("duc-gate", "c:==", "1"),
+                    ),
+                ),
+                actions=(
+                    Expression(
+                        "(up-find-local c: villager c: 1)",
+                        "up-find-local",
+                        ("c:", "villager", "c:", "1"),
+                    ),
+                ),
+            )
+        ]
+        if include_consumer:
+            rules.append(
+                NativeDucRule(
+                    identity="unguarded-consumer",
+                    order=101,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-target-objects 0 action-default -1 -1)",
+                            "up-target-objects",
+                            ("0", "action-default", "-1", "-1"),
+                        ),
+                    ),
+                )
+            )
+        return NativeDucPlan(tuple(rules))
+
     def test_public_compile_source_forwards_attack_plan(self):
         source = """
         demand marker {
@@ -278,6 +317,64 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             self.assertIn("; Native DUC rule: search-and-select", first.read_text(encoding="utf-8"))
             self.assertIn("(up-find-local c: villager c: 1)", first_backend.seen_artifact_text)
             self.assertIn("(up-target-objects 1 action-default -1 -1)", first_backend.seen_artifact_text)
+
+    def test_internal_duc_plan_accepts_generic_persistent_guard_fact(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Path(tmp_dir) / "guarded-duc.per"
+            backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            report = compile_source_with_report(
+                source,
+                output,
+                native_backend=backend,
+                duc_plan=self._guarded_duc_plan(include_consumer=False),
+            )
+
+            self.assertEqual(report.status, ReportStatus.VALIDATED)
+            self.assertIsNotNone(backend.seen_artifact)
+            artifact = backend.seen_artifact_text
+            self.assertIn("(up-compare-goal duc-gate c:== 1)", artifact)
+            self.assertIn("(up-find-local c: villager c: 1)", artifact)
+
+    def test_source_compile_couples_duc_plan_to_recurrent_firing(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Path(tmp_dir) / "guarded-duc.per"
+            output.write_text("KEEP THIS\n", encoding="utf-8")
+            backend = FakeBackend(fake_result(output, ValidationStatus.VALIDATED))
+
+            report = compile_source_with_report(
+                source,
+                output,
+                native_backend=backend,
+                duc_plan=self._guarded_duc_plan(include_consumer=True),
+            )
+
+            self.assertEqual(report.status, ReportStatus.SEMANTIC_REJECTED)
+            self.assertTrue(
+                any(
+                    diagnostic.code == "DUC-005"
+                    and "up-target-objects" in diagnostic.message
+                    for diagnostic in report.rule_diagnostics
+                )
+            )
+            self.assertIsNone(backend.seen_artifact)
+            self.assertEqual(output.read_text(encoding="utf-8"), "KEEP THIS\n")
 
     def test_compile_to_file_requires_native_validation(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

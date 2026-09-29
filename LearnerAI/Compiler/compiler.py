@@ -728,7 +728,11 @@ def compile_source_with_report(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
-        duc_report = analyze_duc(effective_rules, registry.native_contracts)
+        duc_report = analyze_duc(
+            effective_rules,
+            registry.native_contracts,
+            recurrent_execution=recurrent_execution_report,
+        )
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
@@ -853,7 +857,11 @@ def compile_to_file(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
-        duc_report = analyze_duc(effective_rules, registry.native_contracts)
+        duc_report = analyze_duc(
+            effective_rules,
+            registry.native_contracts,
+            recurrent_execution=recurrent_execution_report,
+        )
         rule_report = analyze_rule_diagnostics(
             effective_rules,
             registry,
