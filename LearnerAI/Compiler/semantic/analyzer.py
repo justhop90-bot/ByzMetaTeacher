@@ -583,6 +583,8 @@ def analyze(
                     queue_protection=queue_protection,
                     queue_state=queue_state,
                     provider_state=provider_state,
+                    queue_capacity_evidence=queue_capacity_evidence,
+                    provider_availability_evidence=provider_availability_evidence,
                 )
 
         elif action.head == "research":
