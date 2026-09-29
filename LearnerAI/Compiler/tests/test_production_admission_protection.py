@@ -275,6 +275,51 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         self.assertEqual(lifecycle.queue_state.primitive, "unit-type-count-total")
         self.assertEqual(lifecycle.queue_state.native_unit_id, 93)
 
+    def test_analyzer_binds_provider_state_to_exact_native_building_id(self):
+        source = """
+        demand archers {
+            require (unit-type-count-total archer < 2)
+            require (building-type-count archery-range >= 1)
+            require (can-train archer)
+            action (train archer)
+            witness (unit-type-count archer >= 2)
+            release (unit-type-count archer >= 2)
+        }
+        """
+        demand = analyze(
+            parse(source),
+            self.registry,
+            source_unit="test",
+        )[0]
+
+        lifecycle = demand.production_lifecycle
+        self.assertIsNotNone(lifecycle)
+        self.assertIsNotNone(lifecycle.provider_state)
+        self.assertEqual(lifecycle.provider_state.primitive, "building-type-count")
+        self.assertEqual(lifecycle.provider_state.native_building_id, 87)
+        self.assertEqual(lifecycle.provider_state.expression.args[0], "87")
+
+    def test_analyzer_rejects_ambiguous_provider_state(self):
+        source = """
+        demand archers {
+            require (unit-type-count-total archer < 2)
+            require (building-type-count archery-range >= 1)
+            require (building-type-count archery-range >= 1)
+            require (can-train archer)
+            action (train archer)
+            witness (unit-type-count archer >= 2)
+            release (unit-type-count archer >= 2)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "PRODUCTION-PROVIDER-STATE.*multiple provider-state observations",
+        ):
+            compile_source(
+                source,
+                registry=self.registry,
+            )
+
     def test_analyzer_rejects_train_without_target_admission(self):
         source = """
         demand spears {
