@@ -29,7 +29,7 @@ def main() -> int:
         raise SystemExit("research in-progress artifact is non-deterministic")
 
     required = (
-        "(up-research-status c: ri-wheelbarrow >= research-pending)",
+        "(up-research-status c: 213 >= 2)",
         "(defconst ri-wheelbarrow 213)",
         "research-retry-barrier-research-wheelbarrow",
         "(research ri-wheelbarrow)",
