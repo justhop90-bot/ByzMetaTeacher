@@ -24,6 +24,13 @@ class ByzantineManifestTechnologySeed:
     def __post_init__(self) -> None:
         if not self.name.strip() or not self.snapshot_name.strip():
             raise ValueError("technology seed names must not be empty")
+        normalize = lambda value: "".join(
+            char for char in value.lower() if char.isalnum()
+        )
+        if normalize(self.name) != normalize(self.snapshot_name):
+            raise ValueError(
+                f"technology seed '{int(self.id)}' has conflicting manifest/snapshot names"
+            )
         if self.research_time_seconds < 0:
             raise ValueError("technology seed research time must be non-negative")
 
