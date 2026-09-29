@@ -53,6 +53,7 @@ class EscrowOperation:
     rule_order: int
     within_rule_order: int = 0
     percentage: int | None = None
+    target_demand: SemanticId | None = None
     location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
@@ -64,6 +65,9 @@ class EscrowOperation:
             raise ValueError("escrow operation command must not be empty")
         if self.rule_order < 0 or self.within_rule_order < 0:
             raise ValueError("escrow operation order values must be non-negative")
+        if self.target_demand is not None:
+            if not self.target_demand.source_unit.strip() or not self.target_demand.local_name.strip():
+                raise ValueError("targeted escrow release demand identity must be non-empty")
 
 
 NATIVE_ESCROW_RELEASE_COMMAND = "release-escrow"
@@ -142,6 +146,15 @@ class NativeEscrowReleasePlan:
         if keys != tuple(sorted(keys)):
             raise ValueError(
                 "native escrow release operations must be declared in deterministic order"
+            )
+        targeted_resources = tuple(
+            (operation.target_demand, operation.resource)
+            for operation in self.operations
+            if operation.target_demand is not None
+        )
+        if len(targeted_resources) != len(set(targeted_resources)):
+            raise ValueError(
+                "duplicate targeted native escrow release for demand/resource"
             )
         for operation in self.operations:
             if operation.kind is not EscrowOperationKind.RELEASE:
