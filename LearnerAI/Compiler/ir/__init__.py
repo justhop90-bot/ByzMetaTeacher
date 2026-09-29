@@ -219,6 +219,7 @@ from .production import (
     ProductionFactDisposition,
     ProductionLifecycle,
     ProductionProviderAvailabilityEvidence,
+    ProductionProviderReadinessEvidence,
     ProductionProviderStateObservation,
     ProductionQueueCapacityEvidence,
     ProductionQueueCapacityControlEvidence,
