@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 from .game_data_manifest_technologies import BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
+from .game_data_manifest_buildings import BYZANTINE_MANIFEST_BUILDING_SEEDS
 from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
 from .game_data import (
     Age,
@@ -785,6 +786,22 @@ def _unit(
         effects=effects,
     )
 
+def _materialized_manifest_buildings(
+    manifest_evidence: EvidenceRef,
+    snapshot_evidence: EvidenceRef,
+) -> tuple[BuildingDef, ...]:
+    return tuple(
+        BuildingDef(
+            seed.id,
+            seed.name,
+            seed.available_age,
+            seed.base_cost,
+            provenance=(manifest_evidence, snapshot_evidence),
+        )
+        for seed in BYZANTINE_MANIFEST_BUILDING_SEEDS
+    )
+
+
 def _materialized_manifest_units(
     manifest_evidence: EvidenceRef,
     snapshot_evidence: EvidenceRef,
@@ -991,6 +1008,11 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("villager-line"), "Villager line", (UnitId(83),), (evidence,)),
         UnitLineDef(UnitLineId("trade-cart-line"), "Trade Cart line", (UnitId(128),), (evidence,)),
     )
+    buildings = buildings + _materialized_manifest_buildings(
+        evidence,
+        building_snapshot_evidence,
+    )
+
     buildings = tuple(
         replace(
             building,
@@ -1118,6 +1140,15 @@ def _byzantine_game_data(
         patch,
         content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="compiler-unit-seed-v1",
+    )
+    building_snapshot_evidence = EvidenceRef(
+        EvidenceKind.ENGINE_DATA,
+        "docs/reference/game-data/aoe2techtree-185872-buildings.json",
+        "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        "data.data.Building",
+        patch,
+        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        extraction_version="compiler-building-seed-v1",
     )
     technology_snapshot_evidence = EvidenceRef(
         EvidenceKind.ENGINE_DATA,
