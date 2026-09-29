@@ -262,6 +262,84 @@ class NativeDucPlanTests(unittest.TestCase):
 
         registry.validate_duc_plan(plan)
 
+    def test_registry_accepts_group_lifecycle_actions_and_fact(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="group-create",
+                    order=1,
+                    facts=(),
+                    actions=(
+                        _expr(
+                            "(up-create-group 0 40 c: 0)",
+                            "up-create-group",
+                            "0",
+                            "40",
+                            "c:",
+                            "0",
+                        ),
+                    ),
+                ),
+                NativeDucRule(
+                    identity="group-size",
+                    order=2,
+                    facts=(
+                        _expr(
+                            "(up-group-size c: 0 > 0)",
+                            "up-group-size",
+                            "c:",
+                            "0",
+                            ">",
+                            "0",
+                        ),
+                    ),
+                    actions=(),
+                ),
+                NativeDucRule(
+                    identity="group-set",
+                    order=3,
+                    facts=(),
+                    actions=(
+                        _expr(
+                            "(up-set-group search-local c: 0)",
+                            "up-set-group",
+                            "search-local",
+                            "c:",
+                            "0",
+                        ),
+                    ),
+                ),
+                NativeDucRule(
+                    identity="group-flag",
+                    order=4,
+                    facts=(),
+                    actions=(
+                        _expr(
+                            "(up-modify-group-flag 1 c: 0)",
+                            "up-modify-group-flag",
+                            "1",
+                            "c:",
+                            "0",
+                        ),
+                    ),
+                ),
+                NativeDucRule(
+                    identity="group-reset",
+                    order=5,
+                    facts=(),
+                    actions=(
+                        _expr(
+                            "(up-reset-group c: 0)",
+                            "up-reset-group",
+                            "c:",
+                            "0",
+                        ),
+                    ),
+                ),
+            ),
+        )
+        default_de_registry().validate_duc_plan(plan)
+
     def test_registry_accepts_target_data_goal_outputs(self):
         registry = default_de_registry()
         for command, rule_identity, source in (
@@ -413,6 +491,21 @@ class NativeDucBinderTests(unittest.TestCase):
             self.assertEqual(binding.command, command)
             self.assertEqual(binding.native_kind, "Fact/Action")
             self.assertEqual(binding.parameter_count, 2)
+            self.assertEqual(binding.support_state.value, "executable-safe")
+
+    def test_group_lifecycle_commands_are_executable_safe(self):
+        expected = {
+            "up-create-group": ("Action", 4),
+            "up-reset-group": ("Action", 2),
+            "up-set-group": ("Action", 3),
+            "up-group-size": ("Fact", 4),
+            "up-modify-group-flag": ("Action", 3),
+        }
+        for command, (native_kind, parameter_count) in expected.items():
+            binding = self.binder.bind_duc_command(command)
+            self.assertEqual(binding.command, command)
+            self.assertEqual(binding.native_kind, native_kind)
+            self.assertEqual(binding.parameter_count, parameter_count)
             self.assertEqual(binding.support_state.value, "executable-safe")
 
 
