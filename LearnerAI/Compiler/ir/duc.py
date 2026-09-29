@@ -339,8 +339,8 @@ class DucGoalOutputSpan:
     def __post_init__(self) -> None:
         if not 1 <= self.start_goal_id <= 16000:
             raise ValueError("DUC Goal output must use GoalId range 1..16000")
-        if self.width not in {1, 4}:
-            raise ValueError("DUC Goal output span must have width 1 or 4")
+        if self.width not in {1, 2, 4}:
+            raise ValueError("DUC Goal output span must have width 1, 2, or 4")
         if self.start_goal_id + self.width - 1 > 16000:
             raise ValueError("DUC Goal output span exceeds the native GoalId range")
         if self.generation < 1:
