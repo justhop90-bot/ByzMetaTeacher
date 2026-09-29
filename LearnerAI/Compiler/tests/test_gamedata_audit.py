@@ -15,6 +15,7 @@ from LearnerAI.Compiler.ir.game_data import (
 )
 
 
+from LearnerAI.Compiler.ir.versioning import EvidenceKind
 class GameDataAuditTests(unittest.TestCase):
     def setUp(self):
         self.profile = ByzantineProfile.for_update_185872()
