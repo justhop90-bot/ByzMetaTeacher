@@ -59,6 +59,30 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_sn3_binds_to_civilian_explorer_cap_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 3 == 2)",
+            "civilian-explorer-cap",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.CIVILIAN_EXPLORER_CAP,
+        )
+
+    def test_sn3_accepts_documented_ignore_value_negative_one(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 3 == -1)",
+            "civilian-explorer-cap-ignore",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.CIVILIAN_EXPLORER_CAP,
+        )
+
     def test_sn18_binds_to_total_explorer_cap_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,

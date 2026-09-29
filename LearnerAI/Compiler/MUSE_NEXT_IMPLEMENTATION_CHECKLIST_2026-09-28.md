@@ -103,6 +103,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - SN 42 (`sn-number-explore-groups`) is bound as `EXPLORATION_GROUP_CONTROL` for exact `up-compare-sn` observations, with the documented non-negative range enforced; exploration-controller interactions remain evidence-only.
   - SN 61 (`sn-number-boat-explore-groups`) is bound as `BOAT_EXPLORATION_GROUP_CONTROL` for exact `up-compare-sn` observations, with the documented non-negative range enforced; no water-map or runtime controller behavior is inferred.
   - SN 18 (`sn-total-number-explorers`) is bound as `TOTAL_EXPLORER_CAP`, preserving the documented `-1` ignore value and rejecting lower values.
+  - SN 3 (`sn-cap-civilian-explorers`) is bound as `CIVILIAN_EXPLORER_CAP`, preserving the documented `-1` ignore value without inferring the underlying villager-allocation scheduler.
   - SN 264 is now specialized as `PRODUCTION_QUEUE_CAPACITY_CONTROL` when its exact `up-compare-sn 264 == <0..15>` contract is present; generic SN observations remain `PERSISTENT_CONTROL_STATE` and no DE enforcement is inferred.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: DUC/attack/escrow observation primitives plus policy-vs-semantics audit of native token validation.

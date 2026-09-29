@@ -49,6 +49,7 @@ class StrategicObservationType(str, Enum):
     EXPLORATION_GROUP_CONTROL = "EXPLORATION_GROUP_CONTROL"
     BOAT_EXPLORATION_GROUP_CONTROL = "BOAT_EXPLORATION_GROUP_CONTROL"
     TOTAL_EXPLORER_CAP = "TOTAL_EXPLORER_CAP"
+    CIVILIAN_EXPLORER_CAP = "CIVILIAN_EXPLORER_CAP"
     TOWN_SIZE_CONTROL = "TOWN_SIZE_CONTROL"
     TRAIN_PROVIDER_READINESS = "TRAIN_PROVIDER_READINESS"
     TIMING = "TIMING"
@@ -565,6 +566,16 @@ def _validate_expression(
                     "SN 18 sn-total-number-explorers requires a comparison value in -1..Max"
                 )
             semantic_type = StrategicObservationType.TOTAL_EXPLORER_CAP
+        elif sn_id == 3:
+            try:
+                configured_value = int(str(expression.args[2]))
+            except (IndexError, ValueError, TypeError):
+                configured_value = None
+            if configured_value is None or configured_value < -1:
+                raise ValueError(
+                    "SN 3 sn-cap-civilian-explorers requires a comparison value in -1..Max"
+                )
+            semantic_type = StrategicObservationType.CIVILIAN_EXPLORER_CAP
         elif sn_id == 74:
             semantic_type = StrategicObservationType.TOWN_SIZE_CONTROL
 
