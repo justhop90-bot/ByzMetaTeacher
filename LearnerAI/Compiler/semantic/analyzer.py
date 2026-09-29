@@ -572,6 +572,23 @@ def analyze(
                         f"cannot resolve SN 264 capacity-control evidence: {exc}"
                     ) from exc
 
+                # Emit the canonical numeric SnId. Native validation does not
+                # infer a symbolic SN name unless a defconst alias exists.
+                capacity_source = capacity_control_requirements[0]
+                canonical_capacity = queue_capacity_control.expression
+                requirements = [
+                    (
+                        SemanticRequirement(
+                            canonical_capacity,
+                            _stored_role(canonical_capacity, registry),
+                            location=requirement.location,
+                        )
+                        if requirement.expression == capacity_source
+                        else requirement
+                    )
+                    for requirement in requirements
+                ]
+
             if matching_admissions:
                 admission_expression = matching_admissions[0]
                 canonical_admission = Expression(
