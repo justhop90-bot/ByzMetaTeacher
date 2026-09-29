@@ -203,6 +203,62 @@ class GameDataTests(unittest.TestCase):
             len(manifest.nodes),
         )
 
+    def test_pinned_snapshot_materializes_safe_manifest_building(self):
+        from pathlib import Path
+        import json
+
+        from LearnerAI.Compiler.ir.game_data_manifest_buildings import (
+            BYZANTINE_MANIFEST_BUILDING_SEEDS,
+        )
+
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+
+        source_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "BYZANTINES_manifest.txt"
+        )
+        payload_path = (
+            Path(__file__).parents[3]
+            / "docs"
+            / "reference"
+            / "aoe2techtree-185872-buildings.json"
+        )
+        manifest = parse_byzantine_manifest(source_path.read_text(encoding="utf-8"))
+        payload = json.loads(payload_path.read_text(encoding="utf-8"))
+
+        seed_ids = {int(seed.id) for seed in BYZANTINE_MANIFEST_BUILDING_SEEDS}
+        self.assertEqual(seed_ids, {199})
+        self.assertEqual(payload["schema"], "aoe2techtree-building-snapshot-v1")
+        self.assertEqual(payload["building_count"], 1)
+        self.assertTrue(seed_ids.issubset({int(item["id"]) for item in payload["buildings"]}))
+
+        building = effective.building(199)
+        seed = BYZANTINE_MANIFEST_BUILDING_SEEDS[0]
+        self.assertEqual(building.name, seed.name)
+        self.assertEqual(building.available_age, seed.available_age)
+        self.assertEqual(building.base_cost, seed.base_cost)
+        self.assertIn(EvidenceKind.ENGINE_DATA, {ref.kind for ref in building.provenance})
+        self.assertIn(EvidenceKind.REPOSITORY_MANIFEST, {ref.kind for ref in building.provenance})
+
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+        self.assertEqual(
+            {
+                (node.kind, int(node.id))
+                for node in report.unmodeled_nodes
+            },
+            {
+                (ManifestNodeKind.UNIT, 2628),
+                (ManifestNodeKind.UNIT, 527),
+                (ManifestNodeKind.UNIT, 528),
+                (ManifestNodeKind.TECHNOLOGY, 54),
+                (ManifestNodeKind.TECHNOLOGY, 408),
+                (ManifestNodeKind.TECHNOLOGY, 909),
+            },
+        )
+
     def test_pinned_snapshot_materializes_safe_manifest_units(self):
         from pathlib import Path
         import json
