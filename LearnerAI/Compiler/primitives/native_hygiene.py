@@ -1147,6 +1147,10 @@ class NativeOutputGoalContract:
     output_goal_max: int
     evidence_ids: Tuple[str, ...]
 
+    @property
+    def identity(self) -> str:
+        return f"{self.command}.output-goal"
+
     def __post_init__(self) -> None:
         if not self.command:
             raise ValueError("native output Goal contract requires a command")
