@@ -1,4 +1,4 @@
-from .native_duc import NativeDucPlan, NativeDucRule
+from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from .native_attack import (
     AttackLifecycleObservation,
     NativeAttackLifecyclePlan,
