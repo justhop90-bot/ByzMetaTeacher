@@ -43,7 +43,7 @@ Record SN 264, name, DE support, default, range, and the documented meaning of i
 
 - [ ] **Step 2: Define the runtime proof boundary**
 
-Require a controlled DE test varying SN 264 across 0, a middle value, and 15 while keeping resources, housing, and provider state non-blocking. Record configured SN value, `unit-type-count-total`, `up-pending-objects`, `can-train), successful `train` issuance count, and the first rejected queue position.
+Require a controlled DE test varying SN 264 across 0, a middle value, and 15 while keeping resources, housing, and provider state non-blocking. Record configured SN value, `unit-type-count-total`, `up-pending-objects`, `can-train`, successful `train` issuance count, and the first rejected queue position.
 
 ---
 
@@ -55,12 +55,12 @@ Require a controlled DE test varying SN 264 across 0, a middle value, and 15 whi
 - Test: `LearnerAI/Compiler/tests/test_production_queue_capacity_native_contract.py`
 
 **Interfaces:**
-- Consumes: exact `strategic-number` or equivalent native SN observation for SN 264
+- Consumes: exact `up-compare-sn` native SN observation for SN 264
 - Produces: `ProductionQueueCapacityControlEvidence` with OPEN disposition
 
 - [ ] **Step 1: Add the focused failing tests**
 
-Assert that `(strategic-number sn-enable-training-queue == 3)` resolves to typed OPEN evidence with native SN id 264, additional queue slots 3, documented total capacity 4, and semantic id `controller.production.queue-capacity.sn264`. Assert that non-exact comparisons and values outside 0..15 are rejected.
+Assert that `(up-compare-sn sn-enable-training-queue == 3)` resolves to typed OPEN evidence with native SN id 264, additional queue slots 3, documented total capacity 4, and semantic id `controller.production.queue-capacity.sn264`. Assert that non-exact comparisons and values outside 0..15 are rejected.
 
 - [ ] **Step 2: Verify the relevant failure**
 
