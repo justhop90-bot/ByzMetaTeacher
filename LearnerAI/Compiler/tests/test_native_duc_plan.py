@@ -2,7 +2,7 @@ import unittest
 
 from Compiler.ast import Expression
 from Compiler.compiler import compile_source
-from Compiler.ir import GoalRole, GoalSpanKind, GoalSpanRequest, SemanticId, StorageRequestId
+from Compiler.ir import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest, SemanticId, StorageRequestId
 from Compiler.ir.native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from Compiler.primitives import default_de_registry, default_native_contract_catalog
 from Compiler.primitives.native_binder import NativeSemanticBinder
@@ -278,7 +278,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-group-size c: 3 42)", artifact)
+        self.assertIn("(up-get-group-size c: 3 43)", artifact)
         self.assertNotIn("(up-get-group-size c: 3 41)", artifact)
 
     def test_compile_allocates_and_emits_bound_search_state_goalspan(self):
@@ -312,7 +312,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-search-state 44)", artifact)
+        self.assertIn("(up-get-search-state 43)", artifact)
         self.assertNotIn("(up-get-search-state 41)", artifact)
 
     def test_compile_surface_accepts_internal_duc_plan_without_source_syntax(self):
