@@ -7,6 +7,82 @@ from ..ast import Expression
 from .model import GoalRole, GoalSlotRequest
 
 
+
+
+@dataclass(frozen=True)
+class ProductionQueueStateObservation:
+    """Typed current+queued production observation for one unit target."""
+
+    primitive: str
+    expression: Expression
+    native_unit_id: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.primitive != "unit-type-count-total":
+            raise ValueError(
+                "production queue-state observation must use unit-type-count-total"
+            )
+        if self.expression.head != self.primitive:
+            raise ValueError(
+                "production queue-state observation expression must match its primitive"
+            )
+        if self.native_unit_id <= 0:
+            raise ValueError(
+                "production queue-state observation native_unit_id must be positive"
+            )
+        if (
+            not self.expression.args
+            or str(self.expression.args[0]) != str(self.native_unit_id)
+        ):
+            raise ValueError(
+                f"production queue-state observation does not target "
+                f"UnitId {self.native_unit_id}"
+            )
+        if self.semantic_id != "witness.unit.present.total":
+            raise ValueError(
+                "production queue-state observation must use "
+                "witness.unit.present.total semantic mapping"
+            )
+
+
+@dataclass(frozen=True)
+class ProductionProviderStateObservation:
+    """Typed provider world-state observation for one production building."""
+
+    primitive: str
+    expression: Expression
+    native_building_id: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.primitive != "building-type-count":
+            raise ValueError(
+                "production provider-state observation must use building-type-count"
+            )
+        if self.expression.head != self.primitive:
+            raise ValueError(
+                "production provider-state observation expression must match its primitive"
+            )
+        if self.native_building_id <= 0:
+            raise ValueError(
+                "production provider-state observation native_building_id must be positive"
+            )
+        if (
+            not self.expression.args
+            or str(self.expression.args[0]) != str(self.native_building_id)
+        ):
+            raise ValueError(
+                f"production provider-state observation does not target "
+                f"BuildingId {self.native_building_id}"
+            )
+        if self.semantic_id != "witness.building.present":
+            raise ValueError(
+                "production provider-state observation must use "
+                "witness.building.present semantic mapping"
+            )
+
+
 @dataclass(frozen=True)
 class ProductionLifecycle:
     """Native queue admission evidence for an asynchronous train action."""
@@ -46,6 +122,17 @@ class ProductionLifecycle:
             raise ValueError(
                 "production retry barrier must use EXECUTION_MEMORY role"
             )
+        if (
+            self.queue_state is not None
+            and self.queue_state.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production queue-state observation must target the lifecycle unit"
+            )
 
 
-__all__ = ["ProductionLifecycle"]
+__all__ = [
+    "ProductionLifecycle",
+    "ProductionProviderStateObservation",
+    "ProductionQueueStateObservation",
+]
