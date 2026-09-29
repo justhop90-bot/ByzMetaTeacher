@@ -13,8 +13,8 @@ from .capability import CapabilityId
 from .duc import DucProvenance, DucTargetState, DucTargetStatus
 from .model import CompletionWitnessContract, SemanticId, StateAccess
 from .native_attack import NativeAttackLifecyclePlan
-from .strategy import CapabilityRecoveryContract, StrategicBinding
-from .strategy_runtime import ReassessmentReason
+from . import strategy as _strategy
+from . import strategy_runtime as _strategy_runtime
 
 
 class AttackExecutionState(str, Enum):
@@ -122,7 +122,7 @@ class AttackCompletionContract:
 
 @dataclass(frozen=True)
 class AttackReassessment:
-    reasons: tuple[ReassessmentReason, ...]
+    reasons: tuple[_strategy_runtime.ReassessmentReason, ...]
     preserve_objective: bool = True
     allow_retarget: bool = False
     allow_reinforce: bool = False
@@ -132,7 +132,7 @@ class AttackReassessment:
     def __post_init__(self) -> None:
         if not self.reasons:
             raise ValueError("attack reassessment requires at least one reason")
-        if any(not isinstance(reason, ReassessmentReason) for reason in self.reasons):
+        if any(not isinstance(reason, _strategy_runtime.ReassessmentReason) for reason in self.reasons):
             raise TypeError("attack reassessment reasons must use ReassessmentReason")
         if self.allow_complete and not self.preserve_objective:
             raise ValueError(
@@ -145,7 +145,7 @@ class AttackExecutionTransition:
     from_state: AttackExecutionState
     to_state: AttackExecutionState
     reason: str
-    reassessment_reasons: tuple[ReassessmentReason, ...] = ()
+    reassessment_reasons: tuple[_strategy_runtime.ReassessmentReason, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.reason.strip():
@@ -237,13 +237,13 @@ class AttackExecution:
     mode: AttackExecutionMode
     target: AttackTargetRef | None = None
     capabilities: tuple[AttackCapabilityRef, ...] = ()
-    strategic_binding: StrategicBinding | None = None
+    strategic_binding: _strategy.StrategicBinding | None = None
     completion: AttackCompletionContract | None = None
     reassessment: AttackReassessment | None = None
     result: AttackResultDisposition = AttackResultDisposition.UNKNOWN
     attack_attempt_generation: int = 0
     native_plan: NativeAttackLifecyclePlan | None = None
-    recovery: CapabilityRecoveryContract | None = None
+    recovery: _strategy.CapabilityRecoveryContract | None = None
     state_accesses: tuple[StateAccess, ...] = ()
     previous_state: AttackExecutionState | None = None
     transition: AttackExecutionTransition | None = None
