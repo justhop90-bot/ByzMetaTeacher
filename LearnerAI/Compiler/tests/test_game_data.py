@@ -103,6 +103,30 @@ class GameDataTests(unittest.TestCase):
             parse_byzantine_manifest(raw)
 
 
+    def test_aoe2techtree_adapter_rejects_key_id_mismatch(self):
+        raw = """
+        {
+          "data": {
+            "Tech": {
+              "61": {
+                "Cost": {},
+                "ID": 62,
+                "ResearchTime": 50,
+                "internal_name": "Byzantine Logistica"
+              }
+            }
+          }
+        }
+        """
+        with self.assertRaisesRegex(ValueError, "disagrees with embedded ID"):
+            parse_aoe2techtree_technologies_json(
+                raw,
+                source="test://aoe2techtree/data.json",
+                revision="test-revision",
+                patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+                content_hash="sha256:test-aoe2techtree",
+            )
+
     def test_aoe2techtree_adapter_parses_machine_readable_tech_shape(self):
         raw = """
         {
