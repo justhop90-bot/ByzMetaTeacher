@@ -16,7 +16,15 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Semantic identity: `admissibility.train.site-ready`. The evidence is explicitly `OPEN`; it does not replace `can-train` and does not authorize `train`.
 - Analyzer wiring attaches readiness to `ProductionLifecycle` and preserves the separate `can-train` feasibility path.
 - Acceptance: `tests/test_production_provider_readiness.py`, `tests/fixtures/production_provider_readiness.perdsl`, and `tests/assert_production_provider_readiness_native.py`.
-- Runtime boundary: current DE busy/queued provider behavior and birth timing remain unverified.
+- Runtime boundary: current DE busy/queued provider behavior, birth timing, queue-exit timing, and next-pass visibility remain unverified.
+
+## Production birth and queue-exit timing — typed OPEN observational seam
+- `ProductionBirthTimingEvidence` records a `game-time` sample paired with canonical `unit-type-count` for the target UnitId.
+- `ProductionQueueExitTimingEvidence` records a `game-time` sample paired with canonical `unit-type-count-total` and `up-pending-objects` for the target UnitId.
+- Registry resolvers fail closed on wrong fact families, mismatched UnitIds, or non-native timing sources; analyzer canonicalizes symbolic UnitIds before lifecycle threading.
+- Both records are explicitly OPEN and observational. They do not become completion witnesses, queue-capacity or provider-idle guards, or same-pass transition claims.
+- Acceptance: `tests/test_production_birth_queue_exit_timing.py`, `tests/fixtures/production_birth_queue_exit_timing.perdsl`, and `tests/assert_production_birth_queue_exit_timing_native.py`.
+- Runtime boundary: exact DE birth ordering, queue-exit ordering, and next-pass visibility remain unverified.
 
 ## Production queue capacity — typed native control seam
 - Queue occupancy remains typed through `ir/production.py`: `unit-type-count-total` is observation only; completion remains `unit-type-count`; pending duplicate protection remains `up-pending-objects`.
