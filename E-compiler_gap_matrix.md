@@ -41,10 +41,10 @@ corpus OK (current+queued idiom IDIOM-006) | strategy PARTIAL.
 GAP: prove current DE SN 264 enforcement, `up-train-site-ready` busy/queued interaction, birth timing, queue-exit timing, next-pass visibility, and explicit recovery semantics.
 
 ## Research (availability/prereq/escrow/completion)
-native-fact PARTIAL (in-progress signal unknown) | IR OK-generic | validator OK-generic |
-binding OK-generic | emitter OK-generic | acceptance OK | runtime-evidence PARTIAL |
-tests PARTIAL | corpus OK | strategy OK (feudal-age escrow example).
-GAP: escrow-claim lowering; protected-research pattern catalog; in-progress signal.
+native-fact OK-typed (up-research-status arity/value family pinned) | IR OK-typed | validator OK-generic |
+binding OK-generic | emitter OK-typed | acceptance OK | runtime-evidence PARTIAL |
+tests OK | corpus OK | strategy OK (feudal-age escrow example).
+GAP: escrow-claim lowering; protected-research pattern catalog; direct DE runtime provider/in-progress behavior beyond the documented ResearchState value contract.
 
 ## Resource/escrow/arbitration
 native-fact PARTIAL (resource-view formula closed; same-pass release timing OPEN) |

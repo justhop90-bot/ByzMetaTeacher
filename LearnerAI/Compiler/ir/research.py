@@ -2,8 +2,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import IntEnum
 
 from ..ast import Expression
+
+
+class ResearchState(IntEnum):
+    """Native ResearchState value family from the pinned AIRef inventory."""
+
+    DISABLED = -1
+    UNAVAILABLE = 0
+    AVAILABLE = 1
+    PENDING = 2
+    COMPLETE = 3
+    QUEUED = 4
 
 
 @dataclass(frozen=True)
@@ -13,18 +25,50 @@ class ResearchLifecycle:
     technology: str
     native_tech_id: int
     pending_fact: Expression
+    pending_state: ResearchState = ResearchState.PENDING
 
     def __post_init__(self) -> None:
         if not self.technology:
             raise ValueError("research technology must be nonempty")
         if self.native_tech_id < 0:
             raise ValueError("research native_tech_id must be non-negative")
+        if self.pending_state is not ResearchState.PENDING:
+            raise ValueError(
+                "research lifecycle pending_state must remain ResearchState.PENDING"
+            )
         if self.pending_fact.head != "up-research-status":
             raise ValueError("research pending fact must use up-research-status")
-        if self.pending_fact.args[-1] != "research-pending":
+        if len(self.pending_fact.args) != 4:
             raise ValueError(
-                "research pending fact must compare against research-pending"
+                "research pending fact must have typeOp, TechId, compareOp, and ResearchState"
+            )
+        type_op, tech_id, comparator, state_value = self.pending_fact.args
+        if type_op != "c:":
+            raise ValueError("research pending fact must use c: for TechId")
+        try:
+            numeric_tech_id = int(str(tech_id), 10)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "research pending fact must use numeric native TechId"
+            ) from exc
+        if numeric_tech_id != self.native_tech_id:
+            raise ValueError(
+                "research pending fact TechId must match native_tech_id"
+            )
+        if comparator != ">=":
+            raise ValueError(
+                "research pending fact must compare ResearchState with >="
+            )
+        try:
+            numeric_state = int(str(state_value), 10)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "research pending fact must use numeric ResearchState"
+            ) from exc
+        if numeric_state != int(self.pending_state):
+            raise ValueError(
+                "research pending fact ResearchState must match pending_state"
             )
 
 
-__all__ = ["ResearchLifecycle"]
+__all__ = ["ResearchLifecycle", "ResearchState"]

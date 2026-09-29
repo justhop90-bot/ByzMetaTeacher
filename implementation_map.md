@@ -59,6 +59,13 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
   `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`.
 - Oracle-spec regression: `tests/test_escrow_same_pass_oracle_spec.py`; runtime execution remains outside CI/user-owned.
 
+## Research lifecycle status
+- `ir/research.py` owns the pinned six-value `ResearchState` family (-1 disabled, 0 unavailable, 1 available, 2 pending, 3 complete, 4 queued) and validates the typed pending-status fact shape.
+- `semantic/analyzer.py` resolves the literal technology to its native TechId and emits numeric `up-research-status c: <TechId> >= 2` evidence into the lifecycle.
+- `emitter/per.py` retains the existing research pending/retry lifecycle; `research-completed` remains the only completion witness.
+- Tests: `test_action_issuance.py` typed status contract plus source-to-.per numeric canonicalization; native `research_in_progress.perdsl` gate remains authoritative.
+- Remaining: escrow-claim lowering and runtime/provider semantics outside the documented ResearchState value contract.
+
 ## DUC binder + emission
 - Build: primitives/registry.py (DUC adapters; today zero), primitives/native_binder.py
   (ENGINE_SEMANTICS_MAPPED with binding for DUC), emitter DUC lowering, DSL surface decision.

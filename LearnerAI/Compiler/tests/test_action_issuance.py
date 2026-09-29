@@ -223,6 +223,8 @@ class ActionIssuanceTests(unittest.TestCase):
 
 
     def test_research_lifecycle_uses_native_in_progress_status(self):
+        from Compiler.semantic.native_tech_catalog import resolve_tech_id
+
         output = compile_source(
             """
             demand wheelbarrow {
@@ -233,18 +235,54 @@ class ActionIssuanceTests(unittest.TestCase):
             }
             """
         )
+        native_tech_id = resolve_tech_id("ri-wheelbarrow")
         self.assertIn("research-retry-barrier-wheelbarrow", output)
         pending_start = output.index("; Completion witness: wheelbarrow")
         action_start = output.index("; Action issuance: wheelbarrow")
         lifecycle = output[pending_start:action_start]
         self.assertIn(
-            "(up-research-status c: ri-wheelbarrow >= research-pending)",
+            f"(up-research-status c: {native_tech_id} >= 2)",
             lifecycle,
         )
         self.assertIn(
-            "(not (up-research-status c: ri-wheelbarrow >= research-pending))",
+            f"(not (up-research-status c: {native_tech_id} >= 2))",
             lifecycle,
         )
+
+
+    def test_research_lifecycle_has_typed_native_status_contract(self):
+        from Compiler.ir.research import ResearchState
+        from Compiler.semantic.analyzer import analyze
+        from Compiler.parser import parse
+        from Compiler.primitives import default_de_registry
+
+        semantic = analyze(
+            parse(
+                """
+                demand wheelbarrow {
+                    require (can-research ri-wheelbarrow)
+                    action (research ri-wheelbarrow)
+                    witness (research-completed ri-wheelbarrow)
+                    release (research-completed ri-wheelbarrow)
+                }
+                """
+            ),
+            default_de_registry(),
+            source_unit="test",
+        )
+        lifecycle = semantic[0].research_lifecycle
+        self.assertIsNotNone(lifecycle)
+        self.assertEqual(lifecycle.pending_state, ResearchState.PENDING)
+        self.assertEqual(int(ResearchState.DISABLED), -1)
+        self.assertEqual(int(ResearchState.UNAVAILABLE), 0)
+        self.assertEqual(int(ResearchState.AVAILABLE), 1)
+        self.assertEqual(int(ResearchState.PENDING), 2)
+        self.assertEqual(int(ResearchState.COMPLETE), 3)
+        self.assertEqual(int(ResearchState.QUEUED), 4)
+        self.assertEqual(lifecycle.pending_fact.args[0], "c:")
+        self.assertEqual(int(lifecycle.pending_fact.args[1]), lifecycle.native_tech_id)
+        self.assertEqual(lifecycle.pending_fact.args[2], ">=")
+        self.assertEqual(lifecycle.pending_fact.args[3], str(int(ResearchState.PENDING)))
 
     def test_research_retry_is_barriered_to_a_later_pass(self):
         output = compile_source(

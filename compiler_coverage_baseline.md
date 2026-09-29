@@ -30,9 +30,9 @@ EVIDENCE: A train rows; IDIOM-006. IMPLEMENTATION: production lifecycle registry
 TEST: guard tests; witness-rejection policy test; focused queue-capacity/provider-readiness/birth/queue-exit timing fixtures; full native verification.
 REMAINING: current-build queue-capacity enforcement, provider busy/queued behavior, birth timing, queue-exit timing, next-pass visibility, and runtime recovery evidence.
 
-## Research — CURRENT: generic-safe. TARGET: escrow-claim safe.
-EVIDENCE: A research rows; 2.9k hits. IMPLEMENTATION: generic lifecycle.
-TEST: integration. REMAINING: escrow-claim lowering; in-progress signal.
+## Research — CURRENT: typed in-progress safe. TARGET: escrow-claim safe.
+EVIDENCE: A research rows; 2.9k hits; pinned ResearchState value family. IMPLEMENTATION: generic lifecycle plus typed numeric `up-research-status` observation and retry barrier.
+TEST: integration + source-to-.per research-in-progress native fixture. REMAINING: escrow-claim lowering; protected-research pattern catalog; runtime provider/busy semantics.
 
 ## Escrow/resources — CURRENT: release-only executable-safe; family remains incomplete.
 EVIDENCE: escrow rows; 10.9k hits (largest gap by volume).

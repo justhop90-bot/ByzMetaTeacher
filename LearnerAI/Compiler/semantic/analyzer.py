@@ -17,6 +17,7 @@ from ..ir import (
     ConstructionLifecycle,
     ProductionLifecycle,
     ResearchLifecycle,
+    ResearchState,
     WitnessEvidenceKind,
     DemandOwnership,
     GoalRole,
@@ -858,11 +859,20 @@ def analyze(
                 technology=technology,
                 native_tech_id=native_tech_id,
                 pending_fact=Expression(
-                    source=f"(up-research-status c: {technology} >= research-pending)",
+                    source=(
+                        f"(up-research-status c: {native_tech_id} >= "
+                        f"{int(ResearchState.PENDING)})"
+                    ),
                     head="up-research-status",
-                    args=("c:", technology, ">=", "research-pending"),
+                    args=(
+                        "c:",
+                        str(native_tech_id),
+                        ">=",
+                        str(int(ResearchState.PENDING)),
+                    ),
                     location=action.location,
                 ),
+                pending_state=ResearchState.PENDING,
             )
 
         release = parse_expression(
