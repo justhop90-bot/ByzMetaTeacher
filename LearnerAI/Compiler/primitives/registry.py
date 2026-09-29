@@ -690,6 +690,85 @@ class PrimitiveRegistry:
         return primitive_name, semantic_id
 
 
+    def resolve_production_queue_capacity_control_evidence(self, expression):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionQueueCapacityControlEvidence,
+        )
+        from .strategic_number_catalog import default_strategic_number_catalog
+
+        if expression.head != "up-compare-sn":
+            raise ValueError(
+                f"production queue-capacity control evidence must use up-compare-sn"
+            )
+        primitive = self.get(expression.head)
+        if primitive is None:
+            raise ValueError(
+                f"production queue-capacity control evidence '{expression.head}' "
+                "is REJECTED: not a registered native fact"
+            )
+        self.validate_native_signature(expression.head, len(expression.args))
+        native = self.require_native(expression.head)
+        if native.command_type not in {"Fact", "Fact/Action"}:
+            raise ValueError(
+                f"production queue-capacity control evidence '{expression.head}' "
+                "is REJECTED: native command is not a fact"
+            )
+        if len(expression.args) != 3:
+            raise ValueError(
+                "production queue-capacity control evidence requires "
+                "SnId, compareOp, and value"
+            )
+
+        catalog = default_strategic_number_catalog()
+        expected_name = "sn-enable-training-queue"
+        expected_id = 264
+        if catalog.record_name(expected_id) != expected_name:
+            raise ValueError(
+                "production queue-capacity control evidence is REJECTED: "
+                "pinned Strategic Number catalog does not identify SN 264 "
+                "as sn-enable-training-queue"
+            )
+
+        target = str(expression.args[0])
+        if target not in {expected_name, str(expected_id)}:
+            raise ValueError(
+                "production queue-capacity control evidence is REJECTED: "
+                "source does not target SN 264"
+            )
+        if str(expression.args[1]) != "==":
+            raise ValueError(
+                "production queue-capacity control evidence must use exact equality"
+            )
+        try:
+            additional_slots = int(str(expression.args[2]), 10)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "production queue-capacity control evidence value must be an integer"
+            ) from exc
+        if not 0 <= additional_slots <= 15:
+            raise ValueError(
+                "production queue-capacity control evidence additional queue "
+                "slots must be in 0..15"
+            )
+
+        canonical_expression = expression.__class__(
+            source=(
+                f"({expression.head} {expected_id} == {additional_slots})"
+            ),
+            head=expression.head,
+            args=(str(expected_id), "==", str(additional_slots)),
+            location=expression.location,
+        )
+        return ProductionQueueCapacityControlEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            expression=canonical_expression,
+            native_strategic_number_id=expected_id,
+            configured_additional_queue_slots=additional_slots,
+            documented_total_capacity=additional_slots + 1,
+            semantic_id="controller.production.queue-capacity.sn264",
+        )
+
     def classify_production_queue_capacity_evidence(self, expression):
         from ..ir.production import ProductionFactDisposition
 

@@ -70,6 +70,8 @@ def _validate_compiler_owned_sn_reference(
     *,
     demand_name: str,
 ) -> None:
+    if _is_open_production_queue_capacity_control(expr):
+        return
     if expr.head in {"up-compare-sn", "strategic-number", "up-modify-sn", "set-strategic-number"}:
         if expr.args:
             target = str(expr.args[0])
@@ -172,7 +174,26 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
     return primitive
 
 
+def _is_open_production_queue_capacity_control(expr: Expression) -> bool:
+    if expr.head != "up-compare-sn" or len(expr.args) != 3:
+        return False
+    if str(expr.args[0]) not in {"264", "sn-enable-training-queue"}:
+        return False
+    if str(expr.args[1]) != "==":
+        return False
+    try:
+        value = int(str(expr.args[2]), 10)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= value <= 15
+
+
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
+    # SN 264 is accepted here only as OPEN production-capacity evidence. It
+    # remains forbidden in all other contexts because ordinary Strategic
+    # Number state is an engine-control effect, not a generic observation.
+    if _is_open_production_queue_capacity_control(expr):
+        return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
     if expr.head in _LOGICAL_ARITY:
@@ -531,6 +552,51 @@ def analyze(
                         f"PRODUCTION-QUEUE-STATE: demand '{demand.name}' "
                         f"cannot resolve queue-state observation for unit '{unit}': {exc}"
                     ) from exc
+            capacity_control_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head == "up-compare-sn"
+                and requirement.expression.args
+                and str(requirement.expression.args[0])
+                in {"264", "sn-enable-training-queue"}
+            ]
+            queue_capacity_control = None
+            if len(capacity_control_requirements) > 1:
+                raise CompileError(
+                    f"PRODUCTION-QUEUE-CAPACITY: demand '{demand.name}' "
+                    "has multiple SN 264 capacity-control observations; "
+                    "capacity configuration must be unambiguous"
+                )
+            if capacity_control_requirements:
+                try:
+                    queue_capacity_control = (
+                        registry.resolve_production_queue_capacity_control_evidence(
+                            capacity_control_requirements[0]
+                        )
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-QUEUE-CAPACITY: demand '{demand.name}' "
+                        f"cannot resolve SN 264 capacity-control evidence: {exc}"
+                    ) from exc
+
+                # Emit the canonical numeric SnId. Native validation does not
+                # infer a symbolic SN name unless a defconst alias exists.
+                capacity_source = capacity_control_requirements[0]
+                canonical_capacity = queue_capacity_control.expression
+                requirements = [
+                    (
+                        SemanticRequirement(
+                            canonical_capacity,
+                            _stored_role(canonical_capacity, registry),
+                            location=requirement.location,
+                        )
+                        if requirement.expression == capacity_source
+                        else requirement
+                    )
+                    for requirement in requirements
+                ]
+
             if matching_admissions:
                 admission_expression = matching_admissions[0]
                 canonical_admission = Expression(
@@ -585,6 +651,7 @@ def analyze(
                     provider_state=provider_state,
                     queue_capacity_evidence=queue_capacity_evidence,
                     provider_availability_evidence=provider_availability_evidence,
+                    queue_capacity_control=queue_capacity_control,
                 )
 
         elif action.head == "research":

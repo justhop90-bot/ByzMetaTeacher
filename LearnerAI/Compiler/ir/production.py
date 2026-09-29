@@ -241,6 +241,67 @@ class ProductionProviderAvailabilityEvidence:
 
 
 @dataclass(frozen=True)
+class ProductionQueueCapacityControlEvidence:
+    """Open native control evidence for the DE training queue capacity."""
+
+    disposition: ProductionFactDisposition
+    expression: Expression
+    native_strategic_number_id: int
+    configured_additional_queue_slots: int
+    documented_total_capacity: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                "production queue-capacity control evidence must remain OPEN"
+            )
+        if self.expression.head != "up-compare-sn":
+            raise ValueError(
+                "production queue-capacity control evidence must use up-compare-sn"
+            )
+        if len(self.expression.args) != 3:
+            raise ValueError(
+                "production queue-capacity control evidence requires "
+                "SnId, compareOp, and value"
+            )
+        if str(self.expression.args[0]) != str(self.native_strategic_number_id):
+            raise ValueError(
+                "production queue-capacity control evidence must target "
+                f"Strategic Number {self.native_strategic_number_id}"
+            )
+        if str(self.expression.args[1]) != "==":
+            raise ValueError(
+                "production queue-capacity control evidence must use exact equality"
+            )
+        if not 0 <= self.configured_additional_queue_slots <= 15:
+            raise ValueError(
+                "production queue-capacity control evidence additional queue "
+                "slots must be in 0..15"
+            )
+        if (
+            self.documented_total_capacity
+            != self.configured_additional_queue_slots + 1
+        ):
+            raise ValueError(
+                "production queue-capacity control evidence total capacity must "
+                "equal additional queue slots plus one active training slot"
+            )
+        if str(self.expression.args[2]) != str(
+            self.configured_additional_queue_slots
+        ):
+            raise ValueError(
+                "production queue-capacity control evidence value does not match "
+                "configured additional queue slots"
+            )
+        if self.semantic_id != "controller.production.queue-capacity.sn264":
+            raise ValueError(
+                "production queue-capacity control evidence must use the "
+                "controller.production.queue-capacity.sn264 semantic mapping"
+            )
+
+
+@dataclass(frozen=True)
 class ProductionLifecycle:
 
     """Separated target-admission and queue-protection contract for train."""
@@ -255,6 +316,7 @@ class ProductionLifecycle:
     provider_state: ProductionProviderStateObservation | None = None
     queue_capacity_evidence: ProductionQueueCapacityEvidence | None = None
     provider_availability_evidence: ProductionProviderAvailabilityEvidence | None = None
+    queue_capacity_control: ProductionQueueCapacityControlEvidence | None = None
 
     def __post_init__(self) -> None:
         if not self.unit:
@@ -333,6 +395,7 @@ __all__ = [
     "ProductionQueueProtection",
     "ProductionTargetAdmission",
     "ProductionProviderAvailabilityEvidence",
+    "ProductionQueueCapacityControlEvidence",
     "ProductionProviderStateObservation",
     "ProductionQueueStateObservation",
 ]

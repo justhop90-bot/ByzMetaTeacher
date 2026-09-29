@@ -221,6 +221,7 @@ from .production import (
     ProductionProviderAvailabilityEvidence,
     ProductionProviderStateObservation,
     ProductionQueueCapacityEvidence,
+    ProductionQueueCapacityControlEvidence,
     ProductionQueueProtection,
     ProductionQueueStateObservation,
     ProductionTargetAdmission,
