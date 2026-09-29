@@ -255,7 +255,7 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             CompileError,
             "requires can-research-with-escrow",
         ):
-            compile_source(source, escrow_plan=plan)
+            compile_source(source, source_unit="test", escrow_plan=plan)
 
     def test_targeted_release_requires_research_action(self):
         from Compiler.compiler import compile_source
