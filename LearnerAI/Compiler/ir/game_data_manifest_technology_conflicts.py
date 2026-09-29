@@ -8,7 +8,7 @@ through the normal snapshot identity-safe materializer.
 
 from dataclasses import dataclass
 
-from .game_data import Age, BuildingId, ResourceCost, TechId
+from .game_data import Age, BuildingId, ResourceCost, TechId, VariableCost
 
 
 @dataclass(frozen=True)
@@ -17,7 +17,7 @@ class ByzantineManifestTechnologyConflictSeed:
     name: str
     available_age: Age
     provider_building: BuildingId
-    base_cost: ResourceCost
+    base_cost: ResourceCost | VariableCost
     research_time_seconds: int
     conflicting_snapshot_name: str
 
@@ -53,6 +53,22 @@ BYZANTINE_MANIFEST_TECHNOLOGY_CONFLICT_SEEDS = (
         ResourceCost(food=100, gold=175),
         45,
         "Carvel Hull",
+    ),
+    ByzantineManifestTechnologyConflictSeed(
+        TechId(408),
+        "Spies/Treason",
+        Age.IMPERIAL,
+        BuildingId(82),
+        VariableCost(
+            "spies-treason-gold-per-enemy-civilian",
+            parameters=(
+                ("minimum_gold", 200),
+                ("maximum_gold", 30000),
+                ("gold_per_civilian", 200),
+            ),
+        ),
+        1,
+        "Spy Technology",
     ),
 )
 
