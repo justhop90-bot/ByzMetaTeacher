@@ -531,6 +531,34 @@ def analyze(
                         f"PRODUCTION-QUEUE-STATE: demand '{demand.name}' "
                         f"cannot resolve queue-state observation for unit '{unit}': {exc}"
                     ) from exc
+            capacity_control_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head in {"strategic-number", "up-compare-sn"}
+                and requirement.expression.args
+                and str(requirement.expression.args[0])
+                in {"264", "sn-enable-training-queue"}
+            ]
+            queue_capacity_control = None
+            if len(capacity_control_requirements) > 1:
+                raise CompileError(
+                    f"PRODUCTION-QUEUE-CAPACITY: demand '{demand.name}' "
+                    "has multiple SN 264 capacity-control observations; "
+                    "capacity configuration must be unambiguous"
+                )
+            if capacity_control_requirements:
+                try:
+                    queue_capacity_control = (
+                        registry.resolve_production_queue_capacity_control_evidence(
+                            capacity_control_requirements[0]
+                        )
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-QUEUE-CAPACITY: demand '{demand.name}' "
+                        f"cannot resolve SN 264 capacity-control evidence: {exc}"
+                    ) from exc
+
             if matching_admissions:
                 admission_expression = matching_admissions[0]
                 canonical_admission = Expression(
@@ -585,6 +613,7 @@ def analyze(
                     provider_state=provider_state,
                     queue_capacity_evidence=queue_capacity_evidence,
                     provider_availability_evidence=provider_availability_evidence,
+                    queue_capacity_control=queue_capacity_control,
                 )
 
         elif action.head == "research":
