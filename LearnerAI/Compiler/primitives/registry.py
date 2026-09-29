@@ -302,6 +302,7 @@ class PrimitiveRegistry:
         output_commands = {
             "up-get-search-state",
             "up-get-group-size",
+            "up-get-cost-delta",
         }
         output_sites = {
             (rule.identity, section, index): expression
@@ -356,6 +357,31 @@ class PrimitiveRegistry:
                 if len(expression.args) != 1:
                     raise ValueError(
                         "up-get-search-state native expression must have exactly one OutputGoalId argument"
+                    )
+
+            elif expression.head == "up-get-cost-delta":
+                if output_request.argument_index != 0:
+                    raise ValueError(
+                        f"DUC up-get-cost-delta output request '{site}' must bind argument 0"
+                    )
+                if not isinstance(output_request.request, GoalSpanRequest):
+                    raise ValueError(
+                        f"DUC up-get-cost-delta output request '{site}' requires GoalSpanRequest"
+                    )
+                request = output_request.request
+                if (
+                    request.width != 4
+                    or request.shape.value != "EXTENDED_4"
+                    or request.contract_id != "up-get-cost-delta.OutputGoalId"
+                    or request.start_min != 41
+                    or request.start_max != 15996
+                ):
+                    raise ValueError(
+                        f"DUC up-get-cost-delta output request '{site}' has invalid GoalSpan contract"
+                    )
+                if len(expression.args) != 1:
+                    raise ValueError(
+                        "up-get-cost-delta native expression must have exactly one OutputGoalId argument"
                     )
 
             elif expression.head == "up-get-group-size":

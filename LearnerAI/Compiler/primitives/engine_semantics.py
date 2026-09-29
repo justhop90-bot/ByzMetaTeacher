@@ -188,6 +188,7 @@ _DUC_COMMAND_SPECS = (
     ("up-can-search", "duc.search.availability"),
     ("up-get-search-state", "duc.search.state"),
     ("up-get-group-size", "duc.group.get-size"),
+    ("up-get-cost-delta", "duc.output.cost-delta"),
     ("up-find-local", "duc.search.local"),
     ("up-find-status-local", "duc.search.local-status"),
     ("up-find-remote", "duc.search.remote"),
