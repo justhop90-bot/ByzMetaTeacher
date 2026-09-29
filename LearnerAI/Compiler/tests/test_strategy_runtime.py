@@ -55,6 +55,35 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_up_can_search_binds_to_duc_search_observation_type(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.EXECUTION,
+            "(up-can-search search-local)",
+            "duc-search-availability",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.DUC_SEARCH_AVAILABILITY,
+        )
+        self.assertEqual(binding.observations[0].primitive, "up-can-search")
+
+    def test_escrow_capability_binds_to_escrow_observation_type(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.EXECUTION,
+            "(can-train-with-escrow cataphract)",
+            "cataphract-escrow-feasibility",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.ESCROW_CAPABILITY,
+        )
+        self.assertEqual(
+            binding.observations[0].primitive,
+            "can-train-with-escrow",
+        )
+
     def test_persistent_castle_reason_survives_blocked_can_build(self):
         runtime = evaluate_strategy_runtime(
             self.profile,
