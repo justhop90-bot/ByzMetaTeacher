@@ -83,5 +83,4 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - load-random: ir/source_graph.py LoadKind + explicit resolver materialization policy.
 - .xs boundary: new module (no current owner) for IDIOM-029.
 - Game data: ir/civ_profile.py plus `ir/game_data_manifest.py`; the authoritative Byzantine manifest is now parsed and coverage-classified before missing facts are modeled. Patch overlays and broader civs remain separate.
-- Strategy: ir/strategy_runtime.py observation primitives (DUC/attack/escrow) +
-  policy-vs-semantics audit of _validate_native_operand token sets.
+- Strategy: ir/strategy_runtime.py now classifies `up-can-search` as `DUC_SEARCH_AVAILABILITY` and escrow-aware affordability/build/research facts as `ESCROW_CAPABILITY`. Attack controller Actions remain fail-closed as non-observations; deeper DUC/escrow runtime semantics remain separate.

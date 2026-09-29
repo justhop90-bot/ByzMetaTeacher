@@ -42,6 +42,8 @@ class StrategicObservationType(str, Enum):
     CAPABILITY_STATE = "CAPABILITY_STATE"
     UNIT_CAPABILITY = "UNIT_CAPABILITY"
     RESEARCH_STATE = "RESEARCH_STATE"
+    DUC_SEARCH_AVAILABILITY = "DUC_SEARCH_AVAILABILITY"
+    ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
     TIMING = "TIMING"
 
 
@@ -311,24 +313,23 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "players-building-type-count": StrategicObservationType.ENEMY_BUILDING_COUNT,
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
-    "building-available": StrategicObservationType.CAPABILITY_STATE,
+    "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
     "can-afford-building": StrategicObservationType.CAPABILITY_STATE,
-    "can-afford-building-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-building-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "can-afford-unit": StrategicObservationType.CAPABILITY_STATE,
-    "can-afford-unit-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-unit-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "can-afford-research": StrategicObservationType.CAPABILITY_STATE,
-    "can-afford-research-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-afford-research-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "can-build": StrategicObservationType.CAPABILITY_STATE,
-    "can-build-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-build-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "can-train": StrategicObservationType.UNIT_CAPABILITY,
     "can-train-with-escrow": StrategicObservationType.UNIT_CAPABILITY,
     "can-research": StrategicObservationType.CAPABILITY_STATE,
-    "can-research-with-escrow": StrategicObservationType.CAPABILITY_STATE,
+    "can-research-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
     "dropsite-min-distance": StrategicObservationType.MAP_PROFILE,
     "game-time": StrategicObservationType.TIMING,
 }
-
 _COMPARE_OPS = {"==", "!=", ">", ">=", "<", "<="}
 _PLAYER_VALUES = {
     "self",
