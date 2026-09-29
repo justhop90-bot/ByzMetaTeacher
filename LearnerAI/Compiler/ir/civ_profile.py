@@ -5,6 +5,9 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 from .game_data_manifest_technologies import BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
+from .game_data_manifest_technology_conflicts import (
+    BYZANTINE_MANIFEST_TECHNOLOGY_CONFLICT_SEEDS,
+)
 from .game_data_manifest_buildings import BYZANTINE_MANIFEST_BUILDING_SEEDS
 from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
 from .game_data import (
@@ -842,6 +845,24 @@ def _materialized_manifest_technologies(
     )
 
 
+def _materialized_manifest_technology_conflicts(
+    manifest_evidence: EvidenceRef,
+    evidence_by_id: dict[TechId, tuple[EvidenceRef, ...]],
+) -> tuple[TechnologyDef, ...]:
+    return tuple(
+        TechnologyDef(
+            seed.id,
+            seed.name,
+            seed.available_age,
+            (ResearchProvider(seed.provider_building),),
+            seed.base_cost,
+            seed.research_time_seconds,
+            provenance=(manifest_evidence, *evidence_by_id[seed.id]),
+        )
+        for seed in BYZANTINE_MANIFEST_TECHNOLOGY_CONFLICT_SEEDS
+    )
+
+
 def _byzantine_game_data(
     patch: PatchId,
     evidence: EvidenceRef,
@@ -1150,6 +1171,30 @@ def _byzantine_game_data(
         content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="compiler-unit-seed-v1",
     )
+    treadmill_crane_official = EvidenceRef(
+        EvidenceKind.OFFICIAL_PATCH,
+        "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-153015/",
+        "153015",
+        "Treadmill Crane",
+        patch,
+        verification="verified",
+    )
+    treadmill_crane_community = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://ageofempires.fandom.com/wiki/Treadmill_Crane",
+        "current",
+        "Treadmill Crane",
+        patch,
+        verification="cross-check",
+    )
+    siphons_official = EvidenceRef(
+        EvidenceKind.OFFICIAL_PATCH,
+        "https://www.ageofempires.com/news/a-new-naval-warfare-in-age-of-empires-ii-definitive-edition/",
+        "2026-01-28",
+        "Siphons",
+        patch,
+        verification="verified",
+    )
     technology_snapshot_evidence = EvidenceRef(
         EvidenceKind.ENGINE_DATA,
         "docs/reference/game-data/aoe2techtree-185872-technologies.json",
@@ -1256,6 +1301,12 @@ def _byzantine_game_data(
     ) + _materialized_manifest_technologies(
         evidence,
         technology_snapshot_evidence,
+    ) + _materialized_manifest_technology_conflicts(
+        evidence,
+        {
+            TechId(54): (treadmill_crane_official, treadmill_crane_community),
+            TechId(909): (siphons_official,),
+        },
     )
     tech_upgrade_map = {
         TechId(257): (UnitId(550),),
