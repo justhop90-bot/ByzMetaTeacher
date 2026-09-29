@@ -85,6 +85,9 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Gate: deterministic compiler policy for load-random and an explicit unsupported/typed boundary for .xs.
 
 - [ ] Game-data manifest completion.
+  - [x] Authoritative manifest is parsed and count-checked at CI time.
+  - [x] Coverage is explicitly classified into modeled, verified-unavailable, and unmodeled nodes.
+  - Current Byzantine snapshot: 109 modeled, 14 explicitly unavailable, 50 unmodeled.
   - Muse: `compiler_coverage_baseline.md`, `player_knowledge_matrix.md`.
   - Owner: `ir/civ_profile.py`, patch overlays, 145-node manifest.
 
