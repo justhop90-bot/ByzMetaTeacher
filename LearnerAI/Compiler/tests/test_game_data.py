@@ -96,7 +96,7 @@ class GameDataTests(unittest.TestCase):
         self.assertEqual(report.unmodeled_count, 0)
         self.assertEqual(
             {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
-            {(ManifestNodeKind.UNIT, 527), (ManifestNodeKind.UNIT, 528)},
+            set(),
         )
 
     def test_aoe2techtree_byzantine_tree_snapshot_parses_structure_and_status(self):
