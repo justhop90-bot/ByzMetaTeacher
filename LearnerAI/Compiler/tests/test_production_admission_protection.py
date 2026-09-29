@@ -275,6 +275,30 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         self.assertEqual(lifecycle.queue_state.primitive, "unit-type-count-total")
         self.assertEqual(lifecycle.queue_state.native_unit_id, 93)
 
+    def test_analyzer_binds_provider_state_to_exact_native_building_id(self):
+        source = """
+        demand spears {
+            require (unit-type-count-total spearman < 2)
+            require (building-type-count barracks >= 1)
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 2)
+            release (unit-type-count spearman >= 2)
+        }
+        """
+        demand = analyze(
+            parse(source),
+            self.registry,
+            source_unit="test",
+        )[0]
+
+        lifecycle = demand.production_lifecycle
+        self.assertIsNotNone(lifecycle)
+        self.assertIsNotNone(lifecycle.provider_state)
+        self.assertEqual(lifecycle.provider_state.primitive, "building-type-count")
+        self.assertEqual(lifecycle.provider_state.native_building_id, 12)
+        self.assertEqual(lifecycle.provider_state.expression.args[0], "12")
+
     def test_analyzer_rejects_train_without_target_admission(self):
         source = """
         demand spears {
