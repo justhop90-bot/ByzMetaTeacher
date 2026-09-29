@@ -25,6 +25,7 @@ from LearnerAI.Compiler.clients.basilisk import (
 from LearnerAI.Compiler.clients.basilisk import (
     EvidenceTruth,
     OpportunityCostRuntimeState,
+    ReassessmentReason,
     RuntimeObservationSnapshot,
     StrategicDemandRuntimeState,
     StrategicObservationType,
