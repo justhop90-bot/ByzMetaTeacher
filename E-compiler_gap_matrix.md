@@ -90,7 +90,7 @@ native-fact PARTIAL (Byzantine subset FACTUAL_SUBSET; costs/times missing in pla
 IR OK (GameData + EffectiveCivData + fingerprint) | validator OK (cross-checks) |
 binding n/a | emitter n/a | acceptance n/a | runtime-evidence PARTIAL (patch 185872) |
 tests OK (7+21+8) | corpus n/a | strategy OK (Byzantine castle strategy).
-GAP: the safe 185872 manifest technology tranche is now materialized: 51 previously unmodeled technology nodes plus native age-advance TechIds 101/102/103. Complete 145-node coverage remains OPEN for 19 nodes. TechIds 54/408/909 are blocked by source-identity conflicts; 16 unit/building nodes require separate factual sources.
+GAP: the safe 185872 manifest technology and unit tranches are now materialized: 51 technology nodes plus native age-advance TechIds 101/102/103, and 12 Unit nodes with pinned costs/train times and safe upgrade relations. Complete 145-node coverage remains OPEN for 7 nodes. Fish Trap 199 is the remaining building gap; Carrack 2628 / Demolition Ship 527 / Heavy Demolition Ship 528 remain blocked on trigger TechIds 904/905/244; TechIds 54/408/909 remain source-identity conflicts.
 
 ## Strategy runtime (demand/posture/targets/cost/invalidation)
 native-fact n/a (COMPILER POLICY layer) | IR OK | validator OK (resolve+lower) |
