@@ -253,7 +253,7 @@
         (goal demand-wheelbarrow 44)
     )
     (not (research-completed ri-wheelbarrow))
-    (up-research-status c: ri-wheelbarrow >= research-pending)
+    (up-research-status c: 213 >= 2)
 =>
     (set-goal demand-wheelbarrow 44)
 )
@@ -265,7 +265,7 @@
         (goal demand-wheelbarrow 44)
     )
     (not (research-completed ri-wheelbarrow))
-    (not (up-research-status c: ri-wheelbarrow >= research-pending))
+    (not (up-research-status c: 213 >= 2))
 =>
     (set-goal demand-wheelbarrow 1)
     (set-goal research-retry-barrier-wheelbarrow 1)
@@ -276,7 +276,7 @@
     (goal demand-wheelbarrow 1)
     (not (research-completed ri-wheelbarrow))
     (goal research-retry-barrier-wheelbarrow 0)
-    (not (up-research-status c: ri-wheelbarrow >= research-pending))
+    (not (up-research-status c: 213 >= 2))
     (not (research-completed ri-wheelbarrow))
     (research-available ri-wheelbarrow)
     (can-afford-research ri-wheelbarrow)
