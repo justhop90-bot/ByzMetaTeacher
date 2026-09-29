@@ -1260,11 +1260,19 @@ def _byzantine_game_data(
         patch,
         verification="cross-check",
     )
-    demolition_ship_official = EvidenceRef(
+    demolition_ship_185872_official = EvidenceRef(
+        EvidenceKind.OFFICIAL_PATCH,
+        "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/",
+        "Update 185872",
+        "Demolition Ship upgrade cost/time: 25 wood, 75 gold, 20 seconds",
+        patch,
+        verification="verified",
+    )
+    heavy_demolition_ship_official = EvidenceRef(
         EvidenceKind.OFFICIAL_PATCH,
         "https://www.ageofempires.com/news/a-new-naval-warfare-in-age-of-empires-ii-definitive-edition/",
         "2026-02-17",
-        "Demolition Ship and Heavy Demolition Ship technology identities/costs",
+        "Heavy Demolition Ship technology cost: 250 wood, 350 gold",
         patch,
         verification="verified",
     )
@@ -1334,8 +1342,8 @@ def _byzantine_game_data(
         (carrack_official, carrack_community),
     ) + _materialized_manifest_unit_identities(
         {
-            UnitId(527): (demolition_ship_official, demolition_ship_airef),
-            UnitId(528): (demolition_ship_official, demolition_ship_airef),
+            UnitId(527): (demolition_ship_185872_official, demolition_ship_airef),
+            UnitId(528): (demolition_ship_185872_official, demolition_ship_airef),
         },
     )
     techs = (
@@ -1432,8 +1440,8 @@ def _byzantine_game_data(
         },
     ) + _materialized_manifest_technology_identities(
         {
-            TechId(905): (demolition_ship_official, demolition_ship_airef),
-            TechId(244): (demolition_ship_official, demolition_ship_airef),
+            TechId(905): (demolition_ship_185872_official, demolition_ship_airef),
+            TechId(244): (heavy_demolition_ship_official, demolition_ship_airef),
         },
     )
     tech_upgrade_map = {
@@ -1469,8 +1477,8 @@ def _byzantine_game_data(
         UpgradeRelation(UnitId(1258), UnitId(422), TechId(96), (evidence,)),
         UpgradeRelation(UnitId(422), UnitId(548), TechId(255), (evidence,)),
         UpgradeRelation(UnitId(529), UnitId(532), TechId(246), (evidence,)),
-        UpgradeRelation(UnitId(1104), UnitId(527), TechId(905), (demolition_ship_official, demolition_ship_airef)),
-        UpgradeRelation(UnitId(527), UnitId(528), TechId(244), (demolition_ship_official, demolition_ship_airef)),
+        UpgradeRelation(UnitId(1104), UnitId(527), TechId(905), (demolition_ship_185872_official, demolition_ship_airef)),
+        UpgradeRelation(UnitId(527), UnitId(528), TechId(244), (heavy_demolition_ship_official, demolition_ship_airef)),
         UpgradeRelation(UnitId(40), UnitId(553), TechId(361), (evidence,)),
         UpgradeRelation(UnitId(2703), UnitId(2704), TechId(1454), (evidence, controller)),
         UpgradeRelation(UnitId(280), UnitId(550), TechId(257), (evidence,)),
