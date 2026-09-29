@@ -16,6 +16,56 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
     def setUp(self):
         self.registry = default_de_registry()
 
+    def test_supported_open_rejected_classification_matrix(self):
+        cases = (
+            ("target-admission", "can-train", ProductionFactDisposition.SUPPORTED),
+            ("target-admission", "can-train-with-escrow", ProductionFactDisposition.SUPPORTED),
+            ("target-admission", "unit-type-count-total", ProductionFactDisposition.REJECTED),
+            ("target-admission", "up-pending-objects", ProductionFactDisposition.REJECTED),
+            ("queue-protection", "up-pending-objects", ProductionFactDisposition.SUPPORTED),
+            ("queue-protection", "unit-type-count-total", ProductionFactDisposition.OPEN),
+            ("queue-protection", "building-type-count", ProductionFactDisposition.OPEN),
+            ("queue-protection", "can-train", ProductionFactDisposition.REJECTED),
+        )
+        expressions = {
+            "can-train": _expression("(can-train 93)", "can-train", "93"),
+            "can-train-with-escrow": _expression(
+                "(can-train-with-escrow 93)",
+                "can-train-with-escrow",
+                "93",
+            ),
+            "unit-type-count-total": _expression(
+                "(unit-type-count-total 93 < 2)",
+                "unit-type-count-total",
+                "93",
+                "<",
+                "2",
+            ),
+            "up-pending-objects": _expression(
+                "(up-pending-objects c: 93 >= 1)",
+                "up-pending-objects",
+                "c:",
+                "93",
+                ">=",
+                "1",
+            ),
+            "building-type-count": _expression(
+                "(building-type-count 87 >= 1)",
+                "building-type-count",
+                "87",
+                ">=",
+                "1",
+            ),
+        }
+        for family, primitive, expected in cases:
+            with self.subTest(family=family, primitive=primitive):
+                classifier = (
+                    self.registry.classify_production_target_admission
+                    if family == "target-admission"
+                    else self.registry.classify_production_queue_protection
+                )
+                self.assertEqual(classifier(expressions[primitive]), expected)
+
     def test_target_admission_matrix_supported(self):
         for primitive in ("can-train", "can-train-with-escrow"):
             with self.subTest(primitive=primitive):
