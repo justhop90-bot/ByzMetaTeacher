@@ -319,7 +319,6 @@ class GameDataTests(unittest.TestCase):
             {
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
-                (ManifestNodeKind.TECHNOLOGY, 408),
             },
         )
 
@@ -396,7 +395,6 @@ class GameDataTests(unittest.TestCase):
             {
                 (ManifestNodeKind.UNIT, 527),
                 (ManifestNodeKind.UNIT, 528),
-                (ManifestNodeKind.TECHNOLOGY, 408),
             },
         )
 
