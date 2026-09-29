@@ -97,4 +97,4 @@ native-fact n/a (COMPILER POLICY layer) | IR OK | validator OK (resolve+lower) |
 binding OK (observation primitives; DUC search availability + escrow capability promoted) | emitter via demands OK |
 acceptance OK | runtime-evidence PARTIAL | tests OK (33 runtime + 9 semantics + 2 integration) |
 corpus PARTIAL (idioms cataloged; synthesis unproven) | strategy OK-infra.
-GAP: attack/controller observation, retained DUC state, escrow same-pass/runtime semantics, civ-policy vs generic-semantics separation audit, and invalidation/reassessment proof against corpus recovery examples.
+GAP: attack/controller observation, retained DUC state, escrow same-pass/runtime semantics, civ-policy vs generic-semantics separation audit, and broader recovery corpus coverage. Capability-loss/recovery is now an explicit typed policy contract: loss preserves demand identity and opportunity-cost protection; recovery must reopen the same demand.

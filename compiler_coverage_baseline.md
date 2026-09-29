@@ -69,6 +69,6 @@ IMPLEMENTATION: typed manifest parser/classifier distinguishes 86 modeled nodes,
 IMPLEMENTATION: deterministic DAT technology snapshot parser/merger now exists, with exact patch matching, TechId/name guards, immutable ENGINE_DATA provenance, and non-destructive fill of unresolved cost/research-time fields. A pinned 185872 `aoe2techtree` technology snapshot containing 201 records is now committed and consumed by a focused enrichment test; current source metadata is still not treated as evidence for prerequisites, providers, effects, or civ availability.
 REMAINING: complete the 73 unmodeled Byzantine manifest nodes; broader civs; replayable patch overlays; native ID provenance; any fields not actually established by the pinned machine-readable source.
 
-## Strategy runtime — CURRENT: observation binding partially closed. TARGET: observation-complete.
-EVIDENCE: strategy runtime suite plus native observation contracts. Promoted: Fact-only `up-can-search` as `DUC_SEARCH_AVAILABILITY`; escrow-aware affordability/build/research predicates as `ESCROW_CAPABILITY`; `attack-now` remains fail-closed as an Action.
-REMAINING: attack/controller observation remains OPEN; deeper DUC retained-state and escrow same-pass/runtime semantics remain OPEN; policy-vs-semantics audit continues.
+## Strategy runtime — CURRENT: observation binding + capability recovery contract closed. TARGET: observation-complete.
+EVIDENCE: strategy runtime suite plus native observation contracts. Promoted: Fact-only `up-can-search` as `DUC_SEARCH_AVAILABILITY`; escrow-aware affordability/build/research predicates as `ESCROW_CAPABILITY`; `attack-now` remains fail-closed as an Action; capability loss/recovery now has an explicit typed contract.
+REMAINING: attack/controller observation remains OPEN; deeper DUC retained-state and escrow same-pass/runtime semantics remain OPEN; broader corpus recovery evidence and policy-vs-semantics audit remain.
