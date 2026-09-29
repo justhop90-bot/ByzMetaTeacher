@@ -763,6 +763,65 @@ def _evaluate_demand(
     return StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE, tuple(evaluated)
 
 
+def _validate_capability_recovery_outcome(
+    demand: StrategicDemandSpec,
+    state: StrategicDemandRuntimeState,
+    evaluated: tuple[tuple[str, EvidenceTruth], ...],
+    transition: CapabilityTransition,
+    opportunity_state: OpportunityCostRuntimeState | None,
+) -> None:
+    if transition is CapabilityTransition.LOST:
+        invalidation_true = any(
+            key.startswith(f"{demand.identity}:invalidation:")
+            and truth is EvidenceTruth.TRUE
+            for key, truth in evaluated
+        )
+        if demand.recovery.preserve_strategic_demand and (
+            state is StrategicDemandRuntimeState.STRATEGIC_INVALIDATED
+            and not invalidation_true
+        ):
+            raise ValueError(
+                f"strategic demand '{demand.identity}' cannot be invalidated "
+                "by capability loss without explicit invalidation evidence"
+            )
+        if (
+            demand.recovery.preserve_opportunity_cost
+            and demand.opportunity_cost is not None
+            and state
+            not in {
+                StrategicDemandRuntimeState.STRATEGIC_INVALIDATED,
+                StrategicDemandRuntimeState.STRATEGIC_COMPLETE,
+            }
+            and opportunity_state is OpportunityCostRuntimeState.RELEASED
+        ):
+            raise ValueError(
+                f"strategic demand '{demand.identity}' cannot release "
+                "opportunity-cost protection on capability loss"
+            )
+
+    if transition is CapabilityTransition.RECOVERED and demand.recovery.reopen_on_recovery:
+        reason_truths = tuple(
+            truth
+            for key, truth in evaluated
+            if key.startswith(f"{demand.identity}:reason:")
+        )
+        invalidation_true = any(
+            key.startswith(f"{demand.identity}:invalidation:")
+            and truth is EvidenceTruth.TRUE
+            for key, truth in evaluated
+        )
+        if (
+            reason_truths
+            and all(truth is EvidenceTruth.TRUE for truth in reason_truths)
+            and not invalidation_true
+            and state is StrategicDemandRuntimeState.STRATEGIC_INACTIVE
+        ):
+            raise ValueError(
+                f"strategic demand '{demand.identity}' failed to reopen "
+                "after capability recovery"
+            )
+
+
 def evaluate_strategy_runtime(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -883,27 +942,37 @@ def evaluate_strategy_runtime(
             for observation in profile.capability_observations
             if observation.capability == demand.capability_intent
         }
-        if state in {
-            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
-            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_BLOCKED,
-        }:
-            for capability_identity, transition in capability_transitions:
-                if capability_identity not in matched_capabilities:
-                    continue
-                if transition is CapabilityTransition.LOST:
-                    reasons.add(ReassessmentReason.CAPABILITY_LOSS)
-                elif transition is CapabilityTransition.RECOVERED:
-                    reasons.add(ReassessmentReason.CAPABILITY_RECOVERY)
+        matched_transitions = tuple(
+            transition
+            for capability_identity, transition in capability_transitions
+            if capability_identity in matched_capabilities
+        )
+        for transition in matched_transitions:
+            if transition is CapabilityTransition.LOST:
+                reasons.add(ReassessmentReason.CAPABILITY_LOSS)
+            elif transition is CapabilityTransition.RECOVERED:
+                reasons.add(ReassessmentReason.CAPABILITY_RECOVERY)
 
+        demand_opportunity_state: OpportunityCostRuntimeState | None = None
         if demand.opportunity_cost is not None:
             if state is StrategicDemandRuntimeState.STRATEGIC_COMPLETE and demand.opportunity_cost.release_on_completion:
-                opportunity.append((demand.identity, OpportunityCostRuntimeState.RELEASED))
+                demand_opportunity_state = OpportunityCostRuntimeState.RELEASED
             elif state is StrategicDemandRuntimeState.STRATEGIC_INVALIDATED and demand.opportunity_cost.release_on_invalidation:
-                opportunity.append((demand.identity, OpportunityCostRuntimeState.RELEASED))
+                demand_opportunity_state = OpportunityCostRuntimeState.RELEASED
             elif current_posture in demand.opportunity_cost.emergency_override_postures:
-                opportunity.append((demand.identity, OpportunityCostRuntimeState.OVERRIDDEN))
+                demand_opportunity_state = OpportunityCostRuntimeState.OVERRIDDEN
             else:
-                opportunity.append((demand.identity, OpportunityCostRuntimeState.PROTECTED_ACTIVE))
+                demand_opportunity_state = OpportunityCostRuntimeState.PROTECTED_ACTIVE
+            opportunity.append((demand.identity, demand_opportunity_state))
+
+        for transition in matched_transitions:
+            _validate_capability_recovery_outcome(
+                demand,
+                state,
+                tuple(evaluated),
+                transition,
+                demand_opportunity_state,
+            )
 
     fingerprint = canonical_fingerprint(
         {
@@ -911,6 +980,14 @@ def evaluate_strategy_runtime(
             "previous_posture": snapshot.previous_posture,
             "demand_states": demand_states,
             "opportunity": opportunity,
+            "recovery_contracts": {
+                demand.identity: {
+                    "preserve_strategic_demand": demand.recovery.preserve_strategic_demand,
+                    "preserve_opportunity_cost": demand.recovery.preserve_opportunity_cost,
+                    "reopen_on_recovery": demand.recovery.reopen_on_recovery,
+                }
+                for demand in profile.demands
+            },
             "evaluated": evaluated,
             "active": active,
             "blocked": blocked,
