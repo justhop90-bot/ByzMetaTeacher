@@ -509,6 +509,12 @@ def _validate_expression(
     if semantic_type is None:
         raise ValueError(f"native primitive '{expression.head}' has no strategic observation binding")
 
+    if expression.head == "up-train-site-ready":
+        if len(expression.args) != 2 or str(expression.args[0]) != "c:":
+            raise ValueError(
+                "up-train-site-ready requires literal c: typeOp"
+            )
+
     if expression.head == "up-compare-sn":
         try:
             sn_id = int(str(expression.args[0]))
