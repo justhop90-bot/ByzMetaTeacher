@@ -20,6 +20,12 @@ from Compiler.compiler import (
     compile_to_file,
 )
 from Compiler.diagnostics import ReportStatus
+from Compiler.ir import (
+    EscrowOperation,
+    EscrowOperationKind,
+    NativeEscrowPolicyPlan,
+    SemanticId,
+)
 from Compiler.source_graph import SourceGraphRequest
 
 
@@ -141,25 +147,12 @@ class NativeEscrowPlanCompilerThreadingTests(unittest.TestCase):
         )
 
     def test_every_public_compiler_path_accepts_policy_plan(self):
-        owner = object()
-        policy_plan = __import__(
-            "Compiler.ir",
-            fromlist=["EscrowOperation", "EscrowOperationKind", "NativeEscrowPolicyPlan", "SemanticId"],
-        ).NativeEscrowPolicyPlan(
+        policy_plan = NativeEscrowPolicyPlan(
             (
-                __import__(
-                    "Compiler.ir",
-                    fromlist=["EscrowOperation", "EscrowOperationKind", "SemanticId"],
-                ).EscrowOperation(
+                EscrowOperation(
                     contract_identity="policy-food",
-                    owner=__import__(
-                        "Compiler.ir",
-                        fromlist=["SemanticId"],
-                    ).SemanticId("test", "policy"),
-                    kind=__import__(
-                        "Compiler.ir",
-                        fromlist=["EscrowOperationKind"],
-                    ).EscrowOperationKind.POLICY_RESET,
+                    owner=SemanticId("test", "policy"),
+                    kind=EscrowOperationKind.POLICY_RESET,
                     resource="food",
                     command="set-escrow-percentage",
                     percentage=50,
@@ -178,9 +171,6 @@ class NativeEscrowPlanCompilerThreadingTests(unittest.TestCase):
             tmp = Path(tmp_dir)
             for name, invoke, expected_status in self._cases(tmp):
                 with self.subTest(path=name):
-                    if name == "compile_semantic_demands":
-                        # Empty semantic demands still exercise the public escrow forwarding path.
-                        pass
                     result = invoke(policy_plan)
                     self.assertEqual(
                         emitted.call_args.kwargs["escrow_plan"],
