@@ -236,6 +236,13 @@ class NativeDucBinderTests(unittest.TestCase):
         self.assertEqual(binding.parameter_count, 1)
         self.assertEqual(binding.support_state.value, "executable-safe")
 
+    def test_group_size_duc_command_is_executable_safe(self):
+        binding = self.binder.bind_duc_command("up-get-group-size")
+        self.assertEqual(binding.command, "up-get-group-size")
+        self.assertEqual(binding.native_kind, "Action")
+        self.assertEqual(binding.parameter_count, 3)
+        self.assertEqual(binding.support_state.value, "executable-safe")
+
 
 class NativeDucEmissionFixtureTests(unittest.TestCase):
     def test_compile_allocates_and_emits_bound_group_size_goal_slot(self):
