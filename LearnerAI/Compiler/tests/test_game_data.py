@@ -19,6 +19,7 @@ import unittest
 from LearnerAI.Compiler.ir.civ_profile import (
     ByzantineProfile,
     EffectiveCivData,
+    FactStatus,
     resolve_effective_civ,
 )
 from LearnerAI.Compiler.ir.game_data_manifest import (
