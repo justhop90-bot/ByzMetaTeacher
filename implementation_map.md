@@ -73,6 +73,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
+## Strategy SN74 town-size observation
+- `ir/strategy_runtime.py` binds exact `up-compare-sn 74 ...` comparisons to `TOWN_SIZE_CONTROL`.
+- The pinned DE Strategic Number catalog identifies SN 74 as `sn-maximum-town-size` with the documented meaning of setting maximum town size.
+- This is descriptive strategy evidence only; the native-controller catalog remains evidence-only and no town-size-to-attack action semantics are promoted.
+
 ## Strategy provider-readiness observations
 - `ir/strategy_runtime.py` binds `up-train-site-ready` as `TRAIN_PROVIDER_READINESS`, preserving its native ADMISSIBILITY role.
 - The observation validates the existing native schema and canonical `c:` UnitId without promoting provider readiness to `can-train` feasibility or completion.

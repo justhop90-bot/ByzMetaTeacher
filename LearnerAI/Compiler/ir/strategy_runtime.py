@@ -46,6 +46,7 @@ class StrategicObservationType(str, Enum):
     ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
     PERSISTENT_CONTROL_STATE = "PERSISTENT_CONTROL_STATE"
     PRODUCTION_QUEUE_CAPACITY_CONTROL = "PRODUCTION_QUEUE_CAPACITY_CONTROL"
+    TOWN_SIZE_CONTROL = "TOWN_SIZE_CONTROL"
     TRAIN_PROVIDER_READINESS = "TRAIN_PROVIDER_READINESS"
     TIMING = "TIMING"
 
@@ -531,6 +532,8 @@ def _validate_expression(
                     "SN 264 sn-enable-training-queue requires equality against a value in 0..15"
                 )
             semantic_type = StrategicObservationType.PRODUCTION_QUEUE_CAPACITY_CONTROL
+        elif sn_id == 74:
+            semantic_type = StrategicObservationType.TOWN_SIZE_CONTROL
 
     if evidence.kind is StrategicEvidenceKind.PERSISTENT and primitive.role in {
         "ACTION",

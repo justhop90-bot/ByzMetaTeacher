@@ -59,6 +59,31 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_sn74_binds_to_town_size_control_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 74 == 20)",
+            "town-size-control",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.TOWN_SIZE_CONTROL,
+        )
+        self.assertEqual(binding.observations[0].primitive, "up-compare-sn")
+
+    def test_sn74_does_not_promote_attack_controller_semantics(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 74 >= 20)",
+            "town-size-control-gte",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.TOWN_SIZE_CONTROL,
+        )
+
     def test_up_train_site_ready_binds_to_provider_readiness_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
