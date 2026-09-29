@@ -445,7 +445,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
                         order=100,
                         facts=(_expr("(true)", "true"),),
                         actions=(
-                            _expr(source_text, command, "object-data-type", "41"),
+                            _expr(source_text, command, "38", "41"),
                         ),
                     ),
                 ),
