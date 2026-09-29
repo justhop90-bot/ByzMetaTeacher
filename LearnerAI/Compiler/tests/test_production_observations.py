@@ -2,9 +2,12 @@ import unittest
 
 from Compiler.ast import Expression
 from Compiler.ir.production import (
+    ProductionFactDisposition,
     ProductionLifecycle,
     ProductionProviderStateObservation,
+    ProductionQueueProtection,
     ProductionQueueStateObservation,
+    ProductionTargetAdmission,
 )
 from Compiler.ir.model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
 from Compiler.primitives import default_de_registry
@@ -48,16 +51,27 @@ class ProductionObservationTests(unittest.TestCase):
             native_building_id=87,
         )
 
+        pending = _expression(
+            "(up-pending-objects c: 93 >= 1)",
+            "up-pending-objects",
+            "c:",
+            "93",
+            ">=",
+            "1",
+        )
         lifecycle = ProductionLifecycle(
             unit="spearman",
             native_unit_id=93,
-            pending_fact=_expression(
-                "(up-pending-objects c: 93 >= 1)",
-                "up-pending-objects",
-                "c:",
-                "93",
-                ">=",
-                "1",
+            target_admission=ProductionTargetAdmission(
+                disposition=ProductionFactDisposition.SUPPORTED,
+                primitive="can-train",
+                expression=_expression(
+                    "(can-train 93)",
+                    "can-train",
+                    "93",
+                ),
+                native_unit_id=93,
+                semantic_id="execution.train.feasibility",
             ),
             completion_witness=_expression(
                 "(unit-type-count spearman >= 1)",
@@ -67,6 +81,11 @@ class ProductionObservationTests(unittest.TestCase):
                 "1",
             ),
             retry_barrier=_retry_barrier(),
+            queue_protection=ProductionQueueProtection(
+                disposition=ProductionFactDisposition.SUPPORTED,
+                pending_fact=pending,
+                native_unit_id=93,
+            ),
             queue_state=queue,
             provider_state=provider,
         )
