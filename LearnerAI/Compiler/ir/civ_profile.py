@@ -944,10 +944,11 @@ def _byzantine_game_data(
                 UnitLineId("galley-line"),
                 UnitLineId("hulk-line"),
                 UnitLineId("demolition-raft-line"),
+                UnitLineId("trade-cog-line"),
             ),
         )
         if building.id == BuildingId(45)
-        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("trade-cog-line"),))
+        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("trade-cart-line"),))
         if building.id == BuildingId(84)
         else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("villager-line"),))
         if building.id == BuildingId(109)
