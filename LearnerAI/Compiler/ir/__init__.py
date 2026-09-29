@@ -247,4 +247,4 @@ from .production import (
     ProductionTargetAdmission,
 )
 
-from .research import ResearchLifecycle
+from .research import ResearchLifecycle, ResearchState
