@@ -23,9 +23,12 @@ from .engine_semantics import (
     default_native_controller_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
-from ..ir.resource_control import NativeEscrowReleasePlan
+from ..ir.resource_control import NativeEscrowPolicyPlan, NativeEscrowReleasePlan
 from ..ir.model import GoalSlotRequest, GoalSpanRequest
-from ..semantic.resource_control import validate_escrow_release_plan
+from ..semantic.resource_control import (
+    validate_escrow_policy_plan,
+    validate_escrow_release_plan,
+)
 from .native_hygiene import (
     AIRefProvenance,
     ConfidenceBasis,
@@ -191,6 +194,42 @@ class PrimitiveRegistry:
             adapter_lookup=self.get,
         )
         return binder.bind_attack_plan(plan)
+
+    def validate_escrow_policy_plan(self, plan: NativeEscrowPolicyPlan) -> None:
+        if not isinstance(plan, NativeEscrowPolicyPlan):
+            raise TypeError("escrow_policy_plan must be a NativeEscrowPolicyPlan")
+        report = validate_escrow_policy_plan(plan)
+        if not report.valid:
+            summary = "; ".join(
+                f"{error.code.value}: {error.message}" for error in report.errors
+            )
+            raise ValueError(f"escrow policy plan validation failed: {summary}")
+        bindings = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        ).bind_escrow_plan(plan)
+        binding_by_command = {binding.command: binding for binding in bindings}
+        if set(plan.commands) != set(binding_by_command):
+            raise ValueError(
+                "escrow policy plan contains a command without a dedicated native binding"
+            )
+        for operation in plan.operations:
+            binding = binding_by_command[operation.command]
+            if operation.resource not in binding.resource_domain:
+                raise ValueError(
+                    f"escrow policy resource '{operation.resource}' is outside the "
+                    f"native domain {binding.resource_domain}"
+                )
+            if binding.parameter_count != 2 or binding.integer_range != (0, 100):
+                raise ValueError(
+                    "set-escrow-percentage native binding must expose two inputs and range 0..100"
+                )
+            if operation.percentage is None or not 0 <= operation.percentage <= 100:
+                raise ValueError(
+                    "set-escrow-percentage policy value must be in 0..100"
+                )
 
     def validate_escrow_release_plan(self, plan: NativeEscrowReleasePlan) -> None:
         if not isinstance(plan, NativeEscrowReleasePlan):
