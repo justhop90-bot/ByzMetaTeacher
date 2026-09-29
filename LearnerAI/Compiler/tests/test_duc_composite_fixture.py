@@ -204,7 +204,11 @@ class CompositeDucFixtureTests(unittest.TestCase):
         self.assertEqual(join.predecessor_rule_orders, (1, 2))
         self.assertEqual(join.state_variants, 1)
 
-        clean = report.mutations[1]
+        clean = next(
+            mutation
+            for mutation in report.mutations
+            if mutation.provenance.rule_order == 5
+        )
         self.assertEqual(clean.kind, DucListMutationKind.SORT)
         self.assertEqual(clean.target_transition, DucTargetTransition.UNKNOWN)
 
@@ -214,14 +218,22 @@ class CompositeDucFixtureTests(unittest.TestCase):
         self.assertEqual(after_clean.target.validity, DucTargetStatus.UNKNOWN)
         self.assertEqual(after_clean.target.proof, DucTargetProof.UNKNOWN)
 
-        preserved = report.mutations[2]
+        preserved = next(
+            mutation
+            for mutation in report.mutations
+            if mutation.provenance.rule_order == 7
+        )
         self.assertEqual(preserved.kind, DucListMutationKind.REMOVE_MATCHES)
         self.assertEqual(
             preserved.target_transition,
             DucTargetTransition.UNCHANGED,
         )
 
-        stale = report.mutations[4]
+        stale = next(
+            mutation
+            for mutation in report.mutations
+            if mutation.provenance.rule_order == 9
+        )
         self.assertEqual(stale.kind, DucListMutationKind.REMOVE_MATCHES)
         self.assertEqual(stale.target_transition, DucTargetTransition.STALE)
 
