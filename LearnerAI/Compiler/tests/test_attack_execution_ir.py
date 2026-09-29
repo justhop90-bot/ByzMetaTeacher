@@ -11,6 +11,7 @@ from Compiler.ir.attack import (
     AttackExecutionMode,
     AttackExecutionState,
     AttackResultDisposition,
+    AttackTargetRef,
 )
 from Compiler.ir.capability import CapabilityId
 from Compiler.ir.duc import (
@@ -70,7 +71,7 @@ def _execution(
         objective=SemanticId("test", "break-production"),
         state=state,
         mode=AttackExecutionMode.ATTACK_NOW,
-        target=target or _target(),
+        target=AttackTargetRef(target or _target()),
         capabilities=(
             AttackCapabilityRef(
                 CapabilityId("test", "standing-army"),
