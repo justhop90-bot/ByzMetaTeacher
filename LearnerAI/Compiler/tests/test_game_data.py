@@ -87,7 +87,8 @@ class GameDataTests(unittest.TestCase):
             "BUILDINGS\n"
             "12 | Barracks | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=1 | BUILDING=12 | LINK=<MISSING> | TRIGGER=<MISSING>\n"
             "AVAILABLE UNIT / TECH NODES\n"
-            "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\n        )
+            "4 | Archer | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=2 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>\n"
+        )
         with self.assertRaisesRegex(ValueError, "declared unit/tech count"):
             parse_byzantine_manifest(raw)
 
