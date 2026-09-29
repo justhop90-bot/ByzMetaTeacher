@@ -165,8 +165,84 @@ class ProductionProviderStateObservation:
             )
 
 
+
+@dataclass(frozen=True)
+class ProductionQueueCapacityEvidence:
+    """Open evidence source for queue-capacity semantics."""
+
+    disposition: ProductionFactDisposition
+    expression: Expression
+    native_unit_id: int
+    source_semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError("production queue-capacity evidence must remain OPEN")
+        if self.expression.head != "unit-type-count-total":
+            raise ValueError(
+                "production queue-capacity evidence must use unit-type-count-total"
+            )
+        if self.native_unit_id <= 0:
+            raise ValueError(
+                "production queue-capacity evidence native_unit_id must be positive"
+            )
+        if (
+            not self.expression.args
+            or str(self.expression.args[0]) != str(self.native_unit_id)
+        ):
+            raise ValueError(
+                f"production queue-capacity evidence does not target UnitId "
+                f"{self.native_unit_id}"
+            )
+        if self.source_semantic_id != "witness.unit.present.total":
+            raise ValueError(
+                "production queue-capacity evidence must retain the source "
+                "semantic mapping witness.unit.present.total"
+            )
+
+
+@dataclass(frozen=True)
+class ProductionProviderAvailabilityEvidence:
+    """Open evidence source for provider availability semantics."""
+
+    disposition: ProductionFactDisposition
+    expression: Expression
+    native_building_id: int
+    source_semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                "production provider-availability evidence must remain OPEN"
+            )
+        if self.expression.head != "building-type-count":
+            raise ValueError(
+                "production provider-availability evidence must use "
+                "building-type-count"
+            )
+        if self.native_building_id <= 0:
+            raise ValueError(
+                "production provider-availability evidence native_building_id "
+                "must be positive"
+            )
+        if (
+            not self.expression.args
+            or str(self.expression.args[0]) != str(self.native_building_id)
+        ):
+            raise ValueError(
+                f"production provider-availability evidence does not target "
+                f"BuildingId {self.native_building_id}"
+            )
+        if self.source_semantic_id != "witness.building.present":
+            raise ValueError(
+                "production provider-availability evidence must retain the source "
+                "semantic mapping witness.building.present"
+            )
+
+
 @dataclass(frozen=True)
 class ProductionLifecycle:
+
     """Separated target-admission and queue-protection contract for train."""
 
     unit: str
@@ -177,6 +253,8 @@ class ProductionLifecycle:
     queue_protection: ProductionQueueProtection
     queue_state: ProductionQueueStateObservation | None = None
     provider_state: ProductionProviderStateObservation | None = None
+    queue_capacity_evidence: ProductionQueueCapacityEvidence | None = None
+    provider_availability_evidence: ProductionProviderAvailabilityEvidence | None = None
 
     def __post_init__(self) -> None:
         if not self.unit:
@@ -199,13 +277,30 @@ class ProductionLifecycle:
                 "production queue-state observation must target the lifecycle unit"
             )
         if (
+            self.queue_capacity_evidence is not None
+            and self.queue_capacity_evidence.native_unit_id != self.native_unit_id
+        ):
+            raise ValueError(
+                "production queue-capacity evidence must target the lifecycle unit"
+            )
+        if (
             self.provider_state is not None
             and self.provider_state.native_building_id <= 0
         ):
             raise ValueError(
                 "production provider-state observation native_building_id must be positive"
             )
-        if self.completion_witness.head != "unit-type-count":
+        if (
+            self.provider_availability_evidence is not None
+            and self.provider_availability_evidence.native_building_id <= 0
+        ):
+            raise ValueError(
+                "production provider-availability evidence native_building_id "
+                "must be positive"
+            )
+        if (
+            self.completion_witness.head != "unit-type-count"
+        ):
             raise ValueError(
                 "production completion witness must use unit-type-count"
             )
@@ -234,8 +329,10 @@ class ProductionLifecycle:
 __all__ = [
     "ProductionFactDisposition",
     "ProductionLifecycle",
+    "ProductionQueueCapacityEvidence",
     "ProductionQueueProtection",
     "ProductionTargetAdmission",
+    "ProductionProviderAvailabilityEvidence",
     "ProductionProviderStateObservation",
     "ProductionQueueStateObservation",
 ]

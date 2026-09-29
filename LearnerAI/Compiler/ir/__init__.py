@@ -218,7 +218,9 @@ from .construction import (
 from .production import (
     ProductionFactDisposition,
     ProductionLifecycle,
+    ProductionProviderAvailabilityEvidence,
     ProductionProviderStateObservation,
+    ProductionQueueCapacityEvidence,
     ProductionQueueProtection,
     ProductionQueueStateObservation,
     ProductionTargetAdmission,
