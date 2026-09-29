@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ...compiler import compile_semantic_demands
 from ...ir.strategy import lower_strategy_profile
+from ...ir.resource_control import NativeEscrowReleasePlan
 from ...ir.strategy_runtime import evaluate_strategy_runtime
 
 
@@ -42,9 +43,20 @@ def compile_strategy_runtime_profile(
         if demand.strategic_binding is not None
         and demand.strategic_binding.strategic_id in active_ids
     )
+    selected_ids = {demand.identity for demand in selected}
+    escrow_plan = compilation.escrow_plan
+    if escrow_plan is not None:
+        escrow_plan = NativeEscrowReleasePlan(
+            tuple(
+                operation
+                for operation in escrow_plan.operations
+                if operation.target_demand is None
+                or operation.target_demand in selected_ids
+            )
+        )
     return compile_semantic_demands(
         selected,
         base_goal=base_goal,
         binding_context=binding_context,
-        escrow_plan=compilation.escrow_plan,
+        escrow_plan=escrow_plan,
     )
