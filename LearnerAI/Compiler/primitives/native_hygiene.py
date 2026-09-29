@@ -1768,6 +1768,7 @@ class NativeContractCatalog:
     def duc_command_names(self) -> Tuple[str, ...]:
         commands = {
             "up-get-search-state",
+            "up-get-cost-delta",
             *self.duc_consumer_commands,
         }
         for contracts in (
