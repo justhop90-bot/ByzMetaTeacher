@@ -16,6 +16,9 @@ from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
 from .game_data_manifest_unit_supplements import (
     BYZANTINE_MANIFEST_UNIT_SUPPLEMENT_SEEDS,
 )
+from .game_data_manifest_unit_identity import (
+    BYZANTINE_MANIFEST_UNIT_IDENTITY_SEEDS,
+)
 from .game_data import (
     Age,
     AgeAdvanceDef,
@@ -1091,7 +1094,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("transport-ship-line"), "Transport Ship line", (UnitId(545),), (evidence,)),
         UnitLineDef(UnitLineId("galley-line"), "Galley line", (UnitId(539), UnitId(21), UnitId(442)), (evidence,)),
         UnitLineDef(UnitLineId("hulk-line"), "Hulk line", (UnitId(2626), UnitId(2627), UnitId(2628)), (evidence,)),
-        UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104), UnitId(527), UnitId(528)), (evidence, demolition_ship_airef)),
+        UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104), UnitId(527), UnitId(528)), (evidence,)),
         UnitLineDef(UnitLineId("trade-cog-line"), "Trade Cog line", (UnitId(17),), (evidence,)),
         UnitLineDef(UnitLineId("villager-line"), "Villager line", (UnitId(83),), (evidence,)),
         UnitLineDef(UnitLineId("trade-cart-line"), "Trade Cart line", (UnitId(128),), (evidence,)),
@@ -1308,6 +1311,11 @@ def _byzantine_game_data(
     ) + _materialized_manifest_unit_supplements(
         evidence,
         (carrack_official, carrack_community),
+    ) + _materialized_manifest_unit_identities(
+        {
+            UnitId(527): (demolition_ship_official, demolition_ship_airef),
+            UnitId(528): (demolition_ship_official, demolition_ship_airef),
+        },
     )
     techs = (
         TechnologyDef(TechId(47), "Chemistry", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
