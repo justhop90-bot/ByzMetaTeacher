@@ -124,6 +124,28 @@ def _target_data_output_request(
     )
 
 
+def _native_get_fact_output_request(
+    rule_identity="get-fact-output",
+    section="FACT",
+    expression_index=0,
+):
+    request = GoalSlotRequest(
+        StorageRequestId(
+            SemanticId("native.output", rule_identity),
+            "up-get-fact",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
+    return NativeDucOutputRequest(
+        rule_identity=rule_identity,
+        section=section,
+        expression_index=expression_index,
+        request=request,
+        command="up-get-fact",
+        argument_index=2,
+    )
+
+
 class NativeDucPlanTests(unittest.TestCase):
     def test_plan_orders_rules_deterministically(self):
         plan = NativeDucPlan(
@@ -207,6 +229,30 @@ class NativeDucPlanTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "is an Action and cannot be emitted as a Fact"):
             registry.validate_duc_plan(bad_plan)
+
+    def test_registry_accepts_up_get_fact_as_fact_output(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="get-fact-output",
+                    order=1,
+                    facts=(
+                        _expr(
+                            "(up-get-fact player-number 0 41)",
+                            "up-get-fact",
+                            "player-number",
+                            "0",
+                            "41",
+                        ),
+                    ),
+                    actions=(),
+                ),
+            ),
+            output_requests=(
+                _native_get_fact_output_request(),
+            ),
+        )
+        default_de_registry().validate_duc_plan(plan)
 
     def test_registry_accepts_search_state_goalspan_output_request(self):
         from Compiler.primitives import default_de_registry
@@ -493,6 +539,13 @@ class NativeDucBinderTests(unittest.TestCase):
             self.assertEqual(binding.parameter_count, 2)
             self.assertEqual(binding.support_state.value, "executable-safe")
 
+    def test_up_get_fact_output_command_is_executable_safe(self):
+        binding = self.binder.bind_native_output_command("up-get-fact")
+        self.assertEqual(binding.command, "up-get-fact")
+        self.assertEqual(binding.native_kind, "Fact/Action")
+        self.assertEqual(binding.parameter_count, 3)
+        self.assertEqual(binding.support_state.value, "executable-safe")
+
     def test_group_lifecycle_commands_are_executable_safe(self):
         expected = {
             "up-create-group": ("Action", 4),
@@ -510,6 +563,40 @@ class NativeDucBinderTests(unittest.TestCase):
 
 
 class NativeDucEmissionFixtureTests(unittest.TestCase):
+    def test_compile_allocates_and_emits_up_get_fact_output(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="get-fact-output",
+                    order=100,
+                    facts=(
+                        _expr(
+                            "(up-get-fact player-number 0 41)",
+                            "up-get-fact",
+                            "player-number",
+                            "0",
+                            "41",
+                        ),
+                    ),
+                    actions=(),
+                ),
+            ),
+            output_requests=(
+                _native_get_fact_output_request(),
+            ),
+        )
+        artifact = compile_source(source, duc_plan=plan)
+        self.assertIn("(up-get-fact player-number 0 42)", artifact)
+        self.assertNotIn("(up-get-fact player-number 0 41)", artifact)
+
     def test_compile_allocates_and_emits_target_data_goal_outputs(self):
         source = """
         demand marker {
