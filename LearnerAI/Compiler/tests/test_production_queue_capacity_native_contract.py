@@ -16,8 +16,8 @@ class ProductionQueueCapacityNativeContractTests(unittest.TestCase):
         registry = default_de_registry()
         evidence = registry.resolve_production_queue_capacity_control_evidence(
             _expression(
-                "(strategic-number sn-enable-training-queue == 3)",
-                "strategic-number",
+                "(up-compare-sn sn-enable-training-queue == 3)",
+                "up-compare-sn",
                 "sn-enable-training-queue",
                 "==",
                 "3",
@@ -62,8 +62,8 @@ class ProductionQueueCapacityNativeContractTests(unittest.TestCase):
         ):
             registry.resolve_production_queue_capacity_control_evidence(
                 _expression(
-                    "(strategic-number sn-food-gatherer-percentage == 3)",
-                    "strategic-number",
+                    "(up-compare-sn sn-food-gatherer-percentage == 3)",
+                    "up-compare-sn",
                     "sn-food-gatherer-percentage",
                     "==",
                     "3",
@@ -78,8 +78,8 @@ class ProductionQueueCapacityNativeContractTests(unittest.TestCase):
         ):
             registry.resolve_production_queue_capacity_control_evidence(
                 _expression(
-                    "(strategic-number sn-enable-training-queue >= 3)",
-                    "strategic-number",
+                    "(up-compare-sn sn-enable-training-queue >= 3)",
+                    "up-compare-sn",
                     "sn-enable-training-queue",
                     ">=",
                     "3",
@@ -94,8 +94,8 @@ class ProductionQueueCapacityNativeContractTests(unittest.TestCase):
         ):
             registry.resolve_production_queue_capacity_control_evidence(
                 _expression(
-                    "(strategic-number sn-enable-training-queue == 16)",
-                    "strategic-number",
+                    "(up-compare-sn sn-enable-training-queue == 16)",
+                    "up-compare-sn",
                     "sn-enable-training-queue",
                     "==",
                     "16",
