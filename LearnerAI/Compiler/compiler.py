@@ -108,7 +108,7 @@ else:
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .semantic.native_control import validate_native_control_plan
     from .emitter import emit
-    from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowReleasePlan
+    from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -225,7 +225,7 @@ def _compile_ir_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     reports = []
 
@@ -300,8 +300,13 @@ def _compile_ir_parts(
     context = binding_context or BindingContext()
     if duc_plan is not None and not isinstance(duc_plan, NativeDucPlan):
         raise TypeError("duc_plan must be a NativeDucPlan")
-    if escrow_plan is not None and not isinstance(escrow_plan, NativeEscrowReleasePlan):
-        raise TypeError("escrow_plan must be a NativeEscrowReleasePlan")
+    if escrow_plan is not None and not isinstance(
+        escrow_plan,
+        (NativeEscrowReleasePlan, NativeEscrowPolicyPlan),
+    ):
+        raise TypeError(
+            "escrow_plan must be a NativeEscrowReleasePlan or NativeEscrowPolicyPlan"
+        )
     storage_requests = _storage_requests(ir, control_plan, duc_plan)
     if any(
         isinstance(request, StrategicNumberRequest)
@@ -375,7 +380,7 @@ def _compile_source_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
@@ -401,7 +406,7 @@ def _compile_package_parts(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -434,7 +439,7 @@ def compile_semantic_demands(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     """Compile generic semantic demands without importing downstream strategy policy."""
     registry = registry or default_de_registry()
@@ -487,7 +492,7 @@ def compile_package(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     result, _bindings, _context, _graph = _compile_package_parts(
         request,
@@ -512,7 +517,7 @@ def compile_source(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     result, _bindings, _context = _compile_source_parts(
         source,
@@ -540,7 +545,7 @@ def compile_package_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> CombinedValidationReport:
     if native_backend is None:
         return backend_failure_report(
@@ -671,7 +676,7 @@ def compile_source_with_report(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> CombinedValidationReport:
     """Compile and return one deterministic semantic/native validation report."""
     if native_backend is None:
@@ -804,7 +809,7 @@ def compile_to_file(
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
-    escrow_plan: NativeEscrowReleasePlan | None = None,
+    escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> NativeValidationResult | None:
     """Compile an artifact; native validation is mandatory for promotion."""
     if native_backend is None:
