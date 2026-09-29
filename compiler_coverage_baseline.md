@@ -67,6 +67,6 @@ EVIDENCE: civ_profile patch 185872; authoritative 28-building + 145-unit/tech ma
 IMPLEMENTATION: typed manifest parser/classifier distinguishes 109 modeled nodes, 14 explicitly unavailable nodes, and 50 unmodeled nodes without inventing missing values.
 REMAINING: model the 50 currently unmodeled nodes where factual cost/time/effect/provider evidence is available; broader civs; patch overlays; native ID provenance.
 
-## Strategy runtime — CURRENT: downstream-only complete. TARGET: observation-complete.
-EVIDENCE: 33+9+2 tests; TRAIN-gated observations. REMAINING: DUC/attack/escrow observations;
-policy-vs-semantics audit.
+## Strategy runtime — CURRENT: observation binding partially closed. TARGET: observation-complete.
+EVIDENCE: strategy runtime suite plus native observation contracts. Promoted: Fact-only `up-can-search` as DUC search availability and escrow-aware affordability/build/research predicates as `ESCROW_CAPABILITY`.
+REMAINING: attack/controller observation remains OPEN; deeper DUC retained-state and escrow same-pass/runtime semantics remain OPEN; policy-vs-semantics audit continues.
