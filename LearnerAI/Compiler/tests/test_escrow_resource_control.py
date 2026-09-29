@@ -88,6 +88,34 @@ class EscrowResourceControlTests(unittest.TestCase):
             within_rule_order=within_rule_order,
         )
 
+    def test_targeted_research_release_is_explicit(self):
+        demand = SemanticId("test", "research")
+        operation = self._op(
+            self._contract("research", demand),
+            demand,
+            EscrowOperationKind.RELEASE,
+        )
+        operation = replace(operation, target_demand=demand)
+        plan = NativeEscrowReleasePlan((operation,))
+        self.assertEqual(plan.operations[0].target_demand, demand)
+
+    def test_targeted_research_release_rejects_duplicate_resource_claim(self):
+        demand = SemanticId("test", "research")
+        contract = self._contract("research", demand)
+        first = replace(
+            self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=0),
+            target_demand=demand,
+        )
+        second = replace(
+            self._op(contract, demand, EscrowOperationKind.RELEASE, within_rule_order=1),
+            target_demand=demand,
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "duplicate targeted native escrow release",
+        ):
+            NativeEscrowReleasePlan((first, second))
+
     def test_two_demands_cannot_own_one_escrow_resource(self):
         first = self._contract("research-a", SemanticId("test", "research-a"))
         second = self._contract("research-b", SemanticId("test", "research-b"))
