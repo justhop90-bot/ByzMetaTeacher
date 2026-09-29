@@ -433,6 +433,58 @@ def analyze(
                 if expression.args and str(expression.args[0]) == unit
             ]
             target_admission = None
+            provider_state_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head == "building-type-count"
+            ]
+            provider_state = None
+            if len(provider_state_requirements) > 1:
+                raise CompileError(
+                    f"PRODUCTION-PROVIDER-STATE: demand '{demand.name}' "
+                    "has multiple provider-state observations; provider selection "
+                    "must be unambiguous"
+                )
+            if provider_state_requirements:
+                provider_expression = provider_state_requirements[0]
+                if not provider_expression.args:
+                    raise CompileError(
+                        f"PRODUCTION-PROVIDER-STATE: demand '{demand.name}' "
+                        "provider-state observation has no BuildingId"
+                    )
+                try:
+                    native_building_id = resolve_building_id(
+                        str(provider_expression.args[0])
+                    )
+                except (NativeBuildingIdError, KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-PROVIDER-STATE-ID: demand '{demand.name}' "
+                        f"cannot resolve provider BuildingId "
+                        f"'{provider_expression.args[0]}'"
+                    ) from exc
+                canonical_provider_state = Expression(
+                    source=(
+                        f"(building-type-count {native_building_id} "
+                        f"{' '.join(str(arg) for arg in provider_expression.args[1:])})"
+                    ),
+                    head="building-type-count",
+                    args=(
+                        str(native_building_id),
+                        *tuple(str(arg) for arg in provider_expression.args[1:]),
+                    ),
+                    location=provider_expression.location,
+                )
+                try:
+                    provider_state = registry.resolve_production_provider_state(
+                        canonical_provider_state,
+                        native_building_id=native_building_id,
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-PROVIDER-STATE: demand '{demand.name}' "
+                        f"cannot resolve provider-state observation: {exc}"
+                    ) from exc
+
             matching_queue_states = [
                 requirement.expression
                 for requirement in requirements
@@ -516,6 +568,7 @@ def analyze(
                     retry_barrier=production_retry_barrier,
                     queue_protection=queue_protection,
                     queue_state=queue_state,
+                    provider_state=provider_state,
                 )
 
         elif action.head == "research":
