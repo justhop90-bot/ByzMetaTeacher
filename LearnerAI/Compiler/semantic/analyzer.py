@@ -70,6 +70,8 @@ def _validate_compiler_owned_sn_reference(
     *,
     demand_name: str,
 ) -> None:
+    if _is_open_production_queue_capacity_control(expr):
+        return
     if expr.head in {"up-compare-sn", "strategic-number", "up-modify-sn", "set-strategic-number"}:
         if expr.args:
             target = str(expr.args[0])
