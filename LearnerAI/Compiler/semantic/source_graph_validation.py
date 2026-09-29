@@ -1103,6 +1103,27 @@ def _validate_edges(
         outgoing.setdefault(edge.source, []).append(edge)
 
         event = graph.events_by_id.get(edge.event)
+        if (
+            edge.kind is LoadKind.RANDOM
+            and edge.active
+            and policy.reject_random_loads
+            and (
+                edge.target is None
+                or edge.child is None
+                or event is None
+                or event.kind is not SourceAssemblyEventKind.LOAD_RANDOM
+            )
+        ):
+            diagnostics.append(
+                _diag(
+                    SourceGraphDiagnosticCode.RANDOM_LOAD_UNMATERIALIZED,
+                    f"random load edge '{edge.edge_id}' has no deterministic materialization",
+                    path=path,
+                    line=line,
+                    column=column,
+                    edge_id=edge.edge_id,
+                )
+            )
         if event is None:
             diagnostics.append(
                 _diag(
