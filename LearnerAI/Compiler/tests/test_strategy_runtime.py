@@ -804,7 +804,7 @@ class StrategyRuntimeTests(unittest.TestCase):
             capability_intent=CapabilityIntent(
                 CapabilityIntentKind.TRAIN,
                 "unit",
-                527,
+                999,
                 BuildingId(45),
             ),
         )
