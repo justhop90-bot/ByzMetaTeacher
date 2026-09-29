@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Verified main SHA: db4279a3daa5a3daef1eb70f0a25f04afec69865.
-Latest main verification: Compiler workflow #2242 / Actions run 36508788267 at that exact main SHA is green: 1,015 tests, focused suites 7 / 24 / 27 / 15, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the Compiler verification gate.
+Verified main SHA: 82f4dd93ee2d6c468bc911c3f35b53156bfa5656.
+Latest main verification: Compiler workflow #2263 / Actions run 36509926898 at that exact main SHA is green: 1,023 tests, focused suites 7 / 24 / 27 / 15, production queue-capacity and provider-readiness native zero-findings gates, all 9 native-support determinism jobs, snapshot comparison, and the Compiler verification gate.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
