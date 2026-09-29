@@ -1764,6 +1764,26 @@ class NativeContractCatalog:
     def pass_constraints_for(self, command: str) -> Tuple[PassExecutionConstraint, ...]:
         return tuple(item for item in self.pass_constraints if item.command == command)
 
+    @property
+    def duc_command_names(self) -> Tuple[str, ...]:
+        commands = {
+            "up-get-search-state",
+            *self.duc_consumer_commands,
+        }
+        for contracts in (
+            self.duc_searches,
+            self.duc_search_availability_contracts,
+            self.duc_filters,
+            self.duc_resets,
+            self.duc_mutations,
+            self.duc_targets,
+            self.duc_target_data,
+            self.duc_target_consumers,
+            self.duc_groups,
+        ):
+            commands.update(item.command for item in contracts)
+        return tuple(sorted(commands))
+
 
 @dataclass(frozen=True)
 class SourceRetrieval:
