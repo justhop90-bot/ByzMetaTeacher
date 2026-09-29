@@ -19,8 +19,8 @@ Cross-reference:
 - [x] Thread evidence through production analyzer/lifecycle without changing `can-train`.
 - [x] Add deterministic source-to-.per fixture and native zero-findings acceptance.
 - [x] Reconcile MUSE/gap/unknown documentation.
-- [ ] Run focused tests and full Compiler verification.
-- [ ] Merge after verification.
+- [x] Run focused tests and full Compiler verification.
+- [x] Merge after verification.
 
 ## Explicit non-goals
 
