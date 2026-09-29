@@ -172,7 +172,18 @@ def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
     return primitive
 
 
+def _is_open_production_queue_capacity_control(expr: Expression) -> bool:
+    if expr.head != "up-compare-sn" or len(expr.args) != 3:
+        return False
+    return str(expr.args[0]) in {"264", "sn-enable-training-queue"}
+
+
 def _root_roles(expr: Expression, registry: PrimitiveRegistry) -> set[str]:
+    # SN 264 is accepted here only as OPEN production-capacity evidence. It
+    # remains forbidden in all other contexts because ordinary Strategic
+    # Number state is an engine-control effect, not a generic observation.
+    if _is_open_production_queue_capacity_control(expr):
+        return {"PERSISTENT_STATE"}
     # Validate the logical node itself before descending. Otherwise a nested
     # malformed logical expression can bypass _validate_expression entirely.
     if expr.head in _LOGICAL_ARITY:
