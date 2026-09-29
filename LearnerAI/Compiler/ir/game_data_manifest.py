@@ -101,9 +101,9 @@ class ByzantineManifestCoverage:
 
 
 _NODE_RE = re.compile(
-    r"^(?P<id>\d+) \\| (?P<name>.*?) \\| TYPE=(?P<type>.*?) "
-    r"\\| USE=(?P<use>.*?) \\| STATUS=(?P<status>.*?) \\| AGE=(?P<age>.*?) "
-    r"\\| BUILDING=(?P<building>.*?) \\| LINK=(?P<link>.*?) \\| TRIGGER=(?P<trigger>.*?)$"
+    r"^(?P<id>\d+) \| (?P<name>.*?) \| TYPE=(?P<type>.*?) "
+    r"\| USE=(?P<use>.*?) \| STATUS=(?P<status>.*?) \| AGE=(?P<age>.*?) "
+    r"\| BUILDING=(?P<building>.*?) \| LINK=(?P<link>.*?) \| TRIGGER=(?P<trigger>.*?)$"
 )
 
 
