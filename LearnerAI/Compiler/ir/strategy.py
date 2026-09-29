@@ -119,6 +119,7 @@ class ExecutionDemandTemplate:
     invalidate: str | None = None
     local_id: str = "primary"
     capability_intent: CapabilityIntent | None = None
+    escrow_release_resources: tuple[Resource, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -277,6 +278,7 @@ class StrategyCompilation:
     profile: StrategyProfile
     demands: tuple["SemanticDemand", ...]
     bindings: dict[str, StrategicBinding]
+    escrow_plan: "NativeEscrowReleasePlan | None" = None
 
 
 def _validate_evidence_attribution(
@@ -550,6 +552,14 @@ def lower_strategy_profile(
     # rather than depending on the execution lifecycle at module import time.
     from ..primitives import default_de_registry
     from ..semantic.analyzer import analyze
+    from ..ir.resource_control import (
+        EscrowOperation,
+        EscrowOperationKind,
+        NATIVE_ESCROW_RELEASE_COMMAND,
+        NATIVE_ESCROW_RELEASE_RESOURCES,
+        NativeEscrowReleasePlan,
+    )
+    from ..ir.model import SemanticId
 
     nodes = []
     execution_owner: dict[str, str] = {}
@@ -635,10 +645,69 @@ def lower_strategy_profile(
             )
         )
 
+    escrow_operations = []
+    for demand_index, demand in enumerate(semantic_demands):
+        spec = profile.demand(execution_owner[demand.name])
+        selected_execution = next(
+            execution
+            for execution in spec.execution_demands
+            if (
+                spec.identity
+                if len(spec.execution_demands) == 1 and execution.local_id == "primary"
+                else f"{spec.identity}::{execution.local_id}"
+            ) == demand.name
+        )
+        resources = tuple(
+            resource.value.lower()
+            for resource in selected_execution.escrow_release_resources
+        )
+        if not resources:
+            continue
+        if demand.action.expression.head != "research" or len(demand.action.expression.args) != 1:
+            raise ValueError(
+                f"strategic execution demand '{demand.name}' may use escrow release resources "
+                "only with a one-argument research action"
+            )
+        technology = str(demand.action.expression.args[0])
+        if not any(
+            requirement.expression.head == "can-research-with-escrow"
+            and len(requirement.expression.args) == 1
+            and str(requirement.expression.args[0]) == technology
+            for requirement in demand.requirements
+        ):
+            raise ValueError(
+                f"strategic execution demand '{demand.name}' must require "
+                "can-research-with-escrow for the same technology"
+            )
+        for resource_index, resource in enumerate(resources):
+            if resource not in NATIVE_ESCROW_RELEASE_RESOURCES:
+                raise ValueError(
+                    f"unsupported strategy escrow release resource '{resource}'"
+                )
+            escrow_operations.append(
+                EscrowOperation(
+                    contract_identity=f"{demand.name}:escrow:{resource}",
+                    owner=demand.identity,
+                    target_demand=demand.identity,
+                    kind=EscrowOperationKind.RELEASE,
+                    resource=resource,
+                    command=NATIVE_ESCROW_RELEASE_COMMAND,
+                    rule_order=demand_index,
+                    within_rule_order=resource_index,
+                )
+            )
+
+    escrow_plan = (
+        NativeEscrowReleasePlan(tuple(escrow_operations))
+        if escrow_operations
+        else None
+    )
+
     return StrategyCompilation(
         profile=profile,
         demands=tuple(bound_demands),
         bindings=bindings,
+        escrow_plan=escrow_plan,
     )
 
 
