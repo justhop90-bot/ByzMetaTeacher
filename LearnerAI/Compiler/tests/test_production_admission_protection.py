@@ -271,6 +271,9 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
             lifecycle.pending_fact,
             lifecycle.queue_protection.pending_fact,
         )
+        self.assertIsNotNone(lifecycle.queue_state)
+        self.assertEqual(lifecycle.queue_state.primitive, "unit-type-count-total")
+        self.assertEqual(lifecycle.queue_state.native_unit_id, 93)
 
     def test_analyzer_rejects_train_without_target_admission(self):
         source = """
