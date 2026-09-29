@@ -197,4 +197,6 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
         None,
         None,
     ),
-)\n\n__all__ = ["BYZANTINE_MANIFEST_UNIT_SEEDS", "ByzantineManifestUnitSeed"]\
+)
+
+__all__ = ["BYZANTINE_MANIFEST_UNIT_SEEDS", "ByzantineManifestUnitSeed"]\
