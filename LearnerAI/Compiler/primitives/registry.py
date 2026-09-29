@@ -165,6 +165,15 @@ class PrimitiveRegistry:
                         f"'{constraint.failure_mode.value}'"
                     )
 
+    def bind_duc_command(self, command: str):
+        binder = NativeSemanticBinder(
+            native_registry=self._native,
+            semantic_mappings=self._semantic_mappings,
+            native_contracts=self._native_contracts,
+            adapter_lookup=self.get,
+        )
+        return binder.bind_duc_command(command)
+
     def bind_duc_plan(self, plan):
         binder = NativeSemanticBinder(
             native_registry=self._native,
