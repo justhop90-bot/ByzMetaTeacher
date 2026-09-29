@@ -298,6 +298,62 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"DUC command '{expression.head}' is a Fact and cannot be emitted as an Action"
                     )
+        output_sites = {
+            (rule.identity, section, index): expression
+            for rule in plan.rules
+            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
+            for index, expression in enumerate(expressions)
+            if expression.head == "up-get-search-state"
+        }
+        request_sites = {
+            output_request.site_key: output_request
+            for output_request in plan.output_requests
+        }
+        if set(output_sites) != set(request_sites):
+            missing = sorted(set(output_sites) - set(request_sites))
+            extra = sorted(set(request_sites) - set(output_sites))
+            raise ValueError(
+                "DUC up-get-search-state output binding sites do not match plan writers: "
+                f"missing={missing}, extra={extra}"
+            )
+        for site, output_request in sorted(request_sites.items()):
+            expression = output_sites[site]
+            if output_request.command != "up-get-search-state":
+                raise ValueError(
+                    f"DUC output request '{site}' targets unsupported command "
+                    f"'{output_request.command}'"
+                )
+            if output_request.argument_index != 0:
+                raise ValueError(
+                    f"DUC up-get-search-state output request '{site}' must bind argument 0"
+                )
+            if output_request.request.width != 4:
+                raise ValueError(
+                    f"DUC up-get-search-state output request '{site}' requires width 4"
+                )
+            if output_request.request.shape.value != "EXTENDED_4":
+                raise ValueError(
+                    f"DUC up-get-search-state output request '{site}' requires EXTENDED_4 shape"
+                )
+            if output_request.request.contract_id != "up-get-search-state.OutputGoalId":
+                raise ValueError(
+                    f"DUC up-get-search-state output request '{site}' requires "
+                    "contract up-get-search-state.OutputGoalId"
+                )
+            if (
+                output_request.request.start_min != 41
+                or output_request.request.start_max != 15996
+            ):
+                raise ValueError(
+                    f"DUC up-get-search-state output request '{site}' has invalid "
+                    "GoalSpan bounds"
+                )
+            if len(expression.args) != 1:
+                raise ValueError(
+                    "up-get-search-state native expression must have exactly one "
+                    "OutputGoalId argument"
+                )
+
         identities = tuple(rule.identity for rule in plan.rules)
         if identities != tuple(sorted(identities, key=lambda identity: next(
             rule.order for rule in plan.rules if rule.identity == identity
