@@ -195,9 +195,9 @@ def _plan() -> NativeDucPlan:
                 ),
                 actions=(
                     Expression(
-                        "(up-get-object-target-data object-data-type 41)",
+                        "(up-get-object-target-data 38 41)",
                         "up-get-object-target-data",
-                        ("object-data-type", "41"),
+                        ("38", "41"),
                     ),
                 ),
             ),
