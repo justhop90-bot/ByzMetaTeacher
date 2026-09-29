@@ -758,7 +758,8 @@ def _unit(
     provider: int,
     cost: ResourceCost | None,
     *,
-    classes: tuple[str, ...],
+    classes: tuple[str, ...] = (),
+    train_time_seconds: int | None = None,
     upgrades_from: int | None = None,
     upgrades_to: int | None = None,
     validity: Validity | None = None,
@@ -773,7 +774,7 @@ def _unit(
         available_age=age,
         providers=(ProductionProvider(BuildingId(provider)),),
         base_cost=cost,
-        train_time_seconds=None,
+        train_time_seconds=train_time_seconds,
         upgrades_from=UnitId(upgrades_from) if upgrades_from is not None else None,
         upgrades_to=UnitId(upgrades_to) if upgrades_to is not None else None,
         classes=classes,
@@ -934,6 +935,26 @@ def _byzantine_game_data(
         BuildingDef(BuildingId(621), "Town Center", Age.CASTLE, ResourceCost(wood=275, stone=100)),
         BuildingDef(BuildingId(792), "Palisade Gate", Age.DARK, None),
     )
+    buildings = tuple(
+        replace(
+            building,
+            trainable_lines=building.trainable_lines + (
+                UnitLineId("fishing-ship-line"),
+                UnitLineId("transport-ship-line"),
+                UnitLineId("galley-line"),
+                UnitLineId("hulk-line"),
+                UnitLineId("demolition-raft-line"),
+            ),
+        )
+        if building.id == BuildingId(45)
+        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("trade-cog-line"),))
+        if building.id == BuildingId(84)
+        else replace(building, trainable_lines=building.trainable_lines + (UnitLineId("villager-line"),))
+        if building.id == BuildingId(109)
+        else building
+    for building in buildings
+)
+
     lines = (
         UnitLineDef(UnitLineId("militia-line"), "Militia line", (UnitId(74), UnitId(75), UnitId(77), UnitId(473), UnitId(567)), (evidence,)),
         UnitLineDef(UnitLineId("spearman-line"), "Spearman line", (UnitId(93), UnitId(358), UnitId(359)), (evidence,)),
@@ -1057,6 +1078,15 @@ def _byzantine_game_data(
             provenance=(evidence, controller),
         ),
     )
+    unit_snapshot_evidence = EvidenceRef(
+        EvidenceKind.ENGINE_DATA,
+        "docs/reference/game-data/aoe2techtree-185872-units.json",
+        "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        "data.data.Unit",
+        patch,
+        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        extraction_version="compiler-unit-seed-v1",
+    )
     technology_snapshot_evidence = EvidenceRef(
         EvidenceKind.ENGINE_DATA,
         "docs/reference/game-data/aoe2techtree-185872-technologies.json",
@@ -1065,6 +1095,18 @@ def _byzantine_game_data(
         patch,
         content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="aoe2techtree-data-json-v1",
+    )
+    units = tuple(
+        replace(
+            item,
+            upgrades_to=UnitId(550),
+        )
+        if item.id == UnitId(280)
+        else item
+        for item in units
+    ) + _materialized_manifest_units(
+        evidence,
+        unit_snapshot_evidence,
     )
     techs = (
         TechnologyDef(TechId(47), "Chemistry", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
@@ -1152,6 +1194,18 @@ def _byzantine_game_data(
         evidence,
         technology_snapshot_evidence,
     )
+    tech_upgrade_map = {
+        TechId(257): (UnitId(550),),
+        TechId(34): (UnitId(21), UnitId(2627)),
+        TechId(35): (UnitId(442),),
+    }
+    techs = tuple(
+        replace(
+            tech,
+            upgrades=tech.upgrades + tech_upgrade_map.get(tech.id, ()),
+        )
+        for tech in techs
+    )
     upgrade_relations = (
         UpgradeRelation(UnitId(74), UnitId(75), TechId(222), (evidence,)),
         UpgradeRelation(UnitId(75), UnitId(77), TechId(207), (evidence,)),
@@ -1173,6 +1227,10 @@ def _byzantine_game_data(
         UpgradeRelation(UnitId(529), UnitId(532), TechId(246), (evidence,)),
         UpgradeRelation(UnitId(40), UnitId(553), TechId(361), (evidence,)),
         UpgradeRelation(UnitId(2703), UnitId(2704), TechId(1454), (evidence, controller)),
+        UpgradeRelation(UnitId(280), UnitId(550), TechId(257), (evidence,)),
+        UpgradeRelation(UnitId(539), UnitId(21), TechId(34), (evidence,)),
+        UpgradeRelation(UnitId(21), UnitId(442), TechId(35), (evidence,)),
+        UpgradeRelation(UnitId(2626), UnitId(2627), TechId(34), (evidence,)),
     )
     advances = (
         AgeAdvanceDef(
