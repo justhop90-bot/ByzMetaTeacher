@@ -64,10 +64,11 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Gate: admission/completion/release/reassess model before lifecycle-complete promotion; current tranche proves only issue connectivity with completion `UNOBSERVED`.
 
 - [~] Production queue semantics.
-  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, plus explicit `ProductionQueueCapacityEvidence` and `ProductionProviderAvailabilityEvidence` records. The new evidence records remain `OPEN` by construction and never authorize emission.
-  - PR #102 is merged on `main`; hostile tests cover supported observation typing, OPEN evidence resolution, wrong-family/unknown rejection, lifecycle wiring, and analyzer preservation of the OPEN state.
-  - Remaining native questions are unchanged: exact queue capacity, provider-idle/readiness state, and birth timing remain OPEN. `unit-type-count-total` is observation, not completion, and provider presence is not provider idleness.
-  - Owner: production async semantics and witness layer.
+  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, plus explicit `ProductionQueueCapacityEvidence`, `ProductionProviderAvailabilityEvidence`, and `ProductionQueueCapacityControlEvidence` records. All evidence remains fail-closed and OPEN where engine behavior is unresolved.
+  - The compiler now cross-references the pinned DE AIRef Strategic Number catalog and recognizes exact SN 264 (`sn-enable-training-queue`) equality, preserving its documented additional-slot value and derived documented total capacity (`value + 1`) without using that evidence to authorize `train`.
+  - PR #102 established the world-state observation seam; the current queue-capacity tranche adds the typed SN 264 control seam, hostile rejection tests, analyzer wiring, and a native zero-findings fixture/gate.
+  - Remaining native questions are exact current-build queue enforcement, provider-idle/readiness state, and birth timing. `unit-type-count-total` is observation, not completion; provider presence is not provider idleness; the SN 264 control mapping itself does not prove the engine honored the configured capacity.
+  - Owner: production async semantics and witness layer. Runtime enforcement remains OPEN and user-owned.
 
 - [~] Research escrow/in-progress semantics.
   - The repository now has a machine-checked same-pass escrow/research evidence specification and capture candidate: `docs/plans/2026-09-28-native-escrow-same-pass-visibility-checklist.md`, `docs/reference/oracles/escrow-same-pass-research.schema.json`, `docs/reference/oracles/candidates/escrow-same-pass-research.native.json`, and `tests/test_escrow_same_pass_oracle_spec.py`.
