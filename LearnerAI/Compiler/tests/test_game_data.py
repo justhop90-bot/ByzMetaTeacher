@@ -37,6 +37,7 @@ from LearnerAI.Compiler.ir.game_data import (
     PrerequisiteKind,
     ResourceCost,
     VariableCost,
+    ResearchProvider,
     SelectorKind,
     TechId,
     UnitDef,
@@ -73,7 +74,7 @@ class GameDataTests(unittest.TestCase):
         spies = effective.tech(408)
         self.assertEqual(spies.name, "Spies/Treason")
         self.assertEqual(spies.available_age, Age.IMPERIAL)
-        self.assertEqual(spies.providers, ())
+        self.assertEqual(spies.providers, (ResearchProvider(BuildingId(82)),))
         self.assertEqual(spies.research_time_seconds, 1)
         self.assertIsInstance(spies.base_cost, VariableCost)
         self.assertEqual(spies.base_cost.formula_id, "spies-treason-gold-per-enemy-civilian")
