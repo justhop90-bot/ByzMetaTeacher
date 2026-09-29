@@ -140,6 +140,57 @@ class NativeEscrowPlanCompilerThreadingTests(unittest.TestCase):
             ),
         )
 
+    def test_every_public_compiler_path_accepts_policy_plan(self):
+        owner = object()
+        policy_plan = __import__(
+            "Compiler.ir",
+            fromlist=["EscrowOperation", "EscrowOperationKind", "NativeEscrowPolicyPlan", "SemanticId"],
+        ).NativeEscrowPolicyPlan(
+            (
+                __import__(
+                    "Compiler.ir",
+                    fromlist=["EscrowOperation", "EscrowOperationKind", "SemanticId"],
+                ).EscrowOperation(
+                    contract_identity="policy-food",
+                    owner=__import__(
+                        "Compiler.ir",
+                        fromlist=["SemanticId"],
+                    ).SemanticId("test", "policy"),
+                    kind=__import__(
+                        "Compiler.ir",
+                        fromlist=["EscrowOperationKind"],
+                    ).EscrowOperationKind.POLICY_RESET,
+                    resource="food",
+                    command="set-escrow-percentage",
+                    percentage=50,
+                    rule_order=10,
+                ),
+            )
+        )
+
+        with (
+            patch(
+                "Compiler.compiler.emit",
+                return_value=MINIMAL_ARTIFACT,
+            ) as emitted,
+            tempfile.TemporaryDirectory() as tmp_dir,
+        ):
+            tmp = Path(tmp_dir)
+            for name, invoke, expected_status in self._cases(tmp):
+                with self.subTest(path=name):
+                    if name == "compile_semantic_demands":
+                        # Empty semantic demands still exercise the public escrow forwarding path.
+                        pass
+                    result = invoke(policy_plan)
+                    self.assertEqual(
+                        emitted.call_args.kwargs["escrow_plan"],
+                        policy_plan,
+                    )
+                    if expected_status is not None:
+                        status = result.status if hasattr(result, "status") else result
+                        self.assertEqual(status, expected_status)
+                    emitted.reset_mock()
+
     def test_every_public_compiler_path_forwards_same_escrow_plan_once(self):
         def capture_emit(*_args, **kwargs):
             self.assertIn("escrow_plan", kwargs)
