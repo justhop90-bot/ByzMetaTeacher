@@ -1,3 +1,8 @@
+from LearnerAI.Compiler.ir.game_data_aoe2techtree import (
+    Aoe2TechTreeNodeKind,
+    Aoe2TechTreeNodeStatus,
+    parse_aoe2techtree_byzantine_tree_json,
+)
 from LearnerAI.Compiler.ir.game_data_dat_snapshot import (
     DatTechnologySnapshot,
     DatTechnologyRecord,
@@ -37,6 +42,74 @@ from LearnerAI.Compiler.ir.versioning import PatchId
 
 
 class GameDataTests(unittest.TestCase):
+    def test_aoe2techtree_byzantine_tree_snapshot_parses_structure_and_status(self):
+        raw = """
+        {
+          "buildings": [
+            {
+              "age_id": 3,
+              "building_id": 82,
+              "building_upgraded_from_id": -1,
+              "link_id": null,
+              "name": "Castle",
+              "node_id": 82,
+              "node_status": "ResearchedCompleted",
+              "node_type": "BuildingTech",
+              "use_type": "Building"
+            }
+          ],
+          "units_techs": [
+            {
+              "age_id": 3,
+              "building_id": 12,
+              "link_id": 93,
+              "name": "Pikeman",
+              "node_id": 358,
+              "node_status": "ResearchedCompleted",
+              "node_type": "UnitUpgrade",
+              "use_type": "Unit"
+            },
+            {
+              "age_id": 3,
+              "building_id": 82,
+              "link_id": null,
+              "name": "Logistica",
+              "node_id": 61,
+              "node_status": "ResearchRequired",
+              "node_type": "Research",
+              "use_type": "Tech"
+            },
+            {
+              "age_id": 4,
+              "building_id": 87,
+              "link_id": null,
+              "name": "Parthian Tactics",
+              "node_id": 436,
+              "node_status": "NotAvailable",
+              "node_type": "Research",
+              "use_type": "Tech"
+            }
+          ]
+        }
+        """
+        snapshot = parse_aoe2techtree_byzantine_tree_json(
+            raw,
+            source="https://github.com/SiegeEngineers/aoe2techtree/blob/main/data/trees/BYZANTINES.json",
+            revision="b554983ddae4466f22c98f4d71f35aa6da1fd4e2",
+            patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+            content_hash="sha256:test-byzantine-tree",
+        )
+
+        self.assertEqual(snapshot.civ_name, "Byzantines")
+        self.assertEqual(len(snapshot.buildings), 1)
+        self.assertEqual(len(snapshot.units_techs), 3)
+        castle = snapshot.node(Aoe2TechTreeNodeKind.BUILDING, 82)
+        self.assertEqual(castle.status, Aoe2TechTreeNodeStatus.RESEARCHED_COMPLETED)
+        self.assertEqual(castle.age, Age.CASTLE)
+        pikeman = snapshot.node(Aoe2TechTreeNodeKind.UNIT, 358)
+        self.assertEqual(pikeman.link_id, 93)
+        self.assertEqual(snapshot.node(Aoe2TechTreeNodeKind.TECHNOLOGY, 436).status, Aoe2TechTreeNodeStatus.NOT_AVAILABLE)
+
     def test_byzantine_185872_resolves_current_factual_snapshot(self):
         data = resolve_effective_civ(ByzantineProfile.for_update_185872())
 
