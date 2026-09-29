@@ -27,7 +27,9 @@ rejects (`:282-286` + `test_game_data:767-796`).
 - EVIDENCE: `UNIT NODE 528 … TECH:name='Slinger (make avail)' civ=-1 effect=582 required=(102,…)` (`:558-560`) — same recycled-ID conflict class.
 - IR CAPABILITY: chain `527->528 via 244` representable once endpoints+trigger exist; bidirectional-link validator (`game_data:467-484,513-520`) then applies.
 - TRAP: same as A1 — identical COSTS line is not a verified 528 cost. Chain-stop precedent already in code (`game_data_manifest_units:1-6`, chains stop before unrepresented trigger techs).
-- FORBIDDEN: inventing 528 cost/train-time/`UpgradeRelation(527,528,244)`.
+- CURRENT IR: `UnitDef(528)` carries provider `BuildingId(45)`, age, demolition-raft line, `upgrades_from=527`, and unresolved `base_cost/train_time_seconds=None`.
+- `UpgradeRelation(527,528,244)` is explicit and verified through manifest identity plus current technology identity evidence. Tech 244 is Dock-provided, Imperial-age, `250 wood + 350 gold` in the current typed snapshot.
+- SAFETY: the compiler does not synthesize unit 528 fixed costs from recycled DAT rows; `cost_of("unit:528")` fails closed.
 
 ## A3 — TECHNOLOGY 408 Spies/Treason — VARIABLE COST (closed)
 - MANIFEST IDENTITY: `408 | Spies/Treason | TYPE=Research | USE=Tech | STATUS=ResearchedCompleted | AGE=4 | BUILDING=82 | LINK=315 | TRIGGER=<MISSING>`.
