@@ -60,7 +60,7 @@ REMAINING: completion witness, release semantics, group membership/admission det
 ## Source graph — CURRENT: deterministic policy-safe with explicit load-random materialization. TARGET: met incl. decision on load-random.
 EVIDENCE: depths/fingerprints; source assembly tests; Duke + vendored-AI topology.
 IMPLEMENTATION: resolver + validation + explicit per-directive `LoadRandomSelection` materialization. TEST: source-graph focused coverage plus full Compiler verification.
-REMAINING: runtime RNG semantics are intentionally not modeled; .xs boundary remains open.
+REMAINING: runtime RNG/weight semantics are intentionally not modeled. Active .xs inputs are explicitly rejected at the compiler boundary because no .xs↔.per bridge contract exists.
 
 ## Game data — CURRENT: Byzantine subset. TARGET: 145-node manifest + overlays.
 EVIDENCE: civ_profile patch 185872; 36 tests. REMAINING: manifest completion; broader civs.
