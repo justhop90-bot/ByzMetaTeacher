@@ -49,6 +49,7 @@ from .game_data import (
     UnitLineDef,
     UnitLineId,
     UpgradeRelation,
+    VariableCost,
     canonical_fingerprint,
     validate_game_data,
 )
@@ -237,6 +238,11 @@ class EffectiveCivData:
         base_cost = entity.base_cost
         if base_cost is None:
             raise ValueError(f"base cost is unresolved for {key}")
+        if isinstance(base_cost, VariableCost):
+            raise ValueError(
+                f"variable base cost cannot be resolved by fixed-cost API for {key}: "
+                f"{base_cost.formula_id}"
+            )
         if self.is_free_for_civ(key):
             return ResourceCost()
         override = _cost_override(entity, self.bonuses)
