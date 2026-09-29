@@ -458,6 +458,7 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
         "up-can-search": "Fact",
         "up-get-search-state": "Action",
         "up-get-group-size": "Action",
+        "up-get-cost-delta": "Action",
         "up-find-local": "Fact/Action",
         "up-find-status-local": "Fact/Action",
         "up-find-remote": "Fact/Action",
@@ -511,7 +512,11 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
             "re-establish or reset the affected DUC state using the corresponding "
             "native DUC command; no synthetic scheduler is introduced"
         ),
-        practice_references=("duc.search-state-retained",),
+        practice_references=(
+            ()
+            if command == "up-get-cost-delta"
+            else ("duc.search-state-retained",)
+        ),
     )
 
 
