@@ -341,7 +341,7 @@ def main() -> int:
         "(up-get-search-state 52)",
         "(up-get-group-size c: 3 42)",
         "(up-get-object-data 38 43)",
-        "(up-get-object-target-data object-data-type 44)",
+        "(up-get-object-target-data 38 44)",
         "(up-get-cost-delta 46)",
         "(up-get-point position-center 50)",
         "(up-set-target-object search-local c: 0)",
