@@ -1020,6 +1020,10 @@ class PrimitiveRegistry:
                 "production queue-exit timing evidence must use "
                 "unit-type-count-total"
             )
+        if pending_expression.head != "up-pending-objects":
+            raise ValueError(
+                "production queue-exit timing evidence must use up-pending-objects"
+            )
         self.resolve_production_queue_protection(
             pending_expression,
             native_unit_id=native_unit_id,
