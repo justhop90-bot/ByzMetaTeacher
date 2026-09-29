@@ -13,6 +13,8 @@ from typing import Callable
 
 from ..ir.native_attack import AttackLifecycleObservation
 from ..ir.resource_control import (
+    NATIVE_ESCROW_POLICY_COMMAND,
+    NATIVE_ESCROW_POLICY_RESOURCES,
     NATIVE_ESCROW_RELEASE_COMMAND,
     NATIVE_ESCROW_RELEASE_RESOURCES,
 )
