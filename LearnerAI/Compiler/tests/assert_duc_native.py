@@ -190,7 +190,7 @@ def main() -> int:
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
         "(up-get-search-state 43)",
-        "(up-get-group-size c: 3 44)",
+        "(up-get-group-size c: 3 47)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )
