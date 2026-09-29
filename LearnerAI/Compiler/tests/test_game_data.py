@@ -129,14 +129,27 @@ class GameDataTests(unittest.TestCase):
     def test_dat_snapshot_merge_fills_only_unresolved_technology_fields(self):
         profile = ByzantineProfile.for_update_185872()
         data = resolve_effective_civ(profile)
-        source_patch = PatchId("AOE2DE", "177723", None, "2026-01-01")
+        source_patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
         tech = data.technologies[0]
+        data = replace(
+            data,
+            technologies=tuple(
+                replace(
+                    item,
+                    base_cost=None,
+                    research_time_seconds=None,
+                )
+                if item.id == tech.id
+                else item
+                for item in data.technologies
+            ),
+        )
         snapshot = DatTechnologySnapshot(
             patch=source_patch,
             evidence=EvidenceRef(
                 EvidenceKind.ENGINE_DATA,
                 "dat://empires2_x2_p1.dat",
-                "build-177723",
+                "test-dat-build-185872",
                 "technologies.json",
                 source_patch,
                 content_hash="sha256:test-snapshot",
@@ -166,13 +179,13 @@ class GameDataTests(unittest.TestCase):
         profile = ByzantineProfile.for_update_185872()
         data = resolve_effective_civ(profile)
         tech = data.technologies[0]
-        patch = PatchId("AOE2DE", "177723", None, "2026-01-01")
+        patch = PatchId("AOE2DE", "185872", None, "2026-09-22")
         snapshot = DatTechnologySnapshot(
             patch=patch,
             evidence=EvidenceRef(
                 EvidenceKind.ENGINE_DATA,
                 "dat://empires2_x2_p1.dat",
-                "build-177723",
+                "test-dat-build-185872",
                 "technologies.json",
                 patch,
                 content_hash="sha256:test-snapshot",
