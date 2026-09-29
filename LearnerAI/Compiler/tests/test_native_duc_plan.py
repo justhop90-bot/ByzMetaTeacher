@@ -54,6 +54,29 @@ def _group_size_output_request(rule_identity="group-size-output", section="ACTIO
     )
 
 
+def _cost_delta_output_request(rule_identity="cost-delta-output", section="ACTION", expression_index=0):
+    request = GoalSpanRequest(
+        StorageRequestId(
+            SemanticId("native.duc", rule_identity),
+            "up-get-cost-delta",
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+        width=4,
+        shape=GoalSpanKind.EXTENDED_4,
+        contract_id="up-get-cost-delta.OutputGoalId",
+        start_min=41,
+        start_max=15996,
+    )
+    return NativeDucOutputRequest(
+        rule_identity=rule_identity,
+        section=section,
+        expression_index=expression_index,
+        request=request,
+        command="up-get-cost-delta",
+        argument_index=0,
+    )
+
+
 class NativeDucPlanTests(unittest.TestCase):
     def test_plan_orders_rules_deterministically(self):
         plan = NativeDucPlan(
@@ -192,6 +215,30 @@ class NativeDucPlanTests(unittest.TestCase):
 
         registry.validate_duc_plan(plan)
 
+    def test_registry_accepts_cost_delta_goalspan_output_request(self):
+        registry = default_de_registry()
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="cost-delta-output",
+                    order=1,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr(
+                            "(up-get-cost-delta 41)",
+                            "up-get-cost-delta",
+                            "41",
+                        ),
+                    ),
+                ),
+            ),
+            output_requests=(
+                _cost_delta_output_request(),
+            ),
+        )
+
+        registry.validate_duc_plan(plan)
+
     def test_plan_rejects_duplicate_rule_identity(self):
         with self.assertRaisesRegex(ValueError, "duplicate native DUC rule identity"):
             NativeDucPlan(
@@ -243,8 +290,47 @@ class NativeDucBinderTests(unittest.TestCase):
         self.assertEqual(binding.parameter_count, 3)
         self.assertEqual(binding.support_state.value, "executable-safe")
 
+    def test_cost_delta_duc_command_is_executable_safe(self):
+        binding = self.binder.bind_duc_command("up-get-cost-delta")
+        self.assertEqual(binding.command, "up-get-cost-delta")
+        self.assertEqual(binding.native_kind, "Action")
+        self.assertEqual(binding.parameter_count, 1)
+        self.assertEqual(binding.support_state.value, "executable-safe")
+
 
 class NativeDucEmissionFixtureTests(unittest.TestCase):
+    def test_compile_allocates_and_emits_bound_cost_delta_goalspan(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="cost-delta-output",
+                    order=100,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr(
+                            "(up-get-cost-delta 41)",
+                            "up-get-cost-delta",
+                            "41",
+                        ),
+                    ),
+                ),
+            ),
+            output_requests=(
+                _cost_delta_output_request(),
+            ),
+        )
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        artifact = compile_source(source, duc_plan=plan)
+        self.assertIn("(up-get-cost-delta 43)", artifact)
+        self.assertNotIn("(up-get-cost-delta 41)", artifact)
+
     def test_compile_allocates_and_emits_bound_group_size_goal_slot(self):
         plan = NativeDucPlan(
             rules=(
