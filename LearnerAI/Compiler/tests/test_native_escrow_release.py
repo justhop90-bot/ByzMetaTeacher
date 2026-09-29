@@ -286,7 +286,7 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             CompileError,
             "may target only research actions",
         ):
-            compile_source(source, escrow_plan=plan)
+            compile_source(source, source_unit="test", escrow_plan=plan)
 
     def test_percentage_policy_emits_deterministically(self):
         from Compiler.compiler import compile_source
