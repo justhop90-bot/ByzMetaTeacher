@@ -120,6 +120,23 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertIn("disabled", finding.message)
         self.assertEqual(finding.category.value, "CONTROL_FLOW")
 
+    def test_jump_before_disable_self_does_not_report_disabled_target(self):
+        report = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-jump-rule -1) (disable-self))\n"
+                "(defrule (true) => (set-goal successor 1))\n"
+            )
+        )
+
+        diagnostics = analyze_rule_diagnostics(report)
+
+        self.assertFalse(
+            any(
+                item.code.value == "RULE-CF-005"
+                for item in diagnostics.diagnostics
+            )
+        )
+
     def test_forward_control_transfer_gets_bypass_diagnostic(self):
         report = analyze_effective_rules(
             self._graph(
