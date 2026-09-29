@@ -51,6 +51,20 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             ("set-escrow-percentage",),
         )
 
+    def test_percentage_mapping_is_contracted(self):
+        mapping = self.mappings.for_command("set-escrow-percentage")
+        self.assertIsNotNone(mapping)
+        assert mapping is not None
+        self.assertEqual(
+            mapping.identity,
+            "escrow.execution.set-percentage",
+        )
+        self.assertIs(
+            mapping.status,
+            EngineSemanticMappingStatus.CONTRACTED,
+        )
+        self.assertEqual(mapping.native_kind, "Action")
+
     def test_release_mapping_is_contracted(self):
         mapping = self.mappings.for_command("release-escrow")
         self.assertIsNotNone(mapping)
@@ -69,6 +83,50 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             self.mappings.for_command("release-escrow").native_command,
             "release-escrow",
         )
+
+    def test_percentage_policy_binds_all_resources_and_range(self):
+        from Compiler.ir import EscrowOperation, EscrowOperationKind
+
+        operations = tuple(
+            EscrowOperation(
+                contract_identity=f"policy-{resource}",
+                owner=SemanticId("test", "research"),
+                kind=EscrowOperationKind.POLICY_RESET,
+                resource=resource,
+                command="set-escrow-percentage",
+                percentage=50,
+                rule_order=index,
+            )
+            for index, resource in enumerate(("food", "wood", "stone", "gold"))
+        )
+        plan = NativeEscrowPolicyPlan(operations)
+        bindings = self.binder.bind_escrow_plan(plan)
+        self.assertEqual(
+            tuple(binding.command for binding in bindings),
+            ("set-escrow-percentage",),
+        )
+        binding = bindings[0]
+        self.assertEqual(binding.parameter_count, 2)
+        self.assertEqual(binding.integer_range, (0, 100))
+        self.registry.validate_escrow_policy_plan(plan)
+
+    def test_percentage_policy_rejects_out_of_range(self):
+        from Compiler.ir import EscrowOperation, EscrowOperationKind
+
+        with self.assertRaisesRegex(ValueError, "0..100"):
+            NativeEscrowPolicyPlan(
+                (
+                    EscrowOperation(
+                        contract_identity="bad-percentage",
+                        owner=SemanticId("test", "research"),
+                        kind=EscrowOperationKind.POLICY_RESET,
+                        resource="food",
+                        command="set-escrow-percentage",
+                        percentage=101,
+                        rule_order=1,
+                    ),
+                )
+            )
 
     def test_release_plan_binds_all_resources_deterministically(self):
         plan = NativeEscrowReleasePlan(
@@ -108,6 +166,44 @@ class NativeEscrowReleaseTests(unittest.TestCase):
             ("release-escrow",),
         )
         self.registry.validate_escrow_release_plan(plan)
+
+    def test_percentage_policy_emits_deterministically(self):
+        from Compiler.compiler import compile_source
+
+        plan = NativeEscrowPolicyPlan(
+            (
+                EscrowOperation(
+                    contract_identity="policy-food",
+                    owner=SemanticId("test", "research"),
+                    kind=EscrowOperationKind.POLICY_RESET,
+                    resource="food",
+                    command="set-escrow-percentage",
+                    percentage=50,
+                    rule_order=10,
+                ),
+                EscrowOperation(
+                    contract_identity="policy-gold",
+                    owner=SemanticId("test", "research"),
+                    kind=EscrowOperationKind.POLICY_RESET,
+                    resource="gold",
+                    command="set-escrow-percentage",
+                    percentage=25,
+                    rule_order=11,
+                ),
+            )
+        )
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        artifact = compile_source(source, escrow_plan=plan)
+        self.assertIn("(set-escrow-percentage food 50)", artifact)
+        self.assertIn("(set-escrow-percentage gold 25)", artifact)
+        self.assertNotIn("(release-escrow", artifact)
 
     def test_release_plan_rejects_non_resource_domains_at_construction(self):
         with self.assertRaisesRegex(ValueError, "unsupported native escrow release resource"):
