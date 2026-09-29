@@ -36,6 +36,7 @@ from LearnerAI.Compiler.ir.game_data import (
     Prerequisite,
     PrerequisiteKind,
     ResourceCost,
+    VariableCost,
     SelectorKind,
     TechId,
     UnitDef,
@@ -46,6 +47,57 @@ from LearnerAI.Compiler.ir.versioning import PatchId
 
 
 class GameDataTests(unittest.TestCase):
+    def test_variable_cost_is_typed_and_deterministic(self):
+        variable = VariableCost(
+            "spies-treason-gold-per-enemy-civilian",
+            parameters=(("minimum_gold", 200), ("maximum_gold", 30000), ("gold_per_civilian", 200)),
+        )
+        self.assertEqual(variable.formula_id, "spies-treason-gold-per-enemy-civilian")
+        self.assertEqual(variable.parameters[2], ("gold_per_civilian", 200))
+        self.assertEqual(variable, VariableCost(
+            "spies-treason-gold-per-enemy-civilian",
+            parameters=(("minimum_gold", 200), ("maximum_gold", 30000), ("gold_per_civilian", 200)),
+        ))
+
+    def test_variable_technology_cost_fails_closed_in_fixed_cost_api(self):
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+        spies = effective.tech(408)
+        self.assertIsInstance(spies.base_cost, VariableCost)
+        with self.assertRaisesRegex(ValueError, "variable base cost"):
+            effective.cost_of("tech:408")
+
+    def test_spies_treason_is_materialized_as_variable_cost_without_fabricated_fixed_cost(self):
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+        spies = effective.tech(408)
+        self.assertEqual(spies.name, "Spies/Treason")
+        self.assertEqual(spies.available_age, Age.IMPERIAL)
+        self.assertEqual(spies.providers, ())
+        self.assertEqual(spies.research_time_seconds, 1)
+        self.assertIsInstance(spies.base_cost, VariableCost)
+        self.assertEqual(spies.base_cost.formula_id, "spies-treason-gold-per-enemy-civilian")
+        self.assertEqual(
+            spies.base_cost.parameters,
+            (("minimum_gold", 200), ("maximum_gold", 30000), ("gold_per_civilian", 200)),
+        )
+
+    def test_manifest_coverage_leaves_only_unresolved_demolition_chain(self):
+        from pathlib import Path
+
+        profile = ByzantineProfile.for_update_185872()
+        effective = resolve_effective_civ(profile)
+        manifest = parse_byzantine_manifest(
+            (Path(__file__).parents[3] / "docs" / "reference" / "BYZANTINES_manifest.txt").read_text(encoding="utf-8")
+        )
+        report = classify_byzantine_manifest_coverage(manifest, effective)
+        self.assertEqual(report.modeled_count, 157)
+        self.assertEqual(report.unmodeled_count, 2)
+        self.assertEqual(
+            {(node.kind, int(node.id)) for node in report.unmodeled_nodes},
+            {(ManifestNodeKind.UNIT, 527), (ManifestNodeKind.UNIT, 528)},
+        )
+
     def test_aoe2techtree_byzantine_tree_snapshot_parses_structure_and_status(self):
         raw = """
         {
