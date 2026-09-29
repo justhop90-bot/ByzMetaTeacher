@@ -165,6 +165,10 @@ class GameDataAuditTests(unittest.TestCase):
             self.data.tech(244).base_cost,
             ResourceCost(wood=250, gold=350),
         )
+        self.assertIn(TechId(905), self.data.building(45).researchable_technologies)
+        self.assertIn(TechId(244), self.data.building(45).researchable_technologies)
+        self.assertIn(EvidenceKind.OFFICIAL_PATCH, {ref.kind for ref in self.data.tech(905).provenance})
+        self.assertIn(EvidenceKind.COMMUNITY_REFERENCE, {ref.kind for ref in self.data.tech(905).provenance})
         self.assertIsNone(self.data.tech(244).research_time_seconds)
         self.assertEqual(
             {(int(r.previous), int(r.current), int(r.research)) for r in self.data.upgrade_relations
