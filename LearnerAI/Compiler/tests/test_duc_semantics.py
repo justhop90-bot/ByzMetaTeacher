@@ -120,6 +120,49 @@ class DucSemanticTests(unittest.TestCase):
         self.assertEqual(report.final_state.target.proof, DucTargetProof.CURRENT_PASS_PROOF)
 
 
+    def test_get_point_creates_two_goal_point_output_span(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-point", ("position-center", "41")),),
+            ),
+        ))
+
+        self.assertEqual(len(report.final_state.goal_output_spans), 1)
+        span = report.final_state.goal_output_spans[0]
+        self.assertEqual(span.start_goal_id, 41)
+        self.assertEqual(span.width, 2)
+        self.assertEqual(span.provenance.command, "up-get-point")
+
+    def test_get_point_accepts_last_native_start(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-point", ("position-center", "15998")),),
+            ),
+        ))
+
+        self.assertEqual(
+            report.final_state.goal_output_spans[0].start_goal_id,
+            15998,
+        )
+        self.assertEqual(report.final_state.goal_output_spans[0].width, 2)
+
+    def test_get_point_rejects_start_that_would_overrun_point_pair(self):
+        report = analyze_duc((
+            _rule(
+                1,
+                (("up-get-point", ("position-center", "15999")),),
+            ),
+        ))
+
+        self.assertFalse(report.final_state.goal_output_spans)
+        self.assertTrue(any(
+            item.code == "DUC-017"
+            and "15998" in item.message
+            for item in report.diagnostics
+        ))
+
     def test_get_cost_delta_creates_four_goal_output_span(self):
         report = analyze_duc((
             _rule(
