@@ -10,12 +10,20 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: current construction lifecycle suite plus native zero-findings acceptance.
 - Remaining evidence: same-pass visibility proof; foundation/placement runtime evidence.
 
+## Production provider readiness — typed native admissibility seam
+- `up-train-site-ready` is represented by `ProductionProviderReadinessEvidence` in `ir/production.py`.
+- Registry binding requires the native Fact schema, ADMISSIBILITY semantic role, literal `c:` typeOp, and the lifecycle target UnitId; symbolic UnitIds are canonicalized to numeric IDs.
+- Semantic identity: `admissibility.train.site-ready`. The evidence is explicitly `OPEN`; it does not replace `can-train` and does not authorize `train`.
+- Analyzer wiring attaches readiness to `ProductionLifecycle` and preserves the separate `can-train` feasibility path.
+- Acceptance: `tests/test_production_provider_readiness.py`, `tests/fixtures/production_provider_readiness.perdsl`, and `tests/assert_production_provider_readiness_native.py`.
+- Runtime boundary: current DE busy/queued provider behavior and birth timing remain unverified.
+
 ## Production queue capacity — typed native control seam
 - Queue occupancy remains typed through `ir/production.py`: `unit-type-count-total` is observation only; completion remains `unit-type-count`; pending duplicate protection remains `up-pending-objects`.
 - Native queue-capacity control is represented by `ProductionQueueCapacityControlEvidence`. The registry cross-references the pinned DE Strategic Number inventory, requires exact SN 264 (`sn-enable-training-queue`) equality, canonicalizes the target to numeric 264, derives the documented total capacity as additional queued slots plus one active training slot, and keeps the evidence `OPEN`.
 - Analyzer wiring attaches the control evidence to `ProductionLifecycle` without adding it to action authorization or changing emitted `train` guards.
 - Acceptance: `tests/test_production_queue_capacity_native_contract.py`, `tests/fixtures/production_queue_capacity.perdsl`, and `tests/assert_production_queue_capacity_native.py`.
-- Runtime boundary: the current DE build must still be tested directly to prove that the configured SN 264 value is enforced; provider-idle/readiness and birth timing remain separate OPEN boundaries.
+- Runtime boundary: current DE enforcement of SN 264 remains OPEN.
 
 ## SN/Timer DSL allocation + catalog
 - SN remains executable-safe through its versioned catalog/binding/emission path.

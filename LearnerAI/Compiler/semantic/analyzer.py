@@ -513,6 +513,47 @@ def analyze(
                         f"cannot resolve provider-state observation: {exc}"
                     ) from exc
 
+            provider_readiness_requirements = [
+                requirement.expression
+                for requirement in requirements
+                if requirement.expression.head == "up-train-site-ready"
+            ]
+            provider_readiness_evidence = None
+            if len(provider_readiness_requirements) > 1:
+                raise CompileError(
+                    f"PRODUCTION-PROVIDER-READINESS: demand '{demand.name}' "
+                    "has multiple training-site readiness facts; provider "
+                    "readiness must be unambiguous"
+                )
+            if provider_readiness_requirements:
+                readiness_expression = provider_readiness_requirements[0]
+                try:
+                    provider_readiness_evidence = (
+                        registry.resolve_production_provider_readiness(
+                            readiness_expression,
+                            native_unit_id=native_unit_id,
+                        )
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise CompileError(
+                        f"PRODUCTION-PROVIDER-READINESS: demand '{demand.name}' "
+                        f"cannot resolve training-site readiness: {exc}"
+                    ) from exc
+
+                canonical_readiness = provider_readiness_evidence.expression
+                requirements = [
+                    (
+                        SemanticRequirement(
+                            canonical_readiness,
+                            _stored_role(canonical_readiness, registry),
+                            location=requirement.location,
+                        )
+                        if requirement.expression is readiness_expression
+                        else requirement
+                    )
+                    for requirement in requirements
+                ]
+
             matching_queue_states = [
                 requirement.expression
                 for requirement in requirements
@@ -651,6 +692,7 @@ def analyze(
                     provider_state=provider_state,
                     queue_capacity_evidence=queue_capacity_evidence,
                     provider_availability_evidence=provider_availability_evidence,
+                    provider_readiness_evidence=provider_readiness_evidence,
                     queue_capacity_control=queue_capacity_control,
                 )
 

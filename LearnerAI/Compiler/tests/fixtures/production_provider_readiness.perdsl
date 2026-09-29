@@ -1,0 +1,7 @@
+demand provider-ready-spears {
+    require (up-train-site-ready c: spearman)
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 1)
+    release (unit-type-count spearman >= 1)
+}

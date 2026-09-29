@@ -860,6 +860,81 @@ class PrimitiveRegistry:
             source_semantic_id=semantic_id,
         )
 
+    def resolve_production_provider_readiness(
+        self,
+        expression,
+        *,
+        native_unit_id: int,
+    ):
+        from ..ir.production import (
+            ProductionFactDisposition,
+            ProductionProviderReadinessEvidence,
+        )
+
+        primitive = self.get(expression.head)
+        if primitive is None:
+            raise ValueError(
+                f"production provider-readiness fact '{expression.head}' is REJECTED: "
+                "not a registered native fact"
+            )
+        if expression.head != "up-train-site-ready":
+            raise ValueError(
+                f"production provider-readiness fact '{expression.head}' "
+                "must use up-train-site-ready"
+            )
+        native = self.native(expression.head)
+        if native is None or native.command_type != "Fact":
+            raise ValueError(
+                "production provider-readiness fact 'up-train-site-ready' "
+                "has no native Fact schema entry"
+            )
+        if primitive.kind != "FACT" or primitive.role != "ADMISSIBILITY":
+            raise ValueError(
+                "production provider-readiness fact 'up-train-site-ready' "
+                "must be an ADMISSIBILITY Fact"
+            )
+        self.validate_native_signature(expression.head, len(expression.args))
+        if len(expression.args) != 2:
+            raise ValueError(
+                "production provider-readiness fact requires typeOp and UnitId"
+            )
+        if str(expression.args[0]) != "c:":
+            raise ValueError(
+                "production provider-readiness fact must use literal c:"
+            )
+        target = str(expression.args[1])
+        if target not in {str(native_unit_id)}:
+            try:
+                from ..semantic.native_unit_catalog import resolve_unit_id
+                resolved = resolve_unit_id(target)
+            except (ImportError, KeyError, TypeError, ValueError):
+                resolved = None
+            if resolved != native_unit_id:
+                raise ValueError(
+                    f"production provider-readiness fact does not target UnitId "
+                    f"{native_unit_id}"
+                )
+        semantic_id = self._semantic_mappings.require(
+            "admissibility.train.site-ready"
+        ).identity
+        adapter = self.fact_registry.require(expression.head)
+        if adapter.semantic_id != semantic_id:
+            raise ValueError(
+                "production provider-readiness fact has mismatched semantic adapter"
+            )
+        canonical = expression.__class__(
+            source=f"(up-train-site-ready c: {native_unit_id})",
+            head="up-train-site-ready",
+            args=("c:", str(native_unit_id)),
+            location=expression.location,
+        )
+        return ProductionProviderReadinessEvidence(
+            disposition=ProductionFactDisposition.OPEN,
+            expression=canonical,
+            native_unit_id=native_unit_id,
+            semantic_id=semantic_id,
+        )
+
     def resolve_production_queue_state(
         self,
         expression,
@@ -951,6 +1026,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("can-build", "FACT", "FEASIBILITY", 1, 1),
         Primitive("can-build-with-escrow", "FACT", "FEASIBILITY", 1, 1),
         Primitive("building-type-count", "FACT", "OBSERVATION", 3, 3),
+        Primitive("up-train-site-ready", "FACT", "ADMISSIBILITY", 2, 2),
         Primitive("building-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("unit-type-count", "FACT", "OBSERVATION", 3, 3),
         Primitive("unit-type-count-total", "FACT", "OBSERVATION", 3, 3, completion_witness=False),

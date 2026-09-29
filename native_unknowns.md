@@ -3,7 +3,7 @@
 2. attack-now exact group membership and mediated controller prerequisites remain OPEN (including exploration/town-size/targeting coupling).
 3. Per-SN defaults / version scope / auto-mutation catalog for 0..511 (OPEN).
 4. Escrow same-pass release visibility for `release-escrow -> ordinary action` remains OPEN; starvation/emergency release, multi-owner handoff, and any DE-specific family exceptions remain OPEN. The concrete DE research fixture/oracle is specified in `docs/plans/2026-09-28-native-escrow-same-pass-visibility.md`; runtime evidence is still absent.
-5. Production queue capacity runtime enforcement + provider-idle signal + birth timing remain OPEN. The compiler now binds the AIRef-backed SN 264 control as typed OPEN evidence; that mapping does not establish current-build queue enforcement.
+5. Production queue capacity runtime enforcement + provider-readiness runtime interaction + birth timing remain OPEN. The compiler now binds SN 264 as typed OPEN control evidence and AIRef/UserPatch `up-train-site-ready` as typed OPEN provider-readiness evidence; neither mapping proves current-build behavior under busy/queued conditions.
 6. Research in-progress signal existence; provider-loss behavior (OPEN).
 7. DUC retained-filter exact rules; exhaustive stale-target triggers; measured perf costs (OPEN).
 8. load-random runtime selection semantics (OPEN).
