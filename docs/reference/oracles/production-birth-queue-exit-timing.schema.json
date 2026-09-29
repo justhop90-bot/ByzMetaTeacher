@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AoE2DE production birth and queue-exit timing evidence",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "engine_build",
+    "fixture",
+    "target",
+    "samples"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "production-birth-queue-exit-timing/v1"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "VERIFIED"
+      ]
+    },
+    "engine_build": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixture": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "unit_id",
+        "unit_name"
+      ],
+      "properties": {
+        "unit_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unit_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_index",
+          "game_time",
+          "unit_count",
+          "unit_total_count",
+          "pending_count",
+          "can_train",
+          "provider_ready"
+        ],
+        "properties": {
+          "sample_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "game_time": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unit_total_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pending_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "can_train": {
+            "type": "boolean"
+          },
+          "provider_ready": {
+            "type": "boolean"
+          },
+          "event_marker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "observed_transitions": {
+      "type": "object",
+      "properties": {
+        "birth_sample_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "queue_exit_sample_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "next_pass_visibility_confirmed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
