@@ -11,6 +11,7 @@ from Compiler.ir.source_graph import (
     ConditionalOpenPayload,
     LoadEventPayload,
     LoadRandomEventPayload,
+    LoadRandomSelection,
     LoadSymbolEnvironment,
     LoadSymbolState,
     SourceAssemblyEventKind,
@@ -251,6 +252,96 @@ class SourceAssemblyEventTests(unittest.TestCase):
                 [(item.weight, item.target_text) for item in payload.entries],
                 [(2, "a.perdsl"), (None, "b.perdsl")],
             )
+
+    def test_active_random_load_requires_explicit_selection_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.perdsl").write_text("a-body\n", encoding="utf-8")
+            (root / "b.perdsl").write_text("b-body\n", encoding="utf-8")
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '(load-random 2 "a.perdsl" "b.perdsl")\n',
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                Exception,
+                r"SOURCE-GRAPH-007: load-random requires an explicit materialized selection policy",
+            ):
+                SourceGraphResolver().resolve(
+                    SourceGraphRequest(entrypoint=entry)
+                )
+
+    def test_random_load_selection_policy_materializes_selected_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.perdsl").write_text("a-body\n", encoding="utf-8")
+            (root / "b.perdsl").write_text("b-body\n", encoding="utf-8")
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '(load-random 2 "a.perdsl" "b.perdsl")\n',
+                encoding="utf-8",
+            )
+
+            graph = SourceGraphResolver().resolve(
+                SourceGraphRequest(
+                    entrypoint=entry,
+                    load_random_selections=(
+                        LoadRandomSelection(
+                            source_path=entry,
+                            line=1,
+                            column=1,
+                            target_text="b.perdsl",
+                        ),
+                    ),
+                )
+            )
+
+            random_event = next(
+                event
+                for event in graph.events
+                if event.kind is SourceAssemblyEventKind.LOAD_RANDOM
+            )
+            edge = next(
+                edge
+                for edge in graph.edges
+                if edge.identity == random_event.edge
+            )
+            self.assertEqual(edge.target_path, (root / "b.perdsl").resolve())
+            self.assertIsNotNone(edge.child)
+            self.assertEqual(
+                [item.text for item in graph.slices],
+                ["b-body\n"],
+            )
+
+    def test_random_load_policy_rejects_target_not_in_event(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.perdsl").write_text("a-body\n", encoding="utf-8")
+            (root / "b.perdsl").write_text("b-body\n", encoding="utf-8")
+            entry = root / "root.perdsl"
+            entry.write_text(
+                '(load-random "a.perdsl" "b.perdsl")\n',
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                Exception,
+                r"SOURCE-GRAPH-007: explicit load-random selection 'missing.perdsl' is not one of the event entries",
+            ):
+                SourceGraphResolver().resolve(
+                    SourceGraphRequest(
+                        entrypoint=entry,
+                        load_random_selections=(
+                            LoadRandomSelection(
+                                source_path=entry,
+                                line=1,
+                                column=1,
+                                target_text="missing.perdsl",
+                            ),
+                        ),
+                    )
+                )
 
     def test_validator_rejects_wrong_event_edge_back_reference(self):
         with tempfile.TemporaryDirectory() as tmp:
