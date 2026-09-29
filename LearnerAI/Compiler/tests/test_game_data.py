@@ -228,6 +228,18 @@ class GameDataTests(unittest.TestCase):
         )
         manifest = parse_byzantine_manifest(source_path.read_text(encoding="utf-8"))
         payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        self.assertEqual(payload["schema"], "aoe2techtree-building-snapshot-v1")
+        self.assertEqual(
+            payload["source_revision"],
+            "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        )
+        self.assertEqual(
+            payload["source_blob_sha"],
+            "c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        )
+        self.assertEqual(payload["patch"], "AOE2DE:185872:2026-09-22")
+        self.assertEqual(payload["building_count"], 1)
+        self.assertEqual(len(payload["buildings"]), 1)
 
         seed_ids = {int(seed.id) for seed in BYZANTINE_MANIFEST_BUILDING_SEEDS}
         self.assertEqual(seed_ids, {199})
