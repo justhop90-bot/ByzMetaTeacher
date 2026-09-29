@@ -73,6 +73,11 @@ Base: C:\Users\justh\AppData\Local\Temp\opencode\ByzMetaTeacher\LearnerAI\Compil
 - Tests: `tests/test_strategy_runtime.py` covers typed contract, fail-closed policy variants, same-demand blocked-on-loss, and same-demand executable-on-recovery.
 - Runtime boundary: native capability/provider behavior remains observation-driven; this contract does not schedule replacement actions or invent engine failure channels.
 
+## Strategy SN42 exploration-group observation
+- `ir/strategy_runtime.py` binds exact `up-compare-sn 42 ...` observations to `EXPLORATION_GROUP_CONTROL`.
+- The pinned DE Strategic Number catalog identifies SN 42 as `sn-number-explore-groups`, with default 0 and required range `0..Max`.
+- Only the observation surface is promoted; exploration-controller interactions remain descriptive/evidence-only and no exploration actions are synthesized.
+
 ## Strategy SN74 town-size observation
 - `ir/strategy_runtime.py` binds exact `up-compare-sn 74 ...` comparisons to `TOWN_SIZE_CONTROL`.
 - The pinned DE Strategic Number catalog identifies SN 74 as `sn-maximum-town-size` with the documented meaning of setting maximum town size.
