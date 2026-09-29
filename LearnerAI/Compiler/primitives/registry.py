@@ -471,6 +471,35 @@ class PrimitiveRegistry:
             )
         return primitive_name, semantic_id
 
+    def classify_production_target_admission(
+        self,
+        expression,
+    ):
+        from ..ir.production import ProductionFactDisposition
+
+        if self.get(expression.head) is None:
+            return ProductionFactDisposition.REJECTED
+        if expression.head in {"can-train", "can-train-with-escrow"}:
+            return ProductionFactDisposition.SUPPORTED
+        return ProductionFactDisposition.REJECTED
+
+    def classify_production_queue_protection(
+        self,
+        expression,
+    ):
+        from ..ir.production import ProductionFactDisposition
+
+        if self.get(expression.head) is None:
+            return ProductionFactDisposition.REJECTED
+        if expression.head == "up-pending-objects":
+            return ProductionFactDisposition.SUPPORTED
+        if expression.head in {
+            "unit-type-count-total",
+            "building-type-count",
+        }:
+            return ProductionFactDisposition.OPEN
+        return ProductionFactDisposition.REJECTED
+
     def resolve_production_target_admission(
         self,
         expression,
@@ -483,12 +512,13 @@ class PrimitiveRegistry:
         )
 
         primitive = self.get(expression.head)
+        disposition = self.classify_production_target_admission(expression)
         if primitive is None:
             raise ValueError(
                 f"production target-admission fact '{expression.head}' is REJECTED: "
                 "not a registered native fact"
             )
-        if expression.head not in {"can-train", "can-train-with-escrow"}:
+        if disposition is not ProductionFactDisposition.SUPPORTED:
             raise ValueError(
                 f"production target-admission fact '{expression.head}' is REJECTED"
             )
@@ -531,35 +561,27 @@ class PrimitiveRegistry:
         )
 
         if queue_state is not None:
-            if self.get(queue_state.head) is None:
+            disposition = self.classify_production_queue_protection(queue_state)
+            if disposition is ProductionFactDisposition.OPEN:
                 raise ValueError(
-                    f"production queue-protection queue-state fact "
-                    f"'{queue_state.head}' is REJECTED: not a registered native fact"
-                )
-            if queue_state.head != "unit-type-count-total":
-                raise ValueError(
-                    f"production queue-protection queue-state fact "
-                    f"'{queue_state.head}' is REJECTED"
+                    f"production queue-protection queue-state observation is OPEN: "
+                    f"'{queue_state.head}' queue-capacity semantics are unresolved"
                 )
             raise ValueError(
-                "production queue-protection queue-state observation is OPEN: "
-                "queue-capacity semantics are unresolved"
+                f"production queue-protection queue-state fact "
+                f"'{queue_state.head}' is REJECTED"
             )
 
         if provider_state is not None:
-            if self.get(provider_state.head) is None:
+            disposition = self.classify_production_queue_protection(provider_state)
+            if disposition is ProductionFactDisposition.OPEN:
                 raise ValueError(
-                    f"production queue-protection provider-state fact "
-                    f"'{provider_state.head}' is REJECTED: not a registered native fact"
-                )
-            if provider_state.head != "building-type-count":
-                raise ValueError(
-                    f"production queue-protection provider-state fact "
-                    f"'{provider_state.head}' is REJECTED"
+                    f"production queue-protection provider-state observation is OPEN: "
+                    f"'{provider_state.head}' provider-idle semantics are unresolved"
                 )
             raise ValueError(
-                "production queue-protection provider-state observation is OPEN: "
-                "provider-idle semantics are unresolved"
+                f"production queue-protection provider-state fact "
+                f"'{provider_state.head}' is REJECTED"
             )
 
         return ProductionQueueProtection(
