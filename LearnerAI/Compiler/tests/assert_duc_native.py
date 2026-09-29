@@ -273,7 +273,7 @@ def main() -> int:
 
     required_fragments = (
         "(up-find-local c: 83 c: 1)",
-        "(up-get-search-state 48)",
+        "(up-get-search-state 50)",
         "(up-get-group-size c: 3 42)",
         "(up-get-cost-delta 44)",
         "(up-get-point position-center 48)",
