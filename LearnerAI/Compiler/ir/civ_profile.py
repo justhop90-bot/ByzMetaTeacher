@@ -10,6 +10,9 @@ from .game_data_manifest_technology_conflicts import (
 )
 from .game_data_manifest_buildings import BYZANTINE_MANIFEST_BUILDING_SEEDS
 from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
+from .game_data_manifest_unit_supplements import (
+    BYZANTINE_MANIFEST_UNIT_SUPPLEMENT_SEEDS,
+)
 from .game_data import (
     Age,
     AgeAdvanceDef,
@@ -827,6 +830,28 @@ def _materialized_manifest_units(
     )
 
 
+def _materialized_manifest_unit_supplements(
+    manifest_evidence: EvidenceRef,
+    evidence: tuple[EvidenceRef, ...],
+) -> tuple[UnitDef, ...]:
+    return tuple(
+        _unit(
+            int(seed.id),
+            seed.name,
+            str(seed.line),
+            seed.available_age,
+            int(seed.provider_building),
+            seed.base_cost,
+            classes=(),
+            train_time_seconds=seed.train_time_seconds,
+            upgrades_from=int(seed.upgrades_from) if seed.upgrades_from is not None else None,
+            upgrades_to=int(seed.upgrades_to) if seed.upgrades_to is not None else None,
+            provenance=(manifest_evidence, *evidence),
+        )
+        for seed in BYZANTINE_MANIFEST_UNIT_SUPPLEMENT_SEEDS
+    )
+
+
 def _materialized_manifest_technologies(
     manifest_evidence: EvidenceRef,
     snapshot_evidence: EvidenceRef,
@@ -1162,6 +1187,22 @@ def _byzantine_game_data(
             provenance=(evidence, controller),
         ),
     )
+    carrack_official = EvidenceRef(
+        EvidenceKind.OFFICIAL_PATCH,
+        "https://www.ageofempires.com/news/a-new-naval-warfare-in-age-of-empires-ii-definitive-edition/",
+        "2026-02-17",
+        "Hulk/War Hulk/Carrack; Heavy Warships",
+        patch,
+        verification="verified",
+    )
+    carrack_community = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://ageofempires.fandom.com/wiki/Carrack_(unit)",
+        "current",
+        "Carrack unit information",
+        patch,
+        verification="cross-check",
+    )
     unit_snapshot_evidence = EvidenceRef(
         EvidenceKind.ENGINE_DATA,
         "docs/reference/game-data/aoe2techtree-185872-units.json",
@@ -1215,6 +1256,10 @@ def _byzantine_game_data(
     ) + _materialized_manifest_units(
         evidence,
         unit_snapshot_evidence,
+    )
+ + _materialized_manifest_unit_supplements(
+        evidence,
+        (carrack_official, carrack_community),
     )
     techs = (
         TechnologyDef(TechId(47), "Chemistry", Age.IMPERIAL, (ResearchProvider(BuildingId(209)),), None, None, provenance=(evidence,)),
@@ -1311,7 +1356,7 @@ def _byzantine_game_data(
     tech_upgrade_map = {
         TechId(257): (UnitId(550),),
         TechId(34): (UnitId(21), UnitId(2627)),
-        TechId(35): (UnitId(442),),
+        TechId(35): (UnitId(442), UnitId(2628)),
     }
     techs = tuple(
         replace(
@@ -1345,6 +1390,7 @@ def _byzantine_game_data(
         UpgradeRelation(UnitId(539), UnitId(21), TechId(34), (evidence,)),
         UpgradeRelation(UnitId(21), UnitId(442), TechId(35), (evidence,)),
         UpgradeRelation(UnitId(2626), UnitId(2627), TechId(34), (evidence,)),
+        UpgradeRelation(UnitId(2627), UnitId(2628), TechId(35), (evidence, carrack_official)),
     )
     advances = (
         AgeAdvanceDef(
