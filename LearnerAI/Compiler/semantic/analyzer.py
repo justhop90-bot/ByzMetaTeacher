@@ -547,7 +547,7 @@ def analyze(
             capacity_control_requirements = [
                 requirement.expression
                 for requirement in requirements
-                if requirement.expression.head in {"strategic-number", "up-compare-sn"}
+                if requirement.expression.head == "up-compare-sn"
                 and requirement.expression.args
                 and str(requirement.expression.args[0])
                 in {"264", "sn-enable-training-queue"}
