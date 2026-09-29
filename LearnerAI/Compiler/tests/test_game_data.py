@@ -222,7 +222,7 @@ class GameDataTests(unittest.TestCase):
             ),
             records=(),
         )
-        with self.assertRaisesRegex(ValueError, "newer than GameData patch"):
+        with self.assertRaisesRegex(ValueError, "does not exactly match"):
             enrich_game_data_from_dat_snapshot(data, snapshot)
 
     def test_byzantine_cost_modifier_resolves_without_mutating_base_game_cost(self):
