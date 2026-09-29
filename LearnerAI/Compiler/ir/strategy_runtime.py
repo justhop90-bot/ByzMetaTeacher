@@ -44,6 +44,7 @@ class StrategicObservationType(str, Enum):
     RESEARCH_STATE = "RESEARCH_STATE"
     DUC_SEARCH_AVAILABILITY = "DUC_SEARCH_AVAILABILITY"
     ESCROW_CAPABILITY = "ESCROW_CAPABILITY"
+    PERSISTENT_CONTROL_STATE = "PERSISTENT_CONTROL_STATE"
     TIMING = "TIMING"
 
 
@@ -314,6 +315,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
+    "up-compare-sn": StrategicObservationType.PERSISTENT_CONTROL_STATE,
     "building-available": StrategicObservationType.CAPABILITY_STATE,
     "can-afford-building": StrategicObservationType.CAPABILITY_STATE,
     "can-afford-building-with-escrow": StrategicObservationType.ESCROW_CAPABILITY,
@@ -508,7 +510,7 @@ def _validate_expression(
         "ACTION",
         "FEASIBILITY",
         "TIMING",
-    }:
+    } and expression.head != "up-compare-sn":
         raise ValueError(
             f"persistent strategic evidence cannot be based on {primitive.role.lower()} primitive "
             f"'{expression.head}'"
@@ -521,6 +523,19 @@ def _validate_expression(
         raise ValueError(
             f"timing evidence '{evidence.label}' must use a timing primitive"
         )
+
+    if expression.head == "up-compare-sn":
+        sn_id = _int_or_none(str(expression.args[0])) if expression.args else None
+        if sn_id is None or not 0 <= sn_id <= 511:
+            raise ValueError(
+                f"up-compare-sn requires a numeric Strategic Number id in 0..511; got "
+                f"'{expression.args[0] if expression.args else None}'"
+            )
+        compare_operator = str(expression.args[1]).removeprefix("c:")
+        if compare_operator not in _COMPARE_OPS:
+            raise ValueError(
+                f"up-compare-sn comparison operator '{compare_operator}' is unsupported"
+            )
 
     for parameter, argument in zip(native.parameters, expression.args):
         _validate_native_operand(parameter, argument, effective)
