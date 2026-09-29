@@ -1,8 +1,8 @@
 # Compiler next implementation checklist — Muse cross-reference
 Date: 2026-09-28
 Research pin: 51489706c54ce5c0680d295169ac72a24467e36a
-Verified main SHA: 1a30b77a351bee90d1e7d92cb6484c6df8db86af.
-Latest main verification: Compiler workflow #2213 / Actions run 36505641609 at that exact SHA is green: 1,003 tests, native zero-findings, all 9 native-support determinism jobs, aggregate snapshot comparison, and the Compiler verification gate.
+Verified main SHA: c1064aaea324394275bcad43864537fe80a03d58.
+Latest main verification: Compiler workflow #2219 / Actions run 36507199765 at that exact merge SHA is green: 1,009 tests, native zero-findings, all 9 native-support determinism jobs, aggregate snapshot comparison, and the Compiler verification gate.
 
 This is the execution checklist derived from the Muse forensic package. Evidence is mapped to the actual compiler gap, not treated as a feature wishlist.
 
@@ -53,7 +53,7 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Promoted executable slice: search, filter, reset, list mutation, direct/object/point target establishment, and `up-target-objects`.
   - Deliberate boundary: Goal-output DUC commands, target-data readers, and group output/storage remain unpromoted until their GoalSpan/storage bindings are connected to the internal plan.
   - Native proof: `assert_duc_native.py` compiles the internal plan twice, checks artifact determinism and required emitted commands, and runs the pinned native parser zero-findings gate.
-  - Full mainline verification: Compiler workflow #2213 at `1a30b77a351bee90d1e7d92cb6484c6df8db86af` passed 1,003 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
+  - Full mainline verification: Compiler workflow #2219 at `c1064aaea324394275bcad43864537fe80a03d58` passed 1,009 tests, native zero-findings, all 9 native-support determinism jobs, snapshot comparison, and the aggregate Compiler verification gate.
   - PR #101 added the composite recurrent + branch + mutation + target fixture, covering unreachable-branch state seeding, clean-search target-proof degradation, remove-objects preservation/invalidation, and stale-target consumer diagnostics.
 
 - [~] Native controller attack lifecycle (issue-only slice connected; lifecycle remains open).
@@ -64,8 +64,9 @@ This is the execution checklist derived from the Muse forensic package. Evidence
   - Gate: admission/completion/release/reassess model before lifecycle-complete promotion; current tranche proves only issue connectivity with completion `UNOBSERVED`.
 
 - [~] Production queue semantics.
-  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, with native-ID binding and fail-closed OPEN handling for unresolved queue/provider semantics. PR #98/#99 are merged on `main`.
-  - Remaining native questions are unchanged: queue capacity, provider-idle state, and birth timing remain OPEN. `unit-type-count-total` is observation, not completion, and provider presence is not provider idleness.
+  - Production lifecycle now carries typed current+queued `unit-type-count-total` observation and exact provider `building-type-count` observation, plus explicit `ProductionQueueCapacityEvidence` and `ProductionProviderAvailabilityEvidence` records. The new evidence records remain `OPEN` by construction and never authorize emission.
+  - PR #102 is merged on `main`; hostile tests cover supported observation typing, OPEN evidence resolution, wrong-family/unknown rejection, lifecycle wiring, and analyzer preservation of the OPEN state.
+  - Remaining native questions are unchanged: exact queue capacity, provider-idle/readiness state, and birth timing remain OPEN. `unit-type-count-total` is observation, not completion, and provider presence is not provider idleness.
   - Owner: production async semantics and witness layer.
 
 - [~] Research escrow/in-progress semantics.

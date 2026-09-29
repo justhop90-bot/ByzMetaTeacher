@@ -33,11 +33,11 @@ GAP: same-pass goal-visibility proof; placement-vs-foundation runtime evidence.
 
 ## Train/production (queue/capacity/provider/birth)
 native-fact PARTIAL (queue exists; capacity/provider-idle/birth-timing unproven) |
-IR PARTIAL (typed current+queued observation and provider-state observation now exist; unresolved semantics remain OPEN) | validator PARTIAL |
-binding PARTIAL (native-ID queue/provider bindings are implemented; open semantics fail closed) | emitter PARTIAL (no capacity guard) | acceptance OK |
-runtime-evidence MISSING | tests OK for current queue/provider binding; semantic witness coverage remains bounded |
+IR PARTIAL (typed current+queued/provider-presence observations plus explicit OPEN queue-capacity/provider-availability evidence now exist) | validator PARTIAL |
+binding PARTIAL (native-ID queue/provider bindings are implemented; unresolved capacity/availability semantics fail closed as OPEN) | emitter PARTIAL (no capacity guard) | acceptance OK |
+runtime-evidence MISSING | tests OK (1,009 full suite; hostile OPEN evidence matrix) |
 corpus OK (current+queued idiom IDIOM-006) | strategy PARTIAL.
-GAP: queue capacity + provider-idle signal + birth timing + explicit recovery semantics.
+GAP: exact queue capacity + provider-idle/readiness signal + birth timing + explicit recovery semantics.
 
 ## Research (availability/prereq/escrow/completion)
 native-fact PARTIAL (in-progress signal unknown) | IR OK-generic | validator OK-generic |
@@ -58,7 +58,7 @@ Must NOT become a universal scheduler.
 native-fact OK-structure | IR OK | validator OK | binding OK for promoted commands |
 emitter OK for promoted commands | acceptance OK | runtime-evidence PARTIAL |
 tests OK (native deterministic acceptance + composite recurrent/mutation/branch/target fixture) | corpus STRONG (11.6k up-find) | strategy PARTIAL.
-The promoted source slice now includes semantic observation support for Fact-only `up-can-search` and conservative Action-side handling for `up-add-object-by-id`. `up-can-search` proves FALSE only at compiler-proven end/capacity states; `up-add-object-by-id` invalidates affected-list cardinality and content fingerprint, downgrades list-index targets to UNKNOWN, preserves cursor/filter state without claiming a native cursor transition, and refuses to prove liveness, uniqueness, duplicate handling, append position, or full-list behavior. The corrected slice is verified on current main by Compiler workflow #2213 at code SHA `1a30b77a351bee90d1e7d92cb6484c6df8db86af`: 1,003 tests passed, native zero-findings passed, all 9 native-support determinism jobs passed, aggregate snapshot comparison passed, and the Compiler verification gate passed.
+The promoted source slice now includes semantic observation support for Fact-only `up-can-search` and conservative Action-side handling for `up-add-object-by-id`. `up-can-search` proves FALSE only at compiler-proven end/capacity states; `up-add-object-by-id` invalidates affected-list cardinality and content fingerprint, downgrades list-index targets to UNKNOWN, preserves cursor/filter state without claiming a native cursor transition, and refuses to prove liveness, uniqueness, duplicate handling, append position, or full-list behavior. The corrected slice is verified on current main by Compiler workflow #2219 at code SHA `c1064aaea324394275bcad43864537fe80a03d58`: 1,009 tests passed, native zero-findings passed, all 9 native-support determinism jobs passed, aggregate snapshot comparison passed, and the Compiler verification gate passed.
 GAP: remaining unpromoted DUC source/selection surfaces remain open. Exact native `up-can-search` truth outside proven exhaustion/capacity and `up-add-object-by-id` runtime liveness, duplicate handling, append/reposition semantics, full-list behavior, and Fact truth remain runtime-dependent. Retained list-derived target proof now invalidates across filter-generation changes while runtime object liveness remains open.
 
 ## DUC TargetSession/groups/outputs/costs
