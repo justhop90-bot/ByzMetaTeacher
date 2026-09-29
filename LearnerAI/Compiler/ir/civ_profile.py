@@ -8,6 +8,9 @@ from .game_data_manifest_technologies import BYZANTINE_MANIFEST_TECHNOLOGY_SEEDS
 from .game_data_manifest_technology_conflicts import (
     BYZANTINE_MANIFEST_TECHNOLOGY_CONFLICT_SEEDS,
 )
+from .game_data_manifest_technology_identity import (
+    BYZANTINE_MANIFEST_TECHNOLOGY_IDENTITY_SEEDS,
+)
 from .game_data_manifest_buildings import BYZANTINE_MANIFEST_BUILDING_SEEDS
 from .game_data_manifest_units import BYZANTINE_MANIFEST_UNIT_SEEDS
 from .game_data_manifest_unit_supplements import (
@@ -876,6 +879,23 @@ def _materialized_manifest_technologies(
     )
 
 
+def _materialized_manifest_technology_identities(
+    evidence_by_id: dict[TechId, tuple[EvidenceRef, ...]],
+) -> tuple[TechnologyDef, ...]:
+    return tuple(
+        TechnologyDef(
+            seed.id,
+            seed.name,
+            seed.available_age,
+            (ResearchProvider(seed.provider_building),),
+            seed.base_cost,
+            seed.research_time_seconds,
+            provenance=evidence_by_id[seed.id],
+        )
+        for seed in BYZANTINE_MANIFEST_TECHNOLOGY_IDENTITY_SEEDS
+    )
+
+
 def _materialized_manifest_technology_conflicts(
     manifest_evidence: EvidenceRef,
     evidence_by_id: dict[TechId, tuple[EvidenceRef, ...]],
@@ -1071,7 +1091,7 @@ def _byzantine_game_data(
         UnitLineDef(UnitLineId("transport-ship-line"), "Transport Ship line", (UnitId(545),), (evidence,)),
         UnitLineDef(UnitLineId("galley-line"), "Galley line", (UnitId(539), UnitId(21), UnitId(442)), (evidence,)),
         UnitLineDef(UnitLineId("hulk-line"), "Hulk line", (UnitId(2626), UnitId(2627), UnitId(2628)), (evidence,)),
-        UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104),), (evidence,)),
+        UnitLineDef(UnitLineId("demolition-raft-line"), "Demolition Raft line", (UnitId(1104), UnitId(527), UnitId(528)), (evidence, demolition_ship_airef)),
         UnitLineDef(UnitLineId("trade-cog-line"), "Trade Cog line", (UnitId(17),), (evidence,)),
         UnitLineDef(UnitLineId("villager-line"), "Villager line", (UnitId(83),), (evidence,)),
         UnitLineDef(UnitLineId("trade-cart-line"), "Trade Cart line", (UnitId(128),), (evidence,)),
@@ -1213,6 +1233,22 @@ def _byzantine_game_data(
         "https://ageofempires.fandom.com/wiki/Carrack_(unit)",
         "current",
         "Carrack unit information",
+        patch,
+        verification="cross-check",
+    )
+    demolition_ship_official = EvidenceRef(
+        EvidenceKind.OFFICIAL_PATCH,
+        "https://www.ageofempires.com/news/a-new-naval-warfare-in-age-of-empires-ii-definitive-edition/",
+        "2026-02-17",
+        "Demolition Ship and Heavy Demolition Ship technology identities/costs",
+        patch,
+        verification="verified",
+    )
+    demolition_ship_airef = EvidenceRef(
+        EvidenceKind.COMMUNITY_REFERENCE,
+        "https://airef.github.io/tables/techs.html",
+        "current",
+        "Tech 905 Demolition Ship; Tech 244 Heavy Demolition Ship; Dock; ages 3/4",
         patch,
         verification="cross-check",
     )
@@ -1364,6 +1400,11 @@ def _byzantine_game_data(
             TechId(54): (treadmill_crane_official, treadmill_crane_community),
             TechId(408): (spies_treason,),
             TechId(909): (siphons_official,),
+        },
+    ) + _materialized_manifest_technology_identities(
+        {
+            TechId(905): (demolition_ship_official, demolition_ship_airef),
+            TechId(244): (demolition_ship_official, demolition_ship_airef),
         },
     )
     tech_upgrade_map = {
