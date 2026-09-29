@@ -241,6 +241,49 @@ class ProductionProviderAvailabilityEvidence:
 
 
 @dataclass(frozen=True)
+class ProductionProviderReadinessEvidence:
+    """Open native provider-readiness evidence for one train target."""
+
+    disposition: ProductionFactDisposition
+    expression: Expression
+    native_unit_id: int
+    semantic_id: str
+
+    def __post_init__(self) -> None:
+        if self.disposition is not ProductionFactDisposition.OPEN:
+            raise ValueError(
+                "production provider-readiness evidence must remain OPEN"
+            )
+        if self.expression.head != "up-train-site-ready":
+            raise ValueError(
+                "production provider-readiness evidence must use "
+                "up-train-site-ready"
+            )
+        if len(self.expression.args) != 2:
+            raise ValueError(
+                "production provider-readiness evidence requires typeOp and UnitId"
+            )
+        if str(self.expression.args[0]) != "c:":
+            raise ValueError(
+                "production provider-readiness evidence must use literal c:"
+            )
+        if str(self.expression.args[1]) != str(self.native_unit_id):
+            raise ValueError(
+                f"production provider-readiness evidence does not target UnitId "
+                f"{self.native_unit_id}"
+            )
+        if self.native_unit_id <= 0:
+            raise ValueError(
+                "production provider-readiness evidence native_unit_id must be positive"
+            )
+        if self.semantic_id != "admissibility.train.site-ready":
+            raise ValueError(
+                "production provider-readiness evidence must use "
+                "admissibility.train.site-ready semantic mapping"
+            )
+
+
+@dataclass(frozen=True)
 class ProductionQueueCapacityControlEvidence:
     """Open native control evidence for the DE training queue capacity."""
 
@@ -316,6 +359,7 @@ class ProductionLifecycle:
     provider_state: ProductionProviderStateObservation | None = None
     queue_capacity_evidence: ProductionQueueCapacityEvidence | None = None
     provider_availability_evidence: ProductionProviderAvailabilityEvidence | None = None
+    provider_readiness_evidence: ProductionProviderReadinessEvidence | None = None
     queue_capacity_control: ProductionQueueCapacityControlEvidence | None = None
 
     def __post_init__(self) -> None:
@@ -395,6 +439,7 @@ __all__ = [
     "ProductionQueueProtection",
     "ProductionTargetAdmission",
     "ProductionProviderAvailabilityEvidence",
+    "ProductionProviderReadinessEvidence",
     "ProductionQueueCapacityControlEvidence",
     "ProductionProviderStateObservation",
     "ProductionQueueStateObservation",
