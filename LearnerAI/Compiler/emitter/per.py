@@ -9,6 +9,7 @@ from ..ir import (
     NativeAttackLifecyclePlan,
     NativeControlPlan,
     NativeDucPlan,
+    NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     SemanticDemand,
 )
