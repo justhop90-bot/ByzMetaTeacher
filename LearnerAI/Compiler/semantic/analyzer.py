@@ -606,14 +606,14 @@ def analyze(
                     for requirement in requirements
                     if requirement.expression.head == "unit-type-count-total"
                     and requirement.expression.args
-                    and str(requirement.expression.args[0]) == unit
+                    and str(requirement.expression.args[0]) in {unit, str(native_unit_id)}
                 ]
                 pending_requirements = [
                     requirement.expression
                     for requirement in requirements
                     if requirement.expression.head == "up-pending-objects"
                     and len(requirement.expression.args) >= 2
-                    and str(requirement.expression.args[1]) == unit
+                    and str(requirement.expression.args[1]) in {unit, str(native_unit_id)}
                 ]
                 canonical_time = Expression(
                     source=f"(game-time {' '.join(str(arg) for arg in time_expression.args)})",
