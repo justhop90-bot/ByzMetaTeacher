@@ -9,6 +9,7 @@ from LearnerAI.Compiler.ir.game_data import (
     PrerequisiteKind,
     Rational,
     ResourceCost,
+    TechId,
     UnitId,
     UnitLineId,
 )
