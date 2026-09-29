@@ -299,6 +299,27 @@ class ProductionAdmissionProtectionTests(unittest.TestCase):
         self.assertEqual(lifecycle.provider_state.native_building_id, 87)
         self.assertEqual(lifecycle.provider_state.expression.args[0], "87")
 
+    def test_analyzer_rejects_ambiguous_provider_state(self):
+        source = """
+        demand archers {
+            require (unit-type-count-total archer < 2)
+            require (building-type-count archery-range >= 1)
+            require (building-type-count archery-range >= 1)
+            require (can-train archer)
+            action (train archer)
+            witness (unit-type-count archer >= 2)
+            release (unit-type-count archer >= 2)
+        }
+        """
+        with self.assertRaisesRegex(
+            CompileError,
+            "PRODUCTION-PROVIDER-STATE.*multiple provider-state observations",
+        ):
+            compile_source(
+                source,
+                registry=self.registry,
+            )
+
     def test_analyzer_rejects_train_without_target_admission(self):
         source = """
         demand spears {
