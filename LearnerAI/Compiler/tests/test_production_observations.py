@@ -85,9 +85,9 @@ class ProductionObservationTests(unittest.TestCase):
                 disposition=ProductionFactDisposition.SUPPORTED,
                 pending_fact=pending,
                 native_unit_id=93,
-                queue_state=queue,
-                provider_state=provider,
             ),
+            queue_state=queue,
+            provider_state=provider,
         )
 
         self.assertIsInstance(lifecycle.queue_state, ProductionQueueStateObservation)
