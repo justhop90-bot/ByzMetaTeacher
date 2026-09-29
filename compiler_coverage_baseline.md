@@ -56,7 +56,7 @@ measured performance advisories, and broader source-level expressiveness. DUC gr
 EVIDENCE: A attack rows; 47 attack-now vs mediated-control finding; native attack-now reference and controller ownership catalog.
 IMPLEMENTATION: typed ir/native_attack.py, dedicated binder promotion, contracted issue-only mapping, deterministic emitter/compiler threading.
 TEST: test_native_attack_lifecycle.py, compiler native integration, assert_attack_native.py pinned zero-findings artifact gate.
-REMAINING: completion witness, release semantics, group membership/admission details, exploration/town-size/targeting coupling, attack Strategic Numbers, runtime behavioral evidence.
+REMAINING: completion witness, release semantics, group membership/admission details, exploration/town-size/targeting coupling, attack Strategic Numbers, runtime behavioral evidence. Target-policy bridge is now mode-sensitive: DUC target is required only for explicitly DUC-targeted execution and remains optional for native controller modes.
 
 ## Source graph — CURRENT: deterministic policy-safe with explicit load-random materialization. TARGET: met incl. decision on load-random.
 EVIDENCE: depths/fingerprints; source assembly tests; Duke + vendored-AI topology.
