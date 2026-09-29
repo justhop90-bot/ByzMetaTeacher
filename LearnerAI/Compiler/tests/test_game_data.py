@@ -25,6 +25,7 @@ from LearnerAI.Compiler.ir.game_data_manifest import (
     ManifestNodeKind,
     ManifestNodeStatus,
     classify_byzantine_manifest_coverage,
+    classify_byzantine_manifest_tree_coverage,
     parse_byzantine_manifest,
 )
 from LearnerAI.Compiler.ir.game_data import (
@@ -162,6 +163,57 @@ class GameDataTests(unittest.TestCase):
             + report.verified_unavailable_count,
             len(manifest.nodes),
         )
+
+    def test_byzantine_manifest_tree_coverage_distinguishes_structural_verification(self):
+        manifest_text = """
+        Buildings: 1
+        Units/tech nodes: 2
+        BUILDINGS
+        82 | Castle | TYPE=BuildingTech | USE=Building | STATUS=ResearchedCompleted | AGE=3 | BUILDING=<MISSING> | LINK=<MISSING> | TRIGGER=<MISSING>
+        AVAILABLE UNIT / TECH NODES
+        358 | Pikeman | TYPE=Unit | USE=Unit | STATUS=ResearchedCompleted | AGE=3 | BUILDING=12 | LINK=93 | TRIGGER=<MISSING>
+        436 | Parthian Tactics | TYPE=Research | USE=Tech | STATUS=NotAvailable | AGE=4 | BUILDING=87 | LINK=<MISSING> | TRIGGER=<MISSING>
+        """
+        manifest = parse_byzantine_manifest(manifest_text)
+        tree = parse_aoe2techtree_byzantine_tree_json(
+            """
+            {
+              "buildings": [
+                {
+                  "age_id": 3, "building_id": 82, "link_id": null,
+                  "name": "Castle", "node_id": 82,
+                  "node_status": "ResearchedCompleted",
+                  "node_type": "BuildingTech", "use_type": "Building"
+                }
+              ],
+              "units_techs": [
+                {
+                  "age_id": 3, "building_id": 12, "link_id": 93,
+                  "name": "Pikeman", "node_id": 358,
+                  "node_status": "ResearchedCompleted",
+                  "node_type": "UnitUpgrade", "use_type": "Unit"
+                },
+                {
+                  "age_id": 4, "building_id": 87, "link_id": null,
+                  "name": "Parthian Tactics", "node_id": 436,
+                  "node_status": "NotAvailable",
+                  "node_type": "Research", "use_type": "Tech"
+                }
+              ]
+            }
+            """,
+            source="test://aoe2techtree/BYZANTINES.json",
+            revision="test-tree-revision",
+            patch=PatchId("AOE2DE", "185872", None, "2026-09-22"),
+            content_hash="sha256:test-tree",
+        )
+
+        report = classify_byzantine_manifest_tree_coverage(manifest, tree)
+
+        self.assertEqual(report.verified_count, 3)
+        self.assertEqual(report.verified_unavailable_count, 1)
+        self.assertEqual(report.unmatched_count, 0)
+        self.assertEqual(report.status_mismatch_count, 0)
 
     def test_manifest_rejects_declared_count_drift(self):
         raw = (
