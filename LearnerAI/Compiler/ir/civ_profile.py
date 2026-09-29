@@ -848,6 +848,15 @@ def _byzantine_game_data(
     community: EvidenceRef,
     controller: EvidenceRef,
 ) -> GameData:
+    building_snapshot_evidence = EvidenceRef(
+        EvidenceKind.ENGINE_DATA,
+        "docs/reference/game-data/aoe2techtree-185872-buildings.json",
+        "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
+        "data.data.Building",
+        patch,
+        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
+        extraction_version="compiler-building-seed-v1",
+    )
     buildings = (
         BuildingDef(
             BuildingId(12),
@@ -1140,15 +1149,6 @@ def _byzantine_game_data(
         patch,
         content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
         extraction_version="compiler-unit-seed-v1",
-    )
-    building_snapshot_evidence = EvidenceRef(
-        EvidenceKind.ENGINE_DATA,
-        "docs/reference/game-data/aoe2techtree-185872-buildings.json",
-        "3bb43b1439eef88dfe7fe892d7f7dc41ac9dd76f",
-        "data.data.Building",
-        patch,
-        content_hash="c4f7da961e82a8231b1ba49459949c4d6e479bc8",
-        extraction_version="compiler-building-seed-v1",
     )
     technology_snapshot_evidence = EvidenceRef(
         EvidenceKind.ENGINE_DATA,
