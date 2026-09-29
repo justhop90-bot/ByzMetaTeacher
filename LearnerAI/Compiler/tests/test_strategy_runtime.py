@@ -692,7 +692,12 @@ class StrategyRuntimeTests(unittest.TestCase):
 
 
     def test_capability_loss_preserves_same_demand_and_enters_blocked_state(self):
-        capability = self.profile.capability_observations[0]
+        base_capability = self.profile.capability_observations[0]
+        capability = replace(
+            base_capability,
+            observation_kind=StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE,
+            expression="(building-type-count castle > 0)",
+        )
         base = self.profile.demand("early-defensive-spears")
         recovery_demand = replace(
             base,
@@ -752,6 +757,12 @@ class StrategyRuntimeTests(unittest.TestCase):
 
     def test_capability_recovery_reopens_same_demand(self):
         capability = self.profile.capability_observations[0]
+        base_capability = self.profile.capability_observations[0]
+        capability = replace(
+            base_capability,
+            observation_kind=StrategicCapabilityObservationKind.PROVIDER_WORLD_STATE,
+            expression="(building-type-count castle > 0)",
+        )
         base = self.profile.demand("early-defensive-spears")
         recovery_demand = replace(
             base,
