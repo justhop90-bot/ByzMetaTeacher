@@ -1,7 +1,7 @@
 """Machine-checked Byzantine unit materialization seeds for Update 185872.
 
-The seeds are restricted to manifest units whose identity, cost, and train time are
-available in the pinned aoe2techtree data.json source. Upgrade chains stop before
+The seeds are restricted to manifest Unit nodes whose identity, cost, and train time
+are available in the pinned aoe2techtree data.json source. Upgrade chains stop before
 trigger technologies that are not yet represented in GameData.
 """
 
@@ -56,9 +56,9 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
     ),
     ByzantineManifestUnitSeed(
         UnitId(13),
-        "Heavy Plow",
-        Age.CASTLE,
-        BuildingId(68),
+        "Fishing Ship",
+        Age.DARK,
+        BuildingId(45),
         UnitLineId("fishing-ship-line"),
         ResourceCost(food=0, wood=75, stone=0, gold=0),
         40,
@@ -160,9 +160,9 @@ BYZANTINE_MANIFEST_UNIT_SEEDS = (
     ),
     ByzantineManifestUnitSeed(
         UnitId(17),
-        "Banking",
-        Age.IMPERIAL,
-        BuildingId(84),
+        "Trade Cog",
+        Age.FEUDAL,
+        BuildingId(45),
         UnitLineId("trade-cog-line"),
         ResourceCost(food=0, wood=100, stone=0, gold=50),
         36,
