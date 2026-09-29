@@ -100,6 +100,30 @@ def _point_output_request(rule_identity="point-output", section="ACTION", expres
     )
 
 
+def _target_data_output_request(
+    command,
+    rule_identity,
+    *,
+    section="ACTION",
+    expression_index=0,
+):
+    request = GoalSlotRequest(
+        StorageRequestId(
+            SemanticId("native.duc", rule_identity),
+            command,
+        ),
+        role=GoalRole.NATIVE_OUTPUT,
+    )
+    return NativeDucOutputRequest(
+        rule_identity=rule_identity,
+        section=section,
+        expression_index=expression_index,
+        request=request,
+        command=command,
+        argument_index=1,
+    )
+
+
 class NativeDucPlanTests(unittest.TestCase):
     def test_plan_orders_rules_deterministically(self):
         plan = NativeDucPlan(
@@ -238,6 +262,37 @@ class NativeDucPlanTests(unittest.TestCase):
 
         registry.validate_duc_plan(plan)
 
+    def test_registry_accepts_target_data_goal_outputs(self):
+        registry = default_de_registry()
+        for command, rule_identity, source in (
+            (
+                "up-get-object-data",
+                "object-data-output",
+                "(up-get-object-data object-data-type 41)",
+            ),
+            (
+                "up-get-object-target-data",
+                "object-target-data-output",
+                "(up-get-object-target-data object-data-type 41)",
+            ),
+        ):
+            plan = NativeDucPlan(
+                rules=(
+                    NativeDucRule(
+                        identity=rule_identity,
+                        order=1,
+                        facts=(_expr("(true)", "true"),),
+                        actions=(
+                            _expr(source, command, "object-data-type", "41"),
+                        ),
+                    ),
+                ),
+                output_requests=(
+                    _target_data_output_request(command, rule_identity),
+                ),
+            )
+            registry.validate_duc_plan(plan)
+
     def test_registry_accepts_point_goalspan_output_request(self):
         registry = default_de_registry()
         plan = NativeDucPlan(
@@ -352,8 +407,62 @@ class NativeDucBinderTests(unittest.TestCase):
         self.assertEqual(binding.parameter_count, 2)
         self.assertEqual(binding.support_state.value, "executable-safe")
 
+    def test_target_data_output_commands_are_executable_safe(self):
+        for command in ("up-get-object-data", "up-get-object-target-data"):
+            binding = self.binder.bind_duc_command(command)
+            self.assertEqual(binding.command, command)
+            self.assertEqual(binding.native_kind, "Fact/Action")
+            self.assertEqual(binding.parameter_count, 2)
+            self.assertEqual(binding.support_state.value, "executable-safe")
+
 
 class NativeDucEmissionFixtureTests(unittest.TestCase):
+    def test_compile_allocates_and_emits_target_data_goal_outputs(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        for command, rule_identity, source_text in (
+            (
+                "up-get-object-data",
+                "object-data-output",
+                "(up-get-object-data object-data-type 41)",
+            ),
+            (
+                "up-get-object-target-data",
+                "object-target-data-output",
+                "(up-get-object-target-data object-data-type 41)",
+            ),
+        ):
+            plan = NativeDucPlan(
+                rules=(
+                    NativeDucRule(
+                        identity=rule_identity,
+                        order=100,
+                        facts=(_expr("(true)", "true"),),
+                        actions=(
+                            _expr(source_text, command, "object-data-type", "41"),
+                        ),
+                    ),
+                ),
+                output_requests=(
+                    _target_data_output_request(command, rule_identity),
+                ),
+            )
+            artifact = compile_source(source, duc_plan=plan)
+            self.assertIn(
+                f"({command} object-data-type 42)",
+                artifact,
+            )
+            self.assertNotIn(
+                f"({command} object-data-type 41)",
+                artifact,
+            )
+
     def test_compile_allocates_and_emits_bound_point_goalspan(self):
         plan = NativeDucPlan(
             rules=(
