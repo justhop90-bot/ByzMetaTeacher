@@ -388,6 +388,12 @@ def _validate_native_operand(
     value = token.lower()
     family = parameter.name.lower() or parameter.type.lower()
 
+    if family == "searchsource":
+        if value not in {"search-local", "search-remote"}:
+            raise ValueError(
+                f"native parameter family SearchSource does not accept '{token}'"
+            )
+        return
     if family == "compareop":
         if value not in _COMPARE_OPS:
             raise ValueError(f"native parameter family compareOp does not accept '{token}'")
@@ -462,6 +468,30 @@ def _validate_expression(
 
     primitive = registry.get(expression.head)
     native = registry.native(expression.head)
+
+    if primitive is None and native is not None and native.command_type in {"Action", "Fact/Action"}:
+        raise ValueError(f"unsupported strategic native primitive '{expression.head}'")
+    if primitive is None and expression.head == "up-can-search":
+        registry.bind_duc_command(expression.head)
+        registry.validate_native_signature(expression.head, len(expression.args))
+        semantic_type = StrategicObservationType.DUC_SEARCH_AVAILABILITY
+        for parameter, argument in zip(native.parameters, expression.args):
+            _validate_native_operand(parameter, argument, effective)
+        ordinal[0] += 1
+        observations.append(
+            StrategicObservation(
+                identity=f"{evidence.label}:observation:{ordinal[0]}",
+                semantic_type=semantic_type,
+                primitive=expression.head,
+                native_parameter_contracts=native.parameters,
+                expression=expression,
+                evidence_class=evidence.kind,
+                evidence_source=evidence.source,
+                provenance=evidence.provenance,
+            )
+        )
+        return
+
     if primitive is None or native is None:
         raise ValueError(f"unsupported strategic native primitive '{expression.head}'")
     registry.validate_native_signature(expression.head, len(expression.args))
