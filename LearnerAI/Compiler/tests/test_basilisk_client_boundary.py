@@ -1,6 +1,8 @@
+import ast
 import importlib
 import pkgutil
 import unittest
+from pathlib import Path
 
 
 GENERIC_PUBLIC_MODULES = (
@@ -138,6 +140,47 @@ class BasiliskClientBoundaryTests(unittest.TestCase):
                         f"{module_name}.{symbol_name} re-exports Basilisk strategy "
                         f"symbol {canonical_name} from {origin}"
                     )
+
+    def test_generic_source_does_not_import_downstream_strategy_policy(self):
+        compiler_root = Path(__file__).parents[1]
+        forbidden = DOWNSTREAM_CLIENT_MODULE_PREFIXES
+        violations = []
+
+        for source_path in sorted(compiler_root.rglob("*.py")):
+            relative = source_path.relative_to(compiler_root).as_posix()
+            if relative.startswith("clients/basilisk/"):
+                continue
+            if relative.startswith("tests/"):
+                continue
+
+            tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+            for node in ast.walk(tree):
+                imported: str | None = None
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        imported = alias.name
+                        if any(
+                            imported == prefix or imported.startswith(prefix + ".")
+                            for prefix in forbidden
+                        ):
+                            violations.append((relative, node.lineno, imported))
+                elif isinstance(node, ast.ImportFrom):
+                    module = node.module or ""
+                    if node.level:
+                        continue
+                    imported = module
+                    if any(
+                        imported == prefix or imported.startswith(prefix + ".")
+                        for prefix in forbidden
+                    ):
+                        violations.append((relative, node.lineno, imported))
+
+        self.assertEqual(
+            violations,
+            [],
+            "generic compiler source must not import downstream strategy policy: "
+            f"{violations}",
+        )
 
     def test_basilisk_client_namespace_owns_strategy_exports(self):
         from LearnerAI.Compiler.clients.basilisk import (
