@@ -232,6 +232,7 @@ _OBSERVATION_SPECS = (
 _ADMISSIBILITY_SPECS = (
     ("building-available", "admissibility.building.available"),
     ("research-available", "admissibility.research.available"),
+    ("up-train-site-ready", "admissibility.train.site-ready"),
 )
 
 _ARBITRATION_SPECS = (
@@ -273,6 +274,7 @@ def _practice_references(command: str) -> tuple[str, ...]:
         "can-build-with-escrow": ("build.can-pending-witness", "resource-control.escrow"),
         "can-train": ("train.can-queue-witness",),
         "can-train-with-escrow": ("train.can-queue-witness", "resource-control.escrow"),
+        "up-train-site-ready": ("train.provider-readiness",),
         "can-research": ("research.can-complete-witness",),
         "can-research-with-escrow": ("research.can-complete-witness", "resource-control.escrow"),
         "building-type-count-total": ("build.can-pending-witness",),
