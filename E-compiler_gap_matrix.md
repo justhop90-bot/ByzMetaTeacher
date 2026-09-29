@@ -44,12 +44,12 @@ GAP: prove current DE SN 264 enforcement, `up-train-site-ready` busy/queued inte
 native-fact OK-typed (up-research-status arity/value family pinned) | IR OK-typed | validator OK-generic |
 binding OK-generic | emitter OK-typed | acceptance OK | runtime-evidence PARTIAL |
 tests OK | corpus OK | strategy OK (feudal-age escrow example).
-GAP: escrow-claim lowering; protected-research pattern catalog; direct DE runtime provider/in-progress behavior beyond the documented ResearchState value contract.
+GAP: protected-research pattern catalog; direct DE runtime provider/busy behavior beyond the documented ResearchState value contract; same-pass runtime visibility of targeted `release-escrow` before ordinary `research` remains an evidence-only boundary.
 
 ## Resource/escrow/arbitration
 native-fact PARTIAL (resource-view formula closed; same-pass release timing OPEN) |
-IR OK for typed escrow contracts + release plan | validator OK | binding OK for promoted release-only slice |
-emitter OK for promoted release-only slice | acceptance OK (native zero-findings) | runtime-evidence SPECIFIED but MISSING (native escrow timing) |
+IR OK for typed escrow contracts + release plan + explicit targeted release ownership | validator OK | binding OK for release/policy promotion |
+emitter OK for release, policy, and targeted research release | acceptance OK (native zero-findings) | runtime-evidence SPECIFIED but MISSING (native escrow timing) |
 tests OK for semantic ownership/order/lifetime + release-only compiler/native acceptance + oracle-spec regression | corpus STRONG (10859 hits) |
 strategy PARTIAL.
 GAP: native same-pass timing; starvation/emergency release; multi-owner handoff; remaining UP escrow mutation lowering.
