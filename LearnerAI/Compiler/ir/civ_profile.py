@@ -306,12 +306,57 @@ class ByzantineProfile:
                 ),
                 CivAvailabilityRule(
                     AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(50)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(51)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(75)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(377)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(380)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(441)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.tech(TechId(321)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.unit(UnitId(420)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
                     EntitySelector.unit(UnitId(588)),
                     provenance=(manifest,),
                 ),
                 CivAvailabilityRule(
                     AvailabilityOperation.DISABLE,
                     EntitySelector.unit(UnitId(542)),
+                    provenance=(manifest,),
+                ),
+                CivAvailabilityRule(
+                    AvailabilityOperation.DISABLE,
+                    EntitySelector.unit(UnitId(691)),
                     provenance=(manifest,),
                 ),
             ),

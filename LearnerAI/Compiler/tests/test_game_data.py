@@ -19,6 +19,7 @@ import unittest
 from LearnerAI.Compiler.ir.civ_profile import (
     ByzantineProfile,
     EffectiveCivData,
+    FactStatus,
     resolve_effective_civ,
 )
 from LearnerAI.Compiler.ir.game_data_manifest import (
@@ -144,6 +145,41 @@ class GameDataTests(unittest.TestCase):
             node.status is ManifestNodeStatus.VERIFIED_UNAVAILABLE
             for node in manifest.nodes
         ))
+
+    def test_byzantine_manifest_unavailable_nodes_are_exposed_as_verified_unavailable(self):
+        data = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        expected_units = frozenset({
+            UnitId(420),
+            UnitId(542),
+            UnitId(588),
+            UnitId(691),
+        })
+        expected_technologies = frozenset({
+            TechId(435),
+            TechId(436),
+            TechId(50),
+            TechId(51),
+            TechId(75),
+            TechId(377),
+            TechId(380),
+            TechId(441),
+            TechId(321),
+        })
+        self.assertEqual(data.verified_unavailable_units, expected_units)
+        self.assertEqual(
+            data.verified_unavailable_technologies,
+            expected_technologies | frozenset({TechId(239)}),
+        )
+        for unit_id in expected_units:
+            self.assertEqual(
+                data.factual_status("unit", unit_id),
+                FactStatus.VERIFIED_UNAVAILABLE,
+            )
+        for tech_id in expected_technologies:
+            self.assertEqual(
+                data.factual_status("technology", tech_id),
+                FactStatus.VERIFIED_UNAVAILABLE,
+            )
 
     def test_byzantine_manifest_coverage_distinguishes_modeled_and_unmodeled(self):
         profile = ByzantineProfile.for_update_185872()
