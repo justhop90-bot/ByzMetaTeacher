@@ -1,6 +1,8 @@
 """Deterministic semantic IR -> AoE2 .per emitter."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 from ..errors import CompileError
 from ..ir import (
     ConstructionTransitionKind,
@@ -14,6 +16,7 @@ from ..primitives import PrimitiveRegistry, default_de_registry
 from ..runtime_binding import (
     BindingResult,
     GoalSlot,
+    GoalSpan,
     LifecycleEncoding,
     StrategicNumberSlot,
     TimerSlot,
@@ -320,12 +323,58 @@ def emit(
 
     if duc_plan is not None and not duc_plan.empty:
         out.append("; Native DUC execution plan")
+        output_requests = {
+            request.site_key: request
+            for request in duc_plan.output_requests
+        }
         for rule in duc_plan.rules:
             out.append(f"; Native DUC rule: {rule.identity}")
             out.append("(defrule")
-            out.extend(f"    {fact.source}" for fact in rule.facts)
+            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions)):
+                for expression_index, expression in enumerate(expressions):
+                    request = output_requests.get(
+                        (rule.identity, section, expression_index)
+                    )
+                    rendered = expression.source
+                    if request is not None:
+                        binding = bindings.binding_for(request.request.request_id)
+                        if not isinstance(binding, GoalSpan):
+                            raise CompileError(
+                                f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
+                                f"resolved to '{type(binding).__name__}', expected GoalSpan"
+                            )
+                        arguments = list(expression.args)
+                        if request.argument_index >= len(arguments):
+                            raise CompileError(
+                                f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
+                                "argument index is outside the expression"
+                            )
+                        arguments[request.argument_index] = str(binding.start.value)
+                        rendered = f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
+                    if section == "FACT":
+                        out.append(f"    {rendered}")
             out.append("=>")
-            out.extend(f"    {action.source}" for action in rule.actions)
+            for expression_index, expression in enumerate(rule.actions):
+                request = output_requests.get(
+                    (rule.identity, "ACTION", expression_index)
+                )
+                rendered = expression.source
+                if request is not None:
+                    binding = bindings.binding_for(request.request.request_id)
+                    if not isinstance(binding, GoalSpan):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
+                            f"resolved to '{type(binding).__name__}', expected GoalSpan"
+                        )
+                    arguments = list(expression.args)
+                    if request.argument_index >= len(arguments):
+                        raise CompileError(
+                            f"EMITTER-DUC-GOALSPAN: output '{request.site_key}' "
+                            "argument index is outside the expression"
+                        )
+                    arguments[request.argument_index] = str(binding.start.value)
+                    rendered = f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
+                out.append(f"    {rendered}")
             out += [")", ""]
 
     if attack_plan is not None and not attack_plan.empty:
