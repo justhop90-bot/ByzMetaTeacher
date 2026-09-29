@@ -39,6 +39,7 @@ from .native_hygiene import (
     default_native_goal_parameter_ranges,
     default_native_goal_span_contracts,
     default_native_goal_storage_contracts,
+    default_native_output_goal_contracts,
     NativeWitnessKind,
     PassConstraintScope,
     PassExecutionConstraint,
@@ -1437,7 +1438,8 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     default_native_engine_effect_catalog().validate_native_registry(native_registry)
     primitive_items = tuple(facts + actions)
     semantic_registry.validate_exact_executable_commands(
-        default_duc_executable_commands()
+        tuple(item.command for item in default_native_output_goal_contracts())
+        + default_duc_executable_commands()
         + tuple(item.name for item in primitive_items)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
