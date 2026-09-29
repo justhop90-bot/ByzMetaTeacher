@@ -71,8 +71,8 @@ class StrategyRuntimeTests(unittest.TestCase):
     def test_escrow_capability_binds_to_escrow_observation_type(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.EXECUTION,
-            "(can-train-with-escrow cataphract)",
-            "cataphract-escrow-feasibility",
+            "(can-build-with-escrow castle)",
+            "castle-escrow-feasibility",
         )
         binding = bind_strategic_evidence(evidence, self.effective)
         self.assertEqual(
@@ -81,7 +81,7 @@ class StrategyRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(
             binding.observations[0].primitive,
-            "can-train-with-escrow",
+            "can-build-with-escrow",
         )
 
     def test_persistent_castle_reason_survives_blocked_can_build(self):
