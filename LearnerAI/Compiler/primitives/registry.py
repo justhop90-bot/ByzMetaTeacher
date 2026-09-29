@@ -264,6 +264,17 @@ class PrimitiveRegistry:
                     "release-escrow dedicated native binding does not expose exactly one parameter"
                 )
 
+    def validate_escrow_plan(self, plan) -> None:
+        if isinstance(plan, NativeEscrowReleasePlan):
+            self.validate_escrow_release_plan(plan)
+            return
+        if isinstance(plan, NativeEscrowPolicyPlan):
+            self.validate_escrow_policy_plan(plan)
+            return
+        raise TypeError(
+            "escrow_plan must be a NativeEscrowReleasePlan or NativeEscrowPolicyPlan"
+        )
+
     def validate_attack_plan(self, plan) -> None:
         binder = NativeSemanticBinder(
             native_registry=self._native,
