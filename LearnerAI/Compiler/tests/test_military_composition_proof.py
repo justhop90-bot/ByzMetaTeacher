@@ -44,7 +44,17 @@ from Compiler.ir.capability import DemandId
 from Compiler.ir.duc import DucTargetKind, DucTargetProof, DucTargetState, DucTargetStatus
 from Compiler.ir.model import CompletionWitnessContract
 from Compiler.ir.native_attack import _REQUIRED_LIFECYCLE
-from Compiler.semantic.military_composition import validate_military_composition_proof
+from Compiler.ir.civ_profile import resolve_effective_civ
+from Compiler.clients.basilisk import ByzantineProfile
+from Compiler.ir.strategy import (
+    StrategicMilitaryComposition,
+    build_land_castle_strategy,
+    lower_strategy_profile,
+)
+from Compiler.semantic.military_composition import (
+    build_military_composition_proof,
+    validate_military_composition_proof,
+)
 from Compiler.ir.program import CompilerSemanticProgram
 
 
@@ -291,6 +301,96 @@ class MilitaryCompositionProofTests(unittest.TestCase):
         report = validate_military_composition_proof(bad, program)
         self.assertFalse(report.valid)
         self.assertIn("MIL-PROOF-018", {item.code for item in report.errors})
+
+    def test_strategy_compilation_assembles_the_full_proof_path(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        profile = replace(
+            build_land_castle_strategy(effective, profile_id="military-proof-strategy-v1"),
+            military_compositions=(
+                StrategicMilitaryComposition(
+                    identity="feudal-defense-composition",
+                    production_demands=("early-defensive-spears",),
+                    attack_objective="feudal-defense-attack",
+                ),
+            ),
+        )
+        compilation = lower_strategy_profile(profile, effective)
+        composition = compilation.military_compositions[0]
+        target = DucTargetState(
+            kind=DucTargetKind.OBJECT,
+            generation=7,
+            validity=DucTargetStatus.VALID,
+            proof=DucTargetProof.NATIVE_ID_PROOF,
+        )
+        attack_target = AttackTargetRef.from_duc(target)
+        witness = CompletionWitnessContract(
+            identity=SemanticId("military-proof-strategy-v1", "attack-complete"),
+            evidence_kind="WORLD_STATE",
+            primitive="unit-type-count",
+            expression=_expr(
+                "(unit-type-count spearman >= 2)",
+                "unit-type-count",
+                "spearman",
+                ">=",
+                "2",
+            ),
+            establishes=composition.attack_objective,
+            source_order=30,
+            issuance_source_order=10,
+        )
+        attack = AttackExecution(
+            identity=SemanticId("military-proof-strategy-v1", "attack"),
+            objective=composition.attack_objective,
+            state=AttackExecutionState.ATTACK,
+            mode=AttackExecutionMode.DUC_TARGETED,
+            target=attack_target,
+            capabilities=(
+                AttackCapabilityRef(
+                    CapabilityId("military-proof-strategy-v1", "primary-force"),
+                    AttackCapabilityRole.PRIMARY_FORCE,
+                ),
+            ),
+            completion=AttackCompletionContract(
+                witness=witness,
+                objective=composition.attack_objective,
+            ),
+            native_plan=NativeAttackLifecyclePlan(
+                (
+                    NativeAttackRule(
+                        identity="military-proof-strategy-attack",
+                        order=10,
+                        facts=(_expr("(true)", "true"),),
+                        actions=(_expr("(attack-now)", "attack-now"),),
+                        lifecycle=_REQUIRED_LIFECYCLE,
+                    ),
+                )
+            ),
+        )
+        proof = build_military_composition_proof(
+            compilation,
+            composition,
+            attack=attack,
+        )
+        program = CompilerSemanticProgram(
+            demands=compilation.demands,
+            military_proof_path=proof,
+        )
+        report = validate_military_composition_proof(proof, program)
+
+        self.assertTrue(report.valid)
+        self.assertEqual(proof.composition, composition)
+        self.assertIs(proof.target, attack.target.target)
+        self.assertIs(proof.attack_target, attack.target)
+        self.assertIs(proof.witness, attack.completion.witness)
+        self.assertEqual(
+            proof.resource_claims[0].arbitration_owner,
+            composition.identity,
+        )
+        self.assertEqual(
+            proof.resource_claims[0].claimant,
+            composition.targets[0].demand,
+        )
+        self.assertEqual(proof.recovery_demand, composition.identity)
 
     def test_recovery_returns_same_demand_to_active(self):
         program, proof = _proof()
