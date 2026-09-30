@@ -88,6 +88,16 @@ Status: NOT PROMOTED.
 - Native capture candidate exists.
 - No compiler-side runtime claim is derived from the candidate.
 
+### R7 — Explicit object-liveness boundary
+
+Status: IMPLEMENTED / CLOSED AS COMPILER MODELING.
+
+- `DucTargetStatus` remains the compiler-side reference state (`VALID`, `STALE`, `UNKNOWN`).
+- `DucTargetProof` remains the provenance/proof reason for that reference state.
+- `DucObjectLiveness` is a separate field and defaults to `RUNTIME_DEPENDENT`.
+- Reset, mutation, filter-generation changes, branch joins, loop widening, and pass advancement do not silently convert reference invalidation into object death.
+- `WITNESSED_ALIVE` / `WITNESSED_GONE` remain reserved for direct native/world-state evidence.
+
 ### R6 — Oracle guardrails
 
 Status: IMPLEMENTED.
@@ -106,7 +116,7 @@ A target-lifetime claim becomes `ENGINE_SEMANTICS_MAPPED` only when:
 5. the relevant assertion is reproducibly PASS;
 6. the native observation is promoted from `candidates/` to `fixtures/`.
 
-Community usage, AIRef examples, and performance measurements are supporting evidence only and cannot close target-lifetime boundaries.
+Community usage, AIRef examples, and performance measurements are supporting evidence only and cannot close target-lifetime boundaries. They also cannot be used to populate `WITNESSED_ALIVE` or `WITNESSED_GONE`.
 
 ## Sources reviewed
 
