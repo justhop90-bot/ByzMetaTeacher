@@ -134,6 +134,26 @@ class DucObjectLifecycleTests(unittest.TestCase):
         self.assertEqual(lifecycle.state.value, "REACQUIRED")
         self.assertEqual(lifecycle.identity_ref, "native:93")
 
+    def test_reacquired_native_id_releases_to_stored_across_pass(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "93")),
+            )),
+        ))
+        self.assertIsNotNone(first.next_pass_state.target)
+
+        second = analyze_duc(
+            (_rule(1, ()),),
+            initial_state=first.next_pass_state,
+        )
+
+        target = second.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(
+            target.object_refs[0].lifecycle.state.value,
+            "STORED",
+        )
+
     def test_failed_target_establishment_does_not_create_lifecycle_handle(self):
         report = analyze_duc((
             _rule(1, (
