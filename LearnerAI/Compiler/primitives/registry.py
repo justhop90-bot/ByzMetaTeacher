@@ -23,7 +23,6 @@ from .engine_semantics import (
     default_native_controller_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
-from ..ir.attack import AttackExecution
 from ..ir.resource_control import NativeEscrowPolicyPlan, NativeEscrowReleasePlan
 from ..ir.model import GoalSlotRequest, GoalSpanRequest
 from ..semantic.resource_control import (
@@ -277,6 +276,7 @@ class PrimitiveRegistry:
         )
 
     def validate_attack_plan(self, plan) -> None:
+        from ..ir.attack import AttackExecution
         if isinstance(plan, AttackExecution):
             plan = plan.native_plan
             if plan is None or plan.empty:
