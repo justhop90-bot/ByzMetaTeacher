@@ -61,6 +61,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.operational_domains import merge_operational_plan
     from Compiler.emitter import emit
     from Compiler.ir import (
+        AttackExecution,
         NativeAttackLifecyclePlan,
         NativeDucPlan,
         NativeEscrowPolicyPlan,
@@ -233,7 +234,7 @@ def _compile_ir_parts(
     binding_context: BindingContext | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
-    attack_plan: NativeAttackLifecyclePlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     reports = []

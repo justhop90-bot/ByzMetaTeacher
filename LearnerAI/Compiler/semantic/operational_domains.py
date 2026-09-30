@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from ..ast import Expression
 from ..ir import (
+    AttackExecution,
+    AttackExecutionMode,
+    AttackExecutionState,
     NativeAttackLifecyclePlan,
     NativeDucPlan,
     NativeEscrowPolicyPlan,
@@ -122,6 +125,141 @@ def operational_contracts_for_attack_plan(
 
     return tuple(contracts)
 
+def operational_contracts_for_attack_execution(
+    execution: AttackExecution,
+) -> tuple[OperationalLoopContract, ...]:
+    """Project one typed attack lifecycle state into operational control semantics.
+
+    The projection is compiler policy only. It does not infer combat success,
+    native acknowledgement, target liveness, or controller causality.
+    """
+    if execution.is_terminal:
+        return ()
+
+    identity = (
+        f"attack-execution:{execution.identity.source_unit}:"
+        f"{execution.identity.local_name}"
+    )
+    state_id = f"{identity}:state"
+    observations: list[OperationalObservation] = [
+        _policy_observation(
+            state_id,
+            reference=f"{identity}:state:{execution.state.value}",
+            role=OperationalObservationRole.CONTROL_STATE,
+        )
+    ]
+
+    for capability in execution.capabilities:
+        if not capability.required:
+            continue
+        capability_id = (
+            f"{identity}:capability:{capability.role.value}:"
+            f"{capability.capability.source_unit}:"
+            f"{capability.capability.local_name}"
+        )
+        observations.append(
+            _policy_observation(
+                capability_id,
+                reference=capability_id,
+                role=OperationalObservationRole.CAPABILITY,
+            )
+        )
+
+    if execution.target is not None:
+        target_id = f"{identity}:target"
+        observations.append(
+            _policy_observation(
+                target_id,
+                reference=(
+                    f"{identity}:target:{execution.target.validity.value}:"
+                    f"generation:{execution.target.generation}"
+                ),
+                role=OperationalObservationRole.IDENTITY,
+            )
+        )
+
+    if execution.reassessment is not None:
+        reassess_id = f"{identity}:reassessment"
+        observations.append(
+            _policy_observation(
+                reassess_id,
+                reference=reassess_id,
+                role=OperationalObservationRole.REASSESSMENT,
+            )
+        )
+
+    observation_ids = tuple(item.identity for item in observations)
+    admission = _guard(f"{identity}:admission", observation_ids)
+    retry_guard = _guard(f"{identity}:retry-admission", observation_ids)
+
+    commands: tuple[Expression, ...] = ()
+    if execution.native_plan is not None:
+        commands = tuple(
+            action
+            for rule in execution.native_plan.rules
+            for action in rule.actions
+        )
+
+    recovery_strategies = [OperationalRecoveryStrategy.REASSESS]
+    if execution.native_plan is not None and execution.state in {
+        AttackExecutionState.ATTACK,
+        AttackExecutionState.PRESS,
+    }:
+        recovery_strategies.insert(0, OperationalRecoveryStrategy.REISSUE_REQUEST)
+    if execution.mode is AttackExecutionMode.DUC_TARGETED:
+        recovery_strategies.insert(
+            0,
+            OperationalRecoveryStrategy.REACQUIRE_DUC_IDENTITY,
+        )
+
+    controls: list[OperationalControlRef] = []
+    if execution.mode is AttackExecutionMode.DUC_TARGETED:
+        controls.append(
+            OperationalControlRef(
+                kind=OperationalControlKind.DUC_IDENTITY,
+                reference=identity,
+                use=OperationalControlUse.REASSERT,
+            )
+        )
+
+    return (
+        OperationalLoopContract(
+            identity=f"{identity}:operational",
+            domain=OperationalDomain.ATTACK,
+            demand=execution.objective,
+            observations=tuple(observations),
+            observe=OperationalStage(
+                identity=f"{identity}:observe",
+                observation_ids=observation_ids,
+            ),
+            admission=admission,
+            request=OperationalRequest(
+                identity=f"{identity}:request",
+                kind=OperationalRequestKind.ATTACK_CONTROLLER,
+                commands=commands,
+                execution_ref=identity,
+                location=execution.location,
+            ),
+            debounce=OperationalGuard(
+                identity=f"{identity}:debounce",
+                conditions=(),
+            ),
+            reobserve=OperationalStage(
+                identity=f"{identity}:reobserve",
+                observation_ids=observation_ids,
+            ),
+            recovery=OperationalRecovery(
+                identity=f"{identity}:recovery",
+                strategies=tuple(recovery_strategies),
+                preserves_demand=True,
+                retry_guard=retry_guard,
+                location=execution.location,
+            ),
+            controls=tuple(controls),
+            evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
+            location=execution.location,
+        ),
+    )
 
 def operational_contracts_for_duc_plan(
     plan: NativeDucPlan,
@@ -274,7 +412,7 @@ def operational_contracts_for_escrow_plan(
 def merge_operational_plan(
     base: OperationalSemanticsPlan,
     *,
-    attack_plan: NativeAttackLifecyclePlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     duc_plan: NativeDucPlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> OperationalSemanticsPlan:
@@ -282,6 +420,8 @@ def merge_operational_plan(
 
     if isinstance(attack_plan, NativeAttackLifecyclePlan):
         contracts.extend(operational_contracts_for_attack_plan(attack_plan))
+    elif isinstance(attack_plan, AttackExecution):
+        contracts.extend(operational_contracts_for_attack_execution(attack_plan))
     if isinstance(duc_plan, NativeDucPlan):
         contracts.extend(operational_contracts_for_duc_plan(duc_plan))
     if isinstance(

@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from ..errors import CompileError
 from ..ir import (
+    AttackExecution,
     ConstructionTransitionKind,
     NativeAttackLifecyclePlan,
     NativeControlPlan,
@@ -89,7 +90,7 @@ def emit(
     registry: PrimitiveRegistry | None = None,
     control_plan: NativeControlPlan | None = None,
     duc_plan: NativeDucPlan | None = None,
-    attack_plan: NativeAttackLifecyclePlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ) -> str:
     registry = registry or default_de_registry()
@@ -97,8 +98,13 @@ def emit(
         validate_native_control_plan(control_plan, registry)
     if duc_plan is not None:
         registry.validate_duc_plan(duc_plan)
-    if attack_plan is not None:
-        registry.validate_attack_plan(attack_plan)
+    native_attack_plan = (
+        attack_plan.native_plan
+        if isinstance(attack_plan, AttackExecution)
+        else attack_plan
+    )
+    if native_attack_plan is not None:
+        registry.validate_attack_plan(native_attack_plan)
     if escrow_plan is not None:
         registry.validate_escrow_plan(escrow_plan)
 
@@ -420,9 +426,9 @@ def emit(
                 )
             out += [")", ""]
 
-    if attack_plan is not None and not attack_plan.empty:
+    if native_attack_plan is not None and not native_attack_plan.empty:
         out.append("; Native attack lifecycle plan")
-        for rule in attack_plan.rules:
+        for rule in native_attack_plan.rules:
             out.append(f"; Native attack rule: {rule.identity}")
             out.append("(defrule")
             out.extend(f"    {fact.source}" for fact in rule.facts)
