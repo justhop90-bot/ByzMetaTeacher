@@ -233,10 +233,6 @@ def operational_contracts_for_attack_execution(
             )
         )
 
-    observation_ids = tuple(item.identity for item in observations)
-    admission = _guard(f"{identity}:admission", observation_ids)
-    retry_guard = _guard(f"{identity}:retry-admission", observation_ids)
-
     commands: tuple[Expression, ...] = ()
     if execution.native_plan is not None:
         commands = tuple(
@@ -258,7 +254,6 @@ def operational_contracts_for_attack_execution(
         )
 
     controls: list[OperationalControlRef] = []
-    control_observation_ids: list[str] = []
     attack_control_references: tuple[str, ...]
     if execution.mode is AttackExecutionMode.ATTACK_GROUPS:
         attack_control_references = (
@@ -278,7 +273,6 @@ def operational_contracts_for_attack_execution(
         )
         controls.append(control)
         observations.append(observation)
-        control_observation_ids.append(observation_id)
 
     observation_ids = tuple(item.identity for item in observations)
     admission = _guard(f"{identity}:admission", observation_ids)
