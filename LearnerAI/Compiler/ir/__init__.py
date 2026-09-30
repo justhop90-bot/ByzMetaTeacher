@@ -19,6 +19,7 @@ from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from .attack import (
     AttackCapabilityRef,
     AttackCapabilityRole,
+    AttackTargetRef,
     AttackCompletionContract,
     AttackExecution,
     AttackExecutionMode,
