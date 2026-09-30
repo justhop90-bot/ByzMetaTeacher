@@ -2,13 +2,13 @@ import unittest
 from dataclasses import replace
 
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
-from LearnerAI.Compiler.ir.strategy import StrategicMilitaryComposition
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     ExecutionDemandTemplate,
     StrategyPosture,
     StrategicEvidenceKind,
     StrategicTargetKind,
+    StrategicMilitaryComposition,
     build_byzantine_castle_strategy,
     build_land_castle_strategy,
     lower_strategy_profile,
