@@ -1,3 +1,11 @@
+from .duc import (
+    DucObjectLifecycle,
+    DucObjectLifecycleError,
+    DucObjectLifecycleEvent,
+    DucObjectLifecycleState,
+    DucObjectLifecycleTransition,
+)
+
 from .game_data_aoe2techtree import (
     Aoe2TechTreeNode,
     Aoe2TechTreeNodeKind,
