@@ -56,6 +56,35 @@ class CapabilityRecoveryContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             CapabilityRecoveryContract(preserve_demand=False)
 
+    def test_contract_cannot_release_opportunity_cost_on_loss(self):
+        with self.assertRaises(ValueError):
+            CapabilityRecoveryContract(preserve_opportunity_cost=False)
+
+    def test_repeated_loss_keeps_same_demand_blocked(self):
+        state = CapabilityRecoveryState(
+            demand=self.demand,
+            kind=CapabilityRecoveryStateKind.BLOCKED,
+        )
+
+        blocked = state.transition(
+            CapabilityRecoveryEvent.LOST,
+            CapabilityRecoveryContract(),
+        )
+
+        self.assertEqual(blocked, state)
+
+    def test_invalidated_demand_cannot_be_reopened_by_capability_recovery(self):
+        state = CapabilityRecoveryState(
+            demand=self.demand,
+            kind=CapabilityRecoveryStateKind.INVALIDATED,
+        )
+
+        with self.assertRaisesRegex(ValueError, "invalidated demand"):
+            state.transition(
+                CapabilityRecoveryEvent.RECOVERED,
+                CapabilityRecoveryContract(),
+            )
+
     def test_contract_cannot_disable_reopen(self):
         with self.assertRaises(ValueError):
             CapabilityRecoveryContract(reopen_on_recovery=False)
