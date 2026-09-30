@@ -854,6 +854,10 @@ class DucDiagnostic:
     rule_order: int
     message: str
     location: SourceLocation
+    state_kind: Optional[str] = None
+    state_identifier: Optional[str] = None
+    related_rule_order: Optional[int] = None
+    related_operation: Optional[str] = None
 
 
 @dataclass(frozen=True)
