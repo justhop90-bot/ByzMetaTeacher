@@ -117,11 +117,12 @@ def _domain_request_compatible(
             OperationalRequestKind.ESCROW_OPERATION,
             OperationalRequestKind.ACTION,
         },
-        OperationalDomain.TIMER: {OperationalRequestKind.TIMER_MUTATION},
-        OperationalDomain.GOAL: {OperationalRequestKind.GOAL_MUTATION},
-        OperationalDomain.STRATEGIC_NUMBER: {
-            OperationalRequestKind.STRATEGIC_NUMBER_MUTATION
-        },
+        # Control-surface domains describe the state participating in the
+        # loop; they do not require the loop's request itself to mutate that
+        # same control surface.
+        OperationalDomain.TIMER: set(OperationalRequestKind),
+        OperationalDomain.GOAL: set(OperationalRequestKind),
+        OperationalDomain.STRATEGIC_NUMBER: set(OperationalRequestKind),
         OperationalDomain.GENERIC: set(OperationalRequestKind),
     }[domain]
 
