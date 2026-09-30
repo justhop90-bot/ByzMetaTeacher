@@ -95,7 +95,7 @@ class PersistentStateSemanticsTests(unittest.TestCase):
         findings = tuple(
             item
             for item in report.diagnostics
-            if item.code is PersistentStateDiagnosticCode.TIMER_OPEN_LIFETIME
+            if getattr(item.code, "value", item.code) == "PSTATE-007"
         )
 
         self.assertEqual(len(findings), 1)
