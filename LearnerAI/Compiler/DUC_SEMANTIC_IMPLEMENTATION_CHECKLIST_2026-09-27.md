@@ -36,7 +36,8 @@ Evidence baseline:
 - [x] Track retained filter state and filter generation.
 - [x] Capture filter snapshots at search time.
 - [x] Track target source-list generation and source-filter generation.
-- [x] Preserve target lifetime as VALID / STALE / UNKNOWN.
+- [x] Preserve target-reference state as VALID / STALE / UNKNOWN.
+- [x] Separate compiler target-reference state from engine-world object liveness; default object liveness to RUNTIME_DEPENDENT and reserve witnessed states for direct evidence.
 - [x] Track point-target GoalSpan identity separately from object-target identity.
 - [x] Record rule/source/pass provenance on DUC state mutations.
 - [x] Record DUC effects and source visibility.
@@ -90,7 +91,7 @@ Next consolidation:
 - [x] Object targets become invalid/unknown when dependent list contents are explicitly mutated.
 - [ ] distinguish native-proven STALE from compiler UNKNOWN for every list-mutating command.
 - [ ] add explicit contracts for `up-clean-search`, `up-remove-objects`, and list-index operations.
-- [ ] add native evidence for exact target lifetime after object death, disappearance, or list mutation.
+- [ ] add native evidence for exact target lifetime after object death, disappearance, or list mutation. This remains an engine/runtime evidence gap, not a missing compiler state representation.
 
 ## Vertical slice E: provenance
 
@@ -133,7 +134,7 @@ Still required:
 - [ ] full reset invalidates both lists, filters, and target
 - [ ] target use without initialized list
 - [ ] target use after list invalidation
-- [ ] list mutation after target creation produces UNKNOWN target lifetime
+- [x] list mutation after target creation produces explicit reference transitions while keeping object liveness runtime-dependent
 - [ ] recurrent search without reset raises accumulation warning
 - [ ] repeated search after same-list reset starts a fresh generation
 - [ ] point-target set/read/use chain
