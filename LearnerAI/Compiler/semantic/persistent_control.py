@@ -50,6 +50,7 @@ class PersistentControlDiagnostic:
     owner: SemanticId
     release_contract: SemanticId | None = None
     cleanup_rule_order: int | None = None
+    release_rule_order: int | None = None
     location: SourceLocation | None = None
 
 
@@ -287,6 +288,7 @@ def analyze_persistent_control_lifetimes(
                     control.id,
                     control.owner,
                     demand.release_state.identity,
+                    release_rule_order=release_rule.rule_order,
                     location=demand.location,
                 )
             )
@@ -349,6 +351,7 @@ def analyze_persistent_control_lifetimes(
                     control.owner,
                     demand.release_state.identity,
                     cleanup_rule_order=cleanup[0].rule_order if cleanup else None,
+                    release_rule_order=release_rule.rule_order,
                     location=demand.location,
                 )
             )
