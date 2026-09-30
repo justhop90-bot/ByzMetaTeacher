@@ -84,6 +84,35 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             PersistentStateDiagnosticCode.CONSUMER_BEFORE_WRITER,
         )
 
+    def test_timer_cleanup_closes_open_lifetime(self):
+        graph = self._graph(
+            "(defrule (true) => (enable-timer cooldown 30))\n"
+            "(defrule (up-timer-status cooldown = timer-running) => (disable-timer cooldown))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                getattr(item.code, "value", item.code) == "PSTATE-007"
+                for item in report.diagnostics
+            )
+        )
+
+    def test_dynamic_up_set_timer_does_not_infer_lifetime_direction(self):
+        graph = self._graph(
+            "(defrule (true) => (up-set-timer c: cooldown g: duration))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                getattr(item.code, "value", item.code) == "PSTATE-007"
+                for item in report.diagnostics
+            )
+        )
+
     def test_timer_start_without_cleanup_reports_open_lifetime(self):
         graph = self._graph(
             "(defrule (true) => (enable-timer cooldown 30))\n"
