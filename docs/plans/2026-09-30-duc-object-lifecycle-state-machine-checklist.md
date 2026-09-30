@@ -39,9 +39,9 @@ This slice adds lifecycle state to the existing `DucObjectRef`; it does not intr
 - [x] Represent constant `up-set-target-by-id` as native-ID bind + current acquisition transaction.
 - [x] Release `REACQUIRED`/`VALIDATED` to `STORED` at compiler pass advance.
 - [x] Keep native/world liveness separate from lifecycle state.
-- [x] Export lifecycle IR types through `LearnerAI/Compiler/ir/__init__.py`.
+- [x] Keep lifecycle types local to `LearnerAI/Compiler/ir/duc.py`; do not add a package-root re-export that would introduce an `ir`/semantic circular-import edge.
 - [x] Add focused legal-transition and illegal-transition tests.
-- [x] Add search discovery, object-data identity capture, native-ID reacquisition, and pass-release tests.
+- [x] Add search discovery, object-data identity capture, native-ID reacquisition, symbolic-ID reacquisition, and pass-release tests.
 
 ## Guardrails
 
