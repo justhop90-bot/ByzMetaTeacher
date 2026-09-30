@@ -143,7 +143,7 @@ class OperationalDomainAdapterTests(unittest.TestCase):
             observation_id = control.linked_observation_ids[0]
             self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
             self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
-            self.assertIn(
+            self.assertNotIn(
                 observation_id,
                 tuple(
                     condition.observation_id
@@ -184,7 +184,7 @@ class OperationalDomainAdapterTests(unittest.TestCase):
         observation_id = controls[0].linked_observation_ids[0]
         self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
         self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
-        self.assertIn(
+        self.assertNotIn(
             observation_id,
             tuple(
                 condition.observation_id
