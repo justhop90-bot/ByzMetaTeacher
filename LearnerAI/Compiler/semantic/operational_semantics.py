@@ -212,35 +212,34 @@ def _validate_contract(contract: OperationalLoopContract) -> list[OperationalDia
             )
         )
 
-    if contract.debounce.conditions:
-        if (
-            contract.reobserve.observation_ids
-            and all(
-                observations[item].role is OperationalObservationRole.TIMING
-                for item in contract.reobserve.observation_ids
-                if item in observations
+    if (
+        contract.reobserve.observation_ids
+        and all(
+            observations[item].role is OperationalObservationRole.TIMING
+            for item in contract.reobserve.observation_ids
+            if item in observations
+        )
+    ):
+        diagnostics.append(
+            _diagnostic(
+                OperationalDiagnosticCode.TIMER_ONLY_REOBSERVATION,
+                OperationalStatus.CONFLICTING,
+                "reobserve stage relies only on timing observations",
+                subject,
+                location=contract.location,
             )
-        ):
-            diagnostics.append(
-                _diagnostic(
-                    OperationalDiagnosticCode.TIMER_ONLY_REOBSERVATION,
-                    OperationalStatus.CONFLICTING,
-                    "reobserve stage relies only on timing observations",
-                    subject,
-                    location=contract.location,
-                )
-            )
+        )
 
-        if any(
-            observations.get(condition.observation_id, None)
-            and observations[condition.observation_id].role is OperationalObservationRole.TIMING
-            and condition.expected
-            for condition in contract.debounce.conditions
-        ):
-            # Timer-triggered/deadline state is valid debounce. This branch is
-            # intentionally non-diagnostic to document that timer use here is
-            # control state rather than witness state.
-            pass
+    if contract.debounce.conditions and any(
+        observations.get(condition.observation_id, None)
+        and observations[condition.observation_id].role is OperationalObservationRole.TIMING
+        and condition.expected
+        for condition in contract.debounce.conditions
+    ):
+        # Timer-triggered/deadline state is valid debounce. This branch is
+        # intentionally non-diagnostic to document that timer use here is
+        # control state rather than witness state.
+        pass
 
     if contract.recovery.retry_guard is None:
         diagnostics.append(
