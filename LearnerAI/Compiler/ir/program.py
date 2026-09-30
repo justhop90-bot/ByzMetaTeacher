@@ -58,6 +58,7 @@ class CompilerSemanticProgram:
             or self.duc_plan is not None
             or self.attack_plan is not None
             or self.escrow_plan is not None
+            or self.military_proof_path is not None
         )
 
     def with_operational_plan(
