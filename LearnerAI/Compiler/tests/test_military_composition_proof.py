@@ -139,6 +139,19 @@ def _proof():
         actions=(_expr("(attack-now)", "attack-now"),),
         lifecycle=_REQUIRED_LIFECYCLE,
     )
+    witness = CompletionWitnessContract(
+        identity=SemanticId("test", "attack-complete"),
+        evidence_kind="WORLD_STATE",
+        primitive="building-type-count",
+        expression=_expr("(building-type-count castle >= 1)", "building-type-count", "castle", ">=", "1"),
+        establishes=objective,
+        source_order=20,
+        issuance_source_order=10,
+    )
+    completion = AttackCompletionContract(
+        witness=witness,
+        objective=objective,
+    )
     attack = AttackExecution(
         identity=SemanticId("test", "attack"),
         objective=objective,
@@ -151,17 +164,8 @@ def _proof():
                 AttackCapabilityRole.PRIMARY_FORCE,
             ),
         ),
+        completion=completion,
         native_plan=NativeAttackLifecyclePlan((native_rule,)),
-    )
-
-    witness = CompletionWitnessContract(
-        identity=SemanticId("test", "attack-complete"),
-        evidence_kind="WORLD_STATE",
-        primitive="building-type-count",
-        expression=_expr("(building-type-count castle >= 1)", "building-type-count", "castle", ">=", "1"),
-        establishes=objective,
-        source_order=20,
-        issuance_source_order=10,
     )
 
     claims = (
