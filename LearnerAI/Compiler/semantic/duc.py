@@ -2727,11 +2727,23 @@ def _analyze_duc_linear(
                         contract_id="duc.target.object-id",
                         evidence_ids=target_contract.evidence_ids,
                     )
+                    identity_ref = (
+                        f"native:{native_object_id}"
+                        if native_object_id is not None
+                        else f"goal:{object_id_operand}"
+                        if type_op == "g:"
+                        else f"sn:{object_id_operand}"
+                        if type_op == "s:"
+                        else None
+                    )
                     lifecycle = (
                         DucObjectLifecycle()
-                        .bind_id(native_object_id=native_object_id)
+                        .bind_identity(
+                            identity_ref=identity_ref,
+                            native_object_id=native_object_id,
+                        )
                         .reacquire_by_id(success=None)
-                        if native_object_id is not None
+                        if identity_ref is not None
                         else DucObjectLifecycle()
                     )
                     target = DucTargetState(
