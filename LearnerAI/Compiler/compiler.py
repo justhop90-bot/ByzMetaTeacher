@@ -324,6 +324,11 @@ def _compile_ir_parts(
         duc_plan=duc_plan,
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
+        persistent_controls=tuple(
+            control
+            for demand in ir
+            for control in demand.persistent_controls
+        ),
     )
 
     if program.control_plan is not None:
