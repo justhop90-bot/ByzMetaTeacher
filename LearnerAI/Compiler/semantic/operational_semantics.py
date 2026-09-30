@@ -568,13 +568,10 @@ def operational_contract_for_demand(
             OperationalRecoveryStrategy.RESTORE_STRATEGIC_NUMBER
         )
 
-    evidence_class = OperationalEvidenceClass.COMMUNITY_PRACTICE
-    if domain in {
-        OperationalDomain.GENERIC,
-        OperationalDomain.STRATEGIC_NUMBER,
-        OperationalDomain.TIMER,
-    }:
-        evidence_class = OperationalEvidenceClass.COMPILER_POLICY
+    # The projection itself is compiler policy. Community/engine evidence
+    # remains authoritative in the existing evidence registry and is not
+    # fabricated into executable provenance here.
+    evidence_class = OperationalEvidenceClass.COMPILER_POLICY
 
     return OperationalLoopContract(
         identity=f"{demand.identity.source_unit}:{demand.name}:operational",
