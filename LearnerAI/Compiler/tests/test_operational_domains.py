@@ -202,6 +202,36 @@ class OperationalDomainAdapterTests(unittest.TestCase):
         )
 
 
+    def test_resolved_attack_controls_validate_as_read_only_evidence_links(self):
+        for mode in (
+            AttackExecutionMode.ATTACK_GROUPS,
+            AttackExecutionMode.TOWN_SIZE_ATTACK,
+        ):
+            execution = AttackExecution(
+                identity=SemanticId("test", mode.value.lower()),
+                objective=SemanticId("test", "war-objective"),
+                state=AttackExecutionState.PREPARE,
+                mode=mode,
+            )
+            plan = merge_operational_plan(
+                __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+                attack_plan=execution,
+            )
+            contract = plan.contracts[0]
+            report = validate_operational_semantics(plan)
+            self.assertTrue(report.valid, report.diagnostics)
+            self.assertTrue(
+                all(
+                    control.use.value == "READ"
+                    and control.resolution_required
+                    and control.controller_id
+                    and control.surface_identity
+                    and control.linked_observation_ids
+                    for control in contract.controls
+                    if control.kind.value == "STRATEGIC_NUMBER"
+                )
+            )
+
     def test_attack_adapter_preserves_reassertion_without_completion_ack(self):
         contract = operational_contracts_for_attack_plan(self._attack_plan())[0]
         report = validate_operational_semantics(
