@@ -10,7 +10,7 @@ from dataclasses import dataclass, replace
 
 from .attack import AttackExecution
 from .capability import CapabilityGraph
-from .duc import NativeDucPlan
+from .native_duc import NativeDucPlan
 from .model import SemanticDemand
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
