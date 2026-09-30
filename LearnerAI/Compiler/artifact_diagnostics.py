@@ -20,10 +20,10 @@ def _value(value: object, default: str = "") -> str:
 
 
 def _persistent(item: object) -> bool:
-    return (
-        _value(getattr(item, "category", None))
-        == "PERSISTENT_STATE"
-    )
+    return _value(getattr(item, "category", None)) in {
+        "PERSISTENT_STATE",
+        "PERSISTENT_CONTROL",
+    }
 
 
 def _sort_key(item: object) -> tuple[object, ...]:
@@ -72,7 +72,7 @@ def append_persistent_rule_diagnostics(
 
     lines = [
         _HEADER,
-        "; Persistent-state findings are advisory compiler evidence only.",
+        "; Persistent-state/control findings are advisory compiler evidence only.",
     ]
     for item in persistent:
         related_rule = getattr(item, "related_rule_order", None)
@@ -86,8 +86,9 @@ def append_persistent_rule_diagnostics(
         operation = str(
             getattr(item, "related_operation", "") or "none"
         )
+        category = _value(getattr(item, "category", None))
         lines.append(
-            "; PERSISTENT_STATE "
+            f"; {category} "
             f"rule={int(getattr(item, 'rule_order', 0))} "
             f"code={_value(getattr(item, 'code', None))} "
             f"severity={_value(getattr(item, 'severity', None))} "
