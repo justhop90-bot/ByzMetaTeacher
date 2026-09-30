@@ -600,7 +600,7 @@ def compile_package_with_report(
         )
     registry = registry or default_de_registry()
     try:
-        result, bindings, context, _graph = _compile_package_parts(
+        result, bindings, context, _graph, ir = _compile_package_parts(
             request,
             base_goal,
             binding_context=binding_context,
@@ -608,7 +608,8 @@ def compile_package_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
-        escrow_plan=escrow_plan,
+            escrow_plan=escrow_plan,
+            _return_ir=True,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -653,6 +654,11 @@ def compile_package_with_report(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            recurrent_execution_report,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -665,6 +671,7 @@ def compile_package_with_report(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
@@ -732,7 +739,7 @@ def compile_source_with_report(
         )
     registry = registry or default_de_registry()
     try:
-        result, bindings, context = _compile_source_parts(
+        result, bindings, context, ir = _compile_source_parts(
             source,
             base_goal,
             source_unit=source_unit,
@@ -741,7 +748,8 @@ def compile_source_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
-        escrow_plan=escrow_plan,
+            escrow_plan=escrow_plan,
+            _return_ir=True,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -786,6 +794,11 @@ def compile_source_with_report(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            recurrent_execution_report,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -798,6 +811,7 @@ def compile_source_with_report(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
@@ -863,7 +877,7 @@ def compile_to_file(
             "native validation backend is required before artifact promotion"
         )
     registry = registry or default_de_registry()
-    result, bindings, context = _compile_source_parts(
+    result, bindings, context, ir = _compile_source_parts(
         source,
         base_goal,
         source_unit=source_unit,
@@ -873,6 +887,7 @@ def compile_to_file(
         duc_plan=duc_plan,
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
+        _return_ir=True,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -915,6 +930,11 @@ def compile_to_file(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            recurrent_execution_report,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -927,6 +947,7 @@ def compile_to_file(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
