@@ -66,6 +66,7 @@ if __package__ in (None, ""):
         NativeDucPlan,
         NativeEscrowPolicyPlan,
         NativeEscrowReleasePlan,
+        CompilerSemanticProgram,
     )
     from Compiler.runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
@@ -118,7 +119,7 @@ else:
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
     from .emitter import emit
-    from .ir import AttackExecution, NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
+    from .ir import AttackExecution, CompilerSemanticProgram, NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -313,9 +314,19 @@ def _compile_ir_parts(
     if semantic_diagnostics:
         raise _semantic_compile_failure(semantic_diagnostics)
 
-    if control_plan is not None:
+    program = CompilerSemanticProgram(
+        demands=tuple(ir),
+        capability_graph=capability_graph,
+        operational_plan=operational_plan,
+        control_plan=control_plan,
+        duc_plan=duc_plan,
+        attack_plan=attack_plan,
+        escrow_plan=escrow_plan,
+    )
+
+    if program.control_plan is not None:
         try:
-            validate_native_control_plan(control_plan, registry)
+            validate_native_control_plan(program.control_plan, registry)
         except (TypeError, ValueError) as exc:
             raise CompileError(f"CONTROL-PLANE-VALIDATION: {exc}") from exc
 
@@ -329,7 +340,11 @@ def _compile_ir_parts(
         raise TypeError(
             "escrow_plan must be a NativeEscrowReleasePlan or NativeEscrowPolicyPlan"
         )
-    storage_requests = _storage_requests(ir, control_plan, duc_plan)
+    storage_requests = _storage_requests(
+        program.demands,
+        program.control_plan,
+        program.duc_plan,
+    )
     if any(
         isinstance(request, StrategicNumberRequest)
         for request in storage_requests
@@ -368,10 +383,10 @@ def _compile_ir_parts(
             ir,
             bindings,
             registry=registry,
-            control_plan=control_plan,
-            duc_plan=duc_plan,
-            attack_plan=attack_plan,
-        escrow_plan=escrow_plan,
+            control_plan=program.control_plan,
+            duc_plan=program.duc_plan,
+            attack_plan=program.attack_plan,
+        escrow_plan=program.escrow_plan,
         ),
         bindings,
         context,
