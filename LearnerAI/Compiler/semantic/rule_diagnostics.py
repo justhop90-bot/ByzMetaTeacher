@@ -260,7 +260,7 @@ def _persistent_control_diagnostic_for(item: PersistentControlDiagnostic) -> Rul
         severity=item.severity,
         eligibility=None,
         message=item.message,
-        location=item.location or SourceLocation(0, 0, item.owner.source_unit),
+        location=item.location or SourceLocation(1, 1, item.owner.source_unit),
         category=RuleDiagnosticCategory.PERSISTENT_CONTROL,
         source_code=item.code.value,
         state_kind=item.control.local_name.split(":", 1)[0] if ":" in item.control.local_name else "TIMER",
