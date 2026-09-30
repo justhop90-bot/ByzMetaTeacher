@@ -15,10 +15,6 @@ from Compiler.ir import (
     CapabilityRecoveryState,
     CapabilityRecoveryStateKind,
     CompletionWitnessContract,
-    DucTargetKind,
-    DucTargetProof,
-    DucTargetState,
-    DucTargetStatus,
     GoalRole,
     GoalSlotRequest,
     LifecycleState,
@@ -44,6 +40,7 @@ from Compiler.ir import (
     StorageRequestId,
 )
 from Compiler.ir.capability import DemandId
+from Compiler.ir.duc import DucTargetKind, DucTargetProof, DucTargetState, DucTargetStatus
 from Compiler.ir.model import CompletionWitnessContract
 from Compiler.ir.native_attack import _REQUIRED_LIFECYCLE
 from Compiler.semantic.military_composition import validate_military_composition_proof
