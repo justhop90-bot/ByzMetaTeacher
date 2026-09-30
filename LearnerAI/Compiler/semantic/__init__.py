@@ -256,6 +256,11 @@ from .operational_semantics import (
     validate_operational_semantics,
 )
 
+from .military_composition import (
+    build_military_composition_proof,
+    validate_military_composition_proof,
+)
+
 from .operational_domains import (
     merge_operational_plan,
     operational_contracts_for_attack_plan,
