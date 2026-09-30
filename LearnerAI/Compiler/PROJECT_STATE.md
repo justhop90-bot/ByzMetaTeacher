@@ -2,10 +2,10 @@
 
 Status: authoritative current-state guide for `main`.
 
-Verified main: `5c150125a722038a37fd0c74e4ca8c93029f1eb3`  
-Latest compiler CI: workflow `#2666` on 2026-09-30, green.
+Current compiler baseline: the `main` branch is the source of truth for accepted state. The exact commit SHA is the current tip of the repository's default branch.
+Latest compiler verification: use the green `Compiler tests` workflow on `main`.
 
-The workflow completed the compiler test job, native zero-findings acceptance, compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison. The full compiler regression suite reported **1,212 tests, OK**.
+The accepted compiler baseline reports **1,212 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
 
 ## What this project is
 
@@ -186,8 +186,8 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 
 - default branch: `main`;
 - open PRs at the state snapshot: none;
-- mainline compiler CI: green at verified commit `5c150125a722038a37fd0c74e4ca8c93029f1eb3`;
-- compiler workflow `#2666` is the post-merge verification run for this repository reorganization;
+- mainline compiler CI: authoritative through the latest green `Compiler tests` workflow on `main`;
+- the current-state document deliberately does not embed its own commit SHA or workflow number; GitHub's `main` ref and compiler workflow are the authoritative live pointers;
 - the legacy validator no longer runs automatically on pushes or pull requests;
 - the repository still contains many historical remote branches; they are not current work;
 - merged and superseded branch variants should be retired rather than reused.
