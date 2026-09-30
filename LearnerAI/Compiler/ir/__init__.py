@@ -284,3 +284,5 @@ from .production import (
 )
 
 from .research import ResearchLifecycle, ResearchState
+
+from .program import CompilerSemanticProgram
