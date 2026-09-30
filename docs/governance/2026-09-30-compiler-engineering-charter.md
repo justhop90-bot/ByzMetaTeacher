@@ -4,7 +4,7 @@ Status: project authority and repository operating contract, 2026-09-30.
 
 ## Mission
 
-The project exists to build the single generic AoE2DE .per compiler defined by the target architecture.
+The project exists to build the generic AoE2DE `.per` compiler defined by the current target architecture, with a Byzantine-focused client.
 
 The lead role owns architecture, sequencing, evidence standards, repository hygiene, integration discipline, and acceptance.
 
@@ -14,7 +14,7 @@ Authority is exercised through code, tests, documentation, Git history, and merg
 
 Git is the laboratory.
 
-main is the authoritative accepted state. It must remain reproducible and reviewable.
+`main` is the authoritative accepted state. It must remain reproducible and reviewable.
 
 Feature branches are experiments. Each branch should answer one concrete architectural or semantic question.
 
@@ -22,41 +22,44 @@ Pull requests are lab reports. A PR must identify the contract being changed, su
 
 The commit graph is part of project provenance.
 
-## Branch discipline
-
-Use focused branches by objective:
-- single-compiler-* for semantic-spine work;
-- duc-* for DUC semantics;
-- attack-* for attack/controller semantics;
-- production-* for production/queue semantics;
-- escrow-* for resource-control semantics;
-- game-data-* for factual model work.
-
-Do not revive historical branches merely because their names look relevant. Current main is authoritative.
-
-Large feature work should use coherent commits. Temporary verification branches must not become a second mainline.
-
 ## Mainline policy
 
-No direct edits to main are the default operating mode.
+No direct edits to `main` are the default operating mode.
 
 Normal path:
 
-branch -> implementation -> focused verification -> PR -> review -> merge -> post-merge verification
+`branch -> implementation -> focused verification -> PR -> green compiler CI -> merge -> main verification -> branch retirement`
 
-Repository administration currently reports that required branch checks are not enforced server-side. Until protection is configured, this charter is the operational control.
+Use merge commits by default so the accepted history preserves the boundary between an experiment and the integrated compiler line.
 
-The compiler workflow, not the unrelated historical Basilisk Validator workflow, defines generic compiler acceptance.
+## Branch discipline
+
+Preferred current prefixes:
+
+- `compiler/`
+- `duc/`
+- `attack/`
+- `production/`
+- `escrow/`
+- `game-data/`
+- `research/`
+- `verification/`
+- `git/`
+
+Do not create `v2`, `v3`, `green1`, `final-2`, or equivalent branch variants. Start the next attempt from current `main` and close the superseded PR.
+
+The repository currently contains a large historical branch forest. Those branches are not current compiler state and should be retired as repository administration permits.
 
 ## Evidence discipline
 
 Every promoted engine behavior must have an evidence class and provenance.
 
 Recognized classes:
-- ENGINE FACT: authoritative/native support;
-- COMMUNITY PRACTICE: established community precedent;
-- COMPILER POLICY: intentional static compilation rule;
-- OPEN / UNKNOWN: unresolved native or runtime behavior.
+
+- ENGINE FACT
+- COMMUNITY PRACTICE
+- COMPILER POLICY
+- OPEN / UNKNOWN
 
 When evidence is insufficient, the compiler fails closed or preserves UNKNOWN.
 
@@ -73,19 +76,27 @@ An unexecuted probe is not compiler fact.
 ## Documentation authority
 
 Authoritative hierarchy:
-1. current code on main;
-2. green CI verification for the exact commit;
-3. current architecture/spec documents;
-4. current evidence registries and MUSE research;
-5. historical plans and checklists.
+
+1. current code on `main`;
+2. green compiler CI for the exact commit;
+3. `LearnerAI/Compiler/PROJECT_STATE.md`;
+4. current architecture and evidence documents;
+5. dated plans, audits, and historical research.
 
 A stale checklist is not a specification.
 
-When a repair closes or moves a gap, the corresponding authoritative documentation must be reconciled in the same change window.
+When a repair changes the current frontier, reconcile the current-state document in the same change window.
+
+## CI authority
+
+`.github/workflows/compiler-tests.yml` defines compiler acceptance.
+
+The legacy validator is retained only as a manual historical/compatibility check. It must not create default-branch compiler noise.
 
 ## Definition of done
 
-A repair is done only when:
+A compiler repair is done only when:
+
 - the typed contract exists;
 - illegal states are rejected;
 - implementation is connected to the compiler;
@@ -94,11 +105,12 @@ A repair is done only when:
 - native lowering is validated where applicable;
 - determinism is preserved;
 - evidence status is accurate;
-- exact post-change verification is known.
+- the exact tested commit is known.
 
 ## Design authority
 
 The lead rejects changes that:
+
 - duplicate existing semantic lifecycles;
 - create parallel public compiler surfaces without necessity;
 - hide native UNKNOWN behavior;
@@ -106,11 +118,3 @@ The lead rejects changes that:
 - optimize architecture while leaving the actual community-knowledge gap untouched.
 
 The project optimizes for semantic closure, not architecture theater.
-
-## Current strategic priority
-
-The next major milestone is an end-to-end community strategy synthesis path proving:
-
-community pattern -> strategic demand -> capability/admission -> persistent control -> execution -> witness -> recovery -> native .per
-
-Production/composition and attack/target loops are leading candidates because they exercise the largest remaining semantic seams together.
