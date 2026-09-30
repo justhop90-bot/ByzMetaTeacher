@@ -463,6 +463,10 @@ def _duc_diagnostic_for(item: DucDiagnostic) -> RuleDiagnostic:
         location=item.location,
         category=RuleDiagnosticCategory.DUC,
         source_code=item.code,
+        state_kind=item.state_kind,
+        state_identifier=item.state_identifier,
+        related_rule_order=item.related_rule_order,
+        related_operation=item.related_operation,
     )
 
 
