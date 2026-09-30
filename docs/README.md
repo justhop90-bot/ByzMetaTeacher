@@ -1,18 +1,37 @@
-# ByzMetaTeacher repository guide
+# Repository guide
 
-This repository keeps the executable Basilisk controller separate from the accumulated reference material and audit paperwork. The `.per` controller is not being refactored by the documentation cleanup.
+This repository is organized around the AoE2DE `.per` compiler. Historical controller material, engine references, and research artifacts remain valuable, but they are not the current product boundary.
+
+## First read
+
+- `README.md` — repository orientation.
+- `AGENTS.md` — AI/Git operating contract.
+- `LearnerAI/Compiler/PROJECT_STATE.md` — current compiler state.
+- `LearnerAI/Compiler/README.md` — compiler architecture.
+- `docs/governance/GIT_OPERATING_MODEL.md` — Git and documentation discipline.
 
 ## Repository layout
 
-- `Basilisk/Basilisk.per` — authoritative Basilisk controller. Runtime code; left untouched by this cleanup.
-- `Basiliskload.per` — minimal loader for the Basilisk controller.
-- `validation/` — repository validators and lifecycle replay/self-test tools.
-- `tools/` — maintenance scripts that are not part of the runtime controller.
-- `docs/project/` — Basilisk design notes, implementation checklists, and project history.
-- `docs/audits/` — historical lint and repair records.
-- `docs/reference/` — engine and civilization reference material.
-- `docs/validation/` — validation handoff notes.
+- `LearnerAI/Compiler/` — active compiler implementation, typed IR, semantic validation, native lowering, runtime binding, and tests.
+- `docs/governance/` — project authority and operating rules.
+- `docs/plans/` — dated implementation plans and execution history.
+- `docs/reference/` — engine, AIRef, GameData, and evidence sources.
+- `docs/research/` — MUSE and other evidence records.
+- `docs/reports/` — verification and audit reports.
+- `forensics/` — hostile/native engine research.
+- `tools/` — maintenance and evidence tooling.
+- `Basilisk/`, `validation/`, and legacy client paths — retained compatibility and archaeology.
 
-The large engine-reference set is kept under `docs/reference/engine/` rather than polluting the repository root. Files are grouped by the kind of AIRef material they document.
+The large reference corpus is intentionally separate from the executable compiler.
 
-The cleanup is deliberately repository-only: no Basilisk rule logic, goals, strategic numbers, XS behavior, or runtime include paths are changed here.
+## Documentation rule
+
+Current state belongs in current-state documents, not dated plan files.
+
+A dated checklist can explain how a repair happened. It cannot override the current compiler state.
+
+## CI rule
+
+`.github/workflows/compiler-tests.yml` is the compiler acceptance workflow.
+
+The legacy validator is manual-only and is not evidence that the compiler is correct or incorrect.
