@@ -3275,8 +3275,7 @@ class DucSemanticTests(unittest.TestCase):
             _rule(1, (
                 ("up-target-objects", ("1", "action-default", "-1", "-1")),
             )),
-            initial_state=first.next_pass_state,
-        )
+        ), initial_state=first.next_pass_state)
 
         target = second.final_state.target
         self.assertIsNotNone(target)
