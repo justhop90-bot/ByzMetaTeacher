@@ -154,6 +154,19 @@ class DucObjectLifecycleTests(unittest.TestCase):
             "STORED",
         )
 
+    def test_symbolic_native_id_target_reacquires_from_goal_binding(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("g:", "41")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        lifecycle = target.object_refs[0].lifecycle
+        self.assertEqual(lifecycle.state.value, "REACQUIRED")
+        self.assertEqual(lifecycle.identity_ref, "goal:41")
+
     def test_failed_target_establishment_does_not_create_lifecycle_handle(self):
         report = analyze_duc((
             _rule(1, (
