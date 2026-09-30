@@ -36,19 +36,19 @@ Primary open compiler gap:
 
 ## Implementation checklist
 
-- [ ] Add `StrategicObservationType.ATTACK_GROUP_CONTROL`.
-- [ ] Add `StrategicObservationType.ATTACK_SOLDIER_PERCENT_CONTROL`.
-- [ ] Specialize SN 36 comparisons as `ATTACK_GROUP_CONTROL`.
-- [ ] Enforce SN 36 configured comparison values as `0..Max`.
-- [ ] Specialize SN 227 comparisons as `ATTACK_SOLDIER_PERCENT_CONTROL`.
-- [ ] Enforce SN 227 configured comparison values as `0..100`.
-- [ ] Preserve all existing comparison operators for SN 36/227.
-- [ ] Preserve generic `PERSISTENT_CONTROL_STATE` fallback for unrelated SNs.
-- [ ] Add focused valid/invalid binding tests.
-- [ ] Add a regression proving the new observations are still observations, not executable controller commands.
-- [ ] Keep attack-group controller catalog status `EVIDENCE_ONLY`.
-- [ ] Do not change AttackExecution target requirements, completion, release, DUC targeting, exploration coupling, timers, or native attack lowering.
-- [ ] Do not add new source syntax or a second strategy/control API.
+- [x] Add `StrategicObservationType.ATTACK_GROUP_CONTROL`.
+- [x] Add `StrategicObservationType.ATTACK_SOLDIER_PERCENT_CONTROL`.
+- [x] Specialize SN 36 comparisons as `ATTACK_GROUP_CONTROL`.
+- [x] Enforce SN 36 configured comparison values as `0..Max`.
+- [x] Specialize SN 227 comparisons as `ATTACK_SOLDIER_PERCENT_CONTROL`.
+- [x] Enforce SN 227 configured comparison values as `0..100`.
+- [x] Preserve all existing comparison operators for SN 36/227.
+- [x] Preserve generic `PERSISTENT_CONTROL_STATE` fallback for unrelated SNs.
+- [x] Add focused valid/invalid binding tests.
+- [x] Add a regression proving the new observations are still observations, not executable controller commands.
+- [x] Keep attack-group controller catalog status `EVIDENCE_ONLY`.
+- [x] Do not change AttackExecution target requirements, completion, release, DUC targeting, exploration coupling, timers, or native attack lowering.
+- [x] Do not add new source syntax or a second strategy/control API.
 
 ## Guardrails
 
@@ -64,12 +64,14 @@ Primary open compiler gap:
 
 ## Acceptance
 
-1. Focused attack-control observation tests pass.
-2. Existing strategy-runtime regression remains green.
-3. Full compiler regression passes.
-4. Native zero-findings fixtures remain green.
-5. Cross-platform native-support determinism remains green.
-6. The emitted `.per` behavior is unchanged because this slice only specializes semantic observation typing.
+1. [x] Focused attack-control observation tests pass.
+2. [x] Existing strategy-runtime regression remains green.
+3. [x] Full compiler regression passes.
+4. [x] Native zero-findings fixtures remain green.
+5. [x] Cross-platform native-support determinism remains green.
+6. [x] The emitted `.per` behavior is unchanged because this slice only specializes semantic observation typing.
+
+Verification: Compiler workflow #2579 / Actions run `36772169916` passed the compiler verification gate. The compiler job passed native zero-findings, focused persistent-state regression, full compiler regression, and all 9 native-support determinism jobs; native snapshot comparison also passed.
 
 ## Not in scope
 
