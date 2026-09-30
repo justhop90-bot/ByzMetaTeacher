@@ -53,6 +53,17 @@ class CapabilityBridgeTests(unittest.TestCase):
         self.assertEqual(provider.witness, witness.identity)
         self.assertEqual(witness.establishes, capability.identity)
 
+    def test_projected_demand_carries_generic_recovery_contract(self):
+        registry = default_de_registry()
+        ir = analyze(parse(VALID), registry, source_unit="test")
+        graph = project_capability_graph(ir, registry)
+
+        recovery = graph.demands[0].recovery
+
+        self.assertTrue(recovery.preserve_demand)
+        self.assertTrue(recovery.preserve_opportunity_cost)
+        self.assertTrue(recovery.reopen_on_recovery)
+
     def test_preserves_admissibility_feasibility_and_resource_roles(self):
         registry = default_de_registry()
         ir = analyze(parse(VALID), registry, source_unit="test")
