@@ -207,6 +207,26 @@ from .native_control import (
     NativeControlState,
 )
 
+from .operational import (
+    OperationalCombination,
+    OperationalCondition,
+    OperationalControlKind,
+    OperationalControlRef,
+    OperationalControlUse,
+    OperationalDomain,
+    OperationalEvidenceClass,
+    OperationalLoopContract,
+    OperationalObservation,
+    OperationalObservationRole,
+    OperationalRecovery,
+    OperationalRecoveryStrategy,
+    OperationalRequest,
+    OperationalRequestKind,
+    OperationalSemanticsPlan,
+    OperationalStage,
+    OperationalGuard,
+)
+
 from .resource_control import (
     EscrowAdmissionMode,
     EscrowConsumption,
