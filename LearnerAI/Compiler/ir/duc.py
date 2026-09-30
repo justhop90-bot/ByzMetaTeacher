@@ -127,6 +127,14 @@ class DucTargetTransition(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class DucObjectLiveness(str, Enum):
+    """Engine-world liveness is separate from compiler-side DUC retention."""
+
+    RUNTIME_DEPENDENT = "RUNTIME_DEPENDENT"
+    WITNESSED_ALIVE = "WITNESSED_ALIVE"
+    WITNESSED_GONE = "WITNESSED_GONE"
+
+
 class DucTargetConsumerMode(str, Enum):
     LOCAL_SEARCH_RESULTS = "LOCAL_SEARCH_RESULTS"
     SELECTED_OBJECT_ONLY = "SELECTED_OBJECT_ONLY"
@@ -146,6 +154,7 @@ class DucTargetDataObservation:
     writes_goal: bool
     target_validity: DucTargetStatus
     target_proof: DucTargetProof
+    target_liveness: DucObjectLiveness
     provenance: DucProvenance
     output_span: Optional["DucGoalOutputSpan"] = None
 
@@ -159,6 +168,7 @@ class DucTargetConsumerEffect:
     remote_list_generation: Optional[int]
     target_validity: DucTargetStatus
     target_proof: DucTargetProof
+    target_liveness: DucObjectLiveness
 
 
 @dataclass(frozen=True)
@@ -294,6 +304,7 @@ class DucTargetState:
     validity: DucTargetStatus = DucTargetStatus.UNKNOWN
     pass_id: int = 0
     proof: DucTargetProof = DucTargetProof.UNKNOWN
+    liveness: DucObjectLiveness = DucObjectLiveness.RUNTIME_DEPENDENT
 
 
 @dataclass(frozen=True)
@@ -571,6 +582,7 @@ __all__ = [
     "DucDiagnostic",
     "DucExecutionEffect",
     "DucTargetConsumerEffect",
+    "DucObjectLiveness",
     "DucTargetFactObservation",
     "DucTargetConsumerMode",
     "DucTargetDataObservation",
