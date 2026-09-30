@@ -16,6 +16,7 @@ from .military_composition import MilitaryCompositionProofPath
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
 from .operational import OperationalSemanticsPlan
+from .persistent_control import PersistentControlRef
 from .resource_control import NativeEscrowPolicyPlan, NativeEscrowReleasePlan
 
 
@@ -31,6 +32,7 @@ class CompilerSemanticProgram:
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
     military_proof_path: MilitaryCompositionProofPath | None = None
+    persistent_controls: tuple[PersistentControlRef, ...] = ()
 
     def __post_init__(self) -> None:
         # Domain-specific plan validators run at their existing compiler
@@ -48,6 +50,13 @@ class CompilerSemanticProgram:
                 "compiler semantic program contains duplicate demand identities"
             )
 
+        demand_ids = set(identities)
+        for control in self.persistent_controls:
+            if control.owner not in demand_ids:
+                raise ValueError(
+                    "compiler semantic program persistent control has unknown owner"
+                )
+
     @property
     def empty(self) -> bool:
         return not (
@@ -58,6 +67,8 @@ class CompilerSemanticProgram:
             or self.duc_plan is not None
             or self.attack_plan is not None
             or self.escrow_plan is not None
+            or self.military_proof_path is not None
+            or self.persistent_controls
         )
 
     def with_operational_plan(
