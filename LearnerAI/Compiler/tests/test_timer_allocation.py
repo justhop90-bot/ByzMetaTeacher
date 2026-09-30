@@ -68,6 +68,22 @@ class TimerAllocationIRTests(unittest.TestCase):
             "timer-state:v1:timer-fixture:timer_gate:cooldown",
         )
 
+    def test_analyzed_timer_owner_is_the_demand_identity(self):
+        source = """
+        demand timer_gate {
+            timer cooldown
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        demand = analyze(parse(source, source_unit="timer-fixture"), default_de_registry())[0]
+        timer_state = demand.timer_states[0]
+
+        self.assertEqual(timer_state.owner, demand.identity)
+
+
     def test_compiler_binds_timer_and_emits_symbolic_alias_and_initialization(self):
         from Compiler.compiler import compile_source
 
