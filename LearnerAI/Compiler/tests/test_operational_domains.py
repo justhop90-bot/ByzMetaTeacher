@@ -108,6 +108,44 @@ class OperationalDomainAdapterTests(unittest.TestCase):
         self.assertIn("; Native attack lifecycle plan", artifact)
         self.assertIn("(attack-now)", artifact)
 
+    def test_attack_groups_project_existing_strategic_number_controls(self):
+        execution = AttackExecution(
+            identity=SemanticId("test", "attack-groups"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.PREPARE,
+            mode=AttackExecutionMode.ATTACK_GROUPS,
+        )
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        controls = plan.contracts[0].controls
+        self.assertEqual(
+            tuple((item.kind.value, item.reference, item.use.value) for item in controls),
+            (
+                ("STRATEGIC_NUMBER", "sn-number-attack-groups", "READ"),
+                ("STRATEGIC_NUMBER", "sn-percent-attack-soldiers", "READ"),
+            ),
+        )
+
+    def test_town_size_attack_projects_existing_strategic_number_control(self):
+        execution = AttackExecution(
+            identity=SemanticId("test", "town-size"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.PREPARE,
+            mode=AttackExecutionMode.TOWN_SIZE_ATTACK,
+        )
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        controls = plan.contracts[0].controls
+        self.assertEqual(len(controls), 1)
+        self.assertEqual(controls[0].kind.value, "STRATEGIC_NUMBER")
+        self.assertEqual(controls[0].reference, "sn-maximum-town-size")
+        self.assertEqual(controls[0].use.value, "READ")
+
+
     def test_attack_adapter_preserves_reassertion_without_completion_ack(self):
         contract = operational_contracts_for_attack_plan(self._attack_plan())[0]
         report = validate_operational_semantics(

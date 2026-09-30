@@ -213,6 +213,30 @@ def operational_contracts_for_attack_execution(
         )
 
     controls: list[OperationalControlRef] = []
+    if execution.mode is AttackExecutionMode.ATTACK_GROUPS:
+        controls.extend(
+            (
+                OperationalControlRef(
+                    kind=OperationalControlKind.STRATEGIC_NUMBER,
+                    reference="sn-number-attack-groups",
+                    use=OperationalControlUse.READ,
+                ),
+                OperationalControlRef(
+                    kind=OperationalControlKind.STRATEGIC_NUMBER,
+                    reference="sn-percent-attack-soldiers",
+                    use=OperationalControlUse.READ,
+                ),
+            )
+        )
+    elif execution.mode is AttackExecutionMode.TOWN_SIZE_ATTACK:
+        controls.append(
+            OperationalControlRef(
+                kind=OperationalControlKind.STRATEGIC_NUMBER,
+                reference="sn-maximum-town-size",
+                use=OperationalControlUse.READ,
+            )
+        )
+
     if execution.mode is AttackExecutionMode.DUC_TARGETED:
         controls.append(
             OperationalControlRef(

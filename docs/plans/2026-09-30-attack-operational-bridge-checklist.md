@@ -45,3 +45,14 @@ AttackExecution already owns the typed semantic lifecycle, target provenance, ca
 - Gameplay/runtime execution.
 
 No runtime probe is part of this repair.
+
+
+## Follow-on repair: mode-specific controller control bridge
+- [x] ATTACK_GROUPS references the existing SN 36 attack-group count control.
+- [x] ATTACK_GROUPS references the existing SN 227 soldier-percentage control.
+- [x] TOWN_SIZE_ATTACK references the existing SN 74 town-size control.
+- [x] Controls are READ-only operational state; no automatic mutation or controller ownership is inferred.
+- [x] ATTACK_NOW native emission remains unchanged.
+- [x] DUC_TARGETED retains its separate DUC identity recovery/control reference.
+- [x] Add focused projection tests.
+- [x] Add no-runtime-claim boundary documentation.
