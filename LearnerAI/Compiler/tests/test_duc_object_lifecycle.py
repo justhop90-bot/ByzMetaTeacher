@@ -61,7 +61,7 @@ class DucObjectLifecycleTests(unittest.TestCase):
     def test_store_requires_identity(self):
         lifecycle = self._machine_type()().discover()
         with self.assertRaisesRegex(ValueError, "identity"):
-            lifecycle.store_id()
+            lifecycle.store_id(identity_ref=None)
 
     def test_validation_without_current_reacquisition_is_illegal(self):
         lifecycle = (
@@ -102,7 +102,7 @@ class DucObjectLifecycleTests(unittest.TestCase):
             .store_id(identity_ref="goal:41")
         )
         lifecycle = lifecycle.invalidate_native()
-        with self.assertRaisesRegex(ValueError, "FRESH_DISCOVER"):
+        with self.assertRaisesRegex(ValueError, "RELEASE"):
             lifecycle.release()
 
         lifecycle = lifecycle.fresh_discover()

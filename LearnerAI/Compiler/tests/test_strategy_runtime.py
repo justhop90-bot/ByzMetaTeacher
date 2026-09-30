@@ -149,6 +149,73 @@ class StrategyRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "0..Max"):
             bind_strategic_evidence(evidence, self.effective)
 
+    def test_sn36_binds_to_attack_group_control_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 36 > 0)",
+            "attack-group-control",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.ATTACK_GROUP_CONTROL,
+        )
+
+    def test_sn36_rejects_negative_attack_group_count(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 36 >= -1)",
+            "bad-attack-group-count",
+        )
+        with self.assertRaisesRegex(ValueError, "0..Max"):
+            bind_strategic_evidence(evidence, self.effective)
+
+    def test_sn227_binds_to_attack_soldier_percent_control_observation(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 227 == 75)",
+            "attack-soldier-percent-control",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.ATTACK_SOLDIER_PERCENT_CONTROL,
+        )
+
+    def test_sn227_rejects_percent_outside_documented_attack_range(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 227 == 101)",
+            "bad-attack-soldier-percent",
+        )
+        with self.assertRaisesRegex(ValueError, "0..100"):
+            bind_strategic_evidence(evidence, self.effective)
+
+    def test_sn227_rejects_negative_percent(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 227 >= -1)",
+            "bad-negative-attack-soldier-percent",
+        )
+        with self.assertRaisesRegex(ValueError, "0..100"):
+            bind_strategic_evidence(evidence, self.effective)
+
+    def test_attack_control_observations_do_not_promote_attack_execution(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 36 == 1)",
+            "attack-group-observation-only",
+        )
+        binding = bind_strategic_evidence(evidence, self.effective)
+        self.assertEqual(
+            binding.observations[0].primitive,
+            "up-compare-sn",
+        )
+        self.assertNotEqual(
+            binding.observations[0].semantic_type,
+            StrategicObservationType.PRESSURE_STATE,
+        )
+
     def test_sn74_binds_to_town_size_control_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,

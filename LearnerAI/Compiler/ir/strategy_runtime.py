@@ -50,6 +50,8 @@ class StrategicObservationType(str, Enum):
     BOAT_EXPLORATION_GROUP_CONTROL = "BOAT_EXPLORATION_GROUP_CONTROL"
     TOTAL_EXPLORER_CAP = "TOTAL_EXPLORER_CAP"
     CIVILIAN_EXPLORER_CAP = "CIVILIAN_EXPLORER_CAP"
+    ATTACK_GROUP_CONTROL = "ATTACK_GROUP_CONTROL"
+    ATTACK_SOLDIER_PERCENT_CONTROL = "ATTACK_SOLDIER_PERCENT_CONTROL"
     TOWN_SIZE_CONTROL = "TOWN_SIZE_CONTROL"
     TRAIN_PROVIDER_READINESS = "TRAIN_PROVIDER_READINESS"
     TIMING = "TIMING"
@@ -576,6 +578,26 @@ def _validate_expression(
                     "SN 3 sn-cap-civilian-explorers requires a comparison value in -1..Max"
                 )
             semantic_type = StrategicObservationType.CIVILIAN_EXPLORER_CAP
+        elif sn_id == 36:
+            try:
+                configured_value = int(str(expression.args[2]))
+            except (IndexError, ValueError, TypeError):
+                configured_value = None
+            if configured_value is None or configured_value < 0:
+                raise ValueError(
+                    "SN 36 sn-number-attack-groups requires a comparison value in 0..Max"
+                )
+            semantic_type = StrategicObservationType.ATTACK_GROUP_CONTROL
+        elif sn_id == 227:
+            try:
+                configured_value = int(str(expression.args[2]))
+            except (IndexError, ValueError, TypeError):
+                configured_value = None
+            if configured_value is None or not 0 <= configured_value <= 100:
+                raise ValueError(
+                    "SN 227 sn-percent-attack-soldiers requires a comparison value in 0..100"
+                )
+            semantic_type = StrategicObservationType.ATTACK_SOLDIER_PERCENT_CONTROL
         elif sn_id == 74:
             semantic_type = StrategicObservationType.TOWN_SIZE_CONTROL
 
