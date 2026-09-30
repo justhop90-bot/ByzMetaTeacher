@@ -202,18 +202,33 @@ class DucObjectLifecycle:
             native_object_id=native_id,
         )
 
-    def bind_id(self, *, native_object_id: str) -> "DucObjectLifecycle":
+    def bind_identity(
+        self,
+        *,
+        identity_ref: str,
+        native_object_id: Optional[str] = None,
+    ) -> "DucObjectLifecycle":
         self._require(
             DucObjectLifecycleEvent.BIND_ID,
             (DucObjectLifecycleState.UNBOUND,),
         )
-        if not native_object_id:
+        if not identity_ref:
             raise DucObjectLifecycleError(
-                "BIND_ID requires a native object identity"
+                "BIND_ID requires an identity binding"
             )
         return self._transition(
             DucObjectLifecycleEvent.BIND_ID,
             DucObjectLifecycleState.STORED,
+            identity_ref=identity_ref,
+            native_object_id=native_object_id,
+        )
+
+    def bind_id(self, *, native_object_id: str) -> "DucObjectLifecycle":
+        if not native_object_id:
+            raise DucObjectLifecycleError(
+                "BIND_ID requires a native object identity"
+            )
+        return self.bind_identity(
             identity_ref=f"native:{native_object_id}",
             native_object_id=native_object_id,
         )
