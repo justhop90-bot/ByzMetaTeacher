@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from Compiler.ast import SourceLocation
 from Compiler.ir import (
+    CleanupStatus,
     CompletionWitnessContract,
     SemanticId,
     WitnessEvidenceKind,
