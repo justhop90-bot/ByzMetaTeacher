@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .strategy import StrategicBinding
     from .strategic_number import StrategicNumberState
     from .recurrent import TimerState
+    from .persistent_control import PersistentControlRef
     from .production import ProductionLifecycle
     from .research import ResearchLifecycle
 
@@ -261,6 +262,7 @@ class SemanticDemand:
     strategic_binding: StrategicBinding | None = None
     strategic_number_states: tuple["StrategicNumberState", ...] = ()
     timer_states: tuple["TimerState", ...] = ()
+    persistent_controls: tuple["PersistentControlRef", ...] = ()
     location: SourceLocation | None = None
 
     @property
