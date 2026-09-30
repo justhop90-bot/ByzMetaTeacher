@@ -33,7 +33,7 @@ class OperationalDomainAdapterTests(unittest.TestCase):
                 NativeAttackRule(
                     identity="attack-rule",
                     order=0,
-                    facts=(self._expr("can-attack"),),
+                    facts=(self._expr("true"),),
                     actions=(self._expr("attack-now"),),
                     lifecycle=(
                         AttackLifecycleObservation.ADMISSION_REQUIRED,
