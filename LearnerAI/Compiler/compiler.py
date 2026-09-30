@@ -662,7 +662,7 @@ def compile_package_with_report(
         persistent_control_report = analyze_persistent_control_lifetimes(
             ir,
             persistent_state_report,
-            recurrent_execution_report,
+            effective_rules,
         )
         duc_report = analyze_duc(
             effective_rules,
@@ -802,7 +802,7 @@ def compile_source_with_report(
         persistent_control_report = analyze_persistent_control_lifetimes(
             ir,
             persistent_state_report,
-            recurrent_execution_report,
+            effective_rules,
         )
         duc_report = analyze_duc(
             effective_rules,
@@ -938,7 +938,7 @@ def compile_to_file(
         persistent_control_report = analyze_persistent_control_lifetimes(
             ir,
             persistent_state_report,
-            recurrent_execution_report,
+            effective_rules,
         )
         duc_report = analyze_duc(
             effective_rules,
