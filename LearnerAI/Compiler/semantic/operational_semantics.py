@@ -6,7 +6,6 @@ from enum import Enum
 
 from ..ast import Expression
 from ..ir import (
-    LifecycleAccessPhase,
     OperationalCombination,
     OperationalCondition,
     OperationalControlKind,
@@ -463,7 +462,7 @@ def operational_contract_for_demand(
             OperationalObservation(
                 identity=identity,
                 role=_observation_role(requirement.role),
-                evidence_class=OperationalEvidenceClass.ENGINE_FACT,
+                evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
                 expression=requirement.expression,
                 location=requirement.location,
             )
@@ -480,7 +479,7 @@ def operational_contract_for_demand(
         OperationalObservation(
             identity=witness_id,
             role=OperationalObservationRole.WORLD_STATE,
-            evidence_class=OperationalEvidenceClass.ENGINE_FACT,
+            evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
             expression=witness,
             location=witness.location,
         )
@@ -492,7 +491,7 @@ def operational_contract_for_demand(
             OperationalObservation(
                 identity=invalidation_id,
                 role=OperationalObservationRole.REASSESSMENT,
-                evidence_class=OperationalEvidenceClass.ENGINE_FACT,
+                evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
                 expression=demand.invalidation.expression,
                 location=demand.invalidation.location,
             )
@@ -508,7 +507,7 @@ def operational_contract_for_demand(
             OperationalObservation(
                 identity=identity,
                 role=OperationalObservationRole.DEBOUNCE,
-                evidence_class=OperationalEvidenceClass.COMMUNITY_PRACTICE,
+                evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
                 expression=demand.production_lifecycle.queue_protection.pending_fact,
                 location=demand.location,
             )
@@ -521,7 +520,7 @@ def operational_contract_for_demand(
             OperationalObservation(
                 identity=identity,
                 role=OperationalObservationRole.DEBOUNCE,
-                evidence_class=OperationalEvidenceClass.ENGINE_FACT,
+                evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
                 expression=demand.research_lifecycle.pending_fact,
                 location=demand.location,
             )
@@ -535,7 +534,7 @@ def operational_contract_for_demand(
                 OperationalObservation(
                     identity=identity,
                     role=OperationalObservationRole.TIMING,
-                    evidence_class=OperationalEvidenceClass.ENGINE_FACT,
+                    evidence_class=OperationalEvidenceClass.COMPILER_POLICY,
                     reference=state.name,
                     location=state.location,
                 )
