@@ -1,110 +1,45 @@
 # LearnerAI
 
-LearnerAI is the design, teaching, semantic-validation, and compilation workspace for a competent stock-style 1v1 Byzantine AoE2DE AI.
+LearnerAI is the strategy, semantic, and compiler workspace for the Byzantine-focused AoE2DE `.per` project.
 
-It is documentation-first while interfaces and source contracts are being established, but it is not documentation-only. The workspace exists to produce a real player. The compiler exists to make that player explicit, checkable, and maintainable. Runtime behavior remains the final authority.
+The active engineering center is `LearnerAI/Compiler/`.
 
-## What we are building
+## Current compiler entry point
 
-The target player must:
+Read `LearnerAI/Compiler/PROJECT_STATE.md` first, then `LearnerAI/Compiler/README.md`.
 
-- maintain a coherent Dark Age economy;
-- adapt its plan to common open, closed, hybrid, and water contexts;
-- transition through Feudal without wrecking the next strategic objective;
-- maintain a minimum defensible military;
-- build ordinary economic and military infrastructure when justified;
-- use docks, fishing, naval units, and transport when water matters;
-- use siege when the battlefield requires it;
-- use Monks and contest relics when the position justifies it;
-- use walls, gates, towers, Castles, and late defensive structures conditionally;
-- reach Castle at sensible times for the position;
-- expand its economy in Castle Age;
-- adapt composition to observed enemy commitments;
-- recover when the preferred plan is interrupted;
-- reach Imperial with a functioning economy;
-- convert Imperial resources into pressure.
+The compiler owns semantic contracts that native parsing cannot establish:
 
-The target is Byzantines first, on ordinary random-map situations. Generalization comes later.
+- demand ownership;
+- capability and admissibility;
+- feasibility;
+- pending/in-flight state;
+- world-state witnesses;
+- release and invalidation;
+- persistent control semantics;
+- native Goal/SN/Timer binding;
+- DUC and attack semantic contracts;
+- compiler-policy arbitration;
+- deterministic native lowering.
 
-## North-star loop
+The native parser remains the authority for raw `.per` legality.
 
-    OBSERVE
-      -> INTERPRET
-      -> STRATEGIC POSTURE
-      -> PERSISTENT DEMAND
-      -> CAPABILITY
-      -> ENGINE FEASIBILITY
-      -> ENGINE ACTION
-      -> WORLD-STATE WITNESS
-      -> RELEASE / INVALIDATE
-      -> REASSESS
+## Product boundary
 
-Strategy owns why. Domains own how. Engine predicates decide whether an action can execute. World state proves whether it actually happened.
+The objective is a robust community-native compiler for a Byzantine client.
 
-## Governing documents
+The project is not a general-purpose scheduler, runtime simulator, tournament bot, or replacement `.per` language.
 
-NORTH_STAR.md: exact target player and non-negotiable behavior.
+Runtime DE probing is external evidence acquisition. Static compiler work must not claim probe results that have not been executed.
 
-CAPABILITY_MATRIX.md: complete stock-style Byzantine capability coverage, priority bands, map-conditioned branches, and lifecycle expectations.
+## Relationship to legacy material
 
-MAP_PRIORITY_RULES.md: concrete priority contracts for Arabia, Arena, Black Forest, hybrid, full-water, and transport-critical positions.
+The repository contains historical controller work and compatibility paths. They are preserved as evidence and prior art.
 
-ARABIA_THRESHOLDS.md: executable numeric cutoffs for Feudal military, walls, towers, docks, and Castle investment on open Arabia.
+New compiler decisions must be anchored in current `main`, current CI, current evidence records, and the active state document rather than in legacy branch names or dated descriptions.
 
-ARABIA_OVERRIDE_THRESHOLDS.md: exception thresholds for scouts, archers, Men-at-Arms, tower rushes, and opponent fast-Castle pressure.
+## Build direction
 
-ARABIA_TIMING_WINDOWS.md: timing-confidence bands for scouts, archers, Men-at-Arms, towers, and early opponent Castle pressure.
+The player grows vertically from the compiler substrate. The next compiler frontier is the production/train arbitration seam documented in `LearnerAI/Compiler/PROJECT_STATE.md`.
 
-ARABIA_ECONOMIC_REACTIONS.md: worker packets, production capacity, wall/tower builders, and resource-allocation reactions for those timing windows.
-
-ARABIA_RESEARCH_AUDIT.md: current official/community cross-reference and the revision log for the Arabia rules and compiler semantics.
-
-SOURCE_MAP.md: where engine, community, Basilisk, compiler, and runtime information comes from.
-
-BUILD_ROADMAP.md: implementation order and exit conditions.
-
-Read these before adding a module, compiler feature, goal, timer, claim, or abstraction.
-
-## Relationship to Basilisk
-
-Basilisk remains the current production controller and strongest local implementation reference.
-
-LearnerAI is not a hidden Basilisk rewrite. Learn from Basilisk, compare against it, and reuse verified mechanisms where appropriate. The new learner player must earn its behavior through explicit specifications and runtime evidence.
-
-## Relationship to the native compiler ecosystem
-
-LearnerAI does not replace the AoE2 native parser ecosystem.
-
-The pinned aoe2-ai-parser backend validates emitted .per syntax and native command usage. LearnerAI owns semantic questions the native parser does not know about: demand intent, capability providers, lifecycle meaning, ownership, pending state, witnesses, release, cancellation, recovery, and map-conditional capability.
-
-## Information boundary
-
-The repository already contains the necessary information:
-
-    docs/reference/AIREF-COMMAND-SOURCE.md
-    docs/reference/inventories/
-    docs/reference/engine/
-    docs/reference/BYZANTINES_manifest.txt
-    docs/project/BotDirection.txt
-    docs/project/Basilisk-Controller-Specification.md
-    Basilisk/Basilisk.per
-    validation/
-    LearnerAI/PER_PRIMITIVE_MAP.md
-
-Use SOURCE_MAP.md to choose the correct authority rather than searching randomly.
-
-## Current status
-
-Semantic lifecycle compiler: implemented for the current slice.
-
-Native .per backend adapter: implemented.
-
-Combined semantic/native diagnostics: implemented.
-
-Module specifications: established.
-
-Full Byzantine player: not implemented yet.
-
-Runtime tuning of the new player: not implemented yet.
-
-The architecture exists to build the player next. It is not the product by itself.
+The actual player roadmap remains in `LearnerAI/BUILD_ROADMAP.md`; the compiler state document is authoritative for compiler work.

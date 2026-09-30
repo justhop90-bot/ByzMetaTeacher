@@ -1,4 +1,5 @@
 name: Compiler tests
+# Authoritative compiler acceptance workflow. Legacy validators are not acceptance gates.
 # Timer allocation tranche verification remains pinned to this workflow.
 
 on:
