@@ -173,6 +173,10 @@ class CapabilityRecoveryContract:
             raise ValueError(
                 "capability recovery must preserve the original demand identity"
             )
+        if not self.preserve_opportunity_cost:
+            raise ValueError(
+                "capability recovery must preserve opportunity-cost protection across temporary loss"
+            )
         if not self.preserve_reopen_policy():
             raise ValueError(
                 "capability recovery must reopen the original demand after recovery"
