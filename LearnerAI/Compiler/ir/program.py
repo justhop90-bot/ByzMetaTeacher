@@ -31,6 +31,8 @@ class CompilerSemanticProgram:
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
 
     def __post_init__(self) -> None:
+        # Domain-specific plan validators run at their existing compiler
+        # boundaries. This envelope owns only cross-domain assembly invariants.
         if not isinstance(self.demands, tuple):
             raise TypeError("compiler semantic program demands must be a tuple")
 
@@ -39,29 +41,6 @@ class CompilerSemanticProgram:
             raise ValueError(
                 "compiler semantic program contains duplicate demand identities"
             )
-
-        if not isinstance(self.operational_plan, OperationalSemanticsPlan):
-            raise TypeError("compiler semantic program operational plan is invalid")
-
-        if self.control_plan is not None and not isinstance(
-            self.control_plan, NativeControlPlan
-        ):
-            raise TypeError("compiler semantic program control plan is invalid")
-
-        if self.duc_plan is not None and not isinstance(self.duc_plan, NativeDucPlan):
-            raise TypeError("compiler semantic program DUC plan is invalid")
-
-        if self.attack_plan is not None and not isinstance(
-            self.attack_plan,
-            (NativeAttackLifecyclePlan, AttackExecution),
-        ):
-            raise TypeError("compiler semantic program attack plan is invalid")
-
-        if self.escrow_plan is not None and not isinstance(
-            self.escrow_plan,
-            (NativeEscrowReleasePlan, NativeEscrowPolicyPlan),
-        ):
-            raise TypeError("compiler semantic program escrow plan is invalid")
 
     @property
     def empty(self) -> bool:
