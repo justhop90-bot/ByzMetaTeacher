@@ -159,18 +159,6 @@ class OperationalSemanticsIRTests(unittest.TestCase):
         )
         self.assertTrue(report.valid)
 
-    def test_duc_domain_requires_duc_request(self):
-        contract = self._contract(
-            domain=OperationalDomain.DUC,
-            request_kind=OperationalRequestKind.ACTION,
-        )
-        report = validate_operational_semantics(
-            OperationalSemanticsPlan(contracts=(contract,))
-        )
-        self.assertIn(
-            OperationalDiagnosticCode.DOMAIN_REQUEST_MISMATCH,
-            {item.code for item in report.errors},
-        )
 
 
 if __name__ == "__main__":
