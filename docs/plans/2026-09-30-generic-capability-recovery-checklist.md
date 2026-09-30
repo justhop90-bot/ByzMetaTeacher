@@ -78,13 +78,13 @@ compiler's demand contract means once such a transition is established.
 
 ## Acceptance
 
-- [ ] TDD red test observed before implementation.
-- [ ] Focused capability recovery tests pass.
-- [ ] Full compiler regression passes.
-- [ ] Native zero-findings acceptance passes.
-- [ ] 9/9 native-support determinism passes.
-- [ ] Snapshot comparison passes.
-- [ ] Compiler verification gate passes.
+- [ ] TDD red test observed before implementation (not independently observed in this environment).
+- [x] Focused capability recovery tests pass.
+- [x] Full compiler regression passes.
+- [x] Native zero-findings acceptance passes.
+- [x] 9/9 native-support determinism passes.
+- [x] Snapshot comparison passes.
+- [x] Compiler verification gate passes.
 
 ## Runtime unknowns retained
 
