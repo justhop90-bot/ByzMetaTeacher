@@ -148,6 +148,84 @@ class CapabilityProvider:
     location: SourceLocation | None = None
 
 
+class CapabilityRecoveryStateKind(str, Enum):
+    ACTIVE = "ACTIVE"
+    BLOCKED = "BLOCKED"
+    INVALIDATED = "INVALIDATED"
+    COMPLETE = "COMPLETE"
+
+
+class CapabilityRecoveryEvent(str, Enum):
+    LOST = "LOST"
+    RECOVERED = "RECOVERED"
+
+
+@dataclass(frozen=True)
+class CapabilityRecoveryContract:
+    """Compiler policy for temporary capability loss without demand replacement."""
+
+    preserve_demand: bool = True
+    preserve_opportunity_cost: bool = True
+    reopen_on_recovery: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.preserve_demand:
+            raise ValueError(
+                "capability recovery must preserve the original demand identity"
+            )
+        if not self.preserve_reopen_policy():
+            raise ValueError(
+                "capability recovery must reopen the original demand after recovery"
+            )
+
+    def preserve_reopen_policy(self) -> bool:
+        return self.reopen_on_recovery
+
+
+@dataclass(frozen=True)
+class CapabilityRecoveryState:
+    demand: DemandId
+    kind: CapabilityRecoveryStateKind
+
+    def transition(
+        self,
+        event: CapabilityRecoveryEvent,
+        contract: CapabilityRecoveryContract,
+    ) -> "CapabilityRecoveryState":
+        if not isinstance(contract, CapabilityRecoveryContract):
+            raise TypeError("capability recovery contract is required")
+
+        if event is CapabilityRecoveryEvent.LOST:
+            if self.kind is CapabilityRecoveryStateKind.ACTIVE:
+                return CapabilityRecoveryState(
+                    demand=self.demand,
+                    kind=CapabilityRecoveryStateKind.BLOCKED,
+                )
+            return self
+
+        if event is CapabilityRecoveryEvent.RECOVERED:
+            if self.kind is CapabilityRecoveryStateKind.BLOCKED:
+                return CapabilityRecoveryState(
+                    demand=self.demand,
+                    kind=(
+                        CapabilityRecoveryStateKind.ACTIVE
+                        if contract.reopen_on_recovery
+                        else CapabilityRecoveryStateKind.BLOCKED
+                    ),
+                )
+            if self.kind in {
+                CapabilityRecoveryStateKind.ACTIVE,
+                CapabilityRecoveryStateKind.COMPLETE,
+            }:
+                return self
+            raise ValueError(
+                f"capability recovery cannot reopen invalidated demand "
+                f"'{self.demand.local_name}'"
+            )
+
+        raise ValueError(f"unsupported capability recovery event '{event}'")
+
+
 @dataclass(frozen=True)
 class CapabilityDemand:
     identity: DemandId
@@ -157,6 +235,7 @@ class CapabilityDemand:
     release: tuple[PredicateNode, ...] = ()
     owner: SemanticId | None = None
     strategic_binding: StrategicBinding | None = None
+    recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
     location: SourceLocation | None = None
 
 
