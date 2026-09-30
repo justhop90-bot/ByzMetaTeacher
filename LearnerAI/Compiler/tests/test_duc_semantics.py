@@ -19,6 +19,7 @@ from Compiler.ir.duc import (
     DucTargetFactResult,
     DucTargetKind,
     DucTargetProof,
+    DucObjectLiveness,
     DucTargetStatus,
     DucTargetTransition,
 )
@@ -3213,6 +3214,97 @@ class DucSemanticTests(unittest.TestCase):
         self.assertIsNone(index.focus_player_signature)
         self.assertTrue(index.path_ambiguous)
         self.assertIsNone(index.focus_player_provenance)
+
+
+
+    def test_target_liveness_is_runtime_dependent_for_list_selected_target(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(
+            target.liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
+
+    def test_target_liveness_is_runtime_dependent_for_direct_native_id(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-set-target-by-id", ("c:", "12345")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(
+            target.liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
+
+    def test_stale_target_does_not_claim_object_gone(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-remove-objects", ("search-local", "-1", "==", "0")),
+            )),
+        ))
+
+        target = report.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.STALE)
+        self.assertEqual(
+            target.liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
+
+    def test_cross_pass_retained_target_keeps_liveness_open(self):
+        first = analyze_duc((
+            _rule(1, (
+                ("up-find-remote", ("c:", "town-center", "c:", "1")),
+                ("up-set-target-object", ("search-remote", "c:", "0")),
+            )),
+        ))
+
+        second = analyze_duc((
+            _rule(1, (
+                ("up-target-objects", ("1", "action-default", "-1", "-1")),
+            )),
+            initial_state=first.next_pass_state,
+        )
+
+        target = second.final_state.target
+        self.assertIsNotNone(target)
+        self.assertEqual(target.validity, DucTargetStatus.UNKNOWN)
+        self.assertEqual(target.proof, DucTargetProof.SYNTACTIC_RETENTION)
+        self.assertEqual(
+            target.liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
+        self.assertEqual(
+            second.target_consumers[-1].target_liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
+
+    def test_target_data_observation_carries_explicit_liveness_boundary(self):
+        report = analyze_duc((
+            _rule(1, (
+                ("up-find-local", ("c:", "villager", "c:", "4")),
+                ("up-set-target-object", ("search-local", "c:", "0")),
+                ("up-get-object-data", ("object-data-id", "100")),
+            )),
+        ))
+
+        observation = report.target_data_observations[-1]
+        self.assertEqual(
+            observation.target_liveness,
+            DucObjectLiveness.RUNTIME_DEPENDENT,
+        )
 
 
 
