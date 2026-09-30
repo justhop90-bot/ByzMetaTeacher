@@ -32,6 +32,7 @@ from ..ir.duc import (
     DucListMutationEffect,
     DucListMutationKind,
     DucLoopWidening,
+    DucObjectLiveness,
     DucListKind,
     DucObjectRef,
     DucPointRef,
@@ -427,6 +428,11 @@ def _target_data_read(
         writes_goal=contract.writes_goal,
         target_validity=target_validity,
         target_proof=target_proof,
+        target_liveness=(
+            target.liveness
+            if target is not None
+            else DucObjectLiveness.RUNTIME_DEPENDENT
+        ),
         provenance=provenance,
         output_span=output_span,
     )
@@ -3313,6 +3319,11 @@ def _analyze_duc_linear(
                             if target is not None
                             else DucTargetProof.UNKNOWN
                         ),
+                        target_liveness=(
+                            target.liveness
+                            if target is not None
+                            else DucObjectLiveness.RUNTIME_DEPENDENT
+                        ),
                     )
                 )
                 continue
@@ -3415,6 +3426,7 @@ def _target_key(target: DucTargetState | None) -> tuple[object, ...] | None:
         target.source_filter_generation,
         target.pass_id,
         target.proof,
+        target.liveness,
     )
 
 
@@ -3603,11 +3615,20 @@ def _widen_target_state(
             previous,
             validity=DucTargetStatus.UNKNOWN,
             proof=DucTargetProof.UNKNOWN,
+            liveness=(
+                previous.liveness
+                if current is not None and previous.liveness is current.liveness
+                else DucObjectLiveness.RUNTIME_DEPENDENT
+            ),
         )
     representative = previous if previous is not None else current
     if representative is None:
         return None
-    return replace(representative, validity=DucTargetStatus.UNKNOWN)
+    return replace(
+        representative,
+        validity=DucTargetStatus.UNKNOWN,
+        liveness=DucObjectLiveness.RUNTIME_DEPENDENT,
+    )
 
 
 def _widen_loop_state(
@@ -3746,6 +3767,11 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
                 representative,
                 validity=DucTargetStatus.UNKNOWN,
                 proof=DucTargetProof.NATIVE_ID_PROOF,
+                liveness=(
+                    representative.liveness
+                    if all(state.liveness is representative.liveness for state in direct_id_targets)
+                    else DucObjectLiveness.RUNTIME_DEPENDENT
+                ),
             )
 
     if all(_target_key(state) == _target_key(first) for state in states):
@@ -3762,6 +3788,11 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
             first,
             validity=DucTargetStatus.UNKNOWN,
             proof=DucTargetProof.UNKNOWN,
+            liveness=(
+                first.liveness
+                if all(state.liveness is first.liveness for state in states if state is not None)
+                else DucObjectLiveness.RUNTIME_DEPENDENT
+            ),
         )
     representatives = [state for state in states if state is not None]
     if not representatives:
@@ -3783,6 +3814,7 @@ def _join_targets(states: tuple[DucTargetState | None, ...]) -> DucTargetState |
         representative,
         validity=DucTargetStatus.UNKNOWN,
         proof=DucTargetProof.UNKNOWN,
+        liveness=DucObjectLiveness.RUNTIME_DEPENDENT,
     )
 
 
