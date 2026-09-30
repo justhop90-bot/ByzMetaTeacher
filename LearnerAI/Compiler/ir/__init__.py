@@ -176,6 +176,15 @@ from .native_metadata import (
     default_de_native_profile,
 )
 
+from .persistent_control import (
+    CleanupStatus,
+    PersistentControlCleanupObligation,
+    PersistentControlId,
+    PersistentControlKind,
+    PersistentControlLifetime,
+    PersistentControlRef,
+)
+
 from .recurrent import (
     PendingTimerExpiry,
     TimerRequest,

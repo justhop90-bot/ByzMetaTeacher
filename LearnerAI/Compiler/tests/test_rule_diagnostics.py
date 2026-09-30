@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from Compiler.ast import SourceLocation
 from Compiler.ir import (
+    CleanupStatus,
     CompletionWitnessContract,
     SemanticId,
     WitnessEvidenceKind,
@@ -15,6 +16,8 @@ from Compiler.semantic.rule_diagnostics import (
     RuleDiagnosticCode,
     analyze_rule_diagnostics,
 )
+from Compiler.ir import PersistentControlCleanupObligation, PersistentControlId, PersistentControlKind, PersistentControlLifetime, PersistentControlRef
+from Compiler.semantic.persistent_control import PersistentControlDiagnostic, PersistentControlDiagnosticCode, PersistentControlReport, PersistentControlStatus
 from Compiler.semantic.persistent_state import (
     PersistentStateDiagnosticCode,
     analyze_persistent_state,
@@ -54,6 +57,55 @@ class RuleDiagnosticsTests(unittest.TestCase):
             issuance_source_order=3,
             location=SourceLocation(2, 1, "<test>"),
         )
+
+    def test_persistent_control_diagnostic_converts_through_rule_taxonomy(self):
+        execution = analyze_effective_rules(
+            self._graph("(defrule (true) => (disable-self))\n")
+        )
+        control = PersistentControlRef(
+            id=PersistentControlId("<test>", "timer:cooldown"),
+            kind=PersistentControlKind.TIMER,
+            owner=SemanticId("<test>", "demand"),
+            lifetime=PersistentControlLifetime.UNTIL_OWNER_RELEASE,
+        )
+        finding = PersistentControlDiagnostic(
+            code=PersistentControlDiagnosticCode.RELEASE_MISSING,
+            status=PersistentControlStatus.BLOCKED,
+            severity=DiagnosticSeverity.WARNING,
+            message="timer 'timer:cooldown' has no explicit cleanup after owner release",
+            control=control.id,
+            owner=control.owner,
+            location=SourceLocation(1, 1, "<test>"),
+        )
+        report = PersistentControlReport(
+            controls=(control,),
+            obligations=(
+                PersistentControlCleanupObligation(
+                    control=control.id,
+                    owner=control.owner,
+                    release_contract=SemanticId("<test>", "demand-release"),
+                    status=CleanupStatus.REQUIRED,
+                ),
+            ),
+            diagnostics=(finding,),
+        )
+
+        diagnostics = analyze_rule_diagnostics(
+            execution,
+            persistent_control_report=report,
+        )
+        bridged = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.PERSISTENT_CONTROL_RELEASE_MISSING
+        )
+
+        self.assertEqual(bridged.category, RuleDiagnosticCategory.PERSISTENT_CONTROL)
+        self.assertEqual(bridged.source_code, "PCONTROL-002")
+        self.assertEqual(bridged.severity, DiagnosticSeverity.WARNING)
+        self.assertEqual(bridged.state_kind, "timer")
+        self.assertEqual(bridged.state_identifier, "cooldown")
+        self.assertEqual(bridged.related_operation, "persistent-control")
 
     def test_duc_group_invalid_state_diagnostic_converts_through_rule_taxonomy(self):
         execution = analyze_effective_rules(

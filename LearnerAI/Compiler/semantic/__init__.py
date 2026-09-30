@@ -112,6 +112,14 @@ from .rule_execution import (
     analyze_rule_reachability,
 )
 
+from .persistent_control import (
+    PersistentControlDiagnostic,
+    PersistentControlDiagnosticCode,
+    PersistentControlReport,
+    PersistentControlStatus,
+    analyze_persistent_control_lifetimes,
+)
+
 from .persistent_state import (
     PersistentStateAccess,
     PersistentStateAccessKind,

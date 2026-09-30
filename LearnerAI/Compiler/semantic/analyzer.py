@@ -32,6 +32,9 @@ from ..ir import (
     SemanticId,
     SemanticRequirement,
     StorageRequestId,
+    PersistentControlId,
+    PersistentControlKind,
+    PersistentControlRef,
     StrategicNumberState,
     StrategicNumberStorageRequest,
     TimerRequest,
@@ -964,6 +967,18 @@ def analyze(
                 )
             )
 
+        persistent_controls = tuple(
+            PersistentControlRef(
+                id=PersistentControlId(
+                    source_unit=state.request.request_id.owner.source_unit,
+                    local_name=f"timer:{state.name}",
+                ),
+                kind=PersistentControlKind.TIMER,
+                owner=state.owner,
+            )
+            for state in timer_states
+        )
+
         declared_state_names = {state.name for state in strategic_number_states}
         for requirement in requirements:
             _validate_compiler_owned_sn_reference(
@@ -1187,6 +1202,7 @@ def analyze(
                 research_retry_barrier=research_retry_barrier,
                 strategic_number_states=tuple(strategic_number_states),
                 timer_states=tuple(timer_states),
+                persistent_controls=persistent_controls,
                 location=demand.location,
             )
         )

@@ -48,6 +48,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
     from Compiler.semantic.persistent_state import analyze_persistent_state
+    from Compiler.semantic.persistent_control import analyze_persistent_control_lifetimes
     from Compiler.semantic.strategic_number_semantics import (
         StrategicNumberCompilationError,
         analyze_strategic_number_expressions,
@@ -107,6 +108,7 @@ else:
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
     from .semantic.persistent_state import analyze_persistent_state
+    from .semantic.persistent_control import analyze_persistent_control_lifetimes
     from .semantic.strategic_number_semantics import (
         StrategicNumberCompilationError,
         analyze_strategic_number_expressions,
@@ -322,6 +324,11 @@ def _compile_ir_parts(
         duc_plan=duc_plan,
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
+        persistent_controls=tuple(
+            control
+            for demand in ir
+            for control in demand.persistent_controls
+        ),
     )
 
     if program.control_plan is not None:
@@ -418,11 +425,12 @@ def _compile_source_parts(
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    _return_ir: bool = False,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=source_unit)
-    return _compile_ir_parts(
+    result = _compile_ir_parts(
         ir,
         registry,
         base_goal,
@@ -432,6 +440,9 @@ def _compile_source_parts(
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
     )
+    if _return_ir:
+        return (*result, tuple(ir))
+    return result
 
 
 def _compile_package_parts(
@@ -444,6 +455,7 @@ def _compile_package_parts(
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    _return_ir: bool = False,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -462,6 +474,8 @@ def _compile_package_parts(
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
     )
+    if _return_ir:
+        return result, bindings, context, graph, tuple(ir)
     return result, bindings, context, graph
 
 
@@ -591,7 +605,7 @@ def compile_package_with_report(
         )
     registry = registry or default_de_registry()
     try:
-        result, bindings, context, _graph = _compile_package_parts(
+        result, bindings, context, _graph, ir = _compile_package_parts(
             request,
             base_goal,
             binding_context=binding_context,
@@ -599,7 +613,8 @@ def compile_package_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
-        escrow_plan=escrow_plan,
+            escrow_plan=escrow_plan,
+            _return_ir=True,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -644,6 +659,11 @@ def compile_package_with_report(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            effective_rules,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -656,6 +676,7 @@ def compile_package_with_report(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
@@ -723,7 +744,7 @@ def compile_source_with_report(
         )
     registry = registry or default_de_registry()
     try:
-        result, bindings, context = _compile_source_parts(
+        result, bindings, context, ir = _compile_source_parts(
             source,
             base_goal,
             source_unit=source_unit,
@@ -732,7 +753,8 @@ def compile_source_with_report(
             control_plan=control_plan,
             duc_plan=duc_plan,
             attack_plan=attack_plan,
-        escrow_plan=escrow_plan,
+            escrow_plan=escrow_plan,
+            _return_ir=True,
         )
         manifest_text = _binding_manifest_text(bindings, context)
     except (CompileError, OSError, ValueError) as exc:
@@ -777,6 +799,11 @@ def compile_source_with_report(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            effective_rules,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -789,6 +816,7 @@ def compile_source_with_report(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
@@ -854,7 +882,7 @@ def compile_to_file(
             "native validation backend is required before artifact promotion"
         )
     registry = registry or default_de_registry()
-    result, bindings, context = _compile_source_parts(
+    result, bindings, context, ir = _compile_source_parts(
         source,
         base_goal,
         source_unit=source_unit,
@@ -864,6 +892,7 @@ def compile_to_file(
         duc_plan=duc_plan,
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
+        _return_ir=True,
     )
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -906,6 +935,11 @@ def compile_to_file(
         )
         strategic_number_report = analyze_strategic_number_expressions(effective_rules)
         recurrent_execution_report = analyze_recurrent_execution(effective_rules)
+        persistent_control_report = analyze_persistent_control_lifetimes(
+            ir,
+            persistent_state_report,
+            effective_rules,
+        )
         duc_report = analyze_duc(
             effective_rules,
             registry.native_contracts,
@@ -918,6 +952,7 @@ def compile_to_file(
             strategic_number_report=strategic_number_report,
             recurrent_execution_report=recurrent_execution_report,
             duc_report=duc_report,
+            persistent_control_report=persistent_control_report,
         )
         duc_errors = tuple(
             item
