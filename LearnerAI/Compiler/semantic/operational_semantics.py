@@ -310,7 +310,6 @@ def _validate_contract(contract: OperationalLoopContract) -> list[OperationalDia
                 if (
                     observation_id not in contract.observe.observation_ids
                     or observation_id not in contract.reobserve.observation_ids
-                    or observation_id not in _condition_ids(contract.admission)
                 ):
                     diagnostics.append(
                         _diagnostic(
