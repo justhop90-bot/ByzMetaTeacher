@@ -270,3 +270,8 @@ from .operational_domains import (
     operational_contracts_for_duc_plan,
     operational_contracts_for_escrow_plan,
 )
+
+from .military_composition import (
+    build_military_composition_proof,
+    validate_military_composition_proof,
+)
