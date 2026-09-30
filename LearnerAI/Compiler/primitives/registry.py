@@ -276,6 +276,11 @@ class PrimitiveRegistry:
         )
 
     def validate_attack_plan(self, plan) -> None:
+        from ..ir.attack import AttackExecution
+        if isinstance(plan, AttackExecution):
+            plan = plan.native_plan
+            if plan is None or plan.empty:
+                return
         binder = NativeSemanticBinder(
             native_registry=self._native,
             semantic_mappings=self._semantic_mappings,

@@ -1,7 +1,11 @@
 import unittest
 
 from Compiler.ast import Expression
+from Compiler.compiler import compile_source
 from Compiler.ir import (
+    AttackExecution,
+    AttackExecutionMode,
+    AttackExecutionState,
     AttackLifecycleObservation,
     NativeAttackLifecyclePlan,
     NativeAttackRule,
@@ -9,6 +13,7 @@ from Compiler.ir import (
     NativeDucRule,
     OperationalDomain,
     OperationalRecoveryStrategy,
+    SemanticId,
 )
 from Compiler.semantic.operational_domains import (
     merge_operational_plan,
@@ -28,7 +33,7 @@ class OperationalDomainAdapterTests(unittest.TestCase):
                 NativeAttackRule(
                     identity="attack-rule",
                     order=0,
-                    facts=(self._expr("can-attack"),),
+                    facts=(self._expr("true"),),
                     actions=(self._expr("attack-now"),),
                     lifecycle=(
                         AttackLifecycleObservation.ADMISSION_REQUIRED,
@@ -51,6 +56,57 @@ class OperationalDomainAdapterTests(unittest.TestCase):
                 ),
             )
         )
+
+    def _attack_execution(self):
+        return AttackExecution(
+            identity=SemanticId("test", "attack-attempt"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.ATTACK,
+            mode=AttackExecutionMode.ATTACK_NOW,
+            native_plan=self._attack_plan(),
+        )
+
+    def test_attack_execution_projects_into_operational_loop(self):
+        execution = self._attack_execution()
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        contract = plan.contracts[0]
+        self.assertEqual(contract.demand, execution.objective)
+        self.assertEqual(contract.domain, OperationalDomain.ATTACK)
+        self.assertIn(OperationalRecoveryStrategy.REISSUE_REQUEST, contract.recovery.strategies)
+        self.assertIn(OperationalRecoveryStrategy.REASSESS, contract.recovery.strategies)
+        self.assertEqual(contract.request.commands[0].head, "attack-now")
+
+    def test_duc_targeted_execution_projects_identity_recovery(self):
+        execution = AttackExecution(
+            identity=SemanticId("test", "duc-attempt"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.PREPARE,
+            mode=AttackExecutionMode.DUC_TARGETED,
+        )
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        self.assertIn(
+            OperationalRecoveryStrategy.REACQUIRE_DUC_IDENTITY,
+            plan.contracts[0].recovery.strategies,
+        )
+
+    def test_compile_source_accepts_typed_attack_execution_on_existing_channel(self):
+        source = """
+        demand castle-posture {
+            require (can-build castle)
+            action (build castle)
+            witness (building-type-count castle > 0)
+            release (building-type-count castle > 0)
+        }
+        """
+        artifact = compile_source(source, attack_plan=self._attack_execution())
+        self.assertIn("; Native attack lifecycle plan", artifact)
+        self.assertIn("(attack-now)", artifact)
 
     def test_attack_adapter_preserves_reassertion_without_completion_ack(self):
         contract = operational_contracts_for_attack_plan(self._attack_plan())[0]

@@ -61,6 +61,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.operational_domains import merge_operational_plan
     from Compiler.emitter import emit
     from Compiler.ir import (
+        AttackExecution,
         NativeAttackLifecyclePlan,
         NativeDucPlan,
         NativeEscrowPolicyPlan,
@@ -117,7 +118,7 @@ else:
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
     from .emitter import emit
-    from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
+    from .ir import AttackExecution, NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
@@ -233,7 +234,7 @@ def _compile_ir_parts(
     binding_context: BindingContext | None = None,
     control_plan=None,
     duc_plan: NativeDucPlan | None = None,
-    attack_plan: NativeAttackLifecyclePlan | None = None,
+    attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
 ):
     reports = []

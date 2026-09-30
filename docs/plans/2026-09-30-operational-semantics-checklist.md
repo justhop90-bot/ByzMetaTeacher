@@ -18,7 +18,8 @@
 
 ## Domain projections
 - [x] SemanticDemand projection.
-- [x] Attack execution-plan projection.
+- [x] Native attack-plan projection.
+- [x] Typed AttackExecution lifecycle projection through the existing attack_plan channel; nested native emission remains optional and unchanged.
 - [x] DUC execution-plan projection.
 - [x] Escrow release/policy projection.
 - [x] Goal references.
@@ -40,3 +41,13 @@
 - [ ] Confirm current-head compiler workflow completes.
 - [ ] Confirm native zero-findings on current-head compiler fixtures.
 - [ ] Confirm cross-platform determinism on current head.
+
+## Follow-on repair: typed attack lifecycle bridge
+
+- [x] Project AttackExecution into the operational control loop.
+- [x] Preserve the persistent attack objective as the operational demand.
+- [x] Treat target/capability state as compiler-policy observations only.
+- [x] Reuse DUC identity recovery for DUC_TARGETED execution.
+- [x] Keep native emission limited to AttackExecution.native_plan.
+- [x] Keep one public attack_plan channel.
+- [x] Add focused adapter and compile-path regression coverage.
