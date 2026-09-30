@@ -11,6 +11,7 @@ from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
 
 if TYPE_CHECKING:
+    from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
 
 
@@ -209,6 +210,27 @@ class StrategicDemandSpec:
 
 
 @dataclass(frozen=True)
+class StrategicMilitaryComposition:
+    """Strategy-level grouping of production demands under one military objective."""
+
+    identity: str
+    production_demands: tuple[str, ...]
+    attack_objective: str
+
+    def __post_init__(self) -> None:
+        if not self.identity.strip():
+            raise ValueError("military composition identity must not be empty")
+        if not self.production_demands:
+            raise ValueError("military composition requires at least one production demand")
+        if len(self.production_demands) != len(set(self.production_demands)):
+            raise ValueError("military composition production demands must be unique")
+        if any(not item.strip() for item in self.production_demands):
+            raise ValueError("military composition production demand identities must not be empty")
+        if not self.attack_objective.strip():
+            raise ValueError("military composition attack objective must not be empty")
+
+
+@dataclass(frozen=True)
 class PostureTransition:
     from_postures: tuple[StrategyPosture, ...]
     to_posture: StrategyPosture
@@ -250,6 +272,7 @@ class StrategyProfile:
     provenance: tuple[EvidenceRef, ...]
     capability_observations: tuple[StrategicCapabilityObservation, ...] = ()
     observations: tuple[StrategicObservationSpec, ...] = ()
+    military_compositions: tuple[StrategicMilitaryComposition, ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -299,6 +322,7 @@ class StrategyCompilation:
     demands: tuple["SemanticDemand", ...]
     bindings: dict[str, StrategicBinding]
     escrow_plan: "NativeEscrowReleasePlan | None" = None
+    military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
 
 
 def _validate_evidence_attribution(
@@ -737,11 +761,67 @@ def lower_strategy_profile(
         else None
     )
 
+    from .military_composition import (
+        MilitaryCompositionPlan,
+        MilitaryCompositionUnitTarget,
+    )
+
+    military_compositions: list[MilitaryCompositionPlan] = []
+    for spec in profile.military_compositions:
+        composition_identity = SemanticId(profile.profile_id, spec.identity)
+        targets: list[MilitaryCompositionUnitTarget] = []
+        for strategic_identity in spec.production_demands:
+            candidates = tuple(
+                demand
+                for demand in bound_demands
+                if demand.strategic_binding is not None
+                and demand.strategic_binding.strategic_id == strategic_identity
+            )
+            if not candidates:
+                raise ValueError(
+                    f"military composition '{spec.identity}' references unknown strategic demand "
+                    f"'{strategic_identity}'"
+                )
+            if len(candidates) != 1:
+                raise ValueError(
+                    f"military composition '{spec.identity}' requires exactly one lowered execution demand "
+                    f"for strategic demand '{strategic_identity}'"
+                )
+            demand = candidates[0]
+            lifecycle = demand.production_lifecycle
+            if lifecycle is None:
+                raise ValueError(
+                    f"military composition '{spec.identity}' production demand '{strategic_identity}' "
+                    "must lower to a ProductionLifecycle"
+                )
+            target_minimum = profile.demand(strategic_identity).target.minimum
+            if target_minimum is None or target_minimum < 1:
+                raise ValueError(
+                    f"military composition '{spec.identity}' production demand '{strategic_identity}' "
+                    "requires a positive StrategicTarget minimum"
+                )
+            targets.append(
+                MilitaryCompositionUnitTarget(
+                    demand=demand.identity,
+                    unit=lifecycle.unit,
+                    native_unit_id=lifecycle.native_unit_id,
+                    minimum=target_minimum,
+                )
+            )
+        military_compositions.append(
+            MilitaryCompositionPlan(
+                identity=composition_identity,
+                targets=tuple(targets),
+                attack_objective=SemanticId(profile.profile_id, spec.attack_objective),
+            )
+        )
+
     return StrategyCompilation(
         profile=profile,
         demands=tuple(bound_demands),
         bindings=bindings,
         escrow_plan=escrow_plan,
+        military_compositions=tuple(military_compositions),
     )
 
 
