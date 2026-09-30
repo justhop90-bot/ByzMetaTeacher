@@ -48,6 +48,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
     from Compiler.semantic.persistent_state import analyze_persistent_state
+    from Compiler.semantic.persistent_control import analyze_persistent_control_lifetimes
     from Compiler.semantic.strategic_number_semantics import (
         StrategicNumberCompilationError,
         analyze_strategic_number_expressions,
@@ -107,6 +108,7 @@ else:
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
     from .semantic.persistent_state import analyze_persistent_state
+    from .semantic.persistent_control import analyze_persistent_control_lifetimes
     from .semantic.strategic_number_semantics import (
         StrategicNumberCompilationError,
         analyze_strategic_number_expressions,
@@ -418,11 +420,12 @@ def _compile_source_parts(
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    _return_ir: bool = False,
 ):
     ast = parse(source, source_unit=source_unit)
     registry = registry or default_de_registry()
     ir = analyze(ast, registry, source_unit=source_unit)
-    return _compile_ir_parts(
+    result = _compile_ir_parts(
         ir,
         registry,
         base_goal,
@@ -432,6 +435,9 @@ def _compile_source_parts(
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
     )
+    if _return_ir:
+        return (*result, tuple(ir))
+    return result
 
 
 def _compile_package_parts(
@@ -444,6 +450,7 @@ def _compile_package_parts(
     duc_plan: NativeDucPlan | None = None,
     attack_plan: NativeAttackLifecyclePlan | None = None,
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None,
+    _return_ir: bool = False,
 ):
     graph = SourceGraphResolver().resolve(request)
     graph_report = validate_effective_source_graph(graph)
@@ -462,6 +469,8 @@ def _compile_package_parts(
         attack_plan=attack_plan,
         escrow_plan=escrow_plan,
     )
+    if _return_ir:
+        return result, bindings, context, graph, tuple(ir)
     return result, bindings, context, graph
 
 
