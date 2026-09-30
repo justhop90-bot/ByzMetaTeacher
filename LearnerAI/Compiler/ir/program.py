@@ -12,6 +12,7 @@ from .attack import AttackExecution
 from .capability import CapabilityGraph
 from .native_duc import NativeDucPlan
 from .model import SemanticDemand
+from .military_composition import MilitaryCompositionProofPath
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
 from .operational import OperationalSemanticsPlan
@@ -29,12 +30,17 @@ class CompilerSemanticProgram:
     duc_plan: NativeDucPlan | None = None
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
+    military_proof_path: MilitaryCompositionProofPath | None = None
 
     def __post_init__(self) -> None:
         # Domain-specific plan validators run at their existing compiler
         # boundaries. This envelope owns only cross-domain assembly invariants.
         if not isinstance(self.demands, tuple):
             raise TypeError("compiler semantic program demands must be a tuple")
+        if self.military_proof_path is not None and not isinstance(
+            self.military_proof_path, MilitaryCompositionProofPath
+        ):
+            raise TypeError("compiler semantic program military proof path is invalid")
 
         identities = tuple(demand.identity for demand in self.demands)
         if len(identities) != len(set(identities)):

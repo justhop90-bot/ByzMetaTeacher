@@ -19,6 +19,7 @@ from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 from .attack import (
     AttackCapabilityRef,
     AttackCapabilityRole,
+    AttackTargetRef,
     AttackCompletionContract,
     AttackExecution,
     AttackExecutionMode,
@@ -286,3 +287,10 @@ from .production import (
 from .research import ResearchLifecycle, ResearchState
 
 from .program import CompilerSemanticProgram
+
+from .military_composition import (
+    MilitaryCompositionPlan,
+    MilitaryCompositionProofPath,
+    MilitaryCompositionUnitTarget,
+    MilitaryProofStatus,
+)
