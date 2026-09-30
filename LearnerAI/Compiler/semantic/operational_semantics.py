@@ -46,6 +46,8 @@ class OperationalDiagnosticCode(str, Enum):
     TIMER_ONLY_REOBSERVATION = "OPS-009"
     INVALID_CONTROL_REFERENCE = "OPS-011"
     DUPLICATE_CONTRACT = "OPS-012"
+    UNRESOLVED_CONTROL = "OPS-013"
+    UNLINKED_CONTROL = "OPS-014"
 
 
 @dataclass(frozen=True)
@@ -257,6 +259,69 @@ def _validate_contract(contract: OperationalLoopContract) -> list[OperationalDia
                     location=contract.location,
                 )
             )
+        if control.resolution_required:
+            if control.controller_id is None or control.surface_identity is None:
+                diagnostics.append(
+                    _diagnostic(
+                        OperationalDiagnosticCode.UNRESOLVED_CONTROL,
+                        OperationalStatus.CONFLICTING,
+                        f"resolved operational control '{control.reference}' "
+                        "is missing controller/surface metadata",
+                        subject,
+                        location=contract.location,
+                    )
+                )
+            if not control.linked_observation_ids:
+                diagnostics.append(
+                    _diagnostic(
+                        OperationalDiagnosticCode.UNLINKED_CONTROL,
+                        OperationalStatus.CONFLICTING,
+                        f"resolved operational control '{control.reference}' "
+                        "has no operational observation link",
+                        subject,
+                        location=contract.location,
+                    )
+                )
+            for observation_id in control.linked_observation_ids:
+                observation = observations.get(observation_id)
+                if observation is None:
+                    diagnostics.append(
+                        _diagnostic(
+                            OperationalDiagnosticCode.UNKNOWN_STAGE_REFERENCE,
+                            OperationalStatus.CONFLICTING,
+                            f"operational control '{control.reference}' links "
+                            f"unknown observation '{observation_id}'",
+                            subject,
+                            location=contract.location,
+                        )
+                    )
+                    continue
+                if observation.role is not OperationalObservationRole.CONTROL_STATE:
+                    diagnostics.append(
+                        _diagnostic(
+                            OperationalDiagnosticCode.UNLINKED_CONTROL,
+                            OperationalStatus.CONFLICTING,
+                            f"operational control '{control.reference}' must link "
+                            "to CONTROL_STATE observations",
+                            subject,
+                            location=contract.location,
+                        )
+                    )
+                if (
+                    observation_id not in contract.observe.observation_ids
+                    or observation_id not in contract.reobserve.observation_ids
+                    or observation_id not in _condition_ids(contract.admission)
+                ):
+                    diagnostics.append(
+                        _diagnostic(
+                            OperationalDiagnosticCode.UNLINKED_CONTROL,
+                            OperationalStatus.CONFLICTING,
+                            f"operational control '{control.reference}' is not "
+                            "linked into observe/admission/reobserve",
+                            subject,
+                            location=contract.location,
+                        )
+                    )
 
     return diagnostics
 
