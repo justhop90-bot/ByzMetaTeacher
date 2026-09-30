@@ -116,12 +116,9 @@ def validate_military_composition_proof(
     demand_by_id = {demand.identity: demand for demand in program.demands}
     composition = proof.composition
 
-    if composition.identity not in demand_by_id:
-        diagnostics.append(_error(
-            "MIL-PROOF-001",
-            f"composition demand '{composition.identity.local_name}' is missing",
-        ))
-
+    # A strategy composition is a strategy-level proof identity, not itself an
+    # execution demand. Its concrete production targets must resolve to actual
+    # SemanticDemand instances below.
     for target in composition.targets:
         demand = demand_by_id.get(target.demand)
         if demand is None:
