@@ -193,10 +193,37 @@ class OperationalControlRef:
     kind: OperationalControlKind
     reference: str
     use: OperationalControlUse
+    controller_id: str | None = None
+    surface_identity: str | None = None
+    linked_observation_ids: tuple[str, ...] = ()
+    resolution_required: bool = False
 
     def __post_init__(self) -> None:
         if not self.reference.strip():
             raise ValueError("operational control reference must not be empty")
+        if len(self.linked_observation_ids) != len(set(self.linked_observation_ids)):
+            raise ValueError("operational control observation links must be unique")
+        if any(not item.strip() for item in self.linked_observation_ids):
+            raise ValueError(
+                "operational control observation links must be non-empty"
+            )
+        if self.resolution_required:
+            if self.controller_id is None or not self.controller_id.strip():
+                raise ValueError(
+                    "resolved operational control requires a controller identity"
+                )
+            if self.surface_identity is None or not self.surface_identity.strip():
+                raise ValueError(
+                    "resolved operational control requires a surface identity"
+                )
+            if not self.linked_observation_ids:
+                raise ValueError(
+                    "resolved operational control requires an observation link"
+                )
+            if self.use is not OperationalControlUse.READ:
+                raise ValueError(
+                    "evidence-only resolved controls must be READ-only"
+                )
 
 
 @dataclass(frozen=True)
@@ -244,7 +271,17 @@ class OperationalLoopContract:
         observation_ids = tuple(item.identity for item in self.observations)
         if len(observation_ids) != len(set(observation_ids)):
             raise ValueError("operational observation identities must be unique")
-        control_keys = tuple((item.kind.value, item.reference, item.use.value) for item in self.controls)
+        control_keys = tuple(
+            (
+                item.kind.value,
+                item.reference,
+                item.use.value,
+                item.controller_id,
+                item.surface_identity,
+                item.linked_observation_ids,
+            )
+            for item in self.controls
+        )
         if len(control_keys) != len(set(control_keys)):
             raise ValueError("operational control references must be unique")
         if (
