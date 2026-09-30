@@ -9,7 +9,7 @@ from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
-from .military_composition import MilitaryCompositionPlan
+from .military_composition import MilitaryCompositionPlan, MilitaryCompositionUnitTarget
 
 if TYPE_CHECKING:
     from .model import SemanticDemand
@@ -761,11 +761,62 @@ def lower_strategy_profile(
         else None
     )
 
+    military_compositions: list[MilitaryCompositionPlan] = []
+    for spec in profile.military_compositions:
+        composition_identity = SemanticId(profile.profile_id, spec.identity)
+        targets: list[MilitaryCompositionUnitTarget] = []
+        for strategic_identity in spec.production_demands:
+            candidates = tuple(
+                demand
+                for demand in bound_demands
+                if demand.strategic_binding is not None
+                and demand.strategic_binding.strategic_id == strategic_identity
+            )
+            if not candidates:
+                raise ValueError(
+                    f"military composition '{spec.identity}' references unknown strategic demand "
+                    f"'{strategic_identity}'"
+                )
+            if len(candidates) != 1:
+                raise ValueError(
+                    f"military composition '{spec.identity}' requires exactly one lowered execution demand "
+                    f"for strategic demand '{strategic_identity}'"
+                )
+            demand = candidates[0]
+            lifecycle = demand.production_lifecycle
+            if lifecycle is None:
+                raise ValueError(
+                    f"military composition '{spec.identity}' production demand '{strategic_identity}' "
+                    "must lower to a ProductionLifecycle"
+                )
+            target_minimum = profile.demand(strategic_identity).target.minimum
+            if target_minimum is None or target_minimum < 1:
+                raise ValueError(
+                    f"military composition '{spec.identity}' production demand '{strategic_identity}' "
+                    "requires a positive StrategicTarget minimum"
+                )
+            targets.append(
+                MilitaryCompositionUnitTarget(
+                    demand=demand.identity,
+                    unit=lifecycle.unit,
+                    native_unit_id=lifecycle.native_unit_id,
+                    minimum=target_minimum,
+                )
+            )
+        military_compositions.append(
+            MilitaryCompositionPlan(
+                identity=composition_identity,
+                targets=tuple(targets),
+                attack_objective=SemanticId(profile.profile_id, spec.attack_objective),
+            )
+        )
+
     return StrategyCompilation(
         profile=profile,
         demands=tuple(bound_demands),
         bindings=bindings,
         escrow_plan=escrow_plan,
+        military_compositions=tuple(military_compositions),
     )
 
 
