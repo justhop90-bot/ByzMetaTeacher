@@ -6,6 +6,8 @@ from Compiler.parser import parse
 from Compiler.primitives import default_de_registry
 from Compiler.semantic import analyze
 
+from test_military_composition_proof import _proof
+
 
 _SOURCE = """
 demand bootstrap {
@@ -41,6 +43,10 @@ class CompilerSemanticProgramTests(unittest.TestCase):
             program.demands[0].identity,
             SemanticId("<semantic-program-test>", "bootstrap"),
         )
+
+    def test_program_with_military_proof_is_not_empty(self):
+        program, _ = _proof()
+        self.assertFalse(program.empty)
 
     def test_program_rejects_duplicate_demand_identity(self):
         demands = self._demands()
