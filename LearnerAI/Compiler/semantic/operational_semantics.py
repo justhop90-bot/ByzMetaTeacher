@@ -44,7 +44,6 @@ class OperationalDiagnosticCode(str, Enum):
     RETRY_WITHOUT_ADMISSION = "OPS-007"
     DEMAND_DROPPED_ON_RECOVERY = "OPS-008"
     TIMER_ONLY_REOBSERVATION = "OPS-009"
-    DOMAIN_REQUEST_MISMATCH = "OPS-010"
     INVALID_CONTROL_REFERENCE = "OPS-011"
     DUPLICATE_CONTRACT = "OPS-012"
 
@@ -97,34 +96,6 @@ def _diagnostic(
 
 def _condition_ids(guard: OperationalGuard) -> tuple[str, ...]:
     return tuple(condition.observation_id for condition in guard.conditions)
-
-
-def _domain_request_compatible(
-    domain: OperationalDomain,
-    request: OperationalRequestKind,
-) -> bool:
-    return {
-        OperationalDomain.ATTACK: {
-            OperationalRequestKind.ATTACK_CONTROLLER,
-            OperationalRequestKind.ACTION,
-            OperationalRequestKind.DUC_OPERATION,
-        },
-        OperationalDomain.PRODUCTION: {OperationalRequestKind.ACTION},
-        OperationalDomain.CONSTRUCTION: {OperationalRequestKind.ACTION},
-        OperationalDomain.RESEARCH: {OperationalRequestKind.ACTION},
-        OperationalDomain.DUC: {OperationalRequestKind.DUC_OPERATION},
-        OperationalDomain.ESCROW: {
-            OperationalRequestKind.ESCROW_OPERATION,
-            OperationalRequestKind.ACTION,
-        },
-        # Control-surface domains describe the state participating in the
-        # loop; they do not require the loop's request itself to mutate that
-        # same control surface.
-        OperationalDomain.TIMER: set(OperationalRequestKind),
-        OperationalDomain.GOAL: set(OperationalRequestKind),
-        OperationalDomain.STRATEGIC_NUMBER: set(OperationalRequestKind),
-        OperationalDomain.GENERIC: set(OperationalRequestKind),
-    }[domain]
 
 
 def _validate_contract(contract: OperationalLoopContract) -> list[OperationalDiagnostic]:
@@ -274,17 +245,6 @@ def _validate_contract(contract: OperationalLoopContract) -> list[OperationalDia
             )
         )
 
-    if not _domain_request_compatible(contract.domain, contract.request.kind):
-        diagnostics.append(
-            _diagnostic(
-                OperationalDiagnosticCode.DOMAIN_REQUEST_MISMATCH,
-                OperationalStatus.CONFLICTING,
-                f"domain '{contract.domain.value}' cannot use request kind "
-                f"'{contract.request.kind.value}'",
-                subject,
-                location=contract.request.location or contract.location,
-            )
-        )
 
     for control in contract.controls:
         if not control.reference.strip():
