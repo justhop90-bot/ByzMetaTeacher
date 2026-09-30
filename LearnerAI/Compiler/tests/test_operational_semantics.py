@@ -159,9 +159,9 @@ class OperationalSemanticsIRTests(unittest.TestCase):
         )
         self.assertTrue(report.valid)
 
-    def test_domain_request_mismatch_is_rejected(self):
+    def test_duc_domain_requires_duc_request(self):
         contract = self._contract(
-            domain=OperationalDomain.STRATEGIC_NUMBER,
+            domain=OperationalDomain.DUC,
             request_kind=OperationalRequestKind.ACTION,
         )
         report = validate_operational_semantics(
