@@ -30,6 +30,9 @@ AttackExecution now reaches the operational-semantics layer, but non-ATTACK_NOW 
 ## Acceptance
 
 - [ ] Focused operational-domain tests pass.
+- [ ] Every attack SN control resolves through NativeControllerCatalog surface + controller metadata.
+- [ ] Every resolved attack control is READ-only and remains EVIDENCE_ONLY in the existing catalog.
+- [ ] Every resolved attack control links to a CONTROL_STATE observation included in observe, admission, and reobserve.
 - [ ] Full compiler regression passes.
 - [ ] Native zero-findings and 9/9 determinism remain green.
 - [ ] Compiler verification gate passes.
