@@ -8,6 +8,7 @@ from LearnerAI.Compiler.clients.basilisk import (
     StrategyPosture,
     StrategicEvidenceKind,
     StrategicTargetKind,
+    StrategicMilitaryComposition,
     build_byzantine_castle_strategy,
     build_land_castle_strategy,
     lower_strategy_profile,
@@ -43,6 +44,30 @@ class StrategySemanticsTests(unittest.TestCase):
             self.profile.demand("castle-commitment").identity,
         )
         self.assertEqual(demand.strategic_binding, binding)
+
+    def test_lowering_assembles_military_composition_from_real_strategy_demands(self):
+        profile = replace(
+            self.profile,
+            military_compositions=(
+                StrategicMilitaryComposition(
+                    identity="feudal-defense-composition",
+                    production_demands=("early-defensive-spears",),
+                    attack_objective="feudal-defense-attack",
+                ),
+            ),
+        )
+        compilation = lower_strategy_profile(profile, self.effective)
+
+        self.assertEqual(len(compilation.military_compositions), 1)
+        plan = compilation.military_compositions[0]
+        demand = next(
+            item for item in compilation.demands
+            if item.name == "early-defensive-spears"
+        )
+        self.assertEqual(plan.identity.local_name, "feudal-defense-composition")
+        self.assertEqual(plan.targets[0].demand, demand.identity)
+        self.assertEqual(plan.targets[0].native_unit_id, demand.production_lifecycle.native_unit_id)
+        self.assertEqual(plan.attack_objective.local_name, "feudal-defense-attack")
 
     def test_castle_target_is_a_persistent_exact_target_not_an_execution_witness(self):
         spec = next(
