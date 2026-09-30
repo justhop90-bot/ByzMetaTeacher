@@ -146,6 +146,16 @@ def validate_military_composition_proof(
             "MIL-PROOF-015",
             "completion witness must establish the attack objective",
         ))
+    if attack.completion is None:
+        diagnostics.append(_error(
+            "MIL-PROOF-017",
+            "attack execution must carry the proof completion witness",
+        ))
+    elif attack.completion.witness is not witness:
+        diagnostics.append(_error(
+            "MIL-PROOF-018",
+            "attack completion must carry the exact proof completion witness",
+        ))
 
     recovered = (
         proof.recovery_state
