@@ -29,6 +29,7 @@ class CompilerSemanticProgram:
     duc_plan: NativeDucPlan | None = None
     attack_plan: NativeAttackLifecyclePlan | AttackExecution | None = None
     escrow_plan: NativeEscrowReleasePlan | NativeEscrowPolicyPlan | None = None
+    military_proof_path: MilitaryCompositionProofPath | None = None
 
     def __post_init__(self) -> None:
         # Domain-specific plan validators run at their existing compiler
