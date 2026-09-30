@@ -233,6 +233,26 @@ def _location(action: RuleAction, fallback) -> object:
     return action.expression.location or fallback
 
 
+def _target_diagnostic_kwargs(
+    target: DucTargetState | None,
+    *,
+    current_rule_order: int,
+) -> dict[str, object]:
+    """Return deterministic provenance for diagnostics about a prior target."""
+    if target is None or target.provenance is None:
+        return {}
+    if target.provenance.rule_order == current_rule_order:
+        return {}
+    return {
+        "state_kind": DucStateKind.TARGET.value,
+        "state_identifier": (
+            f"{target.kind.value.lower()}-generation:{target.generation}"
+        ),
+        "related_rule_order": target.provenance.rule_order,
+        "related_operation": target.provenance.command,
+    }
+
+
 def _visibility(current_rule: int, producer_rule: int) -> DucVisibility:
     return (
         DucVisibility.SAME_RULE
@@ -374,6 +394,10 @@ def _target_data_read(
                     rule.rule_order,
                     message,
                     _location(action, rule.source_location),
+                    **_target_diagnostic_kwargs(
+                        target,
+                        current_rule_order=rule.rule_order,
+                    ),
                 )
             )
 
@@ -390,6 +414,10 @@ def _target_data_read(
                         "target-of-target identity is runtime-dependent and is not modeled as compiler state"
                     ),
                     _location(action, rule.source_location),
+                    **_target_diagnostic_kwargs(
+                        target,
+                        current_rule_order=rule.rule_order,
+                    ),
                 )
             )
 
@@ -2863,6 +2891,10 @@ def _analyze_duc_linear(
                                         "compiler preserves the existing target without claiming runtime preservation"
                                     ),
                                     _location(action, rule.source_location),
+                                    **_target_diagnostic_kwargs(
+                                        state.target,
+                                        current_rule_order=rule.rule_order,
+                                    ),
                                 )
                             )
                         continue
@@ -3118,6 +3150,10 @@ def _analyze_duc_linear(
                                 f"{source.value.lower()} DUC state; target lifetime is unknown"
                             ),
                             _location(action, rule.source_location),
+                            **_target_diagnostic_kwargs(
+                                state.target,
+                                current_rule_order=rule.rule_order,
+                            ),
                         )
                     )
                 rule_writes.add(DucStateKind.LIST)
@@ -3220,6 +3256,10 @@ def _analyze_duc_linear(
                                 f"{source.value.lower()} DUC state; target lifetime is unknown"
                             ),
                             _location(action, rule.source_location),
+                            **_target_diagnostic_kwargs(
+                                state.target,
+                                current_rule_order=rule.rule_order,
+                            ),
                         )
                     )
                 rule_writes.add(DucStateKind.LIST)
@@ -3317,6 +3357,10 @@ def _analyze_duc_linear(
                                 rule.rule_order,
                                 "up-target-objects consumes an object target invalidated by later DUC reset state",
                                 _location(action, rule.source_location),
+                                **_target_diagnostic_kwargs(
+                                    target,
+                                    current_rule_order=rule.rule_order,
+                                ),
                             )
                         )
                     elif target is not None and target.validity is DucTargetStatus.UNKNOWN:
@@ -3335,6 +3379,10 @@ def _analyze_duc_linear(
                                 rule.rule_order,
                                 message,
                                 _location(action, rule.source_location),
+                                **_target_diagnostic_kwargs(
+                                    target,
+                                    current_rule_order=rule.rule_order,
+                                ),
                             )
                         )
                     rule_reads.add(DucStateKind.TARGET)

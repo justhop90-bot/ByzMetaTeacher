@@ -72,6 +72,41 @@ class RuleDiagnosticsTests(unittest.TestCase):
         self.assertEqual(diagnostic.category, RuleDiagnosticCategory.DUC)
         self.assertEqual(diagnostic.source_code, "DUC-017")
 
+    def test_duc_cross_rule_target_warning_carries_related_provenance(self):
+        execution = analyze_effective_rules(
+            self._graph(
+                "(defrule (true) => (up-set-target-by-id c: 12345))\\n"
+                "(defrule (true) => (up-target-objects 1 action-default -1 -1))\\n"
+            )
+        )
+
+        duc = analyze_duc(execution)
+        finding = next(
+            item
+            for item in duc.diagnostics
+            if item.code == "DUC-007"
+            and item.rule_order == 2
+            and "liveness is unverified" in item.message
+        )
+
+        self.assertEqual(finding.related_rule_order, 1)
+        self.assertEqual(finding.related_operation, "up-set-target-by-id")
+        self.assertEqual(finding.state_kind, "TARGET")
+        self.assertTrue(finding.state_identifier.startswith("object-generation:"))
+
+        diagnostics = analyze_rule_diagnostics(execution, duc_report=duc)
+        bridged = next(
+            item
+            for item in diagnostics.diagnostics
+            if item.code is RuleDiagnosticCode.DUC_TARGET_UNKNOWN
+            and item.rule_order == 2
+        )
+
+        self.assertEqual(bridged.related_rule_order, 1)
+        self.assertEqual(bridged.related_operation, "up-set-target-by-id")
+        self.assertEqual(bridged.state_kind, "TARGET")
+        self.assertEqual(bridged.state_identifier, finding.state_identifier)
+
     def test_duc_loop_widening_maps_to_rule_diagnostic(self):
         report = analyze_effective_rules(
             self._graph(
