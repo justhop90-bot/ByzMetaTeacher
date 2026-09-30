@@ -191,6 +191,15 @@ class StrategyRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "0..100"):
             bind_strategic_evidence(evidence, self.effective)
 
+    def test_sn227_rejects_negative_percent(self):
+        evidence = StrategicEvidence(
+            StrategicEvidenceKind.PERSISTENT,
+            "(up-compare-sn 227 >= -1)",
+            "bad-negative-attack-soldier-percent",
+        )
+        with self.assertRaisesRegex(ValueError, "0..100"):
+            bind_strategic_evidence(evidence, self.effective)
+
     def test_attack_control_observations_do_not_promote_attack_execution(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
