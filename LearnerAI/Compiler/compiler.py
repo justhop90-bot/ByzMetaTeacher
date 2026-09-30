@@ -118,7 +118,7 @@ else:
     from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .semantic.operational_domains import merge_operational_plan
     from .emitter import emit
-    from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
+    from .ir import AttackExecution, NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
     from .primitives.strategic_number_catalog import default_strategic_number_inventory
     from .source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
