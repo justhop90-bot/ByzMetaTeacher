@@ -127,6 +127,37 @@ class OperationalDomainAdapterTests(unittest.TestCase):
                 ("STRATEGIC_NUMBER", "sn-percent-attack-soldiers", "READ"),
             ),
         )
+        self.assertEqual(
+            tuple(item.controller_id for item in controls),
+            ("attack-group-control", "attack-group-control"),
+        )
+        self.assertEqual(
+            tuple(item.surface_identity for item in controls),
+            (
+                "attack-group-control:strategic_number:sn-number-attack-groups",
+                "attack-group-control:strategic_number:sn-percent-attack-soldiers",
+            ),
+        )
+        for control in controls:
+            self.assertEqual(len(control.linked_observation_ids), 1)
+            observation_id = control.linked_observation_ids[0]
+            self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
+            self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
+            self.assertIn(
+                observation_id,
+                tuple(
+                    condition.observation_id
+                    for condition in plan.contracts[0].admission.conditions
+                ),
+            )
+        self.assertTrue(
+            all(
+                observation.reference.startswith("attack-group-control:")
+                for observation in plan.contracts[0].observations
+                if observation.identity in controls[0].linked_observation_ids
+                or observation.identity in controls[1].linked_observation_ids
+            )
+        )
 
     def test_town_size_attack_projects_existing_strategic_number_control(self):
         execution = AttackExecution(
@@ -144,6 +175,31 @@ class OperationalDomainAdapterTests(unittest.TestCase):
         self.assertEqual(controls[0].kind.value, "STRATEGIC_NUMBER")
         self.assertEqual(controls[0].reference, "sn-maximum-town-size")
         self.assertEqual(controls[0].use.value, "READ")
+        self.assertEqual(controls[0].controller_id, "town-size-defense-targeting")
+        self.assertEqual(
+            controls[0].surface_identity,
+            "town-size-defense-targeting:strategic_number:sn-maximum-town-size",
+        )
+        self.assertEqual(len(controls[0].linked_observation_ids), 1)
+        observation_id = controls[0].linked_observation_ids[0]
+        self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
+        self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
+        self.assertIn(
+            observation_id,
+            tuple(
+                condition.observation_id
+                for condition in plan.contracts[0].admission.conditions
+            ),
+        )
+        observation = next(
+            item
+            for item in plan.contracts[0].observations
+            if item.identity == observation_id
+        )
+        self.assertEqual(
+            observation.reference,
+            "town-size-defense-targeting:strategic_number:sn-maximum-town-size",
+        )
 
 
     def test_attack_adapter_preserves_reassertion_without_completion_ack(self):
