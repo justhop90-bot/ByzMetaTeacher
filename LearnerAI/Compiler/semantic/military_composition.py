@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from ..diagnostics import DiagnosticSeverity
 from ..ir.attack import AttackCapabilityRole, AttackExecutionMode, AttackExecutionState
-from ..ir.capability import CapabilityRecoveryEvent, CapabilityRecoveryStateKind
+from ..ir.capability import CapabilityRecoveryContract, CapabilityRecoveryEvent, CapabilityRecoveryState, CapabilityRecoveryStateKind, DemandId
 from ..ir.model import CompletionWitnessContract
+from ..ir.resource import ResourceClaim, ResourceClaimId, ResourceKind, ResourceScope
 from ..ir.program import CompilerSemanticProgram
 from ..ir.military_composition import MilitaryCompositionProofPath
+from ..ir.model import SemanticId
+if TYPE_CHECKING:
+    from ..ir.attack import AttackExecution
+    from ..ir.strategy import StrategyCompilation
 
 
 @dataclass(frozen=True)
@@ -39,6 +45,69 @@ def _error(code: str, message: str) -> MilitaryProofDiagnostic:
     return MilitaryProofDiagnostic(code, DiagnosticSeverity.ERROR, message)
 
 
+def build_military_composition_proof(
+    compilation: "StrategyCompilation",
+    composition,
+    *,
+    attack: "AttackExecution",
+) -> MilitaryCompositionProofPath:
+    """Assemble a proof path from lowered strategy state plus runtime attack evidence."""
+    if composition not in compilation.military_compositions:
+        raise ValueError(
+            "military composition must originate from the StrategyCompilation"
+        )
+    if attack.objective != composition.attack_objective:
+        raise ValueError(
+            "attack objective does not match the compiled military composition"
+        )
+    if attack.target is None:
+        raise ValueError("military proof assembly requires an attack target")
+    if attack.completion is None:
+        raise ValueError(
+            "military proof assembly requires an attack completion witness"
+        )
+
+    claims = tuple(
+        ResourceClaim(
+            identity=ResourceClaimId(
+                composition.identity.source_unit,
+                f"{target.demand.local_name}-military-composition-resource",
+            ),
+            kind=ResourceKind.ACTION_EXCLUSION,
+            scope=ResourceScope.TRANSIENT,
+            claimant=target.demand,
+            conflict_class=(
+                f"military-composition:{composition.identity.local_name}"
+            ),
+            arbitration_owner=composition.identity,
+        )
+        for target in composition.targets
+    )
+    recovery_contract = CapabilityRecoveryContract()
+    recovery_demand = SemanticId(
+        composition.identity.source_unit,
+        composition.identity.local_name,
+    )
+    recovery_state = CapabilityRecoveryState(
+        demand=DemandId(
+            recovery_demand.source_unit,
+            recovery_demand.local_name,
+        ),
+        kind=CapabilityRecoveryStateKind.ACTIVE,
+    )
+    return MilitaryCompositionProofPath(
+        composition=composition,
+        resource_claims=claims,
+        target=attack.target.target,
+        attack_target=attack.target,
+        attack=attack,
+        witness=attack.completion.witness,
+        recovery_demand=composition.identity,
+        recovery_contract=recovery_contract,
+        recovery_state=recovery_state,
+    )
+
+
 def validate_military_composition_proof(
     proof: MilitaryCompositionProofPath,
     program: CompilerSemanticProgram,
@@ -47,12 +116,9 @@ def validate_military_composition_proof(
     demand_by_id = {demand.identity: demand for demand in program.demands}
     composition = proof.composition
 
-    if composition.identity not in demand_by_id:
-        diagnostics.append(_error(
-            "MIL-PROOF-001",
-            f"composition demand '{composition.identity.local_name}' is missing",
-        ))
-
+    # A strategy composition is a strategy-level proof identity, not itself an
+    # execution demand. Its concrete production targets must resolve to actual
+    # SemanticDemand instances below.
     for target in composition.targets:
         demand = demand_by_id.get(target.demand)
         if demand is None:
@@ -146,6 +212,16 @@ def validate_military_composition_proof(
             "MIL-PROOF-015",
             "completion witness must establish the attack objective",
         ))
+    if attack.completion is None:
+        diagnostics.append(_error(
+            "MIL-PROOF-017",
+            "attack execution must carry the proof completion witness",
+        ))
+    elif attack.completion.witness is not witness:
+        diagnostics.append(_error(
+            "MIL-PROOF-018",
+            "attack completion must carry the exact proof completion witness",
+        ))
 
     recovered = (
         proof.recovery_state
@@ -162,6 +238,7 @@ def validate_military_composition_proof(
 
 
 __all__ = [
+    "build_military_composition_proof",
     "MilitaryProofDiagnostic",
     "MilitaryProofReport",
     "validate_military_composition_proof",
