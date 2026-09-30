@@ -9,9 +9,9 @@ from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
-from .military_composition import MilitaryCompositionPlan, MilitaryCompositionUnitTarget
 
 if TYPE_CHECKING:
+    from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
 
 
@@ -759,6 +759,11 @@ def lower_strategy_profile(
         NativeEscrowReleasePlan(tuple(escrow_operations))
         if escrow_operations
         else None
+    )
+
+    from .military_composition import (
+        MilitaryCompositionPlan,
+        MilitaryCompositionUnitTarget,
     )
 
     military_compositions: list[MilitaryCompositionPlan] = []
