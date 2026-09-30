@@ -7,7 +7,7 @@ source/pass provenance.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -52,6 +52,315 @@ class DucTargetStatus(str, Enum):
     VALID = "VALID"
     STALE = "STALE"
     UNKNOWN = "UNKNOWN"
+
+
+class DucObjectLifecycleState(str, Enum):
+    """Compiler-side identity lifecycle independent of native target-slot lifetime."""
+
+    UNBOUND = "UNBOUND"
+    DISCOVERED = "DISCOVERED"
+    STORED = "STORED"
+    REACQUIRED = "REACQUIRED"
+    VALIDATED = "VALIDATED"
+    INVALIDATED_NATIVE = "INVALIDATED_NATIVE"
+    INVALIDATED_WORLD = "INVALIDATED_WORLD"
+    INVALIDATED_UNKNOWN = "INVALIDATED_UNKNOWN"
+
+
+class DucObjectLifecycleEvent(str, Enum):
+    DISCOVER = "DISCOVER"
+    STORE_ID = "STORE_ID"
+    BIND_ID = "BIND_ID"
+    REACQUIRE_BY_ID = "REACQUIRE_BY_ID"
+    REACQUIRE_BY_SEARCH = "REACQUIRE_BY_SEARCH"
+    VALIDATE = "VALIDATE"
+    RELEASE = "RELEASE"
+    NATIVE_FAILURE = "NATIVE_FAILURE"
+    WORLD_WITNESS_GONE = "WORLD_WITNESS_GONE"
+    IDENTITY_CONFLICT = "IDENTITY_CONFLICT"
+    FRESH_DISCOVER = "FRESH_DISCOVER"
+
+
+@dataclass(frozen=True)
+class DucObjectLifecycleTransition:
+    event: DucObjectLifecycleEvent
+    from_state: DucObjectLifecycleState
+    to_state: DucObjectLifecycleState
+    identity_ref: Optional[str]
+    failure_reason: Optional[str] = None
+
+
+class DucObjectLifecycleError(ValueError):
+    """Illegal compiler-side object lifecycle transition."""
+
+
+@dataclass(frozen=True)
+class DucObjectLifecycle:
+    state: DucObjectLifecycleState = DucObjectLifecycleState.UNBOUND
+    identity_ref: Optional[str] = None
+    native_object_id: Optional[str] = None
+    history: tuple[DucObjectLifecycleTransition, ...] = field(
+        default=(),
+        compare=False,
+    )
+
+    def _require(
+        self,
+        event: DucObjectLifecycleEvent,
+        allowed: tuple[DucObjectLifecycleState, ...],
+    ) -> None:
+        if self.state not in allowed:
+            raise DucObjectLifecycleError(
+                f"{event.value} is illegal from {self.state.value}"
+            )
+
+    def _transition(
+        self,
+        event: DucObjectLifecycleEvent,
+        to_state: DucObjectLifecycleState,
+        *,
+        identity_ref: Optional[str] = None,
+        native_object_id: Optional[str] = None,
+        failure_reason: Optional[str] = None,
+    ) -> "DucObjectLifecycle":
+        return DucObjectLifecycle(
+            state=to_state,
+            identity_ref=(
+                self.identity_ref if identity_ref is None else identity_ref
+            ),
+            native_object_id=(
+                self.native_object_id
+                if native_object_id is None
+                else native_object_id
+            ),
+            history=self.history
+            + (
+                DucObjectLifecycleTransition(
+                    event=event,
+                    from_state=self.state,
+                    to_state=to_state,
+                    identity_ref=(
+                        self.identity_ref if identity_ref is None else identity_ref
+                    ),
+                    failure_reason=failure_reason,
+                ),
+            ),
+        )
+
+    def discover(self) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.DISCOVER,
+            (DucObjectLifecycleState.UNBOUND,),
+        )
+        return self._transition(
+            DucObjectLifecycleEvent.DISCOVER,
+            DucObjectLifecycleState.DISCOVERED,
+            identity_ref=None,
+            native_object_id=None,
+        )
+
+    def fresh_discover(self) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.FRESH_DISCOVER,
+            (
+                DucObjectLifecycleState.INVALIDATED_NATIVE,
+                DucObjectLifecycleState.INVALIDATED_WORLD,
+                DucObjectLifecycleState.INVALIDATED_UNKNOWN,
+            ),
+        )
+        return DucObjectLifecycle(
+            state=DucObjectLifecycleState.DISCOVERED,
+            identity_ref=None,
+            native_object_id=None,
+            history=self.history
+            + (
+                DucObjectLifecycleTransition(
+                    event=DucObjectLifecycleEvent.FRESH_DISCOVER,
+                    from_state=self.state,
+                    to_state=DucObjectLifecycleState.DISCOVERED,
+                    identity_ref=None,
+                ),
+            ),
+        )
+
+    def store_id(self, *, identity_ref: str) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.STORE_ID,
+            (DucObjectLifecycleState.DISCOVERED,),
+        )
+        if not identity_ref:
+            raise DucObjectLifecycleError("STORE_ID requires an identity binding")
+        native_id = (
+            identity_ref.removeprefix("native:")
+            if identity_ref.startswith("native:")
+            else None
+        )
+        return self._transition(
+            DucObjectLifecycleEvent.STORE_ID,
+            DucObjectLifecycleState.STORED,
+            identity_ref=identity_ref,
+            native_object_id=native_id,
+        )
+
+    def bind_identity(
+        self,
+        *,
+        identity_ref: str,
+        native_object_id: Optional[str] = None,
+    ) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.BIND_ID,
+            (DucObjectLifecycleState.UNBOUND,),
+        )
+        if not identity_ref:
+            raise DucObjectLifecycleError(
+                "BIND_ID requires an identity binding"
+            )
+        return self._transition(
+            DucObjectLifecycleEvent.BIND_ID,
+            DucObjectLifecycleState.STORED,
+            identity_ref=identity_ref,
+            native_object_id=native_object_id,
+        )
+
+    def bind_id(self, *, native_object_id: str) -> "DucObjectLifecycle":
+        if not native_object_id:
+            raise DucObjectLifecycleError(
+                "BIND_ID requires a native object identity"
+            )
+        return self.bind_identity(
+            identity_ref=f"native:{native_object_id}",
+            native_object_id=native_object_id,
+        )
+
+    def reacquire_by_id(
+        self,
+        *,
+        success: Optional[bool] = None,
+    ) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.REACQUIRE_BY_ID,
+            (DucObjectLifecycleState.STORED,),
+        )
+        if self.identity_ref is None:
+            raise DucObjectLifecycleError(
+                "REACQUIRE_BY_ID requires a stored identity"
+            )
+        if success is False:
+            return self._transition(
+                DucObjectLifecycleEvent.NATIVE_FAILURE,
+                DucObjectLifecycleState.INVALIDATED_NATIVE,
+                failure_reason="NATIVE_ACQUISITION_FAILED",
+            )
+        return self._transition(
+            DucObjectLifecycleEvent.REACQUIRE_BY_ID,
+            DucObjectLifecycleState.REACQUIRED,
+        )
+
+    def reacquire_by_search(
+        self,
+        *,
+        candidate_identity_ref: str,
+        success: Optional[bool] = None,
+    ) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.REACQUIRE_BY_SEARCH,
+            (DucObjectLifecycleState.STORED,),
+        )
+        if candidate_identity_ref != self.identity_ref:
+            return self._transition(
+                DucObjectLifecycleEvent.IDENTITY_CONFLICT,
+                DucObjectLifecycleState.INVALIDATED_UNKNOWN,
+                failure_reason="IDENTITY_CONFLICT",
+            )
+        if success is False:
+            return self._transition(
+                DucObjectLifecycleEvent.NATIVE_FAILURE,
+                DucObjectLifecycleState.INVALIDATED_NATIVE,
+                failure_reason="NATIVE_ACQUISITION_FAILED",
+            )
+        return self._transition(
+            DucObjectLifecycleEvent.REACQUIRE_BY_SEARCH,
+            DucObjectLifecycleState.REACQUIRED,
+        )
+
+    def validate(self, *, success: bool) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.VALIDATE,
+            (DucObjectLifecycleState.REACQUIRED,),
+        )
+        if not success:
+            return self._transition(
+                DucObjectLifecycleEvent.NATIVE_FAILURE,
+                DucObjectLifecycleState.INVALIDATED_NATIVE,
+                failure_reason="NATIVE_VALIDATION_FAILED",
+            )
+        return self._transition(
+            DucObjectLifecycleEvent.VALIDATE,
+            DucObjectLifecycleState.VALIDATED,
+        )
+
+    def release(self) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.RELEASE,
+            (
+                DucObjectLifecycleState.REACQUIRED,
+                DucObjectLifecycleState.VALIDATED,
+            ),
+        )
+        return self._transition(
+            DucObjectLifecycleEvent.RELEASE,
+            DucObjectLifecycleState.STORED,
+        )
+
+    def invalidate_native(self) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.NATIVE_FAILURE,
+            (
+                DucObjectLifecycleState.STORED,
+                DucObjectLifecycleState.REACQUIRED,
+                DucObjectLifecycleState.VALIDATED,
+            ),
+        )
+        return self._transition(
+            DucObjectLifecycleEvent.NATIVE_FAILURE,
+            DucObjectLifecycleState.INVALIDATED_NATIVE,
+            failure_reason="NATIVE_ACQUISITION_FAILED",
+        )
+
+    def invalidate_world(self, *, world_witness: bool) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.WORLD_WITNESS_GONE,
+            (
+                DucObjectLifecycleState.STORED,
+                DucObjectLifecycleState.REACQUIRED,
+                DucObjectLifecycleState.VALIDATED,
+            ),
+        )
+        if not world_witness:
+            raise DucObjectLifecycleError(
+                "WORLD_WITNESS_GONE requires an independent world witness"
+            )
+        return self._transition(
+            DucObjectLifecycleEvent.WORLD_WITNESS_GONE,
+            DucObjectLifecycleState.INVALIDATED_WORLD,
+            failure_reason="WORLD_LIVENESS_WITNESS_FALSE",
+        )
+
+    def invalidate_unknown(self) -> "DucObjectLifecycle":
+        self._require(
+            DucObjectLifecycleEvent.IDENTITY_CONFLICT,
+            (
+                DucObjectLifecycleState.STORED,
+                DucObjectLifecycleState.REACQUIRED,
+                DucObjectLifecycleState.VALIDATED,
+            ),
+        )
+        return self._transition(
+            DucObjectLifecycleEvent.IDENTITY_CONFLICT,
+            DucObjectLifecycleState.INVALIDATED_UNKNOWN,
+            failure_reason="IDENTITY_UNRESOLVED",
+        )
 
 
 class DucGroupStatus(str, Enum):
@@ -275,6 +584,7 @@ class DucObjectRef:
     native_object_id: Optional[str]
     provenance: DucProvenance
     index_stable: bool = True
+    lifecycle: DucObjectLifecycle = DucObjectLifecycle()
 
     def __post_init__(self) -> None:
         if self.list_kind is None and (
@@ -582,6 +892,11 @@ __all__ = [
     "DucDiagnostic",
     "DucExecutionEffect",
     "DucTargetConsumerEffect",
+    "DucObjectLifecycle",
+    "DucObjectLifecycleError",
+    "DucObjectLifecycleEvent",
+    "DucObjectLifecycleState",
+    "DucObjectLifecycleTransition",
     "DucObjectLiveness",
     "DucTargetFactObservation",
     "DucTargetConsumerMode",

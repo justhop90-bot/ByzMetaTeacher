@@ -32,6 +32,8 @@ from ..ir.duc import (
     DucListMutationEffect,
     DucListMutationKind,
     DucLoopWidening,
+    DucObjectLifecycle,
+    DucObjectLifecycleState,
     DucObjectLiveness,
     DucListKind,
     DucObjectRef,
@@ -419,6 +421,28 @@ def _target_data_read(
                 maximum_start=contract.output_goal_max,
             )
             next_state = replace(state, goal_output_spans=spans)
+
+    if (
+        contract.writes_goal
+        and args[0] == "object-data-id"
+        and target is not None
+        and target.validity is not DucTargetStatus.STALE
+        and target.object_refs
+        and output_span is not None
+        and target.object_refs[0].lifecycle.state
+        is DucObjectLifecycleState.DISCOVERED
+    ):
+        lifecycle = target.object_refs[0].lifecycle.store_id(
+            identity_ref=f"goal:{goal_id}",
+        )
+        target = replace(
+            target,
+            object_refs=(
+                replace(target.object_refs[0], lifecycle=lifecycle),
+                *target.object_refs[1:],
+            ),
+        )
+        next_state = replace(next_state, target=target)
 
     observation = DucTargetDataObservation(
         command=command,
@@ -2703,6 +2727,25 @@ def _analyze_duc_linear(
                         contract_id="duc.target.object-id",
                         evidence_ids=target_contract.evidence_ids,
                     )
+                    identity_ref = (
+                        f"native:{native_object_id}"
+                        if native_object_id is not None
+                        else f"goal:{object_id_operand}"
+                        if type_op == "g:"
+                        else f"sn:{object_id_operand}"
+                        if type_op == "s:"
+                        else None
+                    )
+                    lifecycle = (
+                        DucObjectLifecycle()
+                        .bind_identity(
+                            identity_ref=identity_ref,
+                            native_object_id=native_object_id,
+                        )
+                        .reacquire_by_id(success=None)
+                        if identity_ref is not None
+                        else DucObjectLifecycle()
+                    )
                     target = DucTargetState(
                         kind=DucTargetKind.OBJECT,
                         generation=state_revision,
@@ -2713,6 +2756,7 @@ def _analyze_duc_linear(
                                 None,
                                 native_object_id,
                                 provenance,
+                                lifecycle=lifecycle,
                             ),
                         ),
                         source_list_generation=None,
@@ -2887,6 +2931,7 @@ def _analyze_duc_linear(
                                 index,
                                 None,
                                 provenance,
+                                lifecycle=DucObjectLifecycle().discover(),
                             ),
                         ),
                         source_list_generation=(
@@ -4345,6 +4390,17 @@ def advance_duc_pass(state: DucSemanticState) -> DucSemanticState:
     """
     target = state.target
     if target is not None:
+        released_refs = []
+        for object_ref in target.object_refs:
+            lifecycle = object_ref.lifecycle
+            if lifecycle.state in {
+                DucObjectLifecycleState.REACQUIRED,
+                DucObjectLifecycleState.VALIDATED,
+            }:
+                lifecycle = lifecycle.release()
+            released_refs.append(replace(object_ref, lifecycle=lifecycle))
+        target = replace(target, object_refs=tuple(released_refs))
+
         if target.validity is DucTargetStatus.STALE:
             target = replace(target, proof=DucTargetProof.UNKNOWN)
         else:
