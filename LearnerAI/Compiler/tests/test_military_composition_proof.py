@@ -252,6 +252,41 @@ class MilitaryCompositionProofTests(unittest.TestCase):
         self.assertFalse(report.valid)
         self.assertIn("MIL-PROOF-005", {item.code for item in report.errors})
 
+    def test_attack_completion_must_carry_the_declared_witness(self):
+        program, proof = _proof()
+        bad_attack = replace(proof.attack, completion=None)
+        bad = replace(proof, attack=bad_attack)
+        report = validate_military_composition_proof(bad, program)
+        self.assertFalse(report.valid)
+        self.assertIn("MIL-PROOF-017", {item.code for item in report.errors})
+
+    def test_attack_completion_witness_must_be_the_declared_witness(self):
+        program, proof = _proof()
+        alternate = CompletionWitnessContract(
+            identity=SemanticId("test", "alternate-attack-complete"),
+            evidence_kind="WORLD_STATE",
+            primitive="unit-type-count",
+            expression=_expr(
+                "(unit-type-count spearman >= 3)",
+                "unit-type-count",
+                "spearman",
+                ">=",
+                "3",
+            ),
+            establishes=proof.attack.objective,
+            source_order=21,
+            issuance_source_order=10,
+        )
+        bad_completion = proof.attack.completion.__class__(
+            witness=alternate,
+            objective=proof.attack.objective,
+        ) if proof.attack.completion is not None else None
+        bad_attack = replace(proof.attack, completion=bad_completion)
+        bad = replace(proof, attack=bad_attack)
+        report = validate_military_composition_proof(bad, program)
+        self.assertFalse(report.valid)
+        self.assertIn("MIL-PROOF-018", {item.code for item in report.errors})
+
     def test_recovery_returns_same_demand_to_active(self):
         program, proof = _proof()
         report = validate_military_composition_proof(proof, program)
