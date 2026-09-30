@@ -64,19 +64,31 @@ class DucObjectLifecycleTests(unittest.TestCase):
             lifecycle.store_id()
 
     def test_validation_without_current_reacquisition_is_illegal(self):
-        lifecycle = self._machine_type()().store_id(identity_ref="goal:41")
+        lifecycle = (
+            self._machine_type()()
+            .discover()
+            .store_id(identity_ref="goal:41")
+        )
         with self.assertRaisesRegex(ValueError, "VALIDATE"):
             lifecycle.validate(success=True)
 
     def test_failed_native_reacquisition_invalidates_without_claiming_world_death(self):
-        lifecycle = self._machine_type()().store_id(identity_ref="goal:41")
+        lifecycle = (
+            self._machine_type()()
+            .discover()
+            .store_id(identity_ref="goal:41")
+        )
         lifecycle = lifecycle.reacquire_by_id(success=False)
         self.assertEqual(lifecycle.state.value, "INVALIDATED_NATIVE")
         self.assertNotEqual(lifecycle.state.value, "INVALIDATED_WORLD")
         self.assertEqual(lifecycle.identity_ref, "goal:41")
 
     def test_world_invalidation_requires_independent_witness(self):
-        lifecycle = self._machine_type()().store_id(identity_ref="goal:41")
+        lifecycle = (
+            self._machine_type()()
+            .discover()
+            .store_id(identity_ref="goal:41")
+        )
         with self.assertRaisesRegex(ValueError, "world witness"):
             lifecycle.invalidate_world(world_witness=False)
 
@@ -84,7 +96,11 @@ class DucObjectLifecycleTests(unittest.TestCase):
         self.assertEqual(lifecycle.state.value, "INVALIDATED_WORLD")
 
     def test_invalidated_handle_requires_fresh_discovery(self):
-        lifecycle = self._machine_type()().store_id(identity_ref="goal:41")
+        lifecycle = (
+            self._machine_type()()
+            .discover()
+            .store_id(identity_ref="goal:41")
+        )
         lifecycle = lifecycle.invalidate_native()
         with self.assertRaisesRegex(ValueError, "FRESH_DISCOVER"):
             lifecycle.release()
@@ -107,7 +123,6 @@ class DucObjectLifecycleTests(unittest.TestCase):
         self.assertEqual(lifecycle.state.value, "DISCOVERED")
 
     def test_object_data_id_read_stores_symbolic_identity_binding(self):
-        location = SourceLocation(2, 1, "fixture.per")
         rule = _rule(1, (
             ("up-find-local", ("c:", "villager", "c:", "1")),
             ("up-set-target-object", ("search-local", "c:", "0")),
