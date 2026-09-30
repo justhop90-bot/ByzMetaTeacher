@@ -262,6 +262,8 @@ jobs:
           path: focused-persistent-state-tests.log
           if-no-files-found: error
           retention-days: 14
+      - name: Focused military composition proof regression
+        run: python -m unittest LearnerAI/Compiler/tests/test_military_composition_proof.py
       - name: Run compiler regression suite
         shell: bash
         run: |
