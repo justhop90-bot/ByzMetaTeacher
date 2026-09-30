@@ -92,7 +92,8 @@ def _contains(root: Expression, needle: Expression) -> bool:
 def _release_rule(report: RuleExecutionReport, demand: SemanticDemand) -> EffectiveRule | None:
     goal_name = f"demand-{demand.name}"
     for rule in report.rules:
-        if not any(_contains(fact, demand.release) for fact in rule.facts):
+        release_expression = demand.release_state.expression if demand.release_state else demand.release
+        if not any(_contains(fact, release_expression) for fact in rule.facts):
             continue
         if not any(
             fact.head == "goal"
