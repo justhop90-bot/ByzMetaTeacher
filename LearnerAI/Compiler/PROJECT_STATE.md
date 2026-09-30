@@ -105,7 +105,14 @@ The compiler may adopt a static policy when it is explicitly labeled as policy.
 
 It must not upgrade common community usage into an engine fact.
 
-## Current open frontier
+## Roadmap
+
+The authoritative remaining-gap roadmap is LearnerAI/Compiler/ROADMAP.md.
+
+The latest MUSE community research synthesis is docs/research/2026-09-30-muse-community-gap-synthesis.md.
+
+The roadmap is intentionally narrower than the historical gap matrix: it excludes already-closed substrate work and separates compiler implementation from runtime evidence acquisition.
+
 
 The next compiler seam is the production/train arbitration boundary.
 
