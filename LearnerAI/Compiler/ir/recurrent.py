@@ -10,7 +10,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 from ..ast import SourceLocation
-from .model import GoalRole, StorageRequestId
+from .model import GoalRole, SemanticId, StorageRequestId
 
 
 @dataclass(frozen=True)
@@ -32,6 +32,11 @@ class TimerState:
     name: str
     request: TimerRequest
     location: "SourceLocation | None" = None
+
+    @property
+    def owner(self) -> SemanticId:
+        """Return the semantic owner encoded by the storage request identity."""
+        return self.request.request_id.owner
 
     def __post_init__(self) -> None:
         if not self.name.strip():
