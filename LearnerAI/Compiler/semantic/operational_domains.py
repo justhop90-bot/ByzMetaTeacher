@@ -233,6 +233,13 @@ def operational_contracts_for_attack_execution(
             )
         )
 
+    admission_observation_ids = tuple(item.identity for item in observations)
+    admission = _guard(f"{identity}:admission", admission_observation_ids)
+    retry_guard = _guard(
+        f"{identity}:retry-admission",
+        admission_observation_ids,
+    )
+
     commands: tuple[Expression, ...] = ()
     if execution.native_plan is not None:
         commands = tuple(
@@ -275,8 +282,6 @@ def operational_contracts_for_attack_execution(
         observations.append(observation)
 
     observation_ids = tuple(item.identity for item in observations)
-    admission = _guard(f"{identity}:admission", observation_ids)
-    retry_guard = _guard(f"{identity}:retry-admission", observation_ids)
 
     if execution.mode is AttackExecutionMode.DUC_TARGETED:
         controls.append(
