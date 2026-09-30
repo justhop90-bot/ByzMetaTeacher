@@ -11,6 +11,11 @@ from ..diagnostics import DiagnosticSeverity
 from ..primitives import PrimitiveRegistry, default_de_registry
 from .firing_eligibility import FiringEligibility, analyze_firing_eligibility
 from .guard_satisfiability import GuardSatisfiability, analyze_guard
+from .persistent_control import (
+    PersistentControlDiagnostic,
+    PersistentControlDiagnosticCode,
+    PersistentControlReport,
+)
 from .persistent_state import (
     PersistentStateDiagnostic,
     PersistentStateDiagnosticCode,
@@ -28,6 +33,7 @@ from .recurrent_execution import RecurrentExecutionReport
 class RuleDiagnosticCategory(str, Enum):
     FIRING_ELIGIBILITY = "FIRING_ELIGIBILITY"
     PERSISTENT_STATE = "PERSISTENT_STATE"
+    PERSISTENT_CONTROL = "PERSISTENT_CONTROL"
     STRATEGIC_NUMBER = "STRATEGIC_NUMBER"
     CONTROL_FLOW = "CONTROL_FLOW"
     RECURRENT_EXECUTION = "RECURRENT_EXECUTION"
@@ -45,6 +51,12 @@ class RuleDiagnosticCode(str, Enum):
     PERSISTENT_CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
     PERSISTENT_OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
     PERSISTENT_SAME_PASS_CONSUMER_PATH_BLOCKED = "PSTATE-006"
+    PERSISTENT_CONTROL_OWNER_MISMATCH = "PCONTROL-001"
+    PERSISTENT_CONTROL_RELEASE_MISSING = "PCONTROL-002"
+    PERSISTENT_CONTROL_CLEANUP_UNREACHABLE = "PCONTROL-003"
+    PERSISTENT_CONTROL_CLEANUP_PRE_RELEASE = "PCONTROL-004"
+    PERSISTENT_CONTROL_RELEASE_PATH_UNKNOWN = "PCONTROL-005"
+    PERSISTENT_CONTROL_TIMER_AS_STRATEGIC_STATE = "PCONTROL-006"
     STRATEGIC_NUMBER_INVALID_ARITY = "SNSEM-001"
     STRATEGIC_NUMBER_INVALID_OPERATOR = "SNSEM-002"
     STRATEGIC_NUMBER_INVALID_OPERAND_PREFIX = "SNSEM-003"
@@ -232,6 +244,32 @@ def _persistent_diagnostic_for(
     )
 
 
+def _persistent_control_diagnostic_for(item: PersistentControlDiagnostic) -> RuleDiagnostic:
+    code_map = {
+        PersistentControlDiagnosticCode.OWNER_MISMATCH: RuleDiagnosticCode.PERSISTENT_CONTROL_OWNER_MISMATCH,
+        PersistentControlDiagnosticCode.RELEASE_MISSING: RuleDiagnosticCode.PERSISTENT_CONTROL_RELEASE_MISSING,
+        PersistentControlDiagnosticCode.CLEANUP_UNREACHABLE: RuleDiagnosticCode.PERSISTENT_CONTROL_CLEANUP_UNREACHABLE,
+        PersistentControlDiagnosticCode.CLEANUP_PRE_RELEASE: RuleDiagnosticCode.PERSISTENT_CONTROL_CLEANUP_PRE_RELEASE,
+        PersistentControlDiagnosticCode.RELEASE_PATH_UNKNOWN: RuleDiagnosticCode.PERSISTENT_CONTROL_RELEASE_PATH_UNKNOWN,
+        PersistentControlDiagnosticCode.TIMER_AS_STRATEGIC_STATE: RuleDiagnosticCode.PERSISTENT_CONTROL_TIMER_AS_STRATEGIC_STATE,
+    }
+    rule_order = item.cleanup_rule_order or item.release_rule_order or 0
+    return RuleDiagnostic(
+        rule_order=rule_order,
+        code=code_map[item.code],
+        severity=item.severity,
+        eligibility=None,
+        message=item.message,
+        location=item.location or SourceLocation(0, 0, item.owner.source_unit),
+        category=RuleDiagnosticCategory.PERSISTENT_CONTROL,
+        source_code=item.code.value,
+        state_kind=item.control.local_name.split(":", 1)[0] if ":" in item.control.local_name else "TIMER",
+        state_identifier=item.control.local_name.split(":", 1)[-1],
+        related_rule_order=item.release_rule_order,
+        related_operation="persistent-control",
+    )
+
+
 def _recurrent_diagnostic_for(item) -> RuleDiagnostic:
     code_map = {
         "REX-001": RuleDiagnosticCode.RECURRENT_NEVER_RUNNABLE,
@@ -269,6 +307,7 @@ def _diagnostic_sort_key(item: RuleDiagnostic) -> tuple[object, ...]:
         RuleDiagnosticCategory.CONTROL_FLOW: 2,
         RuleDiagnosticCategory.DUC: 3,
         RuleDiagnosticCategory.RECURRENT_EXECUTION: 4,
+        RuleDiagnosticCategory.PERSISTENT_CONTROL: 5,
     }
     return (
         item.rule_order,
@@ -508,6 +547,7 @@ def analyze_rule_diagnostics(
     strategic_number_report: StrategicNumberSemanticReport | None = None,
     recurrent_execution_report: RecurrentExecutionReport | None = None,
     duc_report: DucAnalysisReport | None = None,
+    persistent_control_report: PersistentControlReport | None = None,
 ) -> RuleDiagnosticReport:
     """Compile firing eligibility into deterministic diagnostics by rule order."""
     if not isinstance(report, RuleExecutionReport):
@@ -534,6 +574,11 @@ def analyze_rule_diagnostics(
         raise TypeError(
             "strategic_number_report must be a StrategicNumberSemanticReport"
         )
+
+    if persistent_control_report is not None and not isinstance(
+        persistent_control_report, PersistentControlReport
+    ):
+        raise TypeError("persistent_control_report must be a PersistentControlReport")
 
     if recurrent_execution_report is not None and not isinstance(
         recurrent_execution_report, RecurrentExecutionReport
@@ -583,6 +628,12 @@ def analyze_rule_diagnostics(
         diagnostics.extend(
             _duc_diagnostic_for(item)
             for item in duc_report.diagnostics
+        )
+
+    if persistent_control_report is not None:
+        diagnostics.extend(
+            _persistent_control_diagnostic_for(item)
+            for item in persistent_control_report.diagnostics
         )
 
     diagnostics.extend(_unreachable_rule_diagnostics(report))
