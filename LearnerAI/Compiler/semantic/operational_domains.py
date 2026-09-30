@@ -280,11 +280,14 @@ def merge_operational_plan(
 ) -> OperationalSemanticsPlan:
     contracts = list(base.contracts)
 
-    if attack_plan is not None:
+    if isinstance(attack_plan, NativeAttackLifecyclePlan):
         contracts.extend(operational_contracts_for_attack_plan(attack_plan))
-    if duc_plan is not None:
+    if isinstance(duc_plan, NativeDucPlan):
         contracts.extend(operational_contracts_for_duc_plan(duc_plan))
-    if escrow_plan is not None:
+    if isinstance(
+        escrow_plan,
+        (NativeEscrowReleasePlan, NativeEscrowPolicyPlan),
+    ):
         contracts.extend(operational_contracts_for_escrow_plan(escrow_plan))
 
     contracts.sort(
