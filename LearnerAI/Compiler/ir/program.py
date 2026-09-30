@@ -12,6 +12,7 @@ from .attack import AttackExecution
 from .capability import CapabilityGraph
 from .native_duc import NativeDucPlan
 from .model import SemanticDemand
+from .military_composition import MilitaryCompositionProofPath
 from .native_attack import NativeAttackLifecyclePlan
 from .native_control import NativeControlPlan
 from .operational import OperationalSemanticsPlan
