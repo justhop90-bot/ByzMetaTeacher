@@ -57,6 +57,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.rule_execution import analyze_effective_rules
     from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
     from Compiler.semantic.native_control import validate_native_control_plan
+    from Compiler.semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from Compiler.emitter import emit
     from Compiler.ir import (
         NativeAttackLifecyclePlan,
@@ -112,6 +113,7 @@ else:
     from .semantic.rule_execution import analyze_effective_rules
     from .semantic.recurrent_execution import analyze_recurrent_execution
     from .semantic.native_control import validate_native_control_plan
+    from .semantic.operational_semantics import build_operational_plan, validate_operational_semantics
     from .emitter import emit
     from .ir import NativeAttackLifecyclePlan, NativeDucPlan, NativeEscrowPolicyPlan, NativeEscrowReleasePlan
     from .runtime_binding import BindingContext, RuntimeBinder, StrategicNumberRequest, StrategicNumberSlot, TimerSlot
@@ -259,6 +261,13 @@ def _compile_ir_parts(
 
     issuance_report = validate_action_issuance(ir, registry)
     reports.append(issuance_report)
+
+    try:
+        operational_plan = build_operational_plan(ir)
+        operational_report = validate_operational_semantics(operational_plan)
+    except (TypeError, ValueError) as exc:
+        raise CompileError(f"OPERATIONAL-SEMANTICS: {exc}") from exc
+    reports.append(operational_report)
 
     graph_failure: SemanticDiagnostic | None = None
     capability_graph = None
