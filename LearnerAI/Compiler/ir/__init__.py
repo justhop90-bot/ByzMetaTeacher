@@ -286,3 +286,10 @@ from .production import (
 from .research import ResearchLifecycle, ResearchState
 
 from .program import CompilerSemanticProgram
+
+from .military_composition import (
+    MilitaryCompositionPlan,
+    MilitaryCompositionProofPath,
+    MilitaryCompositionUnitTarget,
+    MilitaryProofStatus,
+)

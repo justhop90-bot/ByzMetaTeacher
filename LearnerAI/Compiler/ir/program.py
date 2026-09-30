@@ -35,6 +35,10 @@ class CompilerSemanticProgram:
         # boundaries. This envelope owns only cross-domain assembly invariants.
         if not isinstance(self.demands, tuple):
             raise TypeError("compiler semantic program demands must be a tuple")
+        if self.military_proof_path is not None and not isinstance(
+            self.military_proof_path, MilitaryCompositionProofPath
+        ):
+            raise TypeError("compiler semantic program military proof path is invalid")
 
         identities = tuple(demand.identity for demand in self.demands)
         if len(identities) != len(set(identities)):
