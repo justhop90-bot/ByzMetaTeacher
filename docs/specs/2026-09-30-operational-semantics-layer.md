@@ -84,7 +84,6 @@ The validator rejects:
 - timing-only re-observation;
 - retry without explicit admission;
 - recovery that discards the owning demand;
-- incompatible domain/request pairs;
 - empty control references.
 
 The validator intentionally does not require a universal completion witness for controller-owned attack or DUC operational loops.
