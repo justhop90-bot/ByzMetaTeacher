@@ -1,0 +1,27 @@
+name: Legacy validator (manual)
+
+# Historical compatibility validator.
+# This workflow is intentionally not part of compiler CI. It exists only for
+# explicit historical/compatibility investigations and must not create a
+# default-branch red signal.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-validator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Run legacy validator profile self-test
+        run: node validation/basilisk-validator-profile-selftest.js
+      - name: Run legacy validator baseline
+        run: node validation/basilisk-validator.js --profile=8596a45
+      - name: Run legacy validator self-test
+        run: node validation/basilisk-validator-selftest.js
