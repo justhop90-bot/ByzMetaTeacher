@@ -5,6 +5,7 @@ from Compiler.ast import Expression
 from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.ir import (
     AttackCapabilityRef,
+    AttackCompletionContract,
     AttackCapabilityRole,
     AttackExecution,
     AttackExecutionMode,
@@ -277,10 +278,10 @@ class MilitaryCompositionProofTests(unittest.TestCase):
             source_order=21,
             issuance_source_order=10,
         )
-        bad_completion = proof.attack.completion.__class__(
+        bad_completion = AttackCompletionContract(
             witness=alternate,
             objective=proof.attack.objective,
-        ) if proof.attack.completion is not None else None
+        )
         bad_attack = replace(proof.attack, completion=bad_completion)
         bad = replace(proof, attack=bad_attack)
         report = validate_military_composition_proof(bad, program)
