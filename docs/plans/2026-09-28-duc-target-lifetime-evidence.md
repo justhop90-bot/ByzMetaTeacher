@@ -24,6 +24,12 @@ The compiler records target Fact outcomes conservatively:
 
 For a failed `up-set-target-object` Action with an existing target, the compiler preserves the previous target in its static state but emits a warning identifying the native failure effect as unresolved. This is preservation of compiler knowledge, not a claim that the engine necessarily preserves the target.
 
+## Closed compiler modeling seam
+
+The compiler now represents engine-world object liveness separately from DUC target-reference validity/proof. Every target defaults to `RUNTIME_DEPENDENT`; reset/mutation/pass transitions may make the target reference `STALE` or `UNKNOWN`, but none of those transitions assert that the underlying object died. `WITNESSED_ALIVE` and `WITNESSED_GONE` are reserved for future direct world-state observations.
+
+This closes the compiler representation gap without closing the native evidence gap.
+
 ## Open native boundaries
 
 The following remain `OPEN`:
