@@ -53,6 +53,7 @@ class PersistentStateDiagnosticCode(str, Enum):
     CONSUMER_STARVED_BY_RECURRENT_WRITER = "PSTATE-004"
     OPEN_LOOP_WRITE_WITHOUT_CONSUMER = "PSTATE-005"
     SAME_PASS_CONSUMER_PATH_BLOCKED = "PSTATE-006"
+    TIMER_OPEN_LIFETIME = "PSTATE-007"
 
 
 @dataclass(frozen=True)
@@ -386,6 +387,32 @@ def _same_pass_consumer_reachable(
     return False
 
 
+def _timer_lifetime_effect(
+    access: PersistentStateAccess,
+) -> str | None:
+    """Classify only statically provable timer starts and explicit cleanup writes."""
+    if access.state.kind is not PersistentStateKind.TIMER:
+        return None
+    if access.effect is not PersistentStateAccessKind.WRITE:
+        return None
+
+    if access.command == "enable-timer":
+        return "START"
+    if access.command == "disable-timer":
+        return "CLEANUP"
+    if access.command == "up-set-timer" and len(access.expression.args) == 4:
+        selector = str(access.expression.args[0]).lower()
+        interval_type = str(access.expression.args[2]).lower()
+        if selector not in {"c:", "c"} or interval_type not in {"c:", "c"}:
+            return None
+        try:
+            interval = int(str(access.expression.args[3]), 10)
+        except ValueError:
+            return None
+        return "CLEANUP" if interval < 0 else "START"
+    return None
+
+
 def _diagnostic_key(item: PersistentStateDiagnostic) -> tuple[object, ...]:
     related = item.related_access
     return (
@@ -614,6 +641,46 @@ def analyze_persistent_state(
                         location=writer.location,
                     )
                 )
+        if state.kind is PersistentStateKind.TIMER:
+            timer_starts = tuple(
+                writer
+                for writer in writers
+                if writer.rule_order in reachable_orders
+                and _timer_lifetime_effect(writer) == "START"
+            )
+            timer_cleanups = tuple(
+                writer
+                for writer in writers
+                if writer.rule_order in reachable_orders
+                and _timer_lifetime_effect(writer) == "CLEANUP"
+            )
+            for start in timer_starts:
+                later_cleanup = next(
+                    (
+                        cleanup
+                        for cleanup in timer_cleanups
+                        if cleanup.sort_key > start.sort_key
+                    ),
+                    None,
+                )
+                if later_cleanup is None:
+                    diagnostics.append(
+                        PersistentStateDiagnostic(
+                            code=PersistentStateDiagnosticCode.TIMER_OPEN_LIFETIME,
+                            severity=DiagnosticSeverity.WARNING,
+                            message=(
+                                f"timer state '{state.identifier}' is started by rule "
+                                f"{start.rule_order} but has no explicit cleanup in a "
+                                "later reachable rule; the timer may outlive its "
+                                "controlling lifecycle"
+                            ),
+                            rule_order=start.rule_order,
+                            access=start,
+                            related_access=None,
+                            location=start.location,
+                        )
+                    )
+
         reachable_writers = tuple(
             writer
             for writer in writers

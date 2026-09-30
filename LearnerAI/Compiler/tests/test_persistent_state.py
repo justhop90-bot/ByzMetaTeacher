@@ -84,6 +84,55 @@ class PersistentStateSemanticsTests(unittest.TestCase):
             PersistentStateDiagnosticCode.CONSUMER_BEFORE_WRITER,
         )
 
+    def test_timer_cleanup_closes_open_lifetime(self):
+        graph = self._graph(
+            "(defrule (true) => (enable-timer cooldown 30))\n"
+            "(defrule (up-timer-status cooldown = timer-running) => (disable-timer cooldown))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                getattr(item.code, "value", item.code) == "PSTATE-007"
+                for item in report.diagnostics
+            )
+        )
+
+    def test_dynamic_up_set_timer_does_not_infer_lifetime_direction(self):
+        graph = self._graph(
+            "(defrule (true) => (up-set-timer c: cooldown g: duration))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        self.assertFalse(
+            any(
+                getattr(item.code, "value", item.code) == "PSTATE-007"
+                for item in report.diagnostics
+            )
+        )
+
+    def test_timer_start_without_cleanup_reports_open_lifetime(self):
+        graph = self._graph(
+            "(defrule (true) => (enable-timer cooldown 30))\n"
+            "(defrule (up-timer-status cooldown = timer-running) => (set-goal observed 1))\n"
+        )
+
+        report = analyze_persistent_state(analyze_effective_rules(graph))
+
+        findings = tuple(
+            item
+            for item in report.diagnostics
+            if getattr(item.code, "value", item.code) == "PSTATE-007"
+        )
+
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].rule_order, 1)
+        self.assertEqual(findings[0].access.command, "enable-timer")
+        self.assertEqual(findings[0].severity, DiagnosticSeverity.WARNING)
+        self.assertIn("no explicit cleanup", findings[0].message)
+
     def test_cross_rule_write_then_read_is_persisted(self):
         graph = self._graph(
             "(defrule (true) => (set-goal 7 1))\n"
