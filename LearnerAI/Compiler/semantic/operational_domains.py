@@ -30,6 +30,12 @@ from ..ir import (
     SemanticId,
 )
 
+from .community_engine import PracticeStatus
+from .native_controller import (
+    NativeControlSurfaceKind,
+    default_native_controller_catalog,
+)
+
 
 def _policy_observation(
     identity: str,
@@ -125,6 +131,45 @@ def operational_contracts_for_attack_plan(
 
     return tuple(contracts)
 
+def _resolved_attack_strategic_number_control(
+    reference: str,
+    *,
+    observation_id: str,
+    catalog=None,
+) -> tuple[OperationalControlRef, OperationalObservation]:
+    """Resolve an evidence-only attack SN surface and link it into the loop graph."""
+    controller_catalog = catalog or default_native_controller_catalog()
+    surface = controller_catalog.resolve_surface(
+        NativeControlSurfaceKind.STRATEGIC_NUMBER,
+        reference,
+    )
+    controller = controller_catalog.controller(surface.controller_id)
+    if (
+        surface.status is not PracticeStatus.EVIDENCE_ONLY
+        or controller.status is not PracticeStatus.EVIDENCE_ONLY
+    ):
+        raise ValueError(
+            f"attack Strategic Number control '{reference}' must remain "
+            "evidence-only"
+        )
+
+    control = OperationalControlRef(
+        kind=OperationalControlKind.STRATEGIC_NUMBER,
+        reference=reference,
+        use=OperationalControlUse.READ,
+        controller_id=surface.controller_id,
+        surface_identity=surface.identity,
+        linked_observation_ids=(observation_id,),
+        resolution_required=True,
+    )
+    observation = _policy_observation(
+        observation_id,
+        reference=surface.identity,
+        role=OperationalObservationRole.CONTROL_STATE,
+    )
+    return control, observation
+
+
 def operational_contracts_for_attack_execution(
     execution: AttackExecution,
 ) -> tuple[OperationalLoopContract, ...]:
@@ -188,9 +233,12 @@ def operational_contracts_for_attack_execution(
             )
         )
 
-    observation_ids = tuple(item.identity for item in observations)
-    admission = _guard(f"{identity}:admission", observation_ids)
-    retry_guard = _guard(f"{identity}:retry-admission", observation_ids)
+    admission_observation_ids = tuple(item.identity for item in observations)
+    admission = _guard(f"{identity}:admission", admission_observation_ids)
+    retry_guard = _guard(
+        f"{identity}:retry-admission",
+        admission_observation_ids,
+    )
 
     commands: tuple[Expression, ...] = ()
     if execution.native_plan is not None:
@@ -213,6 +261,28 @@ def operational_contracts_for_attack_execution(
         )
 
     controls: list[OperationalControlRef] = []
+    attack_control_references: tuple[str, ...]
+    if execution.mode is AttackExecutionMode.ATTACK_GROUPS:
+        attack_control_references = (
+            "sn-number-attack-groups",
+            "sn-percent-attack-soldiers",
+        )
+    elif execution.mode is AttackExecutionMode.TOWN_SIZE_ATTACK:
+        attack_control_references = ("sn-maximum-town-size",)
+    else:
+        attack_control_references = ()
+
+    for control_reference in attack_control_references:
+        observation_id = f"{identity}:control:{control_reference}"
+        control, observation = _resolved_attack_strategic_number_control(
+            control_reference,
+            observation_id=observation_id,
+        )
+        controls.append(control)
+        observations.append(observation)
+
+    observation_ids = tuple(item.identity for item in observations)
+
     if execution.mode is AttackExecutionMode.DUC_TARGETED:
         controls.append(
             OperationalControlRef(

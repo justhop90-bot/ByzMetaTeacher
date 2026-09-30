@@ -108,6 +108,130 @@ class OperationalDomainAdapterTests(unittest.TestCase):
         self.assertIn("; Native attack lifecycle plan", artifact)
         self.assertIn("(attack-now)", artifact)
 
+    def test_attack_groups_project_existing_strategic_number_controls(self):
+        execution = AttackExecution(
+            identity=SemanticId("test", "attack-groups"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.PREPARE,
+            mode=AttackExecutionMode.ATTACK_GROUPS,
+        )
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        controls = plan.contracts[0].controls
+        self.assertEqual(
+            tuple((item.kind.value, item.reference, item.use.value) for item in controls),
+            (
+                ("STRATEGIC_NUMBER", "sn-number-attack-groups", "READ"),
+                ("STRATEGIC_NUMBER", "sn-percent-attack-soldiers", "READ"),
+            ),
+        )
+        self.assertEqual(
+            tuple(item.controller_id for item in controls),
+            ("attack-group-control", "attack-group-control"),
+        )
+        self.assertEqual(
+            tuple(item.surface_identity for item in controls),
+            (
+                "attack-group-control:strategic_number:sn-number-attack-groups",
+                "attack-group-control:strategic_number:sn-percent-attack-soldiers",
+            ),
+        )
+        for control in controls:
+            self.assertEqual(len(control.linked_observation_ids), 1)
+            observation_id = control.linked_observation_ids[0]
+            self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
+            self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
+            self.assertNotIn(
+                observation_id,
+                tuple(
+                    condition.observation_id
+                    for condition in plan.contracts[0].admission.conditions
+                ),
+            )
+        self.assertTrue(
+            all(
+                observation.reference.startswith("attack-group-control:")
+                for observation in plan.contracts[0].observations
+                if observation.identity in controls[0].linked_observation_ids
+                or observation.identity in controls[1].linked_observation_ids
+            )
+        )
+
+    def test_town_size_attack_projects_existing_strategic_number_control(self):
+        execution = AttackExecution(
+            identity=SemanticId("test", "town-size"),
+            objective=SemanticId("test", "war-objective"),
+            state=AttackExecutionState.PREPARE,
+            mode=AttackExecutionMode.TOWN_SIZE_ATTACK,
+        )
+        plan = merge_operational_plan(
+            __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+            attack_plan=execution,
+        )
+        controls = plan.contracts[0].controls
+        self.assertEqual(len(controls), 1)
+        self.assertEqual(controls[0].kind.value, "STRATEGIC_NUMBER")
+        self.assertEqual(controls[0].reference, "sn-maximum-town-size")
+        self.assertEqual(controls[0].use.value, "READ")
+        self.assertEqual(controls[0].controller_id, "town-size-defense-targeting")
+        self.assertEqual(
+            controls[0].surface_identity,
+            "town-size-defense-targeting:strategic_number:sn-maximum-town-size",
+        )
+        self.assertEqual(len(controls[0].linked_observation_ids), 1)
+        observation_id = controls[0].linked_observation_ids[0]
+        self.assertIn(observation_id, plan.contracts[0].observe.observation_ids)
+        self.assertIn(observation_id, plan.contracts[0].reobserve.observation_ids)
+        self.assertNotIn(
+            observation_id,
+            tuple(
+                condition.observation_id
+                for condition in plan.contracts[0].admission.conditions
+            ),
+        )
+        observation = next(
+            item
+            for item in plan.contracts[0].observations
+            if item.identity == observation_id
+        )
+        self.assertEqual(
+            observation.reference,
+            "town-size-defense-targeting:strategic_number:sn-maximum-town-size",
+        )
+
+
+    def test_resolved_attack_controls_validate_as_read_only_evidence_links(self):
+        for mode in (
+            AttackExecutionMode.ATTACK_GROUPS,
+            AttackExecutionMode.TOWN_SIZE_ATTACK,
+        ):
+            execution = AttackExecution(
+                identity=SemanticId("test", mode.value.lower()),
+                objective=SemanticId("test", "war-objective"),
+                state=AttackExecutionState.PREPARE,
+                mode=mode,
+            )
+            plan = merge_operational_plan(
+                __import__("Compiler.ir", fromlist=["OperationalSemanticsPlan"]).OperationalSemanticsPlan(),
+                attack_plan=execution,
+            )
+            contract = plan.contracts[0]
+            report = validate_operational_semantics(plan)
+            self.assertTrue(report.valid, report.diagnostics)
+            self.assertTrue(
+                all(
+                    control.use.value == "READ"
+                    and control.resolution_required
+                    and control.controller_id
+                    and control.surface_identity
+                    and control.linked_observation_ids
+                    for control in contract.controls
+                    if control.kind.value == "STRATEGIC_NUMBER"
+                )
+            )
+
     def test_attack_adapter_preserves_reassertion_without_completion_ack(self):
         contract = operational_contracts_for_attack_plan(self._attack_plan())[0]
         report = validate_operational_semantics(
