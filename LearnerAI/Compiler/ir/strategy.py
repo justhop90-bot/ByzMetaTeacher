@@ -2033,8 +2033,8 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                     "(unit-type-count-total camel-rider-line < 3)",
                 ),
                 action="(train camel-rider)",
-                witness="(unit-type-count camel-rider-line >= 3)",
-                release="(unit-type-count camel-rider-line >= 3)",
+                witness="(unit-type-count camel-rider >= 3)",
+                release="(unit-type-count camel-rider >= 3)",
             ),
         ),
         StrategicDemandSpec(
@@ -2072,8 +2072,8 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                     "(unit-type-count-total cataphract-line < 2)",
                 ),
                 action="(train cataphract)",
-                witness="(unit-type-count cataphract-line >= 2)",
-                release="(unit-type-count cataphract-line >= 2)",
+                witness="(unit-type-count cataphract >= 2)",
+                release="(unit-type-count cataphract >= 2)",
             ),
         ),
     )
