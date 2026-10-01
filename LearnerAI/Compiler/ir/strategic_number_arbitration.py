@@ -39,6 +39,11 @@ class StrategicNumberControllerLayer(str, Enum):
         }[self]
 
 
+class StrategicNumberControllerOrigin(str, Enum):
+    STRATEGY_MODE = "STRATEGY_MODE"
+    EXPLICIT = "EXPLICIT"
+
+
 class StrategicNumberControllerScope(str, Enum):
     PERSISTENT = "PERSISTENT"
     UNTIL_RELEASE = "UNTIL_RELEASE"
@@ -61,6 +66,7 @@ class StrategicNumberController:
     value: int
     layer: StrategicNumberControllerLayer
     priority: int = 0
+    origin: StrategicNumberControllerOrigin = StrategicNumberControllerOrigin.EXPLICIT
     activation_guard: Expression | None = None
     release_guard: Expression | None = None
     scope: StrategicNumberControllerScope = (
@@ -337,6 +343,7 @@ __all__ = [
     "StrategicNumberArbitrationPlan",
     "StrategicNumberController",
     "StrategicNumberControllerLayer",
+    "StrategicNumberControllerOrigin",
     "StrategicNumberControllerScope",
     "StrategicNumberReleaseEvidence",
     "StrategicNumberRestorationPolicy",
