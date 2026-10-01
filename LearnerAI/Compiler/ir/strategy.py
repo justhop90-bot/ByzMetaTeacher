@@ -99,7 +99,9 @@ class StrategicNumberMode:
 
     @property
     def state_name(self) -> str:
-        return f"sn-mode-{self.identity}"
+        # One physical native storage slot per exact native SN id. Multiple
+        # age/posture modes are policy rules over that same persistent state.
+        return f"sn-native-{self.native_strategic_number_id}"
 
     def __post_init__(self) -> None:
         if not re.fullmatch(r"[a-z][a-z0-9_-]*", self.identity):
@@ -1023,6 +1025,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     states: dict[str, NativeControlState] = {}
+    native_state_names: dict[int, str] = {}
     rules: list[NativeControlRule] = []
 
     if any(mode.postures for mode in profile.strategic_number_modes):
@@ -1055,28 +1058,39 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     )
 
     for rule_index, (_profile_index, mode) in enumerate(ordered):
-        owner = SemanticId(profile.profile_id, mode.state_name)
-        states[mode.state_name] = NativeControlState(
+        state_name = native_state_names.setdefault(
+            mode.native_strategic_number_id,
             mode.state_name,
-            StrategicNumberRequest(
-                StorageRequestId(owner, f"strategy-sn-mode:{mode.identity}"),
-                why_not_goal=(
-                    "This state is a compiler policy mode referencing a DE-documented "
-                    "native Strategic Number; native per-SN effect semantics remain "
-                    "evidence-bounded."
-                ),
-                stability_key=f"{profile.profile_id}:strategic-number-mode:{mode.identity}",
-                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-                native_strategic_number_id=mode.native_strategic_number_id,
-            ),
         )
+        if state_name not in states:
+            owner = SemanticId(profile.profile_id, state_name)
+            states[state_name] = NativeControlState(
+                state_name,
+                StrategicNumberRequest(
+                    StorageRequestId(
+                        owner,
+                        f"strategy-sn-native:{mode.native_strategic_number_id}",
+                    ),
+                    why_not_goal=(
+                        "This state is a compiler policy reference to a DE-documented "
+                        "native Strategic Number; native per-SN effect semantics remain "
+                        "evidence-bounded."
+                    ),
+                    stability_key=(
+                        f"{profile.profile_id}:strategic-number:"
+                        f"{mode.native_strategic_number_id}"
+                    ),
+                    origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                    native_strategic_number_id=mode.native_strategic_number_id,
+                ),
+            )
 
         guards: list[str] = []
         if mode.minimum_age is mode.maximum_age:
             guards.append(f"(current-age == {_age_token(mode.minimum_age)})")
         else:
             guards.append(f"(current-age >= {_age_token(mode.minimum_age)})")
-            if mode.maximum_age is not None:
+            if mode.maximum_age is not None and mode.maximum_age is not Age.IMPERIAL:
                 guards.append(
                     f"(current-age < {_age_token(_next_age(mode.maximum_age))})"
                 )
@@ -1094,17 +1108,17 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
 
         if mode.reassertion_policy is StrategicNumberReassertionPolicy.ON_DRIFT:
             guards.append(
-                f"(up-compare-sn {mode.state_name} != {mode.value})"
+                f"(up-compare-sn {state_name} != {mode.value})"
             )
 
         guard_source = guards[0] if len(guards) == 1 else "(and " + " ".join(guards) + ")"
         rules.append(
             NativeControlRule(
-                f"{mode.state_name}-{rule_index:03d}",
+                f"sn-mode-{mode.identity}-{rule_index:03d}",
                 facts=(parse_expression(guard_source, SourceLocation(1)),),
                 actions=(
                     parse_expression(
-                        f"(set-strategic-number {mode.state_name} {mode.value})",
+                        f"(set-strategic-number {state_name} {mode.value})",
                         SourceLocation(1),
                     ),
                 ),
@@ -1150,7 +1164,7 @@ def _merge_native_control_plans(*plans):
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
-    mode_plan = _strategic_number_mode_control_plan(profile)
+    mode_plan = _strategy_number_mode_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
 
     if any(
