@@ -136,6 +136,14 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
 
     def test_release_rule_does_not_capture_or_restore_historical_value(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
         temporary = StrategicNumberController(
             identity="emergency-defense",
             native_strategic_number_id=227,
@@ -156,7 +164,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                     "strategic_number_modes": (),
                 },
             )(),
-            extra_controllers=(temporary,),
+            extra_controllers=(base, temporary),
         )
 
         lowered = lower_strategic_number_arbitration(
@@ -178,6 +186,29 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             "(set-strategic-number sn-native-227 75)",
             "\n".join(item.source for item in release_rule.actions),
         )
+
+
+    def test_override_without_underlay_is_rejected(self):
+        temporary = StrategicNumberController(
+            identity="orphan-override",
+            native_strategic_number_id=227,
+            value=25,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            activation_guard="(goal emergency 1)",
+            release_guard="(goal emergency-cleared 1)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(temporary,),
+        )
+        with self.assertRaisesRegex(ValueError, "no lower-precedence underlay"):
+            validate_strategic_number_arbitration(
+                plan,
+                documented_native_ids=frozenset({227}),
+            )
 
     def test_action_controller_produces_exact_attachment_and_release(self):
         base = StrategicNumberController(
