@@ -114,22 +114,27 @@ The latest MUSE community research synthesis is docs/research/2026-09-30-muse-co
 The roadmap is intentionally narrower than the historical gap matrix: it excludes already-closed substrate work and separates compiler implementation from runtime evidence acquisition.
 
 
-The next compiler seam is the production/train arbitration boundary.
+The next compiler seam was the production/train arbitration boundary, now
+closed as compiler policy (see `semantic/production_arbitration.py` and
+`tests/test_production_arbitration.py` plus the
+`tests/fixtures/production_arbitration.perdsl` native fixture).
 
-The goal is to connect existing production lifecycle semantics to the existing `ResourceClaim` / arbitration system without inventing a native train conflict class.
+The implemented contract is:
 
-The intended contract is:
-
-- ordinary `train` demands may carry a compiler-policy production claim;
-- claim ownership comes from the semantic/strategic owner, not a provider UnitId;
+- ordinary `train` demands carry one compiler-policy production claim
+  (`action-claim:TRAIN_ARBITRATION`) through the existing `ResourceClaim` /
+  arbitration system; no native train conflict class was invented;
+- claim ownership comes from the strategic owner when strategy-bound,
+  otherwise the shared unit execution-memory owner (the `build` convention);
+  the provider UnitId remains provider identity only;
 - `can-train` remains admission/feasibility only;
 - `train` remains action issuance only;
 - `up-pending-objects` remains duplicate-queue protection;
 - `unit-type-count-total` remains observation;
 - provider readiness, provider availability, and queue capacity remain distinct;
-- SN 264 remains a control input;
+- SN 264 remains a control input and never enters arbitration;
 - exact DE busy/queue interaction, same-pass arbitration, starvation, provider loss, and queue timing remain OPEN pending runtime evidence;
-- DUC-targeted training must not inherit ordinary train arbitration accidentally.
+- DUC-targeted training does not inherit ordinary train arbitration.
 
 Runtime probes for this frontier are a separate evidence track. They do not become compiler guarantees merely because their fixture specifications are checked in.
 

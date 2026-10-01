@@ -436,12 +436,12 @@ def main() -> int:
     required_fragments = (
         "(up-get-fact player-number 0 45)",
         "(up-find-local c: 83 c: 1)",
-        "(up-get-search-state 53)",
+        "(up-get-search-state 54)",
         "(up-get-group-size c: 3 42)",
         "(up-get-object-data 38 43)",
         "(up-get-object-target-data 38 44)",
-        "(up-get-cost-delta 47)",
-        "(up-get-point position-center 51)",
+        "(up-get-cost-delta 48)",
+        "(up-get-point position-center 52)",
         "(up-set-target-object search-local c: 0)",
         "(up-target-objects 1 0 -1 -1)",
     )

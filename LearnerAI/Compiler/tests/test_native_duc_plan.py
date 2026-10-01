@@ -673,7 +673,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-point position-center 43)", artifact)
+        self.assertIn("(up-get-point position-center 44)", artifact)
         self.assertNotIn("(up-get-point position-center 41)", artifact)
 
     def test_compile_allocates_and_emits_bound_cost_delta_goalspan(self):
@@ -705,7 +705,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-cost-delta 43)", artifact)
+        self.assertIn("(up-get-cost-delta 44)", artifact)
         self.assertNotIn("(up-get-cost-delta 41)", artifact)
 
     def test_compile_allocates_and_emits_bound_group_size_goal_slot(self):
@@ -775,7 +775,7 @@ class NativeDucEmissionFixtureTests(unittest.TestCase):
         }
         """
         artifact = compile_source(source, duc_plan=plan)
-        self.assertIn("(up-get-search-state 43)", artifact)
+        self.assertIn("(up-get-search-state 44)", artifact)
         self.assertNotIn("(up-get-search-state 41)", artifact)
 
     def test_compile_surface_accepts_internal_duc_plan_without_source_syntax(self):

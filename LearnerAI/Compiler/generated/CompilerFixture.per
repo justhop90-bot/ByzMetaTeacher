@@ -13,24 +13,31 @@
 (defconst issued-castle 44)
 (defconst pending-castle 42)
 (defconst complete-castle 43)
-(defconst construction-retry-barrier-castle 45)
+(defconst construction-retry-barrier-castle 46)
 (defconst demand-defensive-spearmen 42)
 (defconst issued-defensive-spearmen 45)
 (defconst pending-defensive-spearmen 43)
 (defconst complete-defensive-spearmen 44)
-(defconst production-retry-barrier-defensive-spearmen 46)
+(defconst production-retry-barrier-defensive-spearmen 47)
 (defconst demand-wheelbarrow 43)
 (defconst issued-wheelbarrow 46)
 (defconst pending-wheelbarrow 44)
 (defconst complete-wheelbarrow 45)
-(defconst research-retry-barrier-wheelbarrow 47)
+(defconst research-retry-barrier-wheelbarrow 48)
 (defconst action-claim-build-pass-singleton 44)
+(defconst action-claim-train-arbitration 45)
 
 ; Per-pass transient action arbitration
 (defrule
     (true)
 =>
     (set-goal action-claim-build-pass-singleton 0)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal action-claim-train-arbitration 0)
 )
 
 ; Per-pass construction retry barriers
@@ -211,11 +218,13 @@
     (goal production-retry-barrier-defensive-spearmen 0)
     (not (up-pending-objects c: 93 >= 1))
     (not (unit-type-count spearman >= 2))
+    (goal action-claim-train-arbitration 0)
     (current-age >= feudal)
     (unit-type-count-total spearman < 2)
     (can-train spearman)
 =>
     (train spearman)
+    (set-goal action-claim-train-arbitration 1)
     (set-goal demand-defensive-spearmen 45)
 )
 
