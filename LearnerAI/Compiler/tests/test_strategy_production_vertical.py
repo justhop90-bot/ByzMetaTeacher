@@ -122,7 +122,7 @@ class StrategyProductionVerticalTests(unittest.TestCase):
             "action-claim:%s" % PRODUCTION_TRAIN_CONFLICT_CLASS,
         )
         self.assertEqual(
-            request.request_id.owner, SemanticId(PROFILE_ID, SPEARS)
+            request.request_id.owner, SemanticId(PROFILE_ID, "defense")
         )
         derived = derive_production_arbitration(
             tuple(self.compilation.demands)
@@ -138,7 +138,7 @@ class StrategyProductionVerticalTests(unittest.TestCase):
         self.assertEqual(len(train_conflicts), 1)
         self.assertEqual(
             train_conflicts[0].arbitration_owner,
-            SemanticId(PROFILE_ID, SPEARS),
+            SemanticId(PROFILE_ID, "defense"),
         )
         self.assertIn(
             SemanticId(PROFILE_ID, "early-defensive-spears-provider"),

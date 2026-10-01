@@ -104,6 +104,48 @@ Contemporary Byzantine facts belong in the pinned game-data and native-reference
 
 Primary cross-references include BotDirection.txt, the Byzantine capability and game-data audits, AIRef command and Strategic Number inventories, the community .per idiom catalog, The Duke and Niek/Atilla source corpus, and current community discussions of Byzantine counter-unit and defensive play.
 
+## Land threat taxonomy and arbitration
+
+The land controller now treats the major military threat classes explicitly:
+
+| Threat class | Primary signal | Byzantine response | Arbitration role |
+|---|---|---|---|
+| Mounted | sustained scout/knight-line mass | Spear screen in Feudal; Camels in Castle | one mounted package at a time |
+| Ranged | sustained archer-line mass | discounted Skirmisher package | may coexist with mounted/siege |
+| Infantry | sustained militia-line mass | Castle Cataphract package | premium response only when mass is real |
+| Siege | sustained mangonel-line mass | mobile Castle response | high-priority support threat |
+| Mixed | two or more orthogonal classes | preserve each required counter role | select one primary, retain supporting roles |
+
+The compiler deliberately does not collapse mixed threats into a single “best counter.” A mounted+ranged position needs both anti-mounted and anti-ranged coverage. A same-class overlap is different: when two packages describe the same threat class, the deterministic highest-priority package wins and the lower package is explicitly suppressed.
+
+`CounterArbitrationMode` is therefore `NONE`, `SINGLE`, or `MIXED`. The selected package set is part of runtime state and the fingerprint, so a change in observed composition produces a real reassessment signal instead of silently changing production underneath the strategy layer.
+
+Siege is treated as a threat class rather than as a universal answer. The current Castle siege package uses a mobile Knight-line response because siege pressure changes the tactical problem from “add another static counter” to “restore mobility and attack the siege before it dictates the fight.” The compiler does not claim that every siege composition should be answered identically; this is the first typed land package and remains extensible.
+
+The current population of packages is therefore: `MOUNTED_PRESSURE_FEUDAL`, `RANGED_PRESSURE_FEUDAL`, `MOUNTED_PRESSURE_CASTLE`, `INFANTRY_PRESSURE_CASTLE`, and `SIEGE_PRESSURE_CASTLE`.
+
+These package thresholds are compiler policy over verified native observations. They are not presented as engine truths or as a universal human build order.
+
 ## Architectural consequence
 
 The compiler should therefore grow breadth by adding more evidence-backed strategic packages and more decision-grade observation, not by creating a second strategy language. Policy recipes describe intent. StrategyProfile and StrategyRuntimeState own strategic continuity. Existing execution layers own production, construction, DUC, attack, SN, timers, escrow, witness, release, and recovery.
+
+## Threat-to-counter doctrine
+
+The strategy does not react to every discovered unit. It reacts to decision-grade pressure.
+
+In Feudal, three or more enemy scout-cavalry units can activate the mounted screen package, while three or more enemy archers can activate the ranged counter package. In Castle, sustained knight pressure activates a Camel package, while a five-unit infantry mass can activate a Cataphract response.
+
+Those thresholds are compiler policy, not engine facts. They are deliberately typed through native observation references so they can be changed without changing the execution layer.
+
+The package is not the army. It is the strategic demand trigger. Once activated, the ordinary demand lifecycle still owns admissibility, capability, feasibility, production, witness, release, and recovery.
+
+The important distinction is therefore:
+
+`OBSERVATION -> THREAT INTERPRETATION -> COUNTER PACKAGE -> DEMAND -> EXECUTION -> WITNESS -> RECOVERY`
+
+rather than:
+
+`OBSERVATION -> TRAIN UNIT`
+
+The first is a strategy system. The second is a macro script wearing a strategy-shaped hat.

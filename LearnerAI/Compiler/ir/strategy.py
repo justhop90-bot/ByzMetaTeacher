@@ -15,6 +15,7 @@ from .strategic_number import StrategicNumberOrigin
 if TYPE_CHECKING:
     from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
+    from .counter_strategy import CounterPackage
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -202,6 +203,7 @@ class StrategicBinding:
     target: StrategicTarget
     capability_intent: CapabilityIntent
     opportunity_cost: OpportunityCostPolicy | None
+    production_arbitration_group: str | None = None
 
     @property
     def persistent_intent(self) -> bool:
@@ -276,6 +278,7 @@ class StrategicDemandSpec:
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
+    production_arbitration_group: str | None = None
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
@@ -374,6 +377,7 @@ class StrategyProfile:
     military_compositions: tuple[StrategicMilitaryComposition, ...] = ()
     strategic_number_modes: tuple[StrategicNumberMode, ...] = ()
     policy_recipes: tuple["PolicyRecipe", ...] = ()
+    counter_packages: tuple["CounterPackage", ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -679,6 +683,13 @@ def resolve_strategy_profile(
         raise ValueError("strategy profile snapshot fingerprint does not match EffectiveCivData")
 
     seen: set[str] = set()
+    from .counter_strategy import validate_counter_packages
+    validate_counter_packages(profile)
+    counter_package_demands = {
+        demand_identity
+        for package in profile.counter_packages
+        for demand_identity in package.demand_identities
+    }
     _validate_capability_observations(profile, effective)
     _validate_observation_specs(profile, effective)
     _validate_strategic_number_modes(profile, effective)
@@ -692,12 +703,16 @@ def resolve_strategy_profile(
             raise ValueError(
                 f"strategic demand '{demand.identity}' needs a strategic owner"
             )
-        if not any(
-            evidence.kind is StrategicEvidenceKind.PERSISTENT
-            for evidence in demand.reason
+        if (
+            not any(
+                evidence.kind is StrategicEvidenceKind.PERSISTENT
+                for evidence in demand.reason
+            )
+            and demand.identity not in counter_package_demands
         ):
             raise ValueError(
-                f"strategic demand '{demand.identity}' needs persistent strategic evidence"
+                f"strategic demand '{demand.identity}' needs persistent strategic evidence "
+                "or an explicit counter-package activation owner"
             )
         for evidence in (*demand.reason, *demand.admissibility, *demand.invalidation):
             _validate_evidence_attribution(evidence, effective)
@@ -873,6 +888,7 @@ def lower_strategy_profile(
             base_binding = StrategicBinding(
                 strategic_id=spec.identity,
                 owner=spec.owner,
+                production_arbitration_group=spec.production_arbitration_group,
                 posture=spec.posture,
                 priority=spec.priority,
                 reason=spec.reason,
@@ -1493,6 +1509,26 @@ def _land_castle_observations(
             provenance=knight,
         ),
         StrategicObservationSpec(
+            "enemy-feudal-mounted-pressure",
+            "(and (current-age == feudal-age) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
+            provenance=effective.unit_line("scout-cavalry-line").provenance,
+        ),
+        StrategicObservationSpec(
+            "enemy-ranged-pressure",
+            "(and (current-age == feudal-age) (players-unit-type-count any-enemy archer-line >= 3))",
+            provenance=effective.unit_line("archer-line").provenance,
+        ),
+        StrategicObservationSpec(
+            "enemy-infantry-pressure",
+            "(and (current-age >= castle-age) (players-unit-type-count any-enemy militia-line >= 5))",
+            provenance=effective.unit_line("militia-line").provenance,
+        ),
+        StrategicObservationSpec(
+            "enemy-siege-pressure",
+            "(and (current-age >= castle-age) (players-unit-type-count any-enemy mangonel-line >= 2))",
+            provenance=effective.unit_line("mangonel-line").provenance,
+        ),
+        StrategicObservationSpec(
             "castle-complete",
             "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
             provenance=castle_complete_provenance,
@@ -1571,6 +1607,7 @@ def build_land_castle_strategy(
         StrategicDemandSpec(
             identity="early-defensive-spears",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(
@@ -1890,6 +1927,211 @@ def _byzantine_capability_observations(
     )
 
 
+def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
+    return (
+        StrategicDemandSpec(
+            identity="counter-mounted-spears",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal anti-mounted counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "spearman-line",
+                BuildingId(12),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "spearman-line",
+                minimum=4,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-train-with-escrow spearman-line)",
+                    "(unit-type-count-total spearman-line < 4)",
+                ),
+                action="(train spearman-line)",
+                witness="(unit-type-count spearman-line >= 4)",
+                release="(unit-type-count spearman-line >= 4)",
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="counter-ranged-skirmishers",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Feudal anti-ranged counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "skirmisher-line",
+                BuildingId(87),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "skirmisher-line",
+                minimum=4,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-train-with-escrow skirmisher-line)",
+                    "(unit-type-count-total skirmisher-line < 4)",
+                ),
+                action="(train skirmisher-line)",
+                witness="(unit-type-count skirmisher-line >= 4)",
+                release="(unit-type-count skirmisher-line >= 4)",
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="counter-castle-camels",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.CASTLE_POWER,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle anti-mounted counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "camel-rider-line",
+                BuildingId(101),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "camel-rider-line",
+                minimum=3,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-train-with-escrow 329)",
+                    "(unit-type-count-total camel-rider-line < 3)",
+                ),
+                action="(train 329)",
+                witness="(unit-type-count 329 >= 3)",
+                release="(unit-type-count 329 >= 3)",
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="counter-castle-cataphracts",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.CASTLE_POWER,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle anti-infantry counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "cataphract-line",
+                BuildingId(82),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "cataphract-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-train-with-escrow cataphract)",
+                    "(unit-type-count-total cataphract-line < 2)",
+                ),
+                action="(train cataphract)",
+                witness="(unit-type-count cataphract >= 2)",
+                release="(unit-type-count cataphract >= 2)",
+            ),
+        ),
+        StrategicDemandSpec(
+            identity="counter-castle-siege-response",
+            owner="defense",
+            production_arbitration_group="defense",
+            posture=StrategyPosture.CASTLE_POWER,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle anti-siege counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "knight-line",
+                BuildingId(101),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "knight-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-train-with-escrow knight-line)",
+                    "(unit-type-count-total knight-line < 2)",
+                ),
+                action="(train knight-line)",
+                witness="(unit-type-count knight-line >= 2)",
+                release="(unit-type-count knight-line >= 2)",
+            ),
+        ),
+    )
+
+
 def build_byzantine_castle_strategy(
     effective: EffectiveCivData,
 ) -> StrategyProfile:
@@ -1958,15 +2200,18 @@ def build_byzantine_castle_strategy(
         for transition in profile.transitions
     )
     from ..semantic.policy_recipe import default_byzantine_policy_recipes
+    from .counter_strategy import default_byzantine_counter_packages
 
+    counter_demands = _byzantine_counter_demands()
     return replace(
         profile,
-        demands=demands,
+        demands=(*demands, *counter_demands),
         transitions=transitions,
         provenance=(*profile.provenance, *meta_provenance),
         capability_observations=_byzantine_capability_observations(effective),
         strategic_number_modes=_byzantine_strategic_number_modes(),
         policy_recipes=default_byzantine_policy_recipes(),
+        counter_packages=default_byzantine_counter_packages(effective),
     )
 
 def _validate_capability_intent(

@@ -12,8 +12,9 @@ Covers the required production tests:
 - deterministic repeated compilation.
 
 Hard invariants pinned here (PROJECT_STATE / ROADMAP Phase 1 contract):
-- owner comes from the strategic owner when strategy-bound, otherwise the
-  shared unit execution-memory owner; the provider UnitId is never an owner;
+- owner comes from the strategic identity when strategy-bound unless an
+  explicit production-arbitration group is declared; otherwise the shared
+  unit execution-memory owner applies; the provider UnitId is never an owner;
 - can-train stays admission only; train stays issuance only;
 - up-pending-objects stays duplicate-queue protection;
 - unit-type-count-total stays observation only;
@@ -85,7 +86,7 @@ def _analyze(source, unit="test"):
     return analyze(parse(source), default_de_registry(), source_unit=unit)
 
 
-def _binding(strategic_id):
+def _binding(strategic_id, production_arbitration_group=None):
     return StrategicBinding(
         strategic_id=strategic_id,
         owner="war-council",
@@ -103,6 +104,7 @@ def _binding(strategic_id):
             entity_id="spearman-line",
         ),
         opportunity_cost=None,
+        production_arbitration_group=production_arbitration_group,
     )
 
 
@@ -261,6 +263,24 @@ class ProductionArbitrationDerivationTests(unittest.TestCase):
         self.assertNotIn(
             pending.head, request.request_id.purpose
         )
+
+    def test_explicit_production_group_selects_shared_claim_owner(self):
+        demand = _analyze(_train_source())[0]
+        bound = replace(
+            demand,
+            strategic_binding=_binding(
+                "counter-mounted-spears",
+                production_arbitration_group="defense",
+            ),
+        )
+
+        self.assertEqual(
+            production_arbitration_owner(bound),
+            SemanticId("test", "defense"),
+        )
+        request = production_arbitration_request(bound)
+        self.assertIsNotNone(request)
+        self.assertEqual(request.request_id.owner, SemanticId("test", "defense"))
 
     def test_strategic_binding_selects_strategic_owner(self):
         demand = _analyze(_train_source())[0]

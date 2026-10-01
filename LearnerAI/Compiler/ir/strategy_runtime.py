@@ -10,6 +10,7 @@ from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
 from ..semantic.community_engine import CapabilityTransition, classify_capability_transition
 from .civ_profile import EffectiveCivData
+from .counter_strategy import CounterPackage, CounterThreatClass
 from .game_data import canonical_fingerprint
 from .strategy import (
     CapabilityIntentKind,
@@ -77,9 +78,16 @@ class OpportunityCostRuntimeState(str, Enum):
     RELEASED = "RELEASED"
 
 
+class CounterArbitrationMode(str, Enum):
+    NONE = "NONE"
+    SINGLE = "SINGLE"
+    MIXED = "MIXED"
+
+
 class ReassessmentReason(str, Enum):
     POSTURE_CHANGE = "POSTURE_CHANGE"
     DEMAND_ACTIVATION = "DEMAND_ACTIVATION"
+    COUNTER_PACKAGE_CHANGE = "COUNTER_PACKAGE_CHANGE"
     DEMAND_INVALIDATION = "DEMAND_INVALIDATION"
     CAPABILITY_COMPLETION = "CAPABILITY_COMPLETION"
     CAPABILITY_LOSS = "CAPABILITY_LOSS"
@@ -132,6 +140,7 @@ class RuntimeObservationSnapshot:
     completed_demands: frozenset[str] = frozenset()
     previous_posture: StrategyPosture | None = None
     previous_demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...] = ()
+    previous_counter_package_states: tuple[tuple[str, EvidenceTruth], ...] = ()
     previous_capability_observations: tuple[tuple[str, bool | None], ...] = ()
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
 
@@ -140,6 +149,32 @@ class RuntimeObservationSnapshot:
             if key == expression.source:
                 return EvidenceTruth.TRUE if result else EvidenceTruth.FALSE
         return EvidenceTruth.UNKNOWN
+
+
+@dataclass(frozen=True)
+class CounterPackageRuntimeState:
+    identity: str
+    threat_class: CounterThreatClass
+    truth: EvidenceTruth
+    priority: int
+    demand_identities: tuple[str, ...]
+    policy_recipe_identity: str | None = None
+
+
+@dataclass(frozen=True)
+class CounterArbitrationDecision:
+    mode: CounterArbitrationMode
+    primary_package: str | None
+    supporting_packages: tuple[str, ...]
+    suppressed_packages: tuple[str, ...]
+    active_threat_classes: tuple[CounterThreatClass, ...]
+
+    @property
+    def active_packages(self) -> tuple[str, ...]:
+        packages = (
+            (self.primary_package,) if self.primary_package is not None else ()
+        )
+        return packages + self.supporting_packages
 
 
 @dataclass(frozen=True)
@@ -156,6 +191,8 @@ class StrategyRuntimeState:
     reassessment_reasons: tuple[ReassessmentReason, ...]
     runtime_storage_requests: tuple[object, ...]
     fingerprint: str
+    counter_package_states: tuple[CounterPackageRuntimeState, ...] = ()
+    counter_arbitration: CounterArbitrationDecision | None = None
     _owners: tuple[tuple[str, str], ...] = ()
     evaluated_meta_evidence: tuple[
         tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]],
@@ -172,6 +209,26 @@ class StrategyRuntimeState:
         for key, state in self.demand_states:
             if key == identity:
                 return state
+        raise KeyError(identity)
+
+    @property
+    def active_counter_packages(self) -> tuple[str, ...]:
+        if self.counter_arbitration is not None:
+            return self.counter_arbitration.active_packages
+        return tuple(
+            item.identity
+            for item in self.counter_package_states
+            if item.truth is EvidenceTruth.TRUE
+        )
+
+    @property
+    def counter_package_primary(self) -> str | None:
+        return self.counter_arbitration.primary_package if self.counter_arbitration else None
+
+    def counter_package_state(self, identity: str) -> CounterPackageRuntimeState:
+        for item in self.counter_package_states:
+            if item.identity == identity:
+                return item
         raise KeyError(identity)
 
     def strategic_owner(self, identity: str) -> str:
@@ -820,12 +877,111 @@ def _validate_transition_conflicts(profile: StrategyProfile) -> None:
                 )
 
 
+def _evaluate_counter_packages(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+    snapshot: RuntimeObservationSnapshot,
+    registry: PrimitiveRegistry,
+) -> tuple[tuple[CounterPackageRuntimeState, ...], dict[str, tuple[str, ...]]]:
+    states: list[CounterPackageRuntimeState] = []
+    demand_sources: dict[str, list[str]] = {}
+
+    for package in profile.counter_packages:
+        binding = bind_observation_reference(
+            package.trigger,
+            profile,
+            effective,
+            registry,
+        )
+        truth = evaluate_binding(binding, snapshot)
+        states.append(
+            CounterPackageRuntimeState(
+                identity=package.identity,
+                threat_class=package.threat_class,
+                truth=truth,
+                priority=package.priority,
+                demand_identities=package.demand_identities,
+                policy_recipe_identity=package.policy_recipe_identity,
+            )
+        )
+        if truth is EvidenceTruth.TRUE:
+            for demand_identity in package.demand_identities:
+                demand_sources.setdefault(demand_identity, []).append(package.identity)
+
+    return (
+        tuple(
+            sorted(states, key=lambda item: (-item.priority, item.identity))
+        ),
+        {identity: tuple(sorted(sources)) for identity, sources in demand_sources.items()},
+    )
+
+def arbitrate_counter_packages(
+    states: tuple[CounterPackageRuntimeState, ...],
+) -> CounterArbitrationDecision:
+    active = tuple(
+        state
+        for state in states
+        if state.truth is EvidenceTruth.TRUE
+    )
+    if not active:
+        return CounterArbitrationDecision(
+            mode=CounterArbitrationMode.NONE,
+            primary_package=None,
+            supporting_packages=(),
+            suppressed_packages=(),
+            active_threat_classes=(),
+        )
+
+    selected: list[CounterPackageRuntimeState] = []
+    suppressed: list[str] = []
+    for threat_class in CounterThreatClass:
+        candidates = tuple(
+            state
+            for state in active
+            if state.threat_class is threat_class
+        )
+        if not candidates:
+            continue
+        winner = min(
+            candidates,
+            key=lambda item: (-item.priority, item.identity),
+        )
+        selected.append(winner)
+        suppressed.extend(
+            item.identity
+            for item in candidates
+            if item.identity != winner.identity
+        )
+
+    selected.sort(key=lambda item: (-item.priority, item.identity))
+    primary = selected[0]
+    supporting = tuple(item.identity for item in selected[1:])
+    mode = (
+        CounterArbitrationMode.SINGLE
+        if len(selected) == 1
+        else CounterArbitrationMode.MIXED
+    )
+    return CounterArbitrationDecision(
+        mode=mode,
+        primary_package=primary.identity,
+        supporting_packages=supporting,
+        suppressed_packages=tuple(sorted(suppressed)),
+        active_threat_classes=tuple(
+            sorted(
+                {item.threat_class for item in selected},
+                key=lambda item: item.value,
+            )
+        ),
+    )
+
+
 def _evaluate_demand(
     demand: StrategicDemandSpec,
     profile: StrategyProfile,
     effective: EffectiveCivData,
     snapshot: RuntimeObservationSnapshot,
     registry: PrimitiveRegistry,
+    counter_package_sources: tuple[str, ...] = (),
 ) -> tuple[StrategicDemandRuntimeState, tuple[tuple[str, EvidenceTruth], ...]]:
     evaluated: list[tuple[str, EvidenceTruth]] = []
     reason_bindings = _all_bindings(demand.reason, profile, effective, registry)
@@ -833,6 +989,10 @@ def _evaluate_demand(
     evaluated.extend(
         (f"{demand.identity}:reason:{binding.evidence.label}", truth)
         for binding, truth in zip(reason_bindings, reason_truths)
+    )
+    evaluated.extend(
+        (f"{demand.identity}:counter-package:{package_identity}", EvidenceTruth.TRUE)
+        for package_identity in counter_package_sources
     )
 
     if demand.identity in snapshot.completed_demands:
@@ -847,7 +1007,7 @@ def _evaluate_demand(
     if any(value is EvidenceTruth.TRUE for value in invalidation_truths):
         return StrategicDemandRuntimeState.STRATEGIC_INVALIDATED, tuple(evaluated)
 
-    if not _all_true(reason_truths):
+    if not counter_package_sources and not _all_true(reason_truths):
         return StrategicDemandRuntimeState.STRATEGIC_INACTIVE, tuple(evaluated)
 
     admissibility_bindings = _all_bindings(demand.admissibility, profile, effective, registry)
@@ -1012,6 +1172,23 @@ def evaluate_strategy_runtime(
             (capability_observation.identity, transition)
         )
 
+    counter_package_states, counter_package_sources = _evaluate_counter_packages(
+        profile,
+        effective,
+        snapshot,
+        registry,
+    )
+    counter_arbitration = arbitrate_counter_packages(counter_package_states)
+    selected_package_ids = set(counter_arbitration.active_packages)
+    counter_package_sources = {
+        demand_identity: tuple(
+            package_identity
+            for package_identity in package_ids
+            if package_identity in selected_package_ids
+        )
+        for demand_identity, package_ids in counter_package_sources.items()
+    }
+
     owners: list[tuple[str, str]] = []
     active: list[str] = []
     blocked: list[str] = []
@@ -1020,13 +1197,28 @@ def evaluate_strategy_runtime(
     opportunity: list[tuple[str, OpportunityCostRuntimeState]] = []
 
     reasons = set(snapshot.reassessment_signals)
+    previous_counter_states = dict(snapshot.previous_counter_package_states)
+    current_counter_states = {
+        item.identity: item.truth
+        for item in counter_package_states
+    }
+    if current_counter_states != previous_counter_states:
+        reasons.add(ReassessmentReason.COUNTER_PACKAGE_CHANGE)
+
     if snapshot.previous_posture is not None and snapshot.previous_posture is not current_posture:
         reasons.add(ReassessmentReason.POSTURE_CHANGE)
 
     previous_states = dict(snapshot.previous_demand_states)
     for demand in profile.demands:
         owners.append((demand.identity, demand.owner))
-        state, evidence = _evaluate_demand(demand, profile, effective, snapshot, registry)
+        state, evidence = _evaluate_demand(
+            demand,
+            profile,
+            effective,
+            snapshot,
+            registry,
+            counter_package_sources.get(demand.identity, ()),
+        )
         demand_states.append((demand.identity, state))
         evaluated.extend(evidence)
 
@@ -1091,6 +1283,8 @@ def evaluate_strategy_runtime(
         {
             "current_posture": current_posture,
             "previous_posture": snapshot.previous_posture,
+            "counter_package_states": counter_package_states,
+            "counter_arbitration": counter_arbitration,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1117,6 +1311,8 @@ def evaluate_strategy_runtime(
         current_posture=current_posture,
         previous_posture=snapshot.previous_posture,
         demand_states=tuple(sorted(demand_states)),
+        counter_package_states=tuple(counter_package_states),
+        counter_arbitration=counter_arbitration,
         opportunity_cost_states=tuple(sorted(opportunity)),
         evaluated_evidence=tuple(sorted(evaluated)),
         active_strategic_demands=tuple(sorted(active)),
