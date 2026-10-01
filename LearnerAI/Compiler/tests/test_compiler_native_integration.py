@@ -235,17 +235,14 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     identity="attack-owned",
                     order=10,
                     facts=(Expression("(true)", "true", ()),),
-                    actions=(
-                        Expression("(true-action)", "true-action", ()),
-                        Expression("(attack-now)", "attack-now", ()),
-                    ),
+                    actions=(Expression("(attack-now)", "attack-now", ()),),
                     lifecycle=lifecycle,
                 ),
             ),
         )
         return plan.bind_strategic_number_action_attachments(
             (attachment,),
-            owned_actions={"attack-surge": ("attack-owned", 1)},
+            owned_actions={"attack-surge": ("attack-owned", 0)},
         )
 
     def test_attack_action_attachment_emits_immediately_before_owned_action(self):
