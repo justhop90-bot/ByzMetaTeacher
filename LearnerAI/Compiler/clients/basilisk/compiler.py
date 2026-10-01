@@ -14,6 +14,7 @@ def compile_strategy_profile(
     base_goal: int = 41,
     *,
     binding_context=None,
+    attack_plan=None,
 ) -> str:
     """Lower a downstream strategy profile through the generic compiler."""
     compilation = lower_strategy_profile(profile, effective)
@@ -22,6 +23,7 @@ def compile_strategy_profile(
         base_goal=base_goal,
         binding_context=binding_context,
         control_plan=compilation.control_plan,
+        attack_plan=attack_plan,
         escrow_plan=compilation.escrow_plan,
     )
 
@@ -33,6 +35,7 @@ def compile_strategy_runtime_profile(
     base_goal: int = 41,
     *,
     binding_context=None,
+    attack_plan=None,
 ) -> str:
     """Select active downstream strategic demands, then use generic lowering."""
     runtime_state = evaluate_strategy_runtime(profile, effective, runtime_profile)
@@ -60,5 +63,6 @@ def compile_strategy_runtime_profile(
         base_goal=base_goal,
         binding_context=binding_context,
         control_plan=compilation.control_plan,
+        attack_plan=attack_plan,
         escrow_plan=escrow_plan,
     )

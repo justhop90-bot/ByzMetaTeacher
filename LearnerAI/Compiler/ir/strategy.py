@@ -837,6 +837,12 @@ def lower_strategy_profile(
     )
     from ..ir.model import SemanticId
 
+    counter_activation_guards: dict[str, list[str]] = {}
+    for package in profile.counter_packages:
+        state_name = _counter_package_state_name(package.identity)
+        for demand_identity in package.demand_identities:
+            counter_activation_guards.setdefault(demand_identity, []).append(state_name)
+
     nodes = []
     execution_owner: dict[str, str] = {}
     for spec in profile.demands:
@@ -860,10 +866,22 @@ def lower_strategy_profile(
                     f"duplicate lowered execution demand '{execution_name}'"
                 )
             execution_owner[execution_name] = spec.identity
+            guard_states = tuple(sorted(set(counter_activation_guards.get(spec.identity, ()))))
+            requirements = execution.requirements
+            if guard_states:
+                guard_source = (
+                    guard_states[0]
+                    if len(guard_states) == 1
+                    else "(or " + " ".join(guard_states) + ")"
+                )
+                requirements = (
+                    f"(goal {guard_source} 1)",
+                    *requirements,
+                )
             nodes.append(
                 DemandNode(
                     name=execution_name,
-                    requirements=execution.requirements,
+                    requirements=requirements,
                     action=execution.action,
                     witness=execution.witness,
                     release=execution.release,
@@ -1105,6 +1123,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..ast import SourceLocation
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
@@ -1216,6 +1235,116 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     )
 
 
+def _counter_package_state_name(identity: str) -> str:
+    slug = re.sub(r"[^a-z0-9_-]+", "-", identity.lower()).strip("-")
+    if not slug:
+        raise ValueError("counter package identity cannot produce an empty native state name")
+    return f"counter-package-{slug}"
+
+
+def _counter_package_control_plan(profile: StrategyProfile):
+    """Lower counter arbitration into persistent native package-selection state.
+
+    Each counter package gets one Goal latch. Selection is recomputed from the
+    package's verified native trigger each pass, with higher-priority packages
+    of the same threat class suppressing lower-priority packages. This mirrors
+    runtime arbitration without inventing a second scheduler.
+    """
+    if not profile.counter_packages:
+        return None
+
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    ordered = tuple(sorted(profile.counter_packages, key=lambda item: (-item.priority, item.identity)))
+    state_names: dict[str, str] = {}
+    states: list[NativeControlState] = []
+    by_threat: dict[object, list] = {}
+
+    for package in ordered:
+        state_name = _counter_package_state_name(package.identity)
+        existing = next(
+            (
+                package_identity
+                for package_identity, existing_name in state_names.items()
+                if existing_name == state_name
+            ),
+            None,
+        )
+        if existing is not None and existing != package.identity:
+            raise ValueError(
+                f"counter package identities '{existing}' and '{package.identity}' "
+                f"collide on native state '{state_name}'"
+            )
+        state_names[package.identity] = state_name
+        states.append(
+            NativeControlState(
+                state_name,
+                GoalSlotRequest(
+                    StorageRequestId(
+                        SemanticId(profile.profile_id, package.identity),
+                        "counter-package-selection",
+                    ),
+                    role=GoalRole.PERSISTENT_STATE,
+                ),
+            )
+        )
+        by_threat.setdefault(package.threat_class, []).append(package)
+
+    reset_actions = tuple(
+        parse_expression(
+            f"(set-goal {state_names[package.identity]} 0)",
+            SourceLocation(1),
+        )
+        for package in ordered
+    )
+    rules: list[NativeControlRule] = [
+        NativeControlRule(
+            "counter-package-selection-reset-000",
+            facts=(parse_expression("(true)", SourceLocation(1)),),
+            actions=reset_actions,
+        )
+    ]
+
+    rule_index = 1
+    for threat_class in sorted(by_threat, key=lambda item: item.value):
+        candidates = tuple(sorted(by_threat[threat_class], key=lambda item: (-item.priority, item.identity)))
+        for index, package in enumerate(candidates):
+            observation = profile.observation(package.trigger.observation_ref)
+            guard = observation.expression
+            higher = candidates[:index]
+            if higher:
+                higher_guards = tuple(
+                    profile.observation(item.trigger.observation_ref).expression
+                    for item in higher
+                )
+                blocked = (
+                    higher_guards[0]
+                    if len(higher_guards) == 1
+                    else "(or " + " ".join(higher_guards) + ")"
+                )
+                guard = f"(and {guard} (not {blocked}))"
+            rules.append(
+                NativeControlRule(
+                    f"counter-package-selection-{rule_index:03d}-{package.identity.lower()}",
+                    facts=(parse_expression(guard, SourceLocation(1)),),
+                    actions=(
+                        parse_expression(
+                            f"(set-goal {state_names[package.identity]} 1)",
+                            SourceLocation(1),
+                        ),
+                    ),
+                )
+            )
+            rule_index += 1
+
+    return NativeControlPlan(
+        states=tuple(sorted(states, key=lambda item: item.identifier)),
+        rules=tuple(rules),
+    )
+
+
 def _merge_native_control_plans(*plans):
     from .native_control import NativeControlPlan
 
@@ -1248,6 +1377,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
+    counter_plan = _counter_package_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1271,6 +1401,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
+        counter_plan,
     )
 
 
@@ -1532,6 +1663,11 @@ def _land_castle_observations(
             "castle-complete",
             "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
             provenance=castle_complete_provenance,
+        ),
+        StrategicObservationSpec(
+            "byz-logistica-complete",
+            "(research-completed 61)",
+            provenance=effective.tech(61).provenance,
         ),
     )
 

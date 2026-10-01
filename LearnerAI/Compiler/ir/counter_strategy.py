@@ -89,6 +89,18 @@ def validate_counter_packages(profile: "StrategyProfile") -> None:
             profile.demand(demand_identity)
         if package.policy_recipe_identity is not None:
             profile.policy_recipe(package.policy_recipe_identity)
+        seen_upgrade_requirements: dict[str, CompositionUpgradeRequirement] = {}
+        for requirement in package.upgrade_requirements:
+            previous = seen_upgrade_requirements.get(requirement.identity)
+            if previous is not None and (
+                previous.observation_ref != requirement.observation_ref
+                or previous.technology_id != requirement.technology_id
+            ):
+                raise ValueError(
+                    f"counter package '{package.identity}' has conflicting "
+                    f"upgrade requirement '{requirement.identity}'"
+                )
+            seen_upgrade_requirements[requirement.identity] = requirement
         if package.trigger.kind.value != "PERSISTENT":
             raise ValueError(
                 f"counter package '{package.identity}' requires PERSISTENT trigger evidence"
@@ -177,6 +189,13 @@ def default_byzantine_counter_packages(
             demand_identities=("counter-castle-cataphracts",),
             policy_recipe_identity=None,
             rationale="Use the premium anti-infantry transition when a real infantry mass justifies it.",
+            upgrade_requirements=(
+                CompositionUpgradeRequirement(
+                    identity="logistica",
+                    observation_ref="byz-logistica-complete",
+                    technology_id=61,
+                ),
+            ),
         ),
         CounterPackage(
             identity="SIEGE_PRESSURE_CASTLE",
