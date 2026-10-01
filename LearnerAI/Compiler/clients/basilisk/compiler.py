@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from ...compiler import compile_semantic_demands
 from ...ir.strategy import lower_strategy_profile
 from ...ir.resource_control import NativeEscrowReleasePlan
@@ -38,8 +40,28 @@ def compile_strategy_runtime_profile(
     attack_plan=None,
 ) -> str:
     """Select active downstream strategic demands, then use generic lowering."""
-    runtime_state = evaluate_strategy_runtime(profile, effective, runtime_profile)
     compilation = lower_strategy_profile(profile, effective)
+    lifecycle_inputs = tuple(
+        (
+            demand.name,
+            demand.production_lifecycle,
+        )
+        for demand in compilation.demands
+        if demand.production_lifecycle is not None
+    )
+    runtime_snapshot = replace(
+        runtime_profile,
+        production_lifecycles=(
+            runtime_profile.production_lifecycles
+            if runtime_profile.production_lifecycles
+            else lifecycle_inputs
+        ),
+    )
+    runtime_state = evaluate_strategy_runtime(
+        profile,
+        effective,
+        runtime_snapshot,
+    )
     active_ids = set(runtime_state.active_or_blocked_demands)
     selected = tuple(
         demand
