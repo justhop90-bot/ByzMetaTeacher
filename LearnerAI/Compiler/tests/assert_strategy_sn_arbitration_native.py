@@ -124,8 +124,8 @@ def main() -> int:
         if fragment not in first:
             raise SystemExit(f"missing arbitration artifact fragment: {fragment}")
 
-    if "(not (goal sn-controller-emergency-defense-active 1))" not in first:
-        raise SystemExit("underlay write is not suppressed while temporary override is active")
+    if "(not (or (goal emergency-defense 1) (goal sn-controller-emergency-defense-active 1)))" not in first:
+        raise SystemExit("underlay write is not suppressed across the temporary override lifetime")
 
     if "(set-strategic-number sn-native-227 0)" in first:
         raise SystemExit("native Strategic Number received compiler-owned zero initialization")
