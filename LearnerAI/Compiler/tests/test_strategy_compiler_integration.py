@@ -82,7 +82,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native attack lifecycle plan", first)
         self.assertIn("; Native attack rule: byzantine-castle-attack-now", first)
         self.assertIn("(attack-now)", first)
-        self.assertIn("(goal strategy-posture 4)", first)
+        self.assertIn("(up-compare-sn 227 >= 75)", first)
         self.assertIn("(unit-type-count cataphract >= 2)", first)
 
     def test_strategy_profile_compiles_through_existing_semantic_pipeline(self):
