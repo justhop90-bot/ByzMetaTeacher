@@ -1,6 +1,7 @@
 """Downstream client strategy semantics above generic execution IR."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
@@ -162,6 +163,35 @@ class CapabilityRecoveryContract:
 
 
 @dataclass(frozen=True)
+class GoalStateAssertion:
+    """One strategy-owned goal-state rule: when guard fires, set the state.
+
+    Lowers to a NativeControlPlan state plus one guard rule through the
+    existing persistent-control-plane channel (never through demands:
+    set-goal is not a demand action primitive). Guards stay native Facts;
+    same-pass write visibility and goal-ID collisions remain governed by
+    the control-plane gate and the emitter, not by this type.
+    """
+
+    demand_id: str
+    state_name: str
+    guard_fact: str
+    set_value: int
+
+    def __post_init__(self) -> None:
+        if not self.demand_id.strip():
+            raise ValueError("goal state assertion demand identity must not be empty")
+        if not re.fullmatch(r"[a-z][a-z0-9_-]*", self.state_name):
+            raise ValueError(
+                f"goal state name '{self.state_name}' is not a valid .per identifier"
+            )
+        if not self.guard_fact.strip():
+            raise ValueError("goal state assertion guard fact must not be empty")
+        if not isinstance(self.set_value, int) or isinstance(self.set_value, bool):
+            raise ValueError("goal state assertion value must be an integer")
+
+
+@dataclass(frozen=True)
 class StrategicDemandSpec:
     identity: str
     owner: str
@@ -175,6 +205,7 @@ class StrategicDemandSpec:
     opportunity_cost: OpportunityCostPolicy | None
     execution: ExecutionDemandTemplate
     additional_execution_demands: tuple[ExecutionDemandTemplate, ...] = ()
+    goal_assertions: tuple[GoalStateAssertion, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
 
@@ -322,6 +353,7 @@ class StrategyCompilation:
     demands: tuple["SemanticDemand", ...]
     bindings: dict[str, StrategicBinding]
     escrow_plan: "NativeEscrowReleasePlan | None" = None
+    control_plan: "NativeControlPlan | None" = None
     military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
 
 
@@ -821,7 +853,86 @@ def lower_strategy_profile(
         demands=tuple(bound_demands),
         bindings=bindings,
         escrow_plan=escrow_plan,
+        control_plan=_goal_state_control_plan(profile),
         military_compositions=tuple(military_compositions),
+    )
+
+
+def _goal_state_control_plan(profile: StrategyProfile):
+    """Lower strategy-owned goal assertions to a NativeControlPlan.
+
+    Returns None when no demand declares assertions, preserving existing
+    behavior exactly. States dedupe by (name, owner); rules stay
+    one-per-assertion in profile order.
+    """
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
+    from .native_control import (
+        NativeControlPlan,
+        NativeControlRule,
+        NativeControlState,
+    )
+
+    states: dict[tuple[str, SemanticId], NativeControlState] = {}
+    rules: list[NativeControlRule] = []
+    for spec in profile.demands:
+        for assertion in spec.goal_assertions:
+            if assertion.demand_id != spec.identity:
+                raise ValueError(
+                    f"goal state assertion '{assertion.state_name}' is owned by "
+                    f"'{assertion.demand_id}', not by strategic demand "
+                    f"'{spec.identity}'"
+                )
+            owner = SemanticId(profile.profile_id, assertion.demand_id)
+            key = (assertion.state_name, owner)
+            if key not in states:
+                states[key] = NativeControlState(
+                    assertion.state_name,
+                    GoalSlotRequest(
+                        StorageRequestId(
+                            owner,
+                            f"strategy-goal:{assertion.state_name}",
+                        ),
+                        role=GoalRole.PERSISTENT_STATE,
+                    ),
+                )
+            try:
+                guard = parse_expression(
+                    assertion.guard_fact, SourceLocation(1)
+                )
+                action = parse_expression(
+                    f"(set-goal {assertion.state_name} {assertion.set_value})",
+                    SourceLocation(1),
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    f"goal state assertion '{assertion.state_name}' has an "
+                    f"unparsable native expression: {exc}"
+                ) from exc
+            rules.append(
+                NativeControlRule(
+                    f"{assertion.state_name}-assert-{len(rules):03d}",
+                    facts=(guard,),
+                    actions=(action,),
+                )
+            )
+    for name in sorted({state for state, _ in states}):
+        owners = sorted(
+            {owner.local_name for state, owner in states if state == name}
+        )
+        if len(owners) > 1:
+            raise ValueError(
+                f"goal state '{name}' is claimed by multiple demand owners: "
+                f"{', '.join(owners)}"
+            )
+    if not rules:
+        return None
+    return NativeControlPlan(
+        states=tuple(
+            states[key]
+            for key in sorted(states, key=lambda item: (item[0], item[1].local_name))
+        ),
+        rules=tuple(rules),
     )
 
 
