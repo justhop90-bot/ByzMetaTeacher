@@ -179,6 +179,14 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
 
     def test_action_controller_produces_exact_attachment_and_release(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
         action = StrategicNumberController(
             identity="attack-surge",
             native_strategic_number_id=227,
@@ -200,7 +208,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                     "strategic_number_modes": (),
                 },
             )(),
-            extra_controllers=(action,),
+            extra_controllers=(base, action),
         )
 
         lowered = lower_strategic_number_arbitration(
