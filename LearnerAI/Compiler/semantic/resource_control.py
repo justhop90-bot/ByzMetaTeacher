@@ -12,6 +12,7 @@ from ..ir.resource_control import (
     EscrowAdmissionMode,
     EscrowConsumptionMode,
     EscrowContract,
+    EscrowOwnershipHandoff,
     EscrowReserveKind,
     EscrowRetentionPolicy,
     NativeEscrowPolicyPlan,
@@ -68,6 +69,10 @@ class ResourceControlErrorCode(str, Enum):
     ESCROW_OPERATION_COMMAND_MISMATCH = "RCTRL-034"
     ESCROW_OPERATION_CONTRACT_MISMATCH = "RCTRL-035"
     ESCROW_POLICY_PERCENTAGE = "RCTRL-036"
+    ESCROW_HANDOFF_UNKNOWN_CONTRACT = "RCTRL-037"
+    ESCROW_HANDOFF_SELF = "RCTRL-038"
+    ESCROW_HANDOFF_RESOURCE_MISMATCH = "RCTRL-039"
+    ESCROW_HANDOFF_DUPLICATE = "RCTRL-040"
 
 
 @dataclass(frozen=True)
@@ -385,10 +390,101 @@ def validate_escrow_contract(
     return tuple(errors)
 
 
+def _handoff_subject(handoff: EscrowOwnershipHandoff) -> str:
+    return f"{handoff.predecessor}->{handoff.successor}"
+
+
+def _validate_escrow_handoffs(
+    handoffs: tuple[EscrowOwnershipHandoff, ...],
+    identities: dict[str, EscrowContract],
+) -> list[ResourceControlValidationError]:
+    """Validate explicit ownership edges; returns errors, preserves order-independence."""
+    errors: list[ResourceControlValidationError] = []
+    seen: set[tuple[str, str, tuple[str, ...]]] = set()
+    for handoff in sorted(
+        handoffs,
+        key=lambda item: (
+            item.predecessor,
+            item.successor,
+            item.resources,
+            item.rule_order,
+            item.within_rule_order,
+        ),
+    ):
+        subject = _handoff_subject(handoff)
+        location = handoff.location
+        key = (handoff.predecessor, handoff.successor, handoff.resources)
+        if key in seen:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_HANDOFF_DUPLICATE,
+                    f"escrow ownership handoff '{subject}' is declared more than once",
+                    subject=subject,
+                    location=location,
+                )
+            )
+            continue
+        seen.add(key)
+        predecessor = identities.get(handoff.predecessor)
+        successor = identities.get(handoff.successor)
+        if predecessor is None or successor is None:
+            missing = (
+                handoff.predecessor
+                if predecessor is None
+                else handoff.successor
+            )
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_HANDOFF_UNKNOWN_CONTRACT,
+                    f"escrow ownership handoff '{subject}' names unknown contract '{missing}'",
+                    subject=subject,
+                    location=location or (predecessor or successor).location,
+                )
+            )
+            continue
+        if handoff.predecessor == handoff.successor or predecessor.owner == successor.owner:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_HANDOFF_SELF,
+                    f"escrow ownership handoff '{subject}' must transfer between "
+                    "distinct contracts under distinct semantic owners",
+                    subject=subject,
+                    location=location or predecessor.location,
+                )
+            )
+            continue
+        bad_resources = tuple(
+            resource
+            for resource in handoff.resources
+            if resource not in NATIVE_ESCROW_RELEASE_RESOURCES
+            or resource not in predecessor.resources
+            or resource not in successor.resources
+        )
+        if bad_resources:
+            errors.append(
+                _error(
+                    ResourceControlErrorCode.ESCROW_HANDOFF_RESOURCE_MISMATCH,
+                    f"escrow ownership handoff '{subject}' covers resource(s) "
+                    f"{', '.join(bad_resources)} not claimed by both contracts",
+                    subject=subject,
+                    location=location or predecessor.location,
+                )
+            )
+    return errors
+
+
 def validate_escrow_contract_set(
     contracts: tuple[EscrowContract, ...] | list[EscrowContract],
+    handoffs: tuple[EscrowOwnershipHandoff, ...] | list[EscrowOwnershipHandoff] = (),
 ) -> ResourceControlValidationReport:
-    """Validate ownership exclusivity across concurrently active escrow contracts."""
+    """Validate ownership exclusivity across concurrently active escrow contracts.
+
+    An explicit handoff edge excuses exactly one pairwise same-resource
+    multi-owner conflict: two contracts sharing a resource under distinct
+    owners pass when one handoff links that exact pair over that resource.
+    Three-or-more claimant sets always conflict (handoff chains are a later
+    slice, deliberately out of scope here).
+    """
 
     errors: list[ResourceControlValidationError] = []
     ordered_contracts = tuple(
@@ -419,10 +515,18 @@ def validate_escrow_contract_set(
         for resource in contract.resources:
             resources.setdefault(resource, []).append(contract)
 
+    errors.extend(_validate_escrow_handoffs(tuple(handoffs), identities))
+
     for resource in sorted(resources):
         claimants = resources[resource]
         identities_for_resource = {item.identity for item in claimants}
         if len(identities_for_resource) <= 1:
+            continue
+        if len(identities_for_resource) == 2 and any(
+            {handoff.predecessor, handoff.successor} == identities_for_resource
+            and resource in handoff.resources
+            for handoff in handoffs
+        ):
             continue
         owners = tuple(
             sorted(
