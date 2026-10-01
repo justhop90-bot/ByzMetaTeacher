@@ -2029,10 +2029,10 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(can-train-with-escrow camel-rider-line)",
+                    "(can-train-with-escrow camel-rider)",
                     "(unit-type-count-total camel-rider-line < 3)",
                 ),
-                action="(train camel-rider-line)",
+                action="(train camel-rider)",
                 witness="(unit-type-count camel-rider-line >= 3)",
                 release="(unit-type-count camel-rider-line >= 3)",
             ),
@@ -2068,10 +2068,10 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
             execution=ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(can-train-with-escrow cataphract-line)",
+                    "(can-train-with-escrow cataphract)",
                     "(unit-type-count-total cataphract-line < 2)",
                 ),
-                action="(train cataphract-line)",
+                action="(train cataphract)",
                 witness="(unit-type-count cataphract-line >= 2)",
                 release="(unit-type-count cataphract-line >= 2)",
             ),
