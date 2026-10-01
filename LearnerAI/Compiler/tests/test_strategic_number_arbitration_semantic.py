@@ -402,7 +402,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             rearm_actions = lowered.control_plan.rules[rearm_index].actions
             self.assertEqual(
                 tuple(action.head for action in rearm_actions),
-                ("set-goal", "set-goal"),
+                ("set-goal", "set-goal", "set-goal"),
             )
 
 
