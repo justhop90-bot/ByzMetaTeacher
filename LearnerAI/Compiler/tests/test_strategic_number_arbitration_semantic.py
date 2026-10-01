@@ -405,6 +405,61 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             )
 
 
+    def test_rearm_marks_physical_sn_for_underlay_handoff(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
+        recovery = StrategicNumberController(
+            identity="recovery-override",
+            native_strategic_number_id=227,
+            value=100,
+            layer=StrategicNumberControllerLayer.RECOVERY,
+            activation_guard="(goal recovery-needed 1)",
+            release_guard="(goal recovery-clear 1)",
+            rearm_guard="(goal recovery-reset 1)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        lowered = lower_strategic_number_arbitration(
+            build_strategic_number_arbitration_plan(
+                type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+                extra_controllers=(base, recovery),
+            ),
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        rearm = next(
+            rule
+            for rule in lowered.control_plan.rules
+            if rule.identity == "sn-controller-recovery-override-rearm"
+        )
+        self.assertEqual(
+            tuple(action.source for action in rearm.actions),
+            (
+                "(set-goal sn-controller-recovery-override-release-block 0)",
+                "(set-goal sn-rearm-recovery-override 1)",
+                "(set-goal sn-reassert-227 1)",
+            ),
+        )
+        underlay = next(
+            rule
+            for rule in lowered.control_plan.rules
+            if rule.identity == "sn-controller-strategy-base-write"
+        )
+        self.assertIn("(goal sn-reassert-227 1)", underlay.facts[0].source)
+        self.assertEqual(
+            underlay.actions[-1].source,
+            "(set-goal sn-reassert-227 0)",
+        )
+
+
     def test_temporary_activation_latches_even_when_native_value_is_already_correct(self):
         base = StrategicNumberController(
             identity="strategy-base",
