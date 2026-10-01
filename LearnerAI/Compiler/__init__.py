@@ -46,6 +46,27 @@ __all__ = (
     "NativeControlPlan",
     "NativeControlRule",
     "NativeControlState",
+    "StrategicNumberActionAttachment",
+    "StrategicNumberArbitrationLowering",
+    "StrategicNumberArbitrationPlan",
+    "StrategicNumberController",
+    "StrategicNumberControllerLayer",
+    "StrategicNumberControllerOrigin",
+    "StrategicNumberControllerScope",
+    "StrategicNumberReleaseEvidence",
+    "StrategicNumberRestorationPolicy",
 )
 
 from .ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+from .ir.strategic_number_arbitration import (
+    StrategicNumberActionAttachment,
+    StrategicNumberArbitrationLowering,
+    StrategicNumberArbitrationPlan,
+    StrategicNumberController,
+    StrategicNumberControllerLayer,
+    StrategicNumberControllerOrigin,
+    StrategicNumberControllerScope,
+    StrategicNumberReleaseEvidence,
+    StrategicNumberRestorationPolicy,
+)
