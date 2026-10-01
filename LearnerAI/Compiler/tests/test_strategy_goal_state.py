@@ -11,7 +11,7 @@ Hard invariants pinned here:
 - guards stay native Facts; the control-plane gate rejects unknown
   commands, undeclared states, and bad arities (no test bypasses it);
 - same-pass write visibility stays engine-ordered (no firing proof);
-- no assertions means no control plan (existing behavior preserved).
+- no assertions and no posture transitions means no control plan (existing behavior preserved).
 """
 import unittest
 from dataclasses import replace
@@ -24,6 +24,7 @@ from Compiler.clients.basilisk import (
 from Compiler.ir.civ_profile import resolve_effective_civ
 from Compiler.ir.strategy import (
     GoalStateAssertion,
+    StrategyPosture,
     lower_strategy_profile,
 )
 
@@ -52,6 +53,7 @@ def _with_assertions(profile, *assertions_by_spec):
 class StrategyGoalStateTests(unittest.TestCase):
     def test_lowering_builds_state_and_rule_deterministically(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         spec = profile.demands[0]
         profile = _with_assertions(
             profile,
@@ -75,10 +77,86 @@ class StrategyGoalStateTests(unittest.TestCase):
         )
         self.assertEqual(first.control_plan, second.control_plan)
 
+    def test_posture_transitions_lower_to_persistent_goal_fsm(self):
+        effective, profile = _profile()
+
+        compilation = lower_strategy_profile(profile, effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control_plan = compilation.control_plan
+        assert control_plan is not None
+        self.assertEqual(
+            control_plan.state("strategy-posture").identifier,
+            "strategy-posture",
+        )
+        self.assertEqual(
+            len(control_plan.rules),
+            len(profile.transitions) + 1,
+        )
+        self.assertEqual(
+            tuple(rule.identity for rule in control_plan.rules),
+            (
+                "strategy-posture-initialize-000",
+                "strategy-posture-transition-001",
+                "strategy-posture-transition-002",
+                "strategy-posture-transition-003",
+                "strategy-posture-transition-004",
+                "strategy-posture-transition-005",
+            ),
+        )
+        self.assertEqual(
+            tuple(action.source for action in control_plan.rules[0].actions),
+            ("(set-goal strategy-posture 0)", "(disable-self)"),
+        )
+        self.assertIn("(goal strategy-posture 1)", control_plan.rules[1].facts[0].source)
+        self.assertIn("(goal strategy-posture 3)", control_plan.rules[1].facts[0].source)
+        self.assertIn("(set-goal strategy-posture 4)", control_plan.rules[1].actions[0].source)
+        self.assertIn("(goal strategy-posture 3)", control_plan.rules[2].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[2].actions[0].source,
+            "(set-goal strategy-posture 1)",
+        )
+        self.assertIn("(goal strategy-posture 0)", control_plan.rules[4].facts[0].source)
+        self.assertIn("(current-age == dark-age)", control_plan.rules[4].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[4].actions[0].source,
+            "(set-goal strategy-posture 3)",
+        )
+
     def test_no_assertions_means_no_control_plan(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         compilation = lower_strategy_profile(profile, effective)
         self.assertIsNone(compilation.control_plan)
+
+    def test_posture_fsm_emits_through_existing_control_plane(self):
+        effective, profile = _profile()
+
+        first = compile_strategy_profile(profile, effective)
+        second = compile_strategy_profile(profile, effective)
+
+        self.assertRegex(first, r"\(defconst strategy-posture \d+\)")
+        self.assertIn("(set-goal strategy-posture 3)", first)
+        self.assertIn("; Native control rule: strategy-posture-transition-001", first)
+        self.assertEqual(first, second)
+
+    def test_posture_transition_equal_priority_conflict_is_rejected(self):
+        effective, profile = _profile()
+        profile = replace(
+            profile,
+            transitions=(
+                profile.transitions[0],
+                replace(
+                    profile.transitions[1],
+                    label="conflicting-opening",
+                    to_posture=StrategyPosture.RUSH,
+                    priority=profile.transitions[0].priority,
+                ),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "equal-priority initial posture"):
+            lower_strategy_profile(profile, effective)
 
     def test_end_to_end_emits_defconst_guard_and_set(self):
         effective, profile = _profile()
@@ -141,6 +219,7 @@ class StrategyGoalStateTests(unittest.TestCase):
 
     def test_shared_state_same_owner_dedupes(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         spec = profile.demands[0]
         profile = _with_assertions(
             profile,

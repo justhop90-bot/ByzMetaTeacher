@@ -22,6 +22,14 @@ class StrategyPosture(str, Enum):
     BOOM = "BOOM"
     CASTLE_POWER = "CASTLE-POWER"
 
+_STRATEGY_POSTURE_STATE = "strategy-posture"
+_STRATEGY_POSTURE_VALUES = {
+    StrategyPosture.FLUSH: 1,
+    StrategyPosture.RUSH: 2,
+    StrategyPosture.BOOM: 3,
+    StrategyPosture.CASTLE_POWER: 4,
+}
+
 
 class StrategicEvidenceKind(str, Enum):
     PERSISTENT = "PERSISTENT"
@@ -853,9 +861,146 @@ def lower_strategy_profile(
         demands=tuple(bound_demands),
         bindings=bindings,
         escrow_plan=escrow_plan,
-        control_plan=_goal_state_control_plan(profile),
+        control_plan=_strategy_control_plan(profile),
         military_compositions=tuple(military_compositions),
     )
+
+
+def _strategy_control_plan(profile: StrategyProfile):
+    """Lower posture transitions and explicit Goal assertions through one control plane."""
+    posture_plan = _posture_transition_control_plan(profile)
+    assertion_plan = _goal_state_control_plan(profile)
+
+    if posture_plan is None:
+        return assertion_plan
+    if assertion_plan is None:
+        return posture_plan
+    if any(
+        state.identifier == _STRATEGY_POSTURE_STATE
+        for state in assertion_plan.states
+    ):
+        raise ValueError(
+            f"native strategy state '{_STRATEGY_POSTURE_STATE}' is reserved by posture transitions"
+        )
+    from .native_control import NativeControlPlan
+
+    return NativeControlPlan(
+        states=(*posture_plan.states, *assertion_plan.states),
+        rules=(*posture_plan.rules, *assertion_plan.rules),
+    )
+
+
+def _posture_transition_control_plan(profile: StrategyProfile):
+    """Lower the StrategyProfile posture FSM into native Goal control rules.
+
+    Transition evidence is always read from verified StrategyObservationSpec
+    references. Native same-pass Goal visibility remains engine-ordered, so
+    this synthesis establishes deterministic policy/lowering without claiming
+    an unproven runtime firing order.
+    """
+    if not profile.transitions:
+        return None
+
+    labels = {transition.label for transition in profile.transitions}
+    if len(labels) != len(profile.transitions):
+        raise ValueError("duplicate posture transition label")
+
+    transitions = profile.transitions
+    for index, first in enumerate(transitions):
+        for second in transitions[index + 1 :]:
+            if first.priority != second.priority or first.to_posture is second.to_posture:
+                continue
+            if set(first.from_postures).intersection(second.from_postures):
+                raise ValueError(
+                    f"equal-priority posture transitions '{first.label}' and '{second.label}' "
+                    "have incompatible destinations"
+                )
+            if not first.from_postures and not second.from_postures:
+                raise ValueError(
+                    f"equal-priority initial posture transitions '{first.label}' and '{second.label}' "
+                    "have incompatible destinations"
+                )
+
+    from ..ast import SourceLocation
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    owner = SemanticId(profile.profile_id, _STRATEGY_POSTURE_STATE)
+    state = NativeControlState(
+        _STRATEGY_POSTURE_STATE,
+        GoalSlotRequest(
+            StorageRequestId(owner, _STRATEGY_POSTURE_STATE),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+    rules = [
+        NativeControlRule(
+            f"{_STRATEGY_POSTURE_STATE}-initialize-000",
+            facts=(
+                parse_expression(
+                    f"(goal {_STRATEGY_POSTURE_STATE} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {_STRATEGY_POSTURE_STATE} 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        )
+    ]
+
+    ordered = tuple(
+        sorted(
+            enumerate(profile.transitions),
+            key=lambda item: (-item[1].priority, item[1].label, item[0]),
+        )
+    )
+    for rule_index, (_profile_index, transition) in enumerate(ordered, start=1):
+        guard_sources: list[str] = []
+        if transition.from_postures:
+            posture_guards = tuple(
+                f"(goal {_STRATEGY_POSTURE_STATE} {_STRATEGY_POSTURE_VALUES[posture]})"
+                for posture in transition.from_postures
+            )
+            guard_sources.append(
+                posture_guards[0]
+                if len(posture_guards) == 1
+                else "(or " + " ".join(posture_guards) + ")"
+            )
+        else:
+            # Empty from_postures means "initial posture only" in the runtime
+            # model. Encode the same boundary in native persistent state so an
+            # initial transition cannot reassert forever after initialization.
+            guard_sources.append(f"(goal {_STRATEGY_POSTURE_STATE} 0)")
+        for evidence in transition.evidence:
+            if evidence.observation_ref is None:
+                raise ValueError(
+                    f"posture transition '{transition.label}' requires observation-backed evidence"
+                )
+            guard_sources.append(profile.observation(evidence.observation_ref).expression)
+
+        guard_source = guard_sources[0] if len(guard_sources) == 1 else f"(and {' '.join(guard_sources)})"
+        target_value = _STRATEGY_POSTURE_VALUES[transition.to_posture]
+        rules.append(
+            NativeControlRule(
+                f"{_STRATEGY_POSTURE_STATE}-transition-{rule_index:03d}",
+                facts=(parse_expression(guard_source, SourceLocation(1)),),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {_STRATEGY_POSTURE_STATE} {target_value})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+    return NativeControlPlan(states=(state,), rules=tuple(rules))
 
 
 def _goal_state_control_plan(profile: StrategyProfile):
