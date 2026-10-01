@@ -31,6 +31,10 @@ class ProductionBoundaryStatus(str, Enum):
     NOT_OBSERVED = "NOT_OBSERVED"
     OBSERVED = "OBSERVED"
 
+def _truth_enum():
+    from .strategy_runtime import EvidenceTruth
+    return EvidenceTruth
+
 
 @dataclass(frozen=True)
 class ProductionRuntimeState:
@@ -54,6 +58,7 @@ class ProductionRuntimeState:
 
     @property
     def runtime_open(self) -> bool:
+        EvidenceTruth = _truth_enum()
         return any(
             value is EvidenceTruth.UNKNOWN
             for value in (
@@ -80,6 +85,7 @@ def _truth_from_snapshot(snapshot, expression):
 
 
 def _tri_all(truths):
+    EvidenceTruth = _truth_enum()
     values = tuple(truths)
     if any(value is EvidenceTruth.FALSE for value in values):
         return EvidenceTruth.FALSE
@@ -98,6 +104,7 @@ def _boundary_status(truths) -> ProductionBoundaryStatus:
 
 
 def _provider_transition(snapshot, expression):
+    EvidenceTruth = _truth_enum()
     if expression is None:
         return ProductionProviderTransition.UNKNOWN
     current = snapshot.result_for(expression)
@@ -139,6 +146,7 @@ def _provider_usability(
     provider_readiness: "EvidenceTruth",
     provider_availability: "EvidenceTruth",
 ) -> "EvidenceTruth":
+    EvidenceTruth = _truth_enum()
     values = (
         admission,
         provider_state,
