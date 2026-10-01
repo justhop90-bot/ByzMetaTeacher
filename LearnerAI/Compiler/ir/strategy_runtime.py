@@ -892,6 +892,7 @@ def _evaluate_demand(
     effective: EffectiveCivData,
     snapshot: RuntimeObservationSnapshot,
     registry: PrimitiveRegistry,
+    counter_package_sources: tuple[str, ...] = (),
 ) -> tuple[StrategicDemandRuntimeState, tuple[tuple[str, EvidenceTruth], ...]]:
     evaluated: list[tuple[str, EvidenceTruth]] = []
     reason_bindings = _all_bindings(demand.reason, profile, effective, registry)
@@ -899,6 +900,10 @@ def _evaluate_demand(
     evaluated.extend(
         (f"{demand.identity}:reason:{binding.evidence.label}", truth)
         for binding, truth in zip(reason_bindings, reason_truths)
+    )
+    evaluated.extend(
+        (f"{demand.identity}:counter-package:{package_identity}", EvidenceTruth.TRUE)
+        for package_identity in counter_package_sources
     )
 
     if demand.identity in snapshot.completed_demands:
@@ -913,7 +918,7 @@ def _evaluate_demand(
     if any(value is EvidenceTruth.TRUE for value in invalidation_truths):
         return StrategicDemandRuntimeState.STRATEGIC_INVALIDATED, tuple(evaluated)
 
-    if not _all_true(reason_truths):
+    if not counter_package_sources and not _all_true(reason_truths):
         return StrategicDemandRuntimeState.STRATEGIC_INACTIVE, tuple(evaluated)
 
     admissibility_bindings = _all_bindings(demand.admissibility, profile, effective, registry)
