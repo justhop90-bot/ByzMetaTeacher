@@ -54,7 +54,11 @@ from ...semantic.policy_recipe import (
     resolve_policy_recipe,
 )
 from ...ir.strategy_runtime import (
+    CounterArbitrationDecision,
+    CounterArbitrationMode,
+    CounterPackageRuntimeState,
     EvidenceTruth,
+    arbitrate_counter_packages,
     ObservationReferenceBinding,
     OpportunityCostRuntimeState,
     ReassessmentReason,
@@ -118,6 +122,10 @@ __all__ = (
     "PolicyTerm",
     "default_byzantine_policy_recipes",
     "resolve_policy_recipe",
+    "CounterArbitrationDecision",
+    "CounterArbitrationMode",
+    "CounterPackageRuntimeState",
+    "arbitrate_counter_packages",
     "EvidenceTruth",
     "ObservationReferenceBinding",
     "OpportunityCostRuntimeState",
