@@ -60,6 +60,31 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             action_block.index("(research feudal-age)"),
         )
 
+
+    def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+
+        self.assertIsNotNone(compilation.attack_plan)
+        plan = compilation.attack_plan
+        assert plan is not None
+        self.assertEqual(
+            tuple(rule.identity for rule in plan.rules),
+            ("byzantine-castle-attack-now",),
+        )
+        self.assertEqual(
+            plan.rules[0].actions[0].source,
+            "(attack-now)",
+        )
+
+        first = compile_strategy_profile(self.profile, self.effective)
+        second = compile_strategy_profile(self.profile, self.effective)
+        self.assertEqual(first, second)
+        self.assertIn("; Native attack lifecycle plan", first)
+        self.assertIn("; Native attack rule: byzantine-castle-attack-now", first)
+        self.assertIn("(attack-now)", first)
+        self.assertIn("(goal strategy-posture 4)", first)
+        self.assertIn("(unit-type-count cataphract >= 2)", first)
+
     def test_strategy_profile_compiles_through_existing_semantic_pipeline(self):
         output = compile_strategy_profile(
             self.profile,
