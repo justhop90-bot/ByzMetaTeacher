@@ -146,9 +146,11 @@ def is_duc_directed_train(demand: SemanticDemand) -> bool:
 def production_arbitration_owner(demand: SemanticDemand) -> SemanticId:
     """Resolve the arbitration owner for a production demand.
 
-    Strategy-lowered demands arbitrate under their strategic owner (mapped
-    into the demand source unit so the owner is a stable SemanticId shared
-    by every execution demand of one strategic spec). Ordinary demands
+    Strategy-lowered demands normally arbitrate under their strategic
+    identity (mapped into the demand source unit so every execution demand
+    of one strategic spec shares one contract). A strategy may explicitly
+    set a production-arbitration group to share that contract across
+    several distinct strategic demands. Ordinary demands
     arbitrate under the shared unit execution-memory owner, mirroring the
     `build` claim convention. The provider UnitId is never an owner: it
     remains provider identity carried by the lifecycle.
@@ -157,7 +159,8 @@ def production_arbitration_owner(demand: SemanticDemand) -> SemanticId:
     if binding is not None:
         return SemanticId(
             demand.identity.source_unit,
-            binding.strategic_id,
+            binding.production_arbitration_group
+            or binding.strategic_id,
         )
     return SemanticId(
         demand.identity.source_unit,
