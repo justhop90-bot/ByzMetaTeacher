@@ -171,8 +171,19 @@ def main() -> int:
         if fragment not in first:
             raise SystemExit(f"missing arbitration artifact fragment: {fragment}")
 
-    if "(not (or (current-age >= feudal-age) (goal sn-controller-emergency-defense-active 1)))" not in first:
-        raise SystemExit("underlay write is not suppressed across the temporary override lifetime")
+    expected_underlay_guard = "(not (goal sn-controller-emergency-defense-active 1))"
+    if expected_underlay_guard not in first:
+        raise SystemExit(
+            "temporary release does not expose the strategy underlay reassertion guard"
+        )
+    stale_underlay_guard = (
+        "(not (or (current-age >= feudal-age) "
+        "(goal sn-controller-emergency-defense-active 1)))"
+    )
+    if stale_underlay_guard in first:
+        raise SystemExit(
+            "temporary activation eligibility still suppresses the underlay after release"
+        )
 
     if "(set-strategic-number sn-native-227 0)" in first:
         raise SystemExit("native Strategic Number received compiler-owned zero initialization")
