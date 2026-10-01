@@ -188,7 +188,7 @@ def main() -> int:
                 f"{identity} controller must emit activate -> release -> rearm -> steady order"
             )
         controller_order_positions[identity] = positions
-    if controller_order_positions["recovery-override"][3] >= controller_order_positions["emergency-defense"][0]:
+    if controller_order_positions["recovery-override"][4] >= controller_order_positions["emergency-defense"][0]:
         raise SystemExit(
             "higher-precedence recovery controller must emit before the temporary controller"
         )
