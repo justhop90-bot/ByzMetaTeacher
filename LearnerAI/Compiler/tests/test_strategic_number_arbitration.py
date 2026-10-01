@@ -25,6 +25,7 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         priority=0,
         activation=None,
         release=None,
+        rearm=None,
         scope=StrategicNumberControllerScope.PERSISTENT,
         action=None,
         evidence=None,
@@ -37,6 +38,7 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
             priority=priority,
             activation_guard=activation,
             release_guard=release,
+            rearm_guard=rearm,
             scope=scope,
             restoration=StrategicNumberRestorationPolicy.REASSERT_UNDERLAY,
             release_evidence=evidence,
@@ -102,6 +104,27 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
                 layer=StrategicNumberControllerLayer.TEMPORARY,
                 release="(true)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            )
+
+    def test_transient_requires_explicit_rearm_guard(self):
+        with self.assertRaisesRegex(ValueError, "rearm_guard"):
+            self._controller(
+                "temporary-no-rearm",
+                layer=StrategicNumberControllerLayer.TEMPORARY,
+                activation="(goal emergency 1)",
+                release="(goal emergency-clear 1)",
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            )
+
+        with self.assertRaisesRegex(ValueError, "rearm_guard"):
+            self._controller(
+                "recovery-no-rearm",
+                layer=StrategicNumberControllerLayer.RECOVERY,
+                activation="(goal recovery 1)",
+                release="(goal recovery-clear 1)",
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             )
 
     def test_action_requires_exact_action_identity_and_action_scope(self):
