@@ -12,6 +12,7 @@ from Compiler.ir import (
 from Compiler.ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from Compiler.runtime_binding import (
     BindingContext,
+    BindingManifest,
     RuntimeBinder,
     StrategicNumberInventory,
     StrategicNumberRequest,
@@ -121,6 +122,26 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
 
         self.assertEqual(binding.id, 117)
         self.assertEqual(binding.inventory_sha, default_strategic_number_inventory().inventory_sha)
+
+    def test_native_strategic_number_reference_round_trips_through_manifest(self):
+        owner = SemanticId("control.fixture", "native-sn-manifest")
+        request = StrategicNumberRequest(
+            StorageRequestId(owner, "native-sn-food-gatherer"),
+            why_not_goal="This state is an engine-defined Strategic Number with a documented native identity.",
+            stability_key="control.fixture.native-sn-food-gatherer",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=117,
+        )
+
+        result = RuntimeBinder().bind((request,))
+        manifest = result.to_manifest()
+        loaded = BindingManifest.from_json(manifest.to_json())
+        binding = loaded.binding_for(request.request_id)
+
+        self.assertEqual(binding.id, 117)
+        metadata = loaded.strategic_number_metadata[0]
+        self.assertIs(metadata.origin, StrategicNumberOrigin.NATIVE_REFERENCE)
+        self.assertEqual(metadata.native_strategic_number_id, 117)
 
     def test_native_strategic_number_reference_rejects_undocumented_id(self):
         owner = SemanticId("control.fixture", "native-sn-reject")
