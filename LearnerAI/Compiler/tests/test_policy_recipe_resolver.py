@@ -167,6 +167,14 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
         )
         self.assertFalse(missing.executable)
         self.assertIn("POL-005", {item.key.code for item in missing.diagnostics})
+        self.assertEqual(
+            next(
+                item.key.binding_identity
+                for item in missing.diagnostics
+                if item.key.code == "POL-005"
+            ),
+            "target_kind",
+        )
 
         resolved = resolve_policy_recipe(
             recipe,
