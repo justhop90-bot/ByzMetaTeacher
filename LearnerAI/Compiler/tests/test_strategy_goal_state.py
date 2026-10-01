@@ -109,9 +109,14 @@ class StrategyGoalStateTests(unittest.TestCase):
             ("(set-goal strategy-posture 0)", "(disable-self)"),
         )
         self.assertIn("(current-age == dark-age)", control_plan.rules[1].facts[0].source)
-        self.assertIn("(goal strategy-posture 3)", control_plan.rules[3].facts[0].source)
+        self.assertIn("(goal strategy-posture 1)", control_plan.rules[3].facts[0].source)
         self.assertEqual(
             control_plan.rules[3].actions[0].source,
+            "(set-goal strategy-posture 3)",
+        )
+        self.assertIn("(goal strategy-posture 3)", control_plan.rules[4].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[4].actions[0].source,
             "(set-goal strategy-posture 1)",
         )
 
