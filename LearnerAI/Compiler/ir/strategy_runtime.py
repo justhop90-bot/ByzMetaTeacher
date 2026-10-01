@@ -134,6 +134,7 @@ class RuntimeObservationSnapshot:
     completed_demands: frozenset[str] = frozenset()
     previous_posture: StrategyPosture | None = None
     previous_demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...] = ()
+    previous_counter_package_states: tuple[tuple[str, EvidenceTruth], ...] = ()
     previous_capability_observations: tuple[tuple[str, bool | None], ...] = ()
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
 
@@ -159,8 +160,7 @@ class StrategyRuntimeState:
     current_posture: StrategyPosture | None
     previous_posture: StrategyPosture | None
     demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...]
-    counter_package_states: tuple[CounterPackageRuntimeState, ...] = ()
-    opportunity_cost_states: tuple[tuple[str, OpportunityCostRuntimeState], ...] = ()
+    opportunity_cost_states: tuple[tuple[str, OpportunityCostRuntimeState], ...]
     evaluated_evidence: tuple[tuple[str, EvidenceTruth], ...]
     active_strategic_demands: tuple[str, ...]
     strategically_blocked_demands: tuple[str, ...]
@@ -169,6 +169,7 @@ class StrategyRuntimeState:
     reassessment_reasons: tuple[ReassessmentReason, ...]
     runtime_storage_requests: tuple[object, ...]
     fingerprint: str
+    counter_package_states: tuple[CounterPackageRuntimeState, ...] = ()
     _owners: tuple[tuple[str, str], ...] = ()
     evaluated_meta_evidence: tuple[
         tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]],
