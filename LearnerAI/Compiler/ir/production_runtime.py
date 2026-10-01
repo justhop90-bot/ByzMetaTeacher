@@ -84,6 +84,7 @@ class ProductionRuntimeState:
 
 
 def _truth_from_snapshot(snapshot, expression):
+    EvidenceTruth = _truth_enum()
     if expression is None:
         return EvidenceTruth.UNKNOWN
     return snapshot.result_for(expression)
