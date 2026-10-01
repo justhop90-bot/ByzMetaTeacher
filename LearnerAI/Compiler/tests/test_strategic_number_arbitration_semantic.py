@@ -6,21 +6,22 @@ from Compiler.clients.basilisk import (
     compile_strategy_profile,
 )
 from Compiler.ir import (
-    Age,
     StrategicNumberController,
     StrategicNumberControllerLayer,
     StrategicNumberControllerScope,
     StrategicNumberReleaseEvidence,
-    build_strategic_number_arbitration_plan,
-    lower_strategic_number_arbitration,
-    strategic_number_mode_to_controller,
-    validate_strategic_number_arbitration,
 )
 from Compiler.ir.strategy import StrategicNumberMode, StrategyPosture
 from Compiler.primitives.strategic_number_catalog import (
     default_strategic_number_inventory,
 )
 from Compiler.ir.civ_profile import resolve_effective_civ
+from Compiler.semantic.strategic_number_arbitration import (
+    build_strategic_number_arbitration_plan,
+    lower_strategic_number_arbitration,
+    strategic_number_mode_to_controller,
+    validate_strategic_number_arbitration,
+)
 
 
 class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
