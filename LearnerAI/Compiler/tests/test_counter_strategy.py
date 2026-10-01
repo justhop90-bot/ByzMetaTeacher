@@ -68,6 +68,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_known_ranged_threat_with_unknown_production_stays_blocked(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
@@ -84,6 +85,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_unknown_ranged_observation_keeps_counter_package_unknown_and_demand_inactive(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(("(current-age == feudal-age)", True),),
         )
         state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
@@ -97,6 +99,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_mounted_feudal_pressure_selects_spear_screen_and_policy(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
@@ -114,6 +117,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_castle_infantry_pressure_selects_cataphract_response(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age >= feudal-age)", True),
                 ("(current-age >= castle-age)", True),
@@ -156,6 +160,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_siege_pressure_activates_mobile_siege_response(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age >= feudal-age)", True),
                 ("(current-age >= castle-age)", True),
@@ -173,6 +178,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_mixed_mounted_and_ranged_pressure_preserves_both_counter_roles(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
                 ("(current-age >= feudal-age)", True),
@@ -223,6 +229,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         self.assertEqual(decision.suppressed_packages, ("MOUNTED_SECONDARY",))
     def test_counter_package_selection_is_deterministic(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age >= feudal-age)", True),
                 ("(current-age >= castle-age)", True),
