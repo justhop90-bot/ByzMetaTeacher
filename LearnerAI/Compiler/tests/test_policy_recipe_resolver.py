@@ -5,6 +5,7 @@ from Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_castle_strategy,
 )
+from Compiler.semantic.community_engine import EvidenceClass, PracticeStatus
 from Compiler.semantic.policy_cause_graph import PolicyCauseRelation
 from Compiler.semantic.policy_recipe import (
     PolicyField,
@@ -119,20 +120,14 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
                     PolicyField.OBJECTIVE_DISCIPLINE,
                     "strict",
                     PolicyStrength.CONSTRAINT,
-                    evidence=__import__(
-                        "Compiler.semantic.community_engine",
-                        fromlist=["EvidenceClass"],
-                    ).EvidenceClass.COMPILER_POLICY,
+                    evidence=EvidenceClass.COMPILER_POLICY,
                     source_refs=("test",),
                 ),
                 PolicyTerm(
                     PolicyField.ATTACK_RETARGET,
                     "patrol-style",
                     PolicyStrength.DEFAULT,
-                    evidence=__import__(
-                        "Compiler.semantic.community_engine",
-                        fromlist=["EvidenceClass"],
-                    ).EvidenceClass.COMMUNITY_PRACTICE,
+                    evidence=EvidenceClass.COMMUNITY_PRACTICE,
                     source_refs=("test",),
                 ),
             ),
@@ -199,7 +194,6 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
         )
 
     def test_open_evidence_fails_closed(self):
-        from Compiler.semantic.community_engine import EvidenceClass, PracticeStatus
 
         recipe = PolicyRecipe(
             identity="TEST_OPEN",
