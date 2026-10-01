@@ -1521,6 +1521,11 @@ def _land_castle_observations(
             provenance=effective.unit_line("militia-line").provenance,
         ),
         StrategicObservationSpec(
+            "enemy-siege-pressure",
+            "(and (current-age >= castle-age) (players-unit-type-count any-enemy mangonel-line >= 2))",
+            provenance=effective.unit_line("mangonel-line").provenance,
+        ),
+        StrategicObservationSpec(
             "castle-complete",
             "(and (current-age >= castle-age) (building-type-count-total castle >= 1))",
             provenance=castle_complete_provenance,
@@ -2075,6 +2080,45 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                 witness="(unit-type-count cataphract >= 2)",
                 release="(unit-type-count cataphract >= 2)",
             ),
+        StrategicDemandSpec(
+            identity="counter-castle-siege-response",
+            owner="counter-arbitration",
+            posture=StrategyPosture.CASTLE_POWER,
+            priority=StrategicPriority.DEFENSE,
+            reason=(),
+            admissibility=(
+                StrategicEvidence(
+                    StrategicEvidenceKind.PERSISTENT,
+                    None,
+                    "Castle anti-siege counter demand is admissible",
+                    observation_ref="current-feudal-age",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=CapabilityIntent(
+                CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "knight-line",
+                BuildingId(101),
+            ),
+            target=StrategicTarget(
+                StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "knight-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-train-with-escrow knight-line)",
+                    "(unit-type-count-total knight-line < 2)",
+                ),
+                action="(train knight-line)",
+                witness="(unit-type-count knight-line >= 2)",
+                release="(unit-type-count knight-line >= 2)",
+            ),
+        ),
         ),
     )
 
