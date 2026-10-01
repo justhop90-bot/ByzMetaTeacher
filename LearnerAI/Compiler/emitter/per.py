@@ -457,6 +457,26 @@ def emit(
 
     if native_attack_plan is not None and not native_attack_plan.empty:
         out.append("; Native attack lifecycle plan")
+        attack_sn_aliases = sorted(
+            {
+                attachment.native_strategic_number_id
+                for attachment in native_attack_plan.strategic_number_action_attachments
+            }
+        )
+        existing_symbols = {
+            line.split()[1]
+            for line in out
+            if line.startswith("(defconst ") and len(line.split()) >= 3
+        }
+        for native_id in attack_sn_aliases:
+            alias = f"sn-native-{native_id}"
+            if alias in existing_symbols:
+                continue
+            out.append(f"(defconst {alias} {native_id})")
+            existing_symbols.add(alias)
+        if attack_sn_aliases:
+            out.append("")
+
         attachments_by_rule: dict[str, dict[int, list]] = {}
         for attachment in native_attack_plan.strategic_number_action_attachments:
             assert attachment.owned_rule_identity is not None
