@@ -78,6 +78,12 @@ class OpportunityCostRuntimeState(str, Enum):
     RELEASED = "RELEASED"
 
 
+class CounterArbitrationMode(str, Enum):
+    NONE = "NONE"
+    SINGLE = "SINGLE"
+    MIXED = "MIXED"
+
+
 class ReassessmentReason(str, Enum):
     POSTURE_CHANGE = "POSTURE_CHANGE"
     DEMAND_ACTIVATION = "DEMAND_ACTIVATION"
@@ -156,6 +162,22 @@ class CounterPackageRuntimeState:
 
 
 @dataclass(frozen=True)
+class CounterArbitrationDecision:
+    mode: CounterArbitrationMode
+    primary_package: str | None
+    supporting_packages: tuple[str, ...]
+    suppressed_packages: tuple[str, ...]
+    active_threat_classes: tuple[CounterThreatClass, ...]
+
+    @property
+    def active_packages(self) -> tuple[str, ...]:
+        packages = (
+            (self.primary_package,) if self.primary_package is not None else ()
+        )
+        return packages + self.supporting_packages
+
+
+@dataclass(frozen=True)
 class StrategyRuntimeState:
     current_posture: StrategyPosture | None
     previous_posture: StrategyPosture | None
@@ -170,6 +192,7 @@ class StrategyRuntimeState:
     runtime_storage_requests: tuple[object, ...]
     fingerprint: str
     counter_package_states: tuple[CounterPackageRuntimeState, ...] = ()
+    counter_arbitration: CounterArbitrationDecision | None = None
     _owners: tuple[tuple[str, str], ...] = ()
     evaluated_meta_evidence: tuple[
         tuple[str, EvidenceTruth, tuple[EvidenceRef, ...]],
@@ -195,6 +218,10 @@ class StrategyRuntimeState:
             for item in self.counter_package_states
             if item.truth is EvidenceTruth.TRUE
         )
+
+    @property
+    def counter_package_primary(self) -> str | None:
+        return self.counter_arbitration.primary_package if self.counter_arbitration else None
 
     def counter_package_state(self, identity: str) -> CounterPackageRuntimeState:
         for item in self.counter_package_states:
@@ -886,6 +913,66 @@ def _evaluate_counter_packages(
         {identity: tuple(sorted(sources)) for identity, sources in demand_sources.items()},
     )
 
+def _arbitrate_counter_packages(
+    states: tuple[CounterPackageRuntimeState, ...],
+) -> CounterArbitrationDecision:
+    active = tuple(
+        state
+        for state in states
+        if state.truth is EvidenceTruth.TRUE
+    )
+    if not active:
+        return CounterArbitrationDecision(
+            mode=CounterArbitrationMode.NONE,
+            primary_package=None,
+            supporting_packages=(),
+            suppressed_packages=(),
+            active_threat_classes=(),
+        )
+
+    selected: list[CounterPackageRuntimeState] = []
+    suppressed: list[str] = []
+    for threat_class in CounterThreatClass:
+        candidates = tuple(
+            state
+            for state in active
+            if state.threat_class is threat_class
+        )
+        if not candidates:
+            continue
+        winner = min(
+            candidates,
+            key=lambda item: (-item.priority, item.identity),
+        )
+        selected.append(winner)
+        suppressed.extend(
+            item.identity
+            for item in candidates
+            if item.identity != winner.identity
+        )
+
+    selected.sort(key=lambda item: (-item.priority, item.identity))
+    primary = selected[0]
+    supporting = tuple(item.identity for item in selected[1:])
+    mode = (
+        CounterArbitrationMode.SINGLE
+        if len(selected) == 1
+        else CounterArbitrationMode.MIXED
+    )
+    return CounterArbitrationDecision(
+        mode=mode,
+        primary_package=primary.identity,
+        supporting_packages=supporting,
+        suppressed_packages=tuple(sorted(suppressed)),
+        active_threat_classes=tuple(
+            sorted(
+                {item.threat_class for item in selected},
+                key=lambda item: item.value,
+            )
+        ),
+    )
+
+
 def _evaluate_demand(
     demand: StrategicDemandSpec,
     profile: StrategyProfile,
@@ -1089,6 +1176,16 @@ def evaluate_strategy_runtime(
         snapshot,
         registry,
     )
+    counter_arbitration = _arbitrate_counter_packages(counter_package_states)
+    selected_package_ids = set(counter_arbitration.active_packages)
+    counter_package_sources = {
+        demand_identity: tuple(
+            package_identity
+            for package_identity in package_ids
+            if package_identity in selected_package_ids
+        )
+        for demand_identity, package_ids in counter_package_sources.items()
+    }
 
     owners: list[tuple[str, str]] = []
     active: list[str] = []
@@ -1185,6 +1282,7 @@ def evaluate_strategy_runtime(
             "current_posture": current_posture,
             "previous_posture": snapshot.previous_posture,
             "counter_package_states": counter_package_states,
+            "counter_arbitration": counter_arbitration,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1212,6 +1310,7 @@ def evaluate_strategy_runtime(
         previous_posture=snapshot.previous_posture,
         demand_states=tuple(sorted(demand_states)),
         counter_package_states=tuple(counter_package_states),
+        counter_arbitration=counter_arbitration,
         opportunity_cost_states=tuple(sorted(opportunity)),
         evaluated_evidence=tuple(sorted(evaluated)),
         active_strategic_demands=tuple(sorted(active)),
