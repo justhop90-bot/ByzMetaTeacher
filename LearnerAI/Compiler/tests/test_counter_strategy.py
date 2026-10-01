@@ -49,6 +49,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         snapshot = RuntimeObservationSnapshot(
             previous_posture=StrategyPosture.BOOM,
             fact_results=(
+                ("(current-age >= feudal-age)", True),
                 ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
                 ("(can-train-with-escrow skirmisher-line)", True),
@@ -101,6 +102,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         snapshot = RuntimeObservationSnapshot(
             previous_posture=StrategyPosture.BOOM,
             fact_results=(
+                ("(current-age >= feudal-age)", True),
                 ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
                 ("(can-train-with-escrow spearman-line)", True),
