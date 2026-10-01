@@ -1927,7 +1927,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
     return (
         StrategicDemandSpec(
             identity="counter-mounted-spears",
-            owner="counter-arbitration",
+            owner="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(),
