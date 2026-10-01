@@ -37,6 +37,16 @@ def _claim_name(conflict_class: str) -> str:
     return "action-claim-" + conflict_class.lower().replace("_", "-")
 
 
+def _defconst_bindings(lines: list[str]) -> dict[str, str]:
+    bindings: dict[str, str] = {}
+    for line in lines:
+        stripped = line.strip()
+        fields = stripped.rstrip(")").split()
+        if stripped.startswith("(defconst ") and len(fields) >= 3:
+            bindings[fields[1]] = fields[2]
+    return bindings
+
+
 def _extract_rules(text: str) -> list[str]:
     rules = []
     cursor = 0
@@ -463,17 +473,19 @@ def emit(
                 for attachment in native_attack_plan.strategic_number_action_attachments
             }
         )
-        existing_symbols = {
-            line.split()[1]
-            for line in out
-            if line.startswith("(defconst ") and len(line.split()) >= 3
-        }
+        existing_defconsts = _defconst_bindings(out)
         for native_id in attack_sn_aliases:
             alias = f"sn-native-{native_id}"
-            if alias in existing_symbols:
+            existing_value = existing_defconsts.get(alias)
+            if existing_value is not None:
+                if existing_value != str(native_id):
+                    raise CompileError(
+                        f"EMITTER-SN-ALIAS-CONFLICT: defconst '{alias}' "
+                        f"is already bound to {existing_value}, expected {native_id}"
+                    )
                 continue
             out.append(f"(defconst {alias} {native_id})")
-            existing_symbols.add(alias)
+            existing_defconsts[alias] = str(native_id)
         if attack_sn_aliases:
             out.append("")
 
@@ -543,11 +555,7 @@ def emit(
 
     if control_plan is not None:
         out.append("; Native persistent control plane")
-        emitted_symbols = {
-            line.split()[1]
-            for line in out
-            if line.startswith("(defconst ") and len(line.split()) >= 3
-        }
+        emitted_defconsts = _defconst_bindings(out)
         for state in sorted(control_plan.states, key=lambda item: item.identifier):
             binding = bindings.binding_for(state.request.request_id)
             if isinstance(binding, GoalSlot):
@@ -561,11 +569,19 @@ def emit(
                     f"CONTROL-PLANE-BINDING: state '{state.identifier}' resolved to unsupported "
                     f"binding type '{type(binding).__name__}'"
                 )
-            if state.identifier in emitted_symbols:
+            existing_value = emitted_defconsts.get(state.identifier)
+            if existing_value is not None:
+                if (
+                    isinstance(binding, StrategicNumberSlot)
+                    and state.identifier == f"sn-native-{binding.id}"
+                    and existing_value == str(binding.id)
+                ):
+                    continue
                 raise CompileError(
-                    f"CONTROL-PLANE-SYMBOL: duplicate emitted defconst '{state.identifier}'"
+                    f"CONTROL-PLANE-SYMBOL: duplicate emitted defconst "
+                    f"'{state.identifier}'"
                 )
-            emitted_symbols.add(state.identifier)
+            emitted_defconsts[state.identifier] = str(value)
             out.append(f"(defconst {state.identifier} {value})")
 
         out.append("")
