@@ -210,7 +210,7 @@ def main() -> int:
         recovery_activation = recovery_activation[:next_marker]
     if "(goal sn-controller-recovery-override-release-block 0)" not in recovery_activation:
         raise SystemExit("recovery activation is missing its release-block guard")
-    if "(goal sn-controller-recovery-override-rearm-pass-block 0)" not in recovery_activation:
+    if "(goal sn-rearm-recovery-override 0)" not in recovery_activation:
         raise SystemExit("recovery activation is missing its same-pass rearm block guard")
 
     recovery_release_marker = (
@@ -256,7 +256,7 @@ def main() -> int:
         raise SystemExit("recovery rearm is missing its release-block latch")
     if "(set-goal sn-controller-recovery-override-release-block 0)" not in recovery_rearm:
         raise SystemExit("recovery rearm must clear the release-block latch")
-    if "(set-goal sn-controller-recovery-override-rearm-pass-block 1)" not in recovery_rearm:
+    if "(set-goal sn-rearm-recovery-override 1)" not in recovery_rearm:
         raise SystemExit("recovery rearm must set the same-pass reentry block")
 
     required = (
@@ -271,8 +271,8 @@ def main() -> int:
         "(up-compare-sn sn-native-227 != 100)",
         "(goal sn-controller-emergency-defense-release-block 0)",
         "(goal sn-controller-recovery-override-release-block 0)",
-        "(goal sn-controller-emergency-defense-rearm-pass-block 0)",
-        "(goal sn-controller-recovery-override-rearm-pass-block 0)",
+        "(goal sn-rearm-emergency-defense 0)",
+        "(goal sn-rearm-recovery-override 0)",
     )
     for fragment in required:
         if fragment not in first:
