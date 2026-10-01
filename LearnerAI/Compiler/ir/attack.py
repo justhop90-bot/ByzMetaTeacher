@@ -127,6 +127,71 @@ class AttackTargetRef:
         return self.validity in self.required_validity
 
 
+#: Execution states whose promotion revalidates DUC target proof against
+#: live search generations when the caller provides them. RETARGET stays
+#: open by design (it exists to fix drift), as do REASSESS (recovery
+#: routing), READY (resting), RETREAT (withdrawal), and COMPLETE (which
+#: requires its own explicit witness).
+_REVALIDATED_PROMOTION_STATES = frozenset(
+    {
+        AttackExecutionState.PREPARE,
+        AttackExecutionState.ASSEMBLE,
+        AttackExecutionState.ATTACK,
+        AttackExecutionState.PRESS,
+        AttackExecutionState.REINFORCE,
+    }
+)
+
+
+def revalidate_attack_target_proof(
+    ref: AttackTargetRef | None,
+    *,
+    current_list_generation: int | None = None,
+    current_filter_generation: int | None = None,
+) -> None:
+    """Revalidate attack target proof for promotion.
+
+    Checks both the snapshot status accepted by the ref and the pinned
+    DUC generations against live search state.
+
+    Attack target references are frozen snapshots: the DUC layer mints new
+    state objects on every mutation, reset, or filter change, so a stored
+    ref can read VALID while the live list has moved on. The pinned
+    `source_list_generation` / `source_filter_generation` exist to catch
+    exactly that drift.
+
+    Fail-closed ValueError on an unaccepted snapshot status or on drift.
+    Passes silently when the ref carries no lineage on an axis
+    (direct-ID targets), when the caller provides no live state on an
+    axis, or when the ref is absent. Never claims target death: an
+    invalid proof ends promotion, while liveness stays unknown (death
+    needs an independent world witness).
+    """
+    if ref is None:
+        return
+    if not ref.valid_for_execution:
+        accepted = ", ".join(status.value for status in ref.required_validity)
+        raise ValueError(
+            f"attack target proof is invalid: target status "
+            f"{ref.validity.value} is not accepted for promotion "
+            f"(accepted: {accepted}); invalidation ends the proof — "
+            "target liveness remains unknown"
+        )
+    for pin, current, axis in (
+        (ref.source_list_generation, current_list_generation, "list"),
+        (ref.source_filter_generation, current_filter_generation, "filter"),
+    ):
+        if pin is None or current is None:
+            continue
+        if pin != current:
+            raise ValueError(
+                f"attack target proof is stale: pinned source {axis} generation "
+                f"{pin} != current {axis} generation {current}; the target may have "
+                "been invalidated by list mutation, reset, or filter change — "
+                "target liveness remains unknown"
+            )
+
+
 @dataclass(frozen=True)
 class AttackCompletionContract:
     witness: CompletionWitnessContract
@@ -377,9 +442,24 @@ class AttackExecution:
         native_plan: NativeAttackLifecyclePlan | None = None,
         completion: AttackCompletionContract | None = None,
         capabilities: tuple[AttackCapabilityRef, ...] | None = None,
+        current_list_generation: int | None = None,
+        current_filter_generation: int | None = None,
     ) -> "AttackExecution":
         self.validate_transition(self.state, state)
         selected_target = self.target if target is None else target
+        if (
+            self.mode.requires_duc_target
+            and state in _REVALIDATED_PROMOTION_STATES
+        ):
+            if current_list_generation is not None and current_list_generation < 0:
+                raise ValueError("current list generation must be non-negative")
+            if current_filter_generation is not None and current_filter_generation < 0:
+                raise ValueError("current filter generation must be non-negative")
+            revalidate_attack_target_proof(
+                selected_target,
+                current_list_generation=current_list_generation,
+                current_filter_generation=current_filter_generation,
+            )
         selected_plan = self.native_plan if native_plan is None else native_plan
         selected_completion = self.completion if completion is None else completion
         selected_reassessment = (
@@ -429,4 +509,5 @@ __all__ = [
     "AttackExecutionTransition",
     "AttackReassessment",
     "AttackResultDisposition",
+    "revalidate_attack_target_proof",
 ]

@@ -27,6 +27,7 @@ from .attack import (
     AttackExecutionTransition,
     AttackReassessment,
     AttackResultDisposition,
+    revalidate_attack_target_proof,
 )
 from .native_attack import (
     AttackLifecycleObservation,
