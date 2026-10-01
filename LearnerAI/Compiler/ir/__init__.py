@@ -309,6 +309,7 @@ from .military_composition import (
 
 from .strategic_number_arbitration import (
     StrategicNumberActionAttachment,
+    StrategicNumberArbitrationLowering,
     StrategicNumberArbitrationPlan,
     StrategicNumberController,
     StrategicNumberControllerLayer,
