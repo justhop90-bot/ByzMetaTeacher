@@ -1019,7 +1019,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
         return None
 
     from ..ast import SourceLocation
-    from ..runtime_binding import StrategicNumberRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
