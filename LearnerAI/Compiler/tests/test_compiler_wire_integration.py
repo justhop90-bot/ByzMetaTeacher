@@ -70,7 +70,7 @@ class CompilerWireIntegrationTests(unittest.TestCase):
         )
         sources = tuple(item.source for item in demand.requirements)
         self.assertIn(
-            "(goal counter-package-mounted_pressure_feudal 1)",
+            "(up-compare-goal counter-package-mounted_pressure_feudal c:== 1)",
             sources,
         )
         self.assertIn(
