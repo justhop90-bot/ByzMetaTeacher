@@ -213,6 +213,8 @@ class StrategyRuntimeState:
 
     @property
     def active_counter_packages(self) -> tuple[str, ...]:
+        if self.counter_arbitration is not None:
+            return self.counter_arbitration.active_packages
         return tuple(
             item.identity
             for item in self.counter_package_states
