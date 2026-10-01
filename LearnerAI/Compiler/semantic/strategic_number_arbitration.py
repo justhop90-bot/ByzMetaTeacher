@@ -206,15 +206,6 @@ def validate_strategic_number_arbitration(
         ):
             raise ValueError("ACTION controller must use ACTION_SCOPED scope")
 
-        if controller.release_guard is not None and (
-            controller.release_evidence is StrategicNumberReleaseEvidence.TIMER_CADENCE
-            and "complete" in (_guard_text(controller.release_guard) or "").lower()
-        ):
-            raise ValueError(
-                f"Strategic Number controller '{controller.identity}' cannot treat "
-                "timer-cadence release as completion"
-            )
-
     for sn_id in plan.native_strategic_number_ids:
         controllers = plan.controllers_for_sn(sn_id)
         for index, first in enumerate(controllers):
@@ -369,9 +360,15 @@ def lower_strategic_number_arbitration(
             StrategicNumberControllerLayer.AGE_BASE,
             StrategicNumberControllerLayer.STRATEGY,
         }:
+            rule_identity = (
+                f"sn-mode-{controller.identity}-"
+                f"{sum(1 for item in rules if item.identity.startswith(f'sn-mode-{controller.identity}-')):03d}"
+                if controller.origin is StrategicNumberControllerOrigin.STRATEGY_MODE
+                else f"sn-controller-{controller.identity}-write"
+            )
             rules.append(
                 NativeControlRule(
-                    f"sn-controller-{controller.identity}-write",
+                    rule_identity,
                     facts=(parse_expression(write_guard, SourceLocation(1)),),
                     actions=(
                         parse_expression(
