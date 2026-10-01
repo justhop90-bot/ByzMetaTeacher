@@ -108,16 +108,18 @@ class StrategyGoalStateTests(unittest.TestCase):
             tuple(action.source for action in control_plan.rules[0].actions),
             ("(set-goal strategy-posture 0)", "(disable-self)"),
         )
-        self.assertIn("(current-age == dark-age)", control_plan.rules[1].facts[0].source)
-        self.assertIn("(goal strategy-posture 1)", control_plan.rules[3].facts[0].source)
+        self.assertIn("(goal strategy-posture 0)", control_plan.rules[1].facts[0].source)
+        self.assertIn("(set-goal strategy-posture 4)", control_plan.rules[1].actions[0].source)
+        self.assertIn("(goal strategy-posture 3)", control_plan.rules[2].facts[0].source)
         self.assertEqual(
-            control_plan.rules[3].actions[0].source,
-            "(set-goal strategy-posture 3)",
+            control_plan.rules[2].actions[0].source,
+            "(set-goal strategy-posture 1)",
         )
-        self.assertIn("(goal strategy-posture 3)", control_plan.rules[4].facts[0].source)
+        self.assertIn("(goal strategy-posture 0)", control_plan.rules[4].facts[0].source)
+        self.assertIn("(current-age == dark-age)", control_plan.rules[4].facts[0].source)
         self.assertEqual(
             control_plan.rules[4].actions[0].source,
-            "(set-goal strategy-posture 1)",
+            "(set-goal strategy-posture 3)",
         )
 
     def test_no_assertions_means_no_control_plan(self):
