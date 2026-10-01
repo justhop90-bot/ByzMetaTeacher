@@ -185,7 +185,7 @@ def main() -> int:
             positions.append(first.index(marker))
         if not positions[0] < positions[1] < positions[2] < positions[3] < positions[4]:
             raise SystemExit(
-                f"{identity} controller must emit activate -> release -> rearm -> steady order"
+                f"{identity} controller must emit clear -> activate -> release -> rearm -> steady order"
             )
         controller_order_positions[identity] = positions
     if controller_order_positions["recovery-override"][4] >= controller_order_positions["emergency-defense"][0]:
