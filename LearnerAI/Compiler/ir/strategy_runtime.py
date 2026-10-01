@@ -913,7 +913,7 @@ def _evaluate_counter_packages(
         {identity: tuple(sorted(sources)) for identity, sources in demand_sources.items()},
     )
 
-def _arbitrate_counter_packages(
+def arbitrate_counter_packages(
     states: tuple[CounterPackageRuntimeState, ...],
 ) -> CounterArbitrationDecision:
     active = tuple(
@@ -1176,7 +1176,7 @@ def evaluate_strategy_runtime(
         snapshot,
         registry,
     )
-    counter_arbitration = _arbitrate_counter_packages(counter_package_states)
+    counter_arbitration = arbitrate_counter_packages(counter_package_states)
     selected_package_ids = set(counter_arbitration.active_packages)
     counter_package_sources = {
         demand_identity: tuple(
