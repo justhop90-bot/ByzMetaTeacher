@@ -240,12 +240,21 @@ def validate_strategic_number_arbitration(
                     continue
                 first_guard = _guard_text(first.activation_guard)
                 second_guard = _guard_text(second.activation_guard)
-                if first_guard == second_guard:
-                    raise ValueError(
-                        "conflicting Strategic Number controllers at equal "
-                        "precedence and activation: "
-                        f"'{first.identity}' vs '{second.identity}'"
-                    )
+                if first.origin is StrategicNumberControllerOrigin.STRATEGY_MODE and (
+                    second.origin is StrategicNumberControllerOrigin.STRATEGY_MODE
+                ):
+                    if first_guard == second_guard:
+                        raise ValueError(
+                            "conflicting Strategic Number controllers at equal "
+                            "precedence and activation: "
+                            f"'{first.identity}' vs '{second.identity}'"
+                        )
+                    continue
+                raise ValueError(
+                    "conflicting explicit Strategic Number controllers at equal "
+                    "precedence and priority: "
+                    f"'{first.identity}' vs '{second.identity}'"
+                )
 
 
 def _storage_state(
