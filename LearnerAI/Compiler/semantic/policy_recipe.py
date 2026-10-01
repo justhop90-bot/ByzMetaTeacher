@@ -84,7 +84,6 @@ class PolicyRecipe:
     identity: str
     terms: tuple[PolicyTerm, ...]
     bindings: tuple[PolicyBindingRequirement, ...] = ()
-    evidence: tuple[EvidenceClass, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.identity.strip():
@@ -92,6 +91,10 @@ class PolicyRecipe:
         if not self.terms:
             raise ValueError(f"policy recipe '{self.identity}' requires terms")
         binding_ids = [item.identity for item in self.bindings]
+        if any(not item.strip() for item in binding_ids):
+            raise ValueError(
+                f"policy recipe '{self.identity}' has an empty binding requirement identity"
+            )
         if len(binding_ids) != len(set(binding_ids)):
             raise ValueError(
                 f"policy recipe '{self.identity}' has duplicate binding requirements"
