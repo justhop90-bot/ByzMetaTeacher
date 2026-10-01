@@ -311,7 +311,19 @@ def lower_strategic_number_arbitration(
         controllers = plan.controllers_for_sn(sn_id)
         states[f"sn-native-{sn_id}"] = _storage_state(controllers[0], profile_id)
 
-    for controller in plan.controllers:
+    ordered_controllers = tuple(
+        sorted(
+            plan.controllers,
+            key=lambda item: (
+                item.native_strategic_number_id,
+                -item.layer.precedence,
+                -item.priority,
+                item.identity,
+            ),
+        )
+    )
+
+    for controller in ordered_controllers:
         same_sn = plan.controllers_for_sn(controller.native_strategic_number_id)
         higher_suppression = _higher_controller_suppression(controller, same_sn)
 
