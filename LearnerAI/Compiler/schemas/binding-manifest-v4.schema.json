@@ -212,6 +212,17 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "origin": {
+                    "enum": [
+                      "COMPILER_ALLOCATION",
+                      "NATIVE_REFERENCE"
+                    ]
+                  },
+                  "native_strategic_number_id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 511
                   }
                 }
               },

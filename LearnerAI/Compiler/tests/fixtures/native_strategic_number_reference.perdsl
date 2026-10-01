@@ -1,0 +1,6 @@
+demand bootstrap {
+    require (can-build house)
+    action (build house)
+    witness (building-type-count house >= 1)
+    release (building-type-count house >= 1)
+}

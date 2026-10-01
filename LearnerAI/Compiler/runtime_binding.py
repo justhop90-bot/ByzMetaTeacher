@@ -15,6 +15,7 @@ from .ir import (
     GoalSpanRequest,
     SemanticId,
     StorageRequestId,
+    StrategicNumberOrigin,
     StrategicNumberStorageRequest,
     TimerRequest,
 )
@@ -399,6 +400,8 @@ class StrategicNumberBindingMetadata:
     why_not_goal: str
     native_contract_id: str | None
     request_fingerprint: str
+    origin: StrategicNumberOrigin = StrategicNumberOrigin.COMPILER_ALLOCATION
+    native_strategic_number_id: int | None = None
 
 
 def strategic_number_request_fingerprint(
@@ -415,6 +418,11 @@ def strategic_number_request_fingerprint(
         "why_not_goal": request.why_not_goal.strip(),
         "native_contract_id": request.native_contract_id,
     }
+    if request.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+        material["native_reference"] = {
+            "origin": request.origin.value,
+            "native_strategic_number_id": request.native_strategic_number_id,
+        }
     canonical = json.dumps(
         material,
         ensure_ascii=False,
@@ -434,6 +442,8 @@ def _strategic_number_binding_metadata(
         why_not_goal=request.why_not_goal.strip(),
         native_contract_id=request.native_contract_id,
         request_fingerprint=strategic_number_request_fingerprint(request),
+        origin=request.origin,
+        native_strategic_number_id=request.native_strategic_number_id,
     )
 
 
@@ -685,6 +695,8 @@ class BindingManifest:
                     stability_key=contract.stability_key,
                     role=contract.role,
                     native_contract_id=contract.native_contract_id,
+                    origin=contract.origin,
+                    native_strategic_number_id=contract.native_strategic_number_id,
                 )
                 if contract.request_fingerprint != strategic_number_request_fingerprint(expected_request):
                     raise ValueError(
@@ -694,16 +706,24 @@ class BindingManifest:
                     raise ValueError(
                         f"Strategic Number binding {record.request_id} role does not match request metadata"
                     )
+                request_contract = {
+                    "role": contract.role.value,
+                    "stability_key": contract.stability_key,
+                    "why_not_goal": contract.why_not_goal,
+                    "native_contract_id": contract.native_contract_id,
+                }
+                if contract.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+                    request_contract.update(
+                        {
+                            "origin": contract.origin.value,
+                            "native_strategic_number_id": contract.native_strategic_number_id,
+                        }
+                    )
                 payload.update(
                     {
                         "binding_kind": StorageKind.STRATEGIC_NUMBER.value,
                         "strategic_number_id": record.binding.id,
-                        "request_contract": {
-                            "role": contract.role.value,
-                            "stability_key": contract.stability_key,
-                            "why_not_goal": contract.why_not_goal,
-                            "native_contract_id": contract.native_contract_id,
-                        },
+                        "request_contract": request_contract,
                         "provenance": {
                             "strategic_number_inventory_sha": record.binding.inventory_sha,
                             "request_fingerprint": contract.request_fingerprint,
@@ -827,13 +847,41 @@ class BindingManifest:
             elif binding_kind == StorageKind.STRATEGIC_NUMBER.value:
                 request_contract = raw.get("request_contract")
                 provenance = raw.get("provenance")
-                if not isinstance(request_contract, dict) or set(request_contract) != {
+                if not isinstance(request_contract, dict):
+                    raise ValueError("Strategic Number manifest request_contract is invalid")
+                required_request_contract = {
                     "role",
                     "stability_key",
                     "why_not_goal",
                     "native_contract_id",
-                }:
+                }
+                if not required_request_contract.issubset(request_contract):
                     raise ValueError("Strategic Number manifest request_contract is invalid")
+                allowed_request_contract = required_request_contract | {
+                    "origin",
+                    "native_strategic_number_id",
+                }
+                if set(request_contract) - allowed_request_contract:
+                    raise ValueError("Strategic Number manifest request_contract is invalid")
+                origin = StrategicNumberOrigin(
+                    str(request_contract.get(
+                        "origin",
+                        StrategicNumberOrigin.COMPILER_ALLOCATION.value,
+                    ))
+                )
+                native_strategic_number_id = request_contract.get(
+                    "native_strategic_number_id"
+                )
+                if native_strategic_number_id is not None:
+                    native_strategic_number_id = int(native_strategic_number_id)
+                if origin is StrategicNumberOrigin.NATIVE_REFERENCE and native_strategic_number_id is None:
+                    raise ValueError(
+                        "Strategic Number native-reference manifest request requires native_strategic_number_id"
+                    )
+                if origin is StrategicNumberOrigin.COMPILER_ALLOCATION and native_strategic_number_id is not None:
+                    raise ValueError(
+                        "Strategic Number compiler-allocation manifest must not carry native_strategic_number_id"
+                    )
                 if not isinstance(provenance, dict) or set(provenance) != {
                     "strategic_number_inventory_sha",
                     "request_fingerprint",
@@ -863,6 +911,8 @@ class BindingManifest:
                         if request_contract["native_contract_id"] is None
                         else str(request_contract["native_contract_id"])
                     ),
+                    origin=origin,
+                    native_strategic_number_id=native_strategic_number_id,
                 )
                 fingerprint = str(provenance["request_fingerprint"])
                 expected_fingerprint = strategic_number_request_fingerprint(request)
@@ -878,6 +928,8 @@ class BindingManifest:
                         why_not_goal=request.why_not_goal,
                         native_contract_id=request.native_contract_id,
                         request_fingerprint=fingerprint,
+                        origin=request.origin,
+                        native_strategic_number_id=request.native_strategic_number_id,
                     )
                 )
                 seen_sn_ids.add(binding.id)
@@ -1241,7 +1293,7 @@ class RuntimeBinder:
                     inventory = context.strategic_number_inventory
                     if inventory is None:
                         raise ValueError(
-                            "Strategic Number allocation requires an explicit AIRef inventory"
+                            "Strategic Number binding requires an explicit AIRef inventory"
                         )
                     binding = StrategicNumberSlot(
                         id=sn_id,
@@ -1346,17 +1398,31 @@ class RuntimeBinder:
                 raise ValueError(
                     "Strategic Number binding reuse requires an explicit AIRef inventory"
                 )
-            if binding.id not in strategic_number_inventory.candidate_ids:
-                raise ValueError(
-                    f"existing Strategic Number {binding.id} is not approved by inventory "
-                    f"{strategic_number_inventory.inventory_sha}"
-                )
             if binding.inventory_sha != strategic_number_inventory.inventory_sha:
                 raise ValueError(
                     f"existing Strategic Number {binding.id} provenance inventory mismatch"
                 )
-            if binding.id == 511:
-                raise ValueError("Strategic Number 511 is not eligible for compiler allocation")
+            if request.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+                native_id = request.native_strategic_number_id
+                assert native_id is not None
+                if binding.id != native_id:
+                    raise ValueError(
+                        f"existing native Strategic Number binding {binding.id} does not match "
+                        f"requested native Strategic Number {native_id}"
+                    )
+                if native_id not in strategic_number_inventory.documented_ids:
+                    raise ValueError(
+                        f"existing native Strategic Number {native_id} is not DE-documented "
+                        f"in inventory {strategic_number_inventory.inventory_sha}"
+                    )
+            else:
+                if binding.id not in strategic_number_inventory.candidate_ids:
+                    raise ValueError(
+                        f"existing Strategic Number {binding.id} is not approved by inventory "
+                        f"{strategic_number_inventory.inventory_sha}"
+                    )
+                if binding.id == 511:
+                    raise ValueError("Strategic Number 511 is not eligible for compiler allocation")
             return
 
         if not isinstance(binding, TimerSlot):
@@ -1435,8 +1501,22 @@ class RuntimeBinder:
             )
         if inventory is None:
             raise ValueError(
-                "Strategic Number allocation requires an explicit AIRef inventory"
+                "Strategic Number binding requires an explicit AIRef inventory"
             )
+        if request.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+            native_id = request.native_strategic_number_id
+            assert native_id is not None
+            if native_id not in inventory.documented_ids:
+                raise ValueError(
+                    f"native Strategic Number {native_id} is not DE-documented in inventory "
+                    f"{inventory.inventory_sha}"
+                )
+            if native_id in occupied_sn_ids:
+                raise ValueError(
+                    f"native Strategic Number {native_id} conflicts with occupied Strategic Number "
+                    f"{native_id}"
+                )
+            return native_id
         for candidate in sorted(inventory.candidate_ids, reverse=True):
             if candidate == 511:
                 continue

@@ -60,6 +60,8 @@ class StrategicNumberStorageRequest:
     stability_key: str
     role: GoalRole = GoalRole.PERSISTENT_STATE
     native_contract_id: str | None = None
+    origin: StrategicNumberOrigin = StrategicNumberOrigin.COMPILER_ALLOCATION
+    native_strategic_number_id: int | None = None
 
     def __post_init__(self) -> None:
         if self.role is not GoalRole.PERSISTENT_STATE:
@@ -73,6 +75,22 @@ class StrategicNumberStorageRequest:
         if not self.stability_key.strip():
             raise ValueError(
                 f"Strategic Number request {self.request_id} requires a stability_key"
+            )
+        if self.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+            if self.native_strategic_number_id is None:
+                raise ValueError(
+                    f"native Strategic Number request {self.request_id} requires "
+                    "native_strategic_number_id"
+                )
+            if not 0 <= self.native_strategic_number_id <= 511:
+                raise ValueError(
+                    f"native Strategic Number id must be in range 0..511, got "
+                    f"{self.native_strategic_number_id}"
+                )
+        elif self.native_strategic_number_id is not None:
+            raise ValueError(
+                f"compiler-allocated Strategic Number request {self.request_id} "
+                "must not carry native_strategic_number_id"
             )
 
 
