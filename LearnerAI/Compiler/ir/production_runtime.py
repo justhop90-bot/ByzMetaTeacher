@@ -59,7 +59,6 @@ class ProductionRuntimeState:
     @property
     def runtime_open(self) -> bool:
         EvidenceTruth = _truth_enum()
-        EvidenceTruth = _truth_enum()
         return any(
             value is EvidenceTruth.UNKNOWN
             for value in (
