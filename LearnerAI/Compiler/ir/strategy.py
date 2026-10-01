@@ -1022,6 +1022,30 @@ def _combine_binary_native_guards(head: str, parts: tuple[str, ...]) -> str:
     return combined
 
 
+def _strategic_number_arbitration_control_plan(profile: StrategyProfile):
+    """Build and lower the typed Strategic Number controller arbitration plan."""
+    if not profile.strategic_number_modes:
+        return None
+
+    from ..primitives.strategic_number_catalog import (
+        default_strategic_number_inventory,
+    )
+    from ..semantic.strategic_number_arbitration import (
+        build_strategic_number_arbitration_plan,
+        lower_strategic_number_arbitration,
+    )
+
+    inventory = default_strategic_number_inventory()
+    arbitration_plan = build_strategic_number_arbitration_plan(profile)
+    lowering = lower_strategic_number_arbitration(
+        arbitration_plan,
+        profile_id=profile.profile_id,
+        documented_native_ids=inventory.documented_ids,
+    )
+    return lowering.control_plan
+
+
+
 def _strategy_number_mode_control_plan(profile: StrategyProfile):
     """Lower explicit age/posture Strategic Number modes into native controls."""
     if not profile.strategic_number_modes:
@@ -1171,7 +1195,7 @@ def _merge_native_control_plans(*plans):
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
-    mode_plan = _strategy_number_mode_control_plan(profile)
+    mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
 
     if any(
