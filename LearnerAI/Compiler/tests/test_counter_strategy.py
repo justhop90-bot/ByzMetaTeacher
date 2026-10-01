@@ -128,6 +128,16 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
         )
 
+    def test_counter_demands_reuse_existing_defense_production_owner(self):
+        for identity in (
+            "counter-mounted-spears",
+            "counter-ranged-skirmishers",
+            "counter-castle-camels",
+            "counter-castle-cataphracts",
+            "counter-castle-siege-response",
+        ):
+            self.assertEqual(self.profile.demand(identity).owner, "defense")
+
     def test_counter_production_uses_concrete_train_and_witness_tokens(self):
         for demand_identity, expected_unit in (
             ("counter-castle-camels", "329"),
