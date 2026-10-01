@@ -681,6 +681,13 @@ def resolve_strategy_profile(
         raise ValueError("strategy profile snapshot fingerprint does not match EffectiveCivData")
 
     seen: set[str] = set()
+    from .counter_strategy import validate_counter_packages
+    validate_counter_packages(profile)
+    counter_package_demands = {
+        demand_identity
+        for package in profile.counter_packages
+        for demand_identity in package.demand_identities
+    }
     _validate_capability_observations(profile, effective)
     _validate_observation_specs(profile, effective)
     _validate_strategic_number_modes(profile, effective)
@@ -694,12 +701,16 @@ def resolve_strategy_profile(
             raise ValueError(
                 f"strategic demand '{demand.identity}' needs a strategic owner"
             )
-        if not any(
-            evidence.kind is StrategicEvidenceKind.PERSISTENT
-            for evidence in demand.reason
+        if (
+            not any(
+                evidence.kind is StrategicEvidenceKind.PERSISTENT
+                for evidence in demand.reason
+            )
+            and demand.identity not in counter_package_demands
         ):
             raise ValueError(
-                f"strategic demand '{demand.identity}' needs persistent strategic evidence"
+                f"strategic demand '{demand.identity}' needs persistent strategic evidence "
+                "or an explicit counter-package activation owner"
             )
         for evidence in (*demand.reason, *demand.admissibility, *demand.invalidation):
             _validate_evidence_attribution(evidence, effective)
@@ -797,8 +808,6 @@ def resolve_strategy_profile(
     # Policy recipes carried by StrategyProfile form the reusable policy catalog.
     # Required bindings are resolved only when a concrete control instance supplies them.
     policy_resolutions = resolve_policy_recipes(profile.policy_recipes)
-    from .counter_strategy import validate_counter_packages
-    validate_counter_packages(profile)
 
     return ResolvedStrategyProfile(
         profile_id=profile.profile_id,
