@@ -620,6 +620,52 @@ class PrimitiveRegistry:
                     )
 
 
+        rule_sites = {
+            (rule.identity, section, index): expression
+            for rule in plan.rules
+            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
+            for index, expression in enumerate(expressions)
+        }
+        writer_by_id = {
+            output_request.request.request_id: output_request
+            for output_request in plan.output_requests
+        }
+        for input_request in plan.input_requests:
+            site = (
+                input_request.rule_identity,
+                input_request.section,
+                input_request.expression_index,
+            )
+            expression = rule_sites.get(site)
+            if expression is None:
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' has no plan expression"
+                )
+            if expression.head != "up-set-target-by-id":
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' targets "
+                    f"'{expression.head}': only up-set-target-by-id reads are supported"
+                )
+            if input_request.argument_index != 1 or len(expression.args) != 2:
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' must bind argument 1 "
+                    "of a two-argument up-set-target-by-id"
+                )
+            if str(expression.args[0]) != "g:":
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' requires a literal g: typeOp"
+                )
+            writer = writer_by_id.get(input_request.source)
+            if writer is None:
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' has no writer output "
+                    "request for its storage id"
+                )
+            if not isinstance(writer.request, GoalSlotRequest):
+                raise ValueError(
+                    f"DUC input request '{input_request.site_key}' writer is not a GoalSlot"
+                )
+
         identities = tuple(rule.identity for rule in plan.rules)
         if identities != tuple(sorted(identities, key=lambda identity: next(
             rule.order for rule in plan.rules if rule.identity == identity

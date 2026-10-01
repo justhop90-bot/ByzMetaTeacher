@@ -171,10 +171,17 @@ class EngineSemanticMappingRegistry:
                 f"engine semantic mapping '{identity}' targets "
                 f"'{mapping.native_command}', not '{command}'"
             )
-        if mapping.native_kind != native_kind:
+        # A contracted mapping may cover a subset of the schema-declared
+        # native kinds (e.g. an Action-only mapping under a Fact/Action
+        # schema): promotion is valid wherever the mapping covers the kind.
+        # Claiming a kind outside the schema remains rejected below.
+        mapping_kinds = set(mapping.native_kind.split("/"))
+        native_kinds = set(native_kind.split("/"))
+        if not mapping_kinds <= native_kinds:
             return False, (
-                f"engine semantic mapping '{identity}' has native kind "
-                f"'{mapping.native_kind}', expected '{native_kind}'"
+                f"engine semantic mapping '{identity}' covers native kind(s) "
+                f"'{mapping.native_kind}' outside contracted schema kind(s) "
+                f"'{native_kind}'"
             )
         return True, "engine semantic mapping is contracted and executable"
 

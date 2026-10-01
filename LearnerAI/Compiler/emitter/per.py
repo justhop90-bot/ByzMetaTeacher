@@ -384,32 +384,58 @@ def emit(
             request.site_key: request
             for request in duc_plan.output_requests
         }
+        input_requests: dict[tuple[str, str, int], list] = {}
+        for request in duc_plan.input_requests:
+            input_requests.setdefault(
+                (
+                    request.rule_identity,
+                    request.section,
+                    request.expression_index,
+                ),
+                [],
+            ).append(request)
 
         def _render_duc_expression(section: str, expression_index: int, expression) -> str:
             request = output_requests.get(
                 (current_rule.identity, section, expression_index)
             )
-            rendered = expression.source
-            if request is None:
-                return rendered
+            readers = input_requests.get(
+                (current_rule.identity, section, expression_index), ()
+            )
+            if request is None and not readers:
+                return expression.source
 
-            binding = bindings.binding_for(request.request.request_id)
-            if isinstance(binding, GoalSpan):
-                output_goal = binding.start.value
-            elif isinstance(binding, GoalSlot):
-                output_goal = binding.id.value
-            else:
-                raise CompileError(
-                    f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
-                    f"resolved to '{type(binding).__name__}', expected GoalSlot or GoalSpan"
-                )
             arguments = list(expression.args)
-            if request.argument_index >= len(arguments):
-                raise CompileError(
-                    f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
-                    "argument index is outside the expression"
-                )
-            arguments[request.argument_index] = str(output_goal)
+            if request is not None:
+                binding = bindings.binding_for(request.request.request_id)
+                if isinstance(binding, GoalSpan):
+                    output_goal = binding.start.value
+                elif isinstance(binding, GoalSlot):
+                    output_goal = binding.id.value
+                else:
+                    raise CompileError(
+                        f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
+                        f"resolved to '{type(binding).__name__}', expected GoalSlot or GoalSpan"
+                    )
+                if request.argument_index >= len(arguments):
+                    raise CompileError(
+                        f"EMITTER-DUC-GOAL-OUTPUT: output '{request.site_key}' "
+                        "argument index is outside the expression"
+                    )
+                arguments[request.argument_index] = str(output_goal)
+            for reader in readers:
+                writer_binding = bindings.binding_for(reader.source)
+                if not isinstance(writer_binding, GoalSlot):
+                    raise CompileError(
+                        f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                        f"resolved to '{type(writer_binding).__name__}', expected GoalSlot"
+                    )
+                if reader.argument_index >= len(arguments):
+                    raise CompileError(
+                        f"EMITTER-DUC-GOAL-INPUT: input '{reader.site_key}' "
+                        "argument index is outside the expression"
+                    )
+                arguments[reader.argument_index] = str(writer_binding.id.value)
             return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
 
         for current_rule in duc_plan.rules:
