@@ -62,22 +62,6 @@ class CompilerWireIntegrationTests(unittest.TestCase):
             state.reassessment_reasons,
         )
 
-    def test_counter_demands_are_native_gated_by_arbitrated_package_state(self):
-        compilation = lower_strategy_profile(self.profile, self.effective)
-        demand = next(
-            item for item in compilation.demands
-            if item.name == "counter-mounted-spears"
-        )
-        sources = tuple(item.source for item in demand.requirements)
-        self.assertIn(
-            "(goal counter-package-mounted_pressure_feudal 1)",
-            sources,
-        )
-        self.assertIn(
-            "counter-package-mounted_pressure_feudal",
-            tuple(state.identifier for state in compilation.control_plan.states),
-        )
-
     def test_strategy_compile_accepts_and_emits_existing_attack_plan(self):
         lifecycle = (
             AttackLifecycleObservation.ADMISSION_REQUIRED,

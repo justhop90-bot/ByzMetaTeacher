@@ -225,6 +225,13 @@ class ReassessmentReason(str, Enum):
     CAPABILITY_LOSS = "CAPABILITY_LOSS"
     CAPABILITY_RECOVERY = "CAPABILITY_RECOVERY"
     UPGRADE_READINESS_CHANGE = "UPGRADE_READINESS_CHANGE"
+    PRODUCTION_RUNTIME_CHANGE = "PRODUCTION_RUNTIME_CHANGE"
+    PRODUCTION_PROVIDER_LOSS = "PRODUCTION_PROVIDER_LOSS"
+    PRODUCTION_PROVIDER_RECOVERY = "PRODUCTION_PROVIDER_RECOVERY"
+    PRODUCTION_QUEUE_CAPACITY_CHANGE = "PRODUCTION_QUEUE_CAPACITY_CHANGE"
+    PRODUCTION_BIRTH_BOUNDARY = "PRODUCTION_BIRTH_BOUNDARY"
+    PRODUCTION_QUEUE_EXIT_BOUNDARY = "PRODUCTION_QUEUE_EXIT_BOUNDARY"
+    PRODUCTION_NEXT_PASS_VISIBILITY = "PRODUCTION_NEXT_PASS_VISIBILITY"
     ENEMY_COMPOSITION_CHANGE = "ENEMY_COMPOSITION_CHANGE"
     AGE_TRANSITION = "AGE_TRANSITION"
     MAP_OPENING_CHANGE = "MAP_OPENING_CHANGE"
@@ -276,10 +283,19 @@ class RuntimeObservationSnapshot:
     previous_counter_package_states: tuple[tuple[str, EvidenceTruth], ...] = ()
     previous_capability_observations: tuple[tuple[str, bool | None], ...] = ()
     previous_composition_upgrade_readiness: CompositionUpgradeReadinessState | None = None
+    previous_fact_results: tuple[tuple[str, bool], ...] = ()
+    production_lifecycles: tuple[tuple[str, object], ...] = ()
+    previous_production_runtime_states: tuple[tuple[str, object], ...] = ()
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
 
     def result_for(self, expression: Expression) -> EvidenceTruth:
         for key, result in self.fact_results:
+            if key == expression.source:
+                return EvidenceTruth.TRUE if result else EvidenceTruth.FALSE
+        return EvidenceTruth.UNKNOWN
+
+    def previous_result_for(self, expression: Expression) -> EvidenceTruth:
+        for key, result in self.previous_fact_results:
             if key == expression.source:
                 return EvidenceTruth.TRUE if result else EvidenceTruth.FALSE
         return EvidenceTruth.UNKNOWN
@@ -334,6 +350,7 @@ class StrategyRuntimeState:
     ] = ()
     evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
     capability_transitions: tuple[tuple[str, CapabilityTransition], ...] = ()
+    production_runtime_states: tuple[tuple[str, object], ...] = ()
     composition_upgrade_readiness: CompositionUpgradeReadinessState | None = None
 
     @property
@@ -916,6 +933,9 @@ def _truth_or(values: tuple[EvidenceTruth, ...]) -> EvidenceTruth:
 
 
 def _evaluate_expression(expression: Expression, snapshot: RuntimeObservationSnapshot) -> EvidenceTruth:
+    direct = snapshot.result_for(expression)
+    if direct is not EvidenceTruth.UNKNOWN:
+        return direct
     if expression.head in {"and", "or", "nand", "nor", "xor", "xnor", "not"}:
         children = tuple(
             _evaluate_expression(child, snapshot)
@@ -1321,6 +1341,19 @@ def evaluate_strategy_runtime(
         registry,
         counter_arbitration,
     )
+    from .production_runtime import evaluate_production_runtime, ProductionBoundaryStatus, ProductionProviderTransition
+    production_runtime_states = tuple(
+        sorted(
+            (
+                (
+                    identity,
+                    evaluate_production_runtime(identity, lifecycle, snapshot),
+                )
+                for identity, lifecycle in snapshot.production_lifecycles
+            ),
+            key=lambda item: item[0],
+        )
+    )
     selected_package_ids = set(counter_arbitration.active_packages)
     counter_package_sources = {
         demand_identity: tuple(
@@ -1352,6 +1385,37 @@ def evaluate_strategy_runtime(
         and snapshot.previous_composition_upgrade_readiness != composition_upgrade_readiness
     ):
         reasons.add(ReassessmentReason.UPGRADE_READINESS_CHANGE)
+
+    previous_production = dict(snapshot.previous_production_runtime_states)
+    for identity, state in production_runtime_states:
+        previous_state = previous_production.get(identity)
+        if previous_state is not None and previous_state != state:
+            reasons.add(ReassessmentReason.PRODUCTION_RUNTIME_CHANGE)
+        if state.provider_transition is ProductionProviderTransition.LOST:
+            reasons.add(ReassessmentReason.PRODUCTION_PROVIDER_LOSS)
+        elif state.provider_transition is ProductionProviderTransition.RECOVERED:
+            reasons.add(ReassessmentReason.PRODUCTION_PROVIDER_RECOVERY)
+        if (
+            state.queue_capacity_control is not EvidenceTruth.UNKNOWN
+            and previous_state is not None
+            and getattr(previous_state, "queue_capacity_control", EvidenceTruth.UNKNOWN)
+            is not state.queue_capacity_control
+        ):
+            reasons.add(ReassessmentReason.PRODUCTION_QUEUE_CAPACITY_CHANGE)
+        if state.birth_boundary is ProductionBoundaryStatus.OBSERVED and (
+            previous_state is None
+            or getattr(previous_state, "birth_boundary", ProductionBoundaryStatus.UNKNOWN)
+            is not ProductionBoundaryStatus.OBSERVED
+        ):
+            reasons.add(ReassessmentReason.PRODUCTION_BIRTH_BOUNDARY)
+        if state.queue_exit_boundary is ProductionBoundaryStatus.OBSERVED and (
+            previous_state is None
+            or getattr(previous_state, "queue_exit_boundary", ProductionBoundaryStatus.UNKNOWN)
+            is not ProductionBoundaryStatus.OBSERVED
+        ):
+            reasons.add(ReassessmentReason.PRODUCTION_QUEUE_EXIT_BOUNDARY)
+        if state.next_pass_visibility is ProductionBoundaryStatus.OBSERVED:
+            reasons.add(ReassessmentReason.PRODUCTION_NEXT_PASS_VISIBILITY)
 
     if snapshot.previous_posture is not None and snapshot.previous_posture is not current_posture:
         reasons.add(ReassessmentReason.POSTURE_CHANGE)
@@ -1434,6 +1498,7 @@ def evaluate_strategy_runtime(
             "counter_package_states": counter_package_states,
             "counter_arbitration": counter_arbitration,
             "composition_upgrade_readiness": composition_upgrade_readiness,
+            "production_runtime_states": production_runtime_states,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1485,4 +1550,5 @@ def evaluate_strategy_runtime(
         capability_transitions=tuple(
             sorted(capability_transitions, key=lambda item: item[0])
         ),
+        production_runtime_states=production_runtime_states,
     )

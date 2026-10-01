@@ -837,12 +837,6 @@ def lower_strategy_profile(
     )
     from ..ir.model import SemanticId
 
-    counter_activation_guards: dict[str, list[str]] = {}
-    for package in profile.counter_packages:
-        state_name = _counter_package_state_name(package.identity)
-        for demand_identity in package.demand_identities:
-            counter_activation_guards.setdefault(demand_identity, []).append(state_name)
-
     nodes = []
     execution_owner: dict[str, str] = {}
     for spec in profile.demands:
@@ -866,22 +860,10 @@ def lower_strategy_profile(
                     f"duplicate lowered execution demand '{execution_name}'"
                 )
             execution_owner[execution_name] = spec.identity
-            guard_states = tuple(sorted(set(counter_activation_guards.get(spec.identity, ()))))
-            requirements = execution.requirements
-            if guard_states:
-                guard_source = (
-                    guard_states[0]
-                    if len(guard_states) == 1
-                    else "(or " + " ".join(guard_states) + ")"
-                )
-                requirements = (
-                    f"(goal {guard_source} 1)",
-                    *requirements,
-                )
             nodes.append(
                 DemandNode(
                     name=execution_name,
-                    requirements=requirements,
+                    requirements=execution.requirements,
                     action=execution.action,
                     witness=execution.witness,
                     release=execution.release,
@@ -1124,7 +1106,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest
-    from .model import GoalRole, SemanticId, StorageRequestId
+    from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     states: dict[str, NativeControlState] = {}
@@ -1254,7 +1236,7 @@ def _counter_package_control_plan(profile: StrategyProfile):
         return None
 
     from ..semantic.analyzer import parse_expression
-    from .model import GoalRole, SemanticId, StorageRequestId
+    from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     ordered = tuple(sorted(profile.counter_packages, key=lambda item: (-item.priority, item.identity)))
@@ -1302,7 +1284,7 @@ def _counter_package_control_plan(profile: StrategyProfile):
     rules: list[NativeControlRule] = [
         NativeControlRule(
             "counter-package-selection-reset-000",
-            facts=(parse_expression("(true)", SourceLocation(1)),),
+            facts=(parse_expression("(current-age >= dark-age)", SourceLocation(1)),),
             actions=reset_actions,
         )
     ]
@@ -1377,7 +1359,6 @@ def _strategy_control_plan(profile: StrategyProfile):
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
-    counter_plan = _counter_package_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1401,7 +1382,6 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
-        counter_plan,
     )
 
 
