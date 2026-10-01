@@ -286,7 +286,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             value=100,
             activation_state_name="sn-controller-attack-surge-active",
             owned_rule_identity="attack-owned",
-            action_index=1,
+            action_index=0,
         )
         with self.assertRaisesRegex(ValueError, "does not match owned rule"):
             NativeAttackLifecyclePlan(
