@@ -31,7 +31,10 @@ from Compiler.ir.strategy import (
 
 def _profile():
     effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
-    return effective, build_byzantine_castle_strategy(effective)
+    profile = build_byzantine_castle_strategy(effective)
+    # Goal-FSM tests isolate the existing control-plane seam. Native SN mode
+    # synthesis has its own dedicated tests and acceptance fixture.
+    return effective, replace(profile, strategic_number_modes=())
 
 
 def _with_assertions(profile, *assertions_by_spec):
