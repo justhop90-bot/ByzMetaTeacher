@@ -107,3 +107,23 @@ Primary cross-references include BotDirection.txt, the Byzantine capability and 
 ## Architectural consequence
 
 The compiler should therefore grow breadth by adding more evidence-backed strategic packages and more decision-grade observation, not by creating a second strategy language. Policy recipes describe intent. StrategyProfile and StrategyRuntimeState own strategic continuity. Existing execution layers own production, construction, DUC, attack, SN, timers, escrow, witness, release, and recovery.
+
+## Threat-to-counter doctrine
+
+The strategy does not react to every discovered unit. It reacts to decision-grade pressure.
+
+In Feudal, three or more enemy scout-cavalry units can activate the mounted screen package, while three or more enemy archers can activate the ranged counter package. In Castle, sustained knight pressure activates a Camel package, while a five-unit infantry mass can activate a Cataphract response.
+
+Those thresholds are compiler policy, not engine facts. They are deliberately typed through native observation references so they can be changed without changing the execution layer.
+
+The package is not the army. It is the strategic demand trigger. Once activated, the ordinary demand lifecycle still owns admissibility, capability, feasibility, production, witness, release, and recovery.
+
+The important distinction is therefore:
+
+`OBSERVATION -> THREAT INTERPRETATION -> COUNTER PACKAGE -> DEMAND -> EXECUTION -> WITNESS -> RECOVERY`
+
+rather than:
+
+`OBSERVATION -> TRAIN UNIT`
+
+The first is a strategy system. The second is a macro script wearing a strategy-shaped hat.
