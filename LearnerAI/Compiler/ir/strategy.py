@@ -10,6 +10,7 @@ from ..ast import DemandNode, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
+from .strategic_number import StrategicNumberOrigin
 
 if TYPE_CHECKING:
     from .military_composition import MilitaryCompositionPlan
@@ -21,6 +22,10 @@ class StrategyPosture(str, Enum):
     RUSH = "RUSH"
     BOOM = "BOOM"
     CASTLE_POWER = "CASTLE-POWER"
+
+class StrategicNumberReassertionPolicy(str, Enum):
+    ON_DRIFT = "ON_DRIFT"
+
 
 _STRATEGY_POSTURE_STATE = "strategy-posture"
 _STRATEGY_POSTURE_VALUES = {
@@ -75,6 +80,54 @@ class StrategyEnvelope:
     game_mode: str
     match_type: str
     maps: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class StrategicNumberMode:
+    """Compiler-policy mode for one documented native Strategic Number."""
+
+    identity: str
+    native_strategic_number_id: int
+    value: int
+    minimum_age: Age = Age.DARK
+    maximum_age: Age | None = None
+    postures: tuple[StrategyPosture, ...] = ()
+    reassertion_policy: StrategicNumberReassertionPolicy = (
+        StrategicNumberReassertionPolicy.ON_DRIFT
+    )
+    priority: int = 0
+
+    @property
+    def state_name(self) -> str:
+        return f"sn-mode-{self.identity}"
+
+    def __post_init__(self) -> None:
+        if not re.fullmatch(r"[a-z][a-z0-9_-]*", self.identity):
+            raise ValueError(
+                f"Strategic Number mode identity '{self.identity}' is not a valid .per identifier"
+            )
+        if not isinstance(self.native_strategic_number_id, int) or isinstance(
+            self.native_strategic_number_id, bool
+        ):
+            raise ValueError("Strategic Number mode native id must be an integer")
+        if not 0 <= self.native_strategic_number_id <= 511:
+            raise ValueError(
+                f"Strategic Number mode native id must be in range 0..511, got "
+                f"{self.native_strategic_number_id}"
+            )
+        if not isinstance(self.value, int) or isinstance(self.value, bool):
+            raise ValueError("Strategic Number mode value must be an integer")
+        if not -32768 <= self.value <= 32767:
+            raise ValueError(
+                f"Strategic Number mode value must be in native constant range -32768..32767, got {self.value}"
+            )
+        if self.maximum_age is not None:
+            if _AGE_ORDER[self.maximum_age] < _AGE_ORDER[self.minimum_age]:
+                raise ValueError(
+                    "Strategic Number mode maximum_age must not precede minimum_age"
+                )
+        if len(self.postures) != len(set(self.postures)):
+            raise ValueError("Strategic Number mode postures must be unique")
 
 
 @dataclass(frozen=True)
@@ -312,6 +365,7 @@ class StrategyProfile:
     capability_observations: tuple[StrategicCapabilityObservation, ...] = ()
     observations: tuple[StrategicObservationSpec, ...] = ()
     military_compositions: tuple[StrategicMilitaryComposition, ...] = ()
+    strategic_number_modes: tuple[StrategicNumberMode, ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -364,6 +418,13 @@ class StrategyCompilation:
     control_plan: "NativeControlPlan | None" = None
     military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
 
+
+_AGE_ORDER = {
+    Age.DARK: 0,
+    Age.FEUDAL: 1,
+    Age.CASTLE: 2,
+    Age.IMPERIAL: 3,
+}
 
 def _validate_evidence_attribution(
     evidence: StrategicEvidence,
@@ -512,6 +573,70 @@ def _validate_factual_coverage(
         effective.require_coverage(intent.entity_type, intent.entity_id)
 
 
+def _validate_strategic_number_modes(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+) -> None:
+    if not profile.strategic_number_modes:
+        return
+
+    from ..primitives.strategic_number_catalog import default_strategic_number_catalog
+
+    catalog = default_strategic_number_catalog()
+    identities: set[str] = set()
+    posture_mode_present = False
+    for mode in profile.strategic_number_modes:
+        if mode.identity in identities:
+            raise ValueError(
+                f"duplicate Strategic Number mode '{mode.identity}'"
+            )
+        identities.add(mode.identity)
+        if mode.native_strategic_number_id not in catalog.de_documented_ids:
+            raise ValueError(
+                f"Strategic Number mode '{mode.identity}' references native Strategic Number "
+                f"{mode.native_strategic_number_id}, which is not DE-documented in catalog "
+                f"{catalog.inventory.inventory_sha}"
+            )
+        if mode.postures:
+            posture_mode_present = True
+
+    if posture_mode_present and not profile.transitions:
+        raise ValueError(
+            "posture-driven Strategic Number modes require StrategyPosture transition control"
+        )
+
+    modes = tuple(profile.strategic_number_modes)
+    for index, first in enumerate(modes):
+        first_min = _AGE_ORDER[first.minimum_age]
+        first_max = (
+            _AGE_ORDER[first.maximum_age]
+            if first.maximum_age is not None
+            else _AGE_ORDER[Age.IMPERIAL]
+        )
+        first_postures = set(first.postures) if first.postures else set(StrategyPosture)
+        for second in modes[index + 1:]:
+            if first.native_strategic_number_id != second.native_strategic_number_id:
+                continue
+            second_min = _AGE_ORDER[second.minimum_age]
+            second_max = (
+                _AGE_ORDER[second.maximum_age]
+                if second.maximum_age is not None
+                else _AGE_ORDER[Age.IMPERIAL]
+            )
+            if first_max < second_min or second_max < first_min:
+                continue
+            second_postures = (
+                set(second.postures) if second.postures else set(StrategyPosture)
+            )
+            if not first_postures.intersection(second_postures):
+                continue
+            raise ValueError(
+                f"overlapping Strategic Number modes '{first.identity}' and "
+                f"'{second.identity}' target native Strategic Number "
+                f"{first.native_strategic_number_id}"
+            )
+
+
 def resolve_strategy_profile(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -526,6 +651,7 @@ def resolve_strategy_profile(
     seen: set[str] = set()
     _validate_capability_observations(profile, effective)
     _validate_observation_specs(profile, effective)
+    _validate_strategic_number_modes(profile, effective)
 
     for demand in profile.demands:
         if demand.identity in seen:
@@ -866,27 +992,189 @@ def lower_strategy_profile(
     )
 
 
+def _age_token(age: Age) -> str:
+    return {
+        Age.DARK: "dark-age",
+        Age.FEUDAL: "feudal-age",
+        Age.CASTLE: "castle-age",
+        Age.IMPERIAL: "imperial-age",
+    }[age]
+
+
+def _next_age(age: Age) -> Age:
+    if age is Age.DARK:
+        return Age.FEUDAL
+    if age is Age.FEUDAL:
+        return Age.CASTLE
+    if age is Age.CASTLE:
+        return Age.IMPERIAL
+    raise ValueError("Imperial Age has no successor")
+
+
+def _strategy_number_mode_control_plan(profile: StrategyProfile):
+    """Lower explicit age/posture Strategic Number modes into native controls."""
+    if not profile.strategic_number_modes:
+        return None
+
+    from ..ast import SourceLocation
+    from ..runtime_binding import StrategicNumberRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    states: dict[str, NativeControlState] = {}
+    rules: list[NativeControlRule] = []
+
+    if any(mode.postures for mode in profile.strategic_number_modes):
+        posture_owner = SemanticId(profile.profile_id, _STRATEGY_POSTURE_STATE)
+        states[_STRATEGY_POSTURE_STATE] = NativeControlState(
+            _STRATEGY_POSTURE_STATE,
+            GoalSlotRequest(
+                StorageRequestId(
+                    posture_owner,
+                    "strategy-posture",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+
+    ordered = tuple(
+        sorted(
+            enumerate(profile.strategic_number_modes),
+            key=lambda item: (
+                -item[1].priority,
+                item[1].native_strategic_number_id,
+                _AGE_ORDER[item[1].minimum_age],
+                _AGE_ORDER[item[1].maximum_age]
+                if item[1].maximum_age is not None
+                else _AGE_ORDER[Age.IMPERIAL],
+                item[1].identity,
+                item[0],
+            ),
+        )
+    )
+
+    for rule_index, (_profile_index, mode) in enumerate(ordered):
+        owner = SemanticId(profile.profile_id, mode.state_name)
+        states[mode.state_name] = NativeControlState(
+            mode.state_name,
+            StrategicNumberRequest(
+                StorageRequestId(owner, f"strategy-sn-mode:{mode.identity}"),
+                why_not_goal=(
+                    "This state is a compiler policy mode referencing a DE-documented "
+                    "native Strategic Number; native per-SN effect semantics remain "
+                    "evidence-bounded."
+                ),
+                stability_key=f"{profile.profile_id}:strategic-number-mode:{mode.identity}",
+                origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+                native_strategic_number_id=mode.native_strategic_number_id,
+            ),
+        )
+
+        guards: list[str] = []
+        if mode.minimum_age is mode.maximum_age:
+            guards.append(f"(current-age == {_age_token(mode.minimum_age)})")
+        else:
+            guards.append(f"(current-age >= {_age_token(mode.minimum_age)})")
+            if mode.maximum_age is not None:
+                guards.append(
+                    f"(current-age < {_age_token(_next_age(mode.maximum_age))})"
+                )
+
+        if mode.postures:
+            posture_guards = tuple(
+                f"(goal {_STRATEGY_POSTURE_STATE} {_STRATEGY_POSTURE_VALUES[posture]})"
+                for posture in mode.postures
+            )
+            guards.append(
+                posture_guards[0]
+                if len(posture_guards) == 1
+                else "(or " + " ".join(posture_guards) + ")"
+            )
+
+        if mode.reassertion_policy is StrategicNumberReassertionPolicy.ON_DRIFT:
+            guards.append(
+                f"(up-compare-sn {mode.state_name} != {mode.value})"
+            )
+
+        guard_source = guards[0] if len(guards) == 1 else "(and " + " ".join(guards) + ")"
+        rules.append(
+            NativeControlRule(
+                f"{mode.state_name}-{rule_index:03d}",
+                facts=(parse_expression(guard_source, SourceLocation(1)),),
+                actions=(
+                    parse_expression(
+                        f"(set-strategic-number {mode.state_name} {mode.value})",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+    return NativeControlPlan(
+        states=tuple(
+            states[key]
+            for key in sorted(states)
+        ),
+        rules=tuple(rules),
+    )
+
+
+def _merge_native_control_plans(*plans):
+    from .native_control import NativeControlPlan
+
+    states = []
+    seen_state_ids = set()
+    state_by_id = {}
+    rules = []
+    for plan in plans:
+        if plan is None:
+            continue
+        for state in plan.states:
+            existing = state_by_id.get(state.identifier)
+            if existing is not None:
+                if existing != state:
+                    raise ValueError(
+                        f"native control state '{state.identifier}' has conflicting definitions"
+                    )
+                continue
+            state_by_id[state.identifier] = state
+            states.append(state)
+        rules.extend(plan.rules)
+
+    if not states and not rules:
+        return None
+    return NativeControlPlan(states=tuple(states), rules=tuple(rules))
+
+
 def _strategy_control_plan(profile: StrategyProfile):
-    """Lower posture transitions and explicit Goal assertions through one control plane."""
+    """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
+    mode_plan = _strategic_number_mode_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
 
-    if posture_plan is None:
-        return assertion_plan
-    if assertion_plan is None:
-        return posture_plan
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
-        for state in assertion_plan.states
+        for state in (assertion_plan.states if assertion_plan is not None else ())
     ):
         raise ValueError(
             f"native strategy state '{_STRATEGY_POSTURE_STATE}' is reserved by posture transitions"
         )
-    from .native_control import NativeControlPlan
+    if posture_plan is not None and mode_plan is not None:
+        mode_posture_state = mode_plan.state(_STRATEGY_POSTURE_STATE) if _STRATEGY_POSTURE_STATE in {
+            state.identifier for state in mode_plan.states
+        } else None
+        if mode_posture_state is not None and mode_posture_state != posture_plan.state(
+            _STRATEGY_POSTURE_STATE
+        ):
+            raise ValueError(
+                f"native strategy state '{_STRATEGY_POSTURE_STATE}' conflicts with posture transition storage"
+            )
 
-    return NativeControlPlan(
-        states=(*posture_plan.states, *assertion_plan.states),
-        rules=(*posture_plan.rules, *assertion_plan.rules),
+    return _merge_native_control_plans(
+        posture_plan,
+        mode_plan,
+        assertion_plan,
     )
 
 
@@ -1433,6 +1721,67 @@ def build_land_castle_strategy(
     )
 
 
+def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
+    return (
+        StrategicNumberMode(
+            "civilian-builders-dark",
+            native_strategic_number_id=4,
+            value=3,
+            minimum_age=Age.DARK,
+            maximum_age=Age.DARK,
+        ),
+        StrategicNumberMode(
+            "civilian-builders-feudal",
+            native_strategic_number_id=4,
+            value=5,
+            minimum_age=Age.FEUDAL,
+            maximum_age=Age.FEUDAL,
+        ),
+        StrategicNumberMode(
+            "civilian-builders-castle",
+            native_strategic_number_id=4,
+            value=8,
+            minimum_age=Age.CASTLE,
+            maximum_age=Age.CASTLE,
+        ),
+        StrategicNumberMode(
+            "civilian-builders-imperial",
+            native_strategic_number_id=4,
+            value=12,
+            minimum_age=Age.IMPERIAL,
+            maximum_age=Age.IMPERIAL,
+        ),
+        StrategicNumberMode(
+            "attack-allocation-flush",
+            native_strategic_number_id=227,
+            value=50,
+            minimum_age=Age.FEUDAL,
+            postures=(StrategyPosture.FLUSH,),
+        ),
+        StrategicNumberMode(
+            "attack-allocation-rush",
+            native_strategic_number_id=227,
+            value=50,
+            minimum_age=Age.FEUDAL,
+            postures=(StrategyPosture.RUSH,),
+        ),
+        StrategicNumberMode(
+            "attack-allocation-boom",
+            native_strategic_number_id=227,
+            value=75,
+            minimum_age=Age.FEUDAL,
+            postures=(StrategyPosture.BOOM,),
+        ),
+        StrategicNumberMode(
+            "attack-allocation-castle-power",
+            native_strategic_number_id=227,
+            value=75,
+            minimum_age=Age.FEUDAL,
+            postures=(StrategyPosture.CASTLE_POWER,),
+        ),
+    )
+
+
 def _byzantine_capability_observations(
     effective: EffectiveCivData,
 ) -> tuple[StrategicCapabilityObservation, ...]:
@@ -1534,6 +1883,7 @@ def build_byzantine_castle_strategy(
         transitions=transitions,
         provenance=(*profile.provenance, *meta_provenance),
         capability_observations=_byzantine_capability_observations(effective),
+        strategic_number_modes=_byzantine_strategic_number_modes(),
     )
 
 def _validate_capability_intent(
