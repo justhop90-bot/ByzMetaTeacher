@@ -261,17 +261,23 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             source,
             attack_plan=self._attack_plan_with_strategic_number_action_attachment(),
         )
-        sn_index = artifact.index("(set-strategic-number sn-native-227 100)")
-        action_index = artifact.index("(attack-now)")
-        self.assertLess(sn_index, action_index)
-        self.assertEqual(
-            artifact[sn_index:action_index].count("(set-strategic-number"),
-            1,
+        lines = artifact.splitlines()
+        sn_line = next(
+            index
+            for index, line in enumerate(lines)
+            if line.strip() == "(set-strategic-number sn-native-227 100)"
         )
-        self.assertEqual(
-            artifact[sn_index:action_index].count("(true-action)"),
-            1,
+        attack_rule_start = next(
+            index
+            for index, line in enumerate(lines)
+            if line.strip() == "; Native attack rule: attack-owned"
         )
+        attack_line = next(
+            index
+            for index in range(attack_rule_start, len(lines))
+            if lines[index].strip() == "(attack-now)"
+        )
+        self.assertEqual(attack_line, sn_line + 1)
 
     def test_attack_action_attachment_requires_exact_native_action_identity(self):
         plan = self._attack_plan_with_strategic_number_action_attachment()
