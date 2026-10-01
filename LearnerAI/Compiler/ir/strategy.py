@@ -2080,6 +2080,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                 witness="(unit-type-count cataphract >= 2)",
                 release="(unit-type-count cataphract >= 2)",
             ),
+        ),
         StrategicDemandSpec(
             identity="counter-castle-siege-response",
             owner="counter-arbitration",
@@ -2118,7 +2119,6 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
                 witness="(unit-type-count knight-line >= 2)",
                 release="(unit-type-count knight-line >= 2)",
             ),
-        ),
         ),
     )
 
