@@ -54,6 +54,7 @@ class CounterPackage:
     demand_identities: tuple[str, ...]
     policy_recipe_identity: str | None = None
     rationale: str = ""
+    upgrade_requirements: tuple[CompositionUpgradeRequirement, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.identity.strip():
