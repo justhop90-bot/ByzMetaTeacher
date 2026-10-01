@@ -507,6 +507,9 @@ def emit(
                     action_index, ()
                 ):
                     out.append(
+                        f"    (set-goal {attachment.activation_state_name} 1)"
+                    )
+                    out.append(
                         f"    (set-strategic-number sn-native-"
                         f"{attachment.native_strategic_number_id} {attachment.value})"
                     )
