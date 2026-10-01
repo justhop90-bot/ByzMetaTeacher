@@ -437,7 +437,6 @@ def lower_strategic_number_arbitration(
                 activation.source,
                 *higher_suppression,
                 f"(goal {controller.activation_state_name} 0)",
-                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
             ),
         )
         rules.append(

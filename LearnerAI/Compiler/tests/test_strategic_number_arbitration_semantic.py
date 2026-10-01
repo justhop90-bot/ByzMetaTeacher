@@ -190,6 +190,54 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             low_rule.facts[0].source,
         )
 
+    def test_temporary_activation_latches_even_when_native_value_is_already_correct(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=25,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
+        temporary = StrategicNumberController(
+            identity="emergency-defense",
+            native_strategic_number_id=227,
+            value=25,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            activation_guard="(goal emergency 1)",
+            release_guard="(goal emergency-cleared 1)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type(
+                "Profile",
+                (),
+                {
+                    "profile_id": "fixture",
+                    "strategic_number_modes": (),
+                },
+            )(),
+            extra_controllers=(base, temporary),
+        )
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        activation_rule = next(
+            item
+            for item in lowered.control_plan.rules
+            if item.identity == "sn-controller-emergency-defense-activate"
+        )
+        self.assertNotIn("(up-compare-sn sn-native-227 != 25)", activation_rule.facts[0].source)
+        self.assertEqual(
+            tuple(action.head for action in activation_rule.actions),
+            ("set-goal", "set-strategic-number"),
+        )
+
     def test_release_rule_does_not_capture_or_restore_historical_value(self):
         base = StrategicNumberController(
             identity="strategy-base",
