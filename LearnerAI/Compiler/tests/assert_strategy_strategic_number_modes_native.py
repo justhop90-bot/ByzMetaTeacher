@@ -100,14 +100,12 @@ def main() -> int:
         (3, 75),
         (4, 75),
     )
+    posture_write_counts = {50: 0, 75: 0}
     for posture_value, target in expected_posture_modes:
         write = f"(set-strategic-number sn-native-227 {target})"
         drift = f"(up-compare-sn sn-native-227 != {target})"
         posture = f"(goal strategy-posture {posture_value})"
-        if first.count(write) != 1:
-            raise SystemExit(
-                f"expected exactly one posture-mode write for {posture_value}: {write}"
-            )
+        posture_write_counts[target] += 1
         if posture not in first:
             raise SystemExit(
                 f"missing strategy-posture guard for posture value {posture_value}"
@@ -115,6 +113,12 @@ def main() -> int:
         if drift not in first:
             raise SystemExit(
                 f"missing drift guard for posture value {posture_value}"
+            )
+    for target, expected_count in posture_write_counts.items():
+        write = f"(set-strategic-number sn-native-227 {target})"
+        if first.count(write) != expected_count:
+            raise SystemExit(
+                f"expected {expected_count} guarded posture-mode writes for {target}: {write}"
             )
     if first.count("(current-age >= feudal-age)") < 4:
         raise SystemExit(
