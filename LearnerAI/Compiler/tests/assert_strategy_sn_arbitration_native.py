@@ -242,7 +242,7 @@ def main() -> int:
         )
 
     recovery_rearm_marker = (
-        "; Native control rule: sn-controller-recovery-override-rearm"
+        "; Native control rule: sn-controller-recovery-override-rearm\n"
     )
     recovery_rearm = first.split(recovery_rearm_marker, 1)[1]
     next_marker = recovery_rearm.find("\n; Native ")
