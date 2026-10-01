@@ -130,7 +130,8 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             if item.identity == "sn-controller-strategy-base-write"
         )
         self.assertIn(
-            "(not (goal emergency-defense 1))",
+            "(not (or (goal emergency-defense 1) "
+            "(goal sn-controller-emergency-defense-active 1)))",
             base_rule.facts[0].source,
         )
 
