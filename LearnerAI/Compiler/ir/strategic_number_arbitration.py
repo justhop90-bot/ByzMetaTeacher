@@ -95,6 +95,29 @@ class StrategicNumberController:
             self.native_strategic_number_id, bool
         ):
             raise ValueError("Strategic Number controller native id must be an integer")
+        if self.owned_rule_identity is not None and (
+            not isinstance(self.owned_rule_identity, str)
+            or not _IDENTIFIER_RE.fullmatch(self.owned_rule_identity)
+        ):
+            raise ValueError(
+                f"Strategic Number action attachment owned_rule_identity "
+                f"'{self.owned_rule_identity}' is not a valid .per identifier"
+            )
+        if (self.owned_rule_identity is None) != (self.action_index is None):
+            raise ValueError(
+                "Strategic Number action attachment owned_rule_identity and "
+                "action_index must be provided together"
+            )
+        if self.action_index is not None:
+            if not isinstance(self.action_index, int) or isinstance(self.action_index, bool):
+                raise ValueError(
+                    "Strategic Number action attachment action_index must be an integer"
+                )
+            if self.action_index < 0:
+                raise ValueError(
+                    "Strategic Number action attachment action_index must be non-negative"
+                )
+
         if not _NATIVE_SN_MIN <= self.native_strategic_number_id <= _NATIVE_SN_MAX:
             raise ValueError(
                 "Strategic Number controller native id must be in range "
@@ -222,6 +245,8 @@ class StrategicNumberActionAttachment:
     native_strategic_number_id: int
     value: int
     activation_state_name: str
+    owned_rule_identity: str | None = None
+    action_index: int | None = None
 
     def __post_init__(self) -> None:
         for field_name, value in (
