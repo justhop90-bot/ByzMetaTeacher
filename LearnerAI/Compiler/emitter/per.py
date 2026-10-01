@@ -13,6 +13,7 @@ from ..ir import (
     NativeEscrowPolicyPlan,
     NativeEscrowReleasePlan,
     SemanticDemand,
+    StrategicNumberOrigin,
 )
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..runtime_binding import (
@@ -291,6 +292,8 @@ def emit(
             chunk = strategic_number_states[start : start + INITIALIZATION_CHUNK]
             out += ["(defrule", "    (true)", "=>"]
             for state, _binding in chunk:
+                if state.request.origin is StrategicNumberOrigin.NATIVE_REFERENCE:
+                    continue
                 out.append(
                     f"    (set-strategic-number {state.name} {state.initial_value})"
                 )
