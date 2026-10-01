@@ -23,6 +23,29 @@ class CounterThreatClass(str, Enum):
 
 
 @dataclass(frozen=True)
+class CompositionUpgradeRequirement:
+    """One native research-completion witness required by a composition package."""
+
+    identity: str
+    observation_ref: str
+    technology_id: int
+
+    def __post_init__(self) -> None:
+        if not self.identity.strip():
+            raise ValueError("composition upgrade requirement identity must not be empty")
+        if not self.observation_ref.strip():
+            raise ValueError(
+                "composition upgrade requirement observation reference must not be empty"
+            )
+        if not isinstance(self.technology_id, int) or isinstance(self.technology_id, bool):
+            raise ValueError("composition upgrade requirement technology id must be an integer")
+        if self.technology_id <= 0:
+            raise ValueError(
+                "composition upgrade requirement technology id must be positive"
+            )
+
+
+@dataclass(frozen=True)
 class CounterPackage:
     identity: str
     threat_class: CounterThreatClass
