@@ -169,7 +169,13 @@ def _higher_controller_suppression(
     higher = tuple(
         other
         for other in same_sn
-        if other.layer.precedence > controller.layer.precedence
+        if (
+            other.layer.precedence > controller.layer.precedence
+            or (
+                other.layer is controller.layer
+                and other.priority > controller.priority
+            )
+        )
     )
     suppression: list[str] = []
     for other in higher:
