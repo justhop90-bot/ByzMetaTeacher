@@ -20,7 +20,6 @@ class CounterThreatClass(str, Enum):
     RANGED = "RANGED"
     INFANTRY = "INFANTRY"
     SIEGE = "SIEGE"
-    MIXED = "MIXED"
 
 
 @dataclass(frozen=True)
