@@ -78,8 +78,9 @@ def main() -> int:
         native_strategic_number_id=227,
         value=25,
         layer=StrategicNumberControllerLayer.TEMPORARY,
-        activation_guard="(current-age >= feudal-age)",
+        activation_guard="(current-age == feudal-age)",
         release_guard="(current-age >= imperial-age)",
+        rearm_guard="(current-age >= imperial-age)",
         scope=StrategicNumberControllerScope.UNTIL_RELEASE,
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
@@ -89,8 +90,9 @@ def main() -> int:
         native_strategic_number_id=227,
         value=100,
         layer=StrategicNumberControllerLayer.RECOVERY,
-        activation_guard="(current-age >= castle-age)",
+        activation_guard="(current-age == castle-age)",
         release_guard="(current-age >= imperial-age)",
+        rearm_guard="(current-age >= imperial-age)",
         scope=StrategicNumberControllerScope.UNTIL_RELEASE,
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
@@ -258,6 +260,8 @@ def main() -> int:
         raise SystemExit("recovery rearm must clear the release-block latch")
     if "(set-goal sn-rearm-recovery-override 1)" not in recovery_rearm:
         raise SystemExit("recovery rearm must set the same-pass reentry block")
+    if "(current-age >= imperial-age)" not in recovery_rearm:
+        raise SystemExit("recovery rearm must use the explicit reset condition")
 
     required = (
         "(defconst sn-native-227 227)",
