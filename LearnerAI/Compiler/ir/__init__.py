@@ -249,6 +249,7 @@ from .resource_control import (
     EscrowOperationKind,
     EscrowConsumptionMode,
     EscrowContract,
+    EscrowOwnershipHandoff,
     EscrowRelease,
     EscrowReleaseKind,
     EscrowReserve,

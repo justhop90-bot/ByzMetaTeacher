@@ -275,6 +275,40 @@ class EscrowContract:
 
 
 @dataclass(frozen=True)
+class EscrowOwnershipHandoff:
+    """Explicit, zero-native-command ownership edge between escrow contracts.
+
+    Names a predecessor contract relinquishing named resources to a
+    successor contract under a different semantic owner. The edge emits
+    no native command: releases, policy resets, and consumption still
+    lower through their own operations. It exists solely so the
+    contract-set validator can distinguish an explicit handoff from an
+    accidental multi-owner conflict. Terminality of the predecessor
+    (release/consumption executed) is enforced by the execution layer,
+    not here.
+    """
+
+    predecessor: str
+    successor: str
+    resources: tuple[str, ...]
+    rule_order: int = 0
+    within_rule_order: int = 0
+    location: SourceLocation | None = None
+
+    def __post_init__(self) -> None:
+        if not self.predecessor.strip():
+            raise ValueError("escrow handoff predecessor identity must not be empty")
+        if not self.successor.strip():
+            raise ValueError("escrow handoff successor identity must not be empty")
+        if not isinstance(self.resources, tuple) or not self.resources:
+            raise ValueError("escrow handoff resources must be a non-empty tuple")
+        if any(not resource.strip() for resource in self.resources):
+            raise ValueError("escrow handoff resources must not be empty")
+        if self.rule_order < 0 or self.within_rule_order < 0:
+            raise ValueError("escrow handoff order values must be non-negative")
+
+
+@dataclass(frozen=True)
 class TransientActionExclusionClaim:
     identity_source_unit: str
     identity_local_name: str
@@ -303,6 +337,7 @@ __all__ = [
     "EscrowConsumption",
     "EscrowConsumptionMode",
     "EscrowContract",
+    "EscrowOwnershipHandoff",
     "EscrowRelease",
     "EscrowReleaseKind",
     "EscrowReserve",
