@@ -170,6 +170,12 @@ jobs:
             --output /tmp/duc-group-window.per \
             --report /tmp/native-reports/duc-group-window.json
 
+      - name: Native zero-findings acceptance - unit alias fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_native_unit_alias_native.py \
+            --output /tmp/unit-alias.per \
+            --report /tmp/native-reports/unit-alias.json
+
       - name: Native zero-findings acceptance - attack lifecycle fixture
         run: |
           python LearnerAI/Compiler/tests/assert_attack_native.py             --output /tmp/attack-lifecycle.per             --report /tmp/native-reports/attack-lifecycle.json

@@ -83,7 +83,7 @@ class GameDataTests(unittest.TestCase):
             (("minimum_gold", 200), ("maximum_gold", 30000), ("gold_per_civilian", 200)),
         )
 
-    def test_manifest_coverage_leaves_only_unresolved_demolition_chain(self):
+    def test_manifest_coverage_classifies_every_node_without_unmodeled_remainder(self):
         from pathlib import Path
 
         profile = ByzantineProfile.for_update_185872()
