@@ -140,6 +140,10 @@ jobs:
       - name: Native zero-findings acceptance - posture and age Strategic Number modes
         run: |
           python LearnerAI/Compiler/tests/assert_strategy_strategic_number_modes_native.py             --output /tmp/strategic-number-modes.per             --report /tmp/native-reports/strategic-number-modes.json
+      - name: Native zero-findings acceptance - Strategic Number controller arbitration
+        run: |
+          python LearnerAI/Compiler/tests/assert_strategy_sn_arbitration_native.py             --output /tmp/strategic-number-arbitration.per             --report /tmp/native-reports/strategic-number-arbitration.json
+
       - name: Native zero-findings acceptance - construction lifecycle fixture
         run: |
           python - <<'PY'
