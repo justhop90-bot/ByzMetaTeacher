@@ -549,18 +549,21 @@ def lower_strategic_number_arbitration(
             )
         )
 
-        rearm_guard = _fold(
+        rearm_guard = _as_expression(
+            _guard_text(controller.rearm_guard) or "(false)"
+        )
+        rearm = _fold(
             "and",
             (
                 f"(goal {controller.activation_state_name} 0)",
                 f"(goal {controller.release_block_state_name} 1)",
-                f"(not {activation.source})",
+                rearm_guard.source,
             ),
         )
         rules.append(
             NativeControlRule(
                 f"sn-controller-{controller.identity}-rearm",
-                facts=(parse_expression(rearm_guard, SourceLocation(1)),),
+                facts=(parse_expression(rearm, SourceLocation(1)),),
                 actions=(
                     parse_expression(
                         f"(set-goal {controller.release_block_state_name} 0)",
