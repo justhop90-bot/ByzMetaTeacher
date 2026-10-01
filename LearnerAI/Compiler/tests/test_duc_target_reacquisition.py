@@ -286,7 +286,7 @@ class DucGoalHandoffTests(unittest.TestCase):
             output_requests=plan.output_requests,
             input_requests=(reader,),
         )
-        with self.assertRaisesRegex(ValueError, "only up-set-target-by-id reads"):
+        with self.assertRaisesRegex(ValueError, "only up-set-target-by-id and up-create-group reads"):
             default_de_registry().validate_duc_plan(plan)
 
     def test_input_non_goal_operand_rejected(self):

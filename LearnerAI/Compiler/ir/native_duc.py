@@ -66,9 +66,9 @@ class NativeDucGoalInputRequest:
     The reader operand at (rule_identity, section, expression_index,
     argument_index) is rewritten at emission to the bound goal of the
     writer's storage request (`source`). The writer must be a GoalSlot
-    output request in the same plan; the reader operand must be a `g:`
-    typeOp reference. Readers never allocate storage: they resolve the
-    writer's slot, so STORE_ID -> REACQUIRE stays one deterministic slot.
+    output request in the same plan. Position contracts are
+    head-specific and registry-validated. Readers never allocate
+    storage: without an input request the operand emits verbatim.
     """
 
     rule_identity: str
