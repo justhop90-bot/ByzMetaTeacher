@@ -206,6 +206,23 @@ def validate_strategic_number_arbitration(
         ):
             raise ValueError("ACTION controller must use ACTION_SCOPED scope")
 
+    for controller in plan.controllers:
+        if controller.layer in {
+            StrategicNumberControllerLayer.TEMPORARY,
+            StrategicNumberControllerLayer.ACTION,
+            StrategicNumberControllerLayer.RECOVERY,
+        }:
+            if not any(
+                other.native_strategic_number_id
+                == controller.native_strategic_number_id
+                and other.layer.precedence < controller.layer.precedence
+                for other in plan.controllers
+            ):
+                raise ValueError(
+                    f"Strategic Number override '{controller.identity}' has no lower-precedence "
+                    "underlay to restore"
+                )
+
     for sn_id in plan.native_strategic_number_ids:
         controllers = plan.controllers_for_sn(sn_id)
         for index, first in enumerate(controllers):
@@ -327,7 +344,6 @@ def lower_strategic_number_arbitration(
                 "and",
                 (
                     f"(goal {controller.activation_state_name} 1)",
-                    *higher_suppression,
                     release_guard.source,
                 ),
             )
