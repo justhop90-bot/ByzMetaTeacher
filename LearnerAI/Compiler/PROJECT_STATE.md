@@ -124,6 +124,9 @@ The implemented contract is:
 - ordinary `train` demands carry one compiler-policy production claim
   (`action-claim:TRAIN_ARBITRATION`) through the existing `ResourceClaim` /
   arbitration system; no native train conflict class was invented;
+- strategy-bound demands normally arbitrate under their strategic identity;
+  an explicit `production_arbitration_group` may intentionally group distinct
+  strategic demands under one compatible execution-memory contract;
 - claim ownership comes from the strategic owner when strategy-bound,
   otherwise the shared unit execution-memory owner (the `build` convention);
   the provider UnitId remains provider identity only;
