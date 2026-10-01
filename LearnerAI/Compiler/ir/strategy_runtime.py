@@ -224,6 +224,7 @@ class ReassessmentReason(str, Enum):
     CAPABILITY_COMPLETION = "CAPABILITY_COMPLETION"
     CAPABILITY_LOSS = "CAPABILITY_LOSS"
     CAPABILITY_RECOVERY = "CAPABILITY_RECOVERY"
+    UPGRADE_READINESS_CHANGE = "UPGRADE_READINESS_CHANGE"
     ENEMY_COMPOSITION_CHANGE = "ENEMY_COMPOSITION_CHANGE"
     AGE_TRANSITION = "AGE_TRANSITION"
     MAP_OPENING_CHANGE = "MAP_OPENING_CHANGE"
@@ -274,6 +275,7 @@ class RuntimeObservationSnapshot:
     previous_demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...] = ()
     previous_counter_package_states: tuple[tuple[str, EvidenceTruth], ...] = ()
     previous_capability_observations: tuple[tuple[str, bool | None], ...] = ()
+    previous_composition_upgrade_readiness: CompositionUpgradeReadinessState | None = None
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
 
     def result_for(self, expression: Expression) -> EvidenceTruth:
@@ -332,6 +334,7 @@ class StrategyRuntimeState:
     ] = ()
     evaluated_capability_observations: tuple[tuple[str, EvidenceTruth], ...] = ()
     capability_transitions: tuple[tuple[str, CapabilityTransition], ...] = ()
+    composition_upgrade_readiness: CompositionUpgradeReadinessState | None = None
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -1311,6 +1314,13 @@ def evaluate_strategy_runtime(
         registry,
     )
     counter_arbitration = arbitrate_counter_packages(counter_package_states)
+    composition_upgrade_readiness = evaluate_composition_upgrade_readiness(
+        profile,
+        effective,
+        snapshot,
+        registry,
+        counter_arbitration,
+    )
     selected_package_ids = set(counter_arbitration.active_packages)
     counter_package_sources = {
         demand_identity: tuple(
@@ -1336,6 +1346,12 @@ def evaluate_strategy_runtime(
     }
     if current_counter_states != previous_counter_states:
         reasons.add(ReassessmentReason.COUNTER_PACKAGE_CHANGE)
+
+    if (
+        snapshot.previous_composition_upgrade_readiness is not None
+        and snapshot.previous_composition_upgrade_readiness != composition_upgrade_readiness
+    ):
+        reasons.add(ReassessmentReason.UPGRADE_READINESS_CHANGE)
 
     if snapshot.previous_posture is not None and snapshot.previous_posture is not current_posture:
         reasons.add(ReassessmentReason.POSTURE_CHANGE)
@@ -1417,6 +1433,7 @@ def evaluate_strategy_runtime(
             "previous_posture": snapshot.previous_posture,
             "counter_package_states": counter_package_states,
             "counter_arbitration": counter_arbitration,
+            "composition_upgrade_readiness": composition_upgrade_readiness,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1445,6 +1462,7 @@ def evaluate_strategy_runtime(
         demand_states=tuple(sorted(demand_states)),
         counter_package_states=tuple(counter_package_states),
         counter_arbitration=counter_arbitration,
+        composition_upgrade_readiness=composition_upgrade_readiness,
         opportunity_cost_states=tuple(sorted(opportunity)),
         evaluated_evidence=tuple(sorted(evaluated)),
         active_strategic_demands=tuple(sorted(active)),
