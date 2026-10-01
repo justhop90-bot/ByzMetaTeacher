@@ -143,6 +143,21 @@ def main() -> int:
             "temporary SN activation must latch ownership immediately before its SN write"
         )
 
+    rule_markers = (
+        "; Native control rule: sn-controller-emergency-defense-activate",
+        "; Native control rule: sn-controller-emergency-defense-release",
+        "; Native control rule: sn-controller-emergency-defense-steady",
+    )
+    rule_positions = []
+    for marker in rule_markers:
+        if marker not in first:
+            raise SystemExit(f"missing transient controller rule marker: {marker}")
+        rule_positions.append(first.index(marker))
+    if not rule_positions[0] < rule_positions[1] < rule_positions[2]:
+        raise SystemExit(
+            "temporary controller must emit activate -> release -> steady order"
+        )
+
     required = (
         "(defconst sn-native-227 227)",
         "(current-age >= feudal-age)",
