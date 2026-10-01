@@ -60,7 +60,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
     def test_known_ranged_threat_with_unknown_production_stays_blocked(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
-                ("(current-age >= feudal-age)", True),
+                ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
             ),
         )
@@ -119,6 +119,20 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             state.demand_state("counter-castle-cataphracts"),
             StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
         )
+
+    def test_counter_production_uses_concrete_train_and_witness_tokens(self):
+        for demand_identity, expected_unit in (
+            ("counter-castle-camels", "camel-rider"),
+            ("counter-castle-cataphracts", "cataphract"),
+        ):
+            demand = self.profile.demand(demand_identity)
+            execution = demand.execution_demands[0]
+            self.assertEqual(execution.action, f"(train {expected_unit})")
+            self.assertEqual(
+                execution.witness,
+                f"(unit-type-count {expected_unit} >= "
+                f"{demand.target.minimum})",
+            )
 
     def test_counter_package_selection_is_deterministic(self):
         snapshot = RuntimeObservationSnapshot(
