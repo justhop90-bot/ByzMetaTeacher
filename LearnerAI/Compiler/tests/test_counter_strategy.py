@@ -162,6 +162,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
     def test_mixed_mounted_and_ranged_pressure_preserves_both_counter_roles(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
+                ("(current-age == feudal-age)", True),
                 ("(current-age >= feudal-age)", True),
                 ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
