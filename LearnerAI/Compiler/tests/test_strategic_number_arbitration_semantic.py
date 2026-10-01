@@ -368,6 +368,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 (
                     f"(set-goal sn-controller-{identity}-release-block 0)",
                     f"(set-goal sn-rearm-{identity} 1)",
+                    "(set-goal sn-reassert-227 1)",
                 ),
             )
 
