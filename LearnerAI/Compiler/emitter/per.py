@@ -457,12 +457,28 @@ def emit(
 
     if native_attack_plan is not None and not native_attack_plan.empty:
         out.append("; Native attack lifecycle plan")
+        attachments_by_rule: dict[str, dict[int, list]] = {}
+        for attachment in native_attack_plan.strategic_number_action_attachments:
+            assert attachment.owned_rule_identity is not None
+            assert attachment.action_index is not None
+            attachments_by_rule.setdefault(
+                attachment.owned_rule_identity, {}
+            ).setdefault(attachment.action_index, []).append(attachment)
+
         for rule in native_attack_plan.rules:
             out.append(f"; Native attack rule: {rule.identity}")
             out.append("(defrule")
             out.extend(f"    {fact.source}" for fact in rule.facts)
             out.append("=>")
-            out.extend(f"    {action.source}" for action in rule.actions)
+            for action_index, action in enumerate(rule.actions):
+                for attachment in attachments_by_rule.get(rule.identity, {}).get(
+                    action_index, ()
+                ):
+                    out.append(
+                        f"    (set-strategic-number sn-native-"
+                        f"{attachment.native_strategic_number_id} {attachment.value})"
+                    )
+                out.append(f"    {action.source}")
             out += [")", ""]
 
     if escrow_plan is not None and not escrow_plan.empty:
