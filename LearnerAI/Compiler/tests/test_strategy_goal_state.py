@@ -24,6 +24,7 @@ from Compiler.clients.basilisk import (
 from Compiler.ir.civ_profile import resolve_effective_civ
 from Compiler.ir.strategy import (
     GoalStateAssertion,
+    StrategyPosture,
     lower_strategy_profile,
 )
 
