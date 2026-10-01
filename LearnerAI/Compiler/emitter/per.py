@@ -490,6 +490,28 @@ def emit(
             out.append("")
 
         attachments_by_rule: dict[str, dict[int, list]] = {}
+        control_state_names = (
+            {state.identifier for state in control_plan.states}
+            if control_plan is not None
+            else set()
+        )
+        if control_plan is not None:
+            missing_activation_states = tuple(
+                sorted(
+                    {
+                        attachment.activation_state_name
+                        for attachment in native_attack_plan.strategic_number_action_attachments
+                        if attachment.activation_state_name not in control_state_names
+                    }
+                )
+            )
+            if missing_activation_states:
+                raise CompileError(
+                    "EMITTER-SN-ACTION-ACTIVATION: ACTION Strategic Number "
+                    "attachment references activation state(s) missing from "
+                    f"the native control plan: {', '.join(missing_activation_states)}"
+                )
+
         for attachment in native_attack_plan.strategic_number_action_attachments:
             assert attachment.owned_rule_identity is not None
             assert attachment.action_index is not None
@@ -506,9 +528,10 @@ def emit(
                 for attachment in attachments_by_rule.get(rule.identity, {}).get(
                     action_index, ()
                 ):
-                    out.append(
-                        f"    (set-goal {attachment.activation_state_name} 1)"
-                    )
+                    if attachment.activation_state_name in control_state_names:
+                        out.append(
+                            f"    (set-goal {attachment.activation_state_name} 1)"
+                        )
                     out.append(
                         f"    (set-strategic-number sn-native-"
                         f"{attachment.native_strategic_number_id} {attachment.value})"
