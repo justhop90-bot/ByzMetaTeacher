@@ -66,10 +66,11 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         controller = self._controller(
             "attack-surge",
             layer=StrategicNumberControllerLayer.ACTION,
-            activation=None,
-            release=None,
+            activation="(goal attack-state 1)",
+            release="(goal attack-state 0)",
             scope=StrategicNumberControllerScope.ACTION_SCOPED,
             action="attack-now-rule",
+            evidence=StrategicNumberReleaseEvidence.TIMER_CADENCE,
         )
         self.assertEqual(controller.native_state_name, "sn-native-227")
         self.assertEqual(
