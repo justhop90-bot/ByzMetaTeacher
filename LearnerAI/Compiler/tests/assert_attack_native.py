@@ -44,10 +44,7 @@ def _plan() -> NativeAttackLifecyclePlan:
                 identity="attack-second",
                 order=20,
                 facts=(Expression("(true)", "true", ()),),
-                actions=(
-                    Expression("(true-action)", "true-action", ()),
-                    Expression("(attack-now)", "attack-now", ()),
-                ),
+                actions=(Expression("(attack-now)", "attack-now", ()),),
                 lifecycle=LIFECYCLE,
             ),
         )
@@ -63,7 +60,7 @@ def _plan() -> NativeAttackLifecyclePlan:
                 activation_state_name="sn-controller-attack-surge-active",
             ),
         ),
-        owned_actions={"attack-surge": ("attack-second", 1)},
+        owned_actions={"attack-surge": ("attack-second", 0)},
     )
 
 
