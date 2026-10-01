@@ -224,6 +224,48 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         self.assertEqual(attachment.native_strategic_number_id, 227)
         self.assertEqual(attachment.value, 100)
 
+
+    def test_explicit_equal_precedence_conflict_fails_closed_even_with_different_guards(self):
+        first = StrategicNumberController(
+            identity="override-a",
+            native_strategic_number_id=227,
+            value=25,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            activation_guard="(goal emergency-a 1)",
+            release_guard="(goal emergency-a 0)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        second = StrategicNumberController(
+            identity="override-b",
+            native_strategic_number_id=227,
+            value=35,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            activation_guard="(goal emergency-b 1)",
+            release_guard="(goal emergency-b 0)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        base = StrategicNumberController(
+            identity="base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(base, first, second),
+        )
+        with self.assertRaisesRegex(ValueError, "conflicting explicit"):
+            validate_strategic_number_arbitration(
+                plan,
+                documented_native_ids=frozenset({227}),
+            )
+
     def test_current_byzantine_strategy_remains_deterministic_through_arbitration(self):
         effective, profile = self._profile()
         first = compile_strategy_profile(profile, effective)
