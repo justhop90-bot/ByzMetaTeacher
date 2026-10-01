@@ -43,6 +43,7 @@ from Compiler.ir import (
     NativeAttackRule,
     NativeDucPlan,
     NativeDucRule,
+    StrategicNumberActionAttachment,
 )
 
 EXAMPLES = (Path(__file__).parents[1] / "examples" / "basics.perdsl").read_text(encoding="utf-8")
@@ -209,6 +210,112 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                 )
             )
         return NativeDucPlan(tuple(rules))
+
+    @staticmethod
+    def _attack_plan_with_strategic_number_action_attachment():
+        lifecycle = (
+            AttackLifecycleObservation.ADMISSION_REQUIRED,
+            AttackLifecycleObservation.ISSUE,
+            AttackLifecycleObservation.COMPLETION_UNOBSERVED,
+            AttackLifecycleObservation.REASSESS_REQUIRED,
+        )
+        attachment = StrategicNumberActionAttachment(
+            identity="attack-surge-attachment",
+            controller_identity="attack-surge",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+            owned_rule_identity="attack-owned",
+            action_index=1,
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(
+                NativeAttackRule(
+                    identity="attack-owned",
+                    order=10,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(Expression("(attack-now)", "attack-now", ()),),
+                    lifecycle=lifecycle,
+                ),
+            ),
+        )
+        return plan.bind_strategic_number_action_attachments(
+            (attachment,),
+            owned_actions={"attack-surge": ("attack-owned", 0)},
+        )
+
+    def test_attack_action_attachment_emits_immediately_before_owned_action(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        artifact = compile_source(
+            source,
+            attack_plan=self._attack_plan_with_strategic_number_action_attachment(),
+        )
+        lines = artifact.splitlines()
+        sn_line = next(
+            index
+            for index, line in enumerate(lines)
+            if line.strip() == "(set-strategic-number sn-native-227 100)"
+        )
+        attack_rule_start = next(
+            index
+            for index, line in enumerate(lines)
+            if line.strip() == "; Native attack rule: attack-owned"
+        )
+        attack_line = next(
+            index
+            for index in range(attack_rule_start, len(lines))
+            if lines[index].strip() == "(attack-now)"
+        )
+        self.assertEqual(attack_line, sn_line + 1)
+
+    def test_attack_action_attachment_requires_exact_native_action_identity(self):
+        plan = self._attack_plan_with_strategic_number_action_attachment()
+        attachment = StrategicNumberActionAttachment(
+            identity="bad-attachment",
+            controller_identity="attack-surge",
+            action_identity="different-action",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+            owned_rule_identity="attack-owned",
+            action_index=0,
+        )
+        with self.assertRaisesRegex(ValueError, "does not match owned rule"):
+            NativeAttackLifecyclePlan(
+                rules=plan.rules,
+                strategic_number_action_attachments=(attachment,),
+            )
+
+    def test_attack_action_attachment_output_is_deterministic(self):
+        source = """
+        demand marker {
+            require (can-train spearman)
+            action (train spearman)
+            witness (unit-type-count spearman >= 1)
+            release (unit-type-count spearman >= 1)
+        }
+        """
+        first = compile_source(
+            source,
+            attack_plan=self._attack_plan_with_strategic_number_action_attachment(),
+        )
+        second = compile_source(
+            source,
+            attack_plan=self._attack_plan_with_strategic_number_action_attachment(),
+        )
+        self.assertEqual(first, second)
+        self.assertEqual(
+            first.count("(set-strategic-number sn-native-227 100)"),
+            1,
+        )
 
     def test_public_compile_source_forwards_attack_plan(self):
         source = """

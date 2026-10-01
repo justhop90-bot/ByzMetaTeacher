@@ -5,10 +5,12 @@ syntax and it does not claim native completion or release semantics.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import Mapping
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
+from .strategic_number_arbitration import StrategicNumberActionAttachment
 
 
 class AttackLifecycleObservation(str, Enum):
@@ -62,6 +64,9 @@ class NativeAttackLifecyclePlan:
     """Ordered compiler-owned native attack lifecycle rules."""
 
     rules: tuple[NativeAttackRule, ...] = ()
+    strategic_number_action_attachments: tuple[
+        StrategicNumberActionAttachment, ...
+    ] = ()
 
     def __post_init__(self) -> None:
         identities = tuple(rule.identity for rule in self.rules)
@@ -72,6 +77,104 @@ class NativeAttackLifecyclePlan:
             raise ValueError(
                 "native attack rules must be declared in deterministic order"
             )
+        if not isinstance(self.strategic_number_action_attachments, tuple):
+            raise TypeError(
+                "native attack Strategic Number attachments must be a tuple"
+            )
+
+        attachment_identities = tuple(
+            attachment.identity
+            for attachment in self.strategic_number_action_attachments
+        )
+        if len(attachment_identities) != len(set(attachment_identities)):
+            raise ValueError(
+                "duplicate native attack Strategic Number attachment identity"
+            )
+
+        rule_by_identity = {rule.identity: rule for rule in self.rules}
+        target_keys = set()
+        for attachment in self.strategic_number_action_attachments:
+            if attachment.owned_rule_identity is None:
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' requires an owned rule identity"
+                )
+            rule = rule_by_identity.get(attachment.owned_rule_identity)
+            if rule is None:
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' references unknown owned rule "
+                    f"'{attachment.owned_rule_identity}'"
+                )
+            assert attachment.action_index is not None
+            if attachment.action_index >= len(rule.actions):
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' action_index {attachment.action_index} "
+                    f"is outside owned rule '{rule.identity}'"
+                )
+            action = rule.actions[attachment.action_index]
+            if action.head != attachment.action_identity:
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' action identity '{attachment.action_identity}' "
+                    f"does not match owned rule '{rule.identity}' action {attachment.action_index} "
+                    f"('{action.head}')"
+                )
+            target_key = (rule.identity, attachment.action_index)
+            if target_key in target_keys:
+                raise ValueError(
+                    f"duplicate native attack Strategic Number attachment target "
+                    f"'{rule.identity}[{attachment.action_index}]'"
+                )
+            target_keys.add(target_key)
+
+        ordered_attachments = tuple(
+            sorted(
+                self.strategic_number_action_attachments,
+                key=lambda attachment: (
+                    attachment.owned_rule_identity or "",
+                    attachment.action_index if attachment.action_index is not None else -1,
+                    attachment.identity,
+                ),
+            )
+        )
+        object.__setattr__(
+            self,
+            "strategic_number_action_attachments",
+            ordered_attachments,
+        )
+
+    def bind_strategic_number_action_attachments(
+        self,
+        attachments: tuple[StrategicNumberActionAttachment, ...],
+        *,
+        owned_actions: Mapping[str, tuple[str, int]],
+    ) -> "NativeAttackLifecyclePlan":
+        """Bind controller attachments to exact native attack rule/action positions."""
+        bound = []
+        for attachment in attachments:
+            try:
+                rule_identity, action_index = owned_actions[
+                    attachment.controller_identity
+                ]
+            except KeyError as exc:
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' has no owned action binding for "
+                    f"controller '{attachment.controller_identity}'"
+                ) from exc
+            bound.append(
+                replace(
+                    attachment,
+                    owned_rule_identity=rule_identity,
+                    action_index=action_index,
+                )
+            )
+        return NativeAttackLifecyclePlan(
+            rules=self.rules,
+            strategic_number_action_attachments=tuple(bound),
+        )
 
     @property
     def expressions(self) -> tuple[Expression, ...]:

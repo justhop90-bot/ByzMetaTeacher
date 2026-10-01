@@ -18,6 +18,7 @@ from Compiler.ir import (
     AttackLifecycleObservation,
     NativeAttackLifecyclePlan,
     NativeAttackRule,
+    StrategicNumberActionAttachment,
 )
 
 
@@ -30,7 +31,7 @@ LIFECYCLE = (
 
 
 def _plan() -> NativeAttackLifecyclePlan:
-    return NativeAttackLifecyclePlan(
+    plan = NativeAttackLifecyclePlan(
         (
             NativeAttackRule(
                 identity="attack-first",
@@ -47,6 +48,19 @@ def _plan() -> NativeAttackLifecyclePlan:
                 lifecycle=LIFECYCLE,
             ),
         )
+    )
+    return plan.bind_strategic_number_action_attachments(
+        (
+            StrategicNumberActionAttachment(
+                identity="attack-surge-attachment",
+                controller_identity="attack-surge",
+                action_identity="attack-now",
+                native_strategic_number_id=227,
+                value=100,
+                activation_state_name="sn-controller-attack-surge-active",
+            ),
+        ),
+        owned_actions={"attack-surge": ("attack-second", 0)},
     )
 
 
@@ -104,6 +118,7 @@ def main() -> int:
         "; Native attack rule: attack-first",
         "; Native attack rule: attack-second",
         "(attack-now)",
+        "(set-strategic-number sn-native-227 100)",
     )
     missing = tuple(fragment for fragment in required_fragments if fragment not in first)
     if missing:
@@ -149,7 +164,26 @@ def main() -> int:
         raise SystemExit(
             f"expected exactly two attack-now actions, found {first.count('(attack-now)')}"
         )
-
+    lines = first.splitlines()
+    sn_line = next(
+        index
+        for index, line in enumerate(lines)
+        if line.strip() == "(set-strategic-number sn-native-227 100)"
+    )
+    attack_rule_start = next(
+        index
+        for index, line in enumerate(lines)
+        if line.strip() == "; Native attack rule: attack-second"
+    )
+    attack_line = next(
+        index
+        for index in range(attack_rule_start, len(lines))
+        if lines[index].strip() == "(attack-now)"
+    )
+    if attack_line != sn_line + 1:
+        raise SystemExit(
+            "Strategic Number write was not emitted immediately before owned attack"
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(first, encoding="utf-8")
 

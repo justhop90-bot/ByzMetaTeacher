@@ -305,3 +305,16 @@ from .military_composition import (
     MilitaryCompositionUnitTarget,
     MilitaryProofStatus,
 )
+
+
+from .strategic_number_arbitration import (
+    StrategicNumberActionAttachment,
+    StrategicNumberArbitrationLowering,
+    StrategicNumberArbitrationPlan,
+    StrategicNumberController,
+    StrategicNumberControllerLayer,
+    StrategicNumberControllerOrigin,
+    StrategicNumberControllerScope,
+    StrategicNumberReleaseEvidence,
+    StrategicNumberRestorationPolicy,
+)
