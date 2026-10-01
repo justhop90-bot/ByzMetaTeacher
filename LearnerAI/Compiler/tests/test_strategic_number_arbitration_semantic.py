@@ -250,7 +250,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             low_rule.facts[0].source,
         )
 
-    def test_release_latches_rearm_until_activation_guard_falls(self):
+    def test_release_rearm_uses_explicit_reset_guard(self):
         base = StrategicNumberController(
             identity="strategy-base",
             native_strategic_number_id=227,
@@ -260,18 +260,20 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             owner="fixture",
         )
 
-        for layer, identity, activation, release in (
+        for layer, identity, activation, release, rearm in (
             (
                 StrategicNumberControllerLayer.TEMPORARY,
                 "temporary-rearm",
                 "(goal emergency 1)",
                 "(goal emergency-cleared 1)",
+                "(goal temporary-rearm-reset 1)",
             ),
             (
                 StrategicNumberControllerLayer.RECOVERY,
                 "recovery-rearm",
                 "(goal recovery-needed 1)",
                 "(goal recovery-clear 1)",
+                "(goal recovery-rearm-reset 1)",
             ),
         ):
             controller = StrategicNumberController(
@@ -281,7 +283,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 layer=layer,
                 activation_guard=activation,
                 release_guard=release,
-                rearm_guard=f"(goal {identity}-reset 1)",
+                rearm_guard=rearm,
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
                 release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
                 owner="fixture",
@@ -354,6 +356,10 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 rearm_rule.facts[0].source,
             )
             self.assertIn(
+                rearm,
+                rearm_rule.facts[0].source,
+            )
+            self.assertNotIn(
                 f"(not {activation})",
                 rearm_rule.facts[0].source,
             )
