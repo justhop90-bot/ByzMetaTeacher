@@ -204,6 +204,7 @@ def _validate_bindings(
                     code="POL-005",
                     recipe=recipe,
                     field=None,
+                    binding_identity=requirement.identity,
                     phase=PolicyDiagnosticPhase.BINDING,
                     message=(
                         f"binding '{requirement.identity}' has value '{value}', "
