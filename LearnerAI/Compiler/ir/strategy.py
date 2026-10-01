@@ -971,9 +971,13 @@ def _posture_transition_control_plan(profile: StrategyProfile):
             guard_sources.append(
                 posture_guards[0]
                 if len(posture_guards) == 1
-                else f"(or {' '.join(posture_guards)})"
+                else f"(or {" ".join(posture_guards)})"
             )
-
+        else:
+            # Empty from_postures means "initial posture only" in the runtime
+            # model. Encode the same boundary in native persistent state so an
+            # initial transition cannot reassert forever after initialization.
+            guard_sources.append(f"(goal {_STRATEGY_POSTURE_STATE} 0)")
         for evidence in transition.evidence:
             if evidence.observation_ref is None:
                 raise ValueError(
