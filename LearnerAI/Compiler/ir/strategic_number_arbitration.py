@@ -101,6 +101,14 @@ class StrategicNumberController:
             raise ValueError("Strategic Number controller priority must be an integer")
         if not self.owner.strip():
             raise ValueError("Strategic Number controller owner must not be empty")
+        for field_name, guard in (
+            ("activation_guard", self.activation_guard),
+            ("release_guard", self.release_guard),
+        ):
+            if isinstance(guard, str) and not guard.strip():
+                raise ValueError(
+                    f"Strategic Number controller {field_name} must not be empty"
+                )
 
         persistent_layers = {
             StrategicNumberControllerLayer.DEFAULT_BASE,
@@ -306,10 +314,10 @@ class StrategicNumberArbitrationPlan:
         )
 
 
-def _guard_key(expression: Expression | None) -> str:
+def _guard_key(expression: Expression | str | None) -> str:
     if expression is None:
         return ""
-    return expression.source
+    return expression.source if isinstance(expression, Expression) else expression
 
 
 __all__ = [
