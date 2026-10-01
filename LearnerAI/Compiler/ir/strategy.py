@@ -15,7 +15,11 @@ from .strategic_number import StrategicNumberOrigin
 if TYPE_CHECKING:
     from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
-    from ..semantic.policy_recipe import PolicyRecipe, PolicyResolution
+    from ..semantic.policy_recipe import (
+        PolicyOverride,
+        PolicyRecipe,
+        PolicyResolution,
+    )
 
 
 class StrategyPosture(str, Enum):
@@ -382,6 +386,21 @@ class StrategyProfile:
             if item.identity == identity:
                 return item
         raise KeyError(f"unknown policy recipe '{identity}'")
+
+    def resolve_policy_recipe(
+        self,
+        identity: str,
+        *,
+        bindings: dict[str, str] | None = None,
+        overrides: tuple["PolicyOverride", ...] = (),
+    ) -> "PolicyResolution":
+        from ..semantic.policy_recipe import resolve_policy_recipe
+
+        return resolve_policy_recipe(
+            self.policy_recipe(identity),
+            bindings=bindings,
+            overrides=overrides,
+        )
 
     def observation(self, identity: str) -> StrategicObservationSpec:
         for item in self.observations:
