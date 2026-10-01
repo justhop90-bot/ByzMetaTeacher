@@ -1,0 +1,24 @@
+# Production/train arbitration fixture.
+# One build demand and one ordinary train demand share a compilation: the
+# native build claim (BUILD_PASS_SINGLETON) and the compiler-policy
+# production claim (TRAIN_ARBITRATION) form separate deterministic
+# contracts. No native train conflict class is implied.
+
+demand castle {
+    require (current-age >= castle)
+    require (building-available castle)
+    require (can-afford-building castle)
+    require (can-build castle)
+    action (build castle)
+    witness (building-type-count castle > 0)
+    release (building-type-count castle > 0)
+}
+
+demand defensive-spearmen {
+    require (current-age >= feudal)
+    require (unit-type-count-total spearman < 2)
+    require (can-train spearman)
+    action (train spearman)
+    witness (unit-type-count spearman >= 2)
+    release (unit-type-count spearman >= 2)
+}
