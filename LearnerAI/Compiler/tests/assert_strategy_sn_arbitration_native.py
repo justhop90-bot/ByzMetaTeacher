@@ -111,6 +111,38 @@ def main() -> int:
     if first != second:
         raise SystemExit("Strategic Number arbitration artifact is non-deterministic")
 
+    activation_rule_marker = "; Native control rule: sn-controller-emergency-defense-activate"
+    if activation_rule_marker not in first:
+        raise SystemExit("temporary SN activation rule is missing")
+    activation_section = first.split(activation_rule_marker, 1)[1]
+    next_marker = activation_section.find("\n; Native ")
+    if next_marker >= 0:
+        activation_section = activation_section[:next_marker]
+    if "(up-compare-sn sn-native-227 != 25)" in activation_section:
+        raise SystemExit(
+            "temporary SN activation incorrectly depends on native value drift"
+        )
+    activation_actions = [
+        line.strip()
+        for line in activation_section.splitlines()
+        if line.strip().startswith("(")
+    ]
+    try:
+        activation_index = activation_actions.index(
+            "(set-goal sn-controller-emergency-defense-active 1)"
+        )
+        write_index = activation_actions.index(
+            "(set-strategic-number sn-native-227 25)"
+        )
+    except ValueError as exc:
+        raise SystemExit(
+            "temporary SN activation rule is missing latch/write actions"
+        ) from exc
+    if write_index != activation_index + 1:
+        raise SystemExit(
+            "temporary SN activation must latch ownership immediately before its SN write"
+        )
+
     required = (
         "(defconst sn-native-227 227)",
         "(current-age >= feudal-age)",
