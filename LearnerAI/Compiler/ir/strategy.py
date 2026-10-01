@@ -1284,7 +1284,7 @@ def _counter_package_control_plan(profile: StrategyProfile):
     rules: list[NativeControlRule] = [
         NativeControlRule(
             "counter-package-selection-reset-000",
-            facts=(),
+            facts=(parse_expression("(current-age >= dark-age)", SourceLocation(1)),),
             actions=reset_actions,
         )
     ]
