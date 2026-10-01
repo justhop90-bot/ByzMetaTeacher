@@ -155,6 +155,22 @@ def default_byzantine_counter_packages(
             policy_recipe_identity=None,
             rationale="Use the premium anti-infantry transition when a real infantry mass justifies it.",
         ),
+        CounterPackage(
+            identity="SIEGE_PRESSURE_CASTLE",
+            threat_class=CounterThreatClass.SIEGE,
+            priority=120,
+            trigger=StrategicEvidence(
+                StrategicEvidenceKind.PERSISTENT,
+                None,
+                "Castle siege pressure detected",
+                source=StrategicEvidenceSource.AUTHORING,
+                provenance=effective.unit_line("mangonel-line").provenance,
+                observation_ref="enemy-siege-pressure",
+            ),
+            demand_identities=("counter-castle-siege-response",),
+            policy_recipe_identity=None,
+            rationale="Use a mobile Castle response against sustained enemy siege instead of blindly adding another static counter.",
+        ),
     )
 
 
