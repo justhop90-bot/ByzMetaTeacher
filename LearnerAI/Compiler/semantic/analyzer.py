@@ -128,6 +128,39 @@ def _parse(tokens: list[str], index: int = 0):
     return Expression(source="", head=head, args=tuple(args)), index + 1
 
 
+def _render_expression(expr: Expression) -> str:
+    parts = [expr.head]
+    for argument in expr.args:
+        if isinstance(argument, Expression):
+            parts.append(_render_expression(argument))
+        else:
+            parts.append(str(argument))
+    return "(" + " ".join(parts) + ")"
+
+
+def _populate_expression_sources(
+    expr: Expression,
+    *,
+    root_source: str | None = None,
+    location=None,
+) -> Expression:
+    nested_args = tuple(
+        _populate_expression_sources(argument)
+        if isinstance(argument, Expression)
+        else argument
+        for argument in expr.args
+    )
+    return Expression(
+        source=root_source if root_source is not None else _render_expression(
+            Expression(source="", head=expr.head, args=nested_args)
+        ),
+        head=expr.head,
+        args=nested_args,
+        location=location if location is not None else expr.location,
+    )
+
+
+
 def parse_expression(source: str, location=None) -> Expression:
     tokens = _tokens(source)
     expr, end = _parse(tokens)
@@ -137,7 +170,11 @@ def parse_expression(source: str, location=None) -> Expression:
         raise CompileError(
             f"logical operator '{expr.head}' requires {_LOGICAL_ARITY[expr.head]} operands"
         )
-    return Expression(source=source, head=expr.head, args=expr.args, location=location)
+    return _populate_expression_sources(
+        expr,
+        root_source=source,
+        location=location,
+    )
 
 
 def _validate_expression(expr: Expression, registry: PrimitiveRegistry):
