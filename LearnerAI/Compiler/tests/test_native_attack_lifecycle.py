@@ -6,6 +6,7 @@ from Compiler.ir.native_attack import (
     NativeAttackLifecyclePlan,
     NativeAttackRule,
 )
+from Compiler.ir.strategic_number_arbitration import StrategicNumberActionAttachment
 from Compiler.primitives import default_de_registry, default_native_contract_catalog
 from Compiler.primitives.engine_semantics import (
     EngineSemanticMappingStatus,
@@ -132,6 +133,88 @@ class NativeAttackIrTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "duplicate native attack rule identity"):
             NativeAttackLifecyclePlan((first, _attack_rule("a", 2)))
+
+    def test_action_attachment_is_emitted_immediately_before_exact_owned_native_action(self):
+        attachment = StrategicNumberActionAttachment(
+            identity="attack-surge-attachment",
+            controller_identity="attack-surge",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+            owned_rule_identity="attack-second",
+            action_index=1,
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(
+                _attack_rule("attack-first", 10),
+                NativeAttackRule(
+                    identity="attack-second",
+                    order=20,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr("(true-action)", "true-action"),
+                        _expr("(attack-now)", "attack-now"),
+                    ),
+                    lifecycle=LIFECYCLE,
+                ),
+            ),
+            strategic_number_action_attachments=(attachment,),
+        )
+        self.assertEqual(
+            plan.strategic_number_action_attachments,
+            (attachment,),
+        )
+
+    def test_action_attachment_requires_exact_owned_rule(self):
+        attachment = StrategicNumberActionAttachment(
+            identity="attack-surge-attachment",
+            controller_identity="attack-surge",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+            owned_rule_identity="missing-rule",
+            action_index=0,
+        )
+        with self.assertRaisesRegex(ValueError, "owned rule"):
+            NativeAttackLifecyclePlan(
+                rules=(_attack_rule("attack-first", 10),),
+                strategic_number_action_attachments=(attachment,),
+            )
+
+    def test_attachment_output_order_is_deterministic(self):
+        second = StrategicNumberActionAttachment(
+            identity="b",
+            controller_identity="b",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="b-active",
+            owned_rule_identity="attack-second",
+            action_index=0,
+        )
+        first = StrategicNumberActionAttachment(
+            identity="a",
+            controller_identity="a",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=90,
+            activation_state_name="a-active",
+            owned_rule_identity="attack-first",
+            action_index=0,
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(
+                _attack_rule("attack-first", 10),
+                _attack_rule("attack-second", 20),
+            ),
+            strategic_number_action_attachments=(second, first),
+        )
+        self.assertEqual(
+            tuple(item.identity for item in plan.strategic_number_action_attachments),
+            ("a", "b"),
+        )
 
     def test_empty_plan_is_valid(self):
         plan = NativeAttackLifecyclePlan()
