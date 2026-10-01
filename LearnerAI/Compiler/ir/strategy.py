@@ -266,7 +266,6 @@ class GoalStateAssertion:
 class StrategicDemandSpec:
     identity: str
     owner: str
-    production_arbitration_group: str | None = None
     posture: StrategyPosture
     priority: StrategicPriority
     reason: tuple[StrategicEvidence, ...]
