@@ -878,7 +878,7 @@ def lower_strategy_profile(
                     else "(or " + " ".join(guard_states) + ")"
                 )
                 requirements = (
-                    f"(goal {guard_source} 1)",
+                    f"(up-compare-goal {guard_source} c:== 1)",
                     *requirements,
                 )
             nodes.append(
