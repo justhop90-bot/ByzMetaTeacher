@@ -6,13 +6,15 @@ import unittest
 from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_castle_strategy
 from LearnerAI.Compiler.clients.basilisk.compiler import compile_strategy_profile
 from LearnerAI.Compiler.ir import (
-    CompositionUpgradeReadiness,
-    CompositionUpgradeReadinessState,
     NativeAttackLifecyclePlan,
     NativeAttackRule,
     AttackLifecycleObservation,
+)
+from LearnerAI.Compiler.ir.strategy import StrategyPosture
+from LearnerAI.Compiler.ir.strategy_runtime import (
+    CompositionUpgradeReadiness,
+    CompositionUpgradeReadinessState,
     RuntimeObservationSnapshot,
-    StrategyPosture,
 )
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.strategy import lower_strategy_profile
@@ -29,12 +31,7 @@ class CompilerWireIntegrationTests(unittest.TestCase):
             item for item in self.profile.counter_packages
             if item.identity == "INFANTRY_PRESSURE_CASTLE"
         )
-        self.assertEqual(
-            package.upgrade_requirements,
-            (
-                package.upgrade_requirements[0],
-            ),
-        )
+        self.assertEqual(len(package.upgrade_requirements), 1)
         requirement = package.upgrade_requirements[0]
         self.assertEqual(requirement.identity, "logistica")
         self.assertEqual(requirement.observation_ref, "byz-logistica-complete")
