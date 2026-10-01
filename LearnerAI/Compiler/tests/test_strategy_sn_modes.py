@@ -52,23 +52,27 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
         plan = first.control_plan
         assert plan is not None
         self.assertEqual(
-            tuple(state.identifier for state in plan.states if state.identifier.startswith("sn-mode-")),
-            ("sn-mode-builders-dark", "sn-mode-builders-feudal"),
+            tuple(
+                state.identifier
+                for state in plan.states
+                if state.identifier.startswith("sn-native-")
+            ),
+            ("sn-native-4",),
         )
         rules = {
             rule.identity: rule
             for rule in plan.rules
-            if rule.identity.startswith("sn-mode-")
+            if rule.identity.startswith("sn-mode-builders-")
         }
         self.assertEqual(
             rules["sn-mode-builders-dark-000"].actions[0].source,
-            "(set-strategic-number sn-mode-builders-dark 3)",
+            "(set-strategic-number sn-native-4 3)",
         )
         self.assertIn("(current-age == dark-age)", rules["sn-mode-builders-dark-000"].facts[0].source)
         self.assertIn("(up-compare-sn sn-mode-builders-dark != 3)", rules["sn-mode-builders-dark-000"].facts[0].source)
         self.assertEqual(
             rules["sn-mode-builders-feudal-001"].actions[0].source,
-            "(set-strategic-number sn-mode-builders-feudal 5)",
+            "(set-strategic-number sn-native-4 5)",
         )
         self.assertIn("(current-age == feudal-age)", rules["sn-mode-builders-feudal-001"].facts[0].source)
 
@@ -160,6 +164,32 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "DE-documented"):
             lower_strategy_profile(profile, effective)
 
+    def test_imperial_maximum_age_is_open_ended_without_successor_lookup(self):
+        effective, profile = self._profile()
+        profile = replace(
+            profile,
+            strategic_number_modes=(
+                StrategicNumberMode(
+                    "castle-onward",
+                    native_strategic_number_id=4,
+                    value=8,
+                    minimum_age=Age.CASTLE,
+                    maximum_age=Age.IMPERIAL,
+                ),
+            ),
+        )
+
+        compilation = lower_strategy_profile(profile, effective)
+        plan = compilation.control_plan
+        assert plan is not None
+        rule = next(
+            item
+            for item in plan.rules
+            if item.identity.startswith("sn-mode-castle-onward-")
+        )
+        self.assertIn("(current-age >= castle-age)", rule.facts[0].source)
+        self.assertNotIn("(current-age < imperial-age)", rule.facts[0].source)
+
     def test_compiler_emits_native_mode_aliases_without_fake_initialization(self):
         effective, profile = self._profile()
         profile = replace(
@@ -179,10 +209,10 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
         second = compile_strategy_profile(profile, effective)
 
         self.assertEqual(first, second)
-        self.assertIn("(defconst sn-mode-builders-dark 4)", first)
-        self.assertIn("(set-strategic-number sn-mode-builders-dark 3)", first)
-        self.assertIn("(up-compare-sn sn-mode-builders-dark != 3)", first)
-        self.assertNotIn("(set-strategic-number sn-mode-builders-dark 0)", first)
+        self.assertIn("(defconst sn-native-4 4)", first)
+        self.assertIn("(set-strategic-number sn-native-4 3)", first)
+        self.assertIn("(up-compare-sn sn-native-4 != 3)", first)
+        self.assertNotIn("(set-strategic-number sn-native-4 0)", first)
 
 
 if __name__ == "__main__":
