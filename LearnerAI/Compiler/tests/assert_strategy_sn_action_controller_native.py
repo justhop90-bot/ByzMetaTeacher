@@ -172,6 +172,20 @@ def main() -> int:
     plan, control_plan = _control_plan()
     attack_plan = _attack_plan()
 
+    controller = plan.controller("attack-surge")
+    activation_guard = (
+        controller.activation_guard.source
+        if hasattr(controller.activation_guard, "source")
+        else controller.activation_guard
+    )
+    release_guard = (
+        controller.release_guard.source
+        if hasattr(controller.release_guard, "source")
+        else controller.release_guard
+    )
+    if activation_guard is None or release_guard is None:
+        raise SystemExit("ACTION controller lost activation or release guard")
+
     attachment = attack_plan.strategic_number_action_attachments[0]
     if attachment.controller_identity != "attack-surge":
         raise SystemExit("ACTION attachment lost its controller identity")
@@ -185,7 +199,11 @@ def main() -> int:
     owned_rule = attack_plan.rules[0]
     if owned_rule.actions[attachment.action_index].head != "attack-now":
         raise SystemExit("owned action identity does not match attack-now")
-    activation_guard = "(current-age >= feudal-age)"
+    if attachment.native_strategic_number_id != controller.native_strategic_number_id:
+        raise SystemExit("ACTION attachment native Strategic Number does not match its controller")
+    if attachment.value != controller.value:
+        raise SystemExit("ACTION attachment value does not match its controller")
+
     if activation_guard not in tuple(fact.source for fact in owned_rule.facts):
         raise SystemExit("attack-now ownership is missing the ACTION activation guard")
 
@@ -212,7 +230,7 @@ def main() -> int:
         "(not (or (current-age >= feudal-age) (goal sn-controller-attack-surge-active 1)))",
         "; Native control rule: sn-controller-attack-surge-release",
         "(goal sn-controller-attack-surge-active 1)",
-        "(current-age >= imperial-age)",
+        release_guard,
         "(set-goal sn-controller-attack-surge-active 0)",
     )
     missing = tuple(fragment for fragment in required_fragments if fragment not in first)
@@ -247,7 +265,7 @@ def main() -> int:
     )
     if "(goal sn-controller-attack-surge-active 1)" not in release_section:
         raise SystemExit("ACTION release rule lost its active-state guard")
-    if "(current-age >= imperial-age)" not in release_section:
+    if release_guard not in release_section:
         raise SystemExit("ACTION release rule lost its release witness")
     if "(set-goal sn-controller-attack-surge-active 0)" not in release_section:
         raise SystemExit("ACTION release rule does not clear the controller state")
@@ -274,7 +292,7 @@ def main() -> int:
             "native_id": 227,
             "value": 100,
             "activation_guard": activation_guard,
-            "release_guard": "(current-age >= imperial-age)",
+            "release_guard": release_guard,
             "action_identity": "attack-now",
         },
         "attachment": {
