@@ -240,17 +240,13 @@ class StrategicNumberActionAttachment:
 
 @dataclass(frozen=True)
 class StrategicNumberArbitrationLowering:
+    arbitration_plan: "StrategicNumberArbitrationPlan"
     control_plan: "NativeControlPlan | None"
     action_attachments: tuple[StrategicNumberActionAttachment, ...] = ()
 
     @property
     def controllers(self) -> tuple[StrategicNumberController, ...]:
-        if self.control_plan is None:
-            return ()
-        return tuple(
-            controller
-            for controller in ()
-        )
+        return self.arbitration_plan.controllers
 
 @dataclass(frozen=True)
 class StrategicNumberArbitrationPlan:
