@@ -362,7 +362,7 @@ def lower_strategic_number_arbitration(
         }:
             rule_identity = (
                 f"sn-mode-{controller.identity}-"
-                f"{sum(1 for item in rules if item.identity.startswith(f'sn-mode-{controller.identity}-')):03d}"
+                f"{sum(1 for item in rules if item.identity.startswith('sn-mode-')):03d}"
                 if controller.origin is StrategicNumberControllerOrigin.STRATEGY_MODE
                 else f"sn-controller-{controller.identity}-write"
             )
