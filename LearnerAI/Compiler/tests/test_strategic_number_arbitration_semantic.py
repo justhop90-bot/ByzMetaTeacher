@@ -135,6 +135,61 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             base_rule.facts[0].source,
         )
 
+
+    def test_higher_priority_same_layer_suppresses_lower_priority(self):
+        high = StrategicNumberController(
+            identity="high-priority",
+            native_strategic_number_id=227,
+            value=50,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            priority=20,
+            activation_guard="(goal emergency-high 1)",
+            release_guard="(goal emergency-high 0)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        low = StrategicNumberController(
+            identity="low-priority",
+            native_strategic_number_id=227,
+            value=25,
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            priority=10,
+            activation_guard="(goal emergency-low 1)",
+            release_guard="(goal emergency-low 0)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        base = StrategicNumberController(
+            identity="base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(base, high, low),
+        )
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        low_rule = next(
+            item
+            for item in lowered.control_plan.rules
+            if item.identity == "sn-controller-low-priority-steady"
+        )
+        self.assertIn(
+            "(not (or (goal emergency-high 1) "
+            "(goal sn-controller-high-priority-active 1)))",
+            low_rule.facts[0].source,
+        )
+
     def test_release_rule_does_not_capture_or_restore_historical_value(self):
         base = StrategicNumberController(
             identity="strategy-base",
