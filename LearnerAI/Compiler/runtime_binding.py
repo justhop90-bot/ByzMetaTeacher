@@ -695,6 +695,8 @@ class BindingManifest:
                     stability_key=contract.stability_key,
                     role=contract.role,
                     native_contract_id=contract.native_contract_id,
+                    origin=contract.origin,
+                    native_strategic_number_id=contract.native_strategic_number_id,
                 )
                 if contract.request_fingerprint != strategic_number_request_fingerprint(expected_request):
                     raise ValueError(
