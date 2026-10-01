@@ -73,6 +73,7 @@ class StrategicNumberController:
     origin: StrategicNumberControllerOrigin = StrategicNumberControllerOrigin.EXPLICIT
     activation_guard: Expression | None = None
     release_guard: Expression | None = None
+    rearm_guard: Expression | None = None
     scope: StrategicNumberControllerScope = (
         StrategicNumberControllerScope.PERSISTENT
     )
