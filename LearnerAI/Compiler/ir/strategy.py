@@ -895,7 +895,6 @@ def lower_strategy_profile(
                 target=spec.target,
                 capability_intent=spec.capability_intent,
                 opportunity_cost=spec.opportunity_cost,
-                production_arbitration_group=spec.production_arbitration_group,
             )
             bindings[spec.identity] = base_binding
 
