@@ -182,6 +182,12 @@ jobs:
             --output /tmp/strategy-goal-state.per \
             --report /tmp/native-reports/strategy-goal-state.json
 
+      - name: Native zero-findings acceptance - strategy production vertical
+        run: |
+          python LearnerAI/Compiler/tests/assert_strategy_production_vertical_native.py \
+            --output /tmp/strategy-production.per \
+            --report /tmp/native-reports/strategy-production.json
+
       - name: Native zero-findings acceptance - attack lifecycle fixture
         run: |
           python LearnerAI/Compiler/tests/assert_attack_native.py             --output /tmp/attack-lifecycle.per             --report /tmp/native-reports/attack-lifecycle.json
