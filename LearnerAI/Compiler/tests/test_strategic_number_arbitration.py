@@ -113,23 +113,29 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
 
     def test_transient_requires_explicit_rearm_guard(self):
         with self.assertRaisesRegex(ValueError, "rearm_guard"):
-            self._controller(
-                "temporary-no-rearm",
+            StrategicNumberController(
+                identity="temporary-no-rearm",
+                native_strategic_number_id=227,
+                value=25,
                 layer=StrategicNumberControllerLayer.TEMPORARY,
-                activation="(goal emergency 1)",
-                release="(goal emergency-clear 1)",
+                activation_guard="(goal emergency 1)",
+                release_guard="(goal emergency-clear 1)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
             )
 
         with self.assertRaisesRegex(ValueError, "rearm_guard"):
-            self._controller(
-                "recovery-no-rearm",
+            StrategicNumberController(
+                identity="recovery-no-rearm",
+                native_strategic_number_id=227,
+                value=25,
                 layer=StrategicNumberControllerLayer.RECOVERY,
-                activation="(goal recovery 1)",
-                release="(goal recovery-clear 1)",
+                activation_guard="(goal recovery 1)",
+                release_guard="(goal recovery-clear 1)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
             )
 
     def test_action_requires_exact_action_identity_and_action_scope(self):
