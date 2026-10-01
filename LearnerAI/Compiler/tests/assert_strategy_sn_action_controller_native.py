@@ -237,6 +237,9 @@ def main() -> int:
     if missing:
         raise SystemExit(f"ACTION-controller artifact is missing fragments: {missing}")
 
+    if first.count("(defconst sn-native-227 227)") != 1:
+        raise SystemExit("native Strategic Number alias must be emitted exactly once")
+
     if first.count("(set-strategic-number sn-native-227 100)") != 1:
         raise SystemExit("ACTION Strategic Number write must appear exactly once")
     if first.count("(attack-now)") != 1:
