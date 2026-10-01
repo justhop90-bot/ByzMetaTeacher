@@ -1966,7 +1966,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         ),
         StrategicDemandSpec(
             identity="counter-ranged-skirmishers",
-            owner="counter-arbitration",
+            owner="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2005,7 +2005,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         ),
         StrategicDemandSpec(
             identity="counter-castle-camels",
-            owner="counter-arbitration",
+            owner="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2044,7 +2044,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         ),
         StrategicDemandSpec(
             identity="counter-castle-cataphracts",
-            owner="counter-arbitration",
+            owner="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2083,7 +2083,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         ),
         StrategicDemandSpec(
             identity="counter-castle-siege-response",
-            owner="counter-arbitration",
+            owner="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
