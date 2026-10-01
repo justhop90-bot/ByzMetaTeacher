@@ -456,27 +456,6 @@ def lower_strategic_number_arbitration(
             )
         )
 
-        steady_guard = _fold(
-            "and",
-            (
-                f"(goal {controller.activation_state_name} 1)",
-                *higher_suppression,
-                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
-            ),
-        )
-        rules.append(
-            NativeControlRule(
-                f"sn-controller-{controller.identity}-steady",
-                facts=(parse_expression(steady_guard, SourceLocation(1)),),
-                actions=(
-                    parse_expression(
-                        f"(set-strategic-number {controller.native_state_name} {controller.value})",
-                        SourceLocation(1),
-                    ),
-                ),
-            )
-        )
-
         release_guard = _as_expression(
             _guard_text(controller.release_guard) or "(false)"
         )
@@ -494,6 +473,27 @@ def lower_strategic_number_arbitration(
                 actions=(
                     parse_expression(
                         f"(set-goal {controller.activation_state_name} 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+        steady_guard = _fold(
+            "and",
+            (
+                f"(goal {controller.activation_state_name} 1)",
+                *higher_suppression,
+                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+            ),
+        )
+        rules.append(
+            NativeControlRule(
+                f"sn-controller-{controller.identity}-steady",
+                facts=(parse_expression(steady_guard, SourceLocation(1)),),
+                actions=(
+                    parse_expression(
+                        f"(set-strategic-number {controller.native_state_name} {controller.value})",
                         SourceLocation(1),
                     ),
                 ),
