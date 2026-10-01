@@ -23,7 +23,11 @@ User-facing policy diagnostics remain `POL-*`. Compiler-internal causal-graph in
 - [x] Root selection is deterministic and follows explicit relation/phase/priority ordering.
 - [x] Focused regression coverage for all implemented graph invariants.
 - [x] Public semantic-package exports added.
-- [ ] Wire PolicyRecipe resolution into the graph after a concrete PolicyRecipe IR exists. No such implementation existed on main at tranche start.
+- [x] Add concrete PolicyRecipe IR with typed terms, defaults, constraints, required bindings, author overrides, and evidence status.
+- [x] Wire PolicyRecipe resolution into PolicyCauseGraph with deterministic suppression and executable gating.
+- [x] Integrate the recipe catalog with StrategyProfile and ResolvedStrategyProfile.
+- [x] Cover the five initial Byzantine community-policy recipes with focused tests and deterministic resolution.
+- [x] Codify the layered Byzantine strategy doctrine in docs/strategy/2026-10-01-byzantine-strategy-doctrine.md.
 - [ ] Add end-to-end compiler report serialization once policy diagnostics themselves consume the graph.
 
 ## Cross-reference: existing compiler contracts
@@ -98,3 +102,19 @@ A suppression is valid only when:
 `PCG-*` means the compiler constructed an invalid causal explanation graph.
 
 A `PCG-*` failure is an internal compiler invariant failure and must not be downgraded to a user-policy warning.
+
+
+## PolicyRecipe integration contract
+
+The concrete resolver is LearnerAI/Compiler/semantic/policy_recipe.py.
+
+PolicyRecipe is a typed policy catalog, not a second .per language. StrategyProfile owns recipe definitions; resolve_policy_recipe() creates a PolicyResolution with effective terms, user-policy diagnostics, suppression records, and a validated PolicyCauseGraph. ResolvedStrategyProfile carries the deterministic catalog resolutions.
+
+Recipe diagnostics follow the existing POL-* contract. Binding diagnostics include the binding identity in their diagnostic key so multiple missing bindings remain distinct. Causal graph failures remain PCG-* internal compiler failures.
+
+The initial Byzantine catalog is:
+RANGED_HOLD, MOBILE_LOCAL_DEFENSE, STRICT_RAID, PROTECT_SIEGE, DEER_PUSH.
+
+## Strategy doctrine cross-reference
+
+The policy recipe layer is subordinate to the full strategic model in docs/strategy/2026-10-01-byzantine-strategy-doctrine.md. The doctrine remains layered: environment -> observation -> arbitration -> counter package -> execution -> witness/recovery. Recipes express local control intent inside that larger strategy; they do not replace posture arbitration, persistent demands, military composition, production, or recovery.

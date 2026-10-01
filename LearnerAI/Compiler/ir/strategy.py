@@ -15,6 +15,11 @@ from .strategic_number import StrategicNumberOrigin
 if TYPE_CHECKING:
     from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
+    from ..semantic.policy_recipe import (
+        PolicyOverride,
+        PolicyRecipe,
+        PolicyResolution,
+    )
 
 
 class StrategyPosture(str, Enum):
@@ -368,12 +373,34 @@ class StrategyProfile:
     observations: tuple[StrategicObservationSpec, ...] = ()
     military_compositions: tuple[StrategicMilitaryComposition, ...] = ()
     strategic_number_modes: tuple[StrategicNumberMode, ...] = ()
+    policy_recipes: tuple["PolicyRecipe", ...] = ()
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
             if item.identity == identity:
                 return item
         raise KeyError(f"unknown strategic demand '{identity}'")
+
+    def policy_recipe(self, identity: str) -> "PolicyRecipe":
+        for item in self.policy_recipes:
+            if item.identity == identity:
+                return item
+        raise KeyError(f"unknown policy recipe '{identity}'")
+
+    def resolve_policy_recipe(
+        self,
+        identity: str,
+        *,
+        bindings: dict[str, str] | None = None,
+        overrides: tuple["PolicyOverride", ...] = (),
+    ) -> "PolicyResolution":
+        from ..semantic.policy_recipe import resolve_policy_recipe
+
+        return resolve_policy_recipe(
+            self.policy_recipe(identity),
+            bindings=bindings,
+            overrides=overrides,
+        )
 
     def observation(self, identity: str) -> StrategicObservationSpec:
         for item in self.observations:
@@ -409,6 +436,7 @@ class StrategyProfile:
 class ResolvedStrategyProfile:
     profile_id: str
     demand_ids: tuple[str, ...]
+    policy_resolutions: tuple["PolicyResolution", ...] = ()
 
 
 @dataclass(frozen=True)
@@ -762,9 +790,16 @@ def resolve_strategy_profile(
                 f"posture transition '{transition.label}' is timer-only and cannot be strategic"
             )
 
+    from ..semantic.policy_recipe import resolve_policy_recipes
+
+    # Policy recipes carried by StrategyProfile form the reusable policy catalog.
+    # Required bindings are resolved only when a concrete control instance supplies them.
+    policy_resolutions = resolve_policy_recipes(profile.policy_recipes)
+
     return ResolvedStrategyProfile(
         profile_id=profile.profile_id,
         demand_ids=tuple(sorted(seen)),
+        policy_resolutions=policy_resolutions,
     )
 
 
@@ -1922,6 +1957,8 @@ def build_byzantine_castle_strategy(
         )
         for transition in profile.transitions
     )
+    from ..semantic.policy_recipe import default_byzantine_policy_recipes
+
     return replace(
         profile,
         demands=demands,
@@ -1929,6 +1966,7 @@ def build_byzantine_castle_strategy(
         provenance=(*profile.provenance, *meta_provenance),
         capability_observations=_byzantine_capability_observations(effective),
         strategic_number_modes=_byzantine_strategic_number_modes(),
+        policy_recipes=default_byzantine_policy_recipes(),
     )
 
 def _validate_capability_intent(
