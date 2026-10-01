@@ -175,8 +175,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
         self.assertNotIn(
             "(set-strategic-number sn-native-227 75)",
-            "
-".join(item.source for item in release_rule.actions),
+            "\n".join(item.source for item in release_rule.actions),
         )
 
     def test_action_controller_produces_exact_attachment_and_release(self):
