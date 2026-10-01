@@ -69,7 +69,7 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
             "(set-strategic-number sn-native-4 3)",
         )
         self.assertIn("(current-age == dark-age)", rules["sn-mode-builders-dark-000"].facts[0].source)
-        self.assertIn("(up-compare-sn sn-mode-builders-dark != 3)", rules["sn-mode-builders-dark-000"].facts[0].source)
+        self.assertIn("(up-compare-sn sn-native-4 != 3)", rules["sn-mode-builders-dark-000"].facts[0].source)
         self.assertEqual(
             rules["sn-mode-builders-feudal-001"].actions[0].source,
             "(set-strategic-number sn-native-4 5)",
@@ -116,13 +116,13 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
 
         self.assertIn("(goal strategy-posture 1)", flush.facts[0].source)
         self.assertIn("(current-age >= feudal-age)", flush.facts[0].source)
-        self.assertIn("(up-compare-sn sn-mode-attack-allocation-flush != 50)", flush.facts[0].source)
+        self.assertIn("(up-compare-sn sn-native-227 != 50)", flush.facts[0].source)
         self.assertEqual(
             flush.actions[0].source,
-            "(set-strategic-number sn-mode-attack-allocation-flush 50)",
+            "(set-strategic-number sn-native-227 50)",
         )
         self.assertIn("(goal strategy-posture 3)", boom.facts[0].source)
-        self.assertIn("(up-compare-sn sn-mode-attack-allocation-boom != 75)", boom.facts[0].source)
+        self.assertIn("(up-compare-sn sn-native-227 != 75)", boom.facts[0].source)
 
     def test_overlap_for_same_native_sn_is_rejected(self):
         effective, profile = self._profile()
