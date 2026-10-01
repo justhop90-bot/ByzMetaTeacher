@@ -12,6 +12,7 @@ from ..ir.strategic_number_arbitration import (
     StrategicNumberArbitrationPlan,
     StrategicNumberController,
     StrategicNumberControllerLayer,
+    StrategicNumberControllerOrigin,
     StrategicNumberControllerScope,
     StrategicNumberReleaseEvidence,
 )
@@ -100,6 +101,7 @@ def strategic_number_mode_to_controller(
         priority=mode.priority,
         activation_guard=_fold("and", tuple(item for item in guards if "up-compare-sn" not in item)),
         owner=profile_id,
+        origin=StrategicNumberControllerOrigin.STRATEGY_MODE,
     )
 
 
