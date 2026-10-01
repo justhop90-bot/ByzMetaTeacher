@@ -933,6 +933,9 @@ def _truth_or(values: tuple[EvidenceTruth, ...]) -> EvidenceTruth:
 
 
 def _evaluate_expression(expression: Expression, snapshot: RuntimeObservationSnapshot) -> EvidenceTruth:
+    direct = snapshot.result_for(expression)
+    if direct is not EvidenceTruth.UNKNOWN:
+        return direct
     if expression.head in {"and", "or", "nand", "nor", "xor", "xnor", "not"}:
         children = tuple(
             _evaluate_expression(child, snapshot)
