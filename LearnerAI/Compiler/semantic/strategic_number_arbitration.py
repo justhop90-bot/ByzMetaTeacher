@@ -148,18 +148,11 @@ def _controller_claim_guard(
     }:
         return _controller_activation(controller)
 
-    activation = _guard_text(controller.activation_guard)
-    if activation is None:
+    if controller.activation_guard is None:
         raise ValueError(
             f"Strategic Number override '{controller.identity}' requires activation_guard"
         )
-    return _fold(
-        "or",
-        (
-            activation,
-            f"(goal {controller.activation_state_name} 1)",
-        ),
-    )
+    return f"(goal {controller.activation_state_name} 1)"
 
 
 def _higher_controller_suppression(
