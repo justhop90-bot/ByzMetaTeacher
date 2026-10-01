@@ -1013,6 +1013,15 @@ def _next_age(age: Age) -> Age:
     raise ValueError("Imperial Age has no successor")
 
 
+def _combine_binary_native_guards(head: str, parts: tuple[str, ...]) -> str:
+    if not parts:
+        raise ValueError(f"cannot combine empty native guard sequence with '{head}'")
+    combined = parts[0]
+    for part in parts[1:]:
+        combined = f"({head} {combined} {part})"
+    return combined
+
+
 def _strategy_number_mode_control_plan(profile: StrategyProfile):
     """Lower explicit age/posture Strategic Number modes into native controls."""
     if not profile.strategic_number_modes:
@@ -1101,9 +1110,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
                 for posture in mode.postures
             )
             guards.append(
-                posture_guards[0]
-                if len(posture_guards) == 1
-                else "(or " + " ".join(posture_guards) + ")"
+                _combine_binary_native_guards("or", posture_guards)
             )
 
         if mode.reassertion_policy is StrategicNumberReassertionPolicy.ON_DRIFT:
@@ -1111,7 +1118,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
                 f"(up-compare-sn {state_name} != {mode.value})"
             )
 
-        guard_source = guards[0] if len(guards) == 1 else "(and " + " ".join(guards) + ")"
+        guard_source = _combine_binary_native_guards("and", tuple(guards))
         rules.append(
             NativeControlRule(
                 f"sn-mode-{mode.identity}-{rule_index:03d}",
