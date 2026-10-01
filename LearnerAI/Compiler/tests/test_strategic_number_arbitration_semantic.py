@@ -179,8 +179,12 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             "(not (goal sn-controller-recovery-override-active 1))",
             base_rule.facts[0].source,
         )
+        stale_recovery_claim = (
+            "(not (or (current-age >= feudal-age) "
+            "(goal sn-controller-recovery-override-active 1)))"
+        )
         self.assertNotIn(
-            "(current-age >= feudal-age)",
+            stale_recovery_claim,
             base_rule.facts[0].source,
         )
 
@@ -233,6 +237,10 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             if item.identity == "sn-controller-low-priority-steady"
         )
         self.assertIn(
+            "(not (goal sn-controller-high-priority-active 1))",
+            low_rule.facts[0].source,
+        )
+        self.assertNotIn(
             "(not (or (goal emergency-high 1) "
             "(goal sn-controller-high-priority-active 1)))",
             low_rule.facts[0].source,
