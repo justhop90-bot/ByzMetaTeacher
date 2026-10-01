@@ -138,7 +138,12 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             native_strategic_number_id=117,
         )
 
-        result = RuntimeBinder().bind((request,))
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(
+                strategic_number_inventory=default_strategic_number_inventory(),
+            ),
+        )
         manifest = result.to_manifest()
         loaded = BindingManifest.from_json(manifest.to_json())
         binding = loaded.binding_for(request.request_id)
@@ -159,7 +164,12 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(ValueError, "DE-documented|documented"):
-            RuntimeBinder().bind((request,))
+            RuntimeBinder().bind(
+                (request,),
+                BindingContext(
+                    strategic_number_inventory=default_strategic_number_inventory(),
+                ),
+            )
 
     def test_native_strategic_number_reference_emits_deterministic_guarded_rule(self):
         owner = SemanticId("control.fixture", "native-sn-emission")
