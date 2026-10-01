@@ -10,6 +10,7 @@ from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
 from ..semantic.community_engine import CapabilityTransition, classify_capability_transition
 from .civ_profile import EffectiveCivData
+from .counter_strategy import CounterPackage, CounterThreatClass
 from .game_data import canonical_fingerprint
 from .strategy import (
     CapabilityIntentKind,
@@ -80,6 +81,7 @@ class OpportunityCostRuntimeState(str, Enum):
 class ReassessmentReason(str, Enum):
     POSTURE_CHANGE = "POSTURE_CHANGE"
     DEMAND_ACTIVATION = "DEMAND_ACTIVATION"
+    COUNTER_PACKAGE_CHANGE = "COUNTER_PACKAGE_CHANGE"
     DEMAND_INVALIDATION = "DEMAND_INVALIDATION"
     CAPABILITY_COMPLETION = "CAPABILITY_COMPLETION"
     CAPABILITY_LOSS = "CAPABILITY_LOSS"
@@ -143,11 +145,22 @@ class RuntimeObservationSnapshot:
 
 
 @dataclass(frozen=True)
+class CounterPackageRuntimeState:
+    identity: str
+    threat_class: CounterThreatClass
+    truth: EvidenceTruth
+    priority: int
+    demand_identities: tuple[str, ...]
+    policy_recipe_identity: str | None = None
+
+
+@dataclass(frozen=True)
 class StrategyRuntimeState:
     current_posture: StrategyPosture | None
     previous_posture: StrategyPosture | None
     demand_states: tuple[tuple[str, StrategicDemandRuntimeState], ...]
-    opportunity_cost_states: tuple[tuple[str, OpportunityCostRuntimeState], ...]
+    counter_package_states: tuple[CounterPackageRuntimeState, ...] = ()
+    opportunity_cost_states: tuple[tuple[str, OpportunityCostRuntimeState], ...] = ()
     evaluated_evidence: tuple[tuple[str, EvidenceTruth], ...]
     active_strategic_demands: tuple[str, ...]
     strategically_blocked_demands: tuple[str, ...]
@@ -172,6 +185,20 @@ class StrategyRuntimeState:
         for key, state in self.demand_states:
             if key == identity:
                 return state
+        raise KeyError(identity)
+
+    @property
+    def active_counter_packages(self) -> tuple[str, ...]:
+        return tuple(
+            item.identity
+            for item in self.counter_package_states
+            if item.truth is EvidenceTruth.TRUE
+        )
+
+    def counter_package_state(self, identity: str) -> CounterPackageRuntimeState:
+        for item in self.counter_package_states:
+            if item.identity == identity:
+                return item
         raise KeyError(identity)
 
     def strategic_owner(self, identity: str) -> str:
