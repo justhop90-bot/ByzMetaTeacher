@@ -1123,6 +1123,7 @@ def _strategy_number_mode_control_plan(profile: StrategyProfile):
     from ..ast import SourceLocation
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
