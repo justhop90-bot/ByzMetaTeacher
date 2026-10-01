@@ -47,6 +47,7 @@ if __package__ in (None, ""):
     from Compiler.semantic.capability_bridge import project_capability_graph
     from Compiler.semantic.capability_validation import validate_capability_graph
     from Compiler.semantic.resource_conflicts import validate_resource_conflicts
+    from Compiler.semantic.production_arbitration import derive_production_arbitration
     from Compiler.semantic.persistent_state import analyze_persistent_state
     from Compiler.semantic.persistent_control import analyze_persistent_control_lifetimes
     from Compiler.semantic.strategic_number_semantics import (
@@ -107,6 +108,7 @@ else:
     from .semantic.capability_bridge import project_capability_graph
     from .semantic.capability_validation import validate_capability_graph
     from .semantic.resource_conflicts import validate_resource_conflicts
+    from .semantic.production_arbitration import derive_production_arbitration
     from .semantic.persistent_state import analyze_persistent_state
     from .semantic.persistent_control import analyze_persistent_control_lifetimes
     from .semantic.strategic_number_semantics import (
@@ -267,6 +269,13 @@ def _compile_ir_parts(
 
     issuance_report = validate_action_issuance(ir, registry)
     reports.append(issuance_report)
+
+    # Phase 1 (ROADMAP): project ordinary production/train demands into the
+    # existing ResourceClaim/arbitration system. Compiler-policy only: the
+    # derivation reuses SemanticAction.arbitration_request, so the capability
+    # bridge, resource validation, storage binding, and emission below work
+    # unchanged and no native train conflict class is invented.
+    ir = derive_production_arbitration(ir)
 
     try:
         operational_plan = merge_operational_plan(
