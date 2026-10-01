@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from Compiler.compiler import compile_source
 from Compiler.ir import NativeControlPlan, NativeControlRule, NativeControlState
-from Compiler.ir.strategy import StrategicNumberOrigin
+from Compiler.ir.strategic_number import StrategicNumberOrigin
 from Compiler.ir.model import SemanticId, StorageRequestId
 from Compiler.runtime_binding import StrategicNumberRequest
 from Compiler.semantic.analyzer import parse_expression
