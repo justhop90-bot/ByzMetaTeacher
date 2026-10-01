@@ -117,7 +117,12 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             native_strategic_number_id=117,
         )
 
-        result = RuntimeBinder().bind((request,))
+        result = RuntimeBinder().bind(
+            (request,),
+            BindingContext(
+                strategic_number_inventory=default_strategic_number_inventory(),
+            ),
+        )
         binding = result.binding_for(request.request_id)
 
         self.assertEqual(binding.id, 117)
