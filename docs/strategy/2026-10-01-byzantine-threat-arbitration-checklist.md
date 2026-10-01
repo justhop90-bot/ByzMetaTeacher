@@ -22,6 +22,7 @@ Scope: 1v1 standard-land Byzantine controller.
 - [x] Capability, feasibility, escrow, witness, release, and recovery remain downstream.
 - [x] Counter arbitration participates in runtime fingerprints.
 - [x] Counter-package changes remain explicit reassessment signals.
+- [x] Nested strategic logical expressions preserve child sources so runtime fact evaluation can consume compound threat predicates.
 
 ## Acceptance coverage
 
