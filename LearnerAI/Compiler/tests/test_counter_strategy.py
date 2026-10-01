@@ -108,7 +108,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             fact_results=(
                 ("(current-age >= castle-age)", True),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", True),
-                ("(can-train-with-escrow cataphract-line)", True),
+                ("(can-train-with-escrow cataphract)", True),
                 ("(unit-type-count-total cataphract-line < 2)", True),
             ),
         )
@@ -126,8 +126,8 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 ("(current-age >= castle-age)", True),
                 ("(players-unit-type-count any-enemy knight-line >= 3)", True),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", True),
-                ("(can-train-with-escrow camel-line)", True),
-                ("(unit-type-count-total camel-line < 3)", True),
+                ("(can-train-with-escrow camel-rider)", True),
+                ("(unit-type-count-total camel-rider-line < 3)", True),
                 ("(can-train-with-escrow cataphract-line)", True),
                 ("(unit-type-count-total cataphract-line < 2)", True),
             ),
