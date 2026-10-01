@@ -5,7 +5,8 @@ syntax and it does not claim native completion or release semantics.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import Mapping
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
@@ -142,6 +143,37 @@ class NativeAttackLifecyclePlan:
             self,
             "strategic_number_action_attachments",
             ordered_attachments,
+        )
+
+    def bind_strategic_number_action_attachments(
+        self,
+        attachments: tuple[StrategicNumberActionAttachment, ...],
+        *,
+        owned_actions: Mapping[str, tuple[str, int]],
+    ) -> "NativeAttackLifecyclePlan":
+        """Bind controller attachments to exact native attack rule/action positions."""
+        bound = []
+        for attachment in attachments:
+            try:
+                rule_identity, action_index = owned_actions[
+                    attachment.controller_identity
+                ]
+            except KeyError as exc:
+                raise ValueError(
+                    f"native attack Strategic Number attachment "
+                    f"'{attachment.identity}' has no owned action binding for "
+                    f"controller '{attachment.controller_identity}'"
+                ) from exc
+            bound.append(
+                replace(
+                    attachment,
+                    owned_rule_identity=rule_identity,
+                    action_index=action_index,
+                )
+            )
+        return NativeAttackLifecyclePlan(
+            rules=self.rules,
+            strategic_number_action_attachments=tuple(bound),
         )
 
     @property
