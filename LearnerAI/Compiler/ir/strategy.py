@@ -2003,7 +2003,7 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
         order=100,
         facts=(
             parse_expression("(current-age >= castle-age)", SourceLocation(1)),
-            parse_expression("(goal strategy-posture 4)", SourceLocation(1)),
+            parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
             parse_expression(
                 "(or (unit-type-count cataphract >= 2) (unit-type-count knight >= 3))",
                 SourceLocation(1),
