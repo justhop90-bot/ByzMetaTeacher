@@ -11,6 +11,7 @@ Scope: 1v1 standard-land Byzantine controller.
 - [x] Siege pressure has a typed Castle trigger and mobile response.
 - [x] Mixed threats preserve orthogonal counter roles instead of collapsing to one package.
 - [x] Same-class overlapping packages resolve deterministically by package priority.
+- [x] Raid, forward-pressure, boom, and tech-timing signals remain posture/strategy axes rather than being misclassified as military composition classes.
 - [x] Suppressed same-class packages are recorded explicitly in runtime state.
 
 ## Compiler contract
