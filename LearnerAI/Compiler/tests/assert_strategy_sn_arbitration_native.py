@@ -12,7 +12,6 @@ import sys
 ROOT = Path(__file__).parents[2]
 sys.path.insert(0, str(ROOT))
 
-from Compiler.ast import SourceLocation
 from Compiler.compiler import compile_source
 from Compiler.ir import (
     StrategicNumberController,
@@ -125,12 +124,7 @@ def main() -> int:
         if fragment not in first:
             raise SystemExit(f"missing arbitration artifact fragment: {fragment}")
 
-    base_rule = next(
-        line
-        for line in first.splitlines()
-        if "(set-strategic-number sn-native-227 75)" in line
-    )
-    if "(not (goal emergency-defense-active 1))" not in first:
+    if "(not (goal sn-controller-emergency-defense-active 1))" not in first:
         raise SystemExit("underlay write is not suppressed while temporary override is active")
 
     if "(set-strategic-number sn-native-227 0)" in first:
