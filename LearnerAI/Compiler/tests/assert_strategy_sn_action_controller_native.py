@@ -228,7 +228,6 @@ def main() -> int:
         "(set-strategic-number sn-native-227 75)",
         "(set-goal sn-controller-attack-surge-active 1)",
         "(set-strategic-number sn-native-227 100)",
-        "(not (or (current-age >= feudal-age) (goal sn-controller-attack-surge-active 1)))",
         "; Native control rule: sn-controller-attack-surge-release",
         "(goal sn-controller-attack-surge-active 1)",
         release_guard,
@@ -289,6 +288,15 @@ def main() -> int:
     if expected_restore_guard not in underlay_section:
         raise SystemExit(
             "ACTION release does not permit the strategy underlay to reassert"
+        )
+    stale_suppression = (
+        "(not (or (current-age >= feudal-age) "
+        "(goal sn-controller-attack-surge-active 1)))"
+    )
+    if stale_suppression in underlay_section:
+        raise SystemExit(
+            "ACTION activation eligibility still suppresses the strategy underlay "
+            "after release"
         )
     if "(set-strategic-number sn-native-227 75)" not in underlay_section:
         raise SystemExit("ACTION release path lost the strategy underlay write")
