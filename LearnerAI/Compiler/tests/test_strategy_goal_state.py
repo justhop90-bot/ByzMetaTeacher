@@ -75,6 +75,44 @@ class StrategyGoalStateTests(unittest.TestCase):
         )
         self.assertEqual(first.control_plan, second.control_plan)
 
+    def test_posture_transitions_lower_to_persistent_goal_fsm(self):
+        effective, profile = _profile()
+
+        compilation = lower_strategy_profile(profile, effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control_plan = compilation.control_plan
+        assert control_plan is not None
+        self.assertEqual(
+            control_plan.state("strategy-posture").identifier,
+            "strategy-posture",
+        )
+        self.assertEqual(
+            len(control_plan.rules),
+            len(profile.transitions) + 1,
+        )
+        self.assertEqual(
+            tuple(rule.identity for rule in control_plan.rules),
+            (
+                "strategy-posture-initialize-000",
+                "strategy-posture-transition-001",
+                "strategy-posture-transition-002",
+                "strategy-posture-transition-003",
+                "strategy-posture-transition-004",
+                "strategy-posture-transition-005",
+            ),
+        )
+        self.assertEqual(
+            tuple(action.source for action in control_plan.rules[0].actions),
+            ("(set-goal strategy-posture 0)", "(disable-self)"),
+        )
+        self.assertIn("(current-age == dark-age)", control_plan.rules[1].facts[0].source)
+        self.assertIn("(goal strategy-posture 3)", control_plan.rules[3].facts[0].source)
+        self.assertEqual(
+            control_plan.rules[3].actions[0].source,
+            "(set-goal strategy-posture 1)",
+        )
+
     def test_no_assertions_means_no_control_plan(self):
         effective, profile = _profile()
         compilation = lower_strategy_profile(profile, effective)
