@@ -89,7 +89,7 @@ def main() -> int:
         native_strategic_number_id=227,
         value=100,
         layer=StrategicNumberControllerLayer.RECOVERY,
-        activation_guard="(goal recovery-needed 1)",
+        activation_guard="(current-age >= castle-age)",
         release_guard="(goal recovery-clear 1)",
         scope=StrategicNumberControllerScope.UNTIL_RELEASE,
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
@@ -236,7 +236,7 @@ def main() -> int:
     next_marker = recovery_rearm.find("\n; Native ")
     if next_marker >= 0:
         recovery_rearm = recovery_rearm[:next_marker]
-    if "(not (goal recovery-needed 1))" not in recovery_rearm:
+    if "(not (current-age >= castle-age))" not in recovery_rearm:
         raise SystemExit(
             "recovery rearm must wait for the activation guard to become false"
         )
