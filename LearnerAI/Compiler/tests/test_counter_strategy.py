@@ -2,6 +2,7 @@ import unittest
 
 from Compiler.clients.basilisk import ByzantineProfile, build_byzantine_castle_strategy
 from Compiler.ir.civ_profile import resolve_effective_civ
+from Compiler.ir.strategy import StrategyPosture
 from Compiler.ir.strategy_runtime import (
     EvidenceTruth,
     RuntimeObservationSnapshot,
@@ -46,6 +47,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_ranged_threat_activates_persistent_skirmisher_demand(self):
         snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
             fact_results=(
                 ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
