@@ -1236,7 +1236,7 @@ def _counter_package_control_plan(profile: StrategyProfile):
         return None
 
     from ..semantic.analyzer import parse_expression
-    from .model import GoalRole, SemanticId, StorageRequestId
+    from .model import GoalRole, GoalSlotRequest, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     ordered = tuple(sorted(profile.counter_packages, key=lambda item: (-item.priority, item.identity)))
