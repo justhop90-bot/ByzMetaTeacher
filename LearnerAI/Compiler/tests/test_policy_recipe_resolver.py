@@ -1,19 +1,17 @@
 import unittest
 
-from Compiler.diagnostics import DiagnosticSeverity
 from Compiler.ir.civ_profile import resolve_effective_civ
 from Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_castle_strategy,
 )
-from Compiler.semantic.policy_cause_graph import PolicyCauseRelation, PolicyDiagnosticRef
+from Compiler.semantic.policy_cause_graph import PolicyCauseRelation
 from Compiler.semantic.policy_recipe import (
     PolicyField,
     PolicyOverride,
     PolicyRecipe,
     PolicyStrength,
     PolicyTerm,
-    default_byzantine_policy_recipes,
     resolve_policy_recipe,
 )
 
@@ -36,10 +34,9 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
         )
 
     def test_profile_resolution_validates_policy_recipe_catalog(self):
-        resolved = __import__(
-            "Compiler.clients.basilisk",
-            fromlist=["resolve_strategy_profile"],
-        ).resolve_strategy_profile(
+        from Compiler.clients.basilisk import resolve_strategy_profile
+
+        resolved = resolve_strategy_profile(
             self.profile,
             resolve_effective_civ(ByzantineProfile.for_update_185872()),
         )
@@ -53,6 +50,15 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
                 "STRICT_RAID",
             ),
         )
+
+    def test_strategy_profile_resolves_recipe_instance_through_causal_graph(self):
+        resolution = self.profile.resolve_policy_recipe(
+            "DEER_PUSH",
+            bindings={"target": "deer-1", "target_kind": "deer"},
+        )
+        self.assertTrue(resolution.executable)
+        self.assertEqual(len(resolution.causal_graph.nodes), len(resolution.diagnostics))
+        self.assertEqual(resolution.suppressions, ())
 
     def test_ranged_hold_defaults_to_stand_ground(self):
         recipe = self.profile.policy_recipe("RANGED_HOLD")
