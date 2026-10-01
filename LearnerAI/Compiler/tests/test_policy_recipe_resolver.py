@@ -142,6 +142,17 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
             )
         )
 
+    def test_missing_multiple_bindings_have_distinct_diagnostic_keys(self):
+        recipe = self.profile.policy_recipe("PROTECT_SIEGE")
+        resolution = resolve_policy_recipe(recipe)
+        missing = tuple(
+            item for item in resolution.diagnostics if item.key.code == "POL-004"
+        )
+        self.assertEqual(
+            tuple(item.key.binding_identity for item in missing),
+            ("target", "target_kind"),
+        )
+
     def test_protect_siege_requires_siege_target_binding(self):
         recipe = self.profile.policy_recipe("PROTECT_SIEGE")
         missing = resolve_policy_recipe(
