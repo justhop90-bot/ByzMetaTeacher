@@ -939,7 +939,12 @@ def _posture_transition_control_plan(profile: StrategyProfile):
     rules = [
         NativeControlRule(
             f"{_STRATEGY_POSTURE_STATE}-initialize-000",
-            facts=(parse_expression("(true)", SourceLocation(1)),),
+            facts=(
+                parse_expression(
+                    f"(goal {_STRATEGY_POSTURE_STATE} 0)",
+                    SourceLocation(1),
+                ),
+            ),
             actions=(
                 parse_expression(
                     f"(set-goal {_STRATEGY_POSTURE_STATE} 0)",
