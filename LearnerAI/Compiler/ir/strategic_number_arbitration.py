@@ -221,9 +221,8 @@ class StrategicNumberController:
         """Persistent hysteresis latch that blocks re-entry after release.
 
         The state starts at the native Goal default of 0. A transient controller
-        sets it to 1 on release and may clear it only after its activation guard
-        becomes false again. This prevents a still-true activation guard from
-        immediately reacquiring the controller on the next pass.
+        sets it to 1 on release and may clear it only when its explicit
+        rearm_guard proves the triggering condition has reset.
         """
         return f"sn-controller-{self.identity}-release-block"
 
