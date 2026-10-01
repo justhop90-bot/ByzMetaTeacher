@@ -131,6 +131,24 @@ class StrategyGoalStateTests(unittest.TestCase):
         self.assertIn("; Native control rule: strategy-posture-transition-001", first)
         self.assertEqual(first, second)
 
+    def test_posture_transition_equal_priority_conflict_is_rejected(self):
+        effective, profile = _profile()
+        profile = replace(
+            profile,
+            transitions=(
+                profile.transitions[0],
+                replace(
+                    profile.transitions[1],
+                    label="conflicting-opening",
+                    to_posture=StrategyPosture.RUSH,
+                    priority=profile.transitions[0].priority,
+                ),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "equal-priority initial posture"):
+            lower_strategy_profile(profile, effective)
+
     def test_end_to_end_emits_defconst_guard_and_set(self):
         effective, profile = _profile()
         spec = profile.demands[0]
