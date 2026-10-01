@@ -246,6 +246,124 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             low_rule.facts[0].source,
         )
 
+    def test_release_latches_rearm_until_activation_guard_falls(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(current-age >= feudal-age)",
+            owner="fixture",
+        )
+
+        for layer, identity, activation, release in (
+            (
+                StrategicNumberControllerLayer.TEMPORARY,
+                "temporary-rearm",
+                "(goal emergency 1)",
+                "(goal emergency-cleared 1)",
+            ),
+            (
+                StrategicNumberControllerLayer.RECOVERY,
+                "recovery-rearm",
+                "(goal recovery-needed 1)",
+                "(goal recovery-clear 1)",
+            ),
+        ):
+            controller = StrategicNumberController(
+                identity=identity,
+                native_strategic_number_id=227,
+                value=25,
+                layer=layer,
+                activation_guard=activation,
+                release_guard=release,
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
+            )
+            plan = build_strategic_number_arbitration_plan(
+                type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+                extra_controllers=(base, controller),
+            )
+            lowered = lower_strategic_number_arbitration(
+                plan,
+                profile_id="fixture",
+                documented_native_ids=frozenset({227}),
+            )
+            assert lowered.control_plan is not None
+
+            activation_rule = next(
+                item
+                for item in lowered.control_plan.rules
+                if item.identity == f"sn-controller-{identity}-activate"
+            )
+            self.assertIn(
+                f"(goal sn-controller-{identity}-release-block 0)",
+                activation_rule.facts[0].source,
+            )
+
+            release_rule = next(
+                item
+                for item in lowered.control_plan.rules
+                if item.identity == f"sn-controller-{identity}-release"
+            )
+            self.assertEqual(
+                tuple(action.source for action in release_rule.actions),
+                (
+                    f"(set-goal sn-controller-{identity}-active 0)",
+                    f"(set-goal sn-controller-{identity}-release-block 1)",
+                ),
+            )
+
+            rearm_rule = next(
+                item
+                for item in lowered.control_plan.rules
+                if item.identity == f"sn-controller-{identity}-rearm"
+            )
+            self.assertIn(
+                f"(goal sn-controller-{identity}-release-block 1)",
+                rearm_rule.facts[0].source,
+            )
+            self.assertIn(
+                f"(goal sn-controller-{identity}-active 0)",
+                rearm_rule.facts[0].source,
+            )
+            self.assertIn(
+                f"(not {activation})",
+                rearm_rule.facts[0].source,
+            )
+            self.assertEqual(
+                tuple(action.source for action in rearm_rule.actions),
+                (f"(set-goal sn-controller-{identity}-release-block 0)",),
+            )
+
+            steady_index = next(
+                index
+                for index, rule in enumerate(lowered.control_plan.rules)
+                if rule.identity == f"sn-controller-{identity}-steady"
+            )
+            self.assertLess(
+                next(
+                    index
+                    for index, rule in enumerate(lowered.control_plan.rules)
+                    if rule.identity == f"sn-controller-{identity}-release"
+                ),
+                next(
+                    index
+                    for index, rule in enumerate(lowered.control_plan.rules)
+                    if rule.identity == f"sn-controller-{identity}-rearm"
+                ),
+            )
+            self.assertLess(
+                next(
+                    index
+                    for index, rule in enumerate(lowered.control_plan.rules)
+                    if rule.identity == f"sn-controller-{identity}-rearm"
+                ),
+                steady_index,
+            )
+
+
     def test_temporary_activation_latches_even_when_native_value_is_already_correct(self):
         base = StrategicNumberController(
             identity="strategy-base",
