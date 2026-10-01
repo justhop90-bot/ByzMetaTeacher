@@ -1359,7 +1359,6 @@ def _strategy_control_plan(profile: StrategyProfile):
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
-    counter_plan = _counter_package_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1383,7 +1382,6 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
-        counter_plan,
     )
 
 
