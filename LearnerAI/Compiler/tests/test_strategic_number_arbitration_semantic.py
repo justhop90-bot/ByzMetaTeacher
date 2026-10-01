@@ -457,6 +457,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 layer=StrategicNumberControllerLayer.TEMPORARY,
                 activation_guard="(goal emergency 1)",
                 release_guard="(goal emergency-cleared 1)",
+                rearm_guard="(goal emergency-reset 1)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
                 release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
                 owner="fixture",
