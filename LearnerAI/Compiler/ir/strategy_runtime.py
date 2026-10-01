@@ -197,7 +197,7 @@ def evaluate_composition_upgrade_readiness(
                 continue
             evidence = StrategicEvidence(
                 kind=StrategicEvidenceKind.EXECUTION,
-                expression=f"(research-completed {requirement.technology_id})",
+                expression=None,
                 label=f"composition-upgrade:{requirement.identity}",
                 source=StrategicEvidenceSource.AUTHORING,
                 observation_ref=requirement.observation_ref,
