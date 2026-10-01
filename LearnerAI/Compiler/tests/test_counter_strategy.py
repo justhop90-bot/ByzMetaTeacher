@@ -9,7 +9,11 @@ from Compiler.ir.strategy_runtime import (
     evaluate_strategy_runtime,
 )
 from Compiler.ir.counter_strategy import CounterThreatClass
-from Compiler.ir.strategy_runtime import CounterArbitrationMode
+from Compiler.ir.strategy_runtime import (
+    CounterArbitrationMode,
+    CounterPackageRuntimeState,
+    arbitrate_counter_packages,
+)
 
 
 class ByzantineCounterArbitrationTests(unittest.TestCase):
@@ -184,27 +188,26 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
         )
 
     def test_same_class_lower_priority_package_is_suppressed(self):
-        snapshot = RuntimeObservationSnapshot(
-            fact_results=(
-                ("(current-age >= feudal-age)", True),
-                ("(current-age >= castle-age)", True),
-                ("(players-unit-type-count any-enemy knight-line >= 3)", True),
-                ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
-                ("(can-train-with-escrow camel-line)", True),
-                ("(unit-type-count-total camel-line < 3)", True),
-                ("(can-train-with-escrow spearman-line)", True),
-                ("(unit-type-count-total spearman-line < 4)", True),
+        decision = arbitrate_counter_packages((
+            CounterPackageRuntimeState(
+                identity="MOUNTED_PRIMARY",
+                threat_class=CounterThreatClass.MOUNTED,
+                truth=EvidenceTruth.TRUE,
+                priority=110,
+                demand_identities=("counter-castle-camels",),
             ),
-        )
-        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
-        self.assertIn("MOUNTED_PRESSURE_CASTLE", state.active_counter_packages)
-        self.assertIn(
-            "MOUNTED_PRESSURE_FEUDAL",
-            state.counter_arbitration.suppressed_packages,
-        )
-        self.assertNotIn("counter-mounted-spears", state.active_strategic_demands)
-        self.assertIn("counter-castle-camels", state.active_strategic_demands)
-
+            CounterPackageRuntimeState(
+                identity="MOUNTED_SECONDARY",
+                threat_class=CounterThreatClass.MOUNTED,
+                truth=EvidenceTruth.TRUE,
+                priority=100,
+                demand_identities=("counter-mounted-spears",),
+            ),
+        ))
+        self.assertIs(decision.mode, CounterArbitrationMode.SINGLE)
+        self.assertEqual(decision.primary_package, "MOUNTED_PRIMARY")
+        self.assertEqual(decision.supporting_packages, ())
+        self.assertEqual(decision.suppressed_packages, ("MOUNTED_SECONDARY",))
     def test_counter_package_selection_is_deterministic(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
