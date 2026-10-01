@@ -238,6 +238,85 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             ("set-goal", "set-strategic-number"),
         )
 
+    def test_transient_release_precedes_steady_reassertion(self):
+        controllers = (
+            self._controller(
+                "temporary",
+                layer=StrategicNumberControllerLayer.TEMPORARY,
+                value=25,
+                activation="(goal emergency 1)",
+                release="(goal emergency-cleared 1)",
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            ),
+        )
+        base = self._controller(
+            "base",
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            value=75,
+            activation="(goal strategy-posture 3)",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(*controllers, base),
+        )
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        release_index = next(
+            index
+            for index, rule in enumerate(lowered.control_plan.rules)
+            if rule.identity == "sn-controller-temporary-release"
+        )
+        steady_index = next(
+            index
+            for index, rule in enumerate(lowered.control_plan.rules)
+            if rule.identity == "sn-controller-temporary-steady"
+        )
+        self.assertLess(
+            release_index,
+            steady_index,
+            "temporary release must clear ownership before steady-state reassertion",
+        )
+
+        recovery = self._controller(
+            "recovery",
+            layer=StrategicNumberControllerLayer.RECOVERY,
+            value=100,
+            activation="(goal recovery-needed 1)",
+            release="(goal recovery-clear 1)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(base, recovery),
+        )
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        release_index = next(
+            index
+            for index, rule in enumerate(lowered.control_plan.rules)
+            if rule.identity == "sn-controller-recovery-release"
+        )
+        steady_index = next(
+            index
+            for index, rule in enumerate(lowered.control_plan.rules)
+            if rule.identity == "sn-controller-recovery-steady"
+        )
+        self.assertLess(
+            release_index,
+            steady_index,
+            "recovery release must clear ownership before steady-state reassertion",
+        )
+
     def test_release_rule_does_not_capture_or_restore_historical_value(self):
         base = StrategicNumberController(
             identity="strategy-base",
