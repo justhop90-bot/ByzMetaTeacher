@@ -641,13 +641,7 @@ def lower_strategic_number_arbitration(
             (
                 f"(goal {controller.activation_state_name} 1)",
                 *higher_suppression,
-                _fold(
-                    "or",
-                    (
-                        f"(up-compare-sn {controller.native_state_name} != {controller.value})",
-                        f"(goal {controller.underlay_reassert_pending_state_name} 1)",
-                    ),
-                ),
+                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
             ),
         )
         rules.append(
@@ -657,10 +651,6 @@ def lower_strategic_number_arbitration(
                 actions=(
                     parse_expression(
                         f"(set-strategic-number {controller.native_state_name} {controller.value})",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        f"(set-goal {controller.underlay_reassert_pending_state_name} 0)",
                         SourceLocation(1),
                     ),
                 ),

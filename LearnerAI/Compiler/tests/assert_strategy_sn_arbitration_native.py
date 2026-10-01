@@ -280,6 +280,16 @@ def main() -> int:
     if "(set-goal sn-reassert-227 0)" not in strategy_base:
         raise SystemExit("strategy underlay write does not consume the reassert-pending handoff")
 
+    recovery_steady_marker = "; Native control rule: sn-controller-recovery-override-steady"
+    recovery_steady = first.split(recovery_steady_marker, 1)[1]
+    next_marker = recovery_steady.find("\n; Native ")
+    if next_marker >= 0:
+        recovery_steady = recovery_steady[:next_marker]
+    if "(goal sn-reassert-227 1)" in recovery_steady:
+        raise SystemExit("recovery steady rule must not consume the underlay handoff latch")
+    if "(set-goal sn-reassert-227 0)" in recovery_steady:
+        raise SystemExit("recovery steady rule must not clear the underlay handoff latch")
+
     required = (
         "(defconst sn-native-227 227)",
         "(current-age == feudal-age)",
