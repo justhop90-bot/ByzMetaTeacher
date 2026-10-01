@@ -226,6 +226,7 @@ def main() -> int:
         activation_guard,
         "(defconst sn-native-227 227)",
         "(set-strategic-number sn-native-227 75)",
+        "(set-goal sn-controller-attack-surge-active 1)",
         "(set-strategic-number sn-native-227 100)",
         "(not (or (current-age >= feudal-age) (goal sn-controller-attack-surge-active 1)))",
         "; Native control rule: sn-controller-attack-surge-release",
@@ -240,6 +241,8 @@ def main() -> int:
     if first.count("(defconst sn-native-227 227)") != 1:
         raise SystemExit("native Strategic Number alias must be emitted exactly once")
 
+    if first.count("(set-goal sn-controller-attack-surge-active 1)") != 1:
+        raise SystemExit("ACTION controller activation transition must appear exactly once")
     if first.count("(set-strategic-number sn-native-227 100)") != 1:
         raise SystemExit("ACTION Strategic Number write must appear exactly once")
     if first.count("(attack-now)") != 1:
@@ -251,10 +254,15 @@ def main() -> int:
     )
     attack_lines = [line.strip() for line in attack_section.splitlines()]
     try:
+        activation_index = attack_lines.index("(set-goal sn-controller-attack-surge-active 1)")
         sn_index = attack_lines.index("(set-strategic-number sn-native-227 100)")
         attack_index = attack_lines.index("(attack-now)")
     except ValueError as exc:
         raise SystemExit("ACTION attack rule is missing expected SN/action lines") from exc
+    if sn_index != activation_index + 1:
+        raise SystemExit(
+            "ACTION controller activation was not emitted immediately before its Strategic Number write"
+        )
     if attack_index != sn_index + 1:
         raise SystemExit(
             "ACTION Strategic Number write was not emitted immediately before attack-now"
