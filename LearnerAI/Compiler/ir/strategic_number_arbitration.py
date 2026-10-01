@@ -216,6 +216,17 @@ class StrategicNumberController:
         return f"sn-controller-{self.identity}-release-block"
 
     @property
+    def rearm_pass_block_state_name(self) -> str:
+        """One-pass latch blocking same-pass backward-jump reacquisition.
+
+        Native goal writes become visible immediately, while up-jump-rule can
+        revisit an earlier rule in the same recurrent pass. Rearm therefore
+        needs a short-lived sentinel in addition to the persistent release
+        block.
+        """
+        return f"sn-rearm-{self.identity}"
+
+    @property
     def precedence_key(self) -> tuple[int, int, int, str]:
         return (
             -self.layer.precedence,

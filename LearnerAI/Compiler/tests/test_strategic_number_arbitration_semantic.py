@@ -301,6 +301,26 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 f"(goal sn-controller-{identity}-release-block 0)",
                 activation_rule.facts[0].source,
             )
+            self.assertIn(
+                f"(goal sn-rearm-{identity} 0)",
+                activation_rule.facts[0].source,
+            )
+
+            clear_rule_index = next(
+                index
+                for index, rule in enumerate(lowered.control_plan.rules)
+                if rule.identity == f"sn-controller-{identity}-rearm-pass-clear"
+            )
+            activation_index = next(
+                index
+                for index, rule in enumerate(lowered.control_plan.rules)
+                if rule.identity == f"sn-controller-{identity}-activate"
+            )
+            self.assertLess(
+                clear_rule_index,
+                activation_index,
+                "rearm-pass clear must precede activation so the sentinel belongs to the next pass",
+            )
 
             release_rule = next(
                 item
@@ -334,7 +354,10 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             )
             self.assertEqual(
                 tuple(action.source for action in rearm_rule.actions),
-                (f"(set-goal sn-controller-{identity}-release-block 0)",),
+                (
+                    f"(set-goal sn-controller-{identity}-release-block 0)",
+                    f"(set-goal sn-rearm-{identity} 1)",
+                ),
             )
 
             steady_index = next(
@@ -354,13 +377,20 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                     if rule.identity == f"sn-controller-{identity}-rearm"
                 ),
             )
+            rearm_index = next(
+                index
+                for index, rule in enumerate(lowered.control_plan.rules)
+                if rule.identity == f"sn-controller-{identity}-rearm"
+            )
             self.assertLess(
-                next(
-                    index
-                    for index, rule in enumerate(lowered.control_plan.rules)
-                    if rule.identity == f"sn-controller-{identity}-rearm"
-                ),
+                rearm_index,
                 steady_index,
+            )
+
+            rearm_actions = lowered.control_plan.rules[rearm_index].actions
+            self.assertEqual(
+                tuple(action.head for action in rearm_actions),
+                ("set-goal", "set-goal"),
             )
 
 

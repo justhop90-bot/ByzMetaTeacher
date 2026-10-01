@@ -158,18 +158,20 @@ def main() -> int:
         (
             "recovery-override",
             (
+                "; Native control rule: sn-controller-recovery-override-rearm-pass-clear",
                 "; Native control rule: sn-controller-recovery-override-activate",
                 "; Native control rule: sn-controller-recovery-override-release",
-                "; Native control rule: sn-controller-recovery-override-rearm",
+                "; Native control rule: sn-controller-recovery-override-rearm\n",
                 "; Native control rule: sn-controller-recovery-override-steady",
             ),
         ),
         (
             "emergency-defense",
             (
+                "; Native control rule: sn-controller-emergency-defense-rearm-pass-clear",
                 "; Native control rule: sn-controller-emergency-defense-activate",
                 "; Native control rule: sn-controller-emergency-defense-release",
-                "; Native control rule: sn-controller-emergency-defense-rearm",
+                "; Native control rule: sn-controller-emergency-defense-rearm\n",
                 "; Native control rule: sn-controller-emergency-defense-steady",
             ),
         ),
@@ -181,15 +183,23 @@ def main() -> int:
             if marker not in first:
                 raise SystemExit(f"missing transient controller rule marker: {marker}")
             positions.append(first.index(marker))
-        if not positions[0] < positions[1] < positions[2] < positions[3]:
+        if not positions[0] < positions[1] < positions[2] < positions[3] < positions[4]:
             raise SystemExit(
-                f"{identity} controller must emit activate -> release -> rearm -> steady order"
+                f"{identity} controller must emit clear -> activate -> release -> rearm -> steady order"
             )
         controller_order_positions[identity] = positions
-    if controller_order_positions["recovery-override"][3] >= controller_order_positions["emergency-defense"][0]:
+    if controller_order_positions["recovery-override"][4] >= controller_order_positions["emergency-defense"][0]:
         raise SystemExit(
             "higher-precedence recovery controller must emit before the temporary controller"
         )
+
+    recovery_clear_marker = (
+        "; Native control rule: sn-controller-recovery-override-rearm-pass-clear"
+    )
+    if first.index(recovery_clear_marker) >= first.index(
+        "; Native control rule: sn-controller-recovery-override-activate"
+    ):
+        raise SystemExit("recovery rearm-pass clear must precede activation")
 
     recovery_activation_marker = (
         "; Native control rule: sn-controller-recovery-override-activate"
@@ -200,6 +210,8 @@ def main() -> int:
         recovery_activation = recovery_activation[:next_marker]
     if "(goal sn-controller-recovery-override-release-block 0)" not in recovery_activation:
         raise SystemExit("recovery activation is missing its release-block guard")
+    if "(goal sn-rearm-recovery-override 0)" not in recovery_activation:
+        raise SystemExit("recovery activation is missing its same-pass rearm block guard")
 
     recovery_release_marker = (
         "; Native control rule: sn-controller-recovery-override-release"
@@ -230,7 +242,7 @@ def main() -> int:
         )
 
     recovery_rearm_marker = (
-        "; Native control rule: sn-controller-recovery-override-rearm"
+        "; Native control rule: sn-controller-recovery-override-rearm\n"
     )
     recovery_rearm = first.split(recovery_rearm_marker, 1)[1]
     next_marker = recovery_rearm.find("\n; Native ")
@@ -244,6 +256,8 @@ def main() -> int:
         raise SystemExit("recovery rearm is missing its release-block latch")
     if "(set-goal sn-controller-recovery-override-release-block 0)" not in recovery_rearm:
         raise SystemExit("recovery rearm must clear the release-block latch")
+    if "(set-goal sn-rearm-recovery-override 1)" not in recovery_rearm:
+        raise SystemExit("recovery rearm must set the same-pass reentry block")
 
     required = (
         "(defconst sn-native-227 227)",
@@ -257,6 +271,8 @@ def main() -> int:
         "(up-compare-sn sn-native-227 != 100)",
         "(goal sn-controller-emergency-defense-release-block 0)",
         "(goal sn-controller-recovery-override-release-block 0)",
+        "(goal sn-rearm-emergency-defense 0)",
+        "(goal sn-rearm-recovery-override 0)",
     )
     for fragment in required:
         if fragment not in first:

@@ -327,6 +327,25 @@ def _release_block_state(
     )
 
 
+def _rearm_pass_block_state(
+    controller: StrategicNumberController,
+    profile_id: str,
+) -> NativeControlState:
+    from ..ir.model import GoalRole, SemanticId, StorageRequestId
+
+    owner = SemanticId(profile_id, controller.rearm_pass_block_state_name)
+    return NativeControlState(
+        controller.rearm_pass_block_state_name,
+        GoalSlotRequest(
+            StorageRequestId(
+                owner,
+                f"strategic-number-controller-rearm-pass:{controller.identity}",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+
 def lower_strategic_number_arbitration(
     plan: StrategicNumberArbitrationPlan,
     *,
@@ -373,6 +392,10 @@ def lower_strategic_number_arbitration(
                 profile_id,
             )
             states[controller.release_block_state_name] = _release_block_state(
+                controller,
+                profile_id,
+            )
+            states[controller.rearm_pass_block_state_name] = _rearm_pass_block_state(
                 controller,
                 profile_id,
             )
@@ -453,6 +476,25 @@ def lower_strategic_number_arbitration(
             continue
 
         activation = _as_expression(_guard_text(controller.activation_guard) or "(false)")
+
+        rules.append(
+            NativeControlRule(
+                f"sn-controller-{controller.identity}-rearm-pass-clear",
+                facts=(
+                    parse_expression(
+                        f"(goal {controller.rearm_pass_block_state_name} 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {controller.rearm_pass_block_state_name} 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
         activation_guard = _fold(
             "and",
             (
@@ -460,6 +502,7 @@ def lower_strategic_number_arbitration(
                 *higher_suppression,
                 f"(goal {controller.activation_state_name} 0)",
                 f"(goal {controller.release_block_state_name} 0)",
+                f"(goal {controller.rearm_pass_block_state_name} 0)",
             ),
         )
         rules.append(
@@ -521,6 +564,10 @@ def lower_strategic_number_arbitration(
                 actions=(
                     parse_expression(
                         f"(set-goal {controller.release_block_state_name} 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(set-goal {controller.rearm_pass_block_state_name} 1)",
                         SourceLocation(1),
                     ),
                 ),
