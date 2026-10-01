@@ -20,6 +20,21 @@ class NativeUnitIdError(ValueError):
     """Raised when a train target cannot be bound to a native UnitId."""
 
 
+# Evidenced aliases for modeled units the pinned AIRef object inventory
+# cannot name. Each entry carries two independent evidences:
+#   1. GameData manifest identity (ID <-> name) checked in under
+#      LearnerAI/Compiler/ir (1104 Demolition Raft; 2628 Carrack via the
+#      Hulk-line supplement);
+#   2. pinned-parser acceptance of the emitted symbol in train position
+#      (`(train demolition-raft)` and `(train carrack)` are zero-findings).
+# Consulted only after inventory lookup fails, so the pinned inventory
+# stays the primary authority. Never add entries without both evidences.
+NATIVE_UNIT_ALIASES: tuple[tuple[str, int], ...] = (
+    ("demolition-raft", 1104),
+    ("carrack", 2628),
+)
+
+
 def _aliases(value: str) -> tuple[str, ...]:
     return tuple(
         token.strip().lower()
@@ -76,7 +91,9 @@ def resolve_unit_id(symbol: str) -> int:
         raise NativeUnitIdError(f"invalid UnitId symbol '{symbol}'")
     if token.isdigit():
         unit_id = int(token)
-        known_ids = {entry["object_id"] for entry in _objects()}
+        known_ids = {entry["object_id"] for entry in _objects()} | {
+            alias_id for _, alias_id in NATIVE_UNIT_ALIASES
+        }
         if unit_id not in known_ids:
             raise NativeUnitIdError(
                 f"numeric UnitId '{symbol}' is not a known DE unit"
@@ -85,6 +102,9 @@ def resolve_unit_id(symbol: str) -> int:
 
     matches = _unit_ids_for(token)
     if not matches:
+        for alias, alias_id in NATIVE_UNIT_ALIASES:
+            if token == alias:
+                return alias_id
         raise NativeUnitIdError(
             f"unknown native UnitId symbol '{symbol}'"
         )
