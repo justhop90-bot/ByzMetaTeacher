@@ -197,6 +197,7 @@ class ExecutionDemandTemplate:
 class StrategicBinding:
     strategic_id: str
     owner: str
+    production_arbitration_group: str | None = None
     posture: StrategyPosture
     priority: StrategicPriority
     reason: tuple[StrategicEvidence, ...]
@@ -265,6 +266,7 @@ class GoalStateAssertion:
 class StrategicDemandSpec:
     identity: str
     owner: str
+    production_arbitration_group: str | None = None
     posture: StrategyPosture
     priority: StrategicPriority
     reason: tuple[StrategicEvidence, ...]
@@ -888,6 +890,7 @@ def lower_strategy_profile(
             base_binding = StrategicBinding(
                 strategic_id=spec.identity,
                 owner=spec.owner,
+                production_arbitration_group=spec.production_arbitration_group,
                 posture=spec.posture,
                 priority=spec.priority,
                 reason=spec.reason,
@@ -1607,6 +1610,7 @@ def build_land_castle_strategy(
         StrategicDemandSpec(
             identity="early-defensive-spears",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(
@@ -1931,6 +1935,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         StrategicDemandSpec(
             identity="counter-mounted-spears",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -1970,6 +1975,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         StrategicDemandSpec(
             identity="counter-ranged-skirmishers",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.FLUSH,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2009,6 +2015,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         StrategicDemandSpec(
             identity="counter-castle-camels",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2048,6 +2055,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         StrategicDemandSpec(
             identity="counter-castle-cataphracts",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
@@ -2087,6 +2095,7 @@ def _byzantine_counter_demands() -> tuple[StrategicDemandSpec, ...]:
         StrategicDemandSpec(
             identity="counter-castle-siege-response",
             owner="defense",
+            production_arbitration_group="defense",
             posture=StrategyPosture.CASTLE_POWER,
             priority=StrategicPriority.DEFENSE,
             reason=(),
