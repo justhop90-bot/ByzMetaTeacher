@@ -166,6 +166,43 @@ class NativeAttackIrTests(unittest.TestCase):
             (attachment,),
         )
 
+    def test_action_attachments_bind_through_controller_identity_to_exact_native_action(self):
+        attachment = StrategicNumberActionAttachment(
+            identity="attack-surge-attachment",
+            controller_identity="attack-surge",
+            action_identity="attack-now",
+            native_strategic_number_id=227,
+            value=100,
+            activation_state_name="sn-controller-attack-surge-active",
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(
+                _attack_rule("attack-first", 10),
+                NativeAttackRule(
+                    identity="attack-second",
+                    order=20,
+                    facts=(_expr("(true)", "true"),),
+                    actions=(
+                        _expr("(true-action)", "true-action"),
+                        _expr("(attack-now)", "attack-now"),
+                    ),
+                    lifecycle=LIFECYCLE,
+                ),
+            )
+        )
+        bound = plan.bind_strategic_number_action_attachments(
+            (attachment,),
+            owned_actions={"attack-surge": ("attack-second", 1)},
+        )
+        self.assertEqual(
+            bound.strategic_number_action_attachments[0].owned_rule_identity,
+            "attack-second",
+        )
+        self.assertEqual(
+            bound.strategic_number_action_attachments[0].action_index,
+            1,
+        )
+
     def test_action_attachment_requires_exact_owned_rule(self):
         attachment = StrategicNumberActionAttachment(
             identity="attack-surge-attachment",
