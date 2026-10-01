@@ -431,7 +431,6 @@ def resolve_policy_recipe(
     if (
         retarget == "patrol-style"
         and "attack_consumer" not in bindings
-        and not any(item.key.code == "POL-001" for item in diagnostics)
     ):
         diagnostics.append(
             _diag(
