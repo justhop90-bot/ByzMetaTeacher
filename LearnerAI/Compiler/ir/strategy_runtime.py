@@ -848,6 +848,44 @@ def _validate_transition_conflicts(profile: StrategyProfile) -> None:
                 )
 
 
+def _evaluate_counter_packages(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+    snapshot: RuntimeObservationSnapshot,
+    registry: PrimitiveRegistry,
+) -> tuple[tuple[CounterPackageRuntimeState, ...], dict[str, tuple[str, ...]]]:
+    states: list[CounterPackageRuntimeState] = []
+    demand_sources: dict[str, list[str]] = {}
+
+    for package in profile.counter_packages:
+        binding = bind_observation_reference(
+            package.trigger,
+            profile,
+            effective,
+            registry,
+        )
+        truth = evaluate_binding(binding, snapshot)
+        states.append(
+            CounterPackageRuntimeState(
+                identity=package.identity,
+                threat_class=package.threat_class,
+                truth=truth,
+                priority=package.priority,
+                demand_identities=package.demand_identities,
+                policy_recipe_identity=package.policy_recipe_identity,
+            )
+        )
+        if truth is EvidenceTruth.TRUE:
+            for demand_identity in package.demand_identities:
+                demand_sources.setdefault(demand_identity, []).append(package.identity)
+
+    return (
+        tuple(
+            sorted(states, key=lambda item: (-item.priority, item.identity))
+        ),
+        {identity: tuple(sorted(sources)) for identity, sources in demand_sources.items()},
+    )
+
 def _evaluate_demand(
     demand: StrategicDemandSpec,
     profile: StrategyProfile,
