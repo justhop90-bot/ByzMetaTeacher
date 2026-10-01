@@ -79,6 +79,10 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
             controller.activation_state_name,
             "sn-controller-attack-surge-active",
         )
+        self.assertEqual(
+            controller.release_block_state_name,
+            "sn-controller-attack-surge-release-block",
+        )
 
     def test_temporary_requires_release_guard_and_release_evidence(self):
         with self.assertRaisesRegex(ValueError, "release_guard"):
