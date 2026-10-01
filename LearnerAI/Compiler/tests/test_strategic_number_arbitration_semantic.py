@@ -130,11 +130,63 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             if item.identity == "sn-controller-strategy-base-write"
         )
         self.assertIn(
+            "(not (goal sn-controller-emergency-defense-active 1))",
+            base_rule.facts[0].source,
+        )
+        self.assertNotIn(
             "(not (or (goal emergency-defense 1) "
             "(goal sn-controller-emergency-defense-active 1)))",
             base_rule.facts[0].source,
         )
 
+
+    def test_recovery_release_allows_underlay_reassertion_while_activation_guard_remains_true(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=75,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(current-age >= feudal-age)",
+            owner="fixture",
+        )
+        recovery = StrategicNumberController(
+            identity="recovery-override",
+            native_strategic_number_id=227,
+            value=100,
+            layer=StrategicNumberControllerLayer.RECOVERY,
+            activation_guard="(current-age >= feudal-age)",
+            release_guard="(current-age >= imperial-age)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
+            extra_controllers=(base, recovery),
+        )
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+        )
+        assert lowered.control_plan is not None
+        base_rule = next(
+            item
+            for item in lowered.control_plan.rules
+            if item.identity == "sn-controller-strategy-base-write"
+        )
+        self.assertIn(
+            "(not (goal sn-controller-recovery-override-active 1))",
+            base_rule.facts[0].source,
+        )
+        stale_recovery_claim = (
+            "(not (or (current-age >= feudal-age) "
+            "(goal sn-controller-recovery-override-active 1)))"
+        )
+        self.assertNotIn(
+            stale_recovery_claim,
+            base_rule.facts[0].source,
+        )
 
     def test_higher_priority_same_layer_suppresses_lower_priority(self):
         high = StrategicNumberController(
@@ -185,6 +237,10 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             if item.identity == "sn-controller-low-priority-steady"
         )
         self.assertIn(
+            "(not (goal sn-controller-high-priority-active 1))",
+            low_rule.facts[0].source,
+        )
+        self.assertNotIn(
             "(not (or (goal emergency-high 1) "
             "(goal sn-controller-high-priority-active 1)))",
             low_rule.facts[0].source,
