@@ -25,10 +25,16 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         priority=0,
         activation=None,
         release=None,
+        rearm=None,
         scope=StrategicNumberControllerScope.PERSISTENT,
         action=None,
         evidence=None,
     ):
+        if rearm is None and layer in {
+            StrategicNumberControllerLayer.TEMPORARY,
+            StrategicNumberControllerLayer.RECOVERY,
+        }:
+            rearm = "(goal fixture-rearm 1)"
         return StrategicNumberController(
             identity=identity,
             native_strategic_number_id=sn,
@@ -37,6 +43,7 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
             priority=priority,
             activation_guard=activation,
             release_guard=release,
+            rearm_guard=rearm,
             scope=scope,
             restoration=StrategicNumberRestorationPolicy.REASSERT_UNDERLAY,
             release_evidence=evidence,
@@ -102,6 +109,33 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
                 layer=StrategicNumberControllerLayer.TEMPORARY,
                 release="(true)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            )
+
+    def test_transient_requires_explicit_rearm_guard(self):
+        with self.assertRaisesRegex(ValueError, "rearm_guard"):
+            StrategicNumberController(
+                identity="temporary-no-rearm",
+                native_strategic_number_id=227,
+                value=25,
+                layer=StrategicNumberControllerLayer.TEMPORARY,
+                activation_guard="(goal emergency 1)",
+                release_guard="(goal emergency-clear 1)",
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
+            )
+
+        with self.assertRaisesRegex(ValueError, "rearm_guard"):
+            StrategicNumberController(
+                identity="recovery-no-rearm",
+                native_strategic_number_id=227,
+                value=25,
+                layer=StrategicNumberControllerLayer.RECOVERY,
+                activation_guard="(goal recovery 1)",
+                release_guard="(goal recovery-clear 1)",
+                scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
             )
 
     def test_action_requires_exact_action_identity_and_action_scope(self):

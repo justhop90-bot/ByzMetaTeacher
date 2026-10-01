@@ -73,6 +73,7 @@ class StrategicNumberController:
     origin: StrategicNumberControllerOrigin = StrategicNumberControllerOrigin.EXPLICIT
     activation_guard: Expression | None = None
     release_guard: Expression | None = None
+    rearm_guard: Expression | None = None
     scope: StrategicNumberControllerScope = (
         StrategicNumberControllerScope.PERSISTENT
     )
@@ -114,6 +115,7 @@ class StrategicNumberController:
         for field_name, guard in (
             ("activation_guard", self.activation_guard),
             ("release_guard", self.release_guard),
+            ("rearm_guard", self.rearm_guard),
         ):
             if isinstance(guard, str) and not guard.strip():
                 raise ValueError(
@@ -148,6 +150,10 @@ class StrategicNumberController:
                 raise ValueError(
                     "persistent Strategic Number controllers cannot define action_identity"
                 )
+            if self.rearm_guard is not None:
+                raise ValueError(
+                    "persistent Strategic Number controllers cannot define rearm_guard"
+                )
         elif self.layer is StrategicNumberControllerLayer.TEMPORARY:
             if self.scope is not StrategicNumberControllerScope.UNTIL_RELEASE:
                 raise ValueError("TEMPORARY controller must use UNTIL_RELEASE scope")
@@ -155,6 +161,8 @@ class StrategicNumberController:
                 raise ValueError("TEMPORARY controller requires a release_guard")
             if self.release_evidence is None:
                 raise ValueError("TEMPORARY controller requires release_evidence")
+            if self.rearm_guard is None:
+                raise ValueError("TEMPORARY controller requires a rearm_guard")
             if self.action_identity is not None:
                 raise ValueError(
                     "TEMPORARY controller cannot define action_identity"
@@ -168,6 +176,8 @@ class StrategicNumberController:
                 raise ValueError("ACTION controller requires a release_guard")
             if self.release_evidence is None:
                 raise ValueError("ACTION controller requires release_evidence")
+            if self.rearm_guard is not None:
+                raise ValueError("ACTION controller cannot define rearm_guard")
             if not self.action_identity or not self.action_identity.strip():
                 raise ValueError("ACTION controller requires action_identity")
         elif self.layer is StrategicNumberControllerLayer.RECOVERY:
@@ -179,6 +189,8 @@ class StrategicNumberController:
                 raise ValueError("RECOVERY controller requires a release_guard")
             if self.release_evidence is None:
                 raise ValueError("RECOVERY controller requires release_evidence")
+            if self.rearm_guard is None:
+                raise ValueError("RECOVERY controller requires a rearm_guard")
             if self.action_identity is not None:
                 raise ValueError(
                     "RECOVERY controller cannot define action_identity"
@@ -209,9 +221,8 @@ class StrategicNumberController:
         """Persistent hysteresis latch that blocks re-entry after release.
 
         The state starts at the native Goal default of 0. A transient controller
-        sets it to 1 on release and may clear it only after its activation guard
-        becomes false again. This prevents a still-true activation guard from
-        immediately reacquiring the controller on the next pass.
+        sets it to 1 on release and may clear it only when its explicit
+        rearm_guard proves the triggering condition has reset.
         """
         return f"sn-controller-{self.identity}-release-block"
 

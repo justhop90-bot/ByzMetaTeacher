@@ -102,6 +102,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency-defense 1)",
             release_guard="(goal emergency-defense 0)",
+            rearm_guard="(goal emergency-defense-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -156,6 +157,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.RECOVERY,
             activation_guard="(current-age >= feudal-age)",
             release_guard="(current-age >= imperial-age)",
+            rearm_guard="(goal recovery-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -197,6 +199,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             priority=20,
             activation_guard="(goal emergency-high 1)",
             release_guard="(goal emergency-high 0)",
+            rearm_guard="(goal emergency-high-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -209,6 +212,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             priority=10,
             activation_guard="(goal emergency-low 1)",
             release_guard="(goal emergency-low 0)",
+            rearm_guard="(goal emergency-low-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -246,7 +250,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             low_rule.facts[0].source,
         )
 
-    def test_release_latches_rearm_until_activation_guard_falls(self):
+    def test_release_rearm_uses_explicit_reset_guard(self):
         base = StrategicNumberController(
             identity="strategy-base",
             native_strategic_number_id=227,
@@ -256,18 +260,20 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             owner="fixture",
         )
 
-        for layer, identity, activation, release in (
+        for layer, identity, activation, release, rearm in (
             (
                 StrategicNumberControllerLayer.TEMPORARY,
                 "temporary-rearm",
                 "(goal emergency 1)",
                 "(goal emergency-cleared 1)",
+                "(goal temporary-rearm-reset 1)",
             ),
             (
                 StrategicNumberControllerLayer.RECOVERY,
                 "recovery-rearm",
                 "(goal recovery-needed 1)",
                 "(goal recovery-clear 1)",
+                "(goal recovery-rearm-reset 1)",
             ),
         ):
             controller = StrategicNumberController(
@@ -277,6 +283,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 layer=layer,
                 activation_guard=activation,
                 release_guard=release,
+                rearm_guard=rearm,
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
                 release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
                 owner="fixture",
@@ -349,6 +356,10 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 rearm_rule.facts[0].source,
             )
             self.assertIn(
+                rearm,
+                rearm_rule.facts[0].source,
+            )
+            self.assertNotIn(
                 f"(not {activation})",
                 rearm_rule.facts[0].source,
             )
@@ -410,6 +421,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency 1)",
             release_guard="(goal emergency-cleared 1)",
+            rearm_guard="(goal emergency-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -451,6 +463,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 layer=StrategicNumberControllerLayer.TEMPORARY,
                 activation_guard="(goal emergency 1)",
                 release_guard="(goal emergency-cleared 1)",
+                rearm_guard="(goal emergency-reset 1)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
                 release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
                 owner="fixture",
@@ -497,6 +510,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.RECOVERY,
             activation_guard="(goal recovery-needed 1)",
             release_guard="(goal recovery-clear 1)",
+            rearm_guard="(goal recovery-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -543,6 +557,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency 1)",
             release_guard="(goal emergency-cleared 1)",
+            rearm_guard="(goal emergency-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -595,6 +610,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency 1)",
             release_guard="(goal emergency-cleared 1)",
+            rearm_guard="(goal emergency-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -663,6 +679,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency-a 1)",
             release_guard="(goal emergency-a 0)",
+            rearm_guard="(goal emergency-a-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
@@ -674,6 +691,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             layer=StrategicNumberControllerLayer.TEMPORARY,
             activation_guard="(goal emergency-b 1)",
             release_guard="(goal emergency-b 0)",
+            rearm_guard="(goal emergency-b-reset 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
             release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
             owner="fixture",
