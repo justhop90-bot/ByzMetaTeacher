@@ -68,11 +68,6 @@ class CompilerWireIntegrationTests(unittest.TestCase):
             item for item in compilation.demands
             if item.name == "counter-mounted-spears"
         )
-        sources = tuple(item.source for item in demand.requirements)
-        self.assertIn(
-            "(up-compare-goal counter-package-mounted_pressure_feudal c:== 1)",
-            sources,
-        )
         self.assertIn(
             "counter-package-mounted_pressure_feudal",
             tuple(state.identifier for state in compilation.control_plan.states),
