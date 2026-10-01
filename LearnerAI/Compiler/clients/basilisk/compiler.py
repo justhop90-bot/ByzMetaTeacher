@@ -21,6 +21,7 @@ def compile_strategy_profile(
         compilation.demands,
         base_goal=base_goal,
         binding_context=binding_context,
+        control_plan=compilation.control_plan,
         escrow_plan=compilation.escrow_plan,
     )
 
@@ -58,5 +59,6 @@ def compile_strategy_runtime_profile(
         selected,
         base_goal=base_goal,
         binding_context=binding_context,
+        control_plan=compilation.control_plan,
         escrow_plan=escrow_plan,
     )
