@@ -237,6 +237,21 @@ class StrategicNumberActionAttachment:
             )
 
 
+
+@dataclass(frozen=True)
+class StrategicNumberArbitrationLowering:
+    control_plan: "NativeControlPlan | None"
+    action_attachments: tuple[StrategicNumberActionAttachment, ...] = ()
+
+    @property
+    def controllers(self) -> tuple[StrategicNumberController, ...]:
+        if self.control_plan is None:
+            return ()
+        return tuple(
+            controller
+            for controller in ()
+        )
+
 @dataclass(frozen=True)
 class StrategicNumberArbitrationPlan:
     controllers: tuple[StrategicNumberController, ...] = ()
@@ -322,6 +337,7 @@ def _guard_key(expression: Expression | str | None) -> str:
 
 __all__ = [
     "StrategicNumberActionAttachment",
+    "StrategicNumberArbitrationLowering",
     "StrategicNumberArbitrationPlan",
     "StrategicNumberController",
     "StrategicNumberControllerLayer",
