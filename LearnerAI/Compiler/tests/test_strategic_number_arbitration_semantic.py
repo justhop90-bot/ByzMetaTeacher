@@ -240,21 +240,25 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
 
     def test_transient_release_precedes_steady_reassertion(self):
         controllers = (
-            self._controller(
-                "temporary",
-                layer=StrategicNumberControllerLayer.TEMPORARY,
+            StrategicNumberController(
+                identity="temporary",
+                native_strategic_number_id=227,
                 value=25,
-                activation="(goal emergency 1)",
-                release="(goal emergency-cleared 1)",
+                layer=StrategicNumberControllerLayer.TEMPORARY,
+                activation_guard="(goal emergency 1)",
+                release_guard="(goal emergency-cleared 1)",
                 scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-                evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+                owner="fixture",
             ),
         )
-        base = self._controller(
-            "base",
-            layer=StrategicNumberControllerLayer.STRATEGY,
+        base = StrategicNumberController(
+            identity="base",
+            native_strategic_number_id=227,
             value=75,
-            activation="(goal strategy-posture 3)",
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
         )
         plan = build_strategic_number_arbitration_plan(
             type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
@@ -282,14 +286,16 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
             "temporary release must clear ownership before steady-state reassertion",
         )
 
-        recovery = self._controller(
-            "recovery",
-            layer=StrategicNumberControllerLayer.RECOVERY,
+        recovery = StrategicNumberController(
+            identity="recovery",
+            native_strategic_number_id=227,
             value=100,
-            activation="(goal recovery-needed 1)",
-            release="(goal recovery-clear 1)",
+            layer=StrategicNumberControllerLayer.RECOVERY,
+            activation_guard="(goal recovery-needed 1)",
+            release_guard="(goal recovery-clear 1)",
             scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-            evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
         )
         plan = build_strategic_number_arbitration_plan(
             type("Profile", (), {"profile_id": "fixture", "strategic_number_modes": ()})(),
