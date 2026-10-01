@@ -30,6 +30,11 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         action=None,
         evidence=None,
     ):
+        if rearm is None and layer in {
+            StrategicNumberControllerLayer.TEMPORARY,
+            StrategicNumberControllerLayer.RECOVERY,
+        }:
+            rearm = "(goal fixture-rearm 1)"
         return StrategicNumberController(
             identity=identity,
             native_strategic_number_id=sn,
