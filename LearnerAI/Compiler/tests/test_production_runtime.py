@@ -1,5 +1,14 @@
 import unittest
 
+from Compiler.clients.basilisk import (
+    ByzantineProfile,
+    StrategyPosture,
+    build_byzantine_castle_strategy,
+    lower_strategy_profile,
+)
+from Compiler.ir.civ_profile import resolve_effective_civ
+from Compiler.ir.strategy_runtime import evaluate_strategy_runtime
+
 from Compiler.ast import Expression
 from Compiler.ir import (
     GoalRole,
@@ -251,6 +260,42 @@ class ProductionRuntimePathTests(unittest.TestCase):
             state.next_pass_visibility,
             ProductionBoundaryStatus.OBSERVED,
         )
+
+    def test_strategy_runtime_connects_lowered_production_lifecycle(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        profile = build_byzantine_castle_strategy(effective)
+        compilation = lower_strategy_profile(profile, effective)
+        production = next(
+            demand.production_lifecycle
+            for demand in compilation.demands
+            if demand.production_lifecycle is not None
+        )
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age >= feudal-age)", True),
+                (production.target_admission.expression.source, True),
+                (production.pending_fact.source, False),
+                (production.completion_witness.source, False),
+            ),
+            previous_fact_results=(
+                (production.completion_witness.source, False),
+            ),
+            previous_posture=StrategyPosture.BOOM,
+            production_lifecycles=((production.unit, production),),
+        )
+        runtime = evaluate_strategy_runtime(
+            profile,
+            effective,
+            snapshot,
+        )
+        self.assertEqual(len(runtime.production_runtime_states), 1)
+        identity, state = runtime.production_runtime_states[0]
+        self.assertEqual(identity, production.unit)
+        self.assertEqual(state.target_admission, EvidenceTruth.TRUE)
+        self.assertIn(state.status, {
+            ProductionRuntimeStatus.UNKNOWN,
+            ProductionRuntimeStatus.READY,
+        })
 
     def test_missing_open_runtime_evidence_fails_closed(self):
         snapshot = RuntimeObservationSnapshot(
