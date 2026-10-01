@@ -90,7 +90,7 @@ def main() -> int:
         value=100,
         layer=StrategicNumberControllerLayer.RECOVERY,
         activation_guard="(current-age >= castle-age)",
-        release_guard="(goal recovery-clear 1)",
+        release_guard="(current-age >= imperial-age)",
         scope=StrategicNumberControllerScope.UNTIL_RELEASE,
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
