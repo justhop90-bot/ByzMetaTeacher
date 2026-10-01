@@ -116,14 +116,6 @@ class PolicyResolution:
         return None
 
 
-def _subject(recipe: PolicyRecipe, field: PolicyField | None) -> tuple[str, str, str | None]:
-    return (
-        recipe.identity,
-        recipe.identity,
-        field.value if field is not None else None,
-    )
-
-
 def _diag(
     *,
     code: str,
