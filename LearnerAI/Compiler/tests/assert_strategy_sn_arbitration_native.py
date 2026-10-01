@@ -78,8 +78,8 @@ def main() -> int:
         native_strategic_number_id=227,
         value=25,
         layer=StrategicNumberControllerLayer.TEMPORARY,
-        activation_guard="(goal emergency-defense 1)",
-        release_guard="(goal emergency-defense 0)",
+        activation_guard="(current-age >= feudal-age)",
+        release_guard="(current-age >= imperial-age)",
         scope=StrategicNumberControllerScope.UNTIL_RELEASE,
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
@@ -124,7 +124,7 @@ def main() -> int:
         if fragment not in first:
             raise SystemExit(f"missing arbitration artifact fragment: {fragment}")
 
-    if "(not (or (goal emergency-defense 1) (goal sn-controller-emergency-defense-active 1)))" not in first:
+    if "(not (or (current-age >= feudal-age) (goal sn-controller-emergency-defense-active 1)))" not in first:
         raise SystemExit("underlay write is not suppressed across the temporary override lifetime")
 
     if "(set-strategic-number sn-native-227 0)" in first:
