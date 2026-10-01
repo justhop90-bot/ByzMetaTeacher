@@ -35,10 +35,6 @@ def _truth_enum():
     from .strategy_runtime import EvidenceTruth
     return EvidenceTruth
 
-def _truth_enum():
-    from .strategy_runtime import EvidenceTruth
-    return EvidenceTruth
-
 
 @dataclass(frozen=True)
 class ProductionRuntimeState:
@@ -101,6 +97,7 @@ def _tri_all(truths):
 
 
 def _boundary_status(truths) -> ProductionBoundaryStatus:
+    EvidenceTruth = _truth_enum()
     aggregate = _tri_all(truths)
     if aggregate is EvidenceTruth.TRUE:
         return ProductionBoundaryStatus.OBSERVED
@@ -128,6 +125,7 @@ def _provider_transition(snapshot, expression):
 
 
 def _next_pass_visibility(snapshot, lifecycle: ProductionLifecycle):
+    EvidenceTruth = _truth_enum()
     current_completion = snapshot.result_for(lifecycle.completion_witness)
     previous_completion = snapshot.previous_result_for(lifecycle.completion_witness)
     current_pending = snapshot.result_for(lifecycle.pending_fact)
