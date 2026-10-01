@@ -203,6 +203,7 @@ class StrategicBinding:
     target: StrategicTarget
     capability_intent: CapabilityIntent
     opportunity_cost: OpportunityCostPolicy | None
+    production_arbitration_group: str | None = None
 
     @property
     def persistent_intent(self) -> bool:
@@ -277,6 +278,7 @@ class StrategicDemandSpec:
     goal_assertions: tuple[GoalStateAssertion, ...] = ()
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
+    production_arbitration_group: str | None = None
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
@@ -892,6 +894,7 @@ def lower_strategy_profile(
                 target=spec.target,
                 capability_intent=spec.capability_intent,
                 opportunity_cost=spec.opportunity_cost,
+                production_arbitration_group=spec.production_arbitration_group,
             )
             bindings[spec.identity] = base_binding
 
