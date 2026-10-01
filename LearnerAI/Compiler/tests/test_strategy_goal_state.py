@@ -52,6 +52,7 @@ def _with_assertions(profile, *assertions_by_spec):
 class StrategyGoalStateTests(unittest.TestCase):
     def test_lowering_builds_state_and_rule_deterministically(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         spec = profile.demands[0]
         profile = _with_assertions(
             profile,
@@ -115,8 +116,20 @@ class StrategyGoalStateTests(unittest.TestCase):
 
     def test_no_assertions_means_no_control_plan(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         compilation = lower_strategy_profile(profile, effective)
         self.assertIsNone(compilation.control_plan)
+
+    def test_posture_fsm_emits_through_existing_control_plane(self):
+        effective, profile = _profile()
+
+        first = compile_strategy_profile(profile, effective)
+        second = compile_strategy_profile(profile, effective)
+
+        self.assertRegex(first, r"\(defconst strategy-posture \d+\)")
+        self.assertIn("(set-goal strategy-posture 3)", first)
+        self.assertIn("; Native control rule: strategy-posture-transition-001", first)
+        self.assertEqual(first, second)
 
     def test_end_to_end_emits_defconst_guard_and_set(self):
         effective, profile = _profile()
@@ -179,6 +192,7 @@ class StrategyGoalStateTests(unittest.TestCase):
 
     def test_shared_state_same_owner_dedupes(self):
         effective, profile = _profile()
+        profile = replace(profile, transitions=())
         spec = profile.demands[0]
         profile = _with_assertions(
             profile,
