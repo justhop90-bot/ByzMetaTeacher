@@ -106,6 +106,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
     def test_castle_infantry_pressure_selects_cataphract_response(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
+                ("(current-age >= feudal-age)", True),
                 ("(current-age >= castle-age)", True),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", True),
                 ("(can-train-with-escrow cataphract)", True),
@@ -137,6 +138,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
     def test_counter_package_selection_is_deterministic(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
+                ("(current-age >= feudal-age)", True),
                 ("(current-age >= castle-age)", True),
                 ("(players-unit-type-count any-enemy knight-line >= 3)", True),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", True),
