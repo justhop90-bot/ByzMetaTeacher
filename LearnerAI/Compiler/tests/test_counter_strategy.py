@@ -123,7 +123,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
     def test_counter_production_uses_concrete_train_and_witness_tokens(self):
         for demand_identity, expected_unit in (
-            ("counter-castle-camels", "camel-rider"),
+            ("counter-castle-camels", "329"),
             ("counter-castle-cataphracts", "cataphract"),
         ):
             demand = self.profile.demand(demand_identity)
@@ -142,7 +142,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 ("(current-age >= castle-age)", True),
                 ("(players-unit-type-count any-enemy knight-line >= 3)", True),
                 ("(players-unit-type-count any-enemy militia-line >= 5)", True),
-                ("(can-train-with-escrow camel-rider)", True),
+                ("(can-train-with-escrow 329)", True),
                 ("(unit-type-count-total camel-rider-line < 3)", True),
                 ("(can-train-with-escrow cataphract-line)", True),
                 ("(unit-type-count-total cataphract-line < 2)", True),
