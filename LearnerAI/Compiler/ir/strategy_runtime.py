@@ -3,14 +3,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from ..ast import Expression
 from ..primitives import PrimitiveRegistry, default_de_registry
 from ..primitives.native_schema import NativeParameterSpec
 from ..semantic.community_engine import CapabilityTransition, classify_capability_transition
 from .civ_profile import EffectiveCivData
-from .counter_strategy import CounterPackage, CounterThreatClass
+from .counter_strategy import (
+    CompositionUpgradeRequirement,
+    CounterPackage,
+    CounterThreatClass,
+)
 from .game_data import canonical_fingerprint
 from .strategy import (
     CapabilityIntentKind,
@@ -82,6 +86,134 @@ class CounterArbitrationMode(str, Enum):
     NONE = "NONE"
     SINGLE = "SINGLE"
     MIXED = "MIXED"
+
+
+class CompositionUpgradeReadiness(str, Enum):
+    READY = "READY"
+    BLOCKED = "BLOCKED"
+    UNKNOWN = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class CompositionUpgradeRequirementState:
+    requirement: CompositionUpgradeRequirement
+    truth: EvidenceTruth
+
+
+@dataclass(frozen=True)
+class CompositionUpgradeReadinessState:
+    status: CompositionUpgradeReadiness
+    selected_packages: tuple[str, ...]
+    requirements: tuple[CompositionUpgradeRequirementState, ...]
+
+
+def aggregate_composition_upgrade_readiness(
+    selected_packages: tuple[str, ...],
+    package_requirements: Mapping[str, tuple[CompositionUpgradeRequirement, ...]],
+    requirement_truths: Mapping[str, EvidenceTruth],
+) -> CompositionUpgradeReadinessState:
+    """Aggregate selected-package upgrade witnesses using deterministic tri-state semantics.
+
+    Selected package order does not affect requirement ordering. Requirements are
+    deduplicated by semantic identity; conflicting definitions are structural
+    errors, while absent runtime evidence is UNKNOWN and therefore fail-closed.
+    """
+    canonical_packages = tuple(sorted(set(selected_packages)))
+    unknown_packages = sorted(
+        package_id for package_id in canonical_packages if package_id not in package_requirements
+    )
+    if unknown_packages:
+        raise ValueError(
+            "upgrade readiness selected unknown package(s): "
+            + ", ".join(unknown_packages)
+        )
+
+    union: dict[str, CompositionUpgradeRequirement] = {}
+    for package_id in canonical_packages:
+        for requirement in package_requirements[package_id]:
+            prior = union.get(requirement.identity)
+            if prior is None:
+                union[requirement.identity] = requirement
+                continue
+            if (
+                prior.observation_ref != requirement.observation_ref
+                or prior.technology_id != requirement.technology_id
+            ):
+                raise ValueError(
+                    f"conflicting composition upgrade requirement '{requirement.identity}'"
+                )
+
+    ordered_requirements = tuple(
+        sorted(
+            union.values(),
+            key=lambda item: (
+                item.technology_id,
+                item.identity,
+                item.observation_ref,
+            ),
+        )
+    )
+    states = tuple(
+        CompositionUpgradeRequirementState(
+            requirement=requirement,
+            truth=requirement_truths.get(requirement.identity, EvidenceTruth.UNKNOWN),
+        )
+        for requirement in ordered_requirements
+    )
+
+    truths = tuple(item.truth for item in states)
+    if any(truth is EvidenceTruth.UNKNOWN for truth in truths):
+        status = CompositionUpgradeReadiness.UNKNOWN
+    elif any(truth is EvidenceTruth.FALSE for truth in truths):
+        status = CompositionUpgradeReadiness.BLOCKED
+    else:
+        status = CompositionUpgradeReadiness.READY
+
+    return CompositionUpgradeReadinessState(
+        status=status,
+        selected_packages=canonical_packages,
+        requirements=states,
+    )
+
+
+def evaluate_composition_upgrade_readiness(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+    snapshot: RuntimeObservationSnapshot,
+    registry: PrimitiveRegistry,
+    arbitration: CounterArbitrationDecision,
+) -> CompositionUpgradeReadinessState:
+    """Evaluate research-completion witnesses for the arbitrated package union."""
+    packages = {package.identity: package for package in profile.counter_packages}
+    selected = arbitration.active_packages
+    package_requirements = {
+        package_id: packages[package_id].upgrade_requirements
+        for package_id in selected
+    }
+    truths: dict[str, EvidenceTruth] = {}
+    for requirements in package_requirements.values():
+        for requirement in requirements:
+            if requirement.identity in truths:
+                continue
+            evidence = StrategicEvidence(
+                kind=StrategicEvidenceKind.EXECUTION,
+                expression=f"(research-completed {requirement.technology_id})",
+                label=f"composition-upgrade:{requirement.identity}",
+                source=StrategicEvidenceSource.AUTHORING,
+                observation_ref=requirement.observation_ref,
+            )
+            binding = bind_observation_reference(
+                evidence,
+                profile,
+                effective,
+                registry,
+            )
+            truths[requirement.identity] = evaluate_binding(binding, snapshot)
+    return aggregate_composition_upgrade_readiness(
+        selected,
+        package_requirements,
+        truths,
+    )
 
 
 class ReassessmentReason(str, Enum):
