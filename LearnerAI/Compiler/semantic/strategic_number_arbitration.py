@@ -412,6 +412,14 @@ def lower_strategic_number_arbitration(
     for controller in ordered_controllers:
         same_sn = plan.controllers_for_sn(controller.native_strategic_number_id)
         higher_suppression = _higher_controller_suppression(controller, same_sn)
+        has_transient_handoff = any(
+            item.layer
+            in {
+                StrategicNumberControllerLayer.TEMPORARY,
+                StrategicNumberControllerLayer.RECOVERY,
+            }
+            for item in same_sn
+        )
 
         if controller.layer in {
             StrategicNumberControllerLayer.TEMPORARY,
@@ -471,18 +479,19 @@ def lower_strategic_number_arbitration(
             continue
 
         trigger = _controller_claim_guard(controller)
+        write_conditions = [
+            f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+        ]
+        if has_transient_handoff:
+            write_conditions.append(
+                f"(goal {controller.underlay_reassert_pending_state_name} 1)"
+            )
         write_guard = _fold(
             "and",
             (
                 trigger,
                 *higher_suppression,
-                _fold(
-                    "or",
-                    (
-                        f"(up-compare-sn {controller.native_state_name} != {controller.value})",
-                        f"(goal {controller.underlay_reassert_pending_state_name} 1)",
-                    ),
-                ),
+                _fold("or", tuple(write_conditions)),
             ),
         )
 
@@ -506,9 +515,15 @@ def lower_strategic_number_arbitration(
                             f"(set-strategic-number {controller.native_state_name} {controller.value})",
                             SourceLocation(1),
                         ),
-                        parse_expression(
-                            f"(set-goal {controller.underlay_reassert_pending_state_name} 0)",
-                            SourceLocation(1),
+                        *(
+                            (
+                                parse_expression(
+                                    f"(set-goal {controller.underlay_reassert_pending_state_name} 0)",
+                                    SourceLocation(1),
+                                ),
+                            )
+                            if has_transient_handoff
+                            else ()
                         ),
                     ),
                 )
