@@ -5,6 +5,7 @@ from LearnerAI.Compiler.clients.basilisk import compile_strategy_runtime_profile
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import BuildingId, CivId
 from LearnerAI.Compiler.semantic.community_engine import CapabilityTransition
+from LearnerAI.Compiler.semantic.analyzer import parse_expression
 
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
@@ -59,6 +60,19 @@ class StrategyRuntimeTests(unittest.TestCase):
             reassessment_signals=frozenset(signals),
         )
 
+    def test_nested_logical_expression_preserves_child_sources(self):
+        expression = parse_expression(
+            "(and (current-age == feudal-age) "
+            "(players-unit-type-count any-enemy archer-line >= 3))"
+        )
+        self.assertEqual(
+            expression.args[0].source,
+            "(current-age == feudal-age)",
+        )
+        self.assertEqual(
+            expression.args[1].source,
+            "(players-unit-type-count any-enemy archer-line >= 3)",
+        )
     def test_sn3_binds_to_civilian_explorer_cap_observation(self):
         evidence = StrategicEvidence(
             StrategicEvidenceKind.PERSISTENT,
