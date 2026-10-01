@@ -205,6 +205,17 @@ class StrategicNumberController:
         return f"sn-controller-{self.identity}-active"
 
     @property
+    def release_block_state_name(self) -> str:
+        """Persistent hysteresis latch that blocks re-entry after release.
+
+        The state starts at the native Goal default of 0. A transient controller
+        sets it to 1 on release and may clear it only after its activation guard
+        becomes false again. This prevents a still-true activation guard from
+        immediately reacquiring the controller on the next pass.
+        """
+        return f"sn-controller-{self.identity}-release-block"
+
+    @property
     def precedence_key(self) -> tuple[int, int, int, str]:
         return (
             -self.layer.precedence,

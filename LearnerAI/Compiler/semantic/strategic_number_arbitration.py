@@ -308,6 +308,25 @@ def _activation_state(
     )
 
 
+def _release_block_state(
+    controller: StrategicNumberController,
+    profile_id: str,
+) -> NativeControlState:
+    from ..ir.model import GoalRole, SemanticId, StorageRequestId
+
+    owner = SemanticId(profile_id, controller.release_block_state_name)
+    return NativeControlState(
+        controller.release_block_state_name,
+        GoalSlotRequest(
+            StorageRequestId(
+                owner,
+                f"strategic-number-controller-rearm:{controller.identity}",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+
 def lower_strategic_number_arbitration(
     plan: StrategicNumberArbitrationPlan,
     *,
@@ -348,14 +367,21 @@ def lower_strategic_number_arbitration(
         if controller.layer in {
             StrategicNumberControllerLayer.TEMPORARY,
             StrategicNumberControllerLayer.RECOVERY,
-            StrategicNumberControllerLayer.ACTION,
         }:
             states[controller.activation_state_name] = _activation_state(
                 controller,
                 profile_id,
             )
+            states[controller.release_block_state_name] = _release_block_state(
+                controller,
+                profile_id,
+            )
 
         if controller.layer is StrategicNumberControllerLayer.ACTION:
+            states[controller.activation_state_name] = _activation_state(
+                controller,
+                profile_id,
+            )
             attachments.append(
                 StrategicNumberActionAttachment(
                     identity=f"{controller.identity}-attachment",
@@ -433,6 +459,7 @@ def lower_strategic_number_arbitration(
                 activation.source,
                 *higher_suppression,
                 f"(goal {controller.activation_state_name} 0)",
+                f"(goal {controller.release_block_state_name} 0)",
             ),
         )
         rules.append(
@@ -469,6 +496,31 @@ def lower_strategic_number_arbitration(
                 actions=(
                     parse_expression(
                         f"(set-goal {controller.activation_state_name} 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(set-goal {controller.release_block_state_name} 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+        rearm_guard = _fold(
+            "and",
+            (
+                f"(goal {controller.activation_state_name} 0)",
+                f"(goal {controller.release_block_state_name} 1)",
+                f"(not {activation.source})",
+            ),
+        )
+        rules.append(
+            NativeControlRule(
+                f"sn-controller-{controller.identity}-rearm",
+                facts=(parse_expression(rearm_guard, SourceLocation(1)),),
+                actions=(
+                    parse_expression(
+                        f"(set-goal {controller.release_block_state_name} 0)",
                         SourceLocation(1),
                     ),
                 ),
