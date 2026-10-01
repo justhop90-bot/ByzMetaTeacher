@@ -53,7 +53,7 @@ Primary references:
 
 - https://airef.github.io/
 - https://airef.github.io/tables/up-patch-notes.html
-- https://forums.ageofempires.com/t/defensive-stance-guard-and-patrol/ 
+- https://forums.ageofempires.com/t/defensive-stance-is-useless/169389
 - https://forums.ageofempires.com/t/three-ways-to-get-the-ai-to-attack/205476
 - https://github.com/SiegeEngineers/WololoKingdoms
 
