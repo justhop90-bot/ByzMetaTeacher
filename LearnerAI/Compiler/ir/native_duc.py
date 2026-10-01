@@ -60,11 +60,48 @@ class NativeDucOutputRequest:
 
 
 @dataclass(frozen=True)
+class NativeDucGoalInputRequest:
+    """One goal-identity handoff read inside a DUC plan rule.
+
+    The reader operand at (rule_identity, section, expression_index,
+    argument_index) is rewritten at emission to the bound goal of the
+    writer's storage request (`source`). The writer must be a GoalSlot
+    output request in the same plan; the reader operand must be a `g:`
+    typeOp reference. Readers never allocate storage: they resolve the
+    writer's slot, so STORE_ID -> REACQUIRE stays one deterministic slot.
+    """
+
+    rule_identity: str
+    section: str
+    expression_index: int
+    argument_index: int
+    source: StorageRequestId
+
+    def __post_init__(self) -> None:
+        if not self.rule_identity.strip():
+            raise ValueError("native DUC input request rule identity must not be empty")
+        if self.section not in {"FACT", "ACTION"}:
+            raise ValueError("native DUC input request section must be FACT or ACTION")
+        if self.expression_index < 0 or self.argument_index < 0:
+            raise ValueError("native DUC input request indexes must be non-negative")
+
+    @property
+    def site_key(self) -> tuple[str, str, int, int]:
+        return (
+            self.rule_identity,
+            self.section,
+            self.expression_index,
+            self.argument_index,
+        )
+
+
+@dataclass(frozen=True)
 class NativeDucPlan:
     """Ordered compiler-owned native DUC rules with no source-language surface."""
 
     rules: tuple[NativeDucRule, ...] = ()
     output_requests: tuple[NativeDucOutputRequest, ...] = ()
+    input_requests: tuple[NativeDucGoalInputRequest, ...] = ()
 
     def __post_init__(self) -> None:
         identities = tuple(rule.identity for rule in self.rules)
@@ -83,6 +120,17 @@ class NativeDucPlan:
         )
         if len(request_ids) != len(set(request_ids)):
             raise ValueError("duplicate native DUC output request storage id")
+        input_sites = tuple(request.site_key for request in self.input_requests)
+        if len(input_sites) != len(set(input_sites)):
+            raise ValueError("duplicate native DUC input request site")
+        output_sites = tuple(
+            (request.rule_identity, request.section, request.expression_index, request.argument_index)
+            for request in self.output_requests
+        )
+        if set(input_sites) & set(output_sites):
+            raise ValueError(
+                "native DUC input request collides with an output request site"
+            )
 
     @property
     def expressions(self) -> tuple[Expression, ...]:
@@ -101,4 +149,9 @@ class NativeDucPlan:
         return not self.rules
 
 
-__all__ = ["NativeDucOutputRequest", "NativeDucPlan", "NativeDucRule"]
+__all__ = [
+    "NativeDucGoalInputRequest",
+    "NativeDucOutputRequest",
+    "NativeDucPlan",
+    "NativeDucRule",
+]
