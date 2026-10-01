@@ -9,6 +9,7 @@ from Compiler.ir.strategy_runtime import (
     evaluate_strategy_runtime,
 )
 from Compiler.ir.counter_strategy import CounterThreatClass
+from Compiler.ir.strategy_runtime import CounterArbitrationMode
 
 
 class ByzantineCounterArbitrationTests(unittest.TestCase):
@@ -25,6 +26,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 "RANGED_PRESSURE_FEUDAL",
                 "MOUNTED_PRESSURE_CASTLE",
                 "INFANTRY_PRESSURE_CASTLE",
+                "SIEGE_PRESSURE_CASTLE",
             ),
         )
         self.assertEqual(
@@ -34,6 +36,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 CounterThreatClass.RANGED,
                 CounterThreatClass.MOUNTED,
                 CounterThreatClass.INFANTRY,
+                CounterThreatClass.SIEGE,
             ),
         )
 
@@ -134,6 +137,73 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
                 f"(unit-type-count {expected_unit} >= "
                 f"{demand.target.minimum})",
             )
+
+    def test_siege_pressure_activates_mobile_siege_response(self):
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age >= feudal-age)", True),
+                ("(current-age >= castle-age)", True),
+                ("(players-unit-type-count any-enemy mangonel-line >= 2)", True),
+                ("(can-train-with-escrow knight-line)", True),
+                ("(unit-type-count-total knight-line < 2)", True),
+            ),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+        self.assertIn("SIEGE_PRESSURE_CASTLE", state.active_counter_packages)
+        self.assertEqual(
+            state.demand_state("counter-castle-siege-response"),
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
+        )
+
+    def test_mixed_mounted_and_ranged_pressure_preserves_both_counter_roles(self):
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age >= feudal-age)", True),
+                ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
+                ("(players-unit-type-count any-enemy archer-line >= 3)", True),
+                ("(can-train-with-escrow spearman-line)", True),
+                ("(unit-type-count-total spearman-line < 4)", True),
+                ("(can-train-with-escrow skirmisher-line)", True),
+                ("(unit-type-count-total skirmisher-line < 4)", True),
+            ),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+        self.assertIsNotNone(state.counter_arbitration)
+        self.assertIs(state.counter_arbitration.mode, CounterArbitrationMode.MIXED)
+        self.assertEqual(
+            state.counter_arbitration.primary_package,
+            "MOUNTED_PRESSURE_FEUDAL",
+        )
+        self.assertEqual(
+            state.counter_arbitration.supporting_packages,
+            ("RANGED_PRESSURE_FEUDAL",),
+        )
+        self.assertEqual(
+            set(state.active_counter_packages),
+            {"MOUNTED_PRESSURE_FEUDAL", "RANGED_PRESSURE_FEUDAL"},
+        )
+
+    def test_same_class_lower_priority_package_is_suppressed(self):
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(
+                ("(current-age >= feudal-age)", True),
+                ("(current-age >= castle-age)", True),
+                ("(players-unit-type-count any-enemy knight-line >= 3)", True),
+                ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
+                ("(can-train-with-escrow camel-line)", True),
+                ("(unit-type-count-total camel-line < 3)", True),
+                ("(can-train-with-escrow spearman-line)", True),
+                ("(unit-type-count-total spearman-line < 4)", True),
+            ),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+        self.assertIn("MOUNTED_PRESSURE_CASTLE", state.active_counter_packages)
+        self.assertIn(
+            "MOUNTED_PRESSURE_FEUDAL",
+            state.counter_arbitration.suppressed_packages,
+        )
+        self.assertNotIn("counter-mounted-spears", state.active_strategic_demands)
+        self.assertIn("counter-castle-camels", state.active_strategic_demands)
 
     def test_counter_package_selection_is_deterministic(self):
         snapshot = RuntimeObservationSnapshot(
