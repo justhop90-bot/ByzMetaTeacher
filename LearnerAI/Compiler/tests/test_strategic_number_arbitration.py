@@ -147,7 +147,7 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         self.assertEqual(plan.native_strategic_number_ids, (227,))
         self.assertEqual(
             tuple(item.identity for item in plan.controllers_for_sn(227)),
-            ("age", "strategy"),
+            ("strategy", "age"),
         )
 
     def test_same_layer_equal_priority_conflict_is_rejected(self):
