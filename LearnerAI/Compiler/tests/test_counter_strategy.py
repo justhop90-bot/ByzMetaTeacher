@@ -40,7 +40,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
     def test_ranged_threat_activates_persistent_skirmisher_demand(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
-                ("(current-age >= feudal-age)", True),
+                ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy archer-line >= 3)", True),
                 ("(can-train-with-escrow skirmisher-line)", True),
                 ("(unit-type-count-total skirmisher-line < 4)", True),
@@ -57,7 +57,7 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
             StrategicDemandRuntimeState.STRATEGIC_ACTIVE_EXECUTABLE,
         )
 
-    def test_unknown_threat_does_not_activate_counter_demand(self):
+    def test_known_ranged_threat_with_unknown_production_stays_blocked(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
                 ("(current-age >= feudal-age)", True),
@@ -68,15 +68,28 @@ class ByzantineCounterArbitrationTests(unittest.TestCase):
 
         package = state.counter_package_state("RANGED_PRESSURE_FEUDAL")
         self.assertIs(package.truth, EvidenceTruth.TRUE)
-        self.assertNotIn(
-            "counter-ranged-skirmishers",
-            state.active_strategic_demands,
+        self.assertEqual(
+            state.demand_state("counter-ranged-skirmishers"),
+            StrategicDemandRuntimeState.STRATEGIC_ACTIVE_BLOCKED,
+        )
+
+    def test_unknown_ranged_observation_keeps_counter_package_unknown_and_demand_inactive(self):
+        snapshot = RuntimeObservationSnapshot(
+            fact_results=(("(current-age == feudal-age)", True),),
+        )
+        state = evaluate_strategy_runtime(self.profile, self.effective, snapshot)
+
+        package = state.counter_package_state("RANGED_PRESSURE_FEUDAL")
+        self.assertIs(package.truth, EvidenceTruth.UNKNOWN)
+        self.assertEqual(
+            state.demand_state("counter-ranged-skirmishers"),
+            StrategicDemandRuntimeState.STRATEGIC_INACTIVE,
         )
 
     def test_mounted_feudal_pressure_selects_spear_screen_and_policy(self):
         snapshot = RuntimeObservationSnapshot(
             fact_results=(
-                ("(current-age >= feudal-age)", True),
+                ("(current-age == feudal-age)", True),
                 ("(players-unit-type-count any-enemy scout-cavalry-line >= 3)", True),
                 ("(can-train-with-escrow spearman-line)", True),
                 ("(unit-type-count-total spearman-line < 4)", True),
