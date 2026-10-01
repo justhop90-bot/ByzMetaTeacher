@@ -116,8 +116,16 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
             for rule in plan.rules
             if rule.identity.startswith("sn-mode-attack-allocation")
         }
-        flush = rules["sn-mode-attack-allocation-flush-000"]
-        boom = rules["sn-mode-attack-allocation-boom-001"]
+        flush = next(
+            rule
+            for identity, rule in rules.items()
+            if identity.startswith("sn-mode-attack-allocation-flush-")
+        )
+        boom = next(
+            rule
+            for identity, rule in rules.items()
+            if identity.startswith("sn-mode-attack-allocation-boom-")
+        )
 
         self.assertIn("(goal strategy-posture 1)", flush.facts[0].source)
         self.assertIn("(current-age >= feudal-age)", flush.facts[0].source)
