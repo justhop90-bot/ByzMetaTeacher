@@ -70,7 +70,7 @@ def main() -> int:
         native_strategic_number_id=227,
         value=75,
         layer=StrategicNumberControllerLayer.STRATEGY,
-        activation_guard="(goal strategy-posture 3)",
+        activation_guard="(current-age >= feudal-age)",
         owner=Profile.profile_id,
     )
     temporary = StrategicNumberController(
@@ -113,7 +113,7 @@ def main() -> int:
 
     required = (
         "(defconst sn-native-227 227)",
-        "(goal strategy-posture 3)",
+        "(current-age >= feudal-age)",
         "(goal sn-controller-emergency-defense-active 1)",
         "(set-strategic-number sn-native-227 75)",
         "(set-strategic-number sn-native-227 25)",
