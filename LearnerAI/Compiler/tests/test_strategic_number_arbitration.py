@@ -71,6 +71,21 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
             ),
         )
 
+    def test_controller_derives_stable_underlay_handoff_state_per_native_sn(self):
+        controller = self._controller(
+            "temporary",
+            layer=StrategicNumberControllerLayer.TEMPORARY,
+            activation="(goal emergency 1)",
+            release="(goal emergency-clear 1)",
+            rearm="(goal emergency-reset 1)",
+            scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+            evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+        )
+        self.assertEqual(
+            controller.underlay_reassert_pending_state_name,
+            "sn-reassert-227",
+        )
+
     def test_controller_derives_one_physical_state_and_stable_activation_state(self):
         controller = self._controller(
             "attack-surge",

@@ -227,6 +227,16 @@ class StrategicNumberController:
         return f"sn-controller-{self.identity}-release-block"
 
     @property
+    def underlay_reassert_pending_state_name(self) -> str:
+        """Physical-SN handoff latch set when a transient controller rearms.
+
+        The latch survives until an effective lower-precedence controller
+        reasserts its current intent. It is separate from native value drift so
+        ownership handoff does not depend on the SN already having changed.
+        """
+        return f"sn-reassert-{self.native_strategic_number_id}"
+
+    @property
     def rearm_pass_block_state_name(self) -> str:
         """One-pass latch blocking same-pass backward-jump reacquisition.
 

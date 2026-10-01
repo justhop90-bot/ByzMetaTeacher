@@ -346,6 +346,25 @@ def _rearm_pass_block_state(
     )
 
 
+def _underlay_reassert_pending_state(
+    controller: StrategicNumberController,
+    profile_id: str,
+) -> NativeControlState:
+    from ..ir.model import GoalRole, SemanticId, StorageRequestId
+
+    owner = SemanticId(profile_id, controller.underlay_reassert_pending_state_name)
+    return NativeControlState(
+        controller.underlay_reassert_pending_state_name,
+        GoalSlotRequest(
+            StorageRequestId(
+                owner,
+                f"strategic-number-controller-underlay:{controller.native_strategic_number_id}",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+
 def lower_strategic_number_arbitration(
     plan: StrategicNumberArbitrationPlan,
     *,
@@ -366,6 +385,17 @@ def lower_strategic_number_arbitration(
     for sn_id in plan.native_strategic_number_ids:
         controllers = plan.controllers_for_sn(sn_id)
         states[f"sn-native-{sn_id}"] = _storage_state(controllers[0], profile_id)
+        if any(
+            controller.layer
+            in {
+                StrategicNumberControllerLayer.TEMPORARY,
+                StrategicNumberControllerLayer.RECOVERY,
+            }
+            for controller in controllers
+        ):
+            states[controllers[0].underlay_reassert_pending_state_name] = (
+                _underlay_reassert_pending_state(controllers[0], profile_id)
+            )
 
     ordered_controllers = tuple(
         sorted(
@@ -382,6 +412,14 @@ def lower_strategic_number_arbitration(
     for controller in ordered_controllers:
         same_sn = plan.controllers_for_sn(controller.native_strategic_number_id)
         higher_suppression = _higher_controller_suppression(controller, same_sn)
+        has_transient_handoff = any(
+            item.layer
+            in {
+                StrategicNumberControllerLayer.TEMPORARY,
+                StrategicNumberControllerLayer.RECOVERY,
+            }
+            for item in same_sn
+        )
 
         if controller.layer in {
             StrategicNumberControllerLayer.TEMPORARY,
@@ -441,12 +479,19 @@ def lower_strategic_number_arbitration(
             continue
 
         trigger = _controller_claim_guard(controller)
+        write_conditions = [
+            f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+        ]
+        if has_transient_handoff:
+            write_conditions.append(
+                f"(goal {controller.underlay_reassert_pending_state_name} 1)"
+            )
         write_guard = _fold(
             "and",
             (
                 trigger,
                 *higher_suppression,
-                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+                _fold("or", tuple(write_conditions)),
             ),
         )
 
@@ -469,6 +514,16 @@ def lower_strategic_number_arbitration(
                         parse_expression(
                             f"(set-strategic-number {controller.native_state_name} {controller.value})",
                             SourceLocation(1),
+                        ),
+                        *(
+                            (
+                                parse_expression(
+                                    f"(set-goal {controller.underlay_reassert_pending_state_name} 0)",
+                                    SourceLocation(1),
+                                ),
+                            )
+                            if has_transient_handoff
+                            else ()
                         ),
                     ),
                 )
@@ -573,6 +628,10 @@ def lower_strategic_number_arbitration(
                         f"(set-goal {controller.rearm_pass_block_state_name} 1)",
                         SourceLocation(1),
                     ),
+                    parse_expression(
+                        f"(set-goal {controller.underlay_reassert_pending_state_name} 1)",
+                        SourceLocation(1),
+                    ),
                 ),
             )
         )
@@ -582,7 +641,13 @@ def lower_strategic_number_arbitration(
             (
                 f"(goal {controller.activation_state_name} 1)",
                 *higher_suppression,
-                f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+                _fold(
+                    "or",
+                    (
+                        f"(up-compare-sn {controller.native_state_name} != {controller.value})",
+                        f"(goal {controller.underlay_reassert_pending_state_name} 1)",
+                    ),
+                ),
             ),
         )
         rules.append(
@@ -592,6 +657,10 @@ def lower_strategic_number_arbitration(
                 actions=(
                     parse_expression(
                         f"(set-strategic-number {controller.native_state_name} {controller.value})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(set-goal {controller.underlay_reassert_pending_state_name} 0)",
                         SourceLocation(1),
                     ),
                 ),

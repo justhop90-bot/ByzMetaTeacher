@@ -261,6 +261,25 @@ def main() -> int:
     if "(not (current-age >= castle-age))" in recovery_rearm:
         raise SystemExit("recovery rearm must not infer reset by negating activation eligibility")
 
+    rearm_pending_required = (
+        "(set-goal sn-reassert-227 1)",
+        "(goal sn-reassert-227 1)",
+        "(set-goal sn-reassert-227 0)",
+    )
+    for fragment in rearm_pending_required:
+        if fragment not in first:
+            raise SystemExit(f"missing underlay handoff fragment: {fragment}")
+
+    strategy_base_marker = "; Native control rule: sn-controller-strategy-base-write"
+    strategy_base = first.split(strategy_base_marker, 1)[1]
+    next_marker = strategy_base.find("\n; Native ")
+    if next_marker >= 0:
+        strategy_base = strategy_base[:next_marker]
+    if "(goal sn-reassert-227 1)" not in strategy_base:
+        raise SystemExit("strategy underlay write is not armed by the reassert-pending handoff")
+    if "(set-goal sn-reassert-227 0)" not in strategy_base:
+        raise SystemExit("strategy underlay write does not consume the reassert-pending handoff")
+
     required = (
         "(defconst sn-native-227 227)",
         "(current-age == feudal-age)",
