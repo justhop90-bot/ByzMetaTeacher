@@ -22,6 +22,7 @@ from Compiler.ir import (
     StrategicNumberControllerLayer,
     StrategicNumberControllerScope,
     StrategicNumberReleaseEvidence,
+    StrategicNumberActionAttachment,
 )
 from Compiler.primitives.strategic_number_catalog import (
     default_strategic_number_inventory,
@@ -58,12 +59,7 @@ def _attack_plan() -> NativeAttackLifecyclePlan:
     )
 
     attachment = (
-        # The attachment is intentionally unbound here. The dedicated native
-        # attack plan binder below supplies the exact owned rule/action position.
-        __import__(
-            "Compiler.ir",
-            fromlist=["StrategicNumberActionAttachment"],
-        ).StrategicNumberActionAttachment(
+        StrategicNumberActionAttachment(
             identity="attack-surge-attachment",
             controller_identity="attack-surge",
             action_identity="attack-now",
