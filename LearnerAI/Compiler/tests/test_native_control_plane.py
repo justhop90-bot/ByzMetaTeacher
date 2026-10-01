@@ -7,14 +7,17 @@ from Compiler.ir import (
     GoalSlotRequest,
     SemanticId,
     StorageRequestId,
+    StrategicNumberOrigin,
 )
 from Compiler.ir.native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from Compiler.runtime_binding import (
     BindingContext,
+    RuntimeBinder,
     StrategicNumberInventory,
     StrategicNumberRequest,
     TimerRequest,
 )
+from Compiler.primitives.strategic_number_catalog import default_strategic_number_inventory
 from Compiler.semantic.native_control import validate_native_control_plan
 from Compiler.semantic.pass_scheduler import PassScheduler
 from Compiler.semantic.rule_execution import EffectiveRule, RuleAction, RulePassBehavior
@@ -102,6 +105,87 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
         self.assertIn("(up-timer-status cooldown == timer-running)", output)
 
 
+
+    def test_native_strategic_number_reference_binds_exact_documented_id(self):
+        owner = SemanticId("control.fixture", "native-sn")
+        request = StrategicNumberRequest(
+            StorageRequestId(owner, "native-sn-food-gatherer"),
+            why_not_goal="This state is an engine-defined Strategic Number with a documented native identity.",
+            stability_key="control.fixture.native-sn-food-gatherer",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=117,
+        )
+
+        result = RuntimeBinder().bind((request,))
+        binding = result.binding_for(request.request_id)
+
+        self.assertEqual(binding.id, 117)
+        self.assertEqual(binding.inventory_sha, default_strategic_number_inventory().inventory_sha)
+
+    def test_native_strategic_number_reference_rejects_undocumented_id(self):
+        owner = SemanticId("control.fixture", "native-sn-reject")
+        request = StrategicNumberRequest(
+            StorageRequestId(owner, "native-sn-510"),
+            why_not_goal="This request intentionally points at a non-documented Strategic Number.",
+            stability_key="control.fixture.native-sn-510",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=510,
+        )
+
+        with self.assertRaisesRegex(ValueError, "DE-documented|documented"):
+            RuntimeBinder().bind((request,))
+
+    def test_native_strategic_number_reference_emits_deterministic_guarded_rule(self):
+        owner = SemanticId("control.fixture", "native-sn-emission")
+        sn_request = StrategicNumberRequest(
+            StorageRequestId(owner, "native-sn-food-gatherer"),
+            why_not_goal="This state is an engine-defined Strategic Number with a documented native identity.",
+            stability_key="control.fixture.native-sn-food-gatherer",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=117,
+        )
+        plan = NativeControlPlan(
+            states=(NativeControlState("sn-food-gatherer-percentage", sn_request),),
+            rules=(
+                NativeControlRule(
+                    "set-feudal-food-mode",
+                    facts=(Expression(
+                        "(current-age >= feudal-age)",
+                        "current-age",
+                        (">=", "feudal-age"),
+                    ),),
+                    actions=(Expression(
+                        "(set-strategic-number sn-food-gatherer-percentage 45)",
+                        "set-strategic-number",
+                        ("sn-food-gatherer-percentage", "45"),
+                    ),),
+                ),
+            ),
+        )
+
+        source = """
+            demand bootstrap {
+                require (can-build house)
+                action (build house)
+                witness (building-type-count house >= 1)
+                release (building-type-count house >= 1)
+            }
+        """
+        first = compile_source(source, control_plan=plan)
+        second = compile_source(source, control_plan=plan)
+
+        self.assertEqual(first, second)
+        self.assertIn("(defconst sn-food-gatherer-percentage 117)", first)
+        self.assertIn("(current-age >= feudal-age)", first)
+        self.assertIn("(set-strategic-number sn-food-gatherer-percentage 45)", first)
+        self.assertEqual(
+            first.count("(set-strategic-number sn-food-gatherer-percentage 45)"),
+            1,
+        )
+        self.assertNotIn(
+            "(set-strategic-number sn-food-gatherer-percentage 0)",
+            first,
+        )
 
     def test_all_control_plane_commands_can_cross_the_control_lowering_gate(self):
         owner = SemanticId("control.fixture", "all-commands")
