@@ -8,8 +8,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from ..ast import Expression
+
+if TYPE_CHECKING:
+    from .native_control import NativeControlPlan
 
 
 _IDENTIFIER_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
