@@ -73,8 +73,12 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
             recipe,
             bindings={"route": "woodline-patrol"},
         )
-        self.assertFalse(unresolved.executable)
-        self.assertIn("POL-004", {item.key.code for item in unresolved.diagnostics})
+        self.assertTrue(unresolved.executable)
+        self.assertIn("POL-006", {item.key.code for item in unresolved.diagnostics})
+        self.assertTrue(
+            any(item.severity.name == "WARNING" and item.key.code == "POL-006"
+                for item in unresolved.diagnostics)
+        )
 
         resolved = resolve_policy_recipe(
             recipe,
@@ -135,6 +139,7 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
         resolution = resolve_policy_recipe(recipe)
         self.assertFalse(resolution.executable)
         self.assertIn("POL-001", {item.key.code for item in resolution.diagnostics})
+        self.assertIn("POL-006", {item.key.code for item in resolution.diagnostics})
         self.assertTrue(
             any(
                 suppression.root_cause is not None
@@ -158,7 +163,7 @@ class ByzantinePolicyRecipeIntegrationTests(unittest.TestCase):
         recipe = self.profile.policy_recipe("PROTECT_SIEGE")
         missing = resolve_policy_recipe(
             recipe,
-            bindings={"target": "cataphract"},
+            bindings={"target": "cataphract", "target_kind": "unit"},
         )
         self.assertFalse(missing.executable)
         self.assertIn("POL-005", {item.key.code for item in missing.diagnostics})
