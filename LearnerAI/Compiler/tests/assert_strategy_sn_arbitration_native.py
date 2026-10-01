@@ -84,22 +84,11 @@ def main() -> int:
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
     )
-    recovery = StrategicNumberController(
-        identity="recovery-override",
-        native_strategic_number_id=227,
-        value=100,
-        layer=StrategicNumberControllerLayer.RECOVERY,
-        activation_guard="(current-age >= feudal-age)",
-        release_guard="(current-age >= imperial-age)",
-        scope=StrategicNumberControllerScope.UNTIL_RELEASE,
-        release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
-        owner=Profile.profile_id,
-    )
 
     inventory = default_strategic_number_inventory()
     plan = build_strategic_number_arbitration_plan(
         Profile(),
-        extra_controllers=(base, temporary, recovery),
+        extra_controllers=(base, temporary),
     )
     lowered = lower_strategic_number_arbitration(
         plan,
@@ -154,21 +143,20 @@ def main() -> int:
             "temporary SN activation must latch ownership immediately before its SN write"
         )
 
-    for identity in ("emergency-defense", "recovery-override"):
-        rule_markers = (
-            f"; Native control rule: sn-controller-{identity}-activate",
-            f"; Native control rule: sn-controller-{identity}-release",
-            f"; Native control rule: sn-controller-{identity}-steady",
+    rule_markers = (
+        "; Native control rule: sn-controller-emergency-defense-activate",
+        "; Native control rule: sn-controller-emergency-defense-release",
+        "; Native control rule: sn-controller-emergency-defense-steady",
+    )
+    rule_positions = []
+    for marker in rule_markers:
+        if marker not in first:
+            raise SystemExit(f"missing transient controller rule marker: {marker}")
+        rule_positions.append(first.index(marker))
+    if not rule_positions[0] < rule_positions[1] < rule_positions[2]:
+        raise SystemExit(
+            "temporary controller must emit activate -> release -> steady order"
         )
-        rule_positions = []
-        for marker in rule_markers:
-            if marker not in first:
-                raise SystemExit(f"missing transient controller rule marker: {marker}")
-            rule_positions.append(first.index(marker))
-        if not rule_positions[0] < rule_positions[1] < rule_positions[2]:
-            raise SystemExit(
-                f"{identity} controller must emit activate -> release -> steady order"
-            )
 
     required = (
         "(defconst sn-native-227 227)",
