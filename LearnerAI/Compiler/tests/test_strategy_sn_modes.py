@@ -106,6 +106,11 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
         assert plan is not None
 
         self.assertIn("strategy-posture", tuple(state.identifier for state in plan.states))
+        self.assertIn("sn-native-227", tuple(state.identifier for state in plan.states))
+        self.assertEqual(
+            sum(state.identifier == "sn-native-227" for state in plan.states),
+            1,
+        )
         rules = {
             rule.identity: rule
             for rule in plan.rules
@@ -123,6 +128,25 @@ class StrategyStrategicNumberModeTests(unittest.TestCase):
         )
         self.assertIn("(goal strategy-posture 3)", boom.facts[0].source)
         self.assertIn("(up-compare-sn sn-native-227 != 75)", boom.facts[0].source)
+
+    def test_posture_modes_require_existing_posture_control(self):
+        effective, profile = self._profile()
+        profile = replace(
+            profile,
+            transitions=(),
+            strategic_number_modes=(
+                StrategicNumberMode(
+                    "attack-only",
+                    native_strategic_number_id=227,
+                    value=50,
+                    minimum_age=Age.FEUDAL,
+                    postures=(StrategyPosture.FLUSH,),
+                ),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "require StrategyPosture transition control"):
+            lower_strategy_profile(profile, effective)
 
     def test_overlap_for_same_native_sn_is_rejected(self):
         effective, profile = self._profile()
