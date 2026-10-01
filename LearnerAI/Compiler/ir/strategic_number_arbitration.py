@@ -297,10 +297,23 @@ class StrategicNumberArbitrationPlan:
                     f"{identities} for native Strategic Number {key[0]}"
                 )
 
+        coalesced: dict[tuple[int, StrategicNumberControllerLayer, int, str, int], StrategicNumberController] = {}
+        for controller in canonical.values():
+            key = (
+                controller.native_strategic_number_id,
+                controller.layer,
+                controller.priority,
+                _guard_key(controller.activation_guard),
+                controller.value,
+            )
+            existing = coalesced.get(key)
+            if existing is None or controller.identity < existing.identity:
+                coalesced[key] = controller
+
         object.__setattr__(
             self,
             "controllers",
-            tuple(sorted(canonical.values(), key=lambda item: item.precedence_key)),
+            tuple(sorted(coalesced.values(), key=lambda item: item.precedence_key)),
         )
 
     @property
