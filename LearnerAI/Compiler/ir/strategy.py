@@ -958,7 +958,7 @@ def _posture_transition_control_plan(profile: StrategyProfile):
     ordered = tuple(
         sorted(
             enumerate(profile.transitions),
-            key=lambda item: (item[1].priority, item[1].label, item[0]),
+            key=lambda item: (-item[1].priority, item[1].label, item[0]),
         )
     )
     for rule_index, (_profile_index, transition) in enumerate(ordered, start=1):
