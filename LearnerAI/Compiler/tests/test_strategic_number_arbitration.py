@@ -85,7 +85,7 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         )
         self.assertEqual(
             controller.rearm_pass_block_state_name,
-            "sn-controller-attack-surge-rearm-pass-block",
+            "sn-rearm-attack-surge",
         )
 
     def test_temporary_requires_release_guard_and_release_evidence(self):
