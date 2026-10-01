@@ -27,6 +27,8 @@ User-facing policy diagnostics remain `POL-*`. Compiler-internal causal-graph in
 - [x] Wire PolicyRecipe resolution into PolicyCauseGraph with deterministic suppression and executable gating.
 - [x] Integrate the recipe catalog with StrategyProfile and ResolvedStrategyProfile.
 - [x] Cover the five initial Byzantine community-policy recipes with focused tests and deterministic resolution.
+- [x] Add typed Byzantine counter packages that connect decision-grade enemy observations to persistent demands.
+- [x] Integrate counter package activation with StrategyRuntimeState, reassessment, and deterministic fingerprints.
 - [x] Codify the layered Byzantine strategy doctrine in docs/strategy/2026-10-01-byzantine-strategy-doctrine.md.
 - [ ] Add end-to-end compiler report serialization once policy diagnostics themselves consume the graph.
 
@@ -118,3 +120,23 @@ RANGED_HOLD, MOBILE_LOCAL_DEFENSE, STRICT_RAID, PROTECT_SIEGE, DEER_PUSH.
 ## Strategy doctrine cross-reference
 
 The policy recipe layer is subordinate to the full strategic model in docs/strategy/2026-10-01-byzantine-strategy-doctrine.md. The doctrine remains layered: environment -> observation -> arbitration -> counter package -> execution -> witness/recovery. Recipes express local control intent inside that larger strategy; they do not replace posture arbitration, persistent demands, military composition, production, or recovery.
+
+
+## Counter-arbitration integration
+
+The next strategy layer is now implemented in `LearnerAI/Compiler/ir/counter_strategy.py` and `LearnerAI/Compiler/ir/strategy_runtime.py`.
+
+The runtime path is:
+
+`native enemy observation -> CounterPackage -> persistent demand activation -> existing execution lifecycle`
+
+The initial Byzantine package set is:
+
+- `MOUNTED_PRESSURE_FEUDAL` -> `counter-mounted-spears`
+- `RANGED_PRESSURE_FEUDAL` -> `counter-ranged-skirmishers` + `RANGED_HOLD`
+- `MOUNTED_PRESSURE_CASTLE` -> `counter-castle-camels`
+- `INFANTRY_PRESSURE_CASTLE` -> `counter-castle-cataphracts`
+
+A package only activates from a TRUE native observation. UNKNOWN never activates a package. Known threat with unavailable/unknown production capability becomes an ACTIVE_BLOCKED demand rather than being treated as absence of threat.
+
+This is intentionally not a combat simulator and does not select every possible counter. It is the typed information-to-production coupling that the community `.per` corpus demonstrates repeatedly.
