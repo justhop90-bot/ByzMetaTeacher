@@ -167,13 +167,26 @@ def main() -> int:
         raise SystemExit(
             f"expected exactly two attack-now actions, found {first.count('(attack-now)')}"
         )
-    sn_index = first.index("(set-strategic-number sn-native-227 100)")
-    attack_index = first.index(
-        "(attack-now)",
-        first.index("; Native attack rule: attack-second"),
+    lines = first.splitlines()
+    sn_line = next(
+        index
+        for index, line in enumerate(lines)
+        if line.strip() == "(set-strategic-number sn-native-227 100)"
     )
-    if first[sn_index:attack_index].count("(set-strategic-number sn-native-227 100)") != 1:
-        raise SystemExit("Strategic Number write was not emitted exactly once immediately before owned attack")
+    attack_rule_start = next(
+        index
+        for index, line in enumerate(lines)
+        if line.strip() == "; Native attack rule: attack-second"
+    )
+    attack_line = next(
+        index
+        for index in range(attack_rule_start, len(lines))
+        if lines[index].strip() == "(attack-now)"
+    )
+    if attack_line != sn_line + 1:
+        raise SystemExit(
+            "Strategic Number write was not emitted immediately before owned attack"
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(first, encoding="utf-8")
 
