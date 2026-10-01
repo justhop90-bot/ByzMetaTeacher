@@ -1284,7 +1284,7 @@ def _counter_package_control_plan(profile: StrategyProfile):
     rules: list[NativeControlRule] = [
         NativeControlRule(
             "counter-package-selection-reset-000",
-            facts=(parse_expression("(true)", SourceLocation(1)),),
+            facts=(),
             actions=reset_actions,
         )
     ]
