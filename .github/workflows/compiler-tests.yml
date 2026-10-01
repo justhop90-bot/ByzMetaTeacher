@@ -164,6 +164,12 @@ jobs:
             --output /tmp/duc-target-reacquisition.per \
             --report /tmp/native-reports/duc-target-reacquisition.json
 
+      - name: Native zero-findings acceptance - DUC group window fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_duc_group_window_native.py \
+            --output /tmp/duc-group-window.per \
+            --report /tmp/native-reports/duc-group-window.json
+
       - name: Native zero-findings acceptance - attack lifecycle fixture
         run: |
           python LearnerAI/Compiler/tests/assert_attack_native.py             --output /tmp/attack-lifecycle.per             --report /tmp/native-reports/attack-lifecycle.json
