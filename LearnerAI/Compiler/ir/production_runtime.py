@@ -59,18 +59,24 @@ class ProductionRuntimeState:
     @property
     def runtime_open(self) -> bool:
         EvidenceTruth = _truth_enum()
-        return any(
-            value is EvidenceTruth.UNKNOWN
-            for value in (
-                self.target_admission,
-                self.provider_state,
-                self.provider_readiness,
-                self.provider_availability,
-                self.queue_capacity_control,
-                self.queue_total,
-                self.pending,
-                self.completion,
+        return (
+            any(
+                value is EvidenceTruth.UNKNOWN
+                for value in (
+                    self.target_admission,
+                    self.provider_state,
+                    self.provider_readiness,
+                    self.provider_availability,
+                    self.queue_capacity_control,
+                    self.queue_total,
+                    self.pending,
+                    self.completion,
+                )
             )
+            or self.birth_boundary is ProductionBoundaryStatus.UNKNOWN
+            or self.queue_exit_boundary is ProductionBoundaryStatus.UNKNOWN
+            or self.next_pass_visibility is ProductionBoundaryStatus.UNKNOWN
+            or self.provider_transition is ProductionProviderTransition.UNKNOWN
         )
 
     @property
