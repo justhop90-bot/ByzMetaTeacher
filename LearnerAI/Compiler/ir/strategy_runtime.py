@@ -1083,6 +1083,13 @@ def evaluate_strategy_runtime(
             (capability_observation.identity, transition)
         )
 
+    counter_package_states, counter_package_sources = _evaluate_counter_packages(
+        profile,
+        effective,
+        snapshot,
+        registry,
+    )
+
     owners: list[tuple[str, str]] = []
     active: list[str] = []
     blocked: list[str] = []
@@ -1091,13 +1098,28 @@ def evaluate_strategy_runtime(
     opportunity: list[tuple[str, OpportunityCostRuntimeState]] = []
 
     reasons = set(snapshot.reassessment_signals)
+    previous_counter_states = dict(snapshot.previous_counter_package_states)
+    current_counter_states = {
+        item.identity: item.truth
+        for item in counter_package_states
+    }
+    if current_counter_states != previous_counter_states:
+        reasons.add(ReassessmentReason.COUNTER_PACKAGE_CHANGE)
+
     if snapshot.previous_posture is not None and snapshot.previous_posture is not current_posture:
         reasons.add(ReassessmentReason.POSTURE_CHANGE)
 
     previous_states = dict(snapshot.previous_demand_states)
     for demand in profile.demands:
         owners.append((demand.identity, demand.owner))
-        state, evidence = _evaluate_demand(demand, profile, effective, snapshot, registry)
+        state, evidence = _evaluate_demand(
+            demand,
+            profile,
+            effective,
+            snapshot,
+            registry,
+            counter_package_sources.get(demand.identity, ()),
+        )
         demand_states.append((demand.identity, state))
         evaluated.extend(evidence)
 
@@ -1162,6 +1184,7 @@ def evaluate_strategy_runtime(
         {
             "current_posture": current_posture,
             "previous_posture": snapshot.previous_posture,
+            "counter_package_states": counter_package_states,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1188,6 +1211,7 @@ def evaluate_strategy_runtime(
         current_posture=current_posture,
         previous_posture=snapshot.previous_posture,
         demand_states=tuple(sorted(demand_states)),
+        counter_package_states=tuple(counter_package_states),
         opportunity_cost_states=tuple(sorted(opportunity)),
         evaluated_evidence=tuple(sorted(evaluated)),
         active_strategic_demands=tuple(sorted(active)),
