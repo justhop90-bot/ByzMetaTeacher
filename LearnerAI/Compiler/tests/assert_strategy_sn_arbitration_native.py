@@ -250,10 +250,6 @@ def main() -> int:
     next_marker = recovery_rearm.find("\n; Native ")
     if next_marker >= 0:
         recovery_rearm = recovery_rearm[:next_marker]
-    if "(not (current-age >= castle-age))" not in recovery_rearm:
-        raise SystemExit(
-            "recovery rearm must wait for the activation guard to become false"
-        )
     if "(goal sn-controller-recovery-override-release-block 1)" not in recovery_rearm:
         raise SystemExit("recovery rearm is missing its release-block latch")
     if "(set-goal sn-controller-recovery-override-release-block 0)" not in recovery_rearm:
@@ -262,11 +258,15 @@ def main() -> int:
         raise SystemExit("recovery rearm must set the same-pass reentry block")
     if "(current-age >= imperial-age)" not in recovery_rearm:
         raise SystemExit("recovery rearm must use the explicit reset condition")
+    if "(not (current-age >= castle-age))" in recovery_rearm:
+        raise SystemExit("recovery rearm must not infer reset by negating activation eligibility")
 
     required = (
         "(defconst sn-native-227 227)",
-        "(current-age >= feudal-age)",
+        "(current-age == feudal-age)",
         "(goal sn-controller-emergency-defense-active 1)",
+        "(current-age == castle-age)",
+        "(current-age >= imperial-age)",
         "(set-strategic-number sn-native-227 75)",
         "(set-strategic-number sn-native-227 25)",
         "(set-strategic-number sn-native-227 100)",
