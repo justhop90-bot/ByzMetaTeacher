@@ -302,7 +302,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 activation_rule.facts[0].source,
             )
             self.assertIn(
-                f"(goal sn-controller-{identity}-rearm-pass-block 0)",
+                f"(goal sn-rearm-{identity} 0)",
                 activation_rule.facts[0].source,
             )
 
@@ -356,7 +356,7 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 tuple(action.source for action in rearm_rule.actions),
                 (
                     f"(set-goal sn-controller-{identity}-release-block 0)",
-                    f"(set-goal sn-controller-{identity}-rearm-pass-block 1)",
+                    f"(set-goal sn-rearm-{identity} 1)",
                 ),
             )
 
