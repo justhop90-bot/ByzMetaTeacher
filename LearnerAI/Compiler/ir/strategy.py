@@ -971,7 +971,7 @@ def _posture_transition_control_plan(profile: StrategyProfile):
             guard_sources.append(
                 posture_guards[0]
                 if len(posture_guards) == 1
-                else f"(or {" ".join(posture_guards)})"
+                else "(or " + " ".join(posture_guards) + ")"
             )
         else:
             # Empty from_postures means "initial posture only" in the runtime
