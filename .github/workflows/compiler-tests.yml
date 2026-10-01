@@ -134,6 +134,9 @@ jobs:
       - name: Native zero-findings acceptance - strategic number semantics fixture
         run: |
           python LearnerAI/Compiler/tests/assert_strategic_number_native.py             --output /tmp/strategic-number.per             --report /tmp/native-reports/strategic-number.json
+      - name: Native zero-findings acceptance - native Strategic Number reference fixture
+        run: |
+          python LearnerAI/Compiler/tests/assert_native_strategic_number_reference.py             --output /tmp/native-strategic-number-reference.per             --report /tmp/native-reports/native-strategic-number-reference.json
       - name: Native zero-findings acceptance - construction lifecycle fixture
         run: |
           python - <<'PY'
