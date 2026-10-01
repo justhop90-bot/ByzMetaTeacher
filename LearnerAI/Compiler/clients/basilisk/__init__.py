@@ -36,6 +36,11 @@ from ...ir.strategy import (
     lower_strategy_profile,
     resolve_strategy_profile,
 )
+from ...ir.counter_strategy import (
+    CounterPackage,
+    CounterThreatClass,
+    default_byzantine_counter_packages,
+)
 from ...semantic.policy_recipe import (
     PolicyBindingRequirement,
     PolicyField,
@@ -100,6 +105,9 @@ __all__ = (
     "build_land_castle_strategy",
     "lower_strategy_profile",
     "resolve_strategy_profile",
+    "CounterPackage",
+    "CounterThreatClass",
+    "default_byzantine_counter_packages",
     "PolicyBindingRequirement",
     "PolicyField",
     "PolicyOverride",
