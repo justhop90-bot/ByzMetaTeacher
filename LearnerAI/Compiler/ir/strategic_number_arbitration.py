@@ -224,7 +224,7 @@ class StrategicNumberController:
         needs a short-lived sentinel in addition to the persistent release
         block.
         """
-        return f"sn-controller-{self.identity}-rearm-pass-block"
+        return f"sn-rearm-{self.identity}"
 
     @property
     def precedence_key(self) -> tuple[int, int, int, str]:
