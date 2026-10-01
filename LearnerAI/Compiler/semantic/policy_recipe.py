@@ -130,6 +130,7 @@ def _diag(
     recipe: PolicyRecipe,
     field: PolicyField | None,
     related_field: PolicyField | None = None,
+    binding_identity: str | None = None,
     severity: DiagnosticSeverity = DiagnosticSeverity.ERROR,
     phase: PolicyDiagnosticPhase = PolicyDiagnosticPhase.RESOLUTION,
     priority: int | None = None,
@@ -141,6 +142,7 @@ def _diag(
         recipe_identity=recipe.identity,
         field=field.value if field else None,
         related_field=related_field.value if related_field else None,
+        binding_identity=binding_identity,
         severity=severity,
         phase=phase,
         priority=priority,
@@ -184,6 +186,7 @@ def _validate_bindings(
                     code="POL-004",
                     recipe=recipe,
                     field=None,
+                    binding_identity=requirement.identity,
                     phase=PolicyDiagnosticPhase.BINDING,
                     message=(
                         f"recipe '{recipe.identity}' requires binding "
