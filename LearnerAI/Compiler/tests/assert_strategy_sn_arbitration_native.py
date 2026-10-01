@@ -84,11 +84,22 @@ def main() -> int:
         release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
         owner=Profile.profile_id,
     )
+    recovery = StrategicNumberController(
+        identity="recovery-override",
+        native_strategic_number_id=227,
+        value=100,
+        layer=StrategicNumberControllerLayer.RECOVERY,
+        activation_guard="(goal recovery-needed 1)",
+        release_guard="(goal recovery-clear 1)",
+        scope=StrategicNumberControllerScope.UNTIL_RELEASE,
+        release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+        owner=Profile.profile_id,
+    )
 
     inventory = default_strategic_number_inventory()
     plan = build_strategic_number_arbitration_plan(
         Profile(),
-        extra_controllers=(base, temporary),
+        extra_controllers=(base, temporary, recovery),
     )
     lowered = lower_strategic_number_arbitration(
         plan,
@@ -143,20 +154,96 @@ def main() -> int:
             "temporary SN activation must latch ownership immediately before its SN write"
         )
 
-    rule_markers = (
-        "; Native control rule: sn-controller-emergency-defense-activate",
-        "; Native control rule: sn-controller-emergency-defense-release",
-        "; Native control rule: sn-controller-emergency-defense-steady",
+    controller_orders = (
+        (
+            "recovery-override",
+            (
+                "; Native control rule: sn-controller-recovery-override-activate",
+                "; Native control rule: sn-controller-recovery-override-release",
+                "; Native control rule: sn-controller-recovery-override-rearm",
+                "; Native control rule: sn-controller-recovery-override-steady",
+            ),
+        ),
+        (
+            "emergency-defense",
+            (
+                "; Native control rule: sn-controller-emergency-defense-activate",
+                "; Native control rule: sn-controller-emergency-defense-release",
+                "; Native control rule: sn-controller-emergency-defense-rearm",
+                "; Native control rule: sn-controller-emergency-defense-steady",
+            ),
+        ),
     )
-    rule_positions = []
-    for marker in rule_markers:
-        if marker not in first:
-            raise SystemExit(f"missing transient controller rule marker: {marker}")
-        rule_positions.append(first.index(marker))
-    if not rule_positions[0] < rule_positions[1] < rule_positions[2]:
+    controller_order_positions = {}
+    for identity, markers in controller_orders:
+        positions = []
+        for marker in markers:
+            if marker not in first:
+                raise SystemExit(f"missing transient controller rule marker: {marker}")
+            positions.append(first.index(marker))
+        if not positions[0] < positions[1] < positions[2] < positions[3]:
+            raise SystemExit(
+                f"{identity} controller must emit activate -> release -> rearm -> steady order"
+            )
+        controller_order_positions[identity] = positions
+    if controller_order_positions["recovery-override"][3] >= controller_order_positions["emergency-defense"][0]:
         raise SystemExit(
-            "temporary controller must emit activate -> release -> steady order"
+            "higher-precedence recovery controller must emit before the temporary controller"
         )
+
+    recovery_activation_marker = (
+        "; Native control rule: sn-controller-recovery-override-activate"
+    )
+    recovery_activation = first.split(recovery_activation_marker, 1)[1]
+    next_marker = recovery_activation.find("\n; Native ")
+    if next_marker >= 0:
+        recovery_activation = recovery_activation[:next_marker]
+    if "(goal sn-controller-recovery-override-release-block 0)" not in recovery_activation:
+        raise SystemExit("recovery activation is missing its release-block guard")
+
+    recovery_release_marker = (
+        "; Native control rule: sn-controller-recovery-override-release"
+    )
+    recovery_release = first.split(recovery_release_marker, 1)[1]
+    next_marker = recovery_release.find("\n; Native ")
+    if next_marker >= 0:
+        recovery_release = recovery_release[:next_marker]
+    recovery_release_actions = [
+        line.strip()
+        for line in recovery_release.splitlines()
+        if line.strip().startswith("(")
+    ]
+    try:
+        active_release_index = recovery_release_actions.index(
+            "(set-goal sn-controller-recovery-override-active 0)"
+        )
+        block_release_index = recovery_release_actions.index(
+            "(set-goal sn-controller-recovery-override-release-block 1)"
+        )
+    except ValueError as exc:
+        raise SystemExit(
+            "recovery release must clear active ownership and latch the release block"
+        ) from exc
+    if block_release_index != active_release_index + 1:
+        raise SystemExit(
+            "recovery release must clear active ownership before latching rearm block"
+        )
+
+    recovery_rearm_marker = (
+        "; Native control rule: sn-controller-recovery-override-rearm"
+    )
+    recovery_rearm = first.split(recovery_rearm_marker, 1)[1]
+    next_marker = recovery_rearm.find("\n; Native ")
+    if next_marker >= 0:
+        recovery_rearm = recovery_rearm[:next_marker]
+    if "(not (goal recovery-needed 1))" not in recovery_rearm:
+        raise SystemExit(
+            "recovery rearm must wait for the activation guard to become false"
+        )
+    if "(goal sn-controller-recovery-override-release-block 1)" not in recovery_rearm:
+        raise SystemExit("recovery rearm is missing its release-block latch")
+    if "(set-goal sn-controller-recovery-override-release-block 0)" not in recovery_rearm:
+        raise SystemExit("recovery rearm must clear the release-block latch")
 
     required = (
         "(defconst sn-native-227 227)",
@@ -164,8 +251,12 @@ def main() -> int:
         "(goal sn-controller-emergency-defense-active 1)",
         "(set-strategic-number sn-native-227 75)",
         "(set-strategic-number sn-native-227 25)",
+        "(set-strategic-number sn-native-227 100)",
         "(up-compare-sn sn-native-227 != 75)",
         "(up-compare-sn sn-native-227 != 25)",
+        "(up-compare-sn sn-native-227 != 100)",
+        "(goal sn-controller-emergency-defense-release-block 0)",
+        "(goal sn-controller-recovery-override-release-block 0)",
     )
     for fragment in required:
         if fragment not in first:
