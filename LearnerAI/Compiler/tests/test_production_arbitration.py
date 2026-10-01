@@ -12,8 +12,9 @@ Covers the required production tests:
 - deterministic repeated compilation.
 
 Hard invariants pinned here (PROJECT_STATE / ROADMAP Phase 1 contract):
-- owner comes from the strategic owner when strategy-bound, otherwise the
-  shared unit execution-memory owner; the provider UnitId is never an owner;
+- owner comes from the strategic identity when strategy-bound unless an
+  explicit production-arbitration group is declared; otherwise the shared
+  unit execution-memory owner applies; the provider UnitId is never an owner;
 - can-train stays admission only; train stays issuance only;
 - up-pending-objects stays duplicate-queue protection;
 - unit-type-count-total stays observation only;
