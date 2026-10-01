@@ -11,7 +11,7 @@ Hard invariants pinned here:
 - guards stay native Facts; the control-plane gate rejects unknown
   commands, undeclared states, and bad arities (no test bypasses it);
 - same-pass write visibility stays engine-ordered (no firing proof);
-- no assertions means no control plan (existing behavior preserved).
+- no assertions and no posture transitions means no control plan (existing behavior preserved).
 """
 import unittest
 from dataclasses import replace
