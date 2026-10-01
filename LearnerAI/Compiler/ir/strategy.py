@@ -837,12 +837,6 @@ def lower_strategy_profile(
     )
     from ..ir.model import SemanticId
 
-    counter_activation_guards: dict[str, list[str]] = {}
-    for package in profile.counter_packages:
-        state_name = _counter_package_state_name(package.identity)
-        for demand_identity in package.demand_identities:
-            counter_activation_guards.setdefault(demand_identity, []).append(state_name)
-
     nodes = []
     execution_owner: dict[str, str] = {}
     for spec in profile.demands:
@@ -866,22 +860,10 @@ def lower_strategy_profile(
                     f"duplicate lowered execution demand '{execution_name}'"
                 )
             execution_owner[execution_name] = spec.identity
-            guard_states = tuple(sorted(set(counter_activation_guards.get(spec.identity, ()))))
-            requirements = execution.requirements
-            if guard_states:
-                guard_source = (
-                    guard_states[0]
-                    if len(guard_states) == 1
-                    else "(or " + " ".join(guard_states) + ")"
-                )
-                requirements = (
-                    f"(up-compare-goal {guard_source} c:== 1)",
-                    *requirements,
-                )
             nodes.append(
                 DemandNode(
                     name=execution_name,
-                    requirements=requirements,
+                    requirements=execution.requirements,
                     action=execution.action,
                     witness=execution.witness,
                     release=execution.release,
