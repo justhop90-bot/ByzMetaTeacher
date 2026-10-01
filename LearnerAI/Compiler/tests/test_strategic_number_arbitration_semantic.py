@@ -542,7 +542,14 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
         self.assertEqual(
             tuple(item.head for item in release_rule.actions),
-            ("set-goal",),
+            ("set-goal", "set-goal"),
+        )
+        self.assertEqual(
+            tuple(item.source for item in release_rule.actions),
+            (
+                "(set-goal sn-controller-emergency-defense-active 0)",
+                "(set-goal sn-controller-emergency-defense-release-block 1)",
+            ),
         )
         self.assertNotIn(
             "(set-strategic-number sn-native-227 75)",
