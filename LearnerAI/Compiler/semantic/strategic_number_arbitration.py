@@ -389,6 +389,7 @@ def lower_strategic_number_arbitration(
             controller.layer
             in {
                 StrategicNumberControllerLayer.TEMPORARY,
+                StrategicNumberControllerLayer.ACTION,
                 StrategicNumberControllerLayer.RECOVERY,
             }
             for controller in controllers
@@ -416,6 +417,7 @@ def lower_strategic_number_arbitration(
             item.layer
             in {
                 StrategicNumberControllerLayer.TEMPORARY,
+                StrategicNumberControllerLayer.ACTION,
                 StrategicNumberControllerLayer.RECOVERY,
             }
             for item in same_sn
@@ -471,6 +473,10 @@ def lower_strategic_number_arbitration(
                     actions=(
                         parse_expression(
                             f"(set-goal {controller.activation_state_name} 0)",
+                            SourceLocation(1),
+                        ),
+                        parse_expression(
+                            f"(set-goal {controller.underlay_reassert_pending_state_name} 1)",
                             SourceLocation(1),
                         ),
                     ),

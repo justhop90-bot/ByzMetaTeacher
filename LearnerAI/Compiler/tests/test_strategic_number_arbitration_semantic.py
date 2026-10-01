@@ -693,6 +693,77 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
                 documented_native_ids=frozenset({227}),
             )
 
+    def test_action_release_arms_underlay_reassert_when_native_drift_is_absent(self):
+        base = StrategicNumberController(
+            identity="strategy-base",
+            native_strategic_number_id=227,
+            value=100,
+            layer=StrategicNumberControllerLayer.STRATEGY,
+            activation_guard="(goal strategy-posture 3)",
+            owner="fixture",
+        )
+        action = StrategicNumberController(
+            identity="attack-surge",
+            native_strategic_number_id=227,
+            value=100,
+            layer=StrategicNumberControllerLayer.ACTION,
+            activation_guard="(goal attack-state 1)",
+            release_guard="(goal attack-state 0)",
+            scope=StrategicNumberControllerScope.ACTION_SCOPED,
+            action_identity="attack-now",
+            release_evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+            owner="fixture",
+        )
+        plan = build_strategic_number_arbitration_plan(
+            type(
+                "Profile",
+                (),
+                {
+                    "profile_id": "fixture",
+                    "strategic_number_modes": (),
+                },
+            )(),
+            extra_controllers=(base, action),
+        )
+
+        lowered = lower_strategic_number_arbitration(
+            plan,
+            profile_id="fixture",
+            documented_native_ids=frozenset({227}),
+            action_identities=frozenset({"attack-now"}),
+        )
+        assert lowered.control_plan is not None
+
+        release_rule = next(
+            item
+            for item in lowered.control_plan.rules
+            if item.identity == "sn-controller-attack-surge-release"
+        )
+        self.assertEqual(
+            tuple(item.source for item in release_rule.actions),
+            (
+                "(set-goal sn-controller-attack-surge-active 0)",
+                "(set-goal sn-reassert-227 1)",
+            ),
+        )
+
+        underlay_rule = next(
+            item
+            for item in lowered.control_plan.rules
+            if item.identity == "sn-controller-strategy-base-write"
+        )
+        self.assertIn("(goal sn-reassert-227 1)", underlay_rule.facts[0].source)
+        self.assertIn(
+            "(up-compare-sn sn-native-227 != 100)",
+            underlay_rule.facts[0].source,
+        )
+        self.assertEqual(
+            underlay_rule.actions[-1].source,
+            "(set-goal sn-reassert-227 0)",
+        )
+
+
+
     def test_action_controller_produces_exact_attachment_and_release(self):
         base = StrategicNumberController(
             identity="strategy-base",
