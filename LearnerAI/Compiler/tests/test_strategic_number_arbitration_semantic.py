@@ -461,6 +461,18 @@ class StrategicNumberArbitrationSemanticTests(unittest.TestCase):
         )
 
 
+        recovery_steady = next(
+            rule
+            for rule in lowered.control_plan.rules
+            if rule.identity == "sn-controller-recovery-override-steady"
+        )
+        self.assertNotIn("(goal sn-reassert-227 1)", recovery_steady.facts[0].source)
+        self.assertNotIn(
+            "(set-goal sn-reassert-227 0)",
+            tuple(action.source for action in recovery_steady.actions),
+        )
+
+
     def test_temporary_activation_latches_even_when_native_value_is_already_correct(self):
         base = StrategicNumberController(
             identity="strategy-base",
