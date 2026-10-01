@@ -228,7 +228,6 @@ def main() -> int:
         "(set-strategic-number sn-native-227 75)",
         "(set-goal sn-controller-attack-surge-active 1)",
         "(set-strategic-number sn-native-227 100)",
-        "(not (or (current-age >= feudal-age) (goal sn-controller-attack-surge-active 1)))",
         "; Native control rule: sn-controller-attack-surge-release",
         "(goal sn-controller-attack-surge-active 1)",
         release_guard,
@@ -280,6 +279,35 @@ def main() -> int:
         raise SystemExit("ACTION release rule lost its release witness")
     if "(set-goal sn-controller-attack-surge-active 0)" not in release_section:
         raise SystemExit("ACTION release rule does not clear the controller state")
+
+    underlay_section = _rule_section(
+        first,
+        "; Native control rule: sn-controller-strategy-underlay-write",
+    )
+    expected_restore_guard = "(not (goal sn-controller-attack-surge-active 1))"
+    if expected_restore_guard not in underlay_section:
+        raise SystemExit(
+            "ACTION release does not permit the strategy underlay to reassert"
+        )
+    stale_suppression = (
+        "(not (or (current-age >= feudal-age) "
+        "(goal sn-controller-attack-surge-active 1)))"
+    )
+    if stale_suppression in underlay_section:
+        raise SystemExit(
+            "ACTION activation eligibility still suppresses the strategy underlay "
+            "after release"
+        )
+    if "(set-strategic-number sn-native-227 75)" not in underlay_section:
+        raise SystemExit("ACTION release path lost the strategy underlay write")
+    release_marker = first.index(
+        "; Native control rule: sn-controller-attack-surge-release"
+    )
+    restore_marker = first.index(
+        "; Native control rule: sn-controller-strategy-underlay-write"
+    )
+    if restore_marker <= release_marker:
+        raise SystemExit("ACTION restoration rule was emitted before controller release")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(first, encoding="utf-8")

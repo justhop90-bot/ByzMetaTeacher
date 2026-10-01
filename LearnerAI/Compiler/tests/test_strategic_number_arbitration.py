@@ -1,6 +1,8 @@
 import unittest
 
 from Compiler.ast import SourceLocation
+from Compiler.semantic.strategic_number_arbitration import _controller_claim_guard
+
 from Compiler.ir.strategic_number_arbitration import (
     StrategicNumberActionAttachment,
     StrategicNumberArbitrationPlan,
@@ -224,6 +226,21 @@ class StrategicNumberArbitrationIrTests(unittest.TestCase):
         self.assertEqual(
             tuple(item.identity for item in plan.controllers),
             ("z", "m", "a"),
+        )
+
+    def test_action_claim_guard_is_active_state_only_after_activation(self):
+        controller = self._controller(
+            "attack-surge",
+            layer=StrategicNumberControllerLayer.ACTION,
+            activation="(current-age >= feudal-age)",
+            release="(current-age >= imperial-age)",
+            scope=StrategicNumberControllerScope.ACTION_SCOPED,
+            action="attack-now",
+            evidence=StrategicNumberReleaseEvidence.WORLD_WITNESS,
+        )
+        self.assertEqual(
+            _controller_claim_guard(controller),
+            "(goal sn-controller-attack-surge-active 1)",
         )
 
     def test_action_attachment_requires_exact_nonempty_identity(self):
