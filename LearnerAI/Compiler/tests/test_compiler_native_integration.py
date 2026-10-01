@@ -229,7 +229,7 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
             owned_rule_identity="attack-owned",
             action_index=1,
         )
-        return NativeAttackLifecyclePlan(
+        plan = NativeAttackLifecyclePlan(
             rules=(
                 NativeAttackRule(
                     identity="attack-owned",
@@ -242,7 +242,10 @@ class CompilerNativeIntegrationTests(unittest.TestCase):
                     lifecycle=lifecycle,
                 ),
             ),
-            strategic_number_action_attachments=(attachment,),
+        )
+        return plan.bind_strategic_number_action_attachments(
+            (attachment,),
+            owned_actions={"attack-surge": ("attack-owned", 1)},
         )
 
     def test_attack_action_attachment_emits_immediately_before_owned_action(self):
