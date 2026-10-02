@@ -34,7 +34,7 @@ class OpeningSelectorPlan:
     water_observation: str = "strategy-water-islands"
     naval_pressure_observation: str = "strategy-enemy-naval-pressure"
     arena_observation: str = "strategy-arena-map"
-    enemy_pressure_observation: str = "strategy-enemy-pressure"
+    enemy_pressure_observation: str = "strategy-opening-pressure"
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -90,7 +90,7 @@ def lower_opening_selector(
         ),
         NativeControlRule(
             "opening-selector-fast-castle",
-            facts=(parse_expression(guard(f"(and (not {water}) (and {arena} (not {pressure})))"), SourceLocation(1)),),
+            facts=(parse_expression(guard(f"(and {arena} (not {pressure}))"), SourceLocation(1)),),
             actions=(parse_expression(f"(set-goal {plan.state_name} {OpeningPlanValue.FAST_CASTLE})", SourceLocation(1)),),
         ),
         NativeControlRule(
