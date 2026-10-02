@@ -184,10 +184,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
 
         output = compile_strategy_profile(self.profile, self.effective)
         self.assertIn("; Native DUC rule: byzantine-castle-target-knight", output)
-        self.assertIn("(up-find-remote c: knight-line c: 1)", output)
+        self.assertIn("(up-find-remote c: 38 c: 1)", output)
         self.assertIn("(up-set-target-object search-remote c: 0)", output)
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
-        self.assertIn("(up-find-remote c: militia-line c: 1)", output)
+        self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
