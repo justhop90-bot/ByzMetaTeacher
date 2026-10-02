@@ -1,4 +1,4 @@
-**4/7 PROMPTS**
+**5/7 PROMPTS**
 
 # Byzantine Core v1 — Age-First Bot Roadmap
 
@@ -132,7 +132,7 @@ The compiled bot must exhibit one coherent Castle macro posture at a time rather
 
 ---
 
-## **4/7 — Prompt 4: Imperial Win-Condition Engine — ACTIVE**
+## **4/7 — Prompt 4: Imperial Win-Condition Engine — IMPLEMENTED / CI PENDING**
 
 ### Objective
 
@@ -184,11 +184,34 @@ Prompt 4 also requires focused tests for trash conversion, gunpowder conversion,
 
 ---
 
-## **5/7 — Prompt 5: Resource Demand Controller — QUEUED**
+## **5/7 — Prompt 5: Resource Demand Controller — ACTIVE**
 
 ### Objective
 
 Turn the existing static economy percentages into demand-responsive allocation without inventing a scheduler.
+
+### Implemented in this prompt
+
+- Locked the seven existing economy postures to explicit Byzantine resource priorities:
+  - BASE 50/30/20/5;
+  - COUNTER_FEUDAL 42/40/18/8;
+  - FAST_CASTLE 55/15/30/3;
+  - WATER_ECONOMY 40/40/20/5;
+  - WATER_CONTROL 38/42/20/8;
+  - CASTLE_CONVERSION 45/30/25/7;
+  - IMPERIAL_CONVERSION 40/25/35/7.
+- Kept the existing economy controller as the only worker-allocation controller. No second economic scheduler was introduced.
+- Made discretionary economic research explicitly subordinate to economic readiness:
+  - Hand Cart requires 30 villagers;
+  - Bow Saw requires 35 villagers;
+  - Two-Man Saw requires 50 villagers and Imperial Age;
+  - Conscription requires 45 villagers;
+  - Chemistry remains threat-triggered by sustained infantry pressure.
+- Preserved the existing age-transition, Town Center, and premium conversion resource-protection contracts.
+- Kept training demands on the existing production arbitration channel so resource pressure does not create a second production ownership model.
+- Imperial research demands with unresolved checked-in research costs no longer invent a price. They use native escrow feasibility and remain open on unverified cost data.
+- No generic compiler semantics were changed.
+
 
 ### Rule
 
@@ -216,6 +239,8 @@ Age percentages remain the baseline. Explicit strategic demand can temporarily d
 ### Acceptance
 
 The same bot demand must not simultaneously claim mutually incompatible resource priorities without explicit arbitration.
+
+Prompt 5 also requires focused tests for all seven economy modes, research priority gating, deterministic compilation, and preservation of existing production arbitration.
 
 ---
 
