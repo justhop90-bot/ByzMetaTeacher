@@ -1362,11 +1362,202 @@ def _merge_native_control_plans(*plans):
     return NativeControlPlan(states=tuple(states), rules=tuple(rules))
 
 
+def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
+    """Lower the default Byzantine attack policy into explicit persistent phases.
+
+    Phase values:
+      0 READY
+      1 PREPARE-CATAPHRACT
+      2 ATTACK-CATAPHRACT
+      3 PREPARE-KNIGHT
+      4 ATTACK-KNIGHT
+      5 REASSESS
+
+    This is compiler policy, not a native attack acknowledgement. The native
+    attack command remains issue-only; phase release is driven by an explicit
+    observed pressure witness or a force-floor loss.
+    """
+    if profile.attack_plan is None:
+        return None
+
+    from ..runtime_binding import GoalSlotRequest
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    owner = SemanticId(profile.profile_id, "byzantine-attack-phase")
+    state_name = "byzantine-attack-phase"
+    state = NativeControlState(
+        state_name,
+        GoalSlotRequest(
+            StorageRequestId(owner, state_name),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+    current_age = "(current-age >= castle-age)"
+    allocation = "(up-compare-sn 227 >= 75)"
+    knight_pressure = "(players-unit-type-count any-enemy knight >= 3)"
+    knight_clear = "(players-unit-type-count any-enemy knight < 3)"
+    cataphract_floor = "(unit-type-count cataphract >= 2)"
+    cataphract_lost = "(unit-type-count cataphract < 2)"
+    infantry_pressure = "(players-unit-type-count any-enemy militia-line >= 5)"
+    infantry_clear = "(players-unit-type-count any-enemy militia-line < 5)"
+    knight_floor = "(unit-type-count knight >= 3)"
+    knight_lost = "(unit-type-count knight < 3)"
+
+    rules = (
+        NativeControlRule(
+            "byzantine-attack-phase-initialize",
+            facts=(parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-prepare-cataphract",
+            facts=(
+                parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
+                parse_expression(
+                    f"(and {current_age} (and {allocation} "
+                    f"(and {knight_pressure} {cataphract_floor}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 1)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-attack-cataphract",
+            facts=(
+                parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
+                parse_expression(
+                    f"(and {current_age} (and {allocation} "
+                    f"(and {knight_pressure} {cataphract_floor}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 2)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-prepare-knight",
+            facts=(
+                parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
+                parse_expression(
+                    f"(and {current_age} (and {allocation} "
+                    f"(and {infantry_pressure} {knight_floor}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 3)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-attack-knight",
+            facts=(
+                parse_expression(f"(goal {state_name} 3)", SourceLocation(1)),
+                parse_expression(
+                    f"(and {current_age} (and {allocation} "
+                    f"(and {infantry_pressure} {knight_floor}))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 4)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-complete-cataphract",
+            facts=(
+                parse_expression(f"(goal {state_name} 2)", SourceLocation(1)),
+                parse_expression(knight_clear, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-complete-knight",
+            facts=(
+                parse_expression(f"(goal {state_name} 4)", SourceLocation(1)),
+                parse_expression(infantry_clear, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-recover-cataphract",
+            facts=(
+                parse_expression(f"(goal {state_name} 2)", SourceLocation(1)),
+                parse_expression(cataphract_lost, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 5)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-recover-knight",
+            facts=(
+                parse_expression(f"(goal {state_name} 4)", SourceLocation(1)),
+                parse_expression(knight_lost, SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 5)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeControlRule(
+            "byzantine-attack-phase-reassess",
+            facts=(parse_expression(f"(goal {state_name} 5)", SourceLocation(1)),),
+            actions=(
+                parse_expression(
+                    f"(set-goal {state_name} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+    )
+    return NativeControlPlan(states=(state,), rules=rules)
+
+
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
+    attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1390,6 +1581,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
+        attack_lifecycle_plan,
     )
 
 
@@ -2081,6 +2273,10 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
                         "(unit-type-count cataphract >= 2)",
                         SourceLocation(1),
                     ),
+                    parse_expression(
+                        "(goal byzantine-attack-phase 2)",
+                        SourceLocation(1),
+                    ),
                 ),
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
@@ -2092,6 +2288,10 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
                     *common_facts,
                     parse_expression(
                         "(unit-type-count knight >= 3)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-attack-phase 4)",
                         SourceLocation(1),
                     ),
                 ),
