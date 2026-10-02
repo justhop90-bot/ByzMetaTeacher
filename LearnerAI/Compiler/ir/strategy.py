@@ -1362,11 +1362,69 @@ def _merge_native_control_plans(*plans):
     return NativeControlPlan(states=tuple(states), rules=tuple(rules))
 
 
+def _duc_focus_control_plan(profile: StrategyProfile):
+    """Keep remote DUC searches focused on the nearest observed enemy player.
+
+    The player search writes a persistent Goal. The focus Strategic Number is
+    updated from that Goal on the following pass, so this bridge does not rely
+    on same-rule output visibility.
+    """
+    if profile.duc_plan is None or "up-find-remote" not in profile.duc_plan.commands:
+        return None
+
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    owner = SemanticId(profile.profile_id, "byzantine-focus-player")
+    state_name = "byzantine-focus-player"
+    state = NativeControlState(
+        state_name,
+        GoalSlotRequest(
+            StorageRequestId(owner, state_name),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    return NativeControlPlan(
+        states=(state,),
+        rules=(
+            NativeControlRule(
+                f"{state_name}-discover",
+                facts=(parse_expression("(current-age >= castle-age)", SourceLocation(1)),),
+                actions=(
+                    parse_expression(
+                        f"(up-find-player enemy find-closest {state_name})",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+            NativeControlRule(
+                f"{state_name}-apply",
+                facts=(
+                    parse_expression(
+                        f"(and (current-age >= castle-age) "
+                        f"(up-compare-goal {state_name} > 0))",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(up-modify-sn sn-focus-player-number g:= {state_name})",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
+    duc_focus_plan = _duc_focus_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1390,6 +1448,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
+        duc_focus_plan,
     )
 
 
@@ -1962,6 +2021,87 @@ def build_land_castle_strategy(
     )
 
 
+def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+    """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
+
+    Strategy policy selects only decision-grade observed pressure. DUC then
+    rebuilds the remote search list and records the native object identity.
+    Runtime object liveness and attack-controller consumption remain separate
+    boundaries.
+    """
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+
+    source = SemanticId(profile_id, "byzantine-duc-targets")
+    target_specs = (
+        (
+            "byzantine-castle-target-knight",
+            "(players-unit-type-count any-enemy knight >= 3)",
+            "knight-line",
+            "knight",
+        ),
+        (
+            "byzantine-castle-target-infantry",
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            "militia-line",
+            "militia-line",
+        ),
+    )
+
+    rules = []
+    outputs = []
+    for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
+        target_specs
+    ):
+        output = GoalSlotRequest(
+            StorageRequestId(source, f"{identity}:up-get-object-data"),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        rules.append(
+            NativeDucRule(
+                identity=identity,
+                order=order,
+                facts=(
+                    parse_expression("(current-age >= castle-age)", SourceLocation(1)),
+                    parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
+                    parse_expression(pressure_fact, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression(
+                        f"(up-find-remote c: {search_unit} c: 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data id 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=identity,
+                section="ACTION",
+                expression_index=3,
+                request=output,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+
+    return NativeDucPlan(
+        rules=tuple(rules),
+        output_requests=tuple(outputs),
+    )
+
+
 def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
     """Default Castle-age Byzantine issue actuator.
 
@@ -2394,6 +2534,7 @@ def build_byzantine_castle_strategy(
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
         attack_plan=_default_byzantine_attack_plan(),
+        duc_plan=_default_byzantine_duc_plan(profile.profile_id),
     )
 
 def _validate_capability_intent(
