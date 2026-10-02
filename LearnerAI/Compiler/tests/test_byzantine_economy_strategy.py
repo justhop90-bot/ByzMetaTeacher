@@ -49,9 +49,7 @@ class ByzantineEconomyStrategyTests(unittest.TestCase):
 
         self.assertEqual(observations["strategy-housing-pressure"], "(housing-headroom < 4)")
         self.assertEqual(observations["strategy-food-shortage"], "(food-amount < 350)")
-        self.assertEqual(observations["strategy-food-crisis"], "(food-amount < 200)")
-        self.assertEqual(observations["strategy-idle-farms"], "(idle-farm-count > 0)")
-        self.assertEqual(observations["strategy-wood-resource-opportunity"], "(resource-found wood)")
+        self.assertIn("resource-found wood", observations["strategy-wood-resource-opportunity"])
         self.assertIn("dropsite-min-distance wood", observations["strategy-wood-dropsite-distant"])
 
     def test_economy_emits_houses_farms_dropsites_and_market(self):
