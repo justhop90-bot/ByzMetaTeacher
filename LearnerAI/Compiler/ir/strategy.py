@@ -2717,6 +2717,53 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             )
         )
 
+    # Relic acquisition/denial uses the existing DUC search/target actuator.
+    # The exact relic pathing and runtime target lifetime remain OPEN; the policy
+    # only proves the current rule has Castle access, a Monk, and an unsecured relic.
+    relic_rules = (
+        (
+            "byzantine-relic-acquisition",
+            "(not (hold-relics))",
+        ),
+        (
+            "byzantine-relic-denial-contest",
+            "(and (not (hold-relics)) (players-unit-type-count any-enemy monk-line >= 2))",
+        ),
+    )
+    relic_order = 1000
+    for offset, (identity, relic_fact) in enumerate(relic_rules):
+        rules.append(
+            NativeDucRule(
+                identity=identity,
+                order=relic_order + offset,
+                facts=(
+                    parse_expression("(current-age >= castle-age)", SourceLocation(1)),
+                    parse_expression("(building-type-count-total monastery >= 1)", SourceLocation(1)),
+                    parse_expression("(unit-type-count-total monk >= 1)", SourceLocation(1)),
+                    parse_expression(relic_fact, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression(
+                        "(up-find-remote c: relic-class* c: 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-find-local c: 125 c: 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-target-objects 0 action-move -1 -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
     return NativeDucPlan(
         rules=tuple(rules),
         output_requests=tuple(outputs),
