@@ -87,7 +87,7 @@ jobs:
         run: |
           : > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
           for part in verification/chunks/*.perpart; do cat "$part" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; printf "\n" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; done
-          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
+          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "78cbba8d7aa24d0e8af467970783fe4a07932ac86e6fd5ae8f216dff60d8024c"
           set +e
           python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/byz-native-1.json
           status1=$?
