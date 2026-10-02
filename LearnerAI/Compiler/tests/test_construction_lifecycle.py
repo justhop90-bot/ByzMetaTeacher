@@ -137,6 +137,8 @@ class ConstructionTransitionTests(unittest.TestCase):
         self.assertEqual(
             {
                 "town-center": resolve_building_id("town-center"),
+                "barracks": resolve_building_id("barracks"),
+                "dock": resolve_building_id("dock"),
                 "stable": resolve_building_id("stable"),
                 "siege-workshop": resolve_building_id("siege-workshop"),
                 "university": resolve_building_id("university"),
@@ -144,6 +146,8 @@ class ConstructionTransitionTests(unittest.TestCase):
             },
             {
                 "town-center": 621,
+                "barracks": 12,
+                "dock": 45,
                 "stable": 101,
                 "siege-workshop": 49,
                 "university": 209,
