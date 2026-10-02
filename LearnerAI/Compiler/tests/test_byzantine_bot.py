@@ -30,24 +30,28 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("villagers-castle-45", identities)
         self.assertIn("villagers-imperial-70", identities)
 
-    def test_opening_plan_reads_use_native_goal_comparisons(self):
+    def test_opening_plan_demands_consume_underlying_observations(self):
         demands = {item.identity: item for item in self.profile.demands}
         self.assertIn(
-            "(up-compare-goal opening-plan c:== 2)",
+            "(and (not (map-type islands)) (and (not (map-type arena)) (players-unit-type-count any-enemy militia-line >= 5)))",
             demands["villagers-dark-counter-24"].execution.requirements,
         )
         self.assertIn(
-            "(up-compare-goal opening-plan c:== 3)",
+            "(and (map-type arena) (not (players-unit-type-count any-enemy militia-line >= 5)))",
             demands["villagers-dark-fast-castle-26"].execution.requirements,
         )
         self.assertIn(
-            "(or (up-compare-goal opening-plan c:== 4) (up-compare-goal opening-plan c:== 5))",
+            "(map-type islands)",
             demands["villagers-dark-water-24"].execution.requirements,
         )
-        self.assertNotIn("(goal opening-plan 2)", demands["villagers-dark-counter-24"].execution.requirements)
-        self.assertNotIn("(goal opening-plan 3)", demands["villagers-dark-fast-castle-26"].execution.requirements)
-        self.assertNotIn("(goal opening-plan 4)", demands["villagers-dark-water-24"].execution.requirements)
-        self.assertNotIn("(goal opening-plan 5)", demands["villagers-dark-water-24"].execution.requirements)
+        for identity in (
+            "villagers-dark-counter-24",
+            "villagers-dark-fast-castle-26",
+            "villagers-dark-water-24",
+        ):
+            requirements = demands[identity].execution.requirements
+            self.assertFalse(any("(goal opening-plan" in item for item in requirements))
+            self.assertFalse(any("(up-compare-goal opening-plan" in item for item in requirements))
 
     def test_profile_has_conditional_feudal_and_castle_responses(self):
         demands = {item.identity: item for item in self.profile.demands}
