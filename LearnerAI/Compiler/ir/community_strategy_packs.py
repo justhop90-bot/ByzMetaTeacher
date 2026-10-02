@@ -221,8 +221,10 @@ def _training_demand(
     line: str,
     minimum: int,
     age_guard: str,
+    action_symbol: str | None = None,
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
+    action_symbol = action_symbol or line
     return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
@@ -253,7 +255,7 @@ def _training_demand(
                 f"(can-train-with-escrow {line})",
                 f"(unit-type-count-total {line} < {minimum})",
             ),
-            action=f"(train {line})",
+            action=f"(train {action_symbol})",
             witness=f"(unit-type-count {line} >= {minimum})",
             release=f"(unit-type-count {line} >= {minimum})",
         ),
@@ -684,6 +686,7 @@ def community_strategy_demands(
                 line="bombard-cannon-line",
                 minimum=1,
                 age_guard="(current-age >= imperial-age)",
+                action_symbol="bombard-cannon",
             ),
             _training_demand(
                 effective=effective,
