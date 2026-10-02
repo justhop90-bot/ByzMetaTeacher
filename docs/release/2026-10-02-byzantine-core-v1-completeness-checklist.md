@@ -59,7 +59,7 @@ Scope: 1v1 Byzantine bot built through the existing compiler strategy path.
 ### Information and control
 
 - [x] Existing exploration Strategic Number modes remain connected.
-- [x] Basic explorer cap is explicitly set in the bot policy.
+- [x] Existing age-specific explorer-cap Strategic Number modes remain connected from the stock policy.
 - [x] Initial exploration requirement is explicitly set.
 - [x] Existing Goal/SN/Timer control plane remains the only persistent-control path.
 - [x] Existing DUC plan remains the target/search control path.
