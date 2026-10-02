@@ -431,6 +431,11 @@ def community_strategy_observations(
             effective.unit_line("archer-line").provenance,
         ),
         _observation(
+            "strategy-enemy-ranged-cleared",
+            "(players-unit-type-count any-enemy archer-line < 4)",
+            effective.unit_line("archer-line").provenance,
+        ),
+        _observation(
             "strategy-enemy-siege",
             "(players-unit-type-count any-enemy mangonel-line >= 2)",
             effective.unit_line("mangonel-line").provenance,
