@@ -807,7 +807,7 @@ def community_strategy_demands(
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Sustained pressure justifies a Feudal defensive tower capability",
                 building=_building(effective, "watch-tower"),
-                requirements=("(current-age >= feudal-age)", "(can-build watch-tower)"),
+                requirements=("(current-age >= feudal-age)", "(can-build 79)"),
                 invalidate_ref="strategy-imperial-age",
             ),
             _build_demand(
@@ -818,7 +818,7 @@ def community_strategy_demands(
                 reason_ref="strategy-arena-map",
                 reason_label="Closed-map defense justifies a Stone Wall capability",
                 building=_building(effective, "stone-wall"),
-                requirements=("(current-age >= feudal-age)", "(map-type arena)", "(can-build stone-wall)"),
+                requirements=("(current-age >= feudal-age)", "(map-type arena)", "(can-build 117)"),
                 invalidate_ref="strategy-castle-age",
             ),
         )
