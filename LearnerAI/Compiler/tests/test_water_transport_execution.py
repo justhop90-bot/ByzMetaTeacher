@@ -6,6 +6,8 @@ from Compiler.ir.strategy_runtime import ReassessmentReason, RuntimeObservationS
 from Compiler.ir.water import (
     TransportExecutionPhase,
     WaterExecutionState,
+    WaterPosture,
+    derive_water_posture,
     transition_transport_execution,
 )
 
@@ -26,6 +28,23 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertEqual(recovered.phase, TransportExecutionPhase.RECOVER)
         self.assertTrue(recovered.transport_required)
         self.assertFalse(recovered.transport_capable)
+
+    def test_unknown_water_evidence_fails_closed(self):
+        self.assertEqual(
+            derive_water_posture(
+                transport_required=None,
+                dock_exists=False,
+                naval_pressure=False,
+                warboat_floor_met=False,
+            ),
+            WaterPosture.UNKNOWN,
+        )
+        state = transition_transport_execution(
+            WaterExecutionState(),
+            transport_required=True,
+            transport_capable=None,
+        )
+        self.assertEqual(state.transport_phase, TransportExecutionPhase.UNKNOWN)
 
     def test_runtime_state_marks_transport_loss_as_recovery(self):
         profile = build_byzantine_strategy(self.effective)
