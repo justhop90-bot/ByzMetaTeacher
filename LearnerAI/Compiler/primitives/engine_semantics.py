@@ -967,5 +967,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _ACTION_SPECS)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
+        + default_native_control_plane_executable_commands()
     )
     return registry
