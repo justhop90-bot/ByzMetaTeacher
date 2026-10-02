@@ -402,6 +402,29 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
         )
     )
 
+    # Water opens through a real Dock demand on Islands. The stock water
+    # execution plan already owns fishing, transport, and naval production;
+    # this demand supplies the missing first capability without creating a
+    # second water scheduler.
+    demands.append(
+        _aged_building_demand(
+            effective=effective,
+            identity="water-dock-capability",
+            owner="water-economy",
+            posture=_strategy.StrategyPosture.BOOM,
+            priority=_strategy.StrategicPriority.SUPPORT,
+            reason_ref="strategy-water-islands",
+            reason_label="Establish the first Dock when the map creates a genuine water branch",
+            building_name="dock",
+            minimum_age=Age.DARK,
+            upper_bound=1,
+            invalidate_ref="strategy-water-islands",
+            extra_requirements=(
+                "(map-type islands)",
+            ),
+        )
+    )
+
     # Houses are metered by current count. This avoids a standing burst of
     # house requests and keeps production alive without a universal scheduler.
     house_villager_thresholds = (
