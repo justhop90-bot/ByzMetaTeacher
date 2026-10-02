@@ -751,9 +751,9 @@ def community_strategy_demands(
                     "(can-train-with-escrow fishing-ship-line)",
                     "(unit-type-count-total fishing-ship-line < 2)",
                 ),
-                action="(train fishing-ship-line)",
-                witness="(unit-type-count fishing-ship-line >= 2)",
-                release="(unit-type-count fishing-ship-line >= 2)",
+                action="(train fishing-ship)",
+                witness="(unit-type-count fishing-ship >= 2)",
+                release="(unit-type-count fishing-ship >= 2)",
             ),
         )
     )
