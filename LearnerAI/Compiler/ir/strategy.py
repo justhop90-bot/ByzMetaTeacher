@@ -1385,30 +1385,34 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
     from ..semantic.analyzer import parse_expression
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
-    wall = _byzantine_wall_geometry_requests(profile.profile_id)
-    resource_kind_state = NativeControlState(
-        "byzantine-wall-resource-kind",
-        wall["resource_kind"],
-    )
+    wall = _byzantine_wall_defensive_anchor_requests(profile.profile_id)
     request_state = NativeControlState(
         "byzantine-wall-geometry-request",
         wall["request"],
     )
-    start_state = NativeControlState(
-        "byzantine-wall-start",
-        wall["start"],
+    pair_state = NativeControlState(
+        "byzantine-wall-anchor-pair",
+        wall["pair"],
     )
-    gold_state = NativeControlState(
-        "byzantine-wall-gold-point",
-        wall["gold"],
+    completed_state = NativeControlState(
+        "byzantine-wall-completed",
+        wall["completed"],
     )
-    wood_state = NativeControlState(
-        "byzantine-wall-wood-point",
-        wall["wood"],
+
+    anchor_state_names = (
+        "castle",
+        "keep",
+        "bombard-tower",
+        "guard-tower",
+        "watch-tower",
+        "outpost",
     )
-    stone_state = NativeControlState(
-        "byzantine-wall-stone-point",
-        wall["stone"],
+    anchor_states = tuple(
+        NativeControlState(
+            f"byzantine-wall-anchor-{anchor}",
+            wall[anchor],
+        )
+        for anchor in anchor_state_names
     )
 
     enemy_pressure = (
@@ -1418,222 +1422,293 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         "(players-unit-type-count any-enemy archer-line >= 4) "
         "(players-unit-type-count any-enemy militia-line >= 5)))"
     )
-    common_arm_facts = (
-        parse_expression(
-            "(goal byzantine-wall-geometry-request 0)",
-            SourceLocation(1),
+
+    building_ids = {
+        "castle": 82,
+        "keep": 235,
+        "bombard-tower": 236,
+        "guard-tower": 234,
+        "watch-tower": 79,
+        "outpost": 598,
+    }
+    strong_anchors = {"castle", "keep", "bombard-tower"}
+    anchor_pairs = []
+    pair_number = 1
+    for left_index, left in enumerate(anchor_state_names):
+        for right in anchor_state_names[left_index + 1:]:
+            use_stone = left in strong_anchors or right in strong_anchors
+            anchor_pairs.append(
+                {
+                    "number": pair_number,
+                    "identity": f"{left}-{right}",
+                    "left": left,
+                    "right": right,
+                    "wall_id": 117 if use_stone else 72,
+                    "age": "castle-age" if use_stone else "feudal-age",
+                }
+            )
+            pair_number += 1
+
+    def pair_goal(number: int) -> str:
+        return f"(goal byzantine-wall-anchor-pair {number})"
+
+    def anchor_count(anchor: str) -> str:
+        return f"(building-type-count {building_ids[anchor]} >= 1)"
+
+    def anchor_missing(anchor: str) -> str:
+        return f"(building-type-count {building_ids[anchor]} == 0)"
+
+    choose_rules = []
+    issue_rules = []
+    reanchor_rules = []
+    recover_rules = []
+
+    for pair in anchor_pairs:
+        left = pair["left"]
+        right = pair["right"]
+        wall_id = pair["wall_id"]
+        age = pair["age"]
+        identity = pair["identity"]
+        number = pair["number"]
+
+        choose_rules.append(
+            NativeControlRule(
+                f"byzantine-wall-geometry-choose-{identity}",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-wall-completed 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(f"(current-age >= {age})", SourceLocation(1)),
+                    parse_expression(enemy_pressure, SourceLocation(1)),
+                    parse_expression(anchor_count(left), SourceLocation(1)),
+                    parse_expression(anchor_count(right), SourceLocation(1)),
+                    parse_expression(f"(can-build {wall_id})", SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(set-goal byzantine-wall-anchor-pair {number})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+        issue_rules.append(
+            NativeControlRule(
+                f"byzantine-wall-geometry-issue-{identity}",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(pair_goal(number), SourceLocation(1)),
+                    parse_expression(
+                        "(goal byzantine-wall-completed 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(f"(current-age >= {age})", SourceLocation(1)),
+                    parse_expression(enemy_pressure, SourceLocation(1)),
+                    parse_expression(f"(can-build {wall_id})", SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(
+                        f"(up-build-line byzantine-wall-anchor-{left} "
+                        f"byzantine-wall-anchor-{right} c: {wall_id})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+        reanchor_rules.append(
+            NativeControlRule(
+                f"byzantine-wall-geometry-reanchor-{identity}",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(pair_goal(number), SourceLocation(1)),
+                    parse_expression(anchor_missing(left), SourceLocation(1)),
+                    parse_expression(
+                        "(or "
+                        + anchor_missing(right)
+                        + " (up-pending-objects c: "
+                        + str(wall_id)
+                        + " > 0))",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-anchor-pair 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-completed 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+        recover_rules.append(
+            NativeControlRule(
+                f"byzantine-wall-geometry-recover-{identity}",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(pair_goal(number), SourceLocation(1)),
+                    parse_expression(anchor_count(left), SourceLocation(1)),
+                    parse_expression(anchor_count(right), SourceLocation(1)),
+                    parse_expression(
+                        f"(building-type-count {wall_id} == 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(up-pending-objects c: {wall_id} == 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(not (up-pending-placement c: {wall_id}))",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(can-build {wall_id})",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+    pair_values = [str(item["number"]) for item in anchor_pairs]
+    strong_pair_values = [
+        str(item["number"])
+        for item in anchor_pairs
+        if item["wall_id"] == 117
+    ]
+    light_pair_values = [
+        str(item["number"])
+        for item in anchor_pairs
+        if item["wall_id"] == 72
+    ]
+
+    def binary_or(expressions):
+        if len(expressions) == 1:
+            return expressions[0]
+        result = expressions[-1]
+        for expression in reversed(expressions[:-1]):
+            result = f"(or {expression} {result})"
+        return result
+
+    release_rules = []
+    for values, wall_id, label in (
+        (strong_pair_values, 117, "stone"),
+        (light_pair_values, 72, "palisade"),
+    ):
+        release_rules.append(
+            NativeControlRule(
+                f"byzantine-wall-geometry-release-{label}",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        binary_or(
+                            [
+                                f"(goal byzantine-wall-anchor-pair {value})"
+                                for value in values
+                            ]
+                        ),
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(building-type-count {wall_id} >= 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(not (up-pending-placement c: {wall_id}))",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-completed 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+
+    initialize = NativeControlRule(
+        "byzantine-wall-geometry-initialize",
+        facts=(
+            parse_expression(
+                "(goal byzantine-wall-geometry-request -1)",
+                SourceLocation(1),
+            ),
         ),
-        parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
-        parse_expression(enemy_pressure, SourceLocation(1)),
-        parse_expression("(building-type-count 117 == 0)", SourceLocation(1)),
-        parse_expression("(can-build 117)", SourceLocation(1)),
+        actions=(
+            parse_expression(
+                "(set-goal byzantine-wall-geometry-request 0)",
+                SourceLocation(1),
+            ),
+            parse_expression(
+                "(set-goal byzantine-wall-anchor-pair 0)",
+                SourceLocation(1),
+            ),
+            parse_expression(
+                "(set-goal byzantine-wall-completed 0)",
+                SourceLocation(1),
+            ),
+            parse_expression("(disable-self)", SourceLocation(1)),
+        ),
     )
 
     return NativeControlPlan(
         states=(
-            resource_kind_state,
             request_state,
-            start_state,
-            gold_state,
-            wood_state,
-            stone_state,
+            pair_state,
+            completed_state,
+            *anchor_states,
         ),
         rules=(
-            NativeControlRule(
-                "byzantine-wall-geometry-initialize",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request -1)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 0)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(disable-self)", SourceLocation(1)),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-arm-gold",
-                facts=(
-                    *common_arm_facts,
-                    parse_expression(
-                        "(dropsite-min-distance gold > 12)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-resource-kind 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-arm-wood",
-                facts=(
-                    *common_arm_facts,
-                    parse_expression(
-                        "(not (dropsite-min-distance gold > 12))",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(dropsite-min-distance wood > 12)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-resource-kind 2)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-arm-stone",
-                facts=(
-                    *common_arm_facts,
-                    parse_expression(
-                        "(not (dropsite-min-distance gold > 12))",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(not (dropsite-min-distance wood > 12))",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(dropsite-min-distance stone > 12)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-resource-kind 3)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-issue-gold",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(goal byzantine-wall-resource-kind 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(can-build 117)", SourceLocation(1)),
-                ),
-                actions=(
-                    parse_expression(
-                        "(up-build-line byzantine-wall-start byzantine-wall-gold-point c: 117)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 2)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-issue-wood",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(goal byzantine-wall-resource-kind 2)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(can-build 117)", SourceLocation(1)),
-                ),
-                actions=(
-                    parse_expression(
-                        "(up-build-line byzantine-wall-start byzantine-wall-wood-point c: 117)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 2)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-issue-stone",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(goal byzantine-wall-resource-kind 3)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(can-build 117)", SourceLocation(1)),
-                ),
-                actions=(
-                    parse_expression(
-                        "(up-build-line byzantine-wall-start byzantine-wall-stone-point c: 117)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 2)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-release",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request 2)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(building-type-count 117 >= 1)", SourceLocation(1)),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 0)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                "byzantine-wall-geometry-recover",
-                facts=(
-                    parse_expression(
-                        "(goal byzantine-wall-geometry-request 2)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression("(building-type-count 117 == 0)", SourceLocation(1)),
-                    parse_expression("(up-pending-objects c: 117 == 0)", SourceLocation(1)),
-                    parse_expression("(not (up-pending-placement c: 117))", SourceLocation(1)),
-                    parse_expression("(can-build 117)", SourceLocation(1)),
-                ),
-                actions=(
-                    parse_expression(
-                        "(set-goal byzantine-wall-geometry-request 1)",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
+            initialize,
+            *choose_rules,
+            *issue_rules,
+            *reanchor_rules,
+            *recover_rules,
+            *release_rules,
         ),
     )
 
@@ -2454,11 +2529,12 @@ def build_land_castle_strategy(
     )
 
 
-def _byzantine_wall_geometry_requests(profile_id: str):
+def _byzantine_wall_defensive_anchor_requests(profile_id: str):
     from ..runtime_binding import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest
     from .model import SemanticId, StorageRequestId
 
-    owner = SemanticId(profile_id, "byzantine-wall-geometry")
+    owner = SemanticId(profile_id, "byzantine-wall-defensive-anchors")
+
     def point(purpose: str):
         return GoalSpanRequest(
             StorageRequestId(owner, purpose),
@@ -2475,25 +2551,31 @@ def _byzantine_wall_geometry_requests(profile_id: str):
             StorageRequestId(owner, "geometry-request"),
             role=GoalRole.PERSISTENT_STATE,
         ),
-        "resource_kind": GoalSlotRequest(
-            StorageRequestId(owner, "resource-kind"),
+        "pair": GoalSlotRequest(
+            StorageRequestId(owner, "anchor-pair"),
             role=GoalRole.PERSISTENT_STATE,
         ),
-        "start": point("wall-start"),
-        "gold": point("wall-gold-point"),
-        "wood": point("wall-wood-point"),
-        "stone": point("wall-stone-point"),
+        "completed": GoalSlotRequest(
+            StorageRequestId(owner, "wall-completed"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+        "castle": point("castle-anchor"),
+        "keep": point("keep-anchor"),
+        "bombard-tower": point("bombard-tower-anchor"),
+        "guard-tower": point("guard-tower-anchor"),
+        "watch-tower": point("watch-tower-anchor"),
+        "outpost": point("outpost-anchor"),
     }
 
 
 def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
-    """Default Byzantine DUC substrate, including the Phase 3.5 wall geometry feed."""
+    """Default Byzantine DUC substrate, including defensive-anchor wall geometry."""
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalRole, GoalSlotRequest
     from .model import SemanticId, StorageRequestId
     from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 
-    wall = _byzantine_wall_geometry_requests(profile_id)
+    wall = _byzantine_wall_defensive_anchor_requests(profile_id)
 
     target_specs = (
         (
@@ -2555,113 +2637,57 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             )
         )
 
-    wall_order = len(rules)
-    resource_specs = (
-        ("gold", wall_order + 1, "(dropsite-min-distance gold > 12)", "gold", "1"),
-        (
-            "wood",
-            wall_order + 2,
-            "(dropsite-min-distance wood > 12)",
-            "wood",
-            "2",
-        ),
-        (
-            "stone",
-            wall_order + 3,
-            "(dropsite-min-distance stone > 12)",
-            "stone",
-            "3",
-        ),
+    anchor_specs = (
+        ("castle", 82),
+        ("keep", 235),
+        ("bombard-tower", 236),
+        ("guard-tower", 234),
+        ("watch-tower", 79),
+        ("outpost", 598),
     )
-    rules.append(
-        NativeDucRule(
-            identity="byzantine-wall-find-tc",
-            order=wall_order,
-            facts=(
-                parse_expression(
-                    "(goal byzantine-wall-geometry-request 1)",
-                    SourceLocation(1),
-                ),
-                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
-            ),
-            actions=(
-                parse_expression("(up-full-reset-search)", SourceLocation(1)),
-                parse_expression(
-                    "(up-find-local c: 621 c: 1)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
-                    "(up-set-target-object search-local c: 0)",
-                    SourceLocation(1),
-                ),
-                parse_expression(
-                    "(up-get-point position-object byzantine-wall-start)",
-                    SourceLocation(1),
-                ),
-            ),
-        )
-    )
-    outputs.append(
-        NativeDucOutputRequest(
-            rule_identity="byzantine-wall-find-tc",
-            section="ACTION",
-            expression_index=3,
-            request=wall["start"],
-            command="up-get-point",
-            argument_index=1,
-        )
-    )
-
-    for kind, order, vulnerability, resource, kind_value in resource_specs:
-        output = NativeDucOutputRequest(
-            rule_identity=f"byzantine-wall-find-vulnerable-{kind}",
-            section="ACTION",
-            expression_index=5,
-            request=wall[kind],
-            command="up-get-point",
-            argument_index=1,
-        )
+    for order_offset, (anchor, building_id) in enumerate(anchor_specs):
+        identity = f"byzantine-wall-find-{anchor}-anchor"
         rules.append(
             NativeDucRule(
-                identity=f"byzantine-wall-find-vulnerable-{kind}",
-                order=order,
+                identity=identity,
+                order=len(target_specs) + order_offset,
                 facts=(
                     parse_expression(
                         "(goal byzantine-wall-geometry-request 1)",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        f"(goal byzantine-wall-resource-kind {kind_value})",
+                        f"(building-type-count {building_id} >= 1)",
                         SourceLocation(1),
                     ),
-                    parse_expression(vulnerability, SourceLocation(1)),
                 ),
                 actions=(
                     parse_expression("(up-full-reset-search)", SourceLocation(1)),
                     parse_expression(
-                        "(up-set-target-point byzantine-wall-start)",
+                        f"(up-find-local c: {building_id} c: 1)",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(up-filter-distance c: 0 c: 64)",
+                        "(up-set-target-object search-local c: 0)",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        f"(up-find-resource c: {resource} c: 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(up-set-target-object search-remote c: 0)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        f"(up-get-point position-object byzantine-wall-{kind}-point)",
+                        f"(up-get-point position-object byzantine-wall-anchor-{anchor})",
                         SourceLocation(1),
                     ),
                 ),
             )
         )
-        outputs.append(output)
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=identity,
+                section="ACTION",
+                expression_index=3,
+                request=wall[anchor],
+                command="up-get-point",
+                argument_index=1,
+            )
+        )
 
     return NativeDucPlan(
         rules=tuple(rules),
