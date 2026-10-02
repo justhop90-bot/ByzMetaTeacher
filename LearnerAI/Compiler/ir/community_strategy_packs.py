@@ -1227,11 +1227,11 @@ def build_byzantine_stock_strategy(
                 from_intents=(_PrimaryStrategicIntent.NONE,),
                 required_observation_refs=("current-feudal-age",),
                 forbidden_observation_refs=(
-                    "strategy-castle-complete",
+                    "castle-complete",
                     "strategy-water-islands",
                     "strategy-enemy-pressure",
                 ),
-                release_observation_refs=("strategy-castle-complete",),
+                release_observation_refs=("castle-complete",),
                 invalidation_observation_refs=("current-imperial-age",),
                 priority=200,
             ),
@@ -1246,7 +1246,7 @@ def build_byzantine_stock_strategy(
                     "strategy-castle-age",
                     "strategy-arena-map",
                     "strategy-town-center-capability",
-                    "strategy-castle-complete",
+                    "castle-complete",
                 ),
                 forbidden_observation_refs=(
                     "strategy-water-islands",
