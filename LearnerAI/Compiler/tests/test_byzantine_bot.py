@@ -172,7 +172,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         policy = next(
             item
             for item in self.profile.economy_controller.policies
-            if item.mode is EconomyMode.COUNTER_FEUDAL
+            if int(item.mode) == int(EconomyMode.COUNTER_FEUDAL)
         )
         self.assertEqual(policy.allocation.food, 42)
         self.assertEqual(policy.allocation.wood, 40)
@@ -226,7 +226,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertEqual(logistica.execution.action, "(research ri-logistica)")
         self.assertIn("(can-research-with-escrow ri-logistica)", logistica.execution.requirements)
         self.assertIn(
-            "(map-type arena)",
+            "(or (map-type arena) (players-unit-type-count any-enemy militia-line >= 5))",
             demands["castle-cataphract-floor"].execution.requirements,
         )
 
@@ -241,7 +241,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["castle-monk-floor"].execution.requirements,
         )
         self.assertIn(
-            "(players-unit-type-count any-enemy mangonel-line >= 2)",
+            "(or (players-unit-type-count any-enemy mangonel-line >= 2) (players-unit-type-count any-enemy archer-line >= 4))",
             demands["castle-siege-capability"].execution.requirements,
         )
         self.assertIn(
@@ -284,7 +284,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         policy = next(
             item
             for item in self.profile.economy_controller.policies
-            if item.mode is EconomyMode.CASTLE_CONVERSION
+            if int(item.mode) == int(EconomyMode.CASTLE_CONVERSION)
         )
         self.assertEqual(policy.allocation.food, 45)
         self.assertEqual(policy.allocation.wood, 30)
@@ -302,7 +302,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(research ri-logistica)", artifact)
         self.assertIn("(build town-center)", artifact)
         self.assertIn("(train monk)", artifact)
-        self.assertIn("(train mangonel)", artifact)
+        self.assertIn("(train mangonel-line)", artifact)
         self.assertIn("(research imperial-age)", artifact)
 
     def test_profile_has_broad_imperial_mounted_response(self):
@@ -319,12 +319,15 @@ class ByzantineBotPolicyTests(unittest.TestCase):
     def test_water_dock_releases_when_dock_exists(self):
         demand = self.profile.demand("water-dock-capability")
         self.assertIn("(map-type islands)", demand.execution.requirements)
-        self.assertEqual(demand.invalidation[0].reason_ref, "strategy-dock-exists")
+        self.assertEqual(
+            demand.invalidation[0].expression,
+            "(building-type-count-total dock >= 1)",
+        )
 
     def test_profile_has_imperial_trash_war_packages(self):
         demands = {item.identity: item for item in self.profile.demands}
         self.assertIn(
-            "(players-unit-type-count any-enemy knight >= 3)",
+            "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
             demands["imperial-halberdier-counter"].execution.requirements,
         )
         self.assertIn(
@@ -374,7 +377,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["imperial-elite-cataphract-floor"].execution.requirements,
         )
         self.assertIn(
-            "(map-type arena)",
+            "(or (map-type arena) (players-unit-type-count any-enemy militia-line >= 5))",
             demands["imperial-elite-cataphract-floor"].execution.requirements,
         )
         self.assertIn(
