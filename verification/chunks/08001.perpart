@@ -678,6 +678,12 @@
     (set-goal demand-economy-house-floor-16 1)
     (set-goal demand-economy-farm-floor-feudal-4 1)
     (set-goal demand-economy-farm-floor-feudal-8 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
     (set-goal demand-economy-farm-boom-castle 1)
     (set-goal demand-economy-farm-boom-imperial 0)
     (set-goal demand-economy-lumber-camp-floor-1 1)
