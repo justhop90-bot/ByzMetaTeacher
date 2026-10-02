@@ -1378,6 +1378,161 @@ def _merge_native_control_plans(*plans):
     return NativeControlPlan(states=tuple(states), rules=tuple(rules))
 
 
+def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
+    if profile.profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
+        return None
+
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalRole, GoalSlotRequest
+    from .model import SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    wall = _byzantine_wall_geometry_requests(profile.profile_id)
+    request_state = NativeControlState(
+        "byzantine-wall-geometry-request",
+        wall["request"],
+    )
+    start_state = NativeControlState(
+        "byzantine-wall-start",
+        wall["start"],
+    )
+    end_state = NativeControlState(
+        "byzantine-wall-end",
+        wall["end"],
+    )
+
+    enemy_pressure = (
+        "(or "
+        "(players-unit-type-count any-enemy knight >= 3) "
+        "(or "
+        "(players-unit-type-count any-enemy archer-line >= 4) "
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
+    )
+
+    return NativeControlPlan(
+        states=(request_state, start_state, end_state),
+        rules=(
+            NativeControlRule(
+                "byzantine-wall-geometry-initialize",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request -1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression("(disable-self)", SourceLocation(1)),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-wall-geometry-arm",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(current-age >= feudal-age)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(enemy_pressure, SourceLocation(1)),
+                    parse_expression(
+                        "(building-type-count stone-wall == 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(can-build stone-wall)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-wall-geometry-issue",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(can-build stone-wall)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-wall-geometry-release",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(building-type-count stone-wall >= 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+            NativeControlRule(
+                "byzantine-wall-geometry-recover",
+                facts=(
+                    parse_expression(
+                        "(goal byzantine-wall-geometry-request 2)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(building-type-count stone-wall == 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-pending-objects c: 117 == 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(not (up-pending-placement c: 117))",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(can-build stone-wall)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(
+                    parse_expression(
+                        "(set-goal byzantine-wall-geometry-request 1)",
+                        SourceLocation(1),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+
 def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     """Lower the default Byzantine attack policy into explicit persistent phases.
 
@@ -1611,6 +1766,8 @@ def _strategy_control_plan(profile: StrategyProfile):
                 f"native strategy state '{_STRATEGY_POSTURE_STATE}' conflicts with posture transition storage"
             )
 
+    wall_plan = _byzantine_wall_geometry_control_plan(profile)
+
     return _merge_native_control_plans(
         posture_plan,
         mode_plan,
@@ -1619,6 +1776,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         water_plan,
         opening_plan,
         economy_plan,
+        wall_plan,
     )
 
 
@@ -2191,39 +2349,62 @@ def build_land_castle_strategy(
     )
 
 
-def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
-    """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
+def _byzantine_wall_geometry_requests(profile_id: str):
+    from ..runtime_binding import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest
+    from .model import SemanticId, StorageRequestId
 
-    Strategy policy selects only decision-grade observed pressure. DUC then
-    rebuilds the remote search list and records the native object identity.
-    Runtime object liveness and attack-controller consumption remain separate
-    boundaries.
-    """
+    owner = SemanticId(profile_id, "byzantine-wall-geometry")
+    return {
+        "request": GoalSlotRequest(
+            StorageRequestId(owner, "geometry-request"),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+        "start": GoalSpanRequest(
+            StorageRequestId(owner, "wall-start"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
+        ),
+        "end": GoalSpanRequest(
+            StorageRequestId(owner, "wall-end"),
+            role=GoalRole.NATIVE_OUTPUT,
+            width=2,
+            shape=GoalSpanKind.POINT_PAIR,
+            contract_id="up-get-point.Point",
+            start_min=41,
+            start_max=15998,
+        ),
+    }
+
+
+def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+    """Default Byzantine DUC substrate, including the Phase 3.5 wall geometry feed."""
     from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalSlotRequest
-    from .model import GoalRole, SemanticId, StorageRequestId
+    from ..runtime_binding import GoalRole, GoalSlotRequest
+    from .model import SemanticId, StorageRequestId
     from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+
+    wall = _byzantine_wall_geometry_requests(profile_id)
 
     target_specs = (
         (
             "byzantine-castle-target-knight",
             "(players-unit-type-count any-enemy knight >= 3)",
             "38",
-            "knight",
         ),
         (
             "byzantine-castle-target-infantry",
             "(players-unit-type-count any-enemy militia-line >= 5)",
             "74",
-            "militia-line",
         ),
     )
 
     rules = []
     outputs = []
-    for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
-        target_specs
-    ):
+    for order, (identity, pressure_fact, search_unit) in enumerate(target_specs):
         output = GoalSlotRequest(
             StorageRequestId(
                 SemanticId(profile_id, identity),
@@ -2268,11 +2449,182 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
             )
         )
 
+    wall_order = len(rules)
+    wall_rules = (
+        NativeDucRule(
+            identity="byzantine-wall-find-tc",
+            order=wall_order,
+            facts=(
+                parse_expression(
+                    "(goal byzantine-wall-geometry-request 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(current-age >= feudal-age)", SourceLocation(1)),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-find-local c: town-center c: 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-set-target-object search-local c: 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-get-point position-object byzantine-wall-start)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeDucRule(
+            identity="byzantine-wall-find-vulnerable-gold",
+            order=wall_order + 1,
+            facts=(
+                parse_expression(
+                    "(goal byzantine-wall-geometry-request 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(dropsite-min-distance gold > 12)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-point byzantine-wall-start)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(up-filter-distance c: 0 c: 64)", SourceLocation(1)),
+                parse_expression("(up-find-resource c: gold c: 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-object search-remote c: 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-get-point position-object byzantine-wall-end)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeDucRule(
+            identity="byzantine-wall-find-vulnerable-wood",
+            order=wall_order + 2,
+            facts=(
+                parse_expression(
+                    "(goal byzantine-wall-geometry-request 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(not (dropsite-min-distance gold > 12))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(dropsite-min-distance wood > 12)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-point byzantine-wall-start)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(up-filter-distance c: 0 c: 64)", SourceLocation(1)),
+                parse_expression("(up-find-resource c: wood c: 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-object search-remote c: 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-get-point position-object byzantine-wall-end)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+        NativeDucRule(
+            identity="byzantine-wall-find-vulnerable-stone",
+            order=wall_order + 3,
+            facts=(
+                parse_expression(
+                    "(goal byzantine-wall-geometry-request 1)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(not (dropsite-min-distance gold > 12))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(not (dropsite-min-distance wood > 12))",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(dropsite-min-distance stone > 12)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-point byzantine-wall-start)",
+                    SourceLocation(1),
+                ),
+                parse_expression("(up-filter-distance c: 0 c: 64)", SourceLocation(1)),
+                parse_expression("(up-find-resource c: stone c: 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-set-target-object search-remote c: 0)",
+                    SourceLocation(1),
+                ),
+                parse_expression(
+                    "(up-get-point position-object byzantine-wall-end)",
+                    SourceLocation(1),
+                ),
+            ),
+        ),
+    )
+    rules.extend(wall_rules)
+    outputs.extend(
+        (
+            NativeDucOutputRequest(
+                rule_identity="byzantine-wall-find-tc",
+                section="ACTION",
+                expression_index=3,
+                request=wall["start"],
+                command="up-get-point",
+                argument_index=1,
+            ),
+            NativeDucOutputRequest(
+                rule_identity="byzantine-wall-find-vulnerable-gold",
+                section="ACTION",
+                expression_index=5,
+                request=wall["end"],
+                command="up-get-point",
+                argument_index=1,
+            ),
+            NativeDucOutputRequest(
+                rule_identity="byzantine-wall-find-vulnerable-wood",
+                section="ACTION",
+                expression_index=5,
+                request=wall["end"],
+                command="up-get-point",
+                argument_index=1,
+            ),
+            NativeDucOutputRequest(
+                rule_identity="byzantine-wall-find-vulnerable-stone",
+                section="ACTION",
+                expression_index=5,
+                request=wall["end"],
+                command="up-get-point",
+                argument_index=1,
+            ),
+        )
+    )
+
     return NativeDucPlan(
         rules=tuple(rules),
         output_requests=tuple(outputs),
     )
-
 
 def _byzantine_attack_phase_request(profile_id: str):
     from ..runtime_binding import GoalSlotRequest
