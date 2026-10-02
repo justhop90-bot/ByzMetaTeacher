@@ -17,6 +17,7 @@ def compile_strategy_profile(
     *,
     binding_context=None,
     attack_plan=None,
+    duc_plan=None,
 ) -> str:
     """Lower a downstream strategy profile through the generic compiler."""
     compilation = lower_strategy_profile(profile, effective)
@@ -25,12 +26,18 @@ def compile_strategy_profile(
         if attack_plan is not None
         else compilation.attack_plan
     )
+    effective_duc_plan = (
+        duc_plan
+        if duc_plan is not None
+        else compilation.duc_plan
+    )
     return compile_semantic_demands(
         compilation.demands,
         base_goal=base_goal,
         binding_context=binding_context,
         control_plan=compilation.control_plan,
         attack_plan=effective_attack_plan,
+        duc_plan=effective_duc_plan,
         escrow_plan=compilation.escrow_plan,
     )
 
@@ -43,6 +50,7 @@ def compile_strategy_runtime_profile(
     *,
     binding_context=None,
     attack_plan=None,
+    duc_plan=None,
 ) -> str:
     """Select active downstream strategic demands, then use generic lowering."""
     compilation = lower_strategy_profile(profile, effective)
@@ -50,6 +58,11 @@ def compile_strategy_runtime_profile(
         attack_plan
         if attack_plan is not None
         else compilation.attack_plan
+    )
+    effective_duc_plan = (
+        duc_plan
+        if duc_plan is not None
+        else compilation.duc_plan
     )
     lifecycle_inputs = tuple(
         (
@@ -96,5 +109,6 @@ def compile_strategy_runtime_profile(
         binding_context=binding_context,
         control_plan=compilation.control_plan,
         attack_plan=effective_attack_plan,
+        duc_plan=effective_duc_plan,
         escrow_plan=escrow_plan,
     )
