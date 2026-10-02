@@ -61,6 +61,16 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
                             "current-age",
                             (">=", "feudal-age"),
                         ),
+                        Expression(
+                            "(up-point-distance byzantine-wall-start byzantine-wall-end <= 8)",
+                            "up-point-distance",
+                            (
+                                "byzantine-wall-start",
+                                "byzantine-wall-end",
+                                "<=",
+                                "8",
+                            ),
+                        ),
                     ),
                     actions=(
                         Expression(
@@ -92,6 +102,10 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
 
         self.assertIn("(defconst byzantine-wall-start 46)", output)
         self.assertIn("(defconst byzantine-wall-end 44)", output)
+        self.assertIn(
+            "(up-point-distance byzantine-wall-start byzantine-wall-end <= 8)",
+            output,
+        )
         self.assertIn(
             "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
             output,
