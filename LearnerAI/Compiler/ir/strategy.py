@@ -2235,6 +2235,9 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
                 ),
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
+                activation_state_name=_BYZ_ATTACK_STATE,
+                activation_state_value=2,
+                issued_state_value=3,
             ),
             NativeAttackRule(
                 identity="byzantine-castle-attack-now-knight",
@@ -2248,6 +2251,9 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
                 ),
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
+                activation_state_name=_BYZ_ATTACK_STATE,
+                activation_state_value=2,
+                issued_state_value=3,
             ),
         )
     )
