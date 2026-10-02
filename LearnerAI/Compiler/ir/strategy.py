@@ -390,6 +390,9 @@ class StrategyProfile:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
+    map_profile: tuple["MapProfile", ...] = ()
+    opening_selector: "OpeningSelectorPlan | None" = None
+    economy_controller: "EconomyControllerPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
