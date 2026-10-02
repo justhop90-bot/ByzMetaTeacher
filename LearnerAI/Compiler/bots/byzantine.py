@@ -545,18 +545,17 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     guard_by_identity = {
         "castle-second-town-center": (
             "(map-type arena)",
-            "(map-type arena)",
             "(unit-type-count-total villager >= 35)",
             "(not (players-unit-type-count any-enemy militia-line >= 5))",
         ),
         "castle-cataphract-floor": (
-            "(or (goal opening-plan 3) "
+            "(or (map-type arena) "
             "(players-unit-type-count any-enemy militia-line >= 5))",
             "(up-research-status c: 61 >= 3)",
         ),
         "castle-monk-floor": (
             "(building-type-count-total monastery >= 1)",
-            "(goal opening-plan 3)",
+            "(map-type arena)",
         ),
         "castle-siege-capability": (
             "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
