@@ -718,9 +718,14 @@ def emit(
             chunk = demands[start : start + INITIALIZATION_CHUNK]
             out += ["(defrule", "    (true)", "=>"]
             for demand in chunk:
+                initial_value = encoded[demand.name].active.value
+                if (
+                    demand.strategic_binding is not None
+                    and demand.strategic_binding.required_primary_intent is not None
+                ):
+                    initial_value = encoded[demand.name].released.value
                 out.append(
-                    f"    (set-goal demand-{demand.name} "
-                    f"{encoded[demand.name].active.value})"
+                    f"    (set-goal demand-{demand.name} {initial_value})"
                 )
             out.append("    (disable-self)")
             out += [")", ""]
@@ -772,6 +777,37 @@ def emit(
             ")",
             "",
         ]
+        if (
+            demand.strategic_binding is not None
+            and demand.strategic_binding.recovery_on_world_loss
+            and demand.strategic_binding.recovery is not None
+            and demand.strategic_binding.recovery.reopen_on_recovery
+        ):
+            recovery_guards = [
+                f"(goal demand-{demand.name} {lifecycle.released.value})",
+                f"(not {demand.witness.source})",
+            ]
+            if demand.strategic_binding.required_primary_intent is not None:
+                recovery_guards.append(
+                    f"(goal {demand.strategic_binding._arbitration_state_name} "
+                    f"{demand.strategic_binding.required_primary_intent.value})"
+                )
+            recovery_guards.extend(
+                guard.source for guard in demand.strategic_binding.admissibility_guards
+            )
+            recovery_guards.extend(
+                f"(not {guard.source})"
+                for guard in demand.strategic_binding.invalidation_guards
+            )
+            out += [
+                f"; Recovery: {demand.name} | RELEASED -> ACTIVE on world-state loss",
+                "(defrule",
+                *[f"    {guard}" for guard in recovery_guards],
+                "=>",
+                f"    (set-goal demand-{demand.name} {lifecycle.active.value})",
+                ")",
+                "",
+            ]
 
         construction = demand.construction_lifecycle
         production = demand.production_lifecycle
