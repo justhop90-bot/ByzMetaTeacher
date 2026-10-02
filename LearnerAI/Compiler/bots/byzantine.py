@@ -292,78 +292,28 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             )
         )
 
-    # Minimal land infrastructure. Placement remains delegated to the native
-    # build action and its existing lifecycle witnesses.
-    for spec in (
-        (
-            "dark-lumber-camp",
-            "Dark Age lumber camp",
-            "lumber-camp",
-            "562",
-            Age.DARK,
-            "current-dark-age",
-        ),
-        (
-            "dark-mining-camp",
-            "Dark Age mining camp",
-            "mining-camp",
-            "584",
-            Age.DARK,
-            "current-dark-age",
-        ),
-        (
-            "dark-mill",
-            "Dark Age mill",
-            "mill",
-            "68",
-            Age.DARK,
-            "current-dark-age",
-        ),
-        (
-            "feudal-barracks",
-            "Feudal barracks for stable military production",
-            "barracks",
-            "12",
-            Age.FEUDAL,
-            "current-feudal-age",
-        ),
-        (
-            "feudal-stable",
-            "Feudal stable so Castle cavalry conversion has a ready provider",
-            "stable",
-            "101",
-            Age.FEUDAL,
-            "current-feudal-age",
-        ),
-        (
-            "feudal-archery-range",
-            "Feudal ranged-production provider",
-            "archery-range",
-            "87",
-            Age.FEUDAL,
-            "enemy-ranged-pressure",
-        ),
-    ):
-        identity, reason_label, building_name, native_action, age, reason_ref = spec
-        demands.append(
-            _aged_building_demand(
-                effective=effective,
-                identity=identity,
-                owner="infrastructure",
-                posture=StrategyPosture.BOOM,
-                priority=StrategicPriority.CORE,
-                reason_ref=reason_ref,
-                reason_label=reason_label,
-                building_name=building_name,
-                minimum_age=age,
-                action_name=native_action,
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy archer-line >= 3)",
-                )
-                if identity == "feudal-archery-range"
-                else (),
-            )
+    # The stock strategy owns Castle providers (Stable, Siege Workshop,
+    # Monastery, University, etc.). The bot adds only the Feudal ranged
+    # provider here because the threat-conditioned Skirmisher package needs it
+    # before Castle.
+
+    demands.append(
+        _aged_building_demand(
+            effective=effective,
+            identity="feudal-archery-range",
+            owner="infrastructure",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.DEFENSE,
+            reason_ref="enemy-ranged-pressure",
+            reason_label="Provide the Feudal ranged-production counter under archer pressure",
+            building_name="archery-range",
+            minimum_age=Age.FEUDAL,
+            action_name="87",
+            extra_requirements=(
+                "(players-unit-type-count any-enemy archer-line >= 3)",
+            ),
         )
+    )
 
     # Houses are metered by current count. This avoids a standing burst of
     # house requests and keeps production alive without a universal scheduler.
