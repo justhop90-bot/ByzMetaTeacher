@@ -14,7 +14,7 @@ class NativeObjectDataCatalogTests(unittest.TestCase):
         self.assertEqual(resolve_object_data_id("90"), 90)
 
     def test_negative_index_is_not_valid_for_get_object_data(self):
-        with self.assertRaisesRegex(NativeObjectDataError, "not present"):
+        with self.assertRaisesRegex(NativeObjectDataError, "not valid for up-get-object-data"):
             resolve_object_data_id("-1")
 
     def test_out_of_inventory_id_is_rejected(self):
