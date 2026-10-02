@@ -360,6 +360,10 @@ _RESEARCH_PACK = (
     ("research-hussar", "military", "imperial-age", "hussar", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
     ("research-onager", "military", "imperial-age", "onager", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
     ("research-siege-ram", "military", "imperial-age", "siege-ram", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
+    ("research-arbalester", "military", "imperial-age", "arbalester", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-halberdier", "military", "imperial-age", "halberdier", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-heavy-camel", "military", "imperial-age", "heavy-camel-rider", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-logistica", "military", "imperial-age", "logistica", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
 )
 
 
@@ -542,6 +546,26 @@ def community_strategy_observations(
             "strategy-university-exists",
             f"(building-type-count-total {int(university.id)} >= 1)",
             university.provenance,
+        ),
+        _observation(
+            "strategy-watch-tower-capability",
+            f"(building-type-count-total {int(_building(effective, "watch-tower").id)} < 1)",
+            _building(effective, "watch-tower").provenance,
+        ),
+        _observation(
+            "strategy-watch-tower-exists",
+            f"(building-type-count-total {int(_building(effective, "watch-tower").id)} >= 1)",
+            _building(effective, "watch-tower").provenance,
+        ),
+        _observation(
+            "strategy-stone-wall-capability",
+            f"(building-type-count-total {int(_building(effective, "stone-wall").id)} < 1)",
+            _building(effective, "stone-wall").provenance,
+        ),
+        _observation(
+            "strategy-stone-wall-exists",
+            f"(building-type-count-total {int(_building(effective, "stone-wall").id)} >= 1)",
+            _building(effective, "stone-wall").provenance,
         ),
     ]
 
@@ -765,6 +789,28 @@ def community_strategy_demands(
                 building=outpost,
                 requirements=(" (can-build outpost)".strip(),),
             ),
+            _build_demand(
+                identity="adaptive-watch-tower",
+                owner="defense",
+                posture=_StrategyPosture.FLUSH,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-pressure",
+                reason_label="Sustained pressure justifies a Feudal defensive tower capability",
+                building=_building(effective, "watch-tower"),
+                requirements=("(current-age >= feudal-age)", "(can-build watch-tower)"),
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _build_demand(
+                identity="adaptive-stone-wall",
+                owner="defense",
+                posture=_StrategyPosture.FLUSH,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-arena-map",
+                reason_label="Closed-map defense justifies a Stone Wall capability",
+                building=_building(effective, "stone-wall"),
+                requirements=("(current-age >= feudal-age)", "(map-type arena)", "(can-build stone-wall)"),
+                invalidate_ref="strategy-castle-age",
+            ),
         )
     )
 
@@ -955,6 +1001,36 @@ def community_strategy_demands(
                 age_guard="(current-age >= imperial-age)",
                 action_symbol="trebuchet",
                 witness_symbol="trebuchet",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-arbalester-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-ranged",
+                reason_label="Imperial ranged mass justifies an Arbalester backbone",
+                line="crossbow-line",
+                minimum=3,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="arbalester",
+                witness_symbol="arbalester",
+                invalidate_ref="strategy-enemy-ranged-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-petard-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-enemy-castle",
+                reason_label="Enemy Castle creates a bounded Petard breach package",
+                line="petard-line",
+                minimum=1,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="petard",
+                witness_symbol="petard",
+                invalidate_ref="strategy-enemy-castle-cleared",
             ),
         )
     )
