@@ -1,0 +1,31 @@
+name: Temporary external .per validation
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Native parser / zero-findings
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py tmp/Byzantine-Core-v1-FINAL-STRATEGY-DEPTH-community-meta-IMPERIAL-ARMY-PLAN-NAGA-FEUDAL-MILITARY-AUDITED.per --report /tmp/native.json
+      - name: Compiler semantic validator
+        env:
+          PYTHONPATH: LearnerAI
+        run: python tmp/validate_external_per_semantic.py tmp/Byzantine-Core-v1-FINAL-STRATEGY-DEPTH-community-meta-IMPERIAL-ARMY-PLAN-NAGA-FEUDAL-MILITARY-AUDITED.per --report /tmp/semantic.json
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: external-per-validation
+          path: |
+            /tmp/native.json
+            /tmp/semantic.json
