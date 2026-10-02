@@ -31,6 +31,7 @@ from .attack import (
 )
 from .native_attack import (
     AttackLifecycleObservation,
+    NativeAttackGoalInputRequest,
     NativeAttackLifecyclePlan,
     NativeAttackRule,
 )
