@@ -52,6 +52,11 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train varangian-guard)", first)
         self.assertIn("(attack-now)", first)
 
+    def test_profile_has_long_housing_ladder(self):
+        identities = {item.identity for item in self.profile.demands}
+        self.assertIn("house-stage-1", identities)
+        self.assertIn("house-stage-14", identities)
+
     def test_compilation_contains_staged_housing(self):
         artifact = compile_strategy_profile(self.profile, self.effective)
         self.assertIn("(build house)", artifact)
