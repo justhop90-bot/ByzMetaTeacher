@@ -20,12 +20,17 @@ def compile_strategy_profile(
 ) -> str:
     """Lower a downstream strategy profile through the generic compiler."""
     compilation = lower_strategy_profile(profile, effective)
+    effective_attack_plan = (
+        attack_plan
+        if attack_plan is not None
+        else compilation.attack_plan
+    )
     return compile_semantic_demands(
         compilation.demands,
         base_goal=base_goal,
         binding_context=binding_context,
         control_plan=compilation.control_plan,
-        attack_plan=attack_plan,
+        attack_plan=effective_attack_plan,
         escrow_plan=compilation.escrow_plan,
     )
 
