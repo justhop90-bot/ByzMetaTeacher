@@ -321,7 +321,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             24,
             "Dark Age counter-opening economic growth",
-            ("(up-compare-goal opening-plan c:== 2)",),
+            ("(and (not (map-type islands)) (and (not (map-type arena)) (players-unit-type-count any-enemy militia-line >= 5)))",),
         ),
         (
             "villagers-dark-fast-castle-26",
@@ -329,7 +329,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             26,
             "Dark Age Fast Castle economic growth",
-            ("(up-compare-goal opening-plan c:== 3)",),
+            ("(and (map-type arena) (not (players-unit-type-count any-enemy militia-line >= 5)))",),
         ),
         (
             "villagers-dark-water-24",
@@ -337,7 +337,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             24,
             "Dark Age water-opening economic growth",
-            ("(or (up-compare-goal opening-plan c:== 4) (up-compare-goal opening-plan c:== 5))",),
+            ("(map-type islands)",),
         ),
         ("villagers-feudal-30", Age.FEUDAL, 18, 30, "Feudal economic growth", ()),
         ("villagers-castle-45", Age.CASTLE, 30, 45, "Castle expansion economy", ()),
