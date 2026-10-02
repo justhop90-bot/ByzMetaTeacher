@@ -1,4 +1,4 @@
-**2/7 PROMPTS**
+**3/7 PROMPTS**
 
 # Byzantine Core v1 — Age-First Bot Roadmap
 
@@ -7,7 +7,7 @@
 **Method:** community-derived behavior expressed through the existing Byzantine StrategyProfile and existing compiler/native vocabulary.
 **Style rule:** every addition must read like the existing `LearnerAI/Compiler/bots/byzantine.py`: small pure helpers, `StrategicDemandSpec` construction, `replace(...)` for execution guards, explicit native fact strings, existing `StrategyPosture`/`StrategicPriority` values, deterministic tuple ordering, focused unit tests, no second scheduler, no new bot-side language.
 
-## **1/7 — Prompt 1: Dark Age Foundation — ACTIVE**
+## **1/7 — Prompt 1: Dark Age Foundation — IMPLEMENTED**
 
 ### Objective
 
@@ -41,7 +41,7 @@ Resource-building construction for lumber camp, mill, mining camp, farm and dock
 
 ---
 
-## **2/7 — Prompt 2: Feudal Economic and Military Engine — ACTIVE**
+## **2/7 — Prompt 2: Feudal Economic and Military Engine — IMPLEMENTED / CI PENDING**
 
 ### Objective
 
@@ -88,11 +88,25 @@ Prompt 2 also requires focused tests for the Barracks provider, counter-package 
 
 ---
 
-## **3/7 — Prompt 3: Castle Conversion Engine — QUEUED**
+## **3/7 — Prompt 3: Castle Conversion Engine — ACTIVE**
 
 ### Objective
 
 Replace the current blunt Castle package with explicit Byzantine conversion branches.
+
+### Implemented in this prompt
+
+- Restricted the existing second Town Center demand to the Arena Fast Castle branch: Arena map, opening plan 3, at least 35 villagers, and no active five-militia pressure.
+- Made the default non-Arena Castle path effectively 1TC by withholding the second-TC demand rather than inventing a separate scheduler.
+- Added a bot-local Logistica research demand using the existing StrategicDemandSpec/research lifecycle style and the verified native `ri-logistica` alias.
+- Made the Cataphract floor depend on either the Arena Fast Castle branch or verified infantry pressure, and require completed Logistica before Castle Cataphract production.
+- Made the Monk floor conditional on an actual Monastery and the Arena Fast Castle branch.
+- Expanded Castle siege capability to activate for verified enemy siege or sustained ranged pressure, while retaining the existing bounded Mangonel production floor.
+- Sequenced Castle economy research with native research-status guards: Wheelbarrow -> Hand Cart, Double-Bit Axe -> Bow Saw, Gold Mining -> Gold Shaft Mining, Horse Collar -> Heavy Plow, and Fletching -> Bodkin Arrow with an Archery Range present.
+- Shifted Castle conversion economy to 45 food / 30 wood / 25 gold / 7 builders.
+- Raised the Imperial conversion readiness gate to at least 40 villagers while preserving the existing persistent Imperial demand.
+- No generic compiler changes and no new Castle scheduler.
+
 
 ### Branches
 
