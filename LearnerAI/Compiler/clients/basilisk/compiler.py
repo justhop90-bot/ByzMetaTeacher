@@ -46,6 +46,11 @@ def compile_strategy_runtime_profile(
 ) -> str:
     """Select active downstream strategic demands, then use generic lowering."""
     compilation = lower_strategy_profile(profile, effective)
+    effective_attack_plan = (
+        attack_plan
+        if attack_plan is not None
+        else compilation.attack_plan
+    )
     lifecycle_inputs = tuple(
         (
             demand.name,
@@ -90,6 +95,6 @@ def compile_strategy_runtime_profile(
         base_goal=base_goal,
         binding_context=binding_context,
         control_plan=compilation.control_plan,
-        attack_plan=attack_plan,
+        attack_plan=effective_attack_plan,
         escrow_plan=escrow_plan,
     )
