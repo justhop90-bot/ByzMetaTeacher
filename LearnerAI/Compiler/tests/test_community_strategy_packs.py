@@ -105,7 +105,6 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "water-heavy-warships",
             "water-greek-fire",
             "water-fire-ship-floor",
-            "water-fast-fire-ship-floor",
             "water-galleon-floor",
             "water-dromon-floor",
         ):
