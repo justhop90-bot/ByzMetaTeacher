@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from enum import Enum, IntEnum
 from typing import TYPE_CHECKING
 
-from ..ast import DemandNode, SourceLocation
+from ..ast import DemandNode, Expression, SourceLocation
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, CivId, FactStatus, Resource
 from .versioning import EvidenceKind, EvidenceRef
@@ -46,6 +46,67 @@ _STRATEGY_POSTURE_VALUES = {
     StrategyPosture.BOOM: 3,
     StrategyPosture.CASTLE_POWER: 4,
 }
+
+class PrimaryStrategicIntent(IntEnum):
+    NONE = 0
+    WATER = 1
+    CASTLE = 2
+    TWO_TC = 3
+
+
+@dataclass(frozen=True)
+class StrategicIntentCandidate:
+    identity: str
+    intent: PrimaryStrategicIntent
+    from_intents: tuple[PrimaryStrategicIntent, ...]
+    required_observation_refs: tuple[str, ...]
+    forbidden_observation_refs: tuple[str, ...] = ()
+    release_observation_refs: tuple[str, ...] = ()
+    invalidation_observation_refs: tuple[str, ...] = ()
+    priority: int = 0
+
+    def __post_init__(self) -> None:
+        if not self.identity.strip():
+            raise ValueError("strategic intent candidate identity must not be empty")
+        if len(self.from_intents) != len(set(self.from_intents)):
+            raise ValueError(
+                f"strategic intent candidate '{self.identity}' has duplicate source intents"
+            )
+        if not self.from_intents:
+            raise ValueError(
+                f"strategic intent candidate '{self.identity}' needs at least one source intent"
+            )
+        if self.priority < 0:
+            raise ValueError("strategic intent candidate priority must not be negative")
+
+
+@dataclass(frozen=True)
+class StrategicDemandArbitrationPlan:
+    state_name: str
+    candidates: tuple[StrategicIntentCandidate, ...]
+    emergency_observation_ref: str | None = None
+    emergency_blocked_intents: tuple[PrimaryStrategicIntent, ...] = (
+        PrimaryStrategicIntent.CASTLE,
+        PrimaryStrategicIntent.TWO_TC,
+    )
+
+    def __post_init__(self) -> None:
+        if not re.fullmatch(r"[a-z][a-z0-9_-]*", self.state_name):
+            raise ValueError(
+                f"strategic arbitration state '{self.state_name}' is not a valid .per identifier"
+            )
+        identities = [item.identity for item in self.candidates]
+        if len(identities) != len(set(identities)):
+            raise ValueError("duplicate strategic arbitration candidate identity")
+        intents = [item.intent for item in self.candidates]
+        if len(intents) != len(set(intents)):
+            raise ValueError("duplicate strategic arbitration candidate intent")
+        priorities = [item.priority for item in self.candidates]
+        if len(priorities) != len(set(priorities)):
+            raise ValueError("strategic arbitration candidate priorities must be unique")
+        if self.emergency_observation_ref == "":
+            raise ValueError("strategic arbitration emergency observation reference must be non-empty or None")
+
 
 
 class StrategicEvidenceKind(str, Enum):
@@ -210,6 +271,11 @@ class StrategicBinding:
     capability_intent: CapabilityIntent
     opportunity_cost: OpportunityCostPolicy | None
     production_arbitration_group: str | None = None
+    required_primary_intent: PrimaryStrategicIntent | None = None
+    recovery: "CapabilityRecoveryContract | None" = None
+    recovery_on_world_loss: bool = False
+    admissibility_guards: tuple[Expression, ...] = ()
+    invalidation_guards: tuple[Expression, ...] = ()
 
     @property
     def persistent_intent(self) -> bool:
@@ -390,6 +456,7 @@ class StrategyProfile:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
+    strategic_arbitration: StrategicDemandArbitrationPlan | None = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -689,6 +756,46 @@ def _validate_strategic_number_modes(
             )
 
 
+def _validate_strategic_arbitration(profile: StrategyProfile) -> None:
+    plan = profile.strategic_arbitration
+    if plan is None:
+        if any(demand.required_primary_intent is not None for demand in profile.demands):
+            raise ValueError(
+                "strategic demands with required primary intent need a strategic arbitration plan"
+            )
+        return
+
+    observations = {item.identity for item in profile.observations}
+    candidate_intents = {item.intent for item in plan.candidates}
+    for candidate in plan.candidates:
+        for ref in (
+            *candidate.required_observation_refs,
+            *candidate.forbidden_observation_refs,
+            *candidate.release_observation_refs,
+            *candidate.invalidation_observation_refs,
+        ):
+            if ref not in observations:
+                raise ValueError(
+                    f"strategic arbitration candidate '{candidate.identity}' references unknown observation '{ref}'"
+                )
+        if candidate.intent in candidate.from_intents:
+            raise ValueError(
+                f"strategic arbitration candidate '{candidate.identity}' cannot transition from its own intent"
+            )
+
+    for demand in profile.demands:
+        if demand.required_primary_intent is not None and demand.required_primary_intent not in candidate_intents:
+            raise ValueError(
+                f"strategic demand '{demand.identity}' requires unsupported primary intent "
+                f"'{demand.required_primary_intent.name}'"
+            )
+
+    if plan.emergency_observation_ref is not None and plan.emergency_observation_ref not in observations:
+        raise ValueError(
+            f"strategic arbitration references unknown emergency observation '{plan.emergency_observation_ref}'"
+        )
+
+
 def resolve_strategy_profile(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -711,6 +818,7 @@ def resolve_strategy_profile(
     _validate_capability_observations(profile, effective)
     _validate_observation_specs(profile, effective)
     _validate_strategic_number_modes(profile, effective)
+    _validate_strategic_arbitration(profile)
 
     for demand in profile.demands:
         if demand.identity in seen:
@@ -878,10 +986,27 @@ def lower_strategy_profile(
                     f"duplicate lowered execution demand '{execution_name}'"
                 )
             execution_owner[execution_name] = spec.identity
+            requirements = execution.requirements
+            if spec.required_primary_intent is not None:
+                if profile.strategic_arbitration is None:
+                    raise ValueError(
+                        f"strategic demand '{spec.identity}' requires primary arbitration but no plan is configured"
+                    )
+                requirements = (
+                    *requirements,
+                    f"(goal {profile.strategic_arbitration.state_name} {spec.required_primary_intent.value})",
+                )
+                emergency_ref = profile.strategic_arbitration.emergency_observation_ref
+                if (
+                    emergency_ref is not None
+                    and spec.required_primary_intent in profile.strategic_arbitration.emergency_blocked_intents
+                ):
+                    emergency = profile.observation(emergency_ref).expression
+                    requirements = (*requirements, f"(not {emergency})")
             nodes.append(
                 DemandNode(
                     name=execution_name,
-                    requirements=execution.requirements,
+                    requirements=requirements,
                     action=execution.action,
                     witness=execution.witness,
                     release=execution.release,
@@ -913,6 +1038,19 @@ def lower_strategy_profile(
                 target=spec.target,
                 capability_intent=spec.capability_intent,
                 opportunity_cost=spec.opportunity_cost,
+                required_primary_intent=spec.required_primary_intent,
+                recovery=spec.recovery,
+                recovery_on_world_loss=spec.recovery_on_world_loss,
+                admissibility_guards=tuple(
+                    profile.observation(evidence.observation_ref).expression
+                    for evidence in spec.admissibility
+                    if evidence.observation_ref is not None
+                ),
+                invalidation_guards=tuple(
+                    profile.observation(evidence.observation_ref).expression
+                    for evidence in spec.invalidation
+                    if evidence.observation_ref is not None
+                ),
             )
             bindings[spec.identity] = base_binding
 
@@ -1574,6 +1712,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
+    arbitration_plan = _strategic_demand_arbitration_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
@@ -1613,6 +1752,7 @@ def _strategy_control_plan(profile: StrategyProfile):
 
     return _merge_native_control_plans(
         posture_plan,
+        arbitration_plan,
         mode_plan,
         assertion_plan,
         attack_lifecycle_plan,
@@ -1620,6 +1760,124 @@ def _strategy_control_plan(profile: StrategyProfile):
         opening_plan,
         economy_plan,
     )
+
+
+def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
+    plan = profile.strategic_arbitration
+    if plan is None:
+        return None
+
+    from ..semantic.analyzer import parse_expression
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    state = NativeControlState(
+        plan.state_name,
+        GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile.profile_id, plan.state_name),
+                "strategic-primary-intent",
+            ),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+
+    def observation_expr(ref: str) -> str:
+        return profile.observation(ref).expression
+
+    def combine(parts: list[str]) -> str:
+        if not parts:
+            return "(true)"
+        if len(parts) == 1:
+            return parts[0]
+        return "(and " + " ".join(parts) + ")"
+
+    candidate_guards: dict[str, str] = {}
+    ordered = tuple(sorted(plan.candidates, key=lambda item: (-item.priority, item.identity)))
+    for candidate in ordered:
+        parts = [observation_expr(ref) for ref in candidate.required_observation_refs]
+        parts.extend(f"(not {observation_expr(ref)})" for ref in candidate.forbidden_observation_refs)
+        candidate_guards[candidate.identity] = combine(parts)
+
+    rules: list[NativeControlRule] = [
+        NativeControlRule(
+            "strategic-primary-intent-initialize",
+            facts=(parse_expression(f"(goal {plan.state_name} 0)", SourceLocation(1)),),
+            actions=(
+                parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        )
+    ]
+
+    for candidate in ordered:
+        for source_intent in candidate.from_intents:
+            guards = [
+                f"(goal {plan.state_name} {source_intent.value})",
+                candidate_guards[candidate.identity],
+            ]
+            higher = tuple(
+                other
+                for other in ordered
+                if other.priority > candidate.priority and source_intent in other.from_intents
+            )
+            for other in higher:
+                guards.append(f"(not {candidate_guards[other.identity]})")
+            rules.append(
+                NativeControlRule(
+                    f"strategic-primary-intent-select-{candidate.identity.lower()}-from-{source_intent.value}",
+                    facts=(parse_expression(combine(guards), SourceLocation(1)),),
+                    actions=(
+                        parse_expression(
+                            f"(set-goal {plan.state_name} {candidate.intent.value})",
+                            SourceLocation(1),
+                        ),
+                        *tuple(
+                            parse_expression(
+                                f"(set-goal demand-{demand.identity} 1)",
+                                SourceLocation(1),
+                            )
+                            for demand in profile.demands
+                            if demand.required_primary_intent is candidate.intent
+                        ),
+                    ),
+                )
+            )
+
+    for candidate in ordered:
+        if not candidate.release_observation_refs and not candidate.invalidation_observation_refs:
+            continue
+        source = f"(goal {plan.state_name} {candidate.intent.value})"
+        if candidate.release_observation_refs:
+            release_parts = [observation_expr(ref) for ref in candidate.release_observation_refs]
+            blocking = []
+            for other in ordered:
+                if other.priority > candidate.priority and candidate.intent in other.from_intents:
+                    blocking.append(f"(not {candidate_guards[other.identity]})")
+            release_guard = combine([source, combine(release_parts), *blocking])
+            rules.append(
+                NativeControlRule(
+                    f"strategic-primary-intent-release-{candidate.identity.lower()}",
+                    facts=(parse_expression(release_guard, SourceLocation(1)),),
+                    actions=(parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),),
+                )
+            )
+        if candidate.invalidation_observation_refs:
+            invalidation_parts = [observation_expr(ref) for ref in candidate.invalidation_observation_refs]
+            blocking = []
+            for other in ordered:
+                if other.priority > candidate.priority and candidate.intent in other.from_intents:
+                    blocking.append(f"(not {candidate_guards[other.identity]})")
+            invalidation_guard = combine([source, combine(invalidation_parts), *blocking])
+            rules.append(
+                NativeControlRule(
+                    f"strategic-primary-intent-invalidate-{candidate.identity.lower()}",
+                    facts=(parse_expression(invalidation_guard, SourceLocation(1)),),
+                    actions=(parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),),
+                )
+            )
+
+    return NativeControlPlan(states=(state,), rules=tuple(rules))
 
 
 def _posture_transition_control_plan(profile: StrategyProfile):
