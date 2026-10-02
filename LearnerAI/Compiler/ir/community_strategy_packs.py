@@ -509,8 +509,8 @@ def community_strategy_observations(
         _observation(
             "strategy-enemy-mounted-heavy-cleared",
             "(and (players-unit-type-count any-enemy knight < 4) "
-            "(players-unit-type-count any-enemy scout-cavalry-line < 6) "
-            "(players-unit-type-count any-enemy camel-line < 4))",
+            "(and (players-unit-type-count any-enemy scout-cavalry-line < 6) "
+            "(players-unit-type-count any-enemy camel-line < 4)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
