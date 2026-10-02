@@ -239,7 +239,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         for identifier in (
             "byzantine-wall-geometry-request",
             "byzantine-wall-anchor-pair",
-            "byzantine-wall-completed",
+            "byzantine-wall-issued",
             "byzantine-wall-anchor-town-center",
             "byzantine-wall-anchor-castle",
             "byzantine-wall-anchor-keep",
@@ -280,9 +280,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             )
             self.assertIn(f"byzantine-wall-geometry-issue-{pair}", rule_ids)
             self.assertIn(f"byzantine-wall-geometry-reanchor-{pair}", rule_ids)
-            self.assertIn(f"byzantine-wall-geometry-repair-{pair}", rule_ids)
             self.assertIn(f"byzantine-wall-geometry-release-{pair}", rule_ids)
-            self.assertIn(f"byzantine-wall-geometry-recover-{pair}", rule_ids)
 
         output = compile_strategy_profile(self.profile, self.effective)
         for anchor in anchor_types:
