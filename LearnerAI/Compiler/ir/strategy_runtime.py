@@ -1426,6 +1426,7 @@ def evaluate_strategy_runtime(
         counter_arbitration,
     )
     from .production_runtime import evaluate_production_runtime, ProductionBoundaryStatus, ProductionProviderTransition
+    reasons = set(snapshot.reassessment_signals)
     water_execution_state, evaluated_water = _evaluate_water_execution_state(
         profile,
         effective,
@@ -1490,7 +1491,6 @@ def evaluate_strategy_runtime(
     complete: list[str] = []
     opportunity: list[tuple[str, OpportunityCostRuntimeState]] = []
 
-    reasons = set(snapshot.reassessment_signals)
     previous_counter_states = dict(snapshot.previous_counter_package_states)
     current_counter_states = {
         item.identity: item.truth
