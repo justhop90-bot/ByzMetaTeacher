@@ -323,7 +323,8 @@ The engine supports the object, but the current bot does not yet have a sufficie
 
 ### Witness/recovery
 
-- [x] World wall-count witness.
+- [x] World wall-count witness, scoped to the selected pair's wall tier.
+- [x] Per-pair release rules keep emitted boolean clauses within native line budgets.
 - [x] Pending-placement guard.
 - [x] Anchor-presence guard during recovery.
 - [x] Anchor loss invalidates the pair.
