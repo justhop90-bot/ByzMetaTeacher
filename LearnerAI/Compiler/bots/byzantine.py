@@ -399,7 +399,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 minimum_age=Age.DARK,
                 upper_bound=1,
                 extra_requirements=(
-                    "(or (resource-found wood) (unit-type-count-total villager >= 7))",
+                    "(unit-type-count-total villager >= 7)",
                 ),
             ),
             _staged_building(
@@ -430,8 +430,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 minimum_age=Age.DARK,
                 upper_bound=1,
                 extra_requirements=(
-                    "(or (resource-found gold) (resource-found stone))",
                     "(unit-type-count-total villager >= 9)",
+                    "(or (dropsite-min-distance gold > 5) (dropsite-min-distance stone > 5))",
                 ),
             ),
             _staged_building(
@@ -462,7 +462,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 minimum_age=Age.DARK,
                 upper_bound=1,
                 extra_requirements=(
-                    "(or (resource-found food) (unit-type-count-total villager >= 7))",
+                    "(unit-type-count-total villager >= 7)",
+                    "(dropsite-min-distance food > 5)",
                 ),
             ),
             _aged_building_demand(
