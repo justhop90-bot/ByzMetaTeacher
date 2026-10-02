@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .civ_profile import EffectiveCivData
-from .game_data import Age, BuildingId, Resource, TechId, UnitLineId
+from .game_data import Age, BuildingId, Resource, UnitLineId
 from .strategy import (
     CapabilityIntent as _CapabilityIntent,
     CapabilityIntentKind as _CapabilityIntentKind,
@@ -87,17 +87,6 @@ def _persistent(
         None,
         label,
         observation_ref=observation_ref,
-    )
-
-
-def _execution(
-    label: str,
-    expression: str,
-) -> _StrategicEvidence:
-    return _StrategicEvidence(
-        _StrategicEvidenceKind.EXECUTION,
-        expression,
-        label,
     )
 
 
@@ -710,7 +699,6 @@ def community_strategy_demands(
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
     # requires a proven environmental predicate and remains OPEN.
-    fishing = _line(effective, "fishing-ship-line")
     fishing_provider = _provider_for_line(effective, "fishing-ship-line")
     demands.append(
         _StrategicDemandSpec(
