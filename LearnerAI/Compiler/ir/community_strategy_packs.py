@@ -323,8 +323,8 @@ def community_strategy_observations(
         _observation(
             "strategy-enemy-pressure",
             "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5))",
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
