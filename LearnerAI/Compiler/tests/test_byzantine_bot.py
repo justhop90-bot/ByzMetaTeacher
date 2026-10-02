@@ -265,8 +265,8 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["imperial-hand-cannoneer-counter"].execution.action,
         )
         self.assertIn(
-            "(research 47)",
-            demands["imperial-chemistry"].execution.action,
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            demands["research-chemistry"].execution.requirements,
         )
 
     def test_profile_has_imperial_cataphract_conversion(self):
