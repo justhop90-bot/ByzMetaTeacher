@@ -137,6 +137,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             (
                 "byzantine-castle-target-knight",
                 "byzantine-castle-target-infantry",
+                "byzantine-wall-find-tc",
+                "byzantine-wall-find-vulnerable-resource",
             ),
         )
         self.assertEqual(
@@ -178,7 +180,27 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                     and output.command == "up-get-object-data"
                     for output in plan.output_requests
                 )
-                for rule in plan.rules
+                for rule in plan.rules[:2]
+            )
+        )
+        self.assertEqual(len(plan.output_requests), 4)
+        self.assertEqual(len(plan.input_requests), 1)
+        self.assertEqual(
+            plan.input_requests[0].source.purpose,
+            "resource-kind",
+        )
+        self.assertTrue(
+            any(
+                output.rule_identity == "byzantine-wall-find-tc"
+                and output.request.request_id.purpose == "wall-start"
+                for output in plan.output_requests
+            )
+        )
+        self.assertTrue(
+            any(
+                output.rule_identity == "byzantine-wall-find-vulnerable-resource"
+                and output.request.request_id.purpose == "wall-end"
+                for output in plan.output_requests
             )
         )
 
@@ -188,6 +210,49 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-set-target-object search-remote c: 0)", output)
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
+        self.assertIn("; Native DUC rule: byzantine-wall-find-tc", output)
+        self.assertIn("(up-find-local c: town-center c: 1)", output)
+        self.assertIn("; Native DUC rule: byzantine-wall-find-vulnerable-resource", output)
+        self.assertIn(
+            "(up-find-resource g: byzantine-wall-resource-kind c: 1)",
+            output,
+        )
+        self.assertIn(
+            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+            output,
+        )
+
+    def test_byzantine_strategy_lowers_phase35_wall_geometry_control_plane(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+        state_ids = tuple(state.identifier for state in control.states)
+        for identifier in (
+            "byzantine-wall-geometry-request",
+            "byzantine-wall-resource-kind",
+            "byzantine-wall-start",
+            "byzantine-wall-end",
+        ):
+            self.assertIn(identifier, state_ids)
+
+        rule_ids = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-wall-geometry-")
+        )
+        self.assertIn("byzantine-wall-geometry-arm-gold", rule_ids)
+        self.assertIn("byzantine-wall-geometry-arm-wood", rule_ids)
+        self.assertIn("byzantine-wall-geometry-arm-stone", rule_ids)
+        self.assertIn("byzantine-wall-geometry-issue", rule_ids)
+
+        output = compile_strategy_profile(self.profile, self.effective)
+        self.assertIn("(defconst byzantine-wall-start", output)
+        self.assertIn("(defconst byzantine-wall-end", output)
+        self.assertIn(
+            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+            output,
+        )
 
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
