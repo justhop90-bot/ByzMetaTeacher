@@ -107,7 +107,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIs(compilation.duc_plan, profile_plan)
 
         default_output = compile_strategy_profile(profile, self.effective)
-        self.assertIn("; Native DUC plan", default_output)
+        self.assertIn("; Native DUC execution plan", default_output)
         self.assertIn("; Native DUC rule: byzantine-duc-profile", default_output)
 
         override_output = compile_strategy_profile(
