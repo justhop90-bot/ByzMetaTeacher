@@ -10,6 +10,8 @@ from typing import Mapping
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
+from ..runtime_binding import GoalSlotRequest
+from .model import StorageRequestId
 from .strategic_number_arbitration import StrategicNumberActionAttachment
 
 
@@ -60,6 +62,37 @@ class NativeAttackRule:
 
 
 @dataclass(frozen=True)
+class NativeAttackGoalInputRequest:
+    """Bind a Goal-backed attack Fact operand to the shared Goal allocator."""
+
+    identity: str
+    rule_identity: str
+    section: str
+    expression_index: int
+    argument_index: int
+    request: GoalSlotRequest
+
+    @property
+    def site_key(self) -> tuple[str, str, int, int]:
+        return (
+            self.rule_identity,
+            self.section,
+            self.expression_index,
+            self.argument_index,
+        )
+
+    def __post_init__(self) -> None:
+        if not self.identity.strip():
+            raise ValueError("native attack Goal input identity must not be empty")
+        if self.section not in {"FACT", "ACTION"}:
+            raise ValueError("native attack Goal input section must be FACT or ACTION")
+        if self.expression_index < 0 or self.argument_index < 0:
+            raise ValueError("native attack Goal input indexes must be non-negative")
+        if not isinstance(self.request, GoalSlotRequest):
+            raise TypeError("native attack Goal input request must be a GoalSlotRequest")
+
+
+@dataclass(frozen=True)
 class NativeAttackLifecyclePlan:
     """Ordered compiler-owned native attack lifecycle rules."""
 
@@ -67,6 +100,7 @@ class NativeAttackLifecyclePlan:
     strategic_number_action_attachments: tuple[
         StrategicNumberActionAttachment, ...
     ] = ()
+    goal_input_requests: tuple[NativeAttackGoalInputRequest, ...] = ()
 
     def __post_init__(self) -> None:
         identities = tuple(rule.identity for rule in self.rules)
@@ -77,6 +111,47 @@ class NativeAttackLifecyclePlan:
             raise ValueError(
                 "native attack rules must be declared in deterministic order"
             )
+        if not isinstance(self.goal_input_requests, tuple):
+            raise TypeError("native attack Goal input requests must be a tuple")
+        goal_sites = tuple(request.site_key for request in self.goal_input_requests)
+        if len(goal_sites) != len(set(goal_sites)):
+            raise ValueError("duplicate native attack Goal input request site")
+        goal_ids = tuple(
+            request.request.request_id for request in self.goal_input_requests
+        )
+        if len(goal_ids) != len(set(goal_ids)):
+            raise ValueError("duplicate native attack Goal input request storage id")
+        rule_by_identity = {rule.identity: rule for rule in self.rules}
+        for request in self.goal_input_requests:
+            rule = rule_by_identity.get(request.rule_identity)
+            if rule is None:
+                raise ValueError(
+                    f"native attack Goal input '{request.identity}' references unknown "
+                    f"rule '{request.rule_identity}'"
+                )
+            expressions = rule.facts if request.section == "FACT" else rule.actions
+            if request.expression_index >= len(expressions):
+                raise ValueError(
+                    f"native attack Goal input '{request.identity}' expression index "
+                    "is outside its owned rule"
+                )
+            expression = expressions[request.expression_index]
+            if expression.head not in {"goal", "up-compare-goal"}:
+                raise ValueError(
+                    f"native attack Goal input '{request.identity}' can only bind "
+                    "goal or up-compare-goal expressions"
+                )
+            if request.argument_index != 0:
+                raise ValueError(
+                    f"native attack Goal input '{request.identity}' must bind "
+                    "argument 0"
+                )
+            if request.request.request_id.purpose != "byzantine-attack-phase":
+                raise ValueError(
+                    f"native attack Goal input '{request.identity}' must use the "
+                    "byzantine-attack-phase storage purpose"
+                )
+
         if not isinstance(self.strategic_number_action_attachments, tuple):
             raise TypeError(
                 "native attack Strategic Number attachments must be a tuple"
@@ -197,6 +272,7 @@ class NativeAttackLifecyclePlan:
 
 __all__ = [
     "AttackLifecycleObservation",
+    "NativeAttackGoalInputRequest",
     "NativeAttackLifecyclePlan",
     "NativeAttackRule",
 ]
