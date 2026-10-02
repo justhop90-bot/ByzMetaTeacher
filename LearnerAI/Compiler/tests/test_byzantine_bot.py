@@ -81,6 +81,12 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train villager)", first)
         self.assertIn("(train cataphract)", first)
         self.assertIn("(build barracks)", first)
+        self.assertIn("(build lumber-camp)", first)
+        self.assertIn("(build mining-camp)", first)
+        self.assertIn("(build mill)", first)
+        self.assertIn("(build farm)", first)
+        self.assertIn("(build market)", first)
+        self.assertIn("(train spearman-line)", first)
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", first)
         self.assertIn("(train varangian-guard)", first)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", first)
@@ -421,6 +427,105 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(building-type-count-total dock >= 1)", demand.execution.requirements)
         self.assertEqual(demand.execution.action, "(train fishing-ship)")
         self.assertEqual(demand.execution.witness, "(unit-type-count fishing-ship >= 4)")
+
+
+    def test_profile_has_basic_resource_dropsites(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        for identity in (
+            "dark-lumber-camp",
+            "dark-mining-camp",
+            "dark-mill-capability",
+            "wood-dropsite-extension",
+            "mining-dropsite-extension",
+        ):
+            self.assertIn(identity, demands)
+
+        self.assertIn(
+            "(or (resource-found wood) (unit-type-count-total villager >= 7))",
+            demands["dark-lumber-camp"].execution.requirements,
+        )
+        self.assertIn(
+            "(dropsite-min-distance wood > 12)",
+            demands["wood-dropsite-extension"].execution.requirements,
+        )
+        self.assertIn(
+            "(or (resource-found gold) (resource-found stone))",
+            demands["dark-mining-camp"].execution.requirements,
+        )
+        self.assertIn(
+            "(or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))",
+            demands["mining-dropsite-extension"].execution.requirements,
+        )
+        self.assertIn(
+            "(or (resource-found food) (unit-type-count-total villager >= 7))",
+            demands["dark-mill-capability"].execution.requirements,
+        )
+
+    def test_profile_has_farm_bank_and_market_recovery(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn("farm-bank-stage-1", demands)
+        self.assertIn("farm-bank-stage-2", demands)
+        self.assertIn("farm-bank-stage-3", demands)
+
+        self.assertIn(
+            "(building-type-count-total mill >= 1)",
+            demands["farm-bank-stage-1"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 18)",
+            demands["farm-bank-stage-1"].execution.requirements,
+        )
+        self.assertIn(
+            "(food-amount < 500)",
+            demands["farm-bank-stage-1"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 30)",
+            demands["farm-bank-stage-2"].execution.requirements,
+        )
+        self.assertIn(
+            "(food-amount < 700)",
+            demands["farm-bank-stage-2"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 45)",
+            demands["farm-bank-stage-3"].execution.requirements,
+        )
+        self.assertIn(
+            "(food-amount < 900)",
+            demands["farm-bank-stage-3"].execution.requirements,
+        )
+
+        market = demands["feudal-market-recovery"]
+        self.assertIn("(current-age >= feudal-age)", market.execution.requirements)
+        self.assertIn("(unit-type-count-total villager >= 24)", market.execution.requirements)
+        self.assertIn(
+            "(or (food-amount < 300) (wood-amount < 150) (gold-amount < 150))",
+            market.execution.requirements,
+        )
+
+    def test_profile_has_basic_feudal_spear_floor(self):
+        demand = self.profile.demand("feudal-spear-floor")
+        self.assertEqual(demand.target.minimum, 2)
+        self.assertEqual(demand.execution.action, "(train spearman-line)")
+        self.assertIn("(current-age >= feudal-age)", demand.execution.requirements)
+        self.assertIn("(not (map-type islands))", demand.execution.requirements)
+
+    def test_profile_has_basic_economic_placement_and_exploration_sns(self):
+        modes = {
+            item.identity: item
+            for item in self.profile.strategic_number_modes
+        }
+        expected = {
+            "lumber-camp-placement-distance": (260, 40),
+            "mining-camp-placement-distance": (261, 40),
+            "mill-placement-distance": (87, 28),
+            "land-explorer-cap": (18, 4),
+            "initial-exploration-requirement": (167, 2),
+        }
+        for identity, (native_id, value) in expected.items():
+            self.assertEqual(modes[identity].native_strategic_number_id, native_id)
+            self.assertEqual(modes[identity].value, value)
 
     def test_profile_has_complete_water_capability_chain(self):
         demands = {item.identity: item for item in self.profile.demands}
