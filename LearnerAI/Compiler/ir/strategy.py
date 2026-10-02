@@ -1404,7 +1404,7 @@ def _duc_focus_control_plan(profile: StrategyProfile):
                 facts=(
                     parse_expression(
                         f"(and (current-age >= castle-age) "
-                        f"(up-compare-goal {state_name} > 0))",
+                        f"(up-compare-goal {state_name} c:>= 1))",
                         SourceLocation(1),
                     ),
                 ),
