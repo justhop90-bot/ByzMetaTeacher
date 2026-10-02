@@ -442,25 +442,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             )
         )
 
-    # Feudal response package guards are attached to the stock counter
-    # demands below. Keeping one demand per counter avoids double production.
-    demands.append(
-        _aged_building_demand(
-            effective=effective,
-            identity="feudal-archery-range",
-            owner="infrastructure",
-            posture=StrategyPosture.FLUSH,
-            priority=StrategicPriority.DEFENSE,
-            reason_ref="enemy-ranged-pressure",
-            reason_label="Provide the Feudal ranged-production counter under archer pressure",
-            building_name="archery-range",
-            minimum_age=Age.FEUDAL,
-            extra_requirements=(
-                "(players-unit-type-count any-enemy archer-line >= 3)",
-            ),
-        )
-    )
-
+    # Stock counter demands already own the Feudal response lifecycle.
     # Castle military floors are already owned by the stock Byzantine
     # strategy. Bot policy only strengthens their executable threat guards.
     return tuple(demands)
