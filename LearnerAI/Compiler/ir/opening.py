@@ -9,7 +9,6 @@ from ..runtime_binding import GoalSlotRequest
 from ..semantic.analyzer import parse_expression
 from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
-from .map_profile import MapKind, MapProfile
 
 
 class OpeningFamily(str, Enum):
