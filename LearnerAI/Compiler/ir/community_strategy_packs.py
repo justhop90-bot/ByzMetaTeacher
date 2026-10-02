@@ -198,7 +198,6 @@ def _research_demand(
             requirements=(
                 age_guard,
                 f"(can-research-with-escrow {token})",
-                f"(not (research-completed {int(tech.id)}))",
             ),
             action=f"(research {token})",
             witness=f"(research-completed {int(tech.id)})",
