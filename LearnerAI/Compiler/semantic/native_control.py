@@ -65,6 +65,7 @@ _CONTROL_COMMANDS = frozenset(
         "disable-self",
         "up-jump-rule",
         "up-build-line",
+        "up-point-distance",
     }
 )
 
