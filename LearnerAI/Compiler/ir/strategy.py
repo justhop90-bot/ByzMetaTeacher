@@ -2832,6 +2832,18 @@ def build_byzantine_stock_strategy(
     """Return the broader community-derived Byzantine stock strategy profile."""
     from .community_strategy_packs import build_byzantine_stock_strategy as _build
 
+def build_byzantine_strategy(
+    effective: EffectiveCivData,
+    *,
+    include_water_continuity: bool = True,
+) -> StrategyProfile:
+    """Canonical Byzantine strategy entry point for normal compiler clients."""
+    return build_byzantine_stock_strategy(
+        effective,
+        include_water_continuity=include_water_continuity,
+    )
+
+
     return _build(
         effective,
         include_water_continuity=include_water_continuity,
