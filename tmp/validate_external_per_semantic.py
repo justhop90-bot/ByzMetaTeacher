@@ -41,7 +41,7 @@ def main():
         report["source_graph_valid"] = bool(graph_report.valid)
         report["source_graph_errors"] = [diag_dict(x) for x in getattr(graph_report, "errors", ())]
         effective_rules = analyze_effective_rules(graph)
-        report["effective_rule_count"] = len(effective_rules)
+        report["effective_rule_count"] = len(effective_rules.rules)
         persistent = analyze_persistent_state(effective_rules)
         sn = analyze_strategic_number_expressions(effective_rules)
         recurrent = analyze_recurrent_execution(effective_rules)
