@@ -150,6 +150,48 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         ):
             self.assertTrue(demands[identity].recovery_on_world_loss)
 
+    def test_final_byzantine_strategy_breadth_is_present(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demands = {demand.identity: demand for demand in profile.demands}
+
+        for identity in (
+            "research-arbalester",
+            "research-halberdier",
+            "research-heavy-camel",
+            "research-logistica",
+            "imperial-arbalester-floor",
+            "imperial-petard-floor",
+            "adaptive-watch-tower",
+            "adaptive-stone-wall",
+        ):
+            self.assertIn(identity, demands)
+
+        for identity in (
+            "adaptive-watch-tower",
+            "adaptive-stone-wall",
+            "imperial-arbalester-floor",
+            "imperial-petard-floor",
+        ):
+            self.assertTrue(demands[identity].recovery.preserve_strategic_demand)
+
+    def test_final_byzantine_strategy_emits_late_land_actions(self):
+        from Compiler.clients.basilisk import compile_strategy_profile
+
+        profile = build_byzantine_stock_strategy(self.effective)
+        output = compile_strategy_profile(profile, self.effective)
+
+        for action in (
+            "(research 237)",
+            "(research 429)",
+            "(research 236)",
+            "(research 61)",
+            "(train arbalester)",
+            "(train petard)",
+            "(build watch-tower)",
+            "(build stone-wall)",
+        ):
+            self.assertIn(action, output)
+
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
