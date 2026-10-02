@@ -2718,16 +2718,17 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
         )
 
     # Relic acquisition/denial uses the existing DUC search/target actuator.
-    # The exact relic pathing and runtime target lifetime remain OPEN; the policy
-    # only proves the current rule has Castle access, a Monk, and an unsecured relic.
+    # The exact relic pathing, relic availability, and runtime target lifetime remain OPEN; the policy
+    # only proves the current rule has Castle access and a Monk.
     relic_rules = (
         (
             "byzantine-relic-acquisition",
-            "(not (hold-relics))",
+            "(unit-type-count-total monk >= 1)",
         ),
         (
             "byzantine-relic-denial-contest",
-            "(and (not (hold-relics)) (players-unit-type-count any-enemy monk-line >= 2))",
+            "(and (unit-type-count-total monk >= 1) "
+            "(players-unit-type-count any-enemy monk-line >= 2))",
         ),
     )
     relic_order = 1000
