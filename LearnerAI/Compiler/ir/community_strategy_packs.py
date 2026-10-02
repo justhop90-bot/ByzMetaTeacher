@@ -525,7 +525,7 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= castle-age)",
                     "(building-type-count-total town-center < 2)",
-                    "(can-build town-center)",
+                    "(can-build town-center-foundation)",
                 ),
                 action="(build town-center)",
                 witness="(building-type-count-total town-center >= 2)",
