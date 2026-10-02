@@ -366,6 +366,32 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(research 361)", artifact)
         self.assertIn("(research 315)", artifact)
 
+    def test_profile_has_complete_water_capability_chain(self):
+        demands = {item.identity: item for item in self.profile.demands}
+
+        dock = demands["water-dock-capability"]
+        self.assertIn("(map-type islands)", dock.execution.requirements)
+        self.assertIn("(can-build dock)", dock.execution.requirements)
+        self.assertIn(
+            "(building-type-count-total dock < 1)",
+            dock.execution.requirements,
+        )
+
+        for identity in (
+            "water-fishing-continuity",
+            "water-transport-capability",
+            "water-naval-defense",
+            "water-naval-control",
+        ):
+            self.assertIn(identity, demands)
+
+        artifact = compile_strategy_profile(self.profile, self.effective)
+        self.assertIn("(build dock)", artifact)
+        self.assertIn("(train fishing-ship)", artifact)
+        self.assertIn("(train transport-ship)", artifact)
+        self.assertIn("(train fire-galley)", artifact)
+        self.assertIn("(train galley)", artifact)
+
     def test_profile_has_long_housing_ladder(self):
         identities = {item.identity for item in self.profile.demands}
         self.assertIn("house-stage-1", identities)
