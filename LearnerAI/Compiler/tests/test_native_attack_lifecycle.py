@@ -317,7 +317,7 @@ class NativeAttackIrTests(unittest.TestCase):
                     actions=(
                         _expr("(attack-now)", "attack-now"),
                     ),
-                    lifecycle=_REQUIRED_LIFECYCLE,
+                    lifecycle=LIFECYCLE,
                 ),
             ),
             goal_input_requests=(
