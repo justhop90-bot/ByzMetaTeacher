@@ -1840,14 +1840,6 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
                             f"(set-goal {plan.state_name} {candidate.intent.value})",
                             SourceLocation(1),
                         ),
-                        *tuple(
-                            parse_expression(
-                                f"(set-goal demand-{demand.identity} 1)",
-                                SourceLocation(1),
-                            )
-                            for demand in profile.demands
-                            if demand.required_primary_intent is candidate.intent
-                        ),
                     ),
                 )
             )
