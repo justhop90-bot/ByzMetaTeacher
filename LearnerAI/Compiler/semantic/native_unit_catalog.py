@@ -32,6 +32,8 @@ class NativeUnitIdError(ValueError):
 NATIVE_UNIT_ALIASES: tuple[tuple[str, int], ...] = (
     ("demolition-raft", 1104),
     ("carrack", 2628),
+    ("varangian-guard", 2703),
+    ("elite-varangian-guard", 2704),
 )
 
 
