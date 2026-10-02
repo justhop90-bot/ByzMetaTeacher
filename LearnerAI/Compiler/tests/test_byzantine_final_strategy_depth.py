@@ -63,8 +63,8 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
             for expr in (*rule.facts, *rule.actions)
         )
         self.assertIn("(up-find-remote c: 125 c: 1)", relic_output)
-        self.assertIn("(up-find-local c: 125 c: 1)", relic_output)
         self.assertIn("(up-target-objects 0 action-move -1 -1)", relic_output)
+        self.assertNotIn("relic-class*", relic_output)
 
     def test_second_wave_water_is_real_policy_with_research_dependencies(self):
         for identity in (
