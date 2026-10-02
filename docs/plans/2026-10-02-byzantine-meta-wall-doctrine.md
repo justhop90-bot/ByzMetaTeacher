@@ -66,39 +66,35 @@ The native line command is used because the engine schema explicitly defines `up
 
 ### Witness
 
-A successful issue is not treated as completion.
+A successful issue is not promoted to a line-specific completion witness. The current native contract for up-build-line provides the issue action and generic pending-placement/pending-object observations, but it does not provide a proven identity for the exact generated wall line.
 
-The current witness is deliberately conservative:
+The controller therefore stores an issued latch, not a false completion claim:
 
-- a selected wall type exists;
-- the selected wall placement is no longer pending;
-- both selected anchors still exist.
-
-This proves that the engine has a completed wall object of the selected type and that the placement request is no longer pending. It does not prove that the line is geometrically sealed end-to-end.
-
-That distinction is mandatory.
+- the selected anchor pair remains the authoritative geometry intent;
+- the native wall placement cycle must settle its pending state;
+- both selected anchors must remain present;
+- geometric closure, exact wall identity, and full line completion remain OPEN.
 
 ### Recovery
 
-There are two different failures:
+The current tranche supports anchor invalidation, not per-line wall-loss repair.
 
-1. Wall loss while both anchors survive.
-   - Reissue the same bridge after pending-placement/pending-object guards clear.
+1. Anchor loss:
+   - retire the old pair;
+   - clear the issued latch;
+   - return to pair arbitration;
+   - select another viable defensive pair.
 
-2. Anchor loss.
-   - Retire the old pair.
-   - Clear the completion latch.
-   - Return to pair arbitration.
-   - Select another viable defensive pair.
-   - Rebuild using the new pair's wall tier.
+2. Wall loss with anchors intact:
+   - no automatic repair is claimed because global building-type-count cannot prove that this specific line disappeared.
 
-A destroyed anchor is therefore a geometry invalidation event, not merely a missing building.
+This is intentional fail-closed behavior. A future repair tranche needs a native local wall-object identity/geometry witness before it can safely reissue only the missing line.
 
 ### Reassessment
 
-Once a pair succeeds, the bot does not continuously rebuild the same line every script pass. A persistent completion latch retires the request until an anchor is lost.
+Once a pair has been issued and its native pending-placement/pending-object cycle has settled, the issued latch prevents unconditional reissue.
 
-This is the important control-plane difference between a defensive system and a wall spam loop.
+The latch records compiler intent, not a fabricated world-state completion fact.
 
 
 ## 3. Anchor scoring model
@@ -379,12 +375,14 @@ The engine supports the object, but the current bot does not yet have a sufficie
 
 ### Witness/recovery
 
-- [x] World wall-count witness, scoped to the selected pair's wall tier.
+- [x] Issued-state latch separated from world completion.
 - [x] Per-pair release rules keep emitted boolean clauses within native line budgets.
 - [x] Pending-placement guard.
-- [x] Anchor-presence guard during recovery.
+- [x] Pending-object settling guard.
+- [x] Anchor-presence guard for invalidation.
 - [x] Anchor loss invalidates the pair.
-- [x] Completion latch suppresses repeated reissue.
+- [ ] Line-specific world completion witness.
+- [ ] Line-specific wall-loss recovery.
 - [ ] Geometric closure witness.
 - [ ] Precise breach location.
 - [ ] Route connectivity witness.
@@ -423,7 +421,7 @@ The unchecked items remain explicitly OPEN rather than being replaced with synth
 ### Anchor loss
 
 - One anchor of the selected pair is destroyed.
-- Completion state becomes invalid.
+- Issued geometry state becomes invalid.
 - The old geometry is retired.
 - Another viable pair is selected.
 - A new line is issued only after the new point pair is captured.
@@ -431,9 +429,8 @@ The unchecked items remain explicitly OPEN rather than being replaced with synth
 ### Wall loss without anchor loss
 
 - Existing anchors survive.
-- Wall object disappears.
-- Pending state clears.
-- Bot reissues the same bridge once, instead of forgetting the defense.
+- The system does not infer line loss from global wall counts.
+- No automatic repair is claimed until a line-specific wall-object witness is proven.
 
 ### Closed map
 
@@ -501,9 +498,9 @@ The wall subsystem is done for this tranche when:
 - it captures both points through native DUC;
 - it chooses Palisade versus Stone according to anchor tier and age;
 - it issues a single native wall line;
-- it witnesses a completed wall object conservatively;
-- it does not repeatedly reissue the same line;
-- it can recover a lost wall;
+- it records native wall-line issue without claiming unproven completion;
+- it does not repeatedly reissue the same line while the issued latch is valid;
+- anchor loss can invalidate the issued geometry;
 - it can retire a pair when an anchor is destroyed;
 - all compiler/native/determinism gates pass;
 - the remaining geometric limitations are documented as OPEN rather than hidden.
