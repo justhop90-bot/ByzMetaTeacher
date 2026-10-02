@@ -83,7 +83,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             rule for rule in control.rules
             if rule.identity == "opening-selector-counter-feudal"
         )
-        self.assertIn("(not (players-unit-type-count any-enemy knight >= 3)", fast_castle.facts[0].source)
+        self.assertIn("(not (or (players-unit-type-count any-enemy knight >= 3)", fast_castle.facts[0].source)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
