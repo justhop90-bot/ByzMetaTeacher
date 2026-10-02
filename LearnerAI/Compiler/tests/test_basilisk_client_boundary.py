@@ -72,6 +72,7 @@ BASILISK_STRATEGY_SYMBOLS = (
     "evaluate_binding",
     "evaluate_strategy_runtime",
     "build_byzantine_castle_strategy",
+    "build_byzantine_strategy",
     "build_land_castle_strategy",
     "lower_strategy_profile",
     "resolve_strategy_profile",
@@ -81,6 +82,22 @@ BASILISK_STRATEGY_SYMBOLS = (
 
 
 class BasiliskClientBoundaryTests(unittest.TestCase):
+    def test_canonical_byzantine_strategy_entrypoint_uses_stock_profile(self):
+        from LearnerAI.Compiler.clients.basilisk import (
+            ByzantineProfile,
+            build_byzantine_strategy,
+            resolve_effective_civ,
+        )
+
+        profile = build_byzantine_strategy(
+            resolve_effective_civ(ByzantineProfile.for_update_185872())
+        )
+        self.assertEqual(profile.profile_id, "byzantine-stock-v1")
+        self.assertIn(
+            "castle-second-town-center",
+            {demand.identity for demand in profile.demands},
+        )
+
     def test_generic_compiler_does_not_export_basilisk_strategy_entrypoints(self):
         import LearnerAI.Compiler.compiler as generic
 
