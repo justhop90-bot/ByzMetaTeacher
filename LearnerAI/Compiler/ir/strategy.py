@@ -2722,7 +2722,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     # only proves the current rule has Castle access and a Monk.
     relic_rules = (
         (
-            "byzantine-relic-acquisition",
+            "byzantine-relic-acquisition-intent",
             "(unit-type-count-total monk >= 1)",
         ),
         (
@@ -2746,11 +2746,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
                 actions=(
                     parse_expression("(up-full-reset-search)", SourceLocation(1)),
                     parse_expression(
-                        "(up-find-remote c: relic-class* c: 1)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(up-find-local c: 125 c: 1)",
+                        "(up-find-remote c: 125 c: 1)",
                         SourceLocation(1),
                     ),
                     parse_expression(
