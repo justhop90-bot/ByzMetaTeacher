@@ -1131,13 +1131,6 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             priority=20,
         ),
         _strategy.StrategicNumberMode(
-            "land-explorer-cap",
-            18,
-            4,
-            minimum_age=Age.DARK,
-            priority=5,
-        ),
-        _strategy.StrategicNumberMode(
             "initial-exploration-requirement",
             167,
             2,
