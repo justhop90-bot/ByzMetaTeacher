@@ -122,32 +122,22 @@ The latest MUSE community research synthesis is docs/research/2026-09-30-muse-co
 The roadmap is intentionally narrower than the historical gap matrix: it excludes already-closed substrate work and separates compiler implementation from runtime evidence acquisition.
 
 
-The next compiler seam was the production/train arbitration boundary, now
-closed as compiler policy (see `semantic/production_arbitration.py` and
-`tests/test_production_arbitration.py` plus the
-`tests/fixtures/production_arbitration.perdsl` native fixture).
+## Production/train arbitration closure
+
+Production/train arbitration is closed as compiler policy through the existing ResourceClaim / arbitration system.
 
 The implemented contract is:
 
-- ordinary `train` demands carry one compiler-policy production claim
-  (`action-claim:TRAIN_ARBITRATION`) through the existing `ResourceClaim` /
-  arbitration system; no native train conflict class was invented;
-- strategy-bound demands normally arbitrate under their strategic identity;
-  an explicit `production_arbitration_group` may intentionally group distinct
-  strategic demands under one compatible execution-memory contract;
-- claim ownership comes from the strategic owner when strategy-bound,
-  otherwise the shared unit execution-memory owner (the `build` convention);
-  the provider UnitId remains provider identity only;
-- `can-train` remains admission/feasibility only;
-- `train` remains action issuance only;
+- ordinary `train` demands carry one compiler-policy production claim (`action-claim:TRAIN_ARBITRATION`);
+- strategy-bound demands normally arbitrate under their strategic identity, with an explicit `production_arbitration_group` available for intentional grouping;
+- claim ownership comes from the strategic owner when strategy-bound, otherwise the shared unit execution-memory owner; provider UnitId remains provider identity;
+- `can-train` remains admission/feasibility;
+- `train` remains action issuance;
 - `up-pending-objects` remains duplicate-queue protection;
-- `unit-type-count-total` remains observation;
 - provider readiness, provider availability, and queue capacity remain distinct;
-- SN 264 remains a control input and never enters arbitration;
-- exact DE busy/queue interaction, same-pass arbitration, starvation, provider loss, and queue timing remain OPEN pending runtime evidence;
-- DUC-targeted training does not inherit ordinary train arbitration.
-
-Runtime probes for this frontier are a separate evidence track. They do not become compiler guarantees merely because their fixture specifications are checked in.
+- SN 264 remains a control input rather than emitted capacity proof;
+- exact DE queue/provider behavior, same-pass arbitration, starvation, provider loss, and timing remain runtime evidence boundaries;
+- DUC-targeted training remains separate from ordinary train arbitration.
 
 ## Where to work
 
@@ -208,8 +198,8 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 ## Current Git state
 
 - default branch: `main`;
-- candidate PR #266 carries the DUC strategy compilation channel on branch `duc-strategy-compilation-channel-2026-10-02` pending merge;
-- open PRs on main remain authoritative from GitHub;
+- PR #266 merged the DUC strategy compilation channel into `main` as `cfe26195a4e650c6664a5c1c789d38118cb69cc8`; its post-merge `Compiler tests` workflow #2942 passed;
+- open PRs on main are authoritative from GitHub;
 - mainline compiler CI: authoritative through the latest green `Compiler tests` workflow on `main`;
 - the current-state document deliberately does not embed its own commit SHA or workflow number; GitHub's `main` ref and compiler workflow are the authoritative live pointers;
 - the legacy validator no longer runs automatically on pushes or pull requests;
