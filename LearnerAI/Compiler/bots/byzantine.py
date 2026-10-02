@@ -609,10 +609,6 @@ def _imperial_research(
         ),
     )
 
-
-def _imperial_economy_controller(controller):
-    return controller
-
 def build_byzantine_bot_profile(effective: EffectiveCivData):
     """Build the deployable Byzantine Core v1 profile.
 
@@ -720,6 +716,12 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             f"(up-research-status c: {fletching_id} >= 3)",
             "(building-type-count-total 87 >= 1)",
         ),
+        "research-chemistry": (
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+        ),
+        "research-conscription": (
+            "(unit-type-count-total villager >= 45)",
+        ),
     }
     guarded_demands = tuple(
         _with_execution_guards(
@@ -790,27 +792,6 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
                 reason_label="Research Heavy Camel for sustained enemy mounted pressure",
                 extra_requirements=(
                     "(players-unit-type-count any-enemy knight >= 3)",
-                ),
-            ),
-            _imperial_research(
-                effective=effective,
-                identity="imperial-chemistry",
-                tech_id=47,
-                action_token="47",
-                reason_label="Research Chemistry for the Byzantine gunpowder conversion",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy militia-line >= 5)",
-                ),
-                priority=_strategy.StrategicPriority.CORE,
-            ),
-            _imperial_research(
-                effective=effective,
-                identity="imperial-conscription",
-                tech_id=315,
-                action_token="315",
-                reason_label="Research Conscription when the Imperial production backbone is active",
-                extra_requirements=(
-                    "(unit-type-count-total villager >= 45)",
                 ),
             ),
             _imperial_research(
