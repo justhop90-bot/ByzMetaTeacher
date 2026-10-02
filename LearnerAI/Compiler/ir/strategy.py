@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .military_composition import MilitaryCompositionPlan
     from .model import SemanticDemand
     from .counter_strategy import CounterPackage
+    from .native_attack import NativeAttackLifecyclePlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -378,6 +379,7 @@ class StrategyProfile:
     strategic_number_modes: tuple[StrategicNumberMode, ...] = ()
     policy_recipes: tuple["PolicyRecipe", ...] = ()
     counter_packages: tuple["CounterPackage", ...] = ()
+    attack_plan: "NativeAttackLifecyclePlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -451,6 +453,7 @@ class StrategyCompilation:
     escrow_plan: "NativeEscrowReleasePlan | None" = None
     control_plan: "NativeControlPlan | None" = None
     military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
+    attack_plan: "NativeAttackLifecyclePlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1042,6 +1045,7 @@ def lower_strategy_profile(
         escrow_plan=escrow_plan,
         control_plan=_strategy_control_plan(profile),
         military_compositions=tuple(military_compositions),
+        attack_plan=profile.attack_plan,
     )
 
 
@@ -1954,6 +1958,63 @@ def build_land_castle_strategy(
     )
 
 
+def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
+    """Default Castle-age Byzantine issue actuator.
+
+    The native attack binder accepts atomic Facts per rule. The two army
+    alternatives are therefore lowered as deterministic sibling rules rather
+    than a composite logical Fact. Targeting, completion, release, and reset
+    remain outside this executable slice.
+    """
+    from ..semantic.analyzer import parse_expression
+    from .native_attack import (
+        AttackLifecycleObservation,
+        NativeAttackLifecyclePlan,
+        NativeAttackRule,
+    )
+
+    lifecycle = (
+        AttackLifecycleObservation.ADMISSION_REQUIRED,
+        AttackLifecycleObservation.ISSUE,
+        AttackLifecycleObservation.COMPLETION_UNOBSERVED,
+        AttackLifecycleObservation.REASSESS_REQUIRED,
+    )
+    common_facts = (
+        parse_expression("(current-age == castle-age)", SourceLocation(1)),
+        parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
+    )
+    return NativeAttackLifecyclePlan(
+        rules=(
+            NativeAttackRule(
+                identity="byzantine-castle-attack-now-cataphract",
+                order=100,
+                facts=(
+                    *common_facts,
+                    parse_expression(
+                        "(unit-type-count cataphract >= 2)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+                lifecycle=lifecycle,
+            ),
+            NativeAttackRule(
+                identity="byzantine-castle-attack-now-knight",
+                order=110,
+                facts=(
+                    *common_facts,
+                    parse_expression(
+                        "(unit-type-count knight >= 3)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+                lifecycle=lifecycle,
+            ),
+        )
+    )
+
+
 def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
     return (
         StrategicNumberMode(
@@ -2328,6 +2389,7 @@ def build_byzantine_castle_strategy(
         strategic_number_modes=_byzantine_strategic_number_modes(),
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
+        attack_plan=_default_byzantine_attack_plan(),
     )
 
 def _validate_capability_intent(
