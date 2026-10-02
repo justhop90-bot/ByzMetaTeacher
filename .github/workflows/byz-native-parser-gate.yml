@@ -26,6 +26,7 @@ jobs:
         run: cat tmp/byzantine-parser-chunks/*.perpart > tmp/byzantine-parser-gate.per
       - name: Run pinned native gate
         run: |
+          python tmp/apply_byzantine_native_fixes.py tmp/byzantine-parser-gate.per
           python -m aoe2_ai_lab lint tmp/byzantine-parser-gate.per --profile default --json > native-report.json
           cat native-report.json
           python - <<'PY'
