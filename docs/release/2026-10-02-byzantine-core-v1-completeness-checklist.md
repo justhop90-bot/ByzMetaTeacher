@@ -1,6 +1,6 @@
 # Byzantine Core v1 — Earlier Upgrade Cross-Reference and Final Completeness Checklist
 
-Branch: `bot/byzantine-core-v1`
+Branch: `bot/byzantine-core-v1-final`
 Patch target: Update 185872
 Scope: 1v1 Byzantine bot built through the existing compiler strategy path.
 
