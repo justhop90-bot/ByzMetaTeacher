@@ -240,7 +240,7 @@ def _water_research_demand(
     resources: tuple[Resource, ...],
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
-    token = _slug(tech.name)
+    token = native_symbol
     complete_ref = f"{identity}-complete"
     return _StrategicDemandSpec(
         identity=identity,
