@@ -1,0 +1,1000 @@
+)
+
+; Deterministic resource winner: gold first, then wood.
+(defrule
+    (goal byzantine-remote-resource-state byzantine-remote-resource-observe)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+    (resource-found gold)
+    (gold-amount < 1800)
+    (or
+        (dropsite-min-distance gold == -1)
+        (dropsite-min-distance gold > 18)
+    )
+=>
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+)
+
+(defrule
+    (goal byzantine-remote-resource-state byzantine-remote-resource-observe)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+    (resource-found wood)
+    (wood-amount < 1400)
+    (or
+        (dropsite-min-distance wood == -1)
+        (dropsite-min-distance wood > 18)
+    )
+    (not (resource-found gold))
+=>
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+)
+
+; Seed a real resource target. This is observation only; it does not build or retask.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-resource c: list-active)
+    (up-find-resource c: gold c: 1)
+    (up-get-search-state byzantine-remote-resource-productivity-search)
+)
+
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
+=>
+    (up-full-reset-search)
+    (up-filter-status c: status-ready c: list-active)
+    (up-find-resource c: wood c: 1)
+    (up-get-search-state byzantine-remote-resource-productivity-search)
+)
+
+; If the resource probe produced a target, anchor the next search to it.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+    (up-compare-goal byzantine-remote-resource-productivity-search-remote-list c:>= 1)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-remote-resource-productivity-point)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+)
+
+; No resource target: fail closed and release the transient observation state.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-resource)
+    (up-compare-goal byzantine-remote-resource-productivity-search-remote-list c:== 0)
+=>
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+; Sort owned camps by distance from the active resource point, then inspect the
+; nearest camp. This avoids a camp-count heuristic and keeps the witness local.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
+=>
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-remote-resource-productivity-point)
+    (up-find-local c: mining-camp c: 255)
+    (up-clean-search search-local 44 1)
+    (up-get-search-state byzantine-remote-resource-productivity-search)
+)
+
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
+=>
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-remote-resource-productivity-point)
+    (up-find-local c: lumber-camp c: 255)
+    (up-clean-search search-local 44 1)
+    (up-get-search-state byzantine-remote-resource-productivity-search)
+)
+
+; A selected camp becomes the local dropsite productivity anchor.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+    (up-compare-goal byzantine-remote-resource-productivity-search-local-list c:>= 1)
+=>
+    (up-set-target-object search-local c: 0)
+    (up-get-object-data object-data-id byzantine-remote-resource-productivity-camp-id)
+    (up-get-point position-object byzantine-remote-resource-productivity-point)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-workers)
+)
+
+; Worker probe: find nearby villagers and retain only those assigned to the selected camp.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-workers)
+=>
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-remote-resource-productivity-point)
+    (up-filter-distance c: -1 c: bt-resource-productivity-local-radius)
+    (up-find-local c: villager-class c: 255)
+    (up-remove-objects search-local object-data-dropsite g:!= byzantine-remote-resource-productivity-camp-id)
+    (up-get-search-state byzantine-remote-resource-productivity-worker-search)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
+)
+
+; Productive camp: leave the controller idle. No new camp is warranted merely
+; because another camp does not exist.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
+    (up-compare-goal byzantine-remote-resource-productivity-worker-list c:>= bt-resource-productive-gatherers)
+=>
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+; Underproductive camp: first retask a bounded number of gatherers toward the
+; actual resource, then reassert the existing camp demand as a fallback.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
+    (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
+    (dropsite-min-distance gold > 18)
+=>
+    (up-retask-gatherers gold c: byzantine-economy-delta-step)
+    (set-goal demand-economy-mining-camp-floor-2 1)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-decide)
+    (up-compare-goal byzantine-remote-resource-productivity-worker-list c:< bt-resource-productive-gatherers)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
+    (dropsite-min-distance wood > 18)
+=>
+    (up-retask-gatherers wood c: byzantine-economy-delta-step)
+    (set-goal demand-economy-lumber-camp-floor-2 1)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+; No owned camp is itself a direct productivity failure. Reopen the existing
+; first-camp demand rather than manufacturing a parallel build API.
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-gold)
+    (dropsite-min-distance gold == -1)
+    (up-compare-goal byzantine-remote-resource-productivity-search-local-list c:== 0)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 1)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+(defrule
+    (goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-find-camp)
+    (goal byzantine-remote-resource-kind byzantine-remote-resource-wood)
+    (dropsite-min-distance wood == -1)
+    (up-compare-goal byzantine-remote-resource-productivity-search-local-list c:== 0)
+=>
+    (set-goal demand-economy-lumber-camp-floor-1 1)
+    (set-goal byzantine-remote-resource-productivity-state byzantine-remote-productivity-idle)
+    (set-goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (set-goal byzantine-remote-resource-kind byzantine-remote-resource-none)
+)
+
+;----------------------------------------------------------------
+; PERSISTENT BYZANTINE STANDING ARMY FLOORS
+;----------------------------------------------------------------
+; Recurrent native policy: keep a standing army, then let observations add
+; counter branches. The default Byzantine Imperial backbone is Cataphract +
+; cheap support + persistent siege. Varangian/Arbalester are selected branches,
+; not simultaneous mandatory gold sinks.
+
+(defrule
+    (current-age == castle-age)
+    (goal demand-castle-cataphract-floor 0)
+    (unit-type-count-total cataphract-line < bt-castle-cataphract-floor)
+=>
+    (set-goal demand-castle-cataphract-floor 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal demand-castle-varangian-guard-floor 0)
+    (players-unit-type-count any-enemy knight >= 3)
+    (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor)
+=>
+    (set-goal demand-castle-varangian-guard-floor 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal demand-counter-ranged-skirmishers 0)
+    (unit-type-count-total skirmisher-line < bt-castle-skirmisher-floor)
+=>
+    (set-goal demand-counter-ranged-skirmishers 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal demand-castle-mangonel-floor 0)
+    (unit-type-count-total mangonel-line < bt-castle-mangonel-floor)
+=>
+    (set-goal demand-castle-mangonel-floor 1)
+)
+
+(defrule
+    (current-age == castle-age)
+    (goal demand-castle-monk-floor 0)
+    (unit-type-count-total monk < bt-castle-monk-floor)
+=>
+    (set-goal demand-castle-monk-floor 1)
+)
+
+; Imperial default backbone: Cataphracts + Halberdiers + standing siege.
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-castle-cataphract-floor 0)
+    (unit-type-count-total cataphract-line < bt-imperial-cataphract-floor)
+=>
+    (set-goal demand-castle-cataphract-floor 1)
+)
+
+; Varangian is a deliberate infantry/cavalry support branch, not a second
+; unconditional Imperial gold sink.
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (unit-type-count-total varangian-guard-line < bt-imperial-varangian-floor)
+=>
+    (set-goal demand-castle-varangian-guard-floor 1)
+)
+
+; Arbalester is the selected ranged backbone branch. Default balanced/mounted
+; play stays on Cataphract + cheap support rather than funding both gold cores.
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (unit-type-count-total arbalest < bt-imperial-arbalester-floor)
+=>
+    (set-goal demand-imperial-arbalester-floor 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal demand-imperial-halberdier-floor 0)
+    (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+=>
+    (set-goal demand-imperial-halberdier-floor 1)
+)
+
+;----------------------------------------------------------------
+; LATE-IMPERIAL SPEND PRIORITY
+;----------------------------------------------------------------
+; Naga/community-style principle: once the bank is materially excessive, spend
+; on the useful capability/upgrades before turning the bank into more bodies.
+; Siege remains independently re-armed below; this flag only blocks extra
+; non-siege unit production while an upgrade is actionable or in flight.
+
+; Priority: Siege Engineers. Byzantines have Siege Engineers, but not Blast Furnace.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (building-type-count-total university >= 1)
+    (or
+        (wood-amount > 2500)
+        (gold-amount > 2500)
+    )
+    (not (research-completed 377))
+    (up-research-status c: 377 >= 2)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (building-type-count-total university >= 1)
+    (or
+        (wood-amount > 2500)
+        (gold-amount > 2500)
+    )
+    (not (research-completed 377))
+    (can-research-with-escrow ri-siege-engineers)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+; Priority: existing Imperial unique upgrades. Their normal demand lifecycles
+; own execution; this overlay only prevents extra production from outranking them.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total cataphract-line >= 4)
+    (not (research-completed 361))
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total varangian-guard-line >= 3)
+    (not (research-completed 1454))
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (unit-type-count-total skirmisher-line >= 4)
+    (not (research-completed 98))
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (unit-type-count-total cataphract-line >= 2)
+        (unit-type-count-total varangian-guard-line >= 2)
+    )
+    (not (research-completed 61))
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+; Action: spend the excess bank on Siege Engineers before extra non-siege production.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total university >= 1)
+    (or
+        (wood-amount > 2500)
+        (gold-amount > 2500)
+    )
+    (not (research-completed 377))
+    (can-research-with-escrow ri-siege-engineers)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-siege-engineers)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+; Priority arming for blacksmith work. These are policy probes only; the existing
+; native research action below owns execution.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+    (building-type-count-total blacksmith >= 1)
+    (unit-type-count-total cataphract-line >= 2)
+    (not (research-completed 67))
+    (can-research-with-escrow ri-forging)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+    (building-type-count-total blacksmith >= 1)
+    (unit-type-count-total cataphract-line >= 2)
+    (research-completed 67)
+    (not (research-completed 68))
+    (can-research-with-escrow ri-iron-casting)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+    (building-type-count-total blacksmith >= 1)
+    (unit-type-count-total cataphract-line >= 2)
+    (not (research-completed 81))
+    (can-research-with-escrow ri-scale-barding)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (unit-type-count-total 359 >= 4)
+        (unit-type-count-total varangian-guard-line >= 3)
+    )
+    (not (research-completed 74))
+    (can-research-with-escrow ri-scale-mail)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (not (research-completed 199))
+    (can-research-with-escrow ri-fletching)
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+; Hold the production gate while any just-issued research is still pending.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (up-research-status c: 377 >= 2)
+        (or
+            (up-research-status c: 67 >= 2)
+            (or
+                (up-research-status c: 68 >= 2)
+                (or
+                    (up-research-status c: 81 >= 2)
+                    (or
+                        (up-research-status c: 82 >= 2)
+                        (or
+                            (up-research-status c: 80 >= 2)
+                            (or
+                                (up-research-status c: 74 >= 2)
+                                (or
+                                    (up-research-status c: 76 >= 2)
+                                    (or
+                                        (up-research-status c: 77 >= 2)
+                                        (or
+                                            (up-research-status c: 199 >= 2)
+                                            (or
+                                                (up-research-status c: 201 >= 2)
+                                                (or
+                                                    (up-research-status c: 211 >= 2)
+                                                    (or
+                                                        (up-research-status c: 212 >= 2)
+                                                        (up-research-status c: 219 >= 2)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+; Priority: blacksmith attack/armor trees that actually benefit the fielded army.
+; Existing high-value military research also takes precedence over extra unit queues.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (not (research-completed 315))
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (building-type-count-total university >= 1)
+    (not (research-completed 47))
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (not (research-completed 200))
+    (or
+        (gold-amount > 2500)
+        (wood-amount > 3000)
+    )
+=>
+    (set-goal byzantine-late-upgrade-priority 1)
+)
+
+; Each action is dependency-ordered and serialized by the transient research claim.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (unit-type-count-total cataphract-line >= 2)
+    (not (research-completed 67))
+    (can-research-with-escrow ri-forging)
+=>
+    (release-escrow food)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-forging)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (unit-type-count-total cataphract-line >= 2)
+    (research-completed 67)
+    (not (research-completed 68))
+    (can-research-with-escrow ri-iron-casting)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-iron-casting)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (unit-type-count-total cataphract-line >= 2)
+    (not (research-completed 81))
+    (can-research-with-escrow ri-scale-barding)
+=>
+    (release-escrow food)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-scale-barding)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (unit-type-count-total cataphract-line >= 2)
+    (research-completed 81)
+    (not (research-completed 82))
+    (can-research-with-escrow ri-chain-barding)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-chain-barding)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (unit-type-count-total cataphract-line >= 2)
+    (research-completed 82)
+    (not (research-completed 80))
+    (can-research-with-escrow ri-plate-barding)
+=>
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-plate-barding)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total 359 >= 4)
+        (unit-type-count-total varangian-guard-line >= 3)
+    )
+    (not (research-completed 74))
+    (can-research-with-escrow ri-scale-mail)
+=>
+    (release-escrow food)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-scale-mail)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total 359 >= 4)
+        (unit-type-count-total varangian-guard-line >= 3)
+    )
+    (research-completed 74)
+    (not (research-completed 76))
+    (can-research-with-escrow ri-chain-mail)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-chain-mail)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total 359 >= 4)
+        (unit-type-count-total varangian-guard-line >= 3)
+    )
+    (research-completed 76)
+    (not (research-completed 77))
+    (can-research-with-escrow ri-plate-mail)
+=>
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-plate-mail)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+; Ranged upgrades complete the archer branch when Arbalesters/Skirmishers are active.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (not (research-completed 199))
+    (can-research-with-escrow ri-fletching)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-fletching)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (research-completed 200)
+    (not (research-completed 201))
+    (can-research-with-escrow ri-bracer)
+=>
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-bracer)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (not (research-completed 211))
+    (can-research-with-escrow ri-padded-archer-armor)
+=>
+    (release-escrow food)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-padded-archer-armor)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (research-completed 211)
+    (not (research-completed 212))
+    (can-research-with-escrow ri-leather-archer-armor)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-leather-archer-armor)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-research-claim 0)
+    (building-type-count-total blacksmith >= 1)
+    (or
+        (wood-amount > 3000)
+        (gold-amount > 2500)
+    )
+    (or
+        (unit-type-count-total arbalest >= 4)
+        (unit-type-count-total skirmisher-line >= 4)
+    )
+    (research-completed 212)
+    (not (research-completed 219))
+    (can-research-with-escrow ri-ring-archer-armor)
+=>
+    (release-escrow gold)
+    (set-goal byzantine-late-upgrade-priority 1)
+    (research ri-ring-archer-armor)
+    (set-goal byzantine-late-research-claim 1)
+)
+
+;----------------------------------------------------------------
+; SURPLUS RESOURCE ARBITRATION / EXISTING SPENDS
+;----------------------------------------------------------------
+; Efficiency rule: one overbanked resource, one existing spend channel per
+; execution pass. Higher-value upgrade/research arbitration already runs above;
+; this layer only reasserts an existing demand when that higher-value work is
+; not consuming the bank. Nothing here trains, builds, researches, buys, or
+; sells directly. The native demand lifecycles remain the sole action owners.
+;
+; Resource order is deliberately deterministic: gold -> wood -> food.
+; Spend order within each resource is also deterministic and biased toward
+; already-fielded capabilities rather than speculative expansion.
+
+; GOLD: selected military gold spend, then composition floor.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (gold-amount > 4500)
+    (goal demand-castle-cataphract-floor 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+        )
+    )
+    (unit-type-count-total cataphract-line < bt-imperial-late-cataphract-target)
+=>
+    (set-goal demand-castle-cataphract-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-gold)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (gold-amount > 4500)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (unit-type-count-total varangian-guard-line < bt-imperial-late-varangian-target)
+=>
+    (set-goal demand-castle-varangian-guard-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-gold)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (gold-amount > 4500)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (unit-type-count-total arbalest < bt-imperial-late-arbalester-target)
+=>
+    (set-goal demand-imperial-arbalester-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-gold)
+)
+
+; WOOD: siege first, then the existing Imperial farm continuity lifecycle.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (wood-amount > 5000)
+    (goal demand-imperial-siege-ram-floor 0)
+    (unit-type-count-total battering-ram-line < bt-imperial-late-ram-target)
+=>
+    (set-goal demand-imperial-siege-ram-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (wood-amount > 5000)
+    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+    (goal demand-imperial-trebuchet-floor 0)
+    (unit-type-count-total trebuchet < bt-imperial-late-trebuchet-target)
+    (gold-amount > 2500)
+=>
+    (set-goal demand-imperial-trebuchet-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+; Fortified position: Bombard is the next siege sink after the Trebuchet floor.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
