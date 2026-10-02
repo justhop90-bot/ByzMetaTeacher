@@ -15,6 +15,12 @@ _INVENTORY = (
     / "airef-tech-inventory.json"
 )
 
+# Site-specific DE research aliases whose AIRef inventory has no ai_name.
+# These are explicit native identifiers, not universal compiler constants.
+_CANONICAL_TECH_ID_OVERRIDES = {
+    "ri-logistica": 61,
+}
+
 
 class NativeTechIdError(ValueError):
     """Raised when a research target cannot be bound to a native TechId."""
@@ -88,6 +94,10 @@ def resolve_tech_id(symbol: str) -> int:
                 f"numeric TechId '{symbol}' is not a known DE technology"
             )
         return tech_id
+
+    override = _CANONICAL_TECH_ID_OVERRIDES.get(token)
+    if override is not None:
+        return override
 
     matches = _matches(token)
     if not matches:
