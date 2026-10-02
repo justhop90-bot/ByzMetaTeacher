@@ -1063,6 +1063,9 @@ def lower_strategy_profile(
         attack_plan=profile.attack_plan,
         duc_plan=profile.duc_plan,
         water_execution_plan=profile.water_execution_plan,
+        map_profile=profile.map_profile,
+        opening_selector=profile.opening_selector,
+        economy_controller=profile.economy_controller,
     )
 
 
