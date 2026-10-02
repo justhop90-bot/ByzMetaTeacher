@@ -402,6 +402,31 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
         )
     )
 
+    # Islands need an actual Dark Age fishing opening, not merely a Feudal
+    # continuity floor. Keep this separate from the stock continuity demand so
+    # the opening can establish the food engine before the naval branch ramps.
+    demands.append(
+        _staged_training(
+            effective=effective,
+            identity="water-fishing-opening",
+            owner="water-economy",
+            posture=_strategy.StrategyPosture.BOOM,
+            priority=_strategy.StrategicPriority.SUPPORT,
+            reason_ref="strategy-water-islands",
+            reason_label="Seed four Fishing Ships early on Islands",
+            line="fishing-ship",
+            action_symbol="fishing-ship",
+            witness_symbol="fishing-ship",
+            lower_bound=0,
+            upper_bound=4,
+            age_guard="(current-age >= dark-age)",
+            extra_requirements=(
+                "(map-type islands)",
+                "(building-type-count-total dock >= 1)",
+            ),
+        )
+    )
+
     # Water opens through a real Dock demand on Islands. The stock water
     # execution plan already owns fishing, transport, and naval production;
     # this demand supplies the missing first capability without creating a
