@@ -4,6 +4,9 @@ from Compiler.semantic.native_tech_catalog import NativeTechIdError, resolve_tec
 
 
 class NativeTechCatalogTests(unittest.TestCase):
+    def test_logistica_site_specific_alias_resolves_to_tech_id(self):
+        self.assertEqual(resolve_tech_id("ri-logistica"), 61)
+
     def test_wheelbarrow_alias_resolves_to_tech_id(self):
         self.assertEqual(resolve_tech_id("ri-wheelbarrow"), 213)
 
