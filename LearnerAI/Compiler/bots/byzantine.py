@@ -414,7 +414,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             priority=_strategy.StrategicPriority.SUPPORT,
             reason_ref="strategy-water-islands",
             reason_label="Seed four Fishing Ships early on Islands",
-            line="fishing-ship",
+            line="fishing-ship-line",
             action_symbol="fishing-ship",
             witness_symbol="fishing-ship",
             lower_bound=0,
