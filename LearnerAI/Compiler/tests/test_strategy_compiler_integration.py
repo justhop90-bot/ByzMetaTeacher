@@ -210,7 +210,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
         self.assertIn("; Native DUC rule: byzantine-wall-find-tc", output)
-        self.assertIn("(up-find-local c: town-center c: 1)", output)
+        self.assertIn("(up-find-local c: 621 c: 1)", output)
         for kind in ("gold", "wood", "stone"):
             self.assertIn(
                 f"; Native DUC rule: byzantine-wall-find-vulnerable-{kind}",
