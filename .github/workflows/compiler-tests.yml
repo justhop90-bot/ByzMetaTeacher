@@ -16,6 +16,9 @@ on:
   pull_request:
     paths:
       - "LearnerAI/Compiler/**"
+      - "LearnerAI/Compiler/bots/**"
+      - "LearnerAI/Compiler/tests/test_byzantine_bot.py"
+      - "tools/build_byzantine_bot.py"
       - ".github/workflows/compiler-tests.yml"
   workflow_dispatch:
 
