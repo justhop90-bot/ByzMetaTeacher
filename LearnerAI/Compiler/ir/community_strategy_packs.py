@@ -644,23 +644,13 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#food-amount"),
         ),
         _observation(
-            "strategy-food-crisis",
-            "(food-amount < 200)",
-            _airef_provenance(effective, "commands/commands-details.html#food-amount"),
-        ),
-        _observation(
-            "strategy-idle-farms",
-            "(idle-farm-count > 0)",
-            _airef_provenance(effective, "commands/commands-details.html#idle-farm-count"),
-        ),
-        _observation(
             "strategy-wood-resource-opportunity",
             "(resource-found wood)",
             _airef_provenance(effective, "commands/commands-details.html#resource-found"),
         ),
         _observation(
-            "strategy-gold-resource-opportunity",
-            "(resource-found gold)",
+            "strategy-mineral-resource-opportunity",
+            "(or (resource-found gold) (resource-found stone))",
             _airef_provenance(effective, "commands/commands-details.html#resource-found"),
         ),
         _observation(
@@ -1031,7 +1021,7 @@ def community_strategy_demands(
                 owner="economy-dropsites",
                 posture=_StrategyPosture.BOOM,
                 priority=_StrategicPriority.CORE,
-                reason_ref="strategy-gold-resource-opportunity",
+                reason_ref="strategy-mineral-resource-opportunity",
                 reason_label="Gold/stone access requires a real mining dropsite before military scaling",
                 building=mining_camp,
                 minimum=1,
