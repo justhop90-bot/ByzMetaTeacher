@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from LearnerAI.Compiler.clients.basilisk import (
@@ -67,11 +68,11 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             action_block.index("(research feudal-age)"),
         )
 
-    def test_strategy_compilation_exposes_explicit_duc_plan_channel(self):
-        plan = NativeDucPlan(
+    def test_strategy_compilation_exposes_profile_and_override_duc_channels(self):
+        profile_plan = NativeDucPlan(
             rules=(
                 NativeDucRule(
-                    identity="byzantine-duc-channel",
+                    identity="byzantine-duc-profile",
                     order=0,
                     facts=(Expression("(true)", "true", ()),),
                     actions=(
@@ -84,30 +85,46 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 ),
             )
         )
+        override_plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="byzantine-duc-override",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            )
+        )
+        profile = replace(self.profile, duc_plan=profile_plan)
 
-        compilation = lower_strategy_profile(
+        compilation = lower_strategy_profile(profile, self.effective)
+        self.assertIs(compilation.duc_plan, profile_plan)
+
+        default_output = compile_strategy_profile(profile, self.effective)
+        self.assertIn("; Native DUC plan", default_output)
+        self.assertIn("; Native DUC rule: byzantine-duc-profile", default_output)
+
+        override_output = compile_strategy_profile(
             self.profile,
             self.effective,
-            duc_plan=plan,
+            duc_plan=override_plan,
         )
-        self.assertIs(compilation.duc_plan, plan)
-
-        output = compile_strategy_profile(
-            self.profile,
-            self.effective,
-            duc_plan=plan,
-        )
-        self.assertIn("; Native DUC plan", output)
-        self.assertIn("; Native DUC rule: byzantine-duc-channel", output)
-        self.assertIn("(up-full-reset-search)", output)
+        self.assertIn("; Native DUC rule: byzantine-duc-override", override_output)
+        self.assertNotIn("; Native DUC rule: byzantine-duc-profile", override_output)
 
         runtime_output = compile_strategy_runtime_profile(
-            self.profile,
+            profile,
             self.effective,
             RuntimeObservationSnapshot(previous_posture=StrategyPosture.CASTLE_POWER),
-            duc_plan=plan,
+            duc_plan=override_plan,
         )
-        self.assertIn("; Native DUC rule: byzantine-duc-channel", runtime_output)
+        self.assertIn("; Native DUC rule: byzantine-duc-override", runtime_output)
 
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
