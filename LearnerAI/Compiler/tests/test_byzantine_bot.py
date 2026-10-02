@@ -245,7 +245,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["castle-siege-capability"].execution.requirements,
         )
         self.assertIn(
-            "(players-unit-type-count any-enemy archer-line >= 4)",
+            "(or (players-unit-type-count any-enemy mangonel-line >= 2) (players-unit-type-count any-enemy archer-line >= 4))",
             demands["castle-siege-capability"].execution.requirements,
         )
 
@@ -320,7 +320,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         demand = self.profile.demand("water-dock-capability")
         self.assertIn("(map-type islands)", demand.execution.requirements)
         self.assertEqual(
-            demand.invalidation[0].expression,
+            demand.execution.invalidate,
             "(building-type-count-total dock >= 1)",
         )
 
@@ -411,7 +411,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train 330)", artifact)
         self.assertIn("(train 5)", artifact)
         self.assertIn("(research 361)", artifact)
-        self.assertIn("(research 315)", artifact)
+        self.assertIn("(research conscription)", artifact)
 
     def test_islands_open_fishing_starts_in_dark_and_reaches_four(self):
         demand = self.profile.demand("water-fishing-opening")
@@ -455,7 +455,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
 
     def test_compilation_contains_staged_housing(self):
         artifact = compile_strategy_profile(self.profile, self.effective)
-        self.assertIn("(build 70)", artifact)
+        self.assertIn("(build house)", artifact)
         self.assertIn("(goal strategy-posture 3)", artifact)
 
 
