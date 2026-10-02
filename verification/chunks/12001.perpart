@@ -1,0 +1,1000 @@
+        (goal demand-economy-lumber-camp-floor-2 78)
+        (goal demand-economy-lumber-camp-floor-2 76)
+    )
+    (building-type-count lumber-camp >= 2)
+=>
+    (set-goal demand-economy-lumber-camp-floor-2 77)
+)
+
+; Pending admission: economy-lumber-camp-floor-2 | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-lumber-camp-floor-2 78)
+        (goal demand-economy-lumber-camp-floor-2 76)
+    )
+    (not (building-type-count lumber-camp >= 2))
+    (up-pending-objects c: 562 >= 1)
+=>
+    (set-goal demand-economy-lumber-camp-floor-2 76)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-lumber-camp-floor-2 78)
+        (goal demand-economy-lumber-camp-floor-2 76)
+    )
+    (not (building-type-count lumber-camp >= 2))
+    (up-pending-objects c: 562 == 0)
+    (up-pending-placement c: 562)
+=>
+    (set-goal demand-economy-lumber-camp-floor-2 76)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-economy-lumber-camp-floor-2 78)
+        (goal demand-economy-lumber-camp-floor-2 76)
+    )
+    (not (building-type-count lumber-camp >= 2))
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+=>
+    (set-goal demand-economy-lumber-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-lumber-camp-floor-2 1)
+)
+
+; Action issuance: economy-lumber-camp-floor-2 | ACTIVE -> ISSUED
+(defrule
+    (goal demand-economy-lumber-camp-floor-2 1)
+    (not (building-type-count lumber-camp >= 2))
+    (goal construction-retry-barrier-economy-lumber-camp-floor-2 0)
+    (up-pending-objects c: 562 == 0)
+    (not (up-pending-placement c: 562))
+    (not (building-type-count lumber-camp >= 2))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (resource-found wood)
+    (dropsite-min-distance wood > 12)
+    (can-build lumber-camp)
+    (building-type-count-total lumber-camp < 2)
+=>
+    (build lumber-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-lumber-camp-floor-2 78)
+)
+
+; Pending diagnostics: economy-mining-camp-floor-1
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 77 and cannot reissue from pending goal 78
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 78 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 79 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-mining-camp-floor-1 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-mining-camp-floor-1 in ACTIVE; it is not PENDING.
+; Release: economy-mining-camp-floor-1 | COMPLETE -> RELEASED
+(defrule
+    (goal demand-economy-mining-camp-floor-1 79)
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 0)
+)
+
+; Recovery: economy-mining-camp-floor-1 | RELEASED -> ACTIVE on world-state loss
+(defrule
+    ; First mining camp is a gold demand. Stone has its own explicit demand path.
+    (goal demand-economy-mining-camp-floor-1 0)
+    (not (building-type-count mining-camp >= 1))
+    (strategic-number sn-gold-gatherer-percentage > 0)
+    (resource-found gold)
+    (dropsite-min-distance gold > 5)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 1)
+)
+
+; Construction observation: economy-mining-camp-floor-1
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-mining-camp-floor-1 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-1 80)
+        (goal demand-economy-mining-camp-floor-1 78)
+    )
+    (building-type-count mining-camp >= 1)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 79)
+)
+
+; Pending admission: economy-mining-camp-floor-1 | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-1 80)
+        (goal demand-economy-mining-camp-floor-1 78)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 78)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-1 80)
+        (goal demand-economy-mining-camp-floor-1 78)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-mining-camp-floor-1 78)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-1 80)
+        (goal demand-economy-mining-camp-floor-1 78)
+    )
+    (not (building-type-count mining-camp >= 1))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-mining-camp-floor-1 1)
+    (set-goal construction-retry-barrier-economy-mining-camp-floor-1 1)
+)
+
+; Action issuance: economy-mining-camp-floor-1 | ACTIVE -> ISSUED
+(defrule
+    (goal demand-economy-mining-camp-floor-1 1)
+    (not (building-type-count mining-camp >= 1))
+    (goal construction-retry-barrier-economy-mining-camp-floor-1 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (not (building-type-count mining-camp >= 1))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (unit-type-count-total villager >= 9)
+    (strategic-number sn-gold-gatherer-percentage > 0)
+    (resource-found gold)
+    (dropsite-min-distance gold > 5)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 1)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-mining-camp-floor-1 80)
+)
+
+; Persistent stone drop-site: when a stone bank is active, guarantee a mining camp can be placed
+; on a discovered stone pile instead of assuming the generic mining-camp floor will choose it.
+(defrule
+    ; Stone camps are explicit strategic demand only. They are never a substitute
+    ; for the first gold mining camp.
+    (goal byzantine-stone-demand 1)
+    (strategic-number sn-stone-gatherer-percentage > 0)
+    (resource-found stone)
+    (dropsite-min-distance stone > 5)
+    (building-type-count-total mining-camp >= 1)
+    (building-type-count-total mining-camp < 3)
+    (up-pending-objects c: 584 == 0)
+    (goal action-claim-build-pass-singleton 0)
+    (can-build mining-camp)
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Pending diagnostics: economy-mining-camp-floor-2
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 78 and cannot reissue from pending goal 79
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 79 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 80 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-mining-camp-floor-2 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-mining-camp-floor-2 in ACTIVE; it is not PENDING.
+; Release: economy-mining-camp-floor-2 | COMPLETE -> RELEASED
+(defrule
+    (goal demand-economy-mining-camp-floor-2 80)
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-mining-camp-floor-2 0)
+)
+
+; Recovery: economy-mining-camp-floor-2 | RELEASED -> ACTIVE on world-state loss
+(defrule
+    ; Second generic mining camp is also gold-demand driven.
+    (goal demand-economy-mining-camp-floor-2 0)
+    (not (building-type-count mining-camp >= 2))
+    (strategic-number sn-gold-gatherer-percentage > 0)
+    (resource-found gold)
+    (dropsite-min-distance gold > 12)
+=>
+    (set-goal demand-economy-mining-camp-floor-2 1)
+)
+
+; Construction observation: economy-mining-camp-floor-2
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-mining-camp-floor-2 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-2 81)
+        (goal demand-economy-mining-camp-floor-2 79)
+    )
+    (building-type-count mining-camp >= 2)
+=>
+    (set-goal demand-economy-mining-camp-floor-2 80)
+)
+
+; Pending admission: economy-mining-camp-floor-2 | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-2 81)
+        (goal demand-economy-mining-camp-floor-2 79)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 >= 1)
+=>
+    (set-goal demand-economy-mining-camp-floor-2 79)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-2 81)
+        (goal demand-economy-mining-camp-floor-2 79)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (up-pending-placement c: 584)
+=>
+    (set-goal demand-economy-mining-camp-floor-2 79)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-economy-mining-camp-floor-2 81)
+        (goal demand-economy-mining-camp-floor-2 79)
+    )
+    (not (building-type-count mining-camp >= 2))
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+=>
+    (set-goal demand-economy-mining-camp-floor-2 1)
+    (set-goal construction-retry-barrier-economy-mining-camp-floor-2 1)
+)
+
+; Action issuance: economy-mining-camp-floor-2 | ACTIVE -> ISSUED
+(defrule
+    (goal demand-economy-mining-camp-floor-2 1)
+    (not (building-type-count mining-camp >= 2))
+    (goal construction-retry-barrier-economy-mining-camp-floor-2 0)
+    (up-pending-objects c: 584 == 0)
+    (not (up-pending-placement c: 584))
+    (not (building-type-count mining-camp >= 2))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (strategic-number sn-gold-gatherer-percentage > 0)
+    (resource-found gold)
+    (dropsite-min-distance gold > 12)
+    (can-build mining-camp)
+    (building-type-count-total mining-camp < 2)
+=>
+    (build mining-camp)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-mining-camp-floor-2 81)
+)
+
+; Pending diagnostics: economy-food-mill-boom
+; Community farm-boom pattern: add local food dropsites as the farm bank expands.
+; TC1 = 1 mill, TC2 + sustained farm bank = 2 mills, TC3 + expanded farm bank = 3.
+(defrule
+    (goal demand-economy-food-mill-boom 69)
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill >= bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill >= bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+=>
+    (set-goal demand-economy-food-mill-boom 0)
+)
+
+(defrule
+    (goal demand-economy-food-mill-boom 0)
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill < bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill < bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+=>
+    (set-goal demand-economy-food-mill-boom 1)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-boom 71)
+        (goal demand-economy-food-mill-boom 69)
+    )
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill >= bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill >= bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+=>
+    (set-goal demand-economy-food-mill-boom 70)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-boom 71)
+        (goal demand-economy-food-mill-boom 69)
+    )
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill < bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill < bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+    (up-pending-objects c: 68 >= 1)
+=>
+    (set-goal demand-economy-food-mill-boom 69)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-boom 71)
+        (goal demand-economy-food-mill-boom 69)
+    )
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill < bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill < bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+    (up-pending-objects c: 68 == 0)
+    (up-pending-placement c: 68)
+=>
+    (set-goal demand-economy-food-mill-boom 69)
+)
+
+(defrule
+    (or
+        (goal demand-economy-food-mill-boom 71)
+        (goal demand-economy-food-mill-boom 69)
+    )
+    (or
+        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (and
+                    (not (building-type-count-total town-center >= 3))
+                    (and
+                        (building-type-count farm >= 18)
+                        (building-type-count mill < bt-boom-mill-target-2tc)
+                    )
+                )
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (and
+                    (building-type-count farm >= 26)
+                    (building-type-count mill < bt-boom-mill-target-3tc)
+                )
+            )
+        )
+    )
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+=>
+    (set-goal demand-economy-food-mill-boom 1)
+    (set-goal construction-retry-barrier-economy-food-mill-boom 1)
+)
+
+(defrule
+    (goal demand-economy-food-mill-boom 1)
+    (not (building-type-count-total town-center >= 2))
+    (building-type-count mill < bt-boom-mill-target-1tc)
+    (goal construction-retry-barrier-economy-food-mill-boom 0)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (resource-found food)
+    (can-build mill)
+    (dropsite-min-distance food > 5)
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
+    (set-strategic-number sn-mill-max-distance 17)
+    (build mill)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-food-mill-boom 71)
+)
+
+(defrule
+    (goal demand-economy-food-mill-boom 1)
+    (building-type-count-total town-center >= 2)
+    (not (building-type-count-total town-center >= 3))
+    (building-type-count farm >= 18)
+    (building-type-count mill < bt-boom-mill-target-2tc)
+    (goal construction-retry-barrier-economy-food-mill-boom 0)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (resource-found food)
+    (can-build mill)
+    (dropsite-min-distance food > 8)
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
+    (set-strategic-number sn-mill-max-distance 17)
+    (build mill)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-food-mill-boom 71)
+)
+
+(defrule
+    (goal demand-economy-food-mill-boom 1)
+    (building-type-count-total town-center >= 3)
+    (building-type-count farm >= 26)
+    (building-type-count mill < bt-boom-mill-target-3tc)
+    (goal construction-retry-barrier-economy-food-mill-boom 0)
+    (up-pending-objects c: 68 == 0)
+    (not (up-pending-placement c: 68))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= dark-age)
+    (resource-found food)
+    (can-build mill)
+    (dropsite-min-distance food > 8)
+=>
+    (set-strategic-number sn-allow-adjacent-dropsites 0)
+    (set-strategic-number sn-dropsite-separation-distance 10)
+    (set-strategic-number sn-mill-max-distance 17)
+    (build mill)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-food-mill-boom 71)
+)
+
+; Pending diagnostics: economy-market-floor-1
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 76 and cannot reissue from pending goal 77
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 77 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 78 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: economy-market-floor-1 | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-economy-market-floor-1 in ACTIVE; it is not PENDING.
+; Release: economy-market-floor-1 | COMPLETE -> RELEASED
+(defrule
+    (goal demand-economy-market-floor-1 78)
+    (building-type-count market >= 1)
+=>
+    (set-goal demand-economy-market-floor-1 0)
+)
+
+; Recovery: economy-market-floor-1 | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-economy-market-floor-1 0)
+    (not (building-type-count market >= 1))
+    (or
+        (or (food-amount < 350) (or (wood-amount < 150) (gold-amount < 150)))
+        (or
+            (goal strategic-primary-intent 2)
+            (goal opening-plan 3)
+        )
+    )
+=>
+    (set-goal demand-economy-market-floor-1 1)
+)
+
+; Construction observation: economy-market-floor-1
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: economy-market-floor-1 | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-economy-market-floor-1 79)
+        (goal demand-economy-market-floor-1 77)
+    )
+    (building-type-count market >= 1)
+=>
+    (set-goal demand-economy-market-floor-1 78)
+)
+
+; Pending admission: economy-market-floor-1 | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-market-floor-1 79)
+        (goal demand-economy-market-floor-1 77)
+    )
+    (not (building-type-count market >= 1))
+    (up-pending-objects c: 84 >= 1)
+=>
+    (set-goal demand-economy-market-floor-1 77)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-economy-market-floor-1 79)
+        (goal demand-economy-market-floor-1 77)
+    )
+    (not (building-type-count market >= 1))
+    (up-pending-objects c: 84 == 0)
+    (up-pending-placement c: 84)
+=>
+    (set-goal demand-economy-market-floor-1 77)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-economy-market-floor-1 79)
+        (goal demand-economy-market-floor-1 77)
+    )
+    (not (building-type-count market >= 1))
+    (up-pending-objects c: 84 == 0)
+    (not (up-pending-placement c: 84))
+=>
+    (set-goal demand-economy-market-floor-1 1)
+    (set-goal construction-retry-barrier-economy-market-floor-1 1)
+)
+
+; Action issuance: economy-market-floor-1 | ACTIVE -> ISSUED
+(defrule
+    (goal demand-economy-market-floor-1 1)
+    (not (building-type-count market >= 1))
+    (goal construction-retry-barrier-economy-market-floor-1 0)
+    (up-pending-objects c: 84 == 0)
+    (not (up-pending-placement c: 84))
+    (not (building-type-count market >= 1))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (or
+        (or (food-amount < 350) (or (wood-amount < 150) (gold-amount < 150)))
+        (or
+            (goal strategic-primary-intent 2)
+            (or
+                (goal opening-plan 3)
+                (goal demand-castle-age-transition 1)
+            )
+        )
+    )
+    (can-build market)
+    (building-type-count-total market < 1)
+=>
+    (build market)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-economy-market-floor-1 79)
+)
+
+; Pending diagnostics: castle-stable-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 56 and cannot reissue from pending goal 57
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 57 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 58 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-stable-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-stable-capability in ACTIVE; it is not PENDING.
+; Release: castle-stable-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-stable-capability 58)
+    (building-type-count stable > 0)
+=>
+    (set-goal demand-castle-stable-capability 0)
+)
+
+; Recovery: castle-stable-capability | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-stable-capability 0)
+    (not (building-type-count stable >= 1))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-stable-capability 1)
+)
+
+; Construction observation: castle-stable-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: castle-stable-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-stable-capability 59)
+        (goal demand-castle-stable-capability 57)
+    )
+    (building-type-count stable >= 1)
+=>
+    (set-goal demand-castle-stable-capability 58)
+)
+
+; Pending admission: castle-stable-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-stable-capability 59)
+        (goal demand-castle-stable-capability 57)
+    )
+    (not (building-type-count stable >= 1))
+    (up-pending-objects c: 101 >= 1)
+=>
+    (set-goal demand-castle-stable-capability 57)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-stable-capability 59)
+        (goal demand-castle-stable-capability 57)
+    )
+    (not (building-type-count stable >= 1))
+    (up-pending-objects c: 101 == 0)
+    (up-pending-placement c: 101)
+=>
+    (set-goal demand-castle-stable-capability 57)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-stable-capability 59)
+        (goal demand-castle-stable-capability 57)
+    )
+    (not (building-type-count stable >= 1))
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+=>
+    (set-goal demand-castle-stable-capability 1)
+    (set-goal construction-retry-barrier-castle-stable-capability 1)
+)
+
+; Action issuance: castle-stable-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-stable-capability 1)
+    (not (building-type-count stable >= 1))
+    (goal construction-retry-barrier-castle-stable-capability 0)
+    (up-pending-objects c: 101 == 0)
+    (not (up-pending-placement c: 101))
+    (not (building-type-count stable > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-stable-capability 59)
+)
+
+; Pending diagnostics: castle-archery-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 45 and cannot reissue from pending goal 46
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 46 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 47 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-archery-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-archery-capability in ACTIVE; it is not PENDING.
+; Release: castle-archery-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-archery-capability 47)
+    (building-type-count archery-range > 0)
+=>
+    (set-goal demand-castle-archery-capability 0)
+)
+
+; Construction observation: castle-archery-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: castle-archery-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-archery-capability 48)
+        (goal demand-castle-archery-capability 46)
+    )
+    (building-type-count archery-range >= 1)
+=>
+    (set-goal demand-castle-archery-capability 47)
+)
+
+; Pending admission: castle-archery-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-archery-capability 48)
+        (goal demand-castle-archery-capability 46)
+    )
+    (not (building-type-count archery-range >= 1))
+    (up-pending-objects c: 87 >= 1)
+=>
+    (set-goal demand-castle-archery-capability 46)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-archery-capability 48)
+        (goal demand-castle-archery-capability 46)
+    )
+    (not (building-type-count archery-range >= 1))
+    (up-pending-objects c: 87 == 0)
+    (up-pending-placement c: 87)
+=>
+    (set-goal demand-castle-archery-capability 46)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-archery-capability 48)
+        (goal demand-castle-archery-capability 46)
+    )
+    (not (building-type-count archery-range >= 1))
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+=>
+    (set-goal demand-castle-archery-capability 1)
+    (set-goal construction-retry-barrier-castle-archery-capability 1)
+)
+
+; Action issuance: castle-archery-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-archery-capability 1)
+    (not (building-type-count archery-range >= 1))
+    (goal construction-retry-barrier-castle-archery-capability 0)
+    (up-pending-objects c: 87 == 0)
+    (not (up-pending-placement c: 87))
+    (not (building-type-count archery-range > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-archery-capability 48)
+)
+
+; Recovery: castle-archery-capability | RELEASED -> ACTIVE when the Castle army actually needs ranged support
+(defrule
+    (goal demand-castle-archery-capability 0)
+    (or
+        (goal byzantine-army-plan-phase 1)
+        (goal byzantine-army-plan-phase 2)
+    )
+    (not (building-type-count archery-range >= 1))
+=>
+    (set-goal demand-castle-archery-capability 1)
+)
+
+; Pending diagnostics: castle-siege-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 54 and cannot reissue from pending goal 55
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 55 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 56 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-siege-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-siege-capability in ACTIVE; it is not PENDING.
+; Release: castle-siege-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-siege-capability 56)
+    (building-type-count siege-workshop > 0)
+=>
+    (set-goal demand-castle-siege-capability 0)
+)
+
+; Recovery: castle-siege-capability | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-siege-capability 0)
+    (not (building-type-count siege-workshop >= 1))
+    (players-unit-type-count any-enemy mangonel-line >= 2)
+=>
+    (set-goal demand-castle-siege-capability 1)
+)
+
+; Construction observation: castle-siege-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: castle-siege-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-siege-capability 57)
+        (goal demand-castle-siege-capability 55)
+    )
+    (building-type-count siege-workshop >= 1)
+=>
+    (set-goal demand-castle-siege-capability 56)
+)
+
+; Pending admission: castle-siege-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-siege-capability 57)
+        (goal demand-castle-siege-capability 55)
+    )
+    (not (building-type-count siege-workshop >= 1))
+    (up-pending-objects c: 49 >= 1)
+=>
+    (set-goal demand-castle-siege-capability 55)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-siege-capability 57)
+        (goal demand-castle-siege-capability 55)
+    )
+    (not (building-type-count siege-workshop >= 1))
+    (up-pending-objects c: 49 == 0)
+    (up-pending-placement c: 49)
+=>
+    (set-goal demand-castle-siege-capability 55)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-siege-capability 57)
+        (goal demand-castle-siege-capability 55)
+    )
+    (not (building-type-count siege-workshop >= 1))
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+=>
+    (set-goal demand-castle-siege-capability 1)
+    (set-goal construction-retry-barrier-castle-siege-capability 1)
+)
+
+; Action issuance: castle-siege-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-siege-capability 1)
+    (not (building-type-count siege-workshop >= 1))
+    (goal construction-retry-barrier-castle-siege-capability 0)
+    (up-pending-objects c: 49 == 0)
+    (not (up-pending-placement c: 49))
+    (not (building-type-count siege-workshop > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-siege-capability 57)
+)
+
+; Pending diagnostics: castle-monastery-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 51 and cannot reissue from pending goal 52
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 52 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 53 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-monastery-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-monastery-capability in ACTIVE; it is not PENDING.
+; Release: castle-monastery-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-monastery-capability 53)
+    (building-type-count monastery > 0)
+=>
+    (set-goal demand-castle-monastery-capability 0)
+)
+
+; Recovery: castle-monastery-capability | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-monastery-capability 0)
+    (not (building-type-count monastery >= 1))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-castle-monastery-capability 1)
+)
+
+; Construction observation: castle-monastery-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: castle-monastery-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-monastery-capability 54)
+        (goal demand-castle-monastery-capability 52)
+    )
+    (building-type-count monastery >= 1)
+=>
+    (set-goal demand-castle-monastery-capability 53)
+)
+
+; Pending admission: castle-monastery-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-monastery-capability 54)
+        (goal demand-castle-monastery-capability 52)
+    )
+    (not (building-type-count monastery >= 1))
+    (up-pending-objects c: 104 >= 1)
+=>
+    (set-goal demand-castle-monastery-capability 52)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-monastery-capability 54)
