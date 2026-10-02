@@ -1,7 +1,7 @@
 """Community-derived Byzantine strategy synthesis packs.
 
-This module contains strategy policy only. It reuses the existing StrategyProfile,
-StrategicDemandSpec, StrategicNumberMode, and native lifecycle machinery. It does
+This module contains strategy policy only. It reuses the existing _StrategyProfile,
+_StrategicDemandSpec, _StrategicNumberMode, and native lifecycle machinery. It does
 not introduce a scheduler or a second .per language.
 """
 from __future__ import annotations
@@ -11,23 +11,23 @@ from dataclasses import replace
 from .civ_profile import EffectiveCivData
 from .game_data import Age, BuildingId, Resource, TechId, UnitLineId
 from .strategy import (
-    CapabilityIntent,
-    CapabilityIntentKind,
-    ExecutionDemandTemplate,
-    OpportunityCostPolicy,
-    ProtectedResourceFloor,
-    StrategicDemandSpec,
-    StrategicEvidence,
-    StrategicEvidenceKind,
-    StrategicPriority,
-    StrategicTarget,
-    StrategicTargetKind,
-    StrategicNumberMode,
-    StrategyPosture,
-    StrategyProfile,
-    StrategicObservationSpec,
-    CapabilityRecoveryContract,
-    StrategicMilitaryComposition,
+    _CapabilityIntent as _CapabilityIntent,
+    _CapabilityIntentKind as _CapabilityIntentKind,
+    _ExecutionDemandTemplate as _ExecutionDemandTemplate,
+    _OpportunityCostPolicy as _OpportunityCostPolicy,
+    _ProtectedResourceFloor as _ProtectedResourceFloor,
+    _StrategicDemandSpec as _StrategicDemandSpec,
+    _StrategicEvidence as _StrategicEvidence,
+    _StrategicEvidenceKind as _StrategicEvidenceKind,
+    _StrategicPriority as _StrategicPriority,
+    _StrategicTarget as _StrategicTarget,
+    _StrategicTargetKind as _StrategicTargetKind,
+    _StrategicNumberMode as _StrategicNumberMode,
+    _StrategyPosture as _StrategyPosture,
+    _StrategyProfile as _StrategyProfile,
+    _StrategicObservationSpec as _StrategicObservationSpec,
+    _CapabilityRecoveryContract as _CapabilityRecoveryContract,
+    _StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
 from .versioning import EvidenceRef
 
@@ -70,8 +70,8 @@ def _observation(
     identity: str,
     expression: str,
     provenance: tuple[EvidenceRef, ...],
-) -> StrategicObservationSpec:
-    return StrategicObservationSpec(
+) -> _StrategicObservationSpec:
+    return _StrategicObservationSpec(
         identity=identity,
         expression=expression,
         provenance=provenance,
@@ -81,9 +81,9 @@ def _observation(
 def _persistent(
     label: str,
     observation_ref: str,
-) -> StrategicEvidence:
-    return StrategicEvidence(
-        StrategicEvidenceKind.PERSISTENT,
+) -> _StrategicEvidence:
+    return _StrategicEvidence(
+        _StrategicEvidenceKind.PERSISTENT,
         None,
         label,
         observation_ref=observation_ref,
@@ -93,9 +93,9 @@ def _persistent(
 def _execution(
     label: str,
     expression: str,
-) -> StrategicEvidence:
-    return StrategicEvidence(
-        StrategicEvidenceKind.EXECUTION,
+) -> _StrategicEvidence:
+    return _StrategicEvidence(
+        _StrategicEvidenceKind.EXECUTION,
         expression,
         label,
     )
@@ -105,8 +105,8 @@ def _build_demand(
     *,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
     reason_ref: str,
     reason_label: str,
     building,
@@ -114,13 +114,13 @@ def _build_demand(
     action_name: str | None = None,
     target_witness: str | None = None,
     release: str | None = None,
-    opportunity_cost: OpportunityCostPolicy | None = None,
+    opportunity_cost: _OpportunityCostPolicy | None = None,
     invalidate_ref: str | None = None,
-) -> StrategicDemandSpec:
+) -> _StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
     release = release or target_witness
-    return StrategicDemandSpec(
+    return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
         posture=posture,
@@ -132,24 +132,24 @@ def _build_demand(
         invalidation=(
             _persistent(f"{identity}:policy-invalidation", invalidate_ref),
         ) if invalidate_ref else (),
-        capability_intent=CapabilityIntent(
-            CapabilityIntentKind.BUILD,
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.BUILD,
             "building",
             int(building.id),
         ),
-        target=StrategicTarget(
-            StrategicTargetKind.EXACT,
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
             "building",
             int(building.id),
         ),
         opportunity_cost=opportunity_cost,
-        execution=ExecutionDemandTemplate(
+        execution=_ExecutionDemandTemplate(
             requirements=requirements,
             action=f"(build {action_name})",
             witness=target_witness,
             release=release,
         ),
-        recovery=CapabilityRecoveryContract(),
+        recovery=_CapabilityRecoveryContract(),
     )
 
 
@@ -158,28 +158,28 @@ def _research_demand(
     effective: EffectiveCivData,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
     age_guard: str,
     age_observation_ref: str,
     tech_name: str,
     reason_label: str,
     resources: tuple[Resource, ...],
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
-) -> StrategicDemandSpec:
+) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
     token = _slug(tech.name)
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
-    floors = tuple(ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
+    floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
     policy = None
     if floors:
-        policy = OpportunityCostPolicy(
+        policy = _OpportunityCostPolicy(
             owner=owner,
             protected_floors=floors,
-            emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+            emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
         )
-    demand = StrategicDemandSpec(
+    demand = _StrategicDemandSpec(
         identity=identity,
         owner=owner,
         posture=posture,
@@ -194,18 +194,18 @@ def _research_demand(
         invalidation=(
             _persistent(f"{identity}:completed", complete_ref),
         ),
-        capability_intent=CapabilityIntent(
-            CapabilityIntentKind.RESEARCH,
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.RESEARCH,
             "technology",
             int(tech.id),
         ),
-        target=StrategicTarget(
-            StrategicTargetKind.EXACT,
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
             "technology",
             int(tech.id),
         ),
         opportunity_cost=policy,
-        execution=ExecutionDemandTemplate(
+        execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
                 f"(can-research-with-escrow {token})",
@@ -225,16 +225,16 @@ def _training_demand(
     effective: EffectiveCivData,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
     reason_ref: str,
     reason_label: str,
     line: str,
     minimum: int,
     age_guard: str,
-) -> StrategicDemandSpec:
+) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
-    return StrategicDemandSpec(
+    return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
         production_arbitration_group=owner,
@@ -245,20 +245,20 @@ def _training_demand(
             _persistent(f"{identity}:age-admission", reason_ref),
         ),
         invalidation=(),
-        capability_intent=CapabilityIntent(
-            CapabilityIntentKind.TRAIN,
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.TRAIN,
             "unit-line",
             line,
             provider,
         ),
-        target=StrategicTarget(
-            StrategicTargetKind.CURRENT_QUEUED,
+        target=_StrategicTarget(
+            _StrategicTargetKind.CURRENT_QUEUED,
             "unit-line",
             line,
             minimum=minimum,
         ),
         opportunity_cost=None,
-        execution=ExecutionDemandTemplate(
+        execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
                 f"(can-train-with-escrow {line})",
@@ -272,22 +272,21 @@ def _training_demand(
 
 
 _RESEARCH_PACK = (
-    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", StrategicPriority.SUPPORT, (Resource.FOOD,)),
-    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-horse-collar", "economy", "feudal-age", "horse-collar", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-hand-cart", "economy", "castle-age", "hand-cart", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
-    ("research-bow-saw", "economy", "castle-age", "bow-saw", StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
-    ("research-two-man-saw", "economy", "castle-age", "two-man-saw", StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
-    ("research-bodkin-arrow", "military", "feudal-age", "bodkin-arrow", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
-    ("research-bloodlines", "military", "feudal-age", "bloodlines", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
-    ("research-conscription", "military", "imperial-age", "conscription", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
-    ("research-chemistry", "military", "imperial-age", "chemistry", StrategicPriority.SUPPORT, (Resource.GOLD,)),
+    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-horse-collar", "economy", "feudal-age", "horse-collar", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-hand-cart", "economy", "castle-age", "hand-cart", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-bow-saw", "economy", "castle-age", "bow-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
+    ("research-two-man-saw", "economy", "imperial-age", "two-man-saw", _StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
+    ("research-bodkin-arrow", "military", "castle-age", "bodkin-arrow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-conscription", "military", "imperial-age", "conscription", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-chemistry", "military", "imperial-age", "chemistry", _StrategicPriority.SUPPORT, (Resource.GOLD,)),
 )
 
 
 def community_strategy_observations(
     effective: EffectiveCivData,
-) -> tuple[StrategicObservationSpec, ...]:
+) -> tuple[_StrategicObservationSpec, ...]:
     town_center = _building(effective, "town-center")
     outpost = _building(effective, "outpost")
     monastery = _building(effective, "monastery")
@@ -417,7 +416,7 @@ def community_strategy_observations(
 
 def community_strategy_demands(
     effective: EffectiveCivData,
-) -> tuple[StrategicDemandSpec, ...]:
+) -> tuple[_StrategicDemandSpec, ...]:
     town_center = _building(effective, "town-center")
     outpost = _building(effective, "outpost")
     monastery = _building(effective, "monastery")
@@ -426,16 +425,16 @@ def community_strategy_demands(
     archery_range = _building(effective, "archery-range")
     university = _building(effective, "university")
 
-    demands: list[StrategicDemandSpec] = []
+    demands: list[_StrategicDemandSpec] = []
 
     imperial = effective.age_advance(Age.IMPERIAL)
     imperial_cost = effective.cost_of_age_advance(Age.IMPERIAL)
     demands.append(
-        StrategicDemandSpec(
+        _StrategicDemandSpec(
             identity="imperial-conversion",
             owner="age-transition",
-            posture=StrategyPosture.CASTLE_POWER,
-            priority=StrategicPriority.CORE,
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.CORE,
             reason=(
                 _persistent("Imperial remains the next durable strategic conversion", "strategy-castle-age"),
             ),
@@ -445,26 +444,26 @@ def community_strategy_demands(
             invalidation=(
                 _persistent("Imperial conversion complete", "strategy-imperial-age"),
             ),
-            capability_intent=CapabilityIntent(
-                CapabilityIntentKind.AGE_ADVANCE,
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.AGE_ADVANCE,
                 "age-advance",
                 "imperial-age",
                 imperial.provider_building,
             ),
-            target=StrategicTarget(
-                StrategicTargetKind.EXACT,
+            target=_StrategicTarget(
+                _StrategicTargetKind.EXACT,
                 "age-advance",
                 "imperial-age",
             ),
-            opportunity_cost=OpportunityCostPolicy(
+            opportunity_cost=_OpportunityCostPolicy(
                 owner="age-transition",
                 protected_floors=(
-                    ProtectedResourceFloor(Resource.FOOD, imperial_cost.food),
-                    ProtectedResourceFloor(Resource.GOLD, imperial_cost.gold),
+                    _ProtectedResourceFloor(Resource.FOOD, imperial_cost.food),
+                    _ProtectedResourceFloor(Resource.GOLD, imperial_cost.gold),
                 ),
-                emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+                emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
             ),
-            execution=ExecutionDemandTemplate(
+            execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
                     "(can-research-with-escrow imperial-age)",
@@ -480,19 +479,19 @@ def community_strategy_demands(
     # Castle economic expansion. Native can-build remains the authoritative
     # affordability/provider admission; the strategic policy decides when the
     # expansion is wanted.
-    tc_policy = OpportunityCostPolicy(
+    tc_policy = _OpportunityCostPolicy(
         owner="castle-economy",
         protected_floors=(
-            ProtectedResourceFloor(Resource.WOOD, effective.cost_of(f"building:{int(town_center.id)}").wood),
+            _ProtectedResourceFloor(Resource.WOOD, effective.cost_of(f"building:{int(town_center.id)}").wood),
         ),
-        emergency_override_postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH),
+        emergency_override_postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH),
     )
     demands.append(
-        StrategicDemandSpec(
+        _StrategicDemandSpec(
             identity="castle-second-town-center",
             owner="castle-economy",
-            posture=StrategyPosture.CASTLE_POWER,
-            priority=StrategicPriority.CORE,
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.CORE,
             reason=(
                 _persistent(
                     "Castle Age creates an economic expansion opportunity",
@@ -511,18 +510,18 @@ def community_strategy_demands(
                     "strategy-town-center-complete",
                 ),
             ),
-            capability_intent=CapabilityIntent(
-                CapabilityIntentKind.BUILD,
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.BUILD,
                 "building",
                 int(town_center.id),
             ),
-            target=StrategicTarget(
-                StrategicTargetKind.EXACT,
+            target=_StrategicTarget(
+                _StrategicTargetKind.EXACT,
                 "building",
                 int(town_center.id),
             ),
             opportunity_cost=tc_policy,
-            execution=ExecutionDemandTemplate(
+            execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= castle-age)",
                     "(building-type-count-total town-center < 2)",
@@ -540,8 +539,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="castle-stable-capability",
                 owner="production",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.SUPPORT,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
                 reason_ref="strategy-castle-age",
                 reason_label="Castle cavalry production requires a stable provider",
                 building=stable,
@@ -550,8 +549,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="castle-archery-capability",
                 owner="production",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.SUPPORT,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Ranged pressure creates a real ranged-production capability demand",
                 building=archery_range,
@@ -561,8 +560,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="castle-siege-capability",
                 owner="production",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.DEFENSE,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
                 reason_ref="strategy-enemy-siege",
                 reason_label="Enemy siege creates an explicit siege-capability demand",
                 building=siege_workshop,
@@ -571,8 +570,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="castle-monastery-capability",
                 owner="support",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.OPTIONAL,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.OPTIONAL,
                 reason_ref="strategy-castle-age",
                 reason_label="Castle support includes a Monk/relic capability",
                 building=monastery,
@@ -581,8 +580,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="imperial-university-capability",
                 owner="research",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.SUPPORT,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
                 reason_ref="strategy-castle-age",
                 reason_label="Imperial conversion requires a verified university provider",
                 building=university,
@@ -591,8 +590,8 @@ def community_strategy_demands(
             _build_demand(
                 identity="adaptive-outpost",
                 owner="defense",
-                posture=StrategyPosture.FLUSH,
-                priority=StrategicPriority.DEFENSE,
+                posture=_StrategyPosture.FLUSH,
+                priority=_StrategicPriority.DEFENSE,
                 reason_ref="strategy-enemy-pressure",
                 reason_label="Sustained enemy pressure justifies one defensive observation point",
                 building=outpost,
@@ -607,9 +606,9 @@ def community_strategy_demands(
             identity=identity,
             owner=owner,
             posture=(
-                StrategyPosture.CASTLE_POWER
+                _StrategyPosture.CASTLE_POWER
                 if age in {"castle-age", "imperial-age"}
-                else StrategyPosture.BOOM
+                else _StrategyPosture.BOOM
             ),
             priority=priority,
             age_guard=f"(current-age >= {age})",
@@ -631,8 +630,8 @@ def community_strategy_demands(
                 effective=effective,
                 identity="castle-knight-floor",
                 owner="military",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.CORE,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
                 reason_ref="strategy-castle-age",
                 reason_label="Maintain a Castle mobility floor for pressure/reaction",
                 line="knight-line",
@@ -643,8 +642,8 @@ def community_strategy_demands(
                 effective=effective,
                 identity="castle-cataphract-floor",
                 owner="military",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.CORE,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
                 reason_ref="strategy-castle-age",
                 reason_label="Maintain the Byzantine premium Castle power floor",
                 line="cataphract-line",
@@ -655,8 +654,8 @@ def community_strategy_demands(
                 effective=effective,
                 identity="castle-siege-floor",
                 owner="military",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.DEFENSE,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
                 reason_ref="strategy-enemy-siege",
                 reason_label="Maintain a mobile anti-siege response when enemy siege is observed",
                 line="knight-line",
@@ -667,8 +666,8 @@ def community_strategy_demands(
                 effective=effective,
                 identity="castle-monk-floor",
                 owner="support",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.OPTIONAL,
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.OPTIONAL,
                 reason_ref="strategy-monastery-capability",
                 reason_label="Use a bounded Monk support floor once the monastery capability exists",
                 line="monk-line",
@@ -684,11 +683,11 @@ def community_strategy_demands(
     fishing = _line(effective, "fishing-ship-line")
     fishing_provider = _provider_for_line(effective, "fishing-ship-line")
     demands.append(
-        StrategicDemandSpec(
+        _StrategicDemandSpec(
             identity="water-fishing-continuity",
             owner="water-economy",
-            posture=StrategyPosture.BOOM,
-            priority=StrategicPriority.SUPPORT,
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.SUPPORT,
             reason=(
                 _persistent(
                     "Existing dock establishes an active water-economic opportunity",
@@ -702,20 +701,20 @@ def community_strategy_demands(
                 ),
             ),
             invalidation=(),
-            capability_intent=CapabilityIntent(
-                CapabilityIntentKind.TRAIN,
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
                 "unit-line",
                 "fishing-ship-line",
                 fishing_provider,
             ),
-            target=StrategicTarget(
-                StrategicTargetKind.CURRENT_QUEUED,
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
                 "unit-line",
                 "fishing-ship-line",
                 minimum=2,
             ),
             opportunity_cost=None,
-            execution=ExecutionDemandTemplate(
+            execution=_ExecutionDemandTemplate(
                 requirements=(
                     "(current-age >= feudal-age)",
                     "(building-type-count-total dock >= 1)",
@@ -732,9 +731,9 @@ def community_strategy_demands(
     return tuple(demands)
 
 
-def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
+def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
     return (
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "explore-groups-dark",
             42,
             1,
@@ -742,7 +741,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.DARK,
             priority=10,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "explore-groups-feudal",
             42,
             2,
@@ -750,7 +749,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.FEUDAL,
             priority=10,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "explore-groups-castle",
             42,
             2,
@@ -758,7 +757,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.CASTLE,
             priority=10,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "explore-groups-imperial",
             42,
             3,
@@ -766,7 +765,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.IMPERIAL,
             priority=10,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "total-explorers-dark",
             18,
             2,
@@ -774,7 +773,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.DARK,
             priority=5,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "total-explorers-feudal",
             18,
             3,
@@ -782,7 +781,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.FEUDAL,
             priority=5,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "total-explorers-castle",
             18,
             4,
@@ -790,7 +789,7 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.CASTLE,
             priority=5,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "total-explorers-imperial",
             18,
             4,
@@ -798,22 +797,22 @@ def community_strategy_sn_modes() -> tuple[StrategicNumberMode, ...]:
             maximum_age=Age.IMPERIAL,
             priority=5,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "attack-groups-feudal",
             36,
             1,
             minimum_age=Age.FEUDAL,
             maximum_age=Age.FEUDAL,
-            postures=(StrategyPosture.FLUSH, StrategyPosture.RUSH, StrategyPosture.BOOM),
+            postures=(_StrategyPosture.FLUSH, _StrategyPosture.RUSH, _StrategyPosture.BOOM),
             priority=5,
         ),
-        StrategicNumberMode(
+        _StrategicNumberMode(
             "attack-groups-castle",
             36,
             2,
             minimum_age=Age.CASTLE,
             maximum_age=Age.IMPERIAL,
-            postures=(StrategyPosture.CASTLE_POWER,),
+            postures=(_StrategyPosture.CASTLE_POWER,),
             priority=5,
         ),
     )
@@ -823,7 +822,7 @@ def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
     include_water_continuity: bool = True,
-) -> StrategyProfile:
+) -> _StrategyProfile:
     """Build the broader stock-style Byzantine strategy from the existing base.
 
     The existing Castle profile remains the compatibility baseline. This builder
@@ -855,12 +854,12 @@ def build_byzantine_stock_strategy(
     compositions = list(base.military_compositions)
     composition_ids = {item.identity for item in compositions}
     for composition in (
-        StrategicMilitaryComposition(
+        _StrategicMilitaryComposition(
             identity="castle-standard-package",
             production_demands=("castle-knight-floor", "castle-cataphract-floor"),
             attack_objective="castle-commitment",
         ),
-        StrategicMilitaryComposition(
+        _StrategicMilitaryComposition(
             identity="castle-defense-package",
             production_demands=(
                 "counter-mounted-spears",
