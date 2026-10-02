@@ -1,6 +1,12 @@
 import unittest
 
-from Compiler.clients.basilisk import ByzantineProfile, resolve_effective_civ
+from Compiler.clients.basilisk import (
+    ByzantineProfile,
+    WaterExecutionPlan,
+    WaterExecutionState,
+    WaterPosture,
+    resolve_effective_civ,
+)
 from Compiler.ir.strategy import StrategyPosture, build_byzantine_strategy, lower_strategy_profile
 from Compiler.ir.strategy_runtime import ReassessmentReason, RuntimeObservationSnapshot, evaluate_strategy_runtime
 from Compiler.ir.water import (
@@ -76,6 +82,11 @@ class WaterTransportExecutionTests(unittest.TestCase):
             ReassessmentReason.TRANSPORT_CAPABILITY_LOSS,
             runtime.reassessment_reasons,
         )
+
+    def test_client_exports_typed_water_execution_surface(self):
+        self.assertTrue(WaterExecutionPlan)
+        self.assertTrue(WaterExecutionState)
+        self.assertTrue(WaterPosture)
 
     def test_stock_strategy_exposes_typed_water_execution_plan(self):
         profile = build_byzantine_strategy(self.effective)
