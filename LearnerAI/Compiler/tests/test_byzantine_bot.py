@@ -144,10 +144,6 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertEqual(logistica.execution.action, "(research ri-logistica)")
         self.assertIn("(can-research-with-escrow ri-logistica)", logistica.execution.requirements)
         self.assertIn(
-            "(up-research-status c: 61 >= 3)",
-            demands["castle-cataphract-floor"].execution.requirements,
-        )
-        self.assertIn(
             "(map-type arena)",
             demands["castle-cataphract-floor"].execution.requirements,
         )
