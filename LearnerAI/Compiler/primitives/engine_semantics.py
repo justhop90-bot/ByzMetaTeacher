@@ -903,6 +903,10 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         for command, identity in _DUC_COMMAND_SPECS
     )
     mappings.extend(
+        _player_context_mapping(command, identity)
+        for command, identity in _PLAYER_CONTEXT_SPECS
+    )
+    mappings.extend(
         _native_output_reader_mapping(command, identity)
         for command, identity in _NATIVE_OUTPUT_READER_SPECS
     )
