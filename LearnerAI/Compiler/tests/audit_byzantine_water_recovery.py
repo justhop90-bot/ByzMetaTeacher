@@ -7,6 +7,7 @@ from pathlib import Path
 
 from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
+from LearnerAI.Compiler.semantic.native_tech_catalog import NativeTechIdError, resolve_tech_id
 
 
 UNIT_TARGETS = (
@@ -33,6 +34,17 @@ WATER_DEMANDS = (
     "water-naval-defense",
     "water-naval-control",
 )
+
+WATER_RESEARCH_NATIVE = {
+    "Fishing Lines": "906",
+    "Gillnets": "ri-gillnets",
+    "Warships": "ri-war-galley",
+    "Heavy Warships": "ri-galleon",
+    "Fast Fire Ship": "246",
+    "Careening": "374",
+    "Dry Dock": "375",
+    "Greek Fire": "ri-greek-fire",
+}
 
 WATER_RESEARCH = (
     "Fishing Lines",
@@ -105,10 +117,18 @@ def main() -> int:
             )
             continue
         tech = found[0]
+        try:
+            native_id = resolve_tech_id(WATER_RESEARCH_NATIVE[label])
+            native_status = "VERIFIED"
+        except NativeTechIdError:
+            native_id = None
+            native_status = "BLOCKED"
         researches.append(
             {
                 "technology": label,
                 "game_data": effective.factual_status("technology", int(tech.id)).value,
+                "native_catalog": native_status,
+                "native_id": native_id,
                 "strategy": any(
                     label.lower() in demand.identity.lower()
                     or _slug(label) in demand.execution.action.lower()
@@ -181,7 +201,8 @@ def main() -> int:
     for row in researches:
         print(
             f"research {row['technology']}: game_data={row['game_data']} "
-            f"strategy={row['strategy']} artifact={row['artifact']}"
+            f"native={row.get('native_catalog')} strategy={row['strategy']} "
+            f"artifact={row['artifact']}"
         )
     for row in water_demands:
         print(
