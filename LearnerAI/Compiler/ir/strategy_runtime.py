@@ -541,6 +541,7 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "unit-type-count-total": StrategicObservationType.UNIT_CURRENT_PLUS_QUEUED,
     "players-unit-type-count": StrategicObservationType.ENEMY_UNIT_COUNT,
     "players-building-type-count": StrategicObservationType.ENEMY_BUILDING_COUNT,
+    "map-type": StrategicObservationType.MAP_PROFILE,
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
