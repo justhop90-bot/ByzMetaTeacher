@@ -379,6 +379,163 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
         )
     )
 
+
+    # Basic economic infrastructure is explicit bot policy. The stock strategy
+    # already owns research and resource allocation, but neither of those facts
+    # physically creates the dropsites that keep villagers productive.
+    demands.extend(
+        (
+            _aged_building_demand(
+                effective=effective,
+                identity="dark-lumber-camp",
+                owner="economy-infrastructure",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.CORE,
+                reason_ref="current-dark-age",
+                reason_label="Establish the first Lumber Camp on the initial wood supply",
+                building_name="lumber-camp",
+                minimum_age=Age.DARK,
+                upper_bound=1,
+                extra_requirements=(
+                    "(or (resource-found wood) (unit-type-count-total villager >= 7))",
+                ),
+            ),
+            _staged_building(
+                effective=effective,
+                identity="wood-dropsite-extension",
+                owner="economy-infrastructure",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.SUPPORT,
+                reason_ref="current-dark-age",
+                reason_label="Add a second Lumber Camp when the active wood supply is too far from the dropsite",
+                building_name="lumber-camp",
+                minimum_age=Age.DARK,
+                lower_bound=1,
+                upper_bound=2,
+                extra_requirements=(
+                    "(dropsite-min-distance wood > 12)",
+                ),
+            ),
+            _aged_building_demand(
+                effective=effective,
+                identity="dark-mining-camp",
+                owner="economy-infrastructure",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.CORE,
+                reason_ref="current-dark-age",
+                reason_label="Establish the first Mining Camp when gold or stone is actually discovered",
+                building_name="mining-camp",
+                minimum_age=Age.DARK,
+                upper_bound=1,
+                extra_requirements=(
+                    "(or (resource-found gold) (resource-found stone))",
+                    "(unit-type-count-total villager >= 9)",
+                ),
+            ),
+            _staged_building(
+                effective=effective,
+                identity="mining-dropsite-extension",
+                owner="economy-infrastructure",
+                posture=_strategy.StrategyPosture.CASTLE_POWER,
+                priority=_strategy.StrategicPriority.SUPPORT,
+                reason_ref="strategy-castle-age",
+                reason_label="Add a second Mining Camp when a mineral source is materially displaced",
+                building_name="mining-camp",
+                minimum_age=Age.FEUDAL,
+                lower_bound=1,
+                upper_bound=2,
+                extra_requirements=(
+                    "(or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))",
+                ),
+            ),
+            _aged_building_demand(
+                effective=effective,
+                identity="dark-mill-capability",
+                owner="economy-infrastructure",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.CORE,
+                reason_ref="current-dark-age",
+                reason_label="Establish the food dropsite needed for berries and the farm transition",
+                building_name="mill",
+                minimum_age=Age.DARK,
+                upper_bound=1,
+                extra_requirements=(
+                    "(or (resource-found food) (unit-type-count-total villager >= 7))",
+                ),
+            ),
+            _aged_building_demand(
+                effective=effective,
+                identity="feudal-market-recovery",
+                owner="economy",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.SUPPORT,
+                reason_ref="current-feudal-age",
+                reason_label="Keep a Market capability available for Feudal resource imbalance and recovery",
+                building_name="market",
+                minimum_age=Age.FEUDAL,
+                upper_bound=1,
+                extra_requirements=(
+                    "(unit-type-count-total villager >= 24)",
+                    "(or (food-amount < 300) (wood-amount < 150) (gold-amount < 150))",
+                ),
+            ),
+        )
+    )
+
+    # Food continuity is demand-driven rather than a timer. The bot opens a
+    # small farm bank once the natural food pool is no longer a safe sole
+    # source, then expands that bank only as the economy grows.
+    farm_stages = (
+        ("farm-bank-stage-1", 0, 4, 18, 500),
+        ("farm-bank-stage-2", 4, 8, 30, 700),
+        ("farm-bank-stage-3", 8, 12, 45, 900),
+    )
+    for identity, lower, upper, villager_floor, food_ceiling in farm_stages:
+        demands.append(
+            _staged_building(
+                effective=effective,
+                identity=identity,
+                owner="economy",
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.SUPPORT,
+                reason_ref="current-dark-age",
+                reason_label=f"Expand the farm bank as food demand outgrows safe natural-source capacity, {identity}",
+                building_name="farm",
+                minimum_age=Age.DARK,
+                lower_bound=lower,
+                upper_bound=upper,
+                extra_requirements=(
+                    "(building-type-count-total mill >= 1)",
+                    f"(unit-type-count-total villager >= {villager_floor})",
+                    f"(food-amount < {food_ceiling})",
+                ),
+            )
+        )
+
+    # A basic Byzantine army still needs a minimum Feudal screen even when the
+    # opponent has not yet exposed a specific counter target. Counter packages
+    # remain authoritative when a threat crosses their decision threshold.
+    demands.append(
+        _staged_training(
+            effective=effective,
+            identity="feudal-spear-floor",
+            owner="military",
+            posture=_strategy.StrategyPosture.FLUSH,
+            priority=_strategy.StrategicPriority.DEFENSE,
+            reason_ref="current-feudal-age",
+            reason_label="Maintain a minimal Feudal spear screen before counter packages escalate",
+            line="spearman-line",
+            action_symbol="spearman-line",
+            witness_symbol="spearman-line",
+            lower_bound=0,
+            upper_bound=2,
+            age_guard="(current-age >= feudal-age)",
+            extra_requirements=(
+                "(not (map-type islands))",
+            ),
+        )
+    )
+
     # The stock strategy owns Castle providers (Stable, Siege Workshop,
     # Monastery, University, etc.). The bot adds only the Feudal ranged
     # provider here because the threat-conditioned Skirmisher package needs it
@@ -951,10 +1108,48 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         for demand in additions
         if demand.identity not in existing
     )
+    placement_modes = (
+        _strategy.StrategicNumberMode(
+            "lumber-camp-placement-distance",
+            260,
+            40,
+            minimum_age=Age.DARK,
+            priority=20,
+        ),
+        _strategy.StrategicNumberMode(
+            "mining-camp-placement-distance",
+            261,
+            40,
+            minimum_age=Age.DARK,
+            priority=20,
+        ),
+        _strategy.StrategicNumberMode(
+            "mill-placement-distance",
+            87,
+            28,
+            minimum_age=Age.DARK,
+            priority=20,
+        ),
+        _strategy.StrategicNumberMode(
+            "land-explorer-cap",
+            18,
+            4,
+            minimum_age=Age.DARK,
+            priority=5,
+        ),
+        _strategy.StrategicNumberMode(
+            "initial-exploration-requirement",
+            167,
+            2,
+            minimum_age=Age.DARK,
+            priority=5,
+        ),
+    )
     return replace(
         base,
         demands=(*base.demands, *additions),
         profile_id=base.profile_id,
+        strategic_number_modes=(*base.strategic_number_modes, *placement_modes),
         economy_controller=_castle_economy_controller(
             _feudal_economy_controller(base.economy_controller)
         ),
