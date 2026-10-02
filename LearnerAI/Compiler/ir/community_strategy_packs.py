@@ -176,7 +176,7 @@ def _research_demand(
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
 ) -> _StrategicDemandSpec:
     tech = _tech(effective, tech_name)
-    token = _slug(tech.name)
+    token = native_symbol
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
     floors = tuple(_ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
@@ -233,6 +233,7 @@ def _water_research_demand(
     effective: EffectiveCivData,
     identity: str,
     tech_name: str,
+    native_symbol: str,
     owner: str,
     age: str,
     reason_label: str,
@@ -964,6 +965,7 @@ def community_strategy_demands(
                 effective=effective,
                 identity="water-fishing-lines",
                 tech_name="fishing-lines",
+                native_symbol="906",
                 owner="water-economy",
                 age="feudal-age",
                 reason_label="Fishing Lines improve a committed Byzantine fishing economy",
@@ -973,6 +975,7 @@ def community_strategy_demands(
                 effective=effective,
                 identity="water-gillnets",
                 tech_name="gillnets",
+                native_symbol="ri-gillnets",
                 owner="water-economy",
                 age="castle-age",
                 reason_label="Gillnets sustain a committed Byzantine fishing economy",
@@ -982,6 +985,7 @@ def community_strategy_demands(
                 effective=effective,
                 identity="water-warships",
                 tech_name="warships",
+                native_symbol="ri-war-galley",
                 owner="water-naval",
                 age="castle-age",
                 reason_label="Warships unlock the verified Castle naval escalation",
@@ -991,6 +995,7 @@ def community_strategy_demands(
                 effective=effective,
                 identity="water-heavy-warships",
                 tech_name="heavy-warships",
+                native_symbol="ri-galleon",
                 owner="water-naval",
                 age="imperial-age",
                 reason_label="Heavy Warships unlock verified Imperial galley escalation",
@@ -998,17 +1003,9 @@ def community_strategy_demands(
             ),
             _water_research_demand(
                 effective=effective,
-                identity="water-fast-fire-ship",
-                tech_name="fast-fire-ship",
-                owner="water-naval",
-                age="imperial-age",
-                reason_label="Fast Fire Ship is the verified Imperial fire-line escalation",
-                resources=(Resource.WOOD, Resource.GOLD),
-            ),
-            _water_research_demand(
-                effective=effective,
                 identity="water-greek-fire",
                 tech_name="greek-fire",
+                native_symbol="ri-greek-fire",
                 owner="water-naval",
                 age="castle-age",
                 reason_label="Greek Fire is a verified Byzantine water-combat upgrade",
@@ -1254,21 +1251,6 @@ def community_strategy_demands(
             ),
             _training_demand(
                 effective=effective,
-                identity="water-fast-fire-ship-floor",
-                owner="water-naval",
-                posture=_StrategyPosture.CASTLE_POWER,
-                priority=_StrategicPriority.DEFENSE,
-                reason_ref="strategy-enemy-naval-pressure",
-                reason_label="Imperial naval pressure requires Fast Fire Ships",
-                line="fire-ship-line",
-                minimum=3,
-                age_guard="(current-age >= imperial-age)",
-                action_symbol="fast-fire-ship",
-                witness_symbol="fast-fire-ship",
-                invalidate_ref="strategy-enemy-naval-pressure-cleared",
-            ),
-            _training_demand(
-                effective=effective,
                 identity="water-galleon-floor",
                 owner="water-naval",
                 posture=_StrategyPosture.CASTLE_POWER,
@@ -1489,7 +1471,6 @@ def build_byzantine_stock_strategy(
         "water-gillnets": _PrimaryStrategicIntent.WATER,
         "water-warships": _PrimaryStrategicIntent.WATER,
         "water-heavy-warships": _PrimaryStrategicIntent.WATER,
-        "water-fast-fire-ship": _PrimaryStrategicIntent.WATER,
         "water-greek-fire": _PrimaryStrategicIntent.WATER,
         "water-fire-ship-floor": _PrimaryStrategicIntent.WATER,
         "water-fast-fire-ship-floor": _PrimaryStrategicIntent.WATER,
