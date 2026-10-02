@@ -2590,6 +2590,62 @@ def build_land_castle_strategy(
     )
 
 
+_BYZANTINE_WALL_ANCHOR_SCORES = {
+    "town-center": 38,
+    "castle": 42,
+    "keep": 40,
+    "bombard-tower": 37,
+    "guard-tower": 27,
+    "watch-tower": 23,
+    "outpost": 19,
+}
+_BYZANTINE_WALL_STRONG_ANCHORS = frozenset({"castle", "keep", "bombard-tower"})
+_BYZANTINE_WALL_DISTANCE_SCORE_BANDS = (
+    (8, 42),
+    (16, 30),
+    (24, 18),
+    (32, 6),
+    (48, -20),
+)
+
+
+def _byzantine_wall_pair_material(left: str, right: str) -> int:
+    return (
+        117
+        if left in _BYZANTINE_WALL_STRONG_ANCHORS
+        or right in _BYZANTINE_WALL_STRONG_ANCHORS
+        else 72
+    )
+
+
+def _byzantine_wall_pair_synergy(left: str, right: str) -> int:
+    strong_left = left in _BYZANTINE_WALL_STRONG_ANCHORS
+    strong_right = right in _BYZANTINE_WALL_STRONG_ANCHORS
+    if left == "town-center" or right == "town-center":
+        return 12 if strong_left or strong_right else 10
+    if strong_left and strong_right:
+        return 8
+    if strong_left or strong_right:
+        return 6
+    return 4
+
+
+def _byzantine_wall_pair_score(
+    left: str,
+    right: str,
+    distance_score: int,
+) -> int:
+    wall_id = _byzantine_wall_pair_material(left, right)
+    material_penalty = -10 if wall_id == 117 else 0
+    return (
+        _BYZANTINE_WALL_ANCHOR_SCORES[left]
+        + _BYZANTINE_WALL_ANCHOR_SCORES[right]
+        + _byzantine_wall_pair_synergy(left, right)
+        + material_penalty
+        + distance_score
+    )
+
+
 def _byzantine_wall_defensive_anchor_requests(profile_id: str):
     from ..runtime_binding import GoalRole, GoalSlotRequest, GoalSpanKind, GoalSpanRequest
     from .model import SemanticId, StorageRequestId
