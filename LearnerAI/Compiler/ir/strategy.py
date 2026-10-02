@@ -1778,6 +1778,14 @@ def _strategy_control_plan(profile: StrategyProfile):
 
 
 def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
+    """Lower strategic arbitration through persistent observation mirrors.
+
+    Arbitration candidate predicates are deliberately cached as native Goal
+    facts before selection/release rules consume them. This keeps generated
+    .per guards short and deterministic instead of recursively expanding the
+    same observation expressions into every precedence rule. The mirrors are
+    compiler-policy state, not a second scheduler.
+    """
     plan = profile.strategic_arbitration
     if plan is None:
         return None
@@ -1787,7 +1795,46 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
-    state = NativeControlState(
+    def observation_expr(ref: str) -> str:
+        return profile.observation(ref).expression
+
+    def observation_state_name(ref: str) -> str:
+        return f"strategic-observation-{ref}"
+
+    observation_refs = []
+    seen_observations: set[str] = set()
+
+    def add_observation(ref: str) -> None:
+        if ref not in seen_observations:
+            seen_observations.add(ref)
+            observation_refs.append(ref)
+
+    for candidate in plan.candidates:
+        for ref in (
+            *candidate.required_observation_refs,
+            *candidate.forbidden_observation_refs,
+            *candidate.release_observation_refs,
+            *candidate.invalidation_observation_refs,
+        ):
+            add_observation(ref)
+    if plan.emergency_observation_ref is not None:
+        add_observation(plan.emergency_observation_ref)
+
+    observation_states = tuple(
+        NativeControlState(
+            observation_state_name(ref),
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, observation_state_name(ref)),
+                    "arbitration-observation",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+        for ref in observation_refs
+    )
+
+    primary_state = NativeControlState(
         plan.state_name,
         GoalSlotRequest(
             StorageRequestId(
@@ -1798,8 +1845,9 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
         ),
     )
 
-    def observation_expr(ref: str) -> str:
-        return profile.observation(ref).expression
+    def observation_guard(ref: str, expected: bool) -> str:
+        state = observation_state_name(ref)
+        return f"(goal {state} {1 if expected else 0})"
 
     def combine(parts: list[str]) -> str:
         if not parts:
@@ -1811,11 +1859,67 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
     candidate_guards: dict[str, str] = {}
     ordered = tuple(sorted(plan.candidates, key=lambda item: (-item.priority, item.identity)))
     for candidate in ordered:
-        parts = [observation_expr(ref) for ref in candidate.required_observation_refs]
-        parts.extend(f"(not {observation_expr(ref)})" for ref in candidate.forbidden_observation_refs)
+        parts = [
+            observation_guard(ref, True)
+            for ref in candidate.required_observation_refs
+        ]
+        parts.extend(
+            observation_guard(ref, False)
+            for ref in candidate.forbidden_observation_refs
+        )
         candidate_guards[candidate.identity] = combine(parts)
 
-    rules: list[NativeControlRule] = [
+    rules: list[NativeControlRule] = []
+
+    if observation_states:
+        rules.append(
+            NativeControlRule(
+                "strategic-arbitration-observation-initialize",
+                facts=(parse_expression("(true)", SourceLocation(1)),),
+                actions=tuple(
+                    [
+                        *(
+                            parse_expression(
+                                f"(set-goal {state.identifier} 0)",
+                                SourceLocation(1),
+                            )
+                            for state in observation_states
+                        ),
+                        parse_expression("(disable-self)", SourceLocation(1)),
+                    ]
+                ),
+            )
+        )
+
+        for ref in observation_refs:
+            state_name = observation_state_name(ref)
+            expression = observation_expr(ref)
+            rules.append(
+                NativeControlRule(
+                    f"strategic-arbitration-observation-enable-{ref}",
+                    facts=(
+                        parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
+                        parse_expression(expression, SourceLocation(1)),
+                    ),
+                    actions=(
+                        parse_expression(f"(set-goal {state_name} 1)", SourceLocation(1)),
+                    ),
+                )
+            )
+            rules.append(
+                NativeControlRule(
+                    f"strategic-arbitration-observation-disable-{ref}",
+                    facts=(
+                        parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
+                        parse_expression(f"(not {expression})", SourceLocation(1)),
+                    ),
+                    actions=(
+                        parse_expression(f"(set-goal {state_name} 0)", SourceLocation(1)),
+                    ),
+                )
+            )
+
+    rules.append(
         NativeControlRule(
             "strategic-primary-intent-initialize",
             facts=(parse_expression(f"(goal {plan.state_name} 0)", SourceLocation(1)),),
@@ -1824,7 +1928,7 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
                 parse_expression("(disable-self)", SourceLocation(1)),
             ),
         )
-    ]
+    )
 
     for candidate in ordered:
         for source_intent in candidate.from_intents:
@@ -1857,7 +1961,10 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             continue
         source = f"(goal {plan.state_name} {candidate.intent.value})"
         if candidate.release_observation_refs:
-            release_parts = [observation_expr(ref) for ref in candidate.release_observation_refs]
+            release_parts = [
+                observation_guard(ref, True)
+                for ref in candidate.release_observation_refs
+            ]
             blocking = []
             for other in ordered:
                 if candidate.intent in other.from_intents:
@@ -1867,25 +1974,44 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
                 NativeControlRule(
                     f"strategic-primary-intent-release-{candidate.identity.lower()}",
                     facts=(parse_expression(release_guard, SourceLocation(1)),),
-                    actions=(parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),),
+                    actions=(
+                        parse_expression(
+                            f"(set-goal {plan.state_name} 0)",
+                            SourceLocation(1),
+                        ),
+                    ),
                 )
             )
         if candidate.invalidation_observation_refs:
-            invalidation_parts = [observation_expr(ref) for ref in candidate.invalidation_observation_refs]
+            invalidation_parts = [
+                observation_guard(ref, True)
+                for ref in candidate.invalidation_observation_refs
+            ]
             blocking = []
             for other in ordered:
-                if other.priority > candidate.priority and candidate.intent in other.from_intents:
+                if (
+                    other.priority > candidate.priority
+                    and candidate.intent in other.from_intents
+                ):
                     blocking.append(f"(not {candidate_guards[other.identity]})")
             invalidation_guard = combine([source, combine(invalidation_parts), *blocking])
             rules.append(
                 NativeControlRule(
                     f"strategic-primary-intent-invalidate-{candidate.identity.lower()}",
                     facts=(parse_expression(invalidation_guard, SourceLocation(1)),),
-                    actions=(parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),),
+                    actions=(
+                        parse_expression(
+                            f"(set-goal {plan.state_name} 0)",
+                            SourceLocation(1),
+                        ),
+                    ),
                 )
             )
 
-    return NativeControlPlan(states=(state,), rules=tuple(rules))
+    return NativeControlPlan(
+        states=(primary_state, *observation_states),
+        rules=tuple(rules),
+    )
 
 
 def _posture_transition_control_plan(profile: StrategyProfile):
