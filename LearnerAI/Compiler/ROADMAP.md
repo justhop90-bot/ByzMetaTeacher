@@ -1,6 +1,6 @@
-# MUSE Community Gap Roadmap — 2026-09-30
+# MUSE Community Gap Roadmap — 2026-10-02
 
-Status: authoritative roadmap for remaining compiler work.
+Status: authoritative roadmap for remaining compiler work. Production/train arbitration is closed; DUC semantic substrate is largely closed; the remaining work is downstream strategy synthesis and runtime-bounded control semantics.
 
 ## Research conclusion
 
@@ -29,44 +29,11 @@ Do not build a universal scheduler, runtime simulator, optimizer, or separate hi
 
 ## Phase 1 — Production/train arbitration
 
-Priority: P0. Next implementation target.
+Status: **CLOSED**.
 
-Goal: connect ProductionLifecycle to the existing ResourceClaim and arbitration system without inventing a native train conflict class.
+The compiler now derives the compiler-policy production claim through the existing ResourceClaim/arbitration graph. Ownership is deterministic and no native train conflict class was invented.
 
-Use the existing seams in:
-LearnerAI/Compiler/ir/production.py
-LearnerAI/Compiler/semantic/resource_conflicts.py
-LearnerAI/Compiler/semantic/capability_bridge.py
-LearnerAI/Compiler/semantic/capability_validation.py
-LearnerAI/Compiler/compiler.py
-and the existing production/resource tests.
-
-Contract:
-- ordinary train demand may derive one compiler-policy production claim;
-- owner = semantic or strategic owner;
-- provider UnitId = provider identity only;
-- can-train = admission only;
-- train = issuance only;
-- up-pending-objects = pending/duplicate protection;
-- unit-type-count-total = observation only;
-- escrowed training keeps the same semantic arbitration owner;
-- DUC-targeted training does not inherit ordinary train arbitration accidentally;
-- SN 264 remains OPEN evidence, not an emitted capacity proof.
-
-Required tests:
-- stable claim identity;
-- same-owner conflict;
-- distinct-owner separation;
-- no claim from can-train alone;
-- pending cannot satisfy arbitration;
-- escrowed train preserves ownership;
-- DUC train remains separate;
-- military composition consumes the shared claim;
-- deterministic repeated compilation.
-
-Exit: production demands participate in the existing arbitration graph with deterministic ownership/conflict diagnostics and no invented native train conflict class.
-
-Runtime track, kept separate: SN 264 enforcement, provider busy/queued behavior, birth timing, queue-exit timing, and next-pass visibility.
+The remaining runtime questions stay external: SN 264 enforcement, provider busy/queued behavior, birth timing, queue-exit timing, next-pass visibility, same-pass starvation behavior, and provider-loss effects.
 
 ## Phase 2 — DUC execution closure
 
@@ -111,36 +78,17 @@ Exit: community DUC discovery, micro, and target pipelines lower through one typ
 
 Runtime track: object liveness, retained-filter rules, duplicate handling, runtime output values, group membership, and measured DUC performance remain OPEN.
 
-## Phase 3 — Attack execution lifecycle
+## Phase 2 — DUC execution and strategy exposure
 
-Priority: P0 after Phase 2 target closure is sufficient.
+Status: **SUBSTRATE CLOSED / BEHAVIORAL SYNTHESIS OPEN**.
 
-Goal: extend the existing issue-only attack plan into a full compiler-facing execution lifecycle.
+The compiler already contains the typed DUC state model, recurrent firing coupling, search/filter generations, cursor lifecycle, target provenance, direct-ID identity, group/window inputs, target revalidation, native lowering, and zero-findings acceptance fixtures.
 
-Required lifecycle:
-DEMAND -> ADMISSION -> PREPARE -> READY -> ISSUE -> WITNESS -> RELEASE/RESET -> RECOVERY -> REASSESS
+The downstream strategy seam is now connected: StrategyProfile -> StrategyCompilation -> normal/runtime Byzantine compilation -> existing NativeDucPlan channel.
 
-attack-now may implement ISSUE.
-attack-now never implements WITNESS by implication.
+What remains is not missing DUC vocabulary. The next DUC work is behavioral synthesis: choose evidence-backed Byzantine discovery/target policies, connect them to strategic demands, complete remaining hostile diagnostics/loaded-source coverage where useful, and keep runtime object liveness, retained-filter behavior, group membership, output values, and exact native lifetime OPEN unless independently proven.
 
-Reuse:
-LearnerAI/Compiler/ir/native_attack.py
-LearnerAI/Compiler/semantic/operational_semantics.py
-LearnerAI/Compiler/ir/strategy_runtime.py
-LearnerAI/Compiler/tests/test_native_attack_lifecycle.py
-LearnerAI/Compiler/tests/test_military_composition_proof.py
-
-Required tests:
-- issue cannot satisfy witness;
-- missing readiness blocks promotion;
-- stale target invalidates prepared attack without proving target death;
-- DUC target identity and attack target identity remain distinct but linkable;
-- reset does not equal completion;
-- recovery reopens the same strategic demand where policy allows;
-- composition/resource ownership remains shared;
-- deterministic lowering.
-
-Runtime track: attack-now completion, attack-group membership, exploration gating, TSA/town-size interactions, offensive-priority interactions, and reset lifetime remain OPEN.
+riority interactions, and reset lifetime remain OPEN.
 
 ## Phase 4 — Escrow and resource arbitration
 
@@ -345,14 +293,13 @@ Phase 9 depends on Phases 1-8.
 
 ## Exact implementation order
 
-1. Production/train arbitration.
-2. DUC execution closure.
-3. Attack lifecycle.
-4. Escrow/resource arbitration.
-5. Active SN evidence closure in parallel.
-6. Byzantine factual closure in parallel.
-7. Community strategy synthesis packs.
-8. Broad community corpus closure.
-9. End-to-end Philosopher's Stone acceptance.
+1. DUC behavioral strategy synthesis and remaining hostile semantic closure.
+2. Full attack execution lifecycle after target policy closure.
+3. Remaining escrow/resource arbitration and emergency release policy.
+4. Active Strategic Number evidence closure in parallel.
+5. Byzantine factual closure in parallel.
+6. Community strategy synthesis packs.
+7. Broad community corpus closure.
+8. End-to-end Philosopher's Stone acceptance.
 
 No additional foundation phase is justified by the current evidence.

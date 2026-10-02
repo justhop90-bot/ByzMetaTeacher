@@ -1,13 +1,16 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from LearnerAI.Compiler.clients.basilisk import (
     compile_strategy_profile,
     compile_strategy_runtime_profile,
 )
+from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
+from LearnerAI.Compiler.ir.native_duc import NativeDucPlan, NativeDucRule
 from LearnerAI.Compiler.ir.strategy import StrategyPosture
 from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
 from LearnerAI.Compiler.clients.basilisk import (
@@ -64,6 +67,64 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             action_block.index("(release-escrow gold)"),
             action_block.index("(research feudal-age)"),
         )
+
+    def test_strategy_compilation_exposes_profile_and_override_duc_channels(self):
+        profile_plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="byzantine-duc-profile",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            )
+        )
+        override_plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="byzantine-duc-override",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            )
+        )
+        profile = replace(self.profile, duc_plan=profile_plan)
+
+        compilation = lower_strategy_profile(profile, self.effective)
+        self.assertIs(compilation.duc_plan, profile_plan)
+
+        default_output = compile_strategy_profile(profile, self.effective)
+        self.assertIn("; Native DUC execution plan", default_output)
+        self.assertIn("; Native DUC rule: byzantine-duc-profile", default_output)
+
+        override_output = compile_strategy_profile(
+            self.profile,
+            self.effective,
+            duc_plan=override_plan,
+        )
+        self.assertIn("; Native DUC rule: byzantine-duc-override", override_output)
+        self.assertNotIn("; Native DUC rule: byzantine-duc-profile", override_output)
+
+        runtime_output = compile_strategy_runtime_profile(
+            profile,
+            self.effective,
+            RuntimeObservationSnapshot(previous_posture=StrategyPosture.CASTLE_POWER),
+            duc_plan=override_plan,
+        )
+        self.assertIn("; Native DUC rule: byzantine-duc-override", runtime_output)
 
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
