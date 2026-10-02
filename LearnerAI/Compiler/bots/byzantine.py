@@ -452,6 +452,87 @@ def _feudal_economy_controller(controller):
     )
     return replace(controller, policies=policies)
 
+
+def _castle_logistica_research(effective: EffectiveCivData) -> _strategy.StrategicDemandSpec:
+    tech = effective.tech(61)
+    cost = effective.cost_of("tech:61")
+    return _strategy.StrategicDemandSpec(
+        identity="castle-logistica",
+        owner="military",
+        posture=_strategy.StrategyPosture.CASTLE_POWER,
+        priority=_strategy.StrategicPriority.CORE,
+        reason=(
+            _persistent(
+                "Logistica supports the Byzantine Castle Cataphract conversion",
+                "strategy-castle-age",
+            ),
+        ),
+        admissibility=(
+            _persistent(
+                "Logistica remains admissible while the Castle Cataphract branch is active",
+                "strategy-castle-age",
+            ),
+        ),
+        invalidation=(
+            _persistent(
+                "Logistica conversion is complete",
+                "byz-logistica-complete",
+            ),
+        ),
+        capability_intent=_strategy.CapabilityIntent(
+            _strategy.CapabilityIntentKind.RESEARCH,
+            "technology",
+            int(tech.id),
+        ),
+        target=_strategy.StrategicTarget(
+            _strategy.StrategicTargetKind.EXACT,
+            "technology",
+            int(tech.id),
+        ),
+        opportunity_cost=_strategy.OpportunityCostPolicy(
+            owner="military",
+            protected_floors=(
+                _strategy.ProtectedResourceFloor(Resource.FOOD, cost.food),
+                _strategy.ProtectedResourceFloor(Resource.GOLD, cost.gold),
+            ),
+            emergency_override_postures=(
+                _strategy.StrategyPosture.FLUSH,
+                _strategy.StrategyPosture.RUSH,
+            ),
+        ),
+        execution=_strategy.ExecutionDemandTemplate(
+            requirements=(
+                "(current-age >= castle-age)",
+                "(or (goal opening-plan 3) "
+                "(players-unit-type-count any-enemy militia-line >= 5))",
+                "(can-research-with-escrow ri-logistica)",
+            ),
+            action="(research ri-logistica)",
+            witness="(research-completed 61)",
+            release="(research-completed 61)",
+            escrow_release_resources=(Resource.FOOD, Resource.GOLD),
+        ),
+    )
+
+
+def _castle_economy_controller(controller):
+    policies = tuple(
+        replace(
+            policy,
+            allocation=replace(
+                policy.allocation,
+                food=45,
+                wood=30,
+                gold=25,
+                builders=7,
+            ),
+        )
+        if policy.mode is EconomyMode.CASTLE_CONVERSION
+        else policy
+        for policy in controller.policies
+    )
+    return replace(controller, policies=policies)
+
 def build_byzantine_bot_profile(effective: EffectiveCivData):
     """Build the deployable Byzantine Core v1 profile.
 
@@ -462,6 +543,32 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     base = _strategy.build_byzantine_strategy(effective)
 
     guard_by_identity = {
+        "castle-second-town-center": (
+            "(map-type arena)",
+            "(goal opening-plan 3)",
+            "(unit-type-count-total villager >= 35)",
+            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+        ),
+        "castle-cataphract-floor": (
+            "(or (goal opening-plan 3) "
+            "(players-unit-type-count any-enemy militia-line >= 5))",
+            "(up-research-status c: 61 >= 3)",
+        ),
+        "castle-monk-floor": (
+            "(building-type-count-total monastery >= 1)",
+            "(goal opening-plan 3)",
+        ),
+        "castle-siege-capability": (
+            "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
+            "(players-unit-type-count any-enemy archer-line >= 4))",
+        ),
+        "castle-mangonel-floor": (
+            "(or (players-unit-type-count any-enemy mangonel-line >= 2) "
+            "(players-unit-type-count any-enemy archer-line >= 4))",
+        ),
+        "imperial-conversion": (
+            "(unit-type-count-total villager >= 40)",
+        ),
         "counter-mounted-spears": (
             "(players-unit-type-count any-enemy scout-cavalry-line >= 3)",
         ),
@@ -503,6 +610,10 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     }
 
     wheelbarrow_id = int(base.demand("research-wheelbarrow").target.entity_id)
+    double_bit_axe_id = int(base.demand("research-double-bit-axe").target.entity_id)
+    horse_collar_id = int(base.demand("research-horse-collar").target.entity_id)
+    gold_mining_id = int(base.demand("research-gold-mining").target.entity_id)
+    fletching_id = int(base.demand("research-fletching").target.entity_id)
     research_guard_by_identity = {
         "research-wheelbarrow": (
             "(unit-type-count-total villager >= 20)",
@@ -516,6 +627,22 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         "research-fletching": (
             "(building-type-count-total 87 >= 1)",
             "(players-unit-type-count any-enemy archer-line >= 3)",
+        ),
+        "research-hand-cart": (
+            f"(up-research-status c: {wheelbarrow_id} >= 3)",
+        ),
+        "research-bow-saw": (
+            f"(up-research-status c: {double_bit_axe_id} >= 3)",
+        ),
+        "research-gold-shaft-mining": (
+            f"(up-research-status c: {gold_mining_id} >= 3)",
+        ),
+        "research-heavy-plow": (
+            f"(up-research-status c: {horse_collar_id} >= 3)",
+        ),
+        "research-bodkin-arrow": (
+            f"(up-research-status c: {fletching_id} >= 3)",
+            "(building-type-count-total 87 >= 1)",
         ),
     }
     guarded_demands = tuple(
@@ -555,11 +682,21 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         demand for demand in _bot_demands(effective)
         if demand.identity not in existing
     )
+    additions = tuple(
+        (*additions, _castle_logistica_research(effective))
+    )
+    additions = tuple(
+        demand
+        for demand in additions
+        if demand.identity not in existing
+    )
     return replace(
         base,
         demands=(*base.demands, *additions),
         profile_id=base.profile_id,
-        economy_controller=_feudal_economy_controller(base.economy_controller),
+        economy_controller=_castle_economy_controller(
+            _feudal_economy_controller(base.economy_controller)
+        ),
     )
 
 
