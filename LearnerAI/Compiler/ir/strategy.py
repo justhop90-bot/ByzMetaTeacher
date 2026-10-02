@@ -1848,6 +1848,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         rules=(
             initialize,
             arm_observation,
+            begin_scoring,
             *[item[3] for item in score_rules],
             no_viable_pair,
             *reanchor_rules,
