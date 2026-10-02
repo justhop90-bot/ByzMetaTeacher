@@ -62,6 +62,15 @@ from ...ir.production_runtime import (
     ProductionRuntimeStatus,
     evaluate_production_runtime,
 )
+from ...ir.water import (
+    TransportExecutionPhase,
+    WaterExecutionPlan,
+    WaterExecutionState,
+    WaterPosture,
+    derive_water_posture,
+    lower_water_execution_plan,
+    transition_transport_execution,
+)
 from ...ir.strategy_runtime import (
     CounterArbitrationDecision,
     CounterArbitrationMode,
@@ -114,6 +123,13 @@ __all__ = (
     "StrategyEnvelope",
     "StrategyPosture",
     "StrategyProfile",
+    "TransportExecutionPhase",
+    "WaterExecutionPlan",
+    "WaterExecutionState",
+    "WaterPosture",
+    "derive_water_posture",
+    "lower_water_execution_plan",
+    "transition_transport_execution",
     "build_byzantine_castle_strategy",
     "build_byzantine_stock_strategy",
     "build_byzantine_strategy",
