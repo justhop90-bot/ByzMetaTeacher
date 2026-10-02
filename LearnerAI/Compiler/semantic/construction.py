@@ -75,14 +75,29 @@ def canonical_build_completion_witness(
         raise CompileError(
             f"CONSTRUCTION-WITNESS: {subject} must target '{building}'"
         )
-    if (compare_op, value) not in ((">", "0"), (">=", "1")):
+    if compare_op == ">":
+        if value != "0":
+            raise CompileError(
+                f"CONSTRUCTION-WITNESS: {subject} must establish at least one completed building"
+            )
+        minimum = 1
+    elif compare_op == ">=":
+        try:
+            minimum = int(value)
+        except (TypeError, ValueError):
+            minimum = 0
+        if minimum < 1:
+            raise CompileError(
+                f"CONSTRUCTION-WITNESS: {subject} must establish at least one completed building"
+            )
+    else:
         raise CompileError(
             f"CONSTRUCTION-WITNESS: {subject} must establish at least one completed building"
         )
     return Expression(
-        source=f"(building-type-count {building} >= 1)",
+        source=f"(building-type-count {building} >= {minimum})",
         head="building-type-count",
-        args=(building, ">=", "1"),
+        args=(building, ">=", str(minimum)),
         location=witness.location,
     )
 
