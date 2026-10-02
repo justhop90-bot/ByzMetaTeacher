@@ -14,6 +14,7 @@ from ..ir.native_control import NativeControlPlan
 from ..primitives.native_binder import NativeSupportState
 from ..runtime_binding import (
     GoalSlotRequest,
+    GoalSpanRequest,
     StrategicNumberRequest,
     TimerRequest,
 )
@@ -63,6 +64,7 @@ _CONTROL_COMMANDS = frozenset(
         "up-timer-status",
         "disable-self",
         "up-jump-rule",
+        "up-build-line",
     }
 )
 
@@ -85,6 +87,8 @@ def _walk(expressions: tuple[Expression, ...]):
 def _request_kind(request: object) -> str:
     if isinstance(request, GoalSlotRequest):
         return "GOAL"
+    if isinstance(request, GoalSpanRequest):
+        return "GOAL_SPAN"
     if isinstance(request, StrategicNumberRequest):
         return "STRATEGIC_NUMBER"
     if isinstance(request, TimerRequest):
@@ -255,6 +259,15 @@ def _validate_leaf(
             command=head,
             argument_index=index,
         )
+    elif head == "up-build-line":
+        for index in (0, 1):
+            _require_state(
+                str(expression.args[index]),
+                "GOAL_SPAN",
+                states,
+                command=head,
+                argument_index=index,
+            )
     elif head in _SN_COMMANDS:
         _require_state(
             str(expression.args[0]),
