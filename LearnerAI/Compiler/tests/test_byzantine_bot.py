@@ -61,6 +61,71 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", first)
         self.assertIn("(attack-now)", first)
 
+
+    def test_profile_has_feudal_engine_continuity(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        barracks = demands["feudal-barracks"]
+        self.assertIn("(current-age >= feudal-age)", barracks.execution.requirements)
+        self.assertIn("(can-build barracks)", barracks.execution.requirements)
+        self.assertIn("MOUNTED_PRESSURE_FEUDAL", {
+            item.identity for item in self.profile.counter_packages
+        })
+        self.assertIn("RANGED_PRESSURE_FEUDAL", {
+            item.identity for item in self.profile.counter_packages
+        })
+        self.assertEqual(
+            demands["counter-mounted-spears"].target.minimum,
+            4,
+        )
+        self.assertEqual(
+            demands["counter-ranged-skirmishers"].target.minimum,
+            4,
+        )
+
+    def test_feudal_economy_prioritizes_wood_for_cheap_counters(self):
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+
+        policy = next(
+            item
+            for item in self.profile.economy_controller.policies
+            if item.mode is EconomyMode.COUNTER_FEUDAL
+        )
+        self.assertEqual(policy.allocation.food, 42)
+        self.assertEqual(policy.allocation.wood, 40)
+        self.assertEqual(policy.allocation.gold, 18)
+        self.assertEqual(policy.allocation.builders, 8)
+
+    def test_feudal_research_is_sequenced_around_the_active_package(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        wheelbarrow_id = int(demands["research-wheelbarrow"].target.entity_id)
+        self.assertIn(
+            f"(research-completed {wheelbarrow_id})",
+            demands["research-double-bit-axe"].execution.requirements,
+        )
+        self.assertIn(
+            f"(research-completed {wheelbarrow_id})",
+            demands["research-horse-collar"].execution.requirements,
+        )
+        self.assertIn(
+            "(building-type-count-total 87 >= 1)",
+            demands["research-fletching"].execution.requirements,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy archer-line >= 3)",
+            demands["research-fletching"].execution.requirements,
+        )
+
+    def test_castle_transition_waits_for_feudal_pressure_to_clear(self):
+        demand = self.profile.demand("castle-age-transition")
+        self.assertIn(
+            "(not (players-unit-type-count any-enemy militia-line >= 5))",
+            demand.execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 24)",
+            demand.execution.requirements,
+        )
+
     def test_profile_has_long_housing_ladder(self):
         identities = {item.identity for item in self.profile.demands}
         self.assertIn("house-stage-1", identities)
