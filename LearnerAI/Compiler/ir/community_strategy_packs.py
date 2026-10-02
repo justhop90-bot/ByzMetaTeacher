@@ -2229,6 +2229,8 @@ def build_byzantine_stock_strategy(
         "water-demolition-ship-floor": _PrimaryStrategicIntent.WATER,
         "water-heavy-demolition-ship-floor": _PrimaryStrategicIntent.WATER,
         "water-trade-cog-floor": _PrimaryStrategicIntent.WATER,
+        "research-demolition-ship": _PrimaryStrategicIntent.WATER,
+        "research-heavy-demolition-ship": _PrimaryStrategicIntent.WATER,
     }
     counter_demand_ids = {
         demand_identity
