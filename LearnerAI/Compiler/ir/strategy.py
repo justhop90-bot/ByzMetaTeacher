@@ -272,6 +272,7 @@ class StrategicBinding:
     opportunity_cost: OpportunityCostPolicy | None
     production_arbitration_group: str | None = None
     required_primary_intent: PrimaryStrategicIntent | None = None
+    arbitration_state_name: str = "strategic-primary-intent"
     recovery: "CapabilityRecoveryContract | None" = None
     recovery_on_world_loss: bool = False
     admissibility_guards: tuple[Expression, ...] = ()
@@ -351,6 +352,8 @@ class StrategicDemandSpec:
     provenance: tuple[EvidenceRef, ...] = ()
     recovery: CapabilityRecoveryContract = CapabilityRecoveryContract()
     production_arbitration_group: str | None = None
+    required_primary_intent: PrimaryStrategicIntent | None = None
+    recovery_on_world_loss: bool = False
 
     @property
     def execution_demands(self) -> tuple[ExecutionDemandTemplate, ...]:
@@ -1039,6 +1042,11 @@ def lower_strategy_profile(
                 capability_intent=spec.capability_intent,
                 opportunity_cost=spec.opportunity_cost,
                 required_primary_intent=spec.required_primary_intent,
+                arbitration_state_name=(
+                    profile.strategic_arbitration.state_name
+                    if profile.strategic_arbitration is not None
+                    else "strategic-primary-intent"
+                ),
                 recovery=spec.recovery,
                 recovery_on_world_loss=spec.recovery_on_world_loss,
                 admissibility_guards=tuple(
@@ -1852,7 +1860,7 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             release_parts = [observation_expr(ref) for ref in candidate.release_observation_refs]
             blocking = []
             for other in ordered:
-                if other.priority > candidate.priority and candidate.intent in other.from_intents:
+                if candidate.intent in other.from_intents:
                     blocking.append(f"(not {candidate_guards[other.identity]})")
             release_guard = combine([source, combine(release_parts), *blocking])
             rules.append(
