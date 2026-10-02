@@ -527,7 +527,7 @@ def community_strategy_demands(
                     "(building-type-count-total town-center < 2)",
                     "(can-build town-center-foundation)",
                 ),
-                action="(build town-center)",
+                action="(build town-center-foundation)",
                 witness="(building-type-count-total town-center >= 2)",
                 release="(building-type-count-total town-center >= 2)",
             ),
