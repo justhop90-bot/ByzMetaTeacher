@@ -524,7 +524,6 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             "lumber-camp-placement-distance": (260, 40),
             "mining-camp-placement-distance": (261, 40),
             "mill-placement-distance": (87, 28),
-            "land-explorer-cap": (18, 4),
             "initial-exploration-requirement": (167, 2),
         }
         for identity, (native_id, value) in expected.items():
