@@ -67,7 +67,11 @@ def main() -> int:
         output_present = needle in artifact.lower()
         semantic_present = any(
             needle in demand.identity.lower()
-            or needle in demand.action.expression.source.lower()
+            or needle in demand.execution.action.lower()
+            or any(
+                needle in execution.action.lower()
+                for execution in demand.execution_demands
+            )
             for demand in profile.demands
         )
         rows.append(
