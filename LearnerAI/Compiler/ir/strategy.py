@@ -2727,8 +2727,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
         ),
         (
             "byzantine-relic-denial-contest",
-            "(and (unit-type-count-total monk >= 1) "
-            "(players-unit-type-count any-enemy monk-line >= 2))",
+            "(players-unit-type-count any-enemy monk-line >= 2)",
         ),
     )
     relic_order = 1000
