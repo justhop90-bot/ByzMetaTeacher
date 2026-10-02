@@ -133,8 +133,23 @@ class ConstructionTransitionTests(unittest.TestCase):
     def test_native_building_catalog_resolves_castle_to_object_id(self):
         self.assertEqual(resolve_building_id("castle"), 82)
 
-    def test_native_building_catalog_resolves_town_center_action_to_foundation_object(self):
-        self.assertEqual(resolve_building_id("town-center"), 621)
+    def test_native_building_catalog_resolves_strategy_building_aliases(self):
+        self.assertEqual(
+            {
+                "town-center": resolve_building_id("town-center"),
+                "stable": resolve_building_id("stable"),
+                "siege-workshop": resolve_building_id("siege-workshop"),
+                "university": resolve_building_id("university"),
+                "outpost": resolve_building_id("outpost"),
+            },
+            {
+                "town-center": 621,
+                "stable": 101,
+                "siege-workshop": 49,
+                "university": 209,
+                "outpost": 598,
+            },
+        )
 
     def test_native_building_catalog_rejects_unit_id_in_build_slot(self):
         with self.assertRaisesRegex(ValueError, r"not a known DE building"):

@@ -198,7 +198,6 @@ def _research_demand(
             requirements=(
                 age_guard,
                 f"(can-research-with-escrow {token})",
-                f"(not (research-completed {int(tech.id)}))",
             ),
             action=f"(research {token})",
             witness=f"(research-completed {int(tech.id)})",
@@ -222,8 +221,12 @@ def _training_demand(
     line: str,
     minimum: int,
     age_guard: str,
+    action_symbol: str | None = None,
+    witness_symbol: str | None = None,
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
+    action_symbol = action_symbol or line
+    witness_symbol = witness_symbol or action_symbol
     return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
@@ -254,9 +257,9 @@ def _training_demand(
                 f"(can-train-with-escrow {line})",
                 f"(unit-type-count-total {line} < {minimum})",
             ),
-            action=f"(train {line})",
-            witness=f"(unit-type-count {line} >= {minimum})",
-            release=f"(unit-type-count {line} >= {minimum})",
+            action=f"(train {action_symbol})",
+            witness=f"(unit-type-count {witness_symbol} >= {minimum})",
+            release=f"(unit-type-count {witness_symbol} >= {minimum})",
         ),
         recovery=_CapabilityRecoveryContract(),
     )
@@ -585,7 +588,7 @@ def community_strategy_demands(
                 reason_ref="strategy-castle-age",
                 reason_label="Imperial conversion requires a verified university provider",
                 building=university,
-                requirements=(" (current-age >= castle-age)", "(can-build university)"),
+                requirements=("(current-age >= castle-age)", "(can-build university)"),
             ),
             _build_demand(
                 identity="adaptive-outpost",
@@ -685,6 +688,8 @@ def community_strategy_demands(
                 line="bombard-cannon-line",
                 minimum=1,
                 age_guard="(current-age >= imperial-age)",
+                action_symbol="bombard-cannon",
+                witness_symbol="bombard-cannon",
             ),
             _training_demand(
                 effective=effective,
@@ -697,6 +702,8 @@ def community_strategy_demands(
                 line="monk-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
+                action_symbol="monk",
+                witness_symbol="monk",
             ),
         )
     )
@@ -744,9 +751,9 @@ def community_strategy_demands(
                     "(can-train-with-escrow fishing-ship-line)",
                     "(unit-type-count-total fishing-ship-line < 2)",
                 ),
-                action="(train fishing-ship-line)",
-                witness="(unit-type-count fishing-ship-line >= 2)",
-                release="(unit-type-count fishing-ship-line >= 2)",
+                action="(train fishing-ship)",
+                witness="(unit-type-count fishing-ship >= 2)",
+                release="(unit-type-count fishing-ship >= 2)",
             ),
         )
     )
