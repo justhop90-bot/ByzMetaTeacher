@@ -521,8 +521,16 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-fortification-exposure",
-            "(up-enemy-units-in-town >= 1)",
-            _airef_provenance(effective, "commands/commands-details.html#up-enemy-units-in-town"),
+            "(or (enemy-buildings-in-town) "
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+            tuple(
+                dict.fromkeys(
+                    (_airef_provenance(effective, "commands/commands-details.html#enemy-buildings-in-town")[0],)
+                    + effective.unit_line("knight-line").provenance
+                    + effective.unit_line("militia-line").provenance
+                )
+            ),
         ),
         _observation(
             "strategy-relic-unsecured",
@@ -1232,7 +1240,7 @@ def community_strategy_demands(
                 reason_ref="strategy-fortification-exposure",
                 reason_label="Enemy units inside the town justify an exposed-route defensive tower",
                 building=_building(effective, "watch-tower"),
-                requirements=("(current-age >= feudal-age)", "(can-build 79)", "(up-enemy-units-in-town >= 1)"),
+                requirements=("(current-age >= feudal-age)", "(can-build 79)", "(enemy-buildings-in-town)"),
                 action_name="79",
                 target_witness="(building-type-count 79 > 0)",
                 release="(building-type-count 79 > 0)",
@@ -1248,7 +1256,7 @@ def community_strategy_demands(
                 building=_building(effective, "stone-wall"),
                 requirements=(
                     "(current-age >= feudal-age)",
-                    "(or (map-type arena) (up-enemy-units-in-town >= 1))",
+                    "(or (map-type arena) (enemy-buildings-in-town))",
                     "(can-build 117)",
                 ),
                 action_name="117",
@@ -1266,7 +1274,7 @@ def community_strategy_demands(
                 building=_building(effective, "guard-tower"),
                 requirements=(
                     "(current-age >= castle-age)",
-                    "(up-enemy-units-in-town >= 1)",
+                    "(enemy-buildings-in-town)",
                     "(can-build 234)",
                 ),
                 action_name="234",
@@ -1284,7 +1292,7 @@ def community_strategy_demands(
                 building=_building(effective, "keep"),
                 requirements=(
                     "(current-age >= imperial-age)",
-                    "(or (up-enemy-units-in-town >= 1) (players-building-type-count any-enemy 82 >= 1))",
+                    "(or (enemy-buildings-in-town) (players-building-type-count any-enemy 82 >= 1))",
                     "(can-build 235)",
                 ),
                 action_name="235",
@@ -1301,7 +1309,7 @@ def community_strategy_demands(
                 building=_building(effective, "bombard-tower"),
                 requirements=(
                     "(current-age >= imperial-age)",
-                    "(or (up-enemy-units-in-town >= 1) (players-unit-type-count any-enemy mangonel-line >= 2))",
+                    "(or (enemy-buildings-in-town) (players-unit-type-count any-enemy mangonel-line >= 2))",
                     "(can-build 236)",
                 ),
                 action_name="236",
