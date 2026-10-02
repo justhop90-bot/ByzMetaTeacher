@@ -6,13 +6,12 @@ syntax and it does not claim native completion or release semantics.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Mapping
+from typing import Mapping, TYPE_CHECKING
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
-from ..runtime_binding import GoalSlotRequest
 from .model import StorageRequestId
-from .strategic_number_arbitration import StrategicNumberActionAttachment
+\nif TYPE_CHECKING:\n    from ..runtime_binding import GoalSlotRequest\nfrom .strategic_number_arbitration import StrategicNumberActionAttachment
 
 
 class AttackLifecycleObservation(str, Enum):
@@ -70,7 +69,7 @@ class NativeAttackGoalInputRequest:
     section: str
     expression_index: int
     argument_index: int
-    request: GoalSlotRequest
+    request: "GoalSlotRequest"
 
     @property
     def site_key(self) -> tuple[str, str, int, int]:
@@ -88,6 +87,7 @@ class NativeAttackGoalInputRequest:
             raise ValueError("native attack Goal input section must be FACT or ACTION")
         if self.expression_index < 0 or self.argument_index < 0:
             raise ValueError("native attack Goal input indexes must be non-negative")
+        from ..runtime_binding import GoalSlotRequest
         if not isinstance(self.request, GoalSlotRequest):
             raise TypeError("native attack Goal input request must be a GoalSlotRequest")
 
