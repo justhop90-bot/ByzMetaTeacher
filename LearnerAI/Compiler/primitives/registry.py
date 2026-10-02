@@ -1532,6 +1532,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         Primitive("players-unit-type-count", "FACT", "OBSERVATION", 4, 4),
         Primitive("players-building-type-count", "FACT", "OBSERVATION", 4, 4),
         Primitive("map-type", "FACT", "OBSERVATION", 1, 1, completion_witness=False),
+        Primitive("warboat-count", "FACT", "OBSERVATION", 2, 2, completion_witness=False),
         Primitive("game-time", "FACT", "TIMING", 2, 2, completion_witness=False),
         Primitive("dropsite-min-distance", "FACT", "OBSERVATION", 3, 3, completion_witness=False),
         Primitive("building-available", "FACT", "ADMISSIBILITY", 1, 1),
