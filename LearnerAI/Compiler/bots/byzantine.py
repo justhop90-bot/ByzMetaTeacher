@@ -627,7 +627,6 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         "castle-cataphract-floor": (
             "(or (map-type arena) "
             "(players-unit-type-count any-enemy militia-line >= 5))",
-            "(up-research-status c: 61 >= 3)",
         ),
         "castle-monk-floor": (
             "(building-type-count-total monastery >= 1)",
