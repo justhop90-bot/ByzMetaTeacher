@@ -1,0 +1,23 @@
+name: Temporary Byzantine artifact audit
+on:
+  pull_request:
+    paths:
+      - "LearnerAI/Compiler/tests/fixtures/byzantine_feudal_audited.per"
+      - "LearnerAI/Compiler/tests/test_byzantine_feudal_artifact.py"
+      - ".github/workflows/byz-artifact-audit.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: LearnerAI
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Run compiler raw-rule semantic audit
+        run: python -m unittest LearnerAI.Compiler.tests.test_byzantine_feudal_artifact -v
