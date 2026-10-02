@@ -81,7 +81,27 @@
 - [x] Compiler verification gate passes.
 - [x] Merge only the verified branch into `main`.
 
+
+
+## Follow-on closure: Byzantine DUC behavioral synthesis
+
+- [x] Synthesize deterministic Castle-power knight-target discovery from observed enemy knight pressure.
+- [x] Synthesize deterministic Castle-power infantry-target discovery from observed enemy infantry pressure.
+- [x] Rebuild remote search state before target selection.
+- [x] Establish selected object target and capture native object identity through the existing DUC output channel.
+- [x] Preserve runtime liveness and post-mutation lifetime as OPEN/UNKNOWN.
+- [x] Verify native DUC target/reacquisition acceptance and full compiler regression.
+ 
+## Follow-on closure: Byzantine attack lifecycle control
+
+- [x] Add a persistent Byzantine attack-phase Goal state through the existing NativeControlPlan.
+- [x] Gate attack-now issuance on the bound attack phase.
+- [x] Provide PREPARE -> ISSUE -> pressure-clear completion -> RECOVERY -> REASSESS policy transitions.
+- [x] Bind attack Goal facts through a typed GoalSlotRequest and shared runtime binder/emitter path.
+- [x] Keep native attack acknowledgement and per-object attack completion OPEN.
+- [x] Verify 1,434-test regression, native zero-findings, 9/9 determinism, snapshot comparison, and aggregate compiler verification on the candidate and post-merge main.
+
 ## Actual remaining behavioral gaps after this repair
-1. **DUC behavioral synthesis:** selecting concrete Byzantine discovery/target policies and connecting them to strategy intent is still needed. The compiler will not guess target classes or runtime object liveness from generic DUC primitives.
-2. **Full attack execution:** `READY -> PREPARE -> ASSEMBLE -> ISSUE -> WITNESS -> RELEASE/RESET -> RECOVERY -> REASSESS` remains structurally typed but not fully natively executable. `attack-now` remains issue-only.
-3. **Community strategy synthesis:** broad scouting, military parity/TSA, map adaptation, starvation recovery, water/transport, and additional strategy packs still need executable lowering through the existing substrate.
+1. **DUC runtime evidence:** object liveness after mutation/reset/pass, retained-filter behavior, group membership, exact native output values, and attack-controller consumption remain OPEN until independently proven.
+2. **Native attack acknowledgement:** attack-now completion, per-object target liveness, attack-group causality, exploration/TSA/town-size interactions, and exact reset lifetime remain OPEN. The compiler now owns the policy lifecycle without pretending native acknowledgement exists.
+3. **Community strategy synthesis:** scouting, military parity/TSA, map adaptation, starvation recovery, water/transport, additional recovery packs, and broad community corpus closure remain to be lowered through the existing substrate.

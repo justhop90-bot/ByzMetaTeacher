@@ -37,27 +37,28 @@ The remaining runtime questions stay external: SN 264 enforcement, provider busy
 
 ## Phase 2 — DUC execution and strategy exposure
 
-Status: **SUBSTRATE CLOSED / BEHAVIORAL SYNTHESIS OPEN**.
+Status: **COMPILER-POLICY CLOSED / RUNTIME EVIDENCE OPEN**.
 
 The compiler already contains the typed DUC state model, recurrent firing coupling, search/filter generations, cursor lifecycle, target provenance, direct-ID identity, group/window inputs, target revalidation, native lowering, and zero-findings acceptance fixtures.
 
 The downstream strategy seam is now connected:
 StrategyProfile -> StrategyCompilation -> normal/runtime Byzantine compilation -> existing NativeDucPlan channel.
 
-What remains is not missing DUC vocabulary. The next DUC work is behavioral synthesis: choose evidence-backed Byzantine discovery/target policies, connect them to strategic demands, complete remaining hostile diagnostics/loaded-source coverage where useful, and keep runtime object liveness, retained-filter behavior, group membership, output values, and exact native lifetime OPEN unless independently proven.
+The default Byzantine strategy now synthesizes two evidence-backed Castle-power target pipelines: observed enemy knight pressure drives remote knight-line discovery, and observed enemy infantry pressure drives remote militia-line discovery. Each pipeline resets the remote search, establishes an object target, and captures native object-data identity through the existing DUC output channel.
+
+The remaining DUC uncertainty is runtime evidence, not missing compiler policy: object liveness after search mutation, retained-filter behavior, group membership, exact output values, cross-pass target lifetime, and native attack-controller consumption remain OPEN unless independently proven.
 
 ## Phase 3 — Attack execution lifecycle
 
-Status: **TYPED SUBSTRATE CLOSED / NATIVE EXECUTION OPEN**.
+Status: **COMPILER-POLICY CLOSED / NATIVE ACKNOWLEDGEMENT OPEN**.
 
-The AttackExecution IR, target revalidation, operational bridge, controller metadata bridge, and issue-only native attack plan are implemented.
+The AttackExecution IR, target revalidation, operational bridge, controller metadata bridge, issue-only native attack plan, and persistent Byzantine attack-phase controller are implemented.
 
-Required lifecycle for the remaining closure:
-DEMAND -> ADMISSION -> PREPARE -> READY -> ISSUE -> WITNESS -> RELEASE/RESET -> RECOVERY -> REASSESS
+The default Byzantine Castle-power attack now has explicit persistent phases for PREPARE, ISSUE, pressure-cleared completion, force-floor recovery, and reassessment. The attack-now rules are causally gated by a bound persistent Goal state, using the existing control-plane allocator and emitter.
 
-attack-now implements ISSUE only. It never proves WITNESS by implication.
+The compiler deliberately does not claim a native attack acknowledgement. The pressure-clear and force-floor witnesses are compiler-policy/world-observation conditions for lifecycle control, not proof that a specific attack-now command killed a specific target.
 
-The remaining compiler work is executable lifecycle closure after target synthesis is sufficient. Runtime completion of attack-now, attack-group membership, exploration gating, TSA/town-size interactions, offensive-priority interactions, and reset lifetime remain OPEN.
+Remaining native/runtime OPEN work: exact attack-now completion semantics, per-object target liveness, attack-group membership causality, exploration/TSA/town-size controller behavior, reset lifetime, and native acknowledgement.
 
 ## Phase 4 — Escrow and resource arbitration
 
@@ -262,8 +263,8 @@ Phase 9 depends on Phases 1-8.
 
 ## Exact implementation order
 
-1. DUC behavioral strategy synthesis and remaining hostile semantic closure.
-2. Full attack execution lifecycle after target policy closure.
+1. Remaining DUC runtime-evidence closure where probes are justified, without inventing compiler facts.
+2. Remaining native attack acknowledgement/controller evidence where probes are justified.
 3. Remaining escrow/resource arbitration and emergency release policy.
 4. Active Strategic Number evidence closure in parallel.
 5. Byzantine factual closure in parallel.

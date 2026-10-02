@@ -5,7 +5,7 @@ Status: authoritative current-state guide for `main`.
 Current compiler baseline: the `main` branch is the source of truth for accepted state. The exact commit SHA is the current tip of the repository's default branch.
 Latest compiler verification: use the green `Compiler tests` workflow on `main`.
 
-The latest verified compiler candidate reports **1,431 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
+The latest verified compiler candidate reports **1,434 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
 
 ## What this project is
 
@@ -87,8 +87,10 @@ The accepted mainline currently includes:
 - typed Timer allocation and owner/release cleanup analysis;
 - DUC SearchSession/TargetSession semantics and typed target identity/reacquisition state;
 - downstream Byzantine strategy compilation of the existing NativeDucPlan channel;
+- default Byzantine DUC target synthesis for observed knight and infantry pressure;
 - attack control observation and operational semantics;
 - typed attack execution lifecycle;
+- persistent default Byzantine attack-phase control with Goal-bound attack issuance;
 - military composition proof assembly;
 - source graph resolution and validation;
 - deterministic runtime binding and native lowering;
@@ -109,9 +111,9 @@ It must not upgrade common community usage into an engine fact.
 
 ## Current frontier
 
-The major generic execution substrates are largely present. The highest-value remaining compiler work is now behavioral synthesis on top of those substrates: Byzantine DUC discovery/target policy, full attack execution beyond issue-only attack-now, remaining escrow/resource arbitration, active SN evidence closure, Byzantine factual closure, and broad community strategy synthesis.
+The major generic execution substrates are largely present. The highest-value remaining compiler work is now the broader community strategy synthesis layer: remaining escrow/resource arbitration, active SN evidence closure, Byzantine factual closure, map/scouting strategy packs, recovery packs, water/transport, and broad community corpus closure. The default Byzantine DUC target pipeline and default attack lifecycle control are no longer missing compiler seams.
 
-Production/train arbitration is closed as compiler policy. DUC runtime liveness, retained-filter behavior, group membership, output values, exact target lifetime, and attack completion/release remain OPEN unless independently proven.
+Production/train arbitration is closed as compiler policy. DUC runtime liveness, retained-filter behavior, group membership, output values, exact target lifetime, native attack acknowledgement, attack-group membership causality, exploration/TSA/town-size interactions, and exact reset lifetime remain OPEN unless independently proven.
 
 ## Roadmap
 
@@ -198,7 +200,8 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 ## Current Git state
 
 - default branch: `main`;
-- PR #266 merged the DUC strategy compilation channel into `main` as `cfe26195a4e650c6664a5c1c789d38118cb69cc8`; its post-merge `Compiler tests` workflow #2942 passed;
+- PR #268 merged the Byzantine DUC target synthesis into `main` as `09c74f5b55df20bee1afefa0db2da86a947a6356`; its post-merge compiler workflow #2990 passed;
+- PR #271 merged the Byzantine attack lifecycle control into `main` as `9779ee2abee7b9b855b04a569c4f2b8a77377cd7`; its post-merge compiler workflow #3003 passed;
 - open PRs on main are authoritative from GitHub;
 - mainline compiler CI: authoritative through the latest green `Compiler tests` workflow on `main`;
 - the current-state document deliberately does not embed its own commit SHA or workflow number; GitHub's `main` ref and compiler workflow are the authoritative live pointers;
@@ -208,7 +211,7 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 
 ## Next repair discipline
 
-The next repair should start from the existing DUC and attack substrates rather than reopening production arbitration:
+The next repair should start from the now-closed DUC target and attack lifecycle substrates rather than reopening them:
 
 1. write the failing strategy/behavior test first;
 2. reuse existing typed DUC, ResourceClaim, AttackExecution, SN, Timer, escrow, and witness surfaces;
