@@ -37,6 +37,9 @@ class NativeAttackRule:
     facts: tuple[Expression, ...]
     actions: tuple[Expression, ...]
     lifecycle: tuple[AttackLifecycleObservation, ...]
+    activation_state_name: str | None = None
+    activation_state_value: int | None = None
+    issued_state_value: int | None = None
     location: SourceLocation | None = None
 
     def __post_init__(self) -> None:
@@ -48,6 +51,35 @@ class NativeAttackRule:
             raise TypeError("native attack rule facts/actions must be tuples")
         if not isinstance(self.lifecycle, tuple):
             raise TypeError("native attack rule lifecycle must be a tuple")
+        if self.activation_state_name is None:
+            if (
+                self.activation_state_value is not None
+                or self.issued_state_value is not None
+            ):
+                raise ValueError(
+                    f"native attack rule '{self.identity}' cannot define lifecycle "
+                    "state values without an activation state name"
+                )
+        else:
+            if not self.activation_state_name.strip():
+                raise ValueError(
+                    "native attack rule activation state name must not be empty"
+                )
+            if self.activation_state_value is None:
+                raise ValueError(
+                    f"native attack rule '{self.identity}' requires an activation state value"
+                )
+            if self.activation_state_value < 0:
+                raise ValueError(
+                    "native attack rule activation state value must be non-negative"
+                )
+            if (
+                self.issued_state_value is not None
+                and self.issued_state_value < 0
+            ):
+                raise ValueError(
+                    "native attack rule issued state value must be non-negative"
+                )
         if not self.facts and not self.actions:
             raise ValueError(
                 f"native attack rule '{self.identity}' requires a fact or action"
