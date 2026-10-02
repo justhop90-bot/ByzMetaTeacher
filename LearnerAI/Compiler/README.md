@@ -112,22 +112,15 @@ These are compiler contracts. They do not imply that every runtime interaction t
 
 ## Current open frontier
 
-The next semantic seam is production/train arbitration.
+Production/train arbitration is implemented through the existing `ResourceClaim` surface and is no longer the next generic semantic seam.
 
-The compiler should reuse the existing `ResourceClaim` and arbitration surfaces rather than inventing a new resource model.
+The live frontier is behavioral synthesis above the existing substrates:
 
-Required invariants:
-
-- ordinary `train` demands may acquire a compiler-policy production claim;
-- ownership comes from the semantic/strategic owner, not a provider UnitId;
-- `can-train` remains admission/feasibility;
-- `train` remains action issuance;
-- `up-pending-objects` remains duplicate-queue protection;
-- `unit-type-count-total` remains observation;
-- provider readiness, provider availability, and queue capacity remain distinct;
-- SN 264 remains a control input;
-- exact DE busy/queue behavior, same-pass arbitration, starvation, provider loss, and exact timing remain OPEN pending runtime evidence;
-- DUC-targeted training must not inherit ordinary train arbitration accidentally.
+- DUC strategy exposure is now threaded through `StrategyProfile`, `StrategyCompilation`, and both normal/runtime Byzantine compiler entry points using the existing `NativeDucPlan` channel;
+- DUC behavioral policy is still needed to select concrete Byzantine discovery/target pipelines and connect them to strategic demands;
+- typed `AttackExecution` and its operational bridge are present, but native attack completion, release/reset, group causality, and runtime target liveness remain OPEN;
+- remaining escrow/resource arbitration, active Strategic Number evidence, Byzantine factual closure, and broader community strategy packs remain in scope;
+- exact DE queue/provider behavior and other runtime interactions remain evidence work, not compiler facts.
 
 ## Architecture map
 
@@ -217,7 +210,7 @@ The repository compiler workflow additionally requires:
 
 At the current accepted main commit, the compiler workflow reported:
 
-- 1,212 compiler tests passing;
+- 1,431 compiler tests passing on the latest verified candidate;
 - native zero-findings fixtures passing;
 - 9/9 native-support determinism jobs passing;
 - cross-platform snapshot comparison passing;
