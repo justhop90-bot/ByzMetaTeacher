@@ -479,7 +479,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 upper_bound=1,
                 extra_requirements=(
                     "(unit-type-count-total villager >= 24)",
-                    "(or (food-amount < 300) (wood-amount < 150) (gold-amount < 150))",
+                    "(or (food-amount < 300) (or (wood-amount < 150) (gold-amount < 150)))",
                 ),
             ),
         )
