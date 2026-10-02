@@ -26,6 +26,8 @@ from .strategy import (
     StrategyPosture,
     StrategyProfile,
     StrategicObservationSpec,
+    CapabilityRecoveryContract,
+    StrategicMilitaryComposition,
 )
 from .versioning import EvidenceRef
 
@@ -113,7 +115,7 @@ def _build_demand(
     target_witness: str | None = None,
     release: str | None = None,
     opportunity_cost: OpportunityCostPolicy | None = None,
-    invalidate: str | None = None,
+    invalidate_ref: str | None = None,
 ) -> StrategicDemandSpec:
     action_name = action_name or _slug(building.name)
     target_witness = target_witness or f"(building-type-count {action_name} > 0)"
@@ -128,8 +130,8 @@ def _build_demand(
             _execution(f"{identity}:native-admission", requirements[0]),
         ),
         invalidation=(
-            _execution(f"{identity}:policy-invalidation", invalidate),
-        ) if invalidate else (),
+            _persistent(f"{identity}:policy-invalidation", invalidate_ref),
+        ) if invalidate_ref else (),
         capability_intent=CapabilityIntent(
             CapabilityIntentKind.BUILD,
             "building",
@@ -147,9 +149,7 @@ def _build_demand(
             witness=target_witness,
             release=release,
         ),
-        recovery=None if False else __import__(
-            "Compiler.ir.strategy", fromlist=["CapabilityRecoveryContract"]
-        ).CapabilityRecoveryContract(),
+        recovery=CapabilityRecoveryContract(),
     )
 
 
@@ -161,6 +161,7 @@ def _research_demand(
     posture: StrategyPosture,
     priority: StrategicPriority,
     age_guard: str,
+    age_observation_ref: str,
     tech_name: str,
     reason_label: str,
     resources: tuple[Resource, ...],
@@ -195,10 +196,10 @@ def _research_demand(
         priority=priority,
         reason=(
             _persistent(reason_label, pending_ref),
-            _persistent(f"{identity}:age-window", age_guard),
+            _persistent(f"{identity}:age-window", age_observation_ref),
         ),
         admissibility=(
-            _execution(f"{identity}:can-research", f"(can-research-with-escrow {token})"),
+            _persistent(f"{identity}:age-admissibility", age_observation_ref),
         ),
         invalidation=(
             _persistent(f"{identity}:completed", complete_ref),
@@ -334,6 +335,11 @@ def community_strategy_observations(
             town_center.provenance,
         ),
         _observation(
+            "strategy-town-center-complete",
+            f"(building-type-count-total {int(town_center.id)} >= 2)",
+            town_center.provenance,
+        ),
+        _observation(
             "strategy-outpost-capability",
             f"(building-type-count-total {int(outpost.id)} < 1)",
             outpost.provenance,
@@ -341,6 +347,11 @@ def community_strategy_observations(
         _observation(
             "strategy-monastery-capability",
             f"(building-type-count-total {int(monastery.id)} < 1)",
+            monastery.provenance,
+        ),
+        _observation(
+            "strategy-monastery-exists",
+            f"(building-type-count-total {int(monastery.id)} >= 1)",
             monastery.provenance,
         ),
         _observation(
@@ -481,7 +492,7 @@ def community_strategy_demands(
             invalidation=(
                 _persistent(
                     "Second Town Center objective is already satisfied",
-                    "strategy-town-center-capability",
+                    "strategy-town-center-complete",
                 ),
             ),
             capability_intent=CapabilityIntent(
@@ -529,7 +540,7 @@ def community_strategy_demands(
                 reason_label="Ranged pressure creates a real ranged-production capability demand",
                 building=archery_range,
                 requirements=(" (can-build archery-range)".strip(),),
-                invalidate="(current-age >= imperial-age)",
+                invalidate_ref="strategy-imperial-age",
             ),
             _build_demand(
                 identity="castle-siege-capability",
@@ -667,6 +678,11 @@ def community_strategy_demands(
             ),
             priority=priority,
             age_guard=f"(current-age >= {age})",
+            age_observation_ref={
+                "feudal-age": "current-feudal-age",
+                "castle-age": "strategy-castle-age",
+                "imperial-age": "strategy-imperial-age",
+            }[age],
             tech_name=tech_name,
             reason_label=f"Community research package: {tech_name}",
             resources=resources,
@@ -898,7 +914,6 @@ def build_byzantine_stock_strategy(
 
     compositions = list(base.military_compositions)
     composition_ids = {item.identity for item in compositions}
-    from .strategy import StrategicMilitaryComposition
     for composition in (
         StrategicMilitaryComposition(
             identity="castle-standard-package",
