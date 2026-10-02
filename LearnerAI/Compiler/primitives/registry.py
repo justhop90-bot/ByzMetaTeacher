@@ -21,6 +21,7 @@ from .engine_semantics import (
     default_duc_executable_commands,
     default_escrow_executable_commands,
     default_native_controller_executable_commands,
+    default_native_control_plane_executable_commands,
 )
 from .native_engine_effects import default_native_engine_effect_catalog
 from ..ir.resource_control import NativeEscrowPolicyPlan, NativeEscrowReleasePlan
@@ -1597,6 +1598,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
         + tuple(item.name for item in primitive_items)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
+        + default_native_control_plane_executable_commands()
     )
     mapped_items = tuple(
         replace(
