@@ -207,6 +207,33 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("up-find-player", actions)
         self.assertIn("up-modify-sn", actions)
 
+    def test_byzantine_attack_lifecycle_controller_closes_issue_reassess_cycle(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-attack-state", state_ids)
+
+        rule_ids = tuple(rule.identity for rule in control.rules)
+        self.assertIn("byzantine-attack-state-prepare-001", rule_ids)
+        self.assertIn("byzantine-attack-state-assemble-002", rule_ids)
+        self.assertIn("byzantine-attack-state-reassess-003", rule_ids)
+        self.assertIn("byzantine-attack-state-reset-004", rule_ids)
+
+        output = compile_strategy_profile(self.profile, self.effective)
+        self.assertRegex(
+            output,
+            r"\(defconst byzantine-attack-state (\\d+)\)",
+        )
+        attack_section = output[output.index("; Native attack lifecycle plan"):]
+        self.assertRegex(
+            attack_section,
+            r"\(goal \\d+ 2\).*?\(attack-now\).*?\(set-goal \\d+ 3\)",
+        )
+        self.assertNotIn("(up-reset-attack-now)", attack_section)
+
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
