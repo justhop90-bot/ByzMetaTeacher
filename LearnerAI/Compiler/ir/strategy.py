@@ -1396,7 +1396,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     )
 
     current_age = "(current-age >= castle-age)"
-    allocation = "(up-compare-sn 227 >= 75)"
+    allocation = "(goal strategy-posture 4)"
     knight_pressure = "(players-unit-type-count any-enemy knight >= 3)"
     knight_clear = "(players-unit-type-count any-enemy knight < 3)"
     cataphract_floor = "(unit-type-count cataphract >= 2)"
