@@ -82,7 +82,7 @@ def _identity_writer():
     )
 
 
-def _group_plan(start_placeholder="0", size_placeholder="0"):
+def _group_plan(start_placeholder="0", size_placeholder="0", object_data="0"):
     measure = _measure_writer()
     identity = _identity_writer()
     return NativeDucPlan(
@@ -96,7 +96,7 @@ def _group_plan(start_placeholder="0", size_placeholder="0"):
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
                     _e("(up-create-group 0 40 c: 0)", "up-create-group", "0", "40", "c:", "0"),
                     _e("(up-get-group-size c: 0 41)", "up-get-group-size", "c:", "0", "41"),
-                    _e("(up-get-object-data object-data-id 41)", "up-get-object-data", "object-data-id", "41"),
+                    _e(f"(up-get-object-data {object_data} 41)", "up-get-object-data", object_data, "41"),
                 ),
             ),
             NativeDucRule(
@@ -171,7 +171,7 @@ class DucGroupInputTests(unittest.TestCase):
         size_slot = re.search(
             r"\(up-get-group-size c: 0 (\d+)\)", artifact
         )
-        id_slot = re.search(r"\(up-get-object-data object-data-id (\d+)\)", artifact)
+        id_slot = re.search(r"\(up-get-object-data 0 (\d+)\)", artifact)
         windowed = re.search(
             r"\(up-create-group (\d+) (\d+) c: 1\)", artifact
         )
@@ -191,6 +191,11 @@ class DucGroupInputTests(unittest.TestCase):
         )
         self.assertEqual(first, second)
         self.assertEqual(first, other)
+
+    def test_object_data_operand_must_be_numeric(self):
+        plan = _group_plan(object_data="object-data-id")
+        with self.assertRaisesRegex(ValueError, "requires a numeric ObjectData"):
+            default_de_registry().validate_duc_plan(plan)
 
     def test_input_wrong_command_rejected(self):
         plan = _group_plan()
