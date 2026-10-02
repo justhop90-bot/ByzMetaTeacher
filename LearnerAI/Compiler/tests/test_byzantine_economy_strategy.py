@@ -64,6 +64,11 @@ class ByzantineEconomyStrategyTests(unittest.TestCase):
             "(build market)",
         ):
             self.assertIn(action, output)
+        self.assertIn("(food-amount < 500)", output)
+        self.assertIn("(food-amount < 700)", output)
+        self.assertIn("(food-amount < 900)", output)
+        self.assertIn("(food-amount < 1100)", output)
+        self.assertIn("(idle-farm-count < 2)", output)
         self.assertIn("(housing-headroom < 4)", output)
         self.assertIn("(food-amount < 350)", output)
         self.assertIn("(dropsite-min-distance wood > 12)", output)
