@@ -24,7 +24,7 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
         ):
             self.assertIn(identity, self.demands)
         self.assertIn("(train 329)", self.output)
-        self.assertIn("(train halberdier)", self.output)
+        self.assertIn("(train 359)", self.output)
         self.assertIn("(train 330)", self.output)
 
     def test_fortification_has_exposure_conditioned_tower_layers(self):
@@ -79,12 +79,12 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
         ):
             self.assertIn(identity, self.demands)
         for action in (
-            "(train hulk)",
-            "(train war-hulk)",
-            "(train carrack)",
-            "(train demolition-ship)",
-            "(train heavy-demolition-ship)",
-            "(train trade-cog)",
+            "(train 2626)",
+            "(train 2627)",
+            "(train 2628)",
+            "(train 527)",
+            "(train 528)",
+            "(train 17)",
             "(research 905)",
             "(research 244)",
         ):
