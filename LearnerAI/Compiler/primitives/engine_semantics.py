@@ -863,8 +863,6 @@ def _pending_placement_mapping() -> EngineSemanticMapping:
 
 def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings: list[EngineSemanticMapping] = []
-    for command, identity in _PLAYER_CONTEXT_SPECS:
-        mappings.append(_player_context_mapping(command, identity))
     for command, identity in _PERSISTENT_STATE_SPECS:
         mappings.append(_persistent_state_mapping(command, identity))
     for command, identity in _OBSERVATION_SPECS:
