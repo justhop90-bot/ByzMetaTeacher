@@ -546,7 +546,7 @@ def emit(
             out.append(f"; Native attack rule: {rule.identity}")
             out.append("(defrule")
             out.extend(
-                f"    {_render_attack_expression(rule.identity, "FACT", index, fact)}"
+                f"    {_render_attack_expression(rule.identity, 'FACT', index, fact)}"
                 for index, fact in enumerate(rule.facts)
             )
             out.append("=>")
@@ -563,7 +563,7 @@ def emit(
                         f"{attachment.native_strategic_number_id} {attachment.value})"
                     )
                 out.append(
-                    f"    {_render_attack_expression(rule.identity, "ACTION", action_index, action)}"
+                    f"    {_render_attack_expression(rule.identity, 'ACTION', action_index, action)}"
                 )
             out += [")", ""]
 
