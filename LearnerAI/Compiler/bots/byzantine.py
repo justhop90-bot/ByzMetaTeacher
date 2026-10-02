@@ -375,7 +375,6 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             reason_label="Maintain the Barracks provider for Byzantine Feudal counter continuity",
             building_name="barracks",
             minimum_age=Age.FEUDAL,
-            lower_bound=0,
             upper_bound=1,
         )
     )
