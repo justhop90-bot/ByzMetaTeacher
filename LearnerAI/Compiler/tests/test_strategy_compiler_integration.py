@@ -137,6 +137,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             (
                 "byzantine-castle-target-knight",
                 "byzantine-castle-target-infantry",
+                "byzantine-relic-acquisition-intent",
+                "byzantine-relic-denial-contest",
             ),
         )
         self.assertEqual(
