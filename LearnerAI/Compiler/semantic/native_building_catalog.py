@@ -14,6 +14,14 @@ class NativeBuildingIdError(ValueError):
     """Raised when a build target cannot be bound to a native BuildingId."""
 
 
+# The DE build action uses the completed building name "town-center", while
+# the construction lifecycle's pending foundation/object identity is 621.
+# This is a deliberate source-target/native-observation split, not a second
+# public BuildingId symbol. The checked-in Byzantine object manifest records
+# object 621 as the Castle-Age Town Center object used for expansion.
+_TOWN_CENTER_BUILD_OBJECT_ID = 621
+
+
 @lru_cache(maxsize=1)
 def _building_ids() -> dict[str, int]:
     if not _CATALOG_ROOT.is_dir():
@@ -58,6 +66,9 @@ def resolve_building_id(symbol: str) -> int:
         raise NativeBuildingIdError(
             f"invalid BuildingId symbol '{symbol}'"
         )
+
+    if token == "town-center":
+        return _TOWN_CENTER_BUILD_OBJECT_ID
 
     try:
         return _building_ids()[token]
