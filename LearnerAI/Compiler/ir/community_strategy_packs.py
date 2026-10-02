@@ -281,6 +281,10 @@ _RESEARCH_PACK = (
     ("research-bodkin-arrow", "military", "castle-age", "bodkin-arrow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-conscription", "military", "imperial-age", "conscription", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
     ("research-chemistry", "military", "imperial-age", "chemistry", _StrategicPriority.SUPPORT, (Resource.GOLD,)),
+    ("research-gold-mining", "economy", "feudal-age", "gold-mining", _StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-gold-shaft-mining", "economy", "castle-age", "gold-shaft-mining", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-heavy-plow", "economy", "castle-age", "heavy-plow", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-fletching", "military", "feudal-age", "fletching", _StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
 )
 
 
