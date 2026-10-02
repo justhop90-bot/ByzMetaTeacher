@@ -746,6 +746,31 @@ def community_strategy_observations(
         )
 
     for identity, tech_name in (
+        ("research-sanctity", "sanctity"),
+        ("research-fervor", "fervor"),
+        ("research-atonement", "atonement"),
+        ("research-block-printing", "block-printing"),
+        ("research-theocracy", "theocracy"),
+        ("research-demolition-ship", "demolition-ship"),
+        ("research-heavy-demolition-ship", "heavy-demolition-ship"),
+    ):
+        tech = _tech(effective, tech_name)
+        observations.append(
+            _observation(
+                f"{identity}-complete",
+                f"(research-completed {int(tech.id)})",
+                tech.provenance,
+            )
+        )
+        observations.append(
+            _observation(
+                f"{identity}-pending",
+                f"(not (research-completed {int(tech.id)}))",
+                tech.provenance,
+            )
+        )
+
+    for identity, tech_name in (
         ("water-fishing-lines", "fishing-lines"),
         ("water-gillnets", "gillnets"),
         ("water-warships", "warships"),
