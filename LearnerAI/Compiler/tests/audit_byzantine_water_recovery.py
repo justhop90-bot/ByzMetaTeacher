@@ -85,8 +85,8 @@ def main() -> int:
                 "game_data": effective.factual_status("unit", unit_id).value,
                 "line": line_name,
                 "strategy": any(
-                    line_name in demand.execution.action.lower()
-                    or line_name in demand.identity.lower()
+                    _slug(label) in demand.execution.action.lower()
+                    or _slug(label) in demand.identity.lower()
                     for demand in profile.demands
                 ),
                 "artifact": _slug(label) in artifact,
