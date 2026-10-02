@@ -793,10 +793,10 @@ def emit(
                     f"{demand.strategic_binding.required_primary_intent.value})"
                 )
             recovery_guards.extend(
-                guard.source for guard in demand.strategic_binding.admissibility_guards
+                guard for guard in demand.strategic_binding.admissibility_guards
             )
             recovery_guards.extend(
-                f"(not {guard.source})"
+                f"(not {guard})"
                 for guard in demand.strategic_binding.invalidation_guards
             )
             out += [
