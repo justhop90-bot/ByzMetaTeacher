@@ -1,0 +1,58 @@
+name: Verify patched Byzantine native parser
+on:
+  push:
+    branches:
+      - "verify/byzantine-dark-age-mining-native"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Reconstruct uploaded artifact byte-for-byte
+        run: |
+          cat verification/chunks/*.perpart > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Pinned native parser gate
+        run: |
+          set +e
+          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/native-1.json
+          status1=$?
+          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/native-2.json
+          status2=$?
+          set -e
+          echo "first_exit=$status1"
+          echo "second_exit=$status2"
+          echo "first_result:"
+          cat /tmp/native-1.json
+          echo "second_result:"
+          cat /tmp/native-2.json
+          cmp -s /tmp/native-1.json /tmp/native-2.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("/tmp/native-1.json").read_text())
+          print("finding_count=",a.get("finding_count"))
+          print("failed=",a.get("failed"))
+          if a.get("finding_count") != 0 or a.get("failed") is not False or status1 if False else False:
+              pass
+          PY
+          test $status1 -eq 0
+          test $status2 -eq 0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("/tmp/native-1.json").read_text())
+          if a.get("finding_count") != 0:
+              raise SystemExit(1)
+          if a.get("findings") != []:
+              raise SystemExit(1)
+          if a.get("failed") is not False:
+              raise SystemExit(1)
+          PY
