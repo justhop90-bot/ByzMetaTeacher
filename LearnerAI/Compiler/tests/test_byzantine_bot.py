@@ -105,7 +105,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["research-double-bit-axe"].execution.requirements,
         )
         self.assertIn(
-            f"(research-completed {wheelbarrow_id})",
+            f"(up-research-status c: {wheelbarrow_id} >= 3)",
             demands["research-horse-collar"].execution.requirements,
         )
         self.assertIn(
