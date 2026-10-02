@@ -38,6 +38,10 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["counter-ranged-skirmishers"].execution.requirements,
         )
         self.assertIn(
+            "(players-unit-type-count any-enemy archer-line >= 3)",
+            demands["feudal-archery-range"].execution.requirements,
+        )
+        self.assertIn(
             "(players-unit-type-count any-enemy militia-line >= 5)",
             demands["castle-varangian-guard-floor"].execution.requirements,
         )
