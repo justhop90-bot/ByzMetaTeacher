@@ -90,7 +90,7 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
             control_plan=plan,
         )
 
-        self.assertIn("(defconst byzantine-wall-start 42)", output)
+        self.assertIn("(defconst byzantine-wall-start 46)", output)
         self.assertIn("(defconst byzantine-wall-end 44)", output)
         self.assertIn(
             "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
