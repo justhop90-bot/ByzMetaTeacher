@@ -492,6 +492,57 @@ def community_strategy_observations(
             effective.unit_line("archer-line").provenance,
         ),
         _observation(
+            "strategy-enemy-mounted-heavy",
+            "(or (players-unit-type-count any-enemy knight >= 4) "
+            "(or (players-unit-type-count any-enemy scout-cavalry-line >= 6) "
+            "(players-unit-type-count any-enemy camel-line >= 4)))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("scout-cavalry-line").provenance,
+                     *effective.unit_line("camel-rider-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-enemy-mounted-heavy-cleared",
+            "(and (players-unit-type-count any-enemy knight < 4) "
+            "(players-unit-type-count any-enemy scout-cavalry-line < 6) "
+            "(players-unit-type-count any-enemy camel-line < 4))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("knight-line").provenance,
+                     *effective.unit_line("scout-cavalry-line").provenance,
+                     *effective.unit_line("camel-rider-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-fortification-exposure",
+            "(up-enemy-units-in-town >= 1)",
+            _airef_provenance(effective, "commands/commands-details.html#up-enemy-units-in-town"),
+        ),
+        _observation(
+            "strategy-relic-unsecured",
+            "(not (hold-relics))",
+            _airef_provenance(effective, "commands/commands-details.html#hold-relics"),
+        ),
+        _observation(
+            "strategy-enemy-monk-pressure",
+            "(players-unit-type-count any-enemy monk-line >= 2)",
+            _airef_provenance(effective, "commands/commands-details.html#players-unit-type-count"),
+        ),
+        _observation(
+            "strategy-own-monk-sustained",
+            "(unit-type-count monk >= 3)",
+            effective.unit_line("monk-line").provenance,
+        ),
+        _observation(
+            "strategy-water-trade-opportunity",
+            "(and (map-type islands) (players-building-type-count any-ally market >= 1))",
+            _airef_provenance(effective, "commands/commands-details.html#players-building-type-count"),
+        ),
+        _observation(
             "strategy-enemy-siege",
             "(players-unit-type-count any-enemy mangonel-line >= 2)",
             effective.unit_line("mangonel-line").provenance,
@@ -1151,10 +1202,10 @@ def community_strategy_demands(
                 owner="defense",
                 posture=_StrategyPosture.FLUSH,
                 priority=_StrategicPriority.DEFENSE,
-                reason_ref="strategy-enemy-pressure",
-                reason_label="Sustained pressure justifies a Feudal defensive tower capability",
+                reason_ref="strategy-fortification-exposure",
+                reason_label="Enemy units inside the town justify an exposed-route defensive tower",
                 building=_building(effective, "watch-tower"),
-                requirements=("(current-age >= feudal-age)", "(can-build 79)"),
+                requirements=("(current-age >= feudal-age)", "(can-build 79)", "(up-enemy-units-in-town >= 1)"),
                 action_name="79",
                 target_witness="(building-type-count 79 > 0)",
                 release="(building-type-count 79 > 0)",
@@ -1165,14 +1216,70 @@ def community_strategy_demands(
                 owner="defense",
                 posture=_StrategyPosture.FLUSH,
                 priority=_StrategicPriority.SUPPORT,
-                reason_ref="strategy-arena-map",
-                reason_label="Closed-map defense justifies a Stone Wall capability",
+                reason_ref="strategy-fortification-exposure",
+                reason_label="Town exposure or Arena structure value justifies a bounded wall capability",
                 building=_building(effective, "stone-wall"),
-                requirements=("(current-age >= feudal-age)", "(map-type arena)", "(can-build 117)"),
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(or (map-type arena) (up-enemy-units-in-town >= 1))",
+                    "(can-build 117)",
+                ),
                 action_name="117",
                 target_witness="(building-type-count 117 > 0)",
                 release="(building-type-count 117 > 0)",
-                invalidate_ref="strategy-castle-age",
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _build_demand(
+                identity="adaptive-guard-tower",
+                owner="defense",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-fortification-exposure",
+                reason_label="Persistent exposed routes justify a Castle Guard Tower capability",
+                building=_building(effective, "guard-tower"),
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(up-enemy-units-in-town >= 1)",
+                    "(can-build 234)",
+                ),
+                action_name="234",
+                target_witness="(building-type-count 234 > 0)",
+                release="(building-type-count 234 > 0)",
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _build_demand(
+                identity="imperial-keep-floor",
+                owner="defense",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-fortification-exposure",
+                reason_label="Imperial town exposure or enemy fortification justifies a Keep capability",
+                building=_building(effective, "keep"),
+                requirements=(
+                    "(current-age >= imperial-age)",
+                    "(or (up-enemy-units-in-town >= 1) (players-building-type-count any-enemy 82 >= 1))",
+                    "(can-build 235)",
+                ),
+                action_name="235",
+                target_witness="(building-type-count 235 > 0)",
+                release="(building-type-count 235 > 0)",
+            ),
+            _build_demand(
+                identity="imperial-bombard-tower-floor",
+                owner="defense",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-fortification-exposure",
+                reason_label="Imperial exposed defense with enemy siege or Castles justifies a Bombard Tower",
+                building=_building(effective, "bombard-tower"),
+                requirements=(
+                    "(current-age >= imperial-age)",
+                    "(or (up-enemy-units-in-town >= 1) (players-unit-type-count any-enemy mangonel-line >= 2))",
+                    "(can-build 236)",
+                ),
+                action_name="236",
+                target_witness="(building-type-count 236 > 0)",
+                release="(building-type-count 236 > 0)",
             ),
         )
     )
@@ -1199,6 +1306,29 @@ def community_strategy_demands(
             resources=resources,
         )
         demands.append(demand)
+
+    # Monk/relic research is deliberately selective rather than a Monastery tech dump.
+    for identity, tech_name, age, reason_ref, reason_label in (
+        ("research-sanctity", "sanctity", "castle-age", "strategy-own-monk-sustained", "Monk investment justifies Sanctity"),
+        ("research-fervor", "fervor", "castle-age", "strategy-own-monk-sustained", "Monk investment justifies Fervor"),
+        ("research-atonement", "atonement", "castle-age", "strategy-enemy-monk-pressure", "Enemy Monk pressure justifies Atonement"),
+        ("research-block-printing", "block-printing", "imperial-age", "strategy-own-monk-sustained", "Imperial Monk utility justifies Block Printing"),
+        ("research-theocracy", "theocracy", "imperial-age", "strategy-own-monk-sustained", "Multiple active Monks justify Theocracy"),
+    ):
+        demands.append(
+            _research_demand(
+                effective=effective,
+                identity=identity,
+                owner="support",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                age_guard=f"(current-age >= {age})",
+                age_observation_ref=("strategy-castle-age" if age == "castle-age" else "strategy-imperial-age"),
+                tech_name=tech_name,
+                reason_label=reason_label,
+                resources=(Resource.FOOD, Resource.GOLD),
+            )
+        )
 
     # Standing military floors.
     demands.extend(
@@ -1394,6 +1524,51 @@ def community_strategy_demands(
                 action_symbol="petard",
                 witness_symbol="petard",
                 invalidate_ref="strategy-enemy-castle-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-camel-transition-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-mounted-heavy",
+                reason_label="Sustained mounted pressure warrants a Castle Camel transition",
+                line="camel-rider-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="329",
+                witness_symbol="329",
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-halberdier-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-enemy-mounted-heavy",
+                reason_label="Heavy mounted pressure requires a late cheap anti-cavalry floor",
+                line="spearman-line",
+                minimum=4,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="halberdier",
+                witness_symbol="halberdier",
+                invalidate_ref="strategy-enemy-mounted-heavy-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="imperial-heavy-camel-floor",
+                owner="military",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-mounted-heavy",
+                reason_label="Sustained mounted pressure supports a Heavy Camel transition",
+                line="camel-rider-line",
+                minimum=3,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="heavy-camel-rider",
+                witness_symbol="heavy-camel-rider",
+                invalidate_ref="strategy-enemy-mounted-heavy-cleared",
             ),
         )
     )
@@ -1721,6 +1896,96 @@ def community_strategy_demands(
         )
     )
 
+    # Second-wave naval breadth. These remain map/opportunity conditioned, not unconditional tech-tree traversal.
+    demands.extend(
+        (
+            _training_demand(
+                effective=effective,
+                identity="water-hulk-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-water-islands",
+                reason_label="Committed Islands water creates a Hulk production floor",
+                line="hulk-line",
+                minimum=2,
+                age_guard="(current-age >= feudal-age)",
+                action_symbol="hulk",
+                witness_symbol="hulk",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-war-hulk-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-water-islands",
+                reason_label="Castle naval control upgrades the Hulk line to War Hulk",
+                line="hulk-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="war-hulk",
+                witness_symbol="war-hulk",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-carrack-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-water-islands",
+                reason_label="Imperial water commitment sustains the Carrack line",
+                line="hulk-line",
+                minimum=2,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="carrack",
+                witness_symbol="carrack",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-demolition-ship-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-naval-pressure",
+                reason_label="Enemy naval pressure creates a tactical Demolition Ship response",
+                line="demolition-raft-line",
+                minimum=1,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="demolition-ship",
+                witness_symbol="demolition-ship",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-heavy-demolition-ship-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-enemy-naval-pressure",
+                reason_label="Imperial naval pressure supports Heavy Demolition Ship escalation",
+                line="demolition-raft-line",
+                minimum=1,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="heavy-demolition-ship",
+                witness_symbol="heavy-demolition-ship",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-trade-cog-floor",
+                owner="water-trade",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.OPTIONAL,
+                reason_ref="strategy-water-trade-opportunity",
+                reason_label="An allied market on an Islands water map creates a trade-cog opportunity",
+                line="trade-cog-line",
+                minimum=2,
+                age_guard="(current-age >= feudal-age)",
+                action_symbol="trade-cog",
+                witness_symbol="trade-cog",
+            ),
+        )
+    )
+
     return tuple(demands)
 
 
@@ -1895,6 +2160,23 @@ def build_byzantine_stock_strategy(
             ),
             attack_objective="byzantine-castle-pressure",
         ),
+        _StrategicMilitaryComposition(
+            identity="imperial-mounted-defense-package",
+            production_demands=(
+                "imperial-halberdier-floor",
+                "imperial-heavy-camel-floor",
+            ),
+            attack_objective="imperial-conversion",
+        ),
+        _StrategicMilitaryComposition(
+            identity="imperial-combined-counter-package",
+            production_demands=(
+                "imperial-halberdier-floor",
+                "imperial-arbalester-floor",
+                "imperial-heavy-camel-floor",
+            ),
+            attack_objective="imperial-conversion",
+        ),
     ):
         if composition.identity not in composition_ids:
             compositions.append(composition)
@@ -1915,6 +2197,12 @@ def build_byzantine_stock_strategy(
         "water-fast-fire-ship-floor": _PrimaryStrategicIntent.WATER,
         "water-galleon-floor": _PrimaryStrategicIntent.WATER,
         "water-dromon-floor": _PrimaryStrategicIntent.WATER,
+        "water-hulk-floor": _PrimaryStrategicIntent.WATER,
+        "water-war-hulk-floor": _PrimaryStrategicIntent.WATER,
+        "water-carrack-floor": _PrimaryStrategicIntent.WATER,
+        "water-demolition-ship-floor": _PrimaryStrategicIntent.WATER,
+        "water-heavy-demolition-ship-floor": _PrimaryStrategicIntent.WATER,
+        "water-trade-cog-floor": _PrimaryStrategicIntent.WATER,
     }
     counter_demand_ids = {
         demand_identity
@@ -1938,6 +2226,19 @@ def build_byzantine_stock_strategy(
         "imperial-siege-ram-floor",
         "imperial-trebuchet-floor",
         "imperial-bombard-floor",
+        "adaptive-guard-tower",
+        "imperial-keep-floor",
+        "imperial-bombard-tower-floor",
+        "castle-camel-transition-floor",
+        "imperial-halberdier-floor",
+        "imperial-heavy-camel-floor",
+        "castle-monk-floor",
+        "water-hulk-floor",
+        "water-war-hulk-floor",
+        "water-carrack-floor",
+        "water-demolition-ship-floor",
+        "water-heavy-demolition-ship-floor",
+        "water-trade-cog-floor",
         "economy-house-floor-1",
         "economy-house-floor-4",
         "economy-house-floor-8",
