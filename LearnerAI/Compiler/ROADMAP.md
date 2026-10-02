@@ -35,60 +35,29 @@ The compiler now derives the compiler-policy production claim through the existi
 
 The remaining runtime questions stay external: SN 264 enforcement, provider busy/queued behavior, birth timing, queue-exit timing, next-pass visibility, same-pass starvation behavior, and provider-loss effects.
 
-## Phase 2 — DUC execution closure
-
-Priority: P0.
-
-Goal: turn the current DUC semantic slices into one reusable search/target/group execution path.
-
-Use:
-LearnerAI/Compiler/ir/duc.py
-LearnerAI/Compiler/semantic/duc.py
-LearnerAI/Compiler/primitives/registry.py
-LearnerAI/Compiler/primitives/native_binder.py
-LearnerAI/Compiler/emitter/per.py
-LearnerAI/Compiler/runtime_binding.py
-and the DUC tests.
-
-Required state machine:
-DISCOVER -> STORE_ID -> REACQUIRE -> VALIDATE -> INVALIDATE
-
-Then:
-TARGET -> PREPARE -> READY -> ISSUE -> WITNESS -> RESET/RELEASE -> RECOVER -> REASSESS
-
-Required coverage:
-- search state;
-- group size;
-- point outputs;
-- cost delta;
-- object/target data where evidence permits;
-- local and remote search mutation;
-- filter generations;
-- group creation and flags;
-- set-target-by-id;
-- target reacquisition.
-
-Hard rules:
-- filter-generation change invalidates list-derived target proof;
-- native-ID reference is identity, not liveness proof;
-- selected-target lifetime is never used as durable object identity;
-- runtime reader values are never fabricated.
-
-Exit: community DUC discovery, micro, and target pipelines lower through one typed path with explicit target provenance.
-
-Runtime track: object liveness, retained-filter rules, duplicate handling, runtime output values, group membership, and measured DUC performance remain OPEN.
-
 ## Phase 2 — DUC execution and strategy exposure
 
 Status: **SUBSTRATE CLOSED / BEHAVIORAL SYNTHESIS OPEN**.
 
 The compiler already contains the typed DUC state model, recurrent firing coupling, search/filter generations, cursor lifecycle, target provenance, direct-ID identity, group/window inputs, target revalidation, native lowering, and zero-findings acceptance fixtures.
 
-The downstream strategy seam is now connected: StrategyProfile -> StrategyCompilation -> normal/runtime Byzantine compilation -> existing NativeDucPlan channel.
+The downstream strategy seam is now connected:
+StrategyProfile -> StrategyCompilation -> normal/runtime Byzantine compilation -> existing NativeDucPlan channel.
 
 What remains is not missing DUC vocabulary. The next DUC work is behavioral synthesis: choose evidence-backed Byzantine discovery/target policies, connect them to strategic demands, complete remaining hostile diagnostics/loaded-source coverage where useful, and keep runtime object liveness, retained-filter behavior, group membership, output values, and exact native lifetime OPEN unless independently proven.
 
-riority interactions, and reset lifetime remain OPEN.
+## Phase 3 — Attack execution lifecycle
+
+Status: **TYPED SUBSTRATE CLOSED / NATIVE EXECUTION OPEN**.
+
+The AttackExecution IR, target revalidation, operational bridge, controller metadata bridge, and issue-only native attack plan are implemented.
+
+Required lifecycle for the remaining closure:
+DEMAND -> ADMISSION -> PREPARE -> READY -> ISSUE -> WITNESS -> RELEASE/RESET -> RECOVERY -> REASSESS
+
+attack-now implements ISSUE only. It never proves WITNESS by implication.
+
+The remaining compiler work is executable lifecycle closure after target synthesis is sufficient. Runtime completion of attack-now, attack-group membership, exploration gating, TSA/town-size interactions, offensive-priority interactions, and reset lifetime remain OPEN.
 
 ## Phase 4 — Escrow and resource arbitration
 
