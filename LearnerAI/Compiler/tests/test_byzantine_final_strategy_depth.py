@@ -44,7 +44,8 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
             "(build 236)",
         ):
             self.assertIn(action, self.output)
-        self.assertIn("(up-enemy-units-in-town >= 1)", self.output)
+        self.assertIn("(enemy-buildings-in-town)", self.output)
+        self.assertIn("(players-unit-type-count any-enemy knight >= 3)", self.output)
 
     def test_monastery_strategy_is_selective_and_relic_policy_is_emitted(self):
         for identity in (
