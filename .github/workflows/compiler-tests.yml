@@ -85,7 +85,8 @@ jobs:
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
       - name: Pinned native parser gate - uploaded patched Byzantine artifact
         run: |
-          cat verification/chunks/*.perpart > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          : > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          for part in verification/chunks/*.perpart; do cat "$part" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; printf "\n" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; done
           test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
           set +e
           python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/byz-native-1.json
