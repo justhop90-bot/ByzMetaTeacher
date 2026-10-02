@@ -163,6 +163,10 @@ class StrategicDemandArbitrationTests(unittest.TestCase):
             output,
         )
         self.assertIn(
+            "(set-goal counter-package-mounted_pressure_feudal 1)",
+            output,
+        )
+        self.assertIn(
             "(set-goal demand-counter-mounted-spears 1)",
             output,
         )
