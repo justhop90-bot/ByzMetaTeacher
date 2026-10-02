@@ -22,7 +22,10 @@ class ByzantineBotPolicyTests(unittest.TestCase):
 
     def test_profile_has_staged_villager_production(self):
         identities = {item.identity for item in self.profile.demands}
-        self.assertIn("villagers-dark-18", identities)
+        self.assertIn("villagers-dark-22", identities)
+        self.assertIn("villagers-dark-counter-24", identities)
+        self.assertIn("villagers-dark-fast-castle-26", identities)
+        self.assertIn("villagers-dark-water-24", identities)
         self.assertIn("villagers-feudal-30", identities)
         self.assertIn("villagers-castle-45", identities)
         self.assertIn("villagers-imperial-70", identities)
@@ -51,6 +54,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         second = compile_strategy_profile(self.profile, self.effective)
         self.assertEqual(first, second)
         self.assertIn("(research castle-age)", first)
+        self.assertIn("(research loom)", first)
         self.assertIn("(train villager)", first)
         self.assertIn("(train cataphract)", first)
         self.assertIn("(train varangian-guard)", first)
