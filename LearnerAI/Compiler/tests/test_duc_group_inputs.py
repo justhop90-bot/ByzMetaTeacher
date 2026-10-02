@@ -96,7 +96,7 @@ def _group_plan(start_placeholder="0", size_placeholder="0"):
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
                     _e("(up-create-group 0 40 c: 0)", "up-create-group", "0", "40", "c:", "0"),
                     _e("(up-get-group-size c: 0 41)", "up-get-group-size", "c:", "0", "41"),
-                    _e("(up-get-object-data id 41)", "up-get-object-data", "id", "41"),
+                    _e("(up-get-object-data object-data-id 41)", "up-get-object-data", "object-data-id", "41"),
                 ),
             ),
             NativeDucRule(
@@ -171,7 +171,7 @@ class DucGroupInputTests(unittest.TestCase):
         size_slot = re.search(
             r"\(up-get-group-size c: 0 (\d+)\)", artifact
         )
-        id_slot = re.search(r"\(up-get-object-data id (\d+)\)", artifact)
+        id_slot = re.search(r"\(up-get-object-data object-data-id (\d+)\)", artifact)
         windowed = re.search(
             r"\(up-create-group (\d+) (\d+) c: 1\)", artifact
         )
