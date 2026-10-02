@@ -103,6 +103,23 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per --report /tmp/native-reports/strategy.json
+      - name: Native zero-findings acceptance - Varangian map opening economy control slice
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from LearnerAI.Compiler.clients.basilisk import compile_strategy_profile
+          from LearnerAI.Compiler.ir.civ_profile import ByzantineProfile, resolve_effective_civ
+          from LearnerAI.Compiler.clients.basilisk import build_byzantine_strategy
+
+          effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+          profile = build_byzantine_strategy(effective)
+          Path("/tmp/byzantine-strategy-control-slice.per").write_text(
+              compile_strategy_profile(profile, effective),
+              encoding="utf-8",
+          )
+          PY
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/byzantine-strategy-control-slice.per --report /tmp/native-reports/byzantine-strategy-control-slice.json
+
       - name: Native zero-findings acceptance - strategy-runtime fixture
         run: |
           python - <<'PY'
@@ -284,6 +301,7 @@ jobs:
             /tmp/CompilerFixture.per
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
+            /tmp/byzantine-strategy-control-slice.per
             /tmp/basilisk-invalidation.per
             /tmp/construction-lifecycle.per
             /tmp/strategic-number.per
