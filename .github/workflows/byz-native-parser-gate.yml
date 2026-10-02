@@ -1,0 +1,42 @@
+name: Temporary Byzantine native parser gate
+
+on:
+  push:
+    paths:
+      - "tmp/byzantine-parser-gate.per"
+      - ".github/workflows/byz-native-parser-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned native parser
+        run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
+      - name: Verify parser identity
+        run: python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Run pinned native gate
+        run: |
+          python -m aoe2_ai_lab lint tmp/byzantine-parser-gate.per --profile default --json > native-report.json
+          cat native-report.json
+          python - <<'PY'
+          import json
+          p=json.load(open("native-report.json", encoding="utf-8"))
+          print("finding_count:", p.get("finding_count"))
+          for f in p.get("findings", []):
+              print(f"{f.get('code')} {f.get('severity')} {f.get('path')}:{f.get('line')}: {f.get('message')}")
+          if p.get("finding_count") != 0 or p.get("findings") != []:
+              raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: byzantine-native-parser-report
+          path: native-report.json
