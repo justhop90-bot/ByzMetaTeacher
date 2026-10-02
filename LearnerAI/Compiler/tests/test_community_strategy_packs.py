@@ -103,7 +103,6 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "water-gillnets",
             "water-warships",
             "water-heavy-warships",
-            "water-fast-fire-ship",
             "water-greek-fire",
             "water-fire-ship-floor",
             "water-fast-fire-ship-floor",
