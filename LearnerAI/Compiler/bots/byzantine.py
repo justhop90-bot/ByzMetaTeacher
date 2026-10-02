@@ -317,7 +317,10 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
 
     # Houses are metered by current count. This avoids a standing burst of
     # house requests and keeps production alive without a universal scheduler.
-    for index in range(14):
+    house_villager_thresholds = (
+        10, 16, 22, 28, 34, 40, 46, 52, 58, 64, 70, 76,
+    )
+    for index, villager_threshold in enumerate(house_villager_thresholds):
         demands.append(
             _staged_building(
                 effective=effective,
@@ -331,7 +334,9 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 minimum_age=Age.DARK,
                 lower_bound=index,
                 upper_bound=index + 1,
-                extra_requirements=("(housing-headroom < 4)",),
+                extra_requirements=(
+                    f"(unit-type-count villager >= {villager_threshold})",
+                ),
             )
         )
 
