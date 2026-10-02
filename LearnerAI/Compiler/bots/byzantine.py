@@ -125,6 +125,7 @@ def _staged_building(
     minimum_age: Age,
     lower_bound: int,
     upper_bound: int,
+    extra_requirements: tuple[str, ...] = (),
 ) -> StrategicDemandSpec:
     return _aged_building_demand(
         effective=effective,
@@ -138,6 +139,7 @@ def _staged_building(
         minimum_age=minimum_age,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
+        extra_requirements=extra_requirements,
     )
 
 
