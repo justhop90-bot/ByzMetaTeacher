@@ -113,7 +113,6 @@ def _staged_building(
     lower_bound: int,
     upper_bound: int,
     extra_requirements: tuple[str, ...] = (),
-    action_name: str | None = None,
 ) -> _strategy.StrategicDemandSpec:
     return _aged_building_demand(
         effective=effective,
@@ -128,7 +127,6 @@ def _staged_building(
         lower_bound=lower_bound,
         upper_bound=upper_bound,
         extra_requirements=extra_requirements,
-        action_name=action_name,
     )
 
 
@@ -451,7 +449,6 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 extra_requirements=(
                     f"(unit-type-count villager >= {villager_threshold})",
                 ),
-                action_name="70",
             )
         )
 
