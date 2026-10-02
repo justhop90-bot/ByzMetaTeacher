@@ -30,6 +30,9 @@ from .strategy import (
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
 from .versioning import EvidenceKind, EvidenceRef
+from .map_profile import default_byzantine_map_profiles
+from .opening import default_byzantine_opening_selector
+from .economic_control import default_byzantine_economy_controller
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -235,6 +238,7 @@ def _training_demand(
     age_guard: str,
     action_symbol: str | None = None,
     witness_symbol: str | None = None,
+    invalidate_ref: str | None = None,
 ) -> _StrategicDemandSpec:
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
@@ -250,7 +254,9 @@ def _training_demand(
         admissibility=(
             _persistent(f"{identity}:age-admission", reason_ref),
         ),
-        invalidation=(),
+        invalidation=(
+            _persistent(f"{identity}:policy-invalidation", invalidate_ref),
+        ) if invalidate_ref else (),
         capability_intent=_CapabilityIntent(
             _CapabilityIntentKind.TRAIN,
             "unit-line",
@@ -321,6 +327,11 @@ def community_strategy_observations(
             effective.age_advance(Age.IMPERIAL).provenance,
         ),
         _observation(
+            "strategy-arena-map",
+            "(map-type arena)",
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
             "strategy-enemy-pressure",
             "(or (players-unit-type-count any-enemy knight >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 4) "
@@ -332,6 +343,16 @@ def community_strategy_observations(
                      *effective.unit_line("militia-line").provenance)
                 )
             ),
+        ),
+        _observation(
+            "strategy-enemy-infantry-pressure",
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            effective.unit_line("militia-line").provenance,
+        ),
+        _observation(
+            "strategy-enemy-infantry-pressure-cleared",
+            "(players-unit-type-count any-enemy militia-line < 5)",
+            effective.unit_line("militia-line").provenance,
         ),
         _observation(
             "strategy-enemy-ranged",
@@ -702,6 +723,21 @@ def community_strategy_demands(
                 line="cataphract-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="castle-varangian-guard-floor",
+                owner="castle-varangian",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-infantry-pressure",
+                reason_label="Maintain a conditional Byzantine Varangian Guard floor against sustained infantry pressure",
+                line="varangian-guard-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="varangian-guard",
+                witness_symbol="varangian-guard",
+                invalidate_ref="strategy-enemy-infantry-pressure-cleared",
             ),
             _training_demand(
                 effective=effective,
@@ -1134,6 +1170,14 @@ def build_byzantine_stock_strategy(
             ),
             attack_objective="byzantine-castle-pressure",
         ),
+        _StrategicMilitaryComposition(
+            identity="castle-infantry-package",
+            production_demands=(
+                "castle-varangian-guard-floor",
+                "counter-castle-cataphracts",
+            ),
+            attack_objective="byzantine-castle-pressure",
+        ),
     ):
         if composition.identity not in composition_ids:
             compositions.append(composition)
@@ -1150,6 +1194,9 @@ def build_byzantine_stock_strategy(
         attack_plan=_default_byzantine_attack_plan(stock_profile_id),
         duc_plan=_default_byzantine_duc_plan(stock_profile_id),
         water_execution_plan=community_water_execution_plan(),
+        map_profile=default_byzantine_map_profiles(),
+        opening_selector=default_byzantine_opening_selector(),
+        economy_controller=default_byzantine_economy_controller(),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
