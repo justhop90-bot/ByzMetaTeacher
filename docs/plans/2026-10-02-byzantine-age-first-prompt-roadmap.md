@@ -1,4 +1,4 @@
-**6/7 PROMPTS**
+**7/7 PROMPTS**
 
 # Byzantine Core v1 — Age-First Bot Roadmap
 
@@ -244,7 +244,7 @@ Prompt 5 also requires focused tests for all seven economy modes, research prior
 
 ---
 
-## **6/7 — Prompt 6: Water, Transport, and Positional Completion — ACTIVE**
+## **6/7 — Prompt 6: Water, Transport, and Positional Completion — IMPLEMENTED / CI PENDING**
 
 ### Objective
 
@@ -279,11 +279,32 @@ Prompt 6 also requires focused tests for first-Dock admission, fishing continuit
 
 ---
 
-## **7/7 — Prompt 7: Game-Proof, Tuning, and Release — QUEUED**
+## **7/7 — Prompt 7: Game-Proof, Tuning, and Release — ACTIVE**
 
 ### Objective
 
 Convert the strategic profile into a measured playable bot.
+
+### Implemented in this prompt
+
+- Added a dedicated Byzantine Core v1 game-proof and release matrix covering:
+  - standard open land;
+  - mounted, ranged, infantry, and siege pressure;
+  - Arena conversion;
+  - 1TC open Castle defense;
+  - Fast Imperial;
+  - Imperial trash war;
+  - gunpowder;
+  - Cataphract conversion;
+  - Islands water;
+  - transport loss/recovery;
+  - resource starvation;
+  - prolonged late game.
+- Defined artifact-level acceptance signals for each behavior rather than treating mere unit availability as proof of a working strategy.
+- Made the existing deterministic build manifest the release identity surface.
+- Kept native parser zero-findings, cross-platform determinism, full compiler regression, and focused Byzantine tests as the hard release gate.
+- Recorded unresolved runtime questions explicitly instead of pretending the static compiler is an RTS simulator.
+
 
 ### Required proof set
 
@@ -312,6 +333,8 @@ Convert the strategic profile into a measured playable bot.
 - DE gameplay matrix recorded;
 - no unsupported native primitive silently introduced;
 - no change justified only by “it looks like a bot.”
+
+The release matrix is recorded in `docs/release/2026-10-02-byzantine-core-v1-gameproof-matrix.md`.
 
 ---
 
