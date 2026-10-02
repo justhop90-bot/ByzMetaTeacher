@@ -175,6 +175,24 @@ def _staged_training(
     return replace(base, execution=execution)
 
 
+
+def _with_execution_guards(
+    demand: StrategicDemandSpec,
+    *guards: str,
+) -> StrategicDemandSpec:
+    """Add explicit native threat/world-state guards to a stock demand.
+
+    Community evidence explains why a policy exists; these guards make the
+    deployed .per executable conditionally. This keeps bot policy honest when
+    the stock strategic reason is intentionally broad.
+    """
+    execution = replace(
+        demand.execution,
+        requirements=(*demand.execution.requirements, *guards),
+    )
+    return replace(demand, execution=execution)
+
+
 def _castle_age_transition(effective: EffectiveCivData) -> StrategicDemandSpec:
     advance = effective.age_advance(Age.CASTLE)
     cost = effective.cost_of_age_advance(Age.CASTLE)
@@ -335,83 +353,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             )
         )
 
-    # Conditional Feudal response packages.
-    demands.extend(
-        (
-            _staged_training(
-                effective=effective,
-                identity="feudal-spears-2-4",
-                owner="defense",
-                posture=StrategyPosture.FLUSH,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="enemy-feudal-mounted-pressure",
-                reason_label="Stage cheap anti-mounted defense",
-                line="spearman-line",
-                action_symbol="spearman-line",
-                witness_symbol="spearman-line",
-                lower_bound=2,
-                upper_bound=4,
-                age_guard="(current-age >= feudal-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy scout-cavalry-line >= 3)",
-                ),
-            ),
-            _staged_training(
-                effective=effective,
-                identity="feudal-skirmishers-2-4",
-                owner="defense",
-                posture=StrategyPosture.FLUSH,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="enemy-ranged-pressure",
-                reason_label="Stage anti-ranged skirmisher defense",
-                line="skirmisher-line",
-                action_symbol="skirmisher-line",
-                witness_symbol="skirmisher-line",
-                lower_bound=2,
-                upper_bound=4,
-                age_guard="(current-age >= feudal-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy archer-line >= 3)",
-                ),
-            ),
-            _staged_training(
-                effective=effective,
-                identity="feudal-spears-4-6",
-                owner="defense",
-                posture=StrategyPosture.FLUSH,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="enemy-feudal-mounted-pressure",
-                reason_label="Increase anti-mounted floor under sustained cavalry pressure",
-                line="spearman-line",
-                action_symbol="spearman-line",
-                witness_symbol="spearman-line",
-                lower_bound=4,
-                upper_bound=6,
-                age_guard="(current-age >= feudal-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy scout-cavalry-line >= 5)",
-                ),
-            ),
-            _staged_training(
-                effective=effective,
-                identity="feudal-skirmishers-4-6",
-                owner="defense",
-                posture=StrategyPosture.FLUSH,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="enemy-ranged-pressure",
-                reason_label="Increase anti-ranged floor under sustained archer pressure",
-                line="skirmisher-line",
-                action_symbol="skirmisher-line",
-                witness_symbol="skirmisher-line",
-                lower_bound=4,
-                upper_bound=6,
-                age_guard="(current-age >= feudal-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy archer-line >= 5)",
-                ),
-            ),
-        )
-    )
+    # Feudal response package guards are attached to the stock counter
+    # demands below. Keeping one demand per counter avoids double production.
 
     # Castle power is staged instead of asking for six of everything at once.
     demands.extend(
@@ -496,6 +439,56 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     compiler's generic semantics.
     """
     base = build_byzantine_strategy(effective)
+
+    guard_by_identity = {
+        "counter-mounted-spears": (
+            "(players-unit-type-count any-enemy scout-cavalry-line >= 3)",
+        ),
+        "counter-ranged-skirmishers": (
+            "(players-unit-type-count any-enemy archer-line >= 3)",
+        ),
+        "counter-castle-camels": (
+            "(players-unit-type-count any-enemy knight >= 3)",
+        ),
+        "counter-castle-cataphracts": (
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+        ),
+        "counter-castle-siege-response": (
+            "(players-unit-type-count any-enemy mangonel-line >= 2)",
+        ),
+        "castle-varangian-guard-floor": (
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+        ),
+        "castle-siege-floor": (
+            "(players-unit-type-count any-enemy mangonel-line >= 2)",
+        ),
+        "castle-mangonel-floor": (
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+        ),
+        "imperial-bombard-floor": (
+            "(players-building-type-count any-enemy castle >= 1)",
+        ),
+        "castle-archery-capability": (
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+        ),
+        "castle-siege-capability": (
+            "(players-unit-type-count any-enemy mangonel-line >= 2)",
+        ),
+        "adaptive-outpost": (
+            "(or (players-unit-type-count any-enemy knight >= 3) "
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
+        ),
+    }
+
+    guarded_demands = tuple(
+        _with_execution_guards(demand, *guard_by_identity[demand.identity])
+        if demand.identity in guard_by_identity
+        else demand
+        for demand in base.demands
+    )
+    base = replace(base, demands=guarded_demands)
+
     existing = {item.identity for item in base.demands}
     additions = tuple(
         demand for demand in _bot_demands(effective)
