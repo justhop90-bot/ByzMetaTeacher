@@ -305,6 +305,22 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train mangonel)", artifact)
         self.assertIn("(research imperial-age)", artifact)
 
+    def test_profile_has_broad_imperial_mounted_response(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        mounted_guard = "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))"
+        for identity in (
+            "imperial-halberdier",
+            "imperial-heavy-camel",
+            "imperial-halberdier-counter",
+            "imperial-heavy-camel-counter",
+        ):
+            self.assertIn(mounted_guard, demands[identity].execution.requirements)
+
+    def test_water_dock_releases_when_dock_exists(self):
+        demand = self.profile.demand("water-dock-capability")
+        self.assertIn("(map-type islands)", demand.execution.requirements)
+        self.assertEqual(demand.invalidation[0].reason_ref, "strategy-dock-exists")
+
     def test_profile_has_imperial_trash_war_packages(self):
         demands = {item.identity: item for item in self.profile.demands}
         self.assertIn(
