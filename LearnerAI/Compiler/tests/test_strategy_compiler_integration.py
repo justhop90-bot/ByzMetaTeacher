@@ -254,13 +254,18 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("byzantine-wall-geometry-arm-gold", rule_ids)
         self.assertIn("byzantine-wall-geometry-arm-wood", rule_ids)
         self.assertIn("byzantine-wall-geometry-arm-stone", rule_ids)
-        self.assertIn("byzantine-wall-geometry-issue", rule_ids)
+        self.assertIn("byzantine-wall-geometry-issue-gold", rule_ids)
+        self.assertIn("byzantine-wall-geometry-issue-wood", rule_ids)
+        self.assertIn("byzantine-wall-geometry-issue-stone", rule_ids)
 
         output = compile_strategy_profile(self.profile, self.effective)
         self.assertIn("(defconst byzantine-wall-start", output)
-        self.assertIn("(defconst byzantine-wall-end", output)
+        self.assertIn("(defconst byzantine-wall-resource-kind", output)
+        self.assertIn("(defconst byzantine-wall-gold-point", output)
+        self.assertIn("(defconst byzantine-wall-wood-point", output)
+        self.assertIn("(defconst byzantine-wall-stone-point", output)
         self.assertIn(
-            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+            "(up-build-line byzantine-wall-start byzantine-wall-gold-point c: 117)",
             output,
         )
 
