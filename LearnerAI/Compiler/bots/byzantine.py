@@ -385,63 +385,6 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             )
         )
 
-    # Farm continuity is demand-driven rather than a fixed opening sequence.
-    # A small Feudal base gives the food economy a reliable fallback, while the
-    # Castle stage expands only when food stock is tight and the current farm
-    # base is occupied.
-    for spec in (
-        (
-            "feudal-farm-base",
-            "Maintain a bounded Feudal farm base when food continuity is tight",
-            "farm",
-            "50",
-            Age.FEUDAL,
-            "current-feudal-age",
-            0,
-            8,
-        ),
-        (
-            "castle-farm-base",
-            "Expand the food base in Castle Age when food continuity is tight",
-            "farm",
-            "50",
-            Age.CASTLE,
-            "strategy-castle-age",
-            8,
-            18,
-        ),
-    ):
-        (
-            identity,
-            reason_label,
-            building_name,
-            native_action,
-            age,
-            reason_ref,
-            lower_bound,
-            upper_bound,
-        ) = spec
-        demands.append(
-            _aged_building_demand(
-                effective=effective,
-                identity=identity,
-                owner="economy",
-                posture=StrategyPosture.BOOM,
-                priority=StrategicPriority.CORE,
-                reason_ref=reason_ref,
-                reason_label=reason_label,
-                building_name=building_name,
-                minimum_age=age,
-                lower_bound=lower_bound,
-                upper_bound=upper_bound,
-                action_name=native_action,
-                extra_requirements=(
-                    "(food-amount < 500)",
-                    "(idle-farm-count < 2)",
-                ),
-            )
-        )
-
     # Stock counter demands already own the Feudal response lifecycle.
     # Castle military floors are already owned by the stock Byzantine
     # strategy. Bot policy only strengthens their executable threat guards.
