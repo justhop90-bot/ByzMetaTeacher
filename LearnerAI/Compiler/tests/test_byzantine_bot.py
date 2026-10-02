@@ -84,6 +84,60 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             4,
         )
 
+    def test_economy_modes_encode_resource_priority_by_position(self):
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+
+        expected = {
+            EconomyMode.BASE: (50, 30, 20, 5),
+            EconomyMode.COUNTER_FEUDAL: (42, 40, 18, 8),
+            EconomyMode.FAST_CASTLE: (55, 15, 30, 3),
+            EconomyMode.WATER_ECONOMY: (40, 40, 20, 5),
+            EconomyMode.WATER_CONTROL: (38, 42, 20, 8),
+            EconomyMode.CASTLE_CONVERSION: (45, 30, 25, 7),
+            EconomyMode.IMPERIAL_CONVERSION: (40, 25, 35, 7),
+        }
+        policies = {
+            item.mode: item.allocation
+            for item in self.profile.economy_controller.policies
+        }
+        self.assertEqual(
+            set(policies),
+            set(expected),
+        )
+        for mode, values in expected.items():
+            allocation = policies[mode]
+            self.assertEqual(
+                (allocation.food, allocation.wood, allocation.gold, allocation.builders),
+                values,
+            )
+
+    def test_economy_research_priority_does_not_preempt_conversion(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn(
+            "(unit-type-count-total villager >= 30)",
+            demands["research-hand-cart"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 35)",
+            demands["research-bow-saw"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 50)",
+            demands["research-two-man-saw"].execution.requirements,
+        )
+        self.assertIn(
+            "(current-age >= imperial-age)",
+            demands["research-two-man-saw"].execution.requirements,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            demands["research-chemistry"].execution.requirements,
+        )
+        self.assertIn(
+            "(unit-type-count-total villager >= 45)",
+            demands["research-conscription"].execution.requirements,
+        )
+
     def test_feudal_economy_prioritizes_wood_for_cheap_counters(self):
         from LearnerAI.Compiler.clients.basilisk import EconomyMode
 
