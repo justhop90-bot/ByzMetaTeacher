@@ -86,6 +86,7 @@ jobs:
       - name: Native zero-findings acceptance - patched Byzantine artifact
         run: |
           cat tmp/byzantine-parser-chunks/*.perpart > /tmp/byzantine-parser-gate.per
+          python tmp/apply_byzantine_native_fixes.py /tmp/byzantine-parser-gate.per
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/byzantine-parser-gate.per --report /tmp/native-reports/byzantine-parser-gate.json
 
       - name: Verify generic compiler fixture reproducibility
