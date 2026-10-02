@@ -544,7 +544,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-water-trade-opportunity",
-            "(and (map-type islands) (players-building-type-count any-ally market >= 1))",
+            "(and (map-type islands) (players-building-type-count this-any-ally market >= 1))",
             _airef_provenance(effective, "commands/commands-details.html#players-building-type-count"),
         ),
         _observation(
