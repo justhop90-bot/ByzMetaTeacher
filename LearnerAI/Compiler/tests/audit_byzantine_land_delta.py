@@ -24,6 +24,10 @@ LAND_TARGETS = (
 )
 
 
+TECH_ID_ALIASES = {
+    "arbalest": 237,
+}
+
 def _slug(value: str) -> str:
     return value.lower().replace(" ", "-")
 
@@ -42,8 +46,13 @@ def capability_status(effective, kind: str, value: str) -> tuple[str, str]:
                 return "VERIFIED", f"unit line {value} members are factually verified"
             return "PARTIAL", f"unit line {value} member statuses={statuses}"
         wanted = _slug(value)
-        tech = next(tech for tech in effective.technologies if _slug(tech.name) == wanted)
-        status = effective.factual_status("technology", int(tech.id)).value
+        if wanted in TECH_ID_ALIASES:
+            tech_id = TECH_ID_ALIASES[wanted]
+            tech = effective.tech(tech_id)
+        else:
+            tech = next(tech for tech in effective.technologies if _slug(tech.name) == wanted)
+            tech_id = int(tech.id)
+        status = effective.factual_status("technology", tech_id).value
         return status, f"technology {tech.name} id={int(tech.id)}"
     except (KeyError, StopIteration, ValueError):
         return "BLOCKED", f"verified game-data node for {kind}:{value} is unavailable"
