@@ -200,6 +200,18 @@ class ConstructionTransitionTests(unittest.TestCase):
         ):
             compile_source(source)
 
+    def test_build_completion_witness_accepts_explicit_minimum_count(self):
+        source = """
+        demand town-center {
+            require (can-build town-center)
+            action (build town-center)
+            witness (building-type-count town-center >= 2)
+            release (building-type-count town-center >= 2)
+        }
+        """
+        output = compile_source(source)
+        self.assertIn("(building-type-count town-center >= 2)", output)
+
     def test_build_completion_witness_rejects_nonexistence_threshold(self):
         source = """
         demand castle {
