@@ -75,8 +75,8 @@ def lower_opening_selector(
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
-    zero = f"(goal {plan.state_name} 0)"
-    guard = lambda body: f"(and {zero} {body})"
+    unselected = f"(goal {plan.state_name} -1)"
+    guard = lambda body: f"(and {unselected} {body})"
 
     rules = (
         NativeControlRule(
