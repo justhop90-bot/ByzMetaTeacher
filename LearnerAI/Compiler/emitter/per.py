@@ -622,6 +622,8 @@ def emit(
                 value = binding.id
             elif isinstance(binding, TimerSlot):
                 value = binding.id
+            elif isinstance(binding, GoalSpan):
+                value = binding.start.value
             else:
                 raise CompileError(
                     f"CONTROL-PLANE-BINDING: state '{state.identifier}' resolved to unsupported "
