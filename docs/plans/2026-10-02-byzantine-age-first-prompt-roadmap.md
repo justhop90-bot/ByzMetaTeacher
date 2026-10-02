@@ -3,7 +3,7 @@
 # Byzantine Core v1 — Age-First Bot Roadmap
 
 **Artifact:** Byzantine Core v1
-**Branch:** `bot/byzantine-core-v1`
+**Branch:** `bot/byzantine-core-v1-final`
 **Method:** community-derived behavior expressed through the existing Byzantine StrategyProfile and existing compiler/native vocabulary.
 **Style rule:** every addition must read like the existing `LearnerAI/Compiler/bots/byzantine.py`: small pure helpers, `StrategicDemandSpec` construction, `replace(...)` for execution guards, explicit native fact strings, existing `StrategyPosture`/`StrategicPriority` values, deterministic tuple ordering, focused unit tests, no second scheduler, no new bot-side language.
 
