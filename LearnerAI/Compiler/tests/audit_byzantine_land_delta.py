@@ -63,14 +63,17 @@ def main() -> int:
     rows = []
     for label, kind, value, rationale in LAND_TARGETS:
         status, evidence = capability_status(effective, kind, value)
-        needle = _slug(value)
-        output_present = needle in artifact.lower()
+        needles = {_slug(value), _slug(label)}
+        output_present = any(needle in artifact.lower() for needle in needles)
         semantic_present = any(
-            needle in demand.identity.lower()
-            or needle in demand.execution.action.lower()
-            or any(
-                needle in execution.action.lower()
-                for execution in demand.execution_demands
+            any(
+                needle in demand.identity.lower()
+                or needle in demand.execution.action.lower()
+                or any(
+                    needle in execution.action.lower()
+                    for execution in demand.execution_demands
+                )
+                for needle in needles
             )
             for demand in profile.demands
         )
