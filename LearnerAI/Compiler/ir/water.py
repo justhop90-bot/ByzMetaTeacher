@@ -145,11 +145,26 @@ def lower_water_execution_plan(
     from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
 
-    required = profile.observation(plan.transport_required_observation).expression
-    capable = profile.observation(plan.transport_capable_observation).expression
-    dock = profile.observation(plan.dock_observation).expression
-    naval = profile.observation(plan.naval_pressure_observation).expression
-    warboats = profile.observation(plan.warboat_floor_observation).expression
+    required = parse_expression(
+        profile.observation(plan.transport_required_observation).expression,
+        SourceLocation(1),
+    )
+    capable = parse_expression(
+        profile.observation(plan.transport_capable_observation).expression,
+        SourceLocation(1),
+    )
+    dock = parse_expression(
+        profile.observation(plan.dock_observation).expression,
+        SourceLocation(1),
+    )
+    naval = parse_expression(
+        profile.observation(plan.naval_pressure_observation).expression,
+        SourceLocation(1),
+    )
+    warboats = parse_expression(
+        profile.observation(plan.warboat_floor_observation).expression,
+        SourceLocation(1),
+    )
 
     posture_state = plan.water_posture_state
     phase_state = plan.transport_phase_state
