@@ -39,11 +39,23 @@ Resource-building construction for lumber camp, mill, mining camp, farm and dock
 
 ---
 
-## **2/7 — Prompt 2: Feudal Economic and Military Engine — QUEUED**
+## **2/7 — Prompt 2: Feudal Economic and Military Engine — ACTIVE**
 
 ### Objective
 
 Make Feudal the Byzantine information-to-action age.
+
+### Implemented in this prompt
+
+- Added a persistent Feudal Barracks provider demand using the existing one-sided building-demand pattern.
+- Bound Feudal Spearman and Skirmisher responses to their actual Feudal production providers.
+- Kept the cheap-counter floors at four units and preserved the existing typed counter-package arbitration.
+- Shifted the existing COUNTER_FEUDAL economy controller allocation to 42 food / 40 wood / 18 gold / 8 builders.
+- Sequenced Double-Bit Axe and Horse Collar behind Wheelbarrow.
+- Made Fletching conditional on the actual Feudal Archery Range and observed ranged pressure.
+- Made the Castle transition wait for at least 24 villagers and clearance of the existing five-militia pressure observation.
+- No generic compiler semantics or new bot-side scheduler were introduced.
+
 
 ### Bot policy
 
@@ -69,6 +81,8 @@ Stone remains zero unless a specific defensive or Castle objective calls for it.
 ### Acceptance
 
 Every Feudal military demand must have a verified provider, a counter-condition, a release witness, and a recoverable economic path.
+
+Prompt 2 also requires focused tests for the Barracks provider, counter-package continuity, Feudal economy allocation, research sequencing, and the Castle-pressure gate.
 
 ---
 
