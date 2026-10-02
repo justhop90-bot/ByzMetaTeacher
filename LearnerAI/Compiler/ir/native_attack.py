@@ -116,11 +116,6 @@ class NativeAttackLifecyclePlan:
         goal_sites = tuple(request.site_key for request in self.goal_input_requests)
         if len(goal_sites) != len(set(goal_sites)):
             raise ValueError("duplicate native attack Goal input request site")
-        goal_ids = tuple(
-            request.request.request_id for request in self.goal_input_requests
-        )
-        if len(goal_ids) != len(set(goal_ids)):
-            raise ValueError("duplicate native attack Goal input request storage id")
         rule_by_identity = {rule.identity: rule for rule in self.rules}
         for request in self.goal_input_requests:
             rule = rule_by_identity.get(request.rule_identity)
