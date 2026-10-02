@@ -159,21 +159,6 @@ def default_native_engine_effect_catalog() -> NativeEngineEffectCatalog:
     """Return the generic engine-state/control contracts currently modeled."""
     contracts = (
         NativeEngineEffectContract(
-            command="up-find-player",
-            native_kind="Action",
-            domain=NativeStateDomain.GOAL,
-            effect=NativeEffectKind.WRITE,
-            identifier_arg=2,
-            persistent=True,
-            same_pass_visible=False,
-            typed_operand_dependency=False,
-            evidence_sources=(_AOERF_COMMANDS, _SCHEMA),
-            semantics=(
-                "selects a native player according to PlayerStance and FindPlayerMethod "
-                "and writes the resulting player number into the supplied Goal"
-            ),
-        ),
-        NativeEngineEffectContract(
             command="set-goal",
             native_kind="Action",
             domain=NativeStateDomain.GOAL,
