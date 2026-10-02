@@ -1,7 +1,8 @@
 import unittest
 
 from Compiler.clients.basilisk import ByzantineProfile, resolve_effective_civ
-from Compiler.ir.strategy import build_byzantine_strategy, lower_strategy_profile
+from Compiler.ir.strategy import StrategyPosture, build_byzantine_strategy, lower_strategy_profile
+from Compiler.ir.strategy_runtime import ReassessmentReason, RuntimeObservationSnapshot, evaluate_strategy_runtime
 from Compiler.ir.water import (
     TransportExecutionPhase,
     WaterExecutionState,
@@ -25,6 +26,37 @@ class WaterTransportExecutionTests(unittest.TestCase):
         self.assertEqual(recovered.phase, TransportExecutionPhase.RECOVER)
         self.assertTrue(recovered.transport_required)
         self.assertFalse(recovered.transport_capable)
+
+    def test_runtime_state_marks_transport_loss_as_recovery(self):
+        profile = build_byzantine_strategy(self.effective)
+        transport_expression = profile.observation("strategy-own-transport-capable").expression
+        islands_expression = profile.observation("strategy-water-islands").expression
+
+        previous = WaterExecutionState(
+            transport_required=True,
+            transport_capable=True,
+            transport_phase=TransportExecutionPhase.READY,
+        )
+        snapshot = RuntimeObservationSnapshot(
+            previous_posture=StrategyPosture.BOOM,
+            previous_water_execution_state=previous,
+            fact_results=(
+                (islands_expression, True),
+                (transport_expression, False),
+            ),
+        )
+
+        runtime = evaluate_strategy_runtime(profile, self.effective, snapshot)
+
+        self.assertIsNotNone(runtime.water_execution_state)
+        self.assertEqual(
+            runtime.water_execution_state.transport_phase,
+            TransportExecutionPhase.RECOVER,
+        )
+        self.assertIn(
+            ReassessmentReason.TRANSPORT_CAPABILITY_LOSS,
+            runtime.reassessment_reasons,
+        )
 
     def test_stock_strategy_exposes_typed_water_execution_plan(self):
         profile = build_byzantine_strategy(self.effective)
