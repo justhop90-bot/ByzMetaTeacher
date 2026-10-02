@@ -37,6 +37,17 @@ def _claim_name(conflict_class: str) -> str:
     return "action-claim-" + conflict_class.lower().replace("_", "-")
 
 
+def _combine_binary_native_guards(head: str, parts: tuple[str, ...]) -> str:
+    if not parts:
+        raise CompileError(
+            f"EMITTER-LOGICAL-EMPTY: cannot combine an empty {head} guard sequence"
+        )
+    combined = parts[0]
+    for part in parts[1:]:
+        combined = f"({head} {combined} {part})"
+    return combined
+
+
 def _defconst_bindings(lines: list[str]) -> dict[str, str]:
     bindings: dict[str, str] = {}
     for line in lines:
@@ -721,7 +732,10 @@ def emit(
                 initial_value = encoded[demand.name].active.value
                 if (
                     demand.strategic_binding is not None
-                    and demand.strategic_binding.required_primary_intent is not None
+                    and (
+                        demand.strategic_binding.required_primary_intent is not None
+                        or demand.strategic_binding.counter_package_state_names
+                    )
                 ):
                     initial_value = encoded[demand.name].released.value
                 out.append(
@@ -791,6 +805,14 @@ def emit(
                 recovery_guards.append(
                     f"(goal {demand.strategic_binding.arbitration_state_name} "
                     f"{demand.strategic_binding.required_primary_intent.value})"
+                )
+            if demand.strategic_binding.counter_package_state_names:
+                package_guards = tuple(
+                    f"(goal {state_name} 1)"
+                    for state_name in demand.strategic_binding.counter_package_state_names
+                )
+                recovery_guards.append(
+                    _combine_binary_native_guards("or", package_guards)
                 )
             recovery_guards.extend(
                 guard for guard in demand.strategic_binding.admissibility_guards
