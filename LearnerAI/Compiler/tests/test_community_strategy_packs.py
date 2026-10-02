@@ -94,6 +94,66 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "(train trebuchet)",
         ):
             self.assertIn(action, output)
+    def test_verified_water_escalation_is_present(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demands = {demand.identity: demand for demand in profile.demands}
+
+        for identity in (
+            "water-fishing-lines",
+            "water-gillnets",
+            "water-warships",
+            "water-heavy-warships",
+            "water-fast-fire-ship",
+            "water-greek-fire",
+            "water-fire-ship-floor",
+            "water-fast-fire-ship-floor",
+            "water-galleon-floor",
+            "water-dromon-floor",
+        ):
+            self.assertIn(identity, demands)
+            self.assertEqual(
+                demands[identity].required_primary_intent.name,
+                "WATER",
+            )
+
+    def test_water_escalation_emits_native_actions(self):
+        from Compiler.clients.basilisk import compile_strategy_profile
+
+        profile = build_byzantine_stock_strategy(self.effective)
+        output = compile_strategy_profile(profile, self.effective)
+
+        for action in (
+            "(research fishing-lines)",
+            "(research gillnets)",
+            "(research warships)",
+            "(research heavy-warships)",
+            "(research fast-fire-ship)",
+            "(research greek-fire)",
+            "(train fire-ship)",
+            "(train fast-fire-ship)",
+            "(train galleon)",
+            "(train dromon)",
+        ):
+            self.assertIn(action, output)
+
+    def test_water_and_core_land_capabilities_have_world_loss_recovery(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demands = {demand.identity: demand for demand in profile.demands}
+
+        for identity in (
+            "water-fishing-continuity",
+            "water-transport-capability",
+            "water-naval-defense",
+            "water-naval-control",
+            "castle-stable-capability",
+            "castle-siege-capability",
+            "castle-monastery-capability",
+            "imperial-university-capability",
+            "castle-cataphract-floor",
+            "castle-mangonel-floor",
+        ):
+            self.assertTrue(demands[identity].recovery_on_world_loss)
+
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
