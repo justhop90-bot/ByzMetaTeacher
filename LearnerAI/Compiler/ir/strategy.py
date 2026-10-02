@@ -1962,6 +1962,89 @@ def build_land_castle_strategy(
     )
 
 
+def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
+    """Default Castle-age Byzantine enemy-target discovery/reacquisition substrate.
+
+    Strategy policy selects only decision-grade observed pressure. DUC then
+    rebuilds the remote search list and records the native object identity.
+    Runtime object liveness and attack-controller consumption remain separate
+    boundaries.
+    """
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
+
+    target_specs = (
+        (
+            "byzantine-castle-target-knight",
+            "(players-unit-type-count any-enemy knight >= 3)",
+            "38",
+            "knight",
+        ),
+        (
+            "byzantine-castle-target-infantry",
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            "74",
+            "militia-line",
+        ),
+    )
+
+    rules = []
+    outputs = []
+    for order, (identity, pressure_fact, search_unit, purpose) in enumerate(
+        target_specs
+    ):
+        output = GoalSlotRequest(
+            StorageRequestId(
+                SemanticId(profile_id, identity),
+                "up-get-object-data",
+            ),
+            role=GoalRole.NATIVE_OUTPUT,
+        )
+        rules.append(
+            NativeDucRule(
+                identity=identity,
+                order=order,
+                facts=(
+                    parse_expression("(current-age >= castle-age)", SourceLocation(1)),
+                    parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
+                    parse_expression(pressure_fact, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression("(up-full-reset-search)", SourceLocation(1)),
+                    parse_expression(
+                        f"(up-find-remote c: {search_unit} c: 1)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-set-target-object search-remote c: 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(up-get-object-data id 0)",
+                        SourceLocation(1),
+                    ),
+                ),
+            )
+        )
+        outputs.append(
+            NativeDucOutputRequest(
+                rule_identity=identity,
+                section="ACTION",
+                expression_index=3,
+                request=output,
+                command="up-get-object-data",
+                argument_index=1,
+            )
+        )
+
+    return NativeDucPlan(
+        rules=tuple(rules),
+        output_requests=tuple(outputs),
+    )
+
+
 def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
     """Default Castle-age Byzantine issue actuator.
 
@@ -2394,6 +2477,7 @@ def build_byzantine_castle_strategy(
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
         attack_plan=_default_byzantine_attack_plan(),
+        duc_plan=_default_byzantine_duc_plan(profile.profile_id),
     )
 
 def _validate_capability_intent(
