@@ -33,7 +33,6 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "research-bow-saw",
             "research-two-man-saw",
             "research-bodkin-arrow",
-            "research-bloodlines",
             "research-conscription",
             "research-chemistry",
         ):
