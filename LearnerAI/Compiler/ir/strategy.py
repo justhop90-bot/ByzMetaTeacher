@@ -1553,7 +1553,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                     f"(can-build {pair['wall_id']})",
                     SourceLocation(1),
                 ),
-            )
+            ]
             distance_command = (
                 f"(up-point-distance "
                 f"byzantine-wall-anchor-{pair['left']} "
