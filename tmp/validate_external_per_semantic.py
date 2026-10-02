@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse, json, sys
 from pathlib import Path
 
-from LearnerAI.Compiler.primitives import default_de_registry
+from Compiler.primitives import default_de_registry
 from LearnerAI.Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
 from LearnerAI.Compiler.semantic.source_graph_validation import validate_effective_source_graph
 from LearnerAI.Compiler.semantic.rule_execution import analyze_effective_rules
