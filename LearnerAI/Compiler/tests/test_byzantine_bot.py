@@ -30,6 +30,25 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("villagers-castle-45", identities)
         self.assertIn("villagers-imperial-70", identities)
 
+    def test_opening_plan_reads_use_native_goal_comparisons(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn(
+            "(up-compare-goal opening-plan c:== 2)",
+            demands["villagers-dark-counter-24"].execution.requirements,
+        )
+        self.assertIn(
+            "(up-compare-goal opening-plan c:== 3)",
+            demands["villagers-dark-fast-castle-26"].execution.requirements,
+        )
+        self.assertIn(
+            "(or (up-compare-goal opening-plan c:== 4) (up-compare-goal opening-plan c:== 5))",
+            demands["villagers-dark-water-24"].execution.requirements,
+        )
+        self.assertNotIn("(goal opening-plan 2)", demands["villagers-dark-counter-24"].execution.requirements)
+        self.assertNotIn("(goal opening-plan 3)", demands["villagers-dark-fast-castle-26"].execution.requirements)
+        self.assertNotIn("(goal opening-plan 4)", demands["villagers-dark-water-24"].execution.requirements)
+        self.assertNotIn("(goal opening-plan 5)", demands["villagers-dark-water-24"].execution.requirements)
+
     def test_profile_has_conditional_feudal_and_castle_responses(self):
         demands = {item.identity: item for item in self.profile.demands}
         self.assertIn(
