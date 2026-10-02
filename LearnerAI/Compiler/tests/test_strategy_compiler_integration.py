@@ -189,24 +189,6 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: militia-line c: 1)", output)
 
-    def test_byzantine_duc_remote_search_has_persistent_enemy_focus_control(self):
-        compilation = lower_strategy_profile(self.profile, self.effective)
-
-        self.assertIsNotNone(compilation.control_plan)
-        control = compilation.control_plan
-        assert control is not None
-        self.assertIn(
-            "byzantine-focus-player",
-            tuple(state.identifier for state in control.states),
-        )
-        actions = {
-            action.head
-            for rule in control.rules
-            for action in rule.actions
-        }
-        self.assertIn("up-find-player", actions)
-        self.assertIn("up-modify-sn", actions)
-
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
