@@ -1726,6 +1726,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
     arbitration_plan = _strategic_demand_arbitration_control_plan(profile)
+    counter_package_plan = _counter_package_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
@@ -1766,6 +1767,7 @@ def _strategy_control_plan(profile: StrategyProfile):
     return _merge_native_control_plans(
         posture_plan,
         arbitration_plan,
+        counter_package_plan,
         mode_plan,
         assertion_plan,
         attack_lifecycle_plan,
