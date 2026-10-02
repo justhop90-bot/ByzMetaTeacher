@@ -967,9 +967,6 @@ def community_strategy_demands(
         )
     )
 
-
-    )
-
     return tuple(demands)
 
 
@@ -1164,4 +1161,5 @@ __all__ = [
     "community_strategy_demands",
     "community_strategy_observations",
     "community_strategy_sn_modes",
+    "community_water_execution_plan",
 ]
