@@ -390,9 +390,6 @@ class StrategyProfile:
     map_profile: tuple["MapProfile", ...] = ()
     opening_selector: "OpeningSelectorPlan | None" = None
     economy_controller: "EconomyControllerPlan | None" = None
-    map_profile: tuple["MapProfile", ...] = ()
-    opening_selector: "OpeningSelectorPlan | None" = None
-    economy_controller: "EconomyControllerPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -469,6 +466,9 @@ class StrategyCompilation:
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
+    map_profile: tuple["MapProfile", ...] = ()
+    opening_selector: "OpeningSelectorPlan | None" = None
+    economy_controller: "EconomyControllerPlan | None" = None
 
 
 _AGE_ORDER = {
