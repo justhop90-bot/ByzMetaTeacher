@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from ..ir.civ_profile import EffectiveCivData
-from ..ir.community_strategy_packs import _build_demand, _training_demand
+from ..ir.community_strategy_packs import _build_demand, _research_demand, _training_demand
 from ..ir.game_data import Age, Resource
 from ..ir import strategy as _strategy
 
@@ -253,13 +253,53 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
     # Civilian production is deliberately staged. One permanent "make
     # villagers" demand is easy to write and excellent at starving everything
     # else, which is apparently how humanity discovered economic collapse.
-    villager_stages = (
-        ("villagers-dark-18", Age.DARK, 10, 18, "Dark Age villager production"),
-        ("villagers-feudal-30", Age.FEUDAL, 18, 30, "Feudal economic growth"),
-        ("villagers-castle-45", Age.CASTLE, 30, 45, "Castle expansion economy"),
-        ("villagers-imperial-70", Age.IMPERIAL, 45, 70, "Imperial production backbone"),
+    demands.append(
+        _research_demand(
+            effective=effective,
+            identity="dark-loom",
+            owner="economy",
+            posture=_strategy.StrategyPosture.BOOM,
+            priority=_strategy.StrategicPriority.SUPPORT,
+            age_guard="(current-age == dark-age)",
+            age_observation_ref="current-dark-age",
+            tech_name="loom",
+            reason_label="Secure the Dark Age villager economy before the Feudal transition",
+            resources=(Resource.GOLD,),
+            minimum_floors=((Resource.GOLD, 50),),
+        )
     )
-    for identity, age, lower, upper, label in villager_stages:
+
+    villager_stages = (
+        ("villagers-dark-22", Age.DARK, 10, 22, "Dark Age villager production", ()),
+        (
+            "villagers-dark-counter-24",
+            Age.DARK,
+            22,
+            24,
+            "Dark Age counter-opening economic growth",
+            ("(goal opening-plan 2)",),
+        ),
+        (
+            "villagers-dark-fast-castle-26",
+            Age.DARK,
+            22,
+            26,
+            "Dark Age Fast Castle economic growth",
+            ("(goal opening-plan 3)",),
+        ),
+        (
+            "villagers-dark-water-24",
+            Age.DARK,
+            22,
+            24,
+            "Dark Age water-opening economic growth",
+            ("(or (goal opening-plan 4) (goal opening-plan 5))",),
+        ),
+        ("villagers-feudal-30", Age.FEUDAL, 18, 30, "Feudal economic growth", ()),
+        ("villagers-castle-45", Age.CASTLE, 30, 45, "Castle expansion economy", ()),
+        ("villagers-imperial-70", Age.IMPERIAL, 45, 70, "Imperial production backbone", ()),
+    )
+    for identity, age, lower, upper, label, extra_requirements in villager_stages:
         demands.append(
             _staged_training(
                 effective=effective,
@@ -275,6 +315,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
                 lower_bound=lower,
                 upper_bound=upper,
                 age_guard=f"(current-age >= {_native_age(age)})",
+                extra_requirements=extra_requirements,
             )
         )
 
