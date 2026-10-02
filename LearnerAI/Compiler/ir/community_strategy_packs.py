@@ -36,6 +36,7 @@ from .versioning import EvidenceKind, EvidenceRef
 from .map_profile import default_byzantine_map_profiles
 from .opening import default_byzantine_opening_selector
 from .economic_control import default_byzantine_economy_controller
+from .counter_strategy import default_byzantine_counter_packages
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
@@ -1200,12 +1201,7 @@ def build_byzantine_stock_strategy(
     }
     counter_demand_ids = {
         demand_identity
-        for package in (
-            __import__(
-                "LearnerAI.Compiler.ir.counter_strategy",
-                fromlist=["default_byzantine_counter_packages"],
-            ).default_byzantine_counter_packages(effective)
-        )
+        for package in default_byzantine_counter_packages(effective)
         for demand_identity in package.demand_identities
     }
     demands = [
