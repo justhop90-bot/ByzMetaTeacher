@@ -1424,7 +1424,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {knight_pressure} {cataphract_floor}))",
+                    f"(and {knight_pressure} {cataphract_floor})))",
                     SourceLocation(1),
                 ),
             ),
@@ -1458,7 +1458,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
                 parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
                 parse_expression(
                     f"(and {current_age} (and {allocation} "
-                    f"(and {infantry_pressure} {knight_floor}))",
+                    f"(and {infantry_pressure} {knight_floor})))",
                     SourceLocation(1),
                 ),
             ),
