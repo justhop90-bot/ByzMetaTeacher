@@ -489,6 +489,29 @@ def emit(
         if attack_sn_aliases:
             out.append("")
 
+        goal_inputs = {
+            request.site_key: request
+            for request in native_attack_plan.goal_input_requests
+        }
+
+        def _render_attack_expression(rule_identity, section, expression_index, expression):
+            request = goal_inputs.get((rule_identity, section, expression_index, 0))
+            if request is None:
+                return expression.source
+            binding = bindings.binding_for(request.request.request_id)
+            if not isinstance(binding, GoalSlot):
+                raise CompileError(
+                    f"EMITTER-ATTACK-GOAL-INPUT: input '{request.site_key}' "
+                    f"resolved to '{type(binding).__name__}', expected GoalSlot"
+                )
+            if request.argument_index >= len(expression.args):
+                raise CompileError(
+                    f"EMITTER-ATTACK-GOAL-INPUT: input '{request.site_key}' "
+                    "argument index is outside the expression"
+                )
+            arguments = list(expression.args)
+            arguments[request.argument_index] = str(binding.id.value)
+            return f"({expression.head} {' '.join(str(arg) for arg in arguments)})"
         attachments_by_rule: dict[str, dict[int, list]] = {}
         control_state_names = (
             {state.identifier for state in control_plan.states}
@@ -522,7 +545,10 @@ def emit(
         for rule in native_attack_plan.rules:
             out.append(f"; Native attack rule: {rule.identity}")
             out.append("(defrule")
-            out.extend(f"    {fact.source}" for fact in rule.facts)
+            out.extend(
+                f"    {_render_attack_expression(rule.identity, 'FACT', index, fact)}"
+                for index, fact in enumerate(rule.facts)
+            )
             out.append("=>")
             for action_index, action in enumerate(rule.actions):
                 for attachment in attachments_by_rule.get(rule.identity, {}).get(
@@ -536,7 +562,9 @@ def emit(
                         f"    (set-strategic-number sn-native-"
                         f"{attachment.native_strategic_number_id} {attachment.value})"
                     )
-                out.append(f"    {action.source}")
+                out.append(
+                    f"    {_render_attack_expression(rule.identity, 'ACTION', action_index, action)}"
+                )
             out += [")", ""]
 
     if escrow_plan is not None and not escrow_plan.empty:
