@@ -590,9 +590,6 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         "castle-siege-floor": (
             "(players-unit-type-count any-enemy mangonel-line >= 2)",
         ),
-        "castle-mangonel-floor": (
-            "(players-unit-type-count any-enemy archer-line >= 4)",
-        ),
         "imperial-bombard-floor": (
             "(players-building-type-count any-enemy castle >= 1)",
         ),
