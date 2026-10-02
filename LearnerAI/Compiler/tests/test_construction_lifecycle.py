@@ -133,6 +133,9 @@ class ConstructionTransitionTests(unittest.TestCase):
     def test_native_building_catalog_resolves_castle_to_object_id(self):
         self.assertEqual(resolve_building_id("castle"), 82)
 
+    def test_native_building_catalog_resolves_town_center_action_to_foundation_object(self):
+        self.assertEqual(resolve_building_id("town-center"), 621)
+
     def test_native_building_catalog_rejects_unit_id_in_build_slot(self):
         with self.assertRaisesRegex(ValueError, r"not a known DE building"):
             resolve_building_id("4")

@@ -1377,7 +1377,10 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     attack command remains issue-only; phase release is driven by an explicit
     observed pressure witness or a force-floor loss.
     """
-    if profile.profile_id != "byzantine-land-castle-v1" or profile.attack_plan is None:
+    if profile.profile_id not in {
+        "byzantine-land-castle-v1",
+        "byzantine-stock-v1",
+    } or profile.attack_plan is None:
         return None
 
     from ..runtime_binding import GoalSlotRequest
@@ -2820,3 +2823,16 @@ def _age_from_advance_id(value: str) -> Age:
         return mapping[value]
     except KeyError as exc:
         raise ValueError(f"unknown age advance '{value}'") from exc
+
+def build_byzantine_stock_strategy(
+    effective: EffectiveCivData,
+    *,
+    include_water_continuity: bool = True,
+) -> StrategyProfile:
+    """Return the broader community-derived Byzantine stock strategy profile."""
+    from .community_strategy_packs import build_byzantine_stock_strategy as _build
+
+    return _build(
+        effective,
+        include_water_continuity=include_water_continuity,
+    )
