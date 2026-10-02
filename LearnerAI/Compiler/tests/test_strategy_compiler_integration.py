@@ -126,6 +126,87 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         )
         self.assertIn("; Native DUC rule: byzantine-duc-override", runtime_output)
 
+    def test_byzantine_strategy_lowers_default_duc_target_pipeline(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+
+        self.assertIsNotNone(compilation.duc_plan)
+        plan = compilation.duc_plan
+        assert plan is not None
+        self.assertEqual(
+            tuple(rule.identity for rule in plan.rules),
+            (
+                "byzantine-castle-target-knight",
+                "byzantine-castle-target-infantry",
+            ),
+        )
+        self.assertEqual(
+            tuple(item.source for item in plan.rules[0].facts),
+            (
+                "(current-age >= castle-age)",
+                "(up-compare-sn 227 >= 75)",
+                "(players-unit-type-count any-enemy knight >= 3)",
+            ),
+        )
+        self.assertEqual(
+            tuple(item.source for item in plan.rules[1].facts),
+            (
+                "(current-age >= castle-age)",
+                "(up-compare-sn 227 >= 75)",
+                "(players-unit-type-count any-enemy militia-line >= 5)",
+            ),
+        )
+        self.assertEqual(
+            tuple(item.head for item in plan.rules[0].actions[:3]),
+            (
+                "up-full-reset-search",
+                "up-find-remote",
+                "up-set-target-object",
+            ),
+        )
+        self.assertEqual(
+            tuple(item.head for item in plan.rules[1].actions[:3]),
+            (
+                "up-full-reset-search",
+                "up-find-remote",
+                "up-set-target-object",
+            ),
+        )
+        self.assertTrue(
+            all(
+                any(
+                    output.rule_identity == rule.identity
+                    and output.command == "up-get-object-data"
+                    for output in plan.output_requests
+                )
+                for rule in plan.rules
+            )
+        )
+
+        output = compile_strategy_profile(self.profile, self.effective)
+        self.assertIn("; Native DUC rule: byzantine-castle-target-knight", output)
+        self.assertIn("(up-find-remote c: knight-line c: 1)", output)
+        self.assertIn("(up-set-target-object search-remote c: 0)", output)
+        self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
+        self.assertIn("(up-find-remote c: militia-line c: 1)", output)
+
+    def test_byzantine_duc_remote_search_has_persistent_enemy_focus_control(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+        self.assertIn(
+            "byzantine-focus-player",
+            tuple(state.identifier for state in control.states),
+        )
+        actions = {
+            action.head
+            for rule in control.rules
+            for action in rule.actions
+        }
+        self.assertIn("up-find-player", actions)
+        self.assertIn("up-modify-sn", actions)
+
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
