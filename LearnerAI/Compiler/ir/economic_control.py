@@ -226,7 +226,7 @@ def lower_economy_controller(
         rule(
             "economy-controller-castle-conversion",
             EconomyMode.CASTLE_CONVERSION,
-            f"(and (current-age >= castle-age) (and (current-age < imperial-age) {drift_by_mode[EconomyMode.CASTLE_CONVERSION]})",
+            f"(and (current-age >= castle-age) (and (current-age < imperial-age) {drift_by_mode[EconomyMode.CASTLE_CONVERSION]}))",
         ),
         rule(
             "economy-controller-imperial-conversion",
