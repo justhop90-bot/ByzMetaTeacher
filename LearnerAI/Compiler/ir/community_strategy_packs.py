@@ -702,6 +702,8 @@ def community_strategy_demands(
                 line="monk-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
+                action_symbol="monk",
+                witness_symbol="monk",
             ),
         )
     )
