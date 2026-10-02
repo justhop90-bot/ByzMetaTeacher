@@ -1,5 +1,6 @@
 import unittest
 
+from Compiler.primitives import default_de_registry
 from Compiler.clients.basilisk import (
     ByzantineProfile,
     WaterExecutionPlan,
@@ -82,6 +83,12 @@ class WaterTransportExecutionTests(unittest.TestCase):
             ReassessmentReason.TRANSPORT_CAPABILITY_LOSS,
             runtime.reassessment_reasons,
         )
+
+    def test_map_type_is_a_typed_native_profile_fact(self):
+        registry = default_de_registry()
+        assessment = registry.assess_support("map-type")
+
+        self.assertEqual(assessment.state.value, "EXECUTABLE_SAFE")
 
     def test_client_exports_typed_water_execution_surface(self):
         self.assertTrue(WaterExecutionPlan)
