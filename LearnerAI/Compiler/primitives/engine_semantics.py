@@ -815,6 +815,10 @@ def _duc_mapping(command: str, identity: str) -> EngineSemanticMapping:
 def default_duc_executable_commands() -> tuple[str, ...]:
     return tuple(command for command, _identity in _DUC_COMMAND_SPECS)
 
+
+def default_player_context_executable_commands() -> tuple[str, ...]:
+    return tuple(command for command, _identity in _PLAYER_CONTEXT_SPECS)
+
 def default_escrow_executable_commands() -> tuple[str, ...]:
     """Return commands promoted through the dedicated escrow binder."""
     return tuple(command for command, _identity in _ESCROW_COMMAND_SPECS)
