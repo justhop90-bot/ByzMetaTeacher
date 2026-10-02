@@ -2237,17 +2237,24 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     )
 
 
-def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
-    """Default Castle-age Byzantine issue actuator.
+def _byzantine_attack_phase_request(profile_id: str):
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
 
-    The native attack binder accepts atomic Facts per rule. The two army
-    alternatives are therefore lowered as deterministic sibling rules rather
-    than a composite logical Fact. Targeting, completion, release, and reset
-    remain outside this executable slice.
-    """
+    owner = SemanticId(profile_id, "byzantine-attack-phase")
+    return GoalSlotRequest(
+        StorageRequestId(owner, "byzantine-attack-phase"),
+        role=GoalRole.PERSISTENT_STATE,
+    )
+
+
+def _default_byzantine_attack_plan(profile_id: str) -> "NativeAttackLifecyclePlan":
+    """Default Castle-age Byzantine attack issue actuator gated by lifecycle phase."""
+
     from ..semantic.analyzer import parse_expression
     from .native_attack import (
         AttackLifecycleObservation,
+        NativeAttackGoalInputRequest,
         NativeAttackLifecyclePlan,
         NativeAttackRule,
     )
@@ -2258,6 +2265,7 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
         AttackLifecycleObservation.COMPLETION_UNOBSERVED,
         AttackLifecycleObservation.REASSESS_REQUIRED,
     )
+    phase_request = _byzantine_attack_phase_request(profile_id)
     common_facts = (
         parse_expression("(current-age == castle-age)", SourceLocation(1)),
         parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
@@ -2298,7 +2306,25 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
                 actions=(parse_expression("(attack-now)", SourceLocation(1)),),
                 lifecycle=lifecycle,
             ),
-        )
+        ),
+        goal_input_requests=(
+            NativeAttackGoalInputRequest(
+                identity="byzantine-attack-phase-cataphract-input",
+                rule_identity="byzantine-castle-attack-now-cataphract",
+                section="FACT",
+                expression_index=3,
+                argument_index=0,
+                request=phase_request,
+            ),
+            NativeAttackGoalInputRequest(
+                identity="byzantine-attack-phase-knight-input",
+                rule_identity="byzantine-castle-attack-now-knight",
+                section="FACT",
+                expression_index=3,
+                argument_index=0,
+                request=phase_request,
+            ),
+        ),
     )
 
 
@@ -2676,7 +2702,7 @@ def build_byzantine_castle_strategy(
         strategic_number_modes=_byzantine_strategic_number_modes(),
         policy_recipes=default_byzantine_policy_recipes(),
         counter_packages=default_byzantine_counter_packages(effective),
-        attack_plan=_default_byzantine_attack_plan(),
+        attack_plan=_default_byzantine_attack_plan(profile.profile_id),
         duc_plan=_default_byzantine_duc_plan(profile.profile_id),
     )
 
