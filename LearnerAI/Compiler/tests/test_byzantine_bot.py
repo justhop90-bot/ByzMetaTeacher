@@ -121,6 +121,11 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             "(unit-type-count-total villager >= 35)",
             demands["research-bow-saw"].execution.requirements,
         )
+        bow_saw_id = int(demands["research-bow-saw"].target.entity_id)
+        self.assertIn(
+            f"(up-research-status c: {bow_saw_id} >= 3)",
+            demands["research-two-man-saw"].execution.requirements,
+        )
         self.assertIn(
             "(unit-type-count-total villager >= 50)",
             demands["research-two-man-saw"].execution.requirements,
