@@ -17,7 +17,7 @@ from LearnerAI.Compiler.semantic.rule_diagnostics import analyze_rule_diagnostic
 from LearnerAI.Compiler.source_graph import SourceGraphRequest, SourceGraphResolver
 
 
-ARTIFACT = Path(__file__).with_name("byzantine_feudal_audited.per")
+ARTIFACT = Path(__file__).parent / "fixtures" / "byzantine_feudal_audited.per"
 
 
 class ByzantineArtifactCompilerAudit(unittest.TestCase):
