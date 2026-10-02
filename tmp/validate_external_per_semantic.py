@@ -4,14 +4,14 @@ import argparse, json, sys
 from pathlib import Path
 
 from Compiler.primitives import default_de_registry
-from LearnerAI.Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
-from LearnerAI.Compiler.semantic.source_graph_validation import validate_effective_source_graph
-from LearnerAI.Compiler.semantic.rule_execution import analyze_effective_rules
-from LearnerAI.Compiler.semantic.persistent_state import analyze_persistent_state
-from LearnerAI.Compiler.semantic.strategic_number_semantics import analyze_strategic_number_expressions
-from LearnerAI.Compiler.semantic.recurrent_execution import analyze_recurrent_execution
-from LearnerAI.Compiler.semantic.duc import analyze_duc
-from LearnerAI.Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
+from Compiler.source_graph import EffectiveSourceGraph, SourceGraphRequest, SourceGraphResolver
+from Compiler.semantic.source_graph_validation import validate_effective_source_graph
+from Compiler.semantic.rule_execution import analyze_effective_rules
+from Compiler.semantic.persistent_state import analyze_persistent_state
+from Compiler.semantic.strategic_number_semantics import analyze_strategic_number_expressions
+from Compiler.semantic.recurrent_execution import analyze_recurrent_execution
+from Compiler.semantic.duc import analyze_duc
+from Compiler.semantic.rule_diagnostics import analyze_rule_diagnostics
 
 def diag_dict(item):
     code = getattr(item, "code", None)
