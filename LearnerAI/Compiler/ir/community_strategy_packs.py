@@ -29,7 +29,19 @@ from .strategy import (
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
-from .versioning import EvidenceRef
+from .versioning import EvidenceKind, EvidenceRef
+
+
+def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
+    return (
+        EvidenceRef(
+            kind=EvidenceKind.AIREF,
+            source="https://airef.github.io",
+            revision="master",
+            locator=locator,
+            patch=effective.patch,
+        ),
+    )
 
 
 def _slug(value: str) -> str:
@@ -311,8 +323,8 @@ def community_strategy_observations(
         _observation(
             "strategy-enemy-pressure",
             "(or (players-unit-type-count any-enemy knight >= 3) "
-            "(players-unit-type-count any-enemy archer-line >= 4) "
-            "(players-unit-type-count any-enemy militia-line >= 5))",
+            "(or (players-unit-type-count any-enemy archer-line >= 4) "
+            "(players-unit-type-count any-enemy militia-line >= 5)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
@@ -380,6 +392,43 @@ def community_strategy_observations(
             "strategy-dock-exists",
             f"(building-type-count-total {int(dock.id)} >= 1)",
             dock.provenance,
+        ),
+        _observation(
+            "strategy-water-islands",
+            "(map-type islands)",
+            _airef_provenance(effective, "commands/commands-details.html#map-type"),
+        ),
+        _observation(
+            "strategy-own-transport-capable",
+            "(unit-type-count transport-ship >= 1)",
+            effective.unit(545).provenance,
+        ),
+        _observation(
+            "strategy-enemy-naval-pressure",
+            "(or (players-unit-type-count any-enemy galley-line >= 2) "
+            "(players-unit-type-count any-enemy fire-galley-line >= 2))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("galley-line").provenance,
+                     *effective.unit_line("fire-galley-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-enemy-naval-pressure-cleared",
+            "(and (players-unit-type-count any-enemy galley-line < 2) "
+            "(players-unit-type-count any-enemy fire-galley-line < 2))",
+            tuple(
+                dict.fromkeys(
+                    (*effective.unit_line("galley-line").provenance,
+                     *effective.unit_line("fire-galley-line").provenance)
+                )
+            ),
+        ),
+        _observation(
+            "strategy-own-warboat-floor",
+            "(warboat-count >= 2)",
+            _airef_provenance(effective, "commands/commands-details.html#warboat-count"),
         ),
         _observation(
             "strategy-blacksmith-exists",
@@ -759,6 +808,165 @@ def community_strategy_demands(
             ),
         )
     )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-transport-capability",
+            owner="water-transport",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Islands map requires protected transport capability",
+                    "strategy-water-islands",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Transport is admissible on a disconnected water map",
+                    "strategy-water-islands",
+                ),
+            ),
+            invalidation=(),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "transport-ship-line",
+                _provider_for_line(effective, "transport-ship-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "transport-ship-line",
+                minimum=1,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(can-train-with-escrow transport-ship)",
+                    "(unit-type-count-total transport-ship < 1)",
+                ),
+                action="(train transport-ship)",
+                witness="(unit-type-count transport-ship >= 1)",
+                release="(unit-type-count transport-ship >= 1)",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-naval-defense",
+            owner="water-naval",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.BOOM,
+            priority=_StrategicPriority.DEFENSE,
+            reason=(
+                _persistent(
+                    "Enemy naval pressure requires a bounded defensive ship floor",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            admissibility=(
+                _persistent(
+                    "Island water makes defensive naval production strategically admissible",
+                    "strategy-water-islands",
+                ),
+                _persistent(
+                    "Enemy naval pressure justifies the defensive floor",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            invalidation=(
+                _persistent(
+                    "Enemy naval pressure has cleared",
+                    "strategy-enemy-naval-pressure-cleared",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "fire-galley-line",
+                _provider_for_line(effective, "fire-galley-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "fire-galley-line",
+                minimum=2,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    "(can-train-with-escrow fire-galley)",
+                    "(unit-type-count-total fire-galley < 2)",
+                ),
+                action="(train fire-galley)",
+                witness="(unit-type-count fire-galley >= 2)",
+                release="(or (unit-type-count fire-galley >= 2) "
+                "(and (players-unit-type-count any-enemy galley-line < 2) "
+                "(players-unit-type-count any-enemy fire-galley-line < 2)))",
+            ),
+        )
+    )
+    demands.append(
+        _StrategicDemandSpec(
+            identity="water-naval-control",
+            owner="water-naval",
+            production_arbitration_group="production",
+            posture=_StrategyPosture.CASTLE_POWER,
+            priority=_StrategicPriority.SUPPORT,
+            reason=(
+                _persistent(
+                    "Sustained enemy naval pressure requires water control capacity",
+                    "strategy-enemy-naval-pressure",
+                ),
+            ),
+            admissibility=(
+                _persistent("Water control is admissible on Islands", "strategy-water-islands"),
+                _persistent("Enemy naval pressure is active", "strategy-enemy-naval-pressure"),
+            ),
+            invalidation=(
+                _persistent(
+                    "Enemy naval pressure has cleared",
+                    "strategy-enemy-naval-pressure-cleared",
+                ),
+            ),
+            capability_intent=_CapabilityIntent(
+                _CapabilityIntentKind.TRAIN,
+                "unit-line",
+                "galley-line",
+                _provider_for_line(effective, "galley-line"),
+            ),
+            target=_StrategicTarget(
+                _StrategicTargetKind.CURRENT_QUEUED,
+                "unit-line",
+                "galley-line",
+                minimum=3,
+            ),
+            opportunity_cost=None,
+            execution=_ExecutionDemandTemplate(
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(map-type islands)",
+                    "(building-type-count-total dock >= 1)",
+                    "(players-unit-type-count any-enemy galley-line >= 2)",
+                    "(can-train-with-escrow galley)",
+                    "(unit-type-count-total galley < 3)",
+                ),
+                action="(train galley)",
+                witness="(unit-type-count galley >= 3)",
+                release="(or (unit-type-count galley >= 3) "
+                "(and (players-unit-type-count any-enemy galley-line < 2) "
+                "(players-unit-type-count any-enemy fire-galley-line < 2)))",
+            ),
+        )
+    )
 
     return tuple(demands)
 
@@ -850,6 +1058,22 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
     )
 
 
+def community_water_execution_plan():
+    from .water import WaterExecutionPlan
+
+    return WaterExecutionPlan(
+        plan_id="byzantine-water-v1",
+        water_posture_state="water-posture",
+        transport_phase_state="transport-phase",
+        transport_required_observation="strategy-water-islands",
+        transport_capable_observation="strategy-own-transport-capable",
+        dock_observation="strategy-dock-exists",
+        naval_pressure_observation="strategy-enemy-naval-pressure",
+        naval_pressure_cleared_observation="strategy-enemy-naval-pressure-cleared",
+        warboat_floor_observation="strategy-own-warboat-floor",
+    )
+
+
 def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
@@ -925,6 +1149,7 @@ def build_byzantine_stock_strategy(
         ),
         attack_plan=_default_byzantine_attack_plan(stock_profile_id),
         duc_plan=_default_byzantine_duc_plan(stock_profile_id),
+        water_execution_plan=community_water_execution_plan(),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
@@ -937,4 +1162,5 @@ __all__ = [
     "community_strategy_demands",
     "community_strategy_observations",
     "community_strategy_sn_modes",
+    "community_water_execution_plan",
 ]

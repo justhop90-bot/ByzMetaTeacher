@@ -29,6 +29,11 @@ from .strategy import (
     StrategyProfile,
 )
 from .versioning import EvidenceRef
+from .water import (
+    WaterExecutionState,
+    derive_water_posture,
+    transition_transport_execution,
+)
 
 
 class StrategicObservationType(str, Enum):
@@ -235,6 +240,10 @@ class ReassessmentReason(str, Enum):
     ENEMY_COMPOSITION_CHANGE = "ENEMY_COMPOSITION_CHANGE"
     AGE_TRANSITION = "AGE_TRANSITION"
     MAP_OPENING_CHANGE = "MAP_OPENING_CHANGE"
+    WATER_POSTURE_CHANGE = "WATER_POSTURE_CHANGE"
+    NAVAL_PRESSURE_CHANGE = "NAVAL_PRESSURE_CHANGE"
+    TRANSPORT_CAPABILITY_LOSS = "TRANSPORT_CAPABILITY_LOSS"
+    TRANSPORT_CAPABILITY_RECOVERY = "TRANSPORT_CAPABILITY_RECOVERY"
 
 
 @dataclass(frozen=True)
@@ -287,6 +296,7 @@ class RuntimeObservationSnapshot:
     production_lifecycles: tuple[tuple[str, object], ...] = ()
     previous_production_runtime_states: tuple[tuple[str, object], ...] = ()
     reassessment_signals: frozenset[ReassessmentReason] = frozenset()
+    previous_water_execution_state: WaterExecutionState | None = None
 
     def result_for(self, expression: Expression) -> EvidenceTruth:
         for key, result in self.fact_results:
@@ -352,6 +362,7 @@ class StrategyRuntimeState:
     capability_transitions: tuple[tuple[str, CapabilityTransition], ...] = ()
     production_runtime_states: tuple[tuple[str, object], ...] = ()
     composition_upgrade_readiness: CompositionUpgradeReadinessState | None = None
+    water_execution_state: WaterExecutionState | None = None
 
     @property
     def active_or_blocked_demands(self) -> tuple[str, ...]:
@@ -530,6 +541,8 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "unit-type-count-total": StrategicObservationType.UNIT_CURRENT_PLUS_QUEUED,
     "players-unit-type-count": StrategicObservationType.ENEMY_UNIT_COUNT,
     "players-building-type-count": StrategicObservationType.ENEMY_BUILDING_COUNT,
+    "map-type": StrategicObservationType.MAP_PROFILE,
+    "warboat-count": StrategicObservationType.UNIT_CURRENT_COUNT,
     "research-completed": StrategicObservationType.RESEARCH_STATE,
     "research-available": StrategicObservationType.RESEARCH_STATE,
     "up-can-search": StrategicObservationType.DUC_SEARCH_AVAILABILITY,
@@ -1250,6 +1263,77 @@ def _validate_capability_recovery_outcome(
             )
 
 
+def _evaluate_water_execution_state(
+    profile: StrategyProfile,
+    effective: EffectiveCivData,
+    snapshot: RuntimeObservationSnapshot,
+    registry: PrimitiveRegistry,
+) -> tuple[WaterExecutionState | None, tuple[tuple[str, EvidenceTruth], ...]]:
+    plan = profile.water_execution_plan
+    if plan is None:
+        return None, ()
+
+    refs = (
+        ("water:transport-required", plan.transport_required_observation),
+        ("water:transport-capable", plan.transport_capable_observation),
+        ("water:dock", plan.dock_observation),
+        ("water:naval-pressure", plan.naval_pressure_observation),
+        ("water:naval-pressure-cleared", plan.naval_pressure_cleared_observation),
+        ("water:warboat-floor", plan.warboat_floor_observation),
+    )
+    truths: dict[str, EvidenceTruth] = {}
+    evaluated: list[tuple[str, EvidenceTruth]] = []
+    for label, reference in refs:
+        evidence = StrategicEvidence(
+            kind=StrategicEvidenceKind.EXECUTION,
+            expression=None,
+            label=label,
+            observation_ref=reference,
+        )
+        binding = bind_observation_reference(
+            evidence,
+            profile,
+            effective,
+            registry,
+        )
+        truth = evaluate_binding(binding, snapshot)
+        truths[reference] = truth
+        evaluated.append((label, truth))
+
+    def tri(reference: str) -> bool | None:
+        truth = truths[reference]
+        if truth is EvidenceTruth.TRUE:
+            return True
+        if truth is EvidenceTruth.FALSE:
+            return False
+        return None
+
+    prior = snapshot.previous_water_execution_state or WaterExecutionState()
+    transport_state = transition_transport_execution(
+        prior,
+        transport_required=tri(plan.transport_required_observation),
+        transport_capable=tri(plan.transport_capable_observation),
+    )
+    posture = derive_water_posture(
+        transport_required=tri(plan.transport_required_observation),
+        dock_exists=tri(plan.dock_observation),
+        naval_pressure=tri(plan.naval_pressure_observation),
+        warboat_floor_met=tri(plan.warboat_floor_observation),
+    )
+    return (
+        WaterExecutionState(
+            posture=posture,
+            transport_phase=transport_state.transport_phase,
+            transport_required=transport_state.transport_required,
+            transport_capable=transport_state.transport_capable,
+            dock_exists=tri(plan.dock_observation),
+            naval_pressure=tri(plan.naval_pressure_observation),
+            warboat_floor_met=tri(plan.warboat_floor_observation),
+        ),
+        tuple(evaluated),
+    )
+
+
 def evaluate_strategy_runtime(
     profile: StrategyProfile,
     effective: EffectiveCivData,
@@ -1342,6 +1426,42 @@ def evaluate_strategy_runtime(
         counter_arbitration,
     )
     from .production_runtime import evaluate_production_runtime, ProductionBoundaryStatus, ProductionProviderTransition
+    reasons = set(snapshot.reassessment_signals)
+    water_execution_state, evaluated_water = _evaluate_water_execution_state(
+        profile,
+        effective,
+        snapshot,
+        registry,
+    )
+    evaluated.extend(evaluated_water)
+    if (
+        snapshot.previous_water_execution_state is not None
+        and water_execution_state is not None
+        and snapshot.previous_water_execution_state.posture is not water_execution_state.posture
+    ):
+        reasons.add(ReassessmentReason.WATER_POSTURE_CHANGE)
+    if (
+        snapshot.previous_water_execution_state is not None
+        and water_execution_state is not None
+        and snapshot.previous_water_execution_state.naval_pressure
+        is not water_execution_state.naval_pressure
+    ):
+        reasons.add(ReassessmentReason.NAVAL_PRESSURE_CHANGE)
+    if (
+        snapshot.previous_water_execution_state is not None
+        and water_execution_state is not None
+        and snapshot.previous_water_execution_state.transport_capable
+        and not water_execution_state.transport_capable
+    ):
+        reasons.add(ReassessmentReason.TRANSPORT_CAPABILITY_LOSS)
+    if (
+        snapshot.previous_water_execution_state is not None
+        and water_execution_state is not None
+        and not snapshot.previous_water_execution_state.transport_capable
+        and water_execution_state.transport_capable
+    ):
+        reasons.add(ReassessmentReason.TRANSPORT_CAPABILITY_RECOVERY)
+
     production_runtime_states = tuple(
         sorted(
             (
@@ -1371,7 +1491,6 @@ def evaluate_strategy_runtime(
     complete: list[str] = []
     opportunity: list[tuple[str, OpportunityCostRuntimeState]] = []
 
-    reasons = set(snapshot.reassessment_signals)
     previous_counter_states = dict(snapshot.previous_counter_package_states)
     current_counter_states = {
         item.identity: item.truth
@@ -1499,6 +1618,7 @@ def evaluate_strategy_runtime(
             "counter_arbitration": counter_arbitration,
             "composition_upgrade_readiness": composition_upgrade_readiness,
             "production_runtime_states": production_runtime_states,
+            "water_execution_state": water_execution_state,
             "demand_states": demand_states,
             "opportunity": opportunity,
             "recovery_contracts": {
@@ -1551,4 +1671,5 @@ def evaluate_strategy_runtime(
             sorted(capability_transitions, key=lambda item: item[0])
         ),
         production_runtime_states=production_runtime_states,
+        water_execution_state=water_execution_state,
     )

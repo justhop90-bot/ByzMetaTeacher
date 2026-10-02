@@ -128,6 +128,13 @@ def _parameter_context(
             case_sensitive=False,
         )
 
+    if command == "map-type" and name == "MapType":
+        return CanonicalizationContext.symbol(
+            parameter_name=name,
+            namespace="MAP_TYPE",
+            case_sensitive=False,
+        )
+
     if command == "current-age" and name == "Age":
         return CanonicalizationContext.enum(
             parameter_name=name,
