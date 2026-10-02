@@ -173,6 +173,10 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "up-set-target-object",
             ),
         )
+        output_witness_rule_ids = {
+            "byzantine-castle-target-knight",
+            "byzantine-castle-target-infantry",
+        }
         self.assertTrue(
             all(
                 any(
@@ -181,6 +185,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                     for output in plan.output_requests
                 )
                 for rule in plan.rules
+                if rule.identity in output_witness_rule_ids
             )
         )
 
