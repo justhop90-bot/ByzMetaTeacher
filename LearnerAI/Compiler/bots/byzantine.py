@@ -533,6 +533,86 @@ def _castle_economy_controller(controller):
     )
     return replace(controller, policies=policies)
 
+
+def _imperial_research(
+    *,
+    effective: EffectiveCivData,
+    identity: str,
+    tech_id: int,
+    action_token: str,
+    reason_label: str,
+    extra_requirements: tuple[str, ...] = (),
+    priority: _strategy.StrategicPriority = _strategy.StrategicPriority.SUPPORT,
+) -> _strategy.StrategicDemandSpec:
+    tech = effective.tech(tech_id)
+    cost = effective.cost_of(f"tech:{tech_id}")
+    return _strategy.StrategicDemandSpec(
+        identity=identity,
+        owner="imperial",
+        posture=_strategy.StrategyPosture.CASTLE_POWER,
+        priority=priority,
+        reason=(
+            _persistent(reason_label, "strategy-imperial-age"),
+        ),
+        admissibility=(
+            _persistent(
+                f"{identity}:imperial-admission",
+                "strategy-imperial-age",
+            ),
+        ),
+        invalidation=(
+            _persistent(
+                f"{identity}:completed",
+                "strategy-imperial-age",
+            ),
+        ),
+        capability_intent=_strategy.CapabilityIntent(
+            _strategy.CapabilityIntentKind.RESEARCH,
+            "technology",
+            int(tech.id),
+        ),
+        target=_strategy.StrategicTarget(
+            _strategy.StrategicTargetKind.EXACT,
+            "technology",
+            int(tech.id),
+        ),
+        opportunity_cost=_strategy.OpportunityCostPolicy(
+            owner="imperial",
+            protected_floors=(
+                _strategy.ProtectedResourceFloor(Resource.FOOD, cost.food),
+                _strategy.ProtectedResourceFloor(Resource.WOOD, cost.wood),
+                _strategy.ProtectedResourceFloor(Resource.GOLD, cost.gold),
+            ),
+            emergency_override_postures=(
+                _strategy.StrategyPosture.FLUSH,
+                _strategy.StrategyPosture.RUSH,
+            ),
+        ),
+        execution=_strategy.ExecutionDemandTemplate(
+            requirements=(
+                "(current-age >= imperial-age)",
+                f"(can-research-with-escrow {action_token})",
+                *extra_requirements,
+            ),
+            action=f"(research {action_token})",
+            witness=f"(research-completed {tech_id})",
+            release=f"(research-completed {tech_id})",
+            escrow_release_resources=tuple(
+                resource
+                for resource, amount in (
+                    (Resource.FOOD, cost.food),
+                    (Resource.WOOD, cost.wood),
+                    (Resource.GOLD, cost.gold),
+                )
+                if amount
+            ),
+        ),
+    )
+
+
+def _imperial_economy_controller(controller):
+    return controller
+
 def build_byzantine_bot_profile(effective: EffectiveCivData):
     """Build the deployable Byzantine Core v1 profile.
 
@@ -679,7 +759,179 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         if demand.identity not in existing
     )
     additions = tuple(
-        (*additions, _castle_logistica_research(effective))
+        (
+            *additions,
+            _castle_logistica_research(effective),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-halberdier",
+                tech_id=429,
+                action_token="429",
+                reason_label="Research Halberdier for the Byzantine late anti-mounted package",
+                extra_requirements=(
+                    "(players-unit-type-count any-enemy knight >= 3)",
+                ),
+            ),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-elite-skirmisher",
+                tech_id=98,
+                action_token="98",
+                reason_label="Research Elite Skirmisher for the Byzantine late ranged-counter package",
+                extra_requirements=(
+                    "(players-unit-type-count any-enemy archer-line >= 4)",
+                ),
+            ),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-heavy-camel",
+                tech_id=236,
+                action_token="236",
+                reason_label="Research Heavy Camel for sustained enemy mounted pressure",
+                extra_requirements=(
+                    "(players-unit-type-count any-enemy knight >= 3)",
+                ),
+            ),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-chemistry",
+                tech_id=47,
+                action_token="47",
+                reason_label="Research Chemistry for the Byzantine gunpowder conversion",
+                extra_requirements=(
+                    "(players-unit-type-count any-enemy militia-line >= 5)",
+                ),
+                priority=_strategy.StrategicPriority.CORE,
+            ),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-conscription",
+                tech_id=315,
+                action_token="315",
+                reason_label="Research Conscription when the Imperial production backbone is active",
+                extra_requirements=(
+                    "(unit-type-count-total villager >= 45)",
+                ),
+            ),
+            _imperial_research(
+                effective=effective,
+                identity="imperial-elite-cataphract",
+                tech_id=361,
+                action_token="361",
+                reason_label="Research Elite Cataphract for the premium Byzantine late-game conversion",
+                extra_requirements=(
+                    "(up-research-status c: 61 >= 3)",
+                    "(or (map-type arena) "
+                    "(players-unit-type-count any-enemy militia-line >= 5))",
+                ),
+                priority=_strategy.StrategicPriority.CORE,
+            ),
+        )
+    )
+    additions = tuple(
+        demand
+        for demand in additions
+        if demand.identity not in existing
+    )
+    additions = (
+        *additions,
+        _staged_training(
+            effective=effective,
+            identity="imperial-halberdier-counter",
+            owner="military",
+            posture=_strategy.StrategyPosture.CASTLE_POWER,
+            priority=_strategy.StrategicPriority.DEFENSE,
+            reason_ref="strategy-enemy-knight-pressure",
+            reason_label="Maintain a bounded Halberdier floor against sustained enemy cavalry",
+            line="spearman-line",
+            action_symbol="359",
+            witness_symbol="359",
+            lower_bound=0,
+            upper_bound=6,
+            age_guard="(current-age >= imperial-age)",
+            extra_requirements=(
+                "(players-unit-type-count any-enemy knight >= 3)",
+                "(up-research-status c: 429 >= 3)",
+            ),
+        ),
+        _staged_training(
+            effective=effective,
+            identity="imperial-elite-skirmisher-counter",
+            owner="military",
+            posture=_strategy.StrategyPosture.CASTLE_POWER,
+            priority=_strategy.StrategicPriority.DEFENSE,
+            reason_ref="strategy-enemy-ranged",
+            reason_label="Maintain a bounded Elite Skirmisher floor against sustained enemy ranged pressure",
+            line="skirmisher-line",
+            action_symbol="6",
+            witness_symbol="6",
+            lower_bound=0,
+            upper_bound=6,
+            age_guard="(current-age >= imperial-age)",
+            extra_requirements=(
+                "(players-unit-type-count any-enemy archer-line >= 4)",
+                "(up-research-status c: 98 >= 3)",
+            ),
+        ),
+        _staged_training(
+            effective=effective,
+            identity="imperial-heavy-camel-counter",
+            owner="military",
+            posture=_strategy.StrategyPosture.CASTLE_POWER,
+            priority=_strategy.StrategicPriority.DEFENSE,
+            reason_ref="strategy-enemy-knight-pressure",
+            reason_label="Maintain a bounded Heavy Camel floor against sustained enemy cavalry",
+            line="camel-rider-line",
+            action_symbol="330",
+            witness_symbol="330",
+            lower_bound=0,
+            upper_bound=3,
+            age_guard="(current-age >= imperial-age)",
+            extra_requirements=(
+                "(players-unit-type-count any-enemy knight >= 3)",
+                "(up-research-status c: 236 >= 3)",
+            ),
+        ),
+        _staged_training(
+            effective=effective,
+            identity="imperial-hand-cannoneer-counter",
+            owner="military",
+            posture=_strategy.StrategyPosture.CASTLE_POWER,
+            priority=_strategy.StrategicPriority.DEFENSE,
+            reason_ref="strategy-enemy-infantry-pressure",
+            reason_label="Maintain a bounded Hand Cannoneer floor against sustained heavy infantry",
+            line="hand-cannoneer-line",
+            action_symbol="5",
+            witness_symbol="5",
+            lower_bound=0,
+            upper_bound=6,
+            age_guard="(current-age >= imperial-age)",
+            extra_requirements=(
+                "(players-unit-type-count any-enemy militia-line >= 5)",
+                "(up-research-status c: 47 >= 3)",
+            ),
+        ),
+        _staged_training(
+            effective=effective,
+            identity="imperial-elite-cataphract-floor",
+            owner="military",
+            posture=_strategy.StrategyPosture.CASTLE_POWER,
+            priority=_strategy.StrategicPriority.CORE,
+            reason_ref="strategy-castle-age",
+            reason_label="Convert the Byzantine premium cavalry branch into an Imperial Elite Cataphract floor",
+            line="cataphract-line",
+            action_symbol="553",
+            witness_symbol="553",
+            lower_bound=0,
+            upper_bound=4,
+            age_guard="(current-age >= imperial-age)",
+            extra_requirements=(
+                "(or (map-type arena) "
+                "(players-unit-type-count any-enemy militia-line >= 5))",
+                "(up-research-status c: 61 >= 3)",
+                "(up-research-status c: 361 >= 3)",
+            ),
+        ),
     )
     additions = tuple(
         demand
