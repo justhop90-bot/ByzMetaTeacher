@@ -1362,82 +1362,11 @@ def _merge_native_control_plans(*plans):
     return NativeControlPlan(states=tuple(states), rules=tuple(rules))
 
 
-def _duc_focus_control_plan(profile: StrategyProfile):
-    """Keep remote DUC searches focused on the nearest observed enemy player.
-
-    The player search writes a persistent Goal. The focus Strategic Number is
-    updated from that Goal on the following pass, so this bridge does not rely
-    on same-rule output visibility.
-    """
-    if profile.duc_plan is None or "up-find-remote" not in profile.duc_plan.commands:
-        return None
-
-    from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
-    from .model import GoalRole, SemanticId, StorageRequestId
-    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
-
-    owner = SemanticId(profile.profile_id, "byzantine-focus-player")
-    state_name = "byzantine-focus-player"
-    player_state = NativeControlState(
-        state_name,
-        GoalSlotRequest(
-            StorageRequestId(owner, state_name),
-            role=GoalRole.PERSISTENT_STATE,
-        ),
-    )
-    focus_sn_state = NativeControlState(
-        "sn-focus-player-number",
-        StrategicNumberRequest(
-            StorageRequestId(owner, "sn-focus-player-number"),
-            why_not_goal=(
-                "Native focus-player context is a Strategic Number control state; "
-                "the compiler does not infer player identity beyond the native output."
-            ),
-            stability_key=f"{profile.profile_id}:sn-focus-player-number",
-            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
-            native_strategic_number_id=251,
-        ),
-    )
-    return NativeControlPlan(
-        states=(focus_sn_state, player_state),
-        rules=(
-            NativeControlRule(
-                f"{state_name}-discover",
-                facts=(parse_expression("(current-age >= castle-age)", SourceLocation(1)),),
-                actions=(
-                    parse_expression(
-                        f"(up-find-player enemy find-closest {state_name})",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-            NativeControlRule(
-                f"{state_name}-apply",
-                facts=(
-                    parse_expression(
-                        f"(and (current-age >= castle-age) "
-                        f"(up-compare-goal {state_name} c:>= 1))",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=(
-                    parse_expression(
-                        f"(up-modify-sn sn-focus-player-number g:= {state_name})",
-                        SourceLocation(1),
-                    ),
-                ),
-            ),
-        ),
-    )
-
-
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
-    duc_focus_plan = _duc_focus_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1461,7 +1390,6 @@ def _strategy_control_plan(profile: StrategyProfile):
         posture_plan,
         mode_plan,
         assertion_plan,
-        duc_focus_plan,
     )
 
 
