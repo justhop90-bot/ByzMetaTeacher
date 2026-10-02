@@ -20,6 +20,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         self.assertIn("imperial-conversion", resolved.demand_ids)
         self.assertIn("castle-second-town-center", resolved.demand_ids)
         self.assertIn("castle-cataphract-floor", resolved.demand_ids)
+        self.assertIn("castle-mangonel-floor", resolved.demand_ids)
+        self.assertIn("imperial-bombard-floor", resolved.demand_ids)
         self.assertIn("water-fishing-continuity", resolved.demand_ids)
 
     def test_stock_profile_contains_complete_research_witnesses(self):
@@ -35,6 +37,10 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "research-bodkin-arrow",
             "research-conscription",
             "research-chemistry",
+            "research-gold-mining",
+            "research-gold-shaft-mining",
+            "research-heavy-plow",
+            "research-fletching",
         ):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
