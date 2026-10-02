@@ -55,14 +55,14 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
             "research-theocracy",
         ):
             self.assertIn(identity, self.demands)
-        self.assertIn("byzantine-relic-acquisition", {rule.identity for rule in self.profile.duc_plan.rules})
+        self.assertIn("byzantine-relic-acquisition-intent", {rule.identity for rule in self.profile.duc_plan.rules})
         self.assertIn("byzantine-relic-denial-contest", {rule.identity for rule in self.profile.duc_plan.rules})
         relic_output = "\\n".join(
             str(expr.source)
             for rule in self.profile.duc_plan.rules
             for expr in (*rule.facts, *rule.actions)
         )
-        self.assertIn("(up-find-remote c: relic-class* c: 1)", relic_output)
+        self.assertIn("(up-find-remote c: 125 c: 1)", relic_output)
         self.assertIn("(up-find-local c: 125 c: 1)", relic_output)
         self.assertIn("(up-target-objects 0 action-move -1 -1)", relic_output)
 
