@@ -384,7 +384,6 @@ class StrategyProfile:
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
-    water_execution_plan: "WaterExecutionPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -460,6 +459,7 @@ class StrategyCompilation:
     military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
+    water_execution_plan: "WaterExecutionPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1565,17 +1565,13 @@ def _strategy_control_plan(profile: StrategyProfile):
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
-    water_plan = (
-        None
-        if profile.water_execution_plan is None
-        else __import__(
-            "Compiler.ir.water",
-            fromlist=("lower_water_execution_plan",),
-        ).lower_water_execution_plan(
+    water_plan = None
+    if profile.water_execution_plan is not None:
+        from .water import lower_water_execution_plan
+        water_plan = lower_water_execution_plan(
             profile.water_execution_plan,
             profile,
         )
-    )
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
