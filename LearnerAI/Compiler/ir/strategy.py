@@ -2047,7 +2047,6 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_duc import NativeDucOutputRequest, NativeDucPlan, NativeDucRule
 
-    source = SemanticId(profile_id, "byzantine-duc-targets")
     target_specs = (
         (
             "byzantine-castle-target-knight",
@@ -2069,7 +2068,10 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
         target_specs
     ):
         output = GoalSlotRequest(
-            StorageRequestId(source, f"{identity}:up-get-object-data"),
+            StorageRequestId(
+                SemanticId(profile_id, identity),
+                "up-get-object-data",
+            ),
             role=GoalRole.NATIVE_OUTPUT,
         )
         rules.append(
