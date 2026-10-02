@@ -316,6 +316,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "feudal-barracks",
             "Feudal barracks for stable military production",
             "barracks",
+            "12",
             Age.FEUDAL,
             "current-feudal-age",
         ),
@@ -323,8 +324,17 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "feudal-stable",
             "Feudal stable so Castle cavalry conversion has a ready provider",
             "stable",
+            "101",
             Age.FEUDAL,
             "current-feudal-age",
+        ),
+        (
+            "feudal-archery-range",
+            "Feudal ranged-production provider",
+            "archery-range",
+            "87",
+            Age.FEUDAL,
+            "enemy-ranged-pressure",
         ),
     ):
         identity, reason_label, building_name, native_action, age, reason_ref = spec
@@ -340,6 +350,11 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 building_name=building_name,
                 minimum_age=age,
                 action_name=native_action,
+                extra_requirements=(
+                    "(players-unit-type-count any-enemy archer-line >= 3)",
+                )
+                if identity == "feudal-archery-range"
+                else (),
             )
         )
 
