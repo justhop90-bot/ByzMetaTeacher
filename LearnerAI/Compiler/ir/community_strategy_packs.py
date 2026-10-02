@@ -1198,12 +1198,23 @@ def build_byzantine_stock_strategy(
         "water-naval-defense": _PrimaryStrategicIntent.WATER,
         "water-naval-control": _PrimaryStrategicIntent.WATER,
     }
+    counter_demand_ids = {
+        demand_identity
+        for package in (
+            __import__(
+                "LearnerAI.Compiler.ir.counter_strategy",
+                fromlist=["default_byzantine_counter_packages"],
+            ).default_byzantine_counter_packages(effective)
+        )
+        for demand_identity in package.demand_identities
+    }
     demands = [
         replace(
             demand,
             required_primary_intent=strategic_intent_map.get(demand.identity),
             recovery_on_world_loss=(
                 demand.identity in strategic_intent_map
+                or demand.identity in counter_demand_ids
                 or demand.recovery_on_world_loss
             ),
         )
