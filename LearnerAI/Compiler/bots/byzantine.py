@@ -545,7 +545,6 @@ def _imperial_research(
     priority: _strategy.StrategicPriority = _strategy.StrategicPriority.SUPPORT,
 ) -> _strategy.StrategicDemandSpec:
     tech = effective.tech(tech_id)
-    cost = effective.cost_of(f"tech:{tech_id}")
     return _strategy.StrategicDemandSpec(
         identity=identity,
         owner="imperial",
@@ -576,18 +575,7 @@ def _imperial_research(
             "technology",
             int(tech.id),
         ),
-        opportunity_cost=_strategy.OpportunityCostPolicy(
-            owner="imperial",
-            protected_floors=(
-                _strategy.ProtectedResourceFloor(Resource.FOOD, cost.food),
-                _strategy.ProtectedResourceFloor(Resource.WOOD, cost.wood),
-                _strategy.ProtectedResourceFloor(Resource.GOLD, cost.gold),
-            ),
-            emergency_override_postures=(
-                _strategy.StrategyPosture.FLUSH,
-                _strategy.StrategyPosture.RUSH,
-            ),
-        ),
+        opportunity_cost=None,
         execution=_strategy.ExecutionDemandTemplate(
             requirements=(
                 "(current-age >= imperial-age)",
@@ -597,15 +585,7 @@ def _imperial_research(
             action=f"(research {action_token})",
             witness=f"(research-completed {tech_id})",
             release=f"(research-completed {tech_id})",
-            escrow_release_resources=tuple(
-                resource
-                for resource, amount in (
-                    (Resource.FOOD, cost.food),
-                    (Resource.WOOD, cost.wood),
-                    (Resource.GOLD, cost.gold),
-                )
-                if amount
-            ),
+            escrow_release_resources=(),
         ),
     )
 
