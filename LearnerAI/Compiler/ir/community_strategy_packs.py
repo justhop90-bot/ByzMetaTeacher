@@ -29,13 +29,13 @@ from .strategy import (
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
-from .versioning import EvidenceRef
+from .versioning import EvidenceKind, EvidenceRef
 
 
 def _airef_provenance(effective: EffectiveCivData, locator: str) -> tuple[EvidenceRef, ...]:
     return (
         EvidenceRef(
-            kind=__import__("Compiler.ir.versioning", fromlist=("EvidenceKind",)).EvidenceKind.AIREF,
+            kind=EvidenceKind.AIREF,
             source="https://airef.github.io",
             revision="master",
             locator=locator,
@@ -1060,6 +1060,22 @@ def community_strategy_sn_modes() -> tuple[_StrategicNumberMode, ...]:
     )
 
 
+def community_water_execution_plan():
+    from .water import WaterExecutionPlan
+
+    return WaterExecutionPlan(
+        plan_id="byzantine-water-v1",
+        water_posture_state="water-posture",
+        transport_phase_state="transport-phase",
+        transport_required_observation="strategy-water-islands",
+        transport_capable_observation="strategy-own-transport-capable",
+        dock_observation="strategy-dock-exists",
+        naval_pressure_observation="strategy-enemy-naval-pressure",
+        naval_pressure_cleared_observation="strategy-enemy-naval-pressure-cleared",
+        warboat_floor_observation="strategy-own-warboat-floor",
+    )
+
+
 def build_byzantine_stock_strategy(
     effective: EffectiveCivData,
     *,
@@ -1135,6 +1151,7 @@ def build_byzantine_stock_strategy(
         ),
         attack_plan=_default_byzantine_attack_plan(stock_profile_id),
         duc_plan=_default_byzantine_duc_plan(stock_profile_id),
+        water_execution_plan=community_water_execution_plan(),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
