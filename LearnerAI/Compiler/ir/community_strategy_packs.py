@@ -227,10 +227,11 @@ def _training_demand(
     provider = _provider_for_line(effective, line)
     action_symbol = action_symbol or line
     witness_symbol = witness_symbol or action_symbol
+    train_target = action_symbol
     return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
-        production_arbitration_group=owner,
+        production_arbitration_group="production",
         posture=posture,
         priority=priority,
         reason=(_persistent(reason_label, reason_ref),),
@@ -254,8 +255,8 @@ def _training_demand(
         execution=_ExecutionDemandTemplate(
             requirements=(
                 age_guard,
-                f"(can-train-with-escrow {line})",
-                f"(unit-type-count-total {line} < {minimum})",
+                f"(can-train-with-escrow {train_target})",
+                f"(unit-type-count-total {train_target} < {minimum})",
             ),
             action=f"(train {action_symbol})",
             witness=f"(unit-type-count {witness_symbol} >= {minimum})",
@@ -531,8 +532,8 @@ def community_strategy_demands(
                     "(can-build town-center)",
                 ),
                 action="(build town-center)",
-                witness="(building-type-count-total town-center >= 2)",
-                release="(building-type-count-total town-center >= 2)",
+                witness="(building-type-count town-center >= 2)",
+                release="(building-type-count town-center >= 2)",
             ),
         )
     )
@@ -716,6 +717,7 @@ def community_strategy_demands(
         _StrategicDemandSpec(
             identity="water-fishing-continuity",
             owner="water-economy",
+            production_arbitration_group="production",
             posture=_StrategyPosture.BOOM,
             priority=_StrategicPriority.SUPPORT,
             reason=(
@@ -748,8 +750,8 @@ def community_strategy_demands(
                 requirements=(
                     "(current-age >= feudal-age)",
                     "(building-type-count-total dock >= 1)",
-                    "(can-train-with-escrow fishing-ship-line)",
-                    "(unit-type-count-total fishing-ship-line < 2)",
+                    "(can-train-with-escrow fishing-ship)",
+                    "(unit-type-count-total fishing-ship < 2)",
                 ),
                 action="(train fishing-ship)",
                 witness="(unit-type-count fishing-ship >= 2)",
@@ -872,7 +874,17 @@ def build_byzantine_stock_strategy(
         if observation.identity not in observed:
             observations.append(observation)
 
-    demands = list(base.demands)
+    demands = []
+    for base_demand in base.demands:
+        if (
+            base_demand.execution is not None
+            and base_demand.execution.action.startswith("(train ")
+        ):
+            base_demand = replace(
+                base_demand,
+                production_arbitration_group="production",
+            )
+        demands.append(base_demand)
     existing_demands = {item.identity for item in demands}
     for demand in community_strategy_demands(effective):
         if demand.identity == "water-fishing-continuity" and not include_water_continuity:

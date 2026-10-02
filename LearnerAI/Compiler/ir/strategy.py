@@ -2836,3 +2836,15 @@ def build_byzantine_stock_strategy(
         effective,
         include_water_continuity=include_water_continuity,
     )
+
+
+def build_byzantine_strategy(
+    effective: EffectiveCivData,
+    *,
+    include_water_continuity: bool = True,
+) -> StrategyProfile:
+    """Canonical Byzantine strategy entry point for normal compiler clients."""
+    return build_byzantine_stock_strategy(
+        effective,
+        include_water_continuity=include_water_continuity,
+    )
