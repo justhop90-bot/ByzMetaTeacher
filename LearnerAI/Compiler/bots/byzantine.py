@@ -13,26 +13,12 @@ from dataclasses import replace
 from ..ir.civ_profile import EffectiveCivData
 from ..ir.community_strategy_packs import _build_demand, _training_demand
 from ..ir.game_data import Age, Resource
-from ..ir.strategy import (
-    CapabilityIntent,
-    CapabilityIntentKind,
-    ExecutionDemandTemplate,
-    OpportunityCostPolicy,
-    ProtectedResourceFloor,
-    StrategicDemandSpec,
-    StrategicEvidence,
-    StrategicEvidenceKind,
-    StrategicPriority,
-    StrategicTarget,
-    StrategicTargetKind,
-    StrategyPosture,
-    build_byzantine_strategy,
-)
+from ..ir import strategy as _strategy
 
 
-def _persistent(label: str, observation_ref: str) -> StrategicEvidence:
-    return StrategicEvidence(
-        StrategicEvidenceKind.PERSISTENT,
+def _persistent(label: str, observation_ref: str) -> _strategy.StrategicEvidence:
+    return _strategy.StrategicEvidence(
+        _strategy.StrategicEvidenceKind.PERSISTENT,
         None,
         label,
         observation_ref=observation_ref,
@@ -62,8 +48,8 @@ def _aged_building_demand(
     effective: EffectiveCivData,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _strategy.StrategyPosture,
+    priority: _strategy.StrategicPriority,
     reason_ref: str,
     reason_label: str,
     building_name: str,
@@ -73,7 +59,7 @@ def _aged_building_demand(
     invalidate_ref: str | None = None,
     extra_requirements: tuple[str, ...] = (),
     action_name: str | None = None,
-) -> StrategicDemandSpec:
+) -> _strategy.StrategicDemandSpec:
     building = next(
         item
         for item in effective.buildings
@@ -117,8 +103,8 @@ def _staged_building(
     effective: EffectiveCivData,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _strategy.StrategyPosture,
+    priority: _strategy.StrategicPriority,
     reason_ref: str,
     reason_label: str,
     building_name: str,
@@ -126,7 +112,7 @@ def _staged_building(
     lower_bound: int,
     upper_bound: int,
     extra_requirements: tuple[str, ...] = (),
-) -> StrategicDemandSpec:
+) -> _strategy.StrategicDemandSpec:
     return _aged_building_demand(
         effective=effective,
         identity=identity,
@@ -148,8 +134,8 @@ def _staged_training(
     effective: EffectiveCivData,
     identity: str,
     owner: str,
-    posture: StrategyPosture,
-    priority: StrategicPriority,
+    posture: _strategy.StrategyPosture,
+    priority: _strategy.StrategicPriority,
     reason_ref: str,
     reason_label: str,
     line: str,
@@ -159,7 +145,7 @@ def _staged_training(
     upper_bound: int,
     age_guard: str,
     extra_requirements: tuple[str, ...] = (),
-) -> StrategicDemandSpec:
+) -> _strategy.StrategicDemandSpec:
     base = _training_demand(
         effective=effective,
         identity=identity,
@@ -189,9 +175,9 @@ def _staged_training(
 
 
 def _with_execution_guards(
-    demand: StrategicDemandSpec,
+    demand: _strategy.StrategicDemandSpec,
     *guards: str,
-) -> StrategicDemandSpec:
+) -> _strategy.StrategicDemandSpec:
     """Add explicit native threat/world-state guards to a stock demand.
 
     Community evidence explains why a policy exists; these guards make the
@@ -205,14 +191,14 @@ def _with_execution_guards(
     return replace(demand, execution=execution)
 
 
-def _castle_age_transition(effective: EffectiveCivData) -> StrategicDemandSpec:
+def _castle_age_transition(effective: EffectiveCivData) -> _strategy.StrategicDemandSpec:
     advance = effective.age_advance(Age.CASTLE)
     cost = effective.cost_of_age_advance(Age.CASTLE)
-    return StrategicDemandSpec(
+    return _strategy.StrategicDemandSpec(
         identity="castle-age-transition",
         owner="age-transition",
-        posture=StrategyPosture.BOOM,
-        priority=StrategicPriority.CORE,
+        posture=_strategy.StrategyPosture.BOOM,
+        priority=_strategy.StrategicPriority.CORE,
         reason=(
             _persistent(
                 "Reach Castle Age as the core Byzantine land conversion point",
@@ -226,29 +212,29 @@ def _castle_age_transition(effective: EffectiveCivData) -> StrategicDemandSpec:
             ),
         ),
         invalidation=(),
-        capability_intent=CapabilityIntent(
-            CapabilityIntentKind.AGE_ADVANCE,
+        capability_intent=_strategy.CapabilityIntent(
+            _strategy.CapabilityIntentKind.AGE_ADVANCE,
             "age-advance",
             "castle-age",
             advance.provider_building,
         ),
-        target=StrategicTarget(
-            StrategicTargetKind.EXACT,
+        target=_strategy.StrategicTarget(
+            _strategy.StrategicTargetKind.EXACT,
             "age-advance",
             "castle-age",
         ),
-        opportunity_cost=OpportunityCostPolicy(
+        opportunity_cost=_strategy.OpportunityCostPolicy(
             owner="age-transition",
             protected_floors=(
-                ProtectedResourceFloor(Resource.FOOD, cost.food),
-                ProtectedResourceFloor(Resource.GOLD, cost.gold),
+                _strategy.ProtectedResourceFloor(Resource.FOOD, cost.food),
+                _strategy.ProtectedResourceFloor(Resource.GOLD, cost.gold),
             ),
             emergency_override_postures=(
-                StrategyPosture.FLUSH,
-                StrategyPosture.RUSH,
+                _strategy.StrategyPosture.FLUSH,
+                _strategy.StrategyPosture.RUSH,
             ),
         ),
-        execution=ExecutionDemandTemplate(
+        execution=_strategy.ExecutionDemandTemplate(
             requirements=(
                 "(current-age == feudal-age)",
                 "(can-research-with-escrow castle-age)",
@@ -261,8 +247,8 @@ def _castle_age_transition(effective: EffectiveCivData) -> StrategicDemandSpec:
     )
 
 
-def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]:
-    demands: list[StrategicDemandSpec] = [_castle_age_transition(effective)]
+def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemandSpec, ...]:
+    demands: list[_strategy.StrategicDemandSpec] = [_castle_age_transition(effective)]
 
     # Civilian production is deliberately staged. One permanent "make
     # villagers" demand is easy to write and excellent at starving everything
@@ -279,8 +265,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 effective=effective,
                 identity=identity,
                 owner="economy",
-                posture=StrategyPosture.BOOM,
-                priority=StrategicPriority.CORE,
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.CORE,
                 reason_ref=_age_observation(age),
                 reason_label=label,
                 line="villager-line",
@@ -302,8 +288,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             effective=effective,
             identity="feudal-archery-range",
             owner="infrastructure",
-            posture=StrategyPosture.FLUSH,
-            priority=StrategicPriority.DEFENSE,
+            posture=_strategy.StrategyPosture.FLUSH,
+            priority=_strategy.StrategicPriority.DEFENSE,
             reason_ref="enemy-ranged-pressure",
             reason_label="Provide the Feudal ranged-production counter under archer pressure",
             building_name="archery-range",
@@ -326,8 +312,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 effective=effective,
                 identity=f"house-stage-{index + 1}",
                 owner="housing",
-                posture=StrategyPosture.BOOM,
-                priority=StrategicPriority.SUPPORT,
+                posture=_strategy.StrategyPosture.BOOM,
+                priority=_strategy.StrategicPriority.SUPPORT,
                 reason_ref="current-dark-age",
                 reason_label=f"Maintain housing headroom, stage {index + 1}",
                 building_name="house",
@@ -353,7 +339,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     explicit bot-level production and opening continuity without changing the
     compiler's generic semantics.
     """
-    base = build_byzantine_strategy(effective)
+    base = _strategy.build_byzantine_strategy(effective)
 
     guard_by_identity = {
         "counter-mounted-spears": (
