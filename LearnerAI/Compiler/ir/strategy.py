@@ -1416,7 +1416,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         "(players-unit-type-count any-enemy knight >= 3) "
         "(or "
         "(players-unit-type-count any-enemy archer-line >= 4) "
-        "(players-unit-count any-enemy militia-line >= 5)))"
+        "(players-unit-type-count any-enemy militia-line >= 5)))"
     )
     common_arm_facts = (
         parse_expression(
