@@ -248,7 +248,6 @@ def _water_research_demand(
         priority=_StrategicPriority.SUPPORT,
         reason=(
             _persistent(reason_label, "strategy-water-islands"),
-            _persistent(f"{identity}:completion-state", complete_ref),
         ),
         admissibility=(
             _persistent(f"{identity}:water-admission", "strategy-water-islands"),
@@ -558,6 +557,23 @@ def community_strategy_observations(
             _observation(
                 f"{identity}-pending",
                 f"(not (research-completed {int(tech.id)}))",
+                tech.provenance,
+            )
+        )
+
+    for identity, tech_name in (
+        ("water-fishing-lines", "fishing-lines"),
+        ("water-gillnets", "gillnets"),
+        ("water-warships", "warships"),
+        ("water-heavy-warships", "heavy-warships"),
+        ("water-fast-fire-ship", "fast-fire-ship"),
+        ("water-greek-fire", "greek-fire"),
+    ):
+        tech = _tech(effective, tech_name)
+        observations.append(
+            _observation(
+                f"{identity}-complete",
+                f"(research-completed {int(tech.id)})",
                 tech.provenance,
             )
         )
