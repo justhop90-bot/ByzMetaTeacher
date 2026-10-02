@@ -71,6 +71,7 @@ def _aged_building_demand(
     lower_bound: int | None = None,
     upper_bound: int | None = None,
     invalidate_ref: str | None = None,
+    extra_requirements: tuple[str, ...] = (),
 ) -> StrategicDemandSpec:
     building = next(
         item
@@ -87,7 +88,7 @@ def _aged_building_demand(
             f"(building-type-count-total {building_name} < {upper_bound})"
         )
     requirements = tuple(
-        [*guard_parts, f"(can-build {building_name})"]
+        [*guard_parts, f"(can-build {building_name})", *extra_requirements]
     )
     return _build_demand(
         identity=identity,
@@ -355,6 +356,22 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
 
     # Feudal response package guards are attached to the stock counter
     # demands below. Keeping one demand per counter avoids double production.
+    demands.append(
+        _aged_building_demand(
+            effective=effective,
+            identity="feudal-archery-range",
+            owner="infrastructure",
+            posture=StrategyPosture.FLUSH,
+            priority=StrategicPriority.DEFENSE,
+            reason_ref="enemy-ranged-pressure",
+            reason_label="Provide the Feudal ranged-production counter under archer pressure",
+            building_name="archery-range",
+            minimum_age=Age.FEUDAL,
+            extra_requirements=(
+                "(players-unit-type-count any-enemy archer-line >= 3)",
+            ),
+        )
+    )
 
     # Castle power is staged instead of asking for six of everything at once.
     demands.extend(
