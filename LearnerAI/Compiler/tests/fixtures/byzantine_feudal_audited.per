@@ -11612,7 +11612,8 @@ demand-castle-varangian-guard-floor 60))
     (set-goal demand-water-naval-defense 1)
 )
 
-; Completion witness: water-naval-defense | PENDING/ISSUED -> COMPLETE(defrule
+; Completion witness: water-naval-defense | PENDING/ISSUED -> COMPLETE
+(defrule
     (or
         (goal demand-water-naval-defense 139)
         (goal demand-water-naval-defense 137)
