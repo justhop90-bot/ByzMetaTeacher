@@ -185,7 +185,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "(research 429)",
             "(research 236)",
             "(research 61)",
-            "(train arbalester)",
+            "(train arbalest)",
             "(train petard)",
             "(build 79)",
             "(build 117)",
