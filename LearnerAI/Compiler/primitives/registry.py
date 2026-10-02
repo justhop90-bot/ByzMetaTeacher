@@ -169,29 +169,6 @@ class PrimitiveRegistry:
                     )
 
     def bind_duc_command(self, command: str):
-        goal_sites = {request.site_key for request in plan.goal_input_requests}
-        rule_sites = {
-            (rule.identity, section, index, 0)
-            for rule in plan.rules
-            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
-            for index, _expression in enumerate(expressions)
-        }
-        if not goal_sites <= rule_sites:
-            missing = sorted(goal_sites - rule_sites)
-            raise ValueError(f"native attack Goal input sites do not exist: {missing}")
-        for request in plan.goal_input_requests:
-            rule = next(
-                rule for rule in plan.rules if rule.identity == request.rule_identity
-            )
-            expressions = rule.facts if request.section == "FACT" else rule.actions
-            expression = expressions[request.expression_index]
-            if request.argument_index >= len(expression.args):
-                raise ValueError(f"native attack Goal input '{request.site_key}' argument is outside expression")
-            if expression.head not in {"goal", "up-compare-goal"}:
-                raise ValueError(f"native attack Goal input '{request.site_key}' targets unsupported command '{expression.head}'")
-            if request.argument_index != 0:
-                raise ValueError(f"native attack Goal input '{request.site_key}' must bind argument 0")
-
         binder = NativeSemanticBinder(
             native_registry=self._native,
             semantic_mappings=self._semantic_mappings,
@@ -304,6 +281,35 @@ class PrimitiveRegistry:
             plan = plan.native_plan
             if plan is None or plan.empty:
                 return
+        goal_sites = {request.site_key for request in plan.goal_input_requests}
+        rule_sites = {
+            (rule.identity, section, index, 0)
+            for rule in plan.rules
+            for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
+            for index, _expression in enumerate(expressions)
+        }
+        if not goal_sites <= rule_sites:
+            missing = sorted(goal_sites - rule_sites)
+            raise ValueError(f"native attack Goal input sites do not exist: {missing}")
+        for request in plan.goal_input_requests:
+            rule = next(
+                rule for rule in plan.rules if rule.identity == request.rule_identity
+            )
+            expressions = rule.facts if request.section == "FACT" else rule.actions
+            expression = expressions[request.expression_index]
+            if request.argument_index >= len(expression.args):
+                raise ValueError(
+                    f"native attack Goal input '{request.site_key}' argument is outside expression"
+                )
+            if expression.head not in {"goal", "up-compare-goal"}:
+                raise ValueError(
+                    f"native attack Goal input '{request.site_key}' targets unsupported command '{expression.head}'"
+                )
+            if request.argument_index != 0:
+                raise ValueError(
+                    f"native attack Goal input '{request.site_key}' must bind argument 0"
+                )
+
         binder = NativeSemanticBinder(
             native_registry=self._native,
             semantic_mappings=self._semantic_mappings,
