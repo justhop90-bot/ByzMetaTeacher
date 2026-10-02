@@ -29,6 +29,10 @@ from ..semantic.resource_control import (
     validate_escrow_policy_plan,
     validate_escrow_release_plan,
 )
+from ..semantic.native_object_data_catalog import (
+    NativeObjectDataError,
+    resolve_object_data_id,
+)
 from .native_hygiene import (
     AIRefProvenance,
     ConfidenceBasis,
@@ -570,6 +574,10 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"{expression.head} native expression must have exactly two arguments"
                     )
+                try:
+                    resolve_object_data_id(str(expression.args[0]))
+                except NativeObjectDataError as exc:
+                    raise ValueError(str(exc)) from exc
 
             elif expression.head == "up-get-point":
                 if output_request.argument_index != 1:
