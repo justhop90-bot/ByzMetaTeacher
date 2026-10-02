@@ -1,6 +1,6 @@
 # Byzantine Core v1 — Game-Proof and Release Matrix
 
-**Branch:** `bot/byzantine-core-v1`  
+**Branch:** `bot/byzantine-core-v1-final`  
 **Profile:** Byzantine Core v1  
 **Patch target:** Update 185872  
 **Scope:** 1v1 Byzantine community-derived bot with standard land, Arena, Islands, and water/transport support.
@@ -13,21 +13,23 @@ Gameplay acceptance is behavioral. A scenario passes when the compiled policy ex
 
 ## Verified artifact run — 2026-10-02
 
-The current deployable artifact was built and validated on GitHub Actions PR run #3272 (36976201125) from verified PR head 01d47f2b6605e34533e6f134e59856b7cce91c88 and merged into `bot/byzantine-core-v1` as ba2237dd96d5697561d04fcd1a5548094caeaca5.
+The deployable artifact was built and fully validated on GitHub Actions PR run #3300 (36978087631) from the final Byzantine Core v1 economy-completeness head. The PR is #285; the final code remains on `bot/byzantine-core-v1-final`.
 
 artifact: Byzantine.per
-artifact_sha256: bf2b1d861fdec4a158e868ba2db73ea87fcaf30602ab76d244db5310e667f38a
-artifact_bytes: 267784
-demand_count: 76
-strategic_number_mode_count: 18
-compiler_revision: bcdab43727fefb29a26634490ecfe6b79fa4912a
+artifact_sha256: 1e7b29160801a92baed79307c311c9bd7e3f0d67b7227a40649f69ecb73f1d96
+artifact_bytes: 304874
+artifact_lines: 8655
+demand_count: 86
+strategic_number_mode_count: 22
+compiler_revision: 4c6eb8df2023f649be36b6a26cea8125ad1e61e6
 native_parser_revision: 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba
+effective_snapshot_fingerprint: 6f69321936d2b4ddc61384f3a71e647f4c188d0f125483d6231b8e0b472e2537
 
-The run passed the full compiler regression suite (1,489 tests), Byzantine native zero-findings (0 findings), all focused native fixtures, all cross-platform native-support determinism jobs, and the final verification gate. The DUC ObjectData hardening specifically eliminates the invalid `id`/undefined-symbol forms and validates ObjectData operands against the checked-in native value inventory.
+Run #3300 passed the full compiler regression suite (1,493 tests), Byzantine native zero-findings (0 findings), all focused native fixtures, all nine cross-platform native-support determinism jobs, the final cross-platform snapshot comparison, and the compiler verification gate.
 
-The 15-scenario artifact-policy matrix was re-run against this exact Byzantine.per. 15/15 scenarios passed at the static policy-contract level: each exposed its required demand/admission, native condition, action, completion/release evidence, and recovery path where applicable.
+The final completeness tranche closes the previously deferred basic economic execution seam: Lumber Camp, Mining Camp, Mill, Farm and Market demands are now emitted through the existing construction lifecycle, using verified native BuildingIds and supported observations. It also adds the minimal Feudal Spearman floor and explicit camp/mill placement Strategic Number policy.
 
-The first substantive behavioral weakness found during this pass was the Islands opening: fishing continuity was previously Feudal-only and capped at two boats. The bot now has a distinct Dark-Age Islands fishing-opening demand reaching four Fishing Ships after Dock completion. This remains a policy contract, not a simulated DE match result.
+The final artifact contains no `resource-found` executable dependency because the checked-in compiler correctly rejects that command as known-but-unadapted. The bot therefore uses supported `dropsite-min-distance` and existing villager/provider facts instead of smuggling unsupported native semantics into the release.
 
 ## Scenario matrix
 
