@@ -5,7 +5,7 @@ Status: authoritative current-state guide for `main`.
 Current compiler baseline: the `main` branch is the source of truth for accepted state. The exact commit SHA is the current tip of the repository's default branch.
 Latest compiler verification: use the green `Compiler tests` workflow on `main`.
 
-The accepted compiler baseline reports **1,212 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
+The latest verified compiler candidate reports **1,431 tests, OK**, with native zero-findings acceptance, the compiler verification gate, 9/9 native-support determinism jobs, and cross-platform snapshot comparison.
 
 ## What this project is
 
@@ -81,10 +81,12 @@ The accepted mainline currently includes:
 - deterministic resource/conflict validation;
 - construction lifecycle and resource ownership;
 - production lifecycle observations for provider readiness, queue capacity, provider availability, birth, queue exit, and pending-object protection;
+- compiler-policy production/train arbitration through the existing ResourceClaim surface;
 - research lifecycle and escrow claim semantics;
 - typed Strategic Number semantics and persistent-control surfaces;
 - typed Timer allocation and owner/release cleanup analysis;
 - DUC SearchSession/TargetSession semantics and typed target identity/reacquisition state;
+- downstream Byzantine strategy compilation of the existing NativeDucPlan channel;
 - attack control observation and operational semantics;
 - typed attack execution lifecycle;
 - military composition proof assembly;
@@ -104,6 +106,12 @@ Evidence is classified as:
 The compiler may adopt a static policy when it is explicitly labeled as policy.
 
 It must not upgrade common community usage into an engine fact.
+
+## Current frontier
+
+The major generic execution substrates are largely present. The highest-value remaining compiler work is now behavioral synthesis on top of those substrates: Byzantine DUC discovery/target policy, full attack execution beyond issue-only attack-now, remaining escrow/resource arbitration, active SN evidence closure, Byzantine factual closure, and broad community strategy synthesis.
+
+Production/train arbitration is closed as compiler policy. DUC runtime liveness, retained-filter behavior, group membership, output values, exact target lifetime, and attack completion/release remain OPEN unless independently proven.
 
 ## Roadmap
 
@@ -200,7 +208,8 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 ## Current Git state
 
 - default branch: `main`;
-- open PRs at the state snapshot: none;
+- candidate PR #266 carries the DUC strategy compilation channel on branch `duc-strategy-compilation-channel-2026-10-02` pending merge;
+- open PRs on main remain authoritative from GitHub;
 - mainline compiler CI: authoritative through the latest green `Compiler tests` workflow on `main`;
 - the current-state document deliberately does not embed its own commit SHA or workflow number; GitHub's `main` ref and compiler workflow are the authoritative live pointers;
 - the legacy validator no longer runs automatically on pushes or pull requests;
@@ -209,14 +218,13 @@ Native acceptance and cross-platform determinism are authoritative in GitHub Act
 
 ## Next repair discipline
 
-The next repair should:
+The next repair should start from the existing DUC and attack substrates rather than reopening production arbitration:
 
-1. cross-reference the existing production lifecycle and `ResourceClaim` interfaces;
-2. write the failing arbitration tests first;
-3. implement the smallest policy projection that closes the seam;
-4. prove deterministic ownership and conflict behavior;
-5. preserve all existing OPEN/UNKNOWN boundaries;
-6. run focused tests, native acceptance, full compiler regression, 9/9 determinism, snapshot comparison, and compiler verification;
-7. merge to `main` only after the exact candidate commit is green.
+1. write the failing strategy/behavior test first;
+2. reuse existing typed DUC, ResourceClaim, AttackExecution, SN, Timer, escrow, and witness surfaces;
+3. add only the smallest compiler-policy projection required by the community behavior;
+4. preserve all OPEN/UNKNOWN runtime boundaries;
+5. run focused tests, native acceptance, full compiler regression, 9/9 determinism, snapshot comparison, and compiler verification;
+6. merge only after the exact candidate commit is green.
 
 That is the state from which new compiler work should begin.
