@@ -1581,8 +1581,8 @@ def community_strategy_demands(
                 line="spearman-line",
                 minimum=4,
                 age_guard="(current-age >= imperial-age)",
-                action_symbol="halberdier",
-                witness_symbol="halberdier",
+                action_symbol="359",
+                witness_symbol="359",
                 invalidate_ref="strategy-enemy-mounted-heavy-cleared",
             ),
             _training_demand(
@@ -1964,8 +1964,8 @@ def community_strategy_demands(
                 line="hulk-line",
                 minimum=2,
                 age_guard="(current-age >= feudal-age)",
-                action_symbol="hulk",
-                witness_symbol="hulk",
+                action_symbol="2626",
+                witness_symbol="2626",
             ),
             _training_demand(
                 effective=effective,
@@ -1978,8 +1978,8 @@ def community_strategy_demands(
                 line="hulk-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
-                action_symbol="war-hulk",
-                witness_symbol="war-hulk",
+                action_symbol="2627",
+                witness_symbol="2627",
             ),
             _training_demand(
                 effective=effective,
@@ -1992,8 +1992,8 @@ def community_strategy_demands(
                 line="hulk-line",
                 minimum=2,
                 age_guard="(current-age >= imperial-age)",
-                action_symbol="carrack",
-                witness_symbol="carrack",
+                action_symbol="2628",
+                witness_symbol="2628",
             ),
             _training_demand(
                 effective=effective,
@@ -2006,8 +2006,8 @@ def community_strategy_demands(
                 line="demolition-raft-line",
                 minimum=1,
                 age_guard="(current-age >= castle-age)",
-                action_symbol="demolition-ship",
-                witness_symbol="demolition-ship",
+                action_symbol="527",
+                witness_symbol="527",
             ),
             _training_demand(
                 effective=effective,
@@ -2020,8 +2020,8 @@ def community_strategy_demands(
                 line="demolition-raft-line",
                 minimum=1,
                 age_guard="(current-age >= imperial-age)",
-                action_symbol="heavy-demolition-ship",
-                witness_symbol="heavy-demolition-ship",
+                action_symbol="528",
+                witness_symbol="528",
             ),
             _training_demand(
                 effective=effective,
@@ -2034,8 +2034,8 @@ def community_strategy_demands(
                 line="trade-cog-line",
                 minimum=2,
                 age_guard="(current-age >= feudal-age)",
-                action_symbol="trade-cog",
-                witness_symbol="trade-cog",
+                action_symbol="17",
+                witness_symbol="17",
             ),
         )
     )
