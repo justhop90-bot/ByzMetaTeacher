@@ -30,7 +30,7 @@ Turn Dark Age from a villager-count checkpoint into a real economic opening whil
 
 At Prompt 1 time, resource-building construction for lumber camp, mill, mining camp and farm was deliberately deferred because the bot did not yet expose those providers through its executable policy path. The final completeness tranche now uses the existing native BuildingId catalog and construction lifecycle directly. Dock remains owned by the existing Islands/water policy.
 
-The bot now emits real Lumber Camp, Mining Camp, Mill and Farm demands, uses existing `resource-found` / `dropsite-min-distance` observations, and applies existing Strategic Number placement controls. This closes the old Prompt 1 execution dependency without changing generic compiler semantics.
+The bot now emits real Lumber Camp, Mining Camp, Mill and Farm demands, uses the supported `dropsite-min-distance` observation together with existing villager/provider facts, and applies existing Strategic Number placement controls. This closes the old Prompt 1 execution dependency without changing generic compiler semantics.
 
 ### Acceptance
 
