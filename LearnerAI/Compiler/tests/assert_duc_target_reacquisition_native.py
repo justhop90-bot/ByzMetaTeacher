@@ -62,7 +62,7 @@ def _vertical():
                 actions=(
                     _e("(up-find-local c: 83 c: 1)", "up-find-local", "c:", "83", "c:", "1"),
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
-                    _e("(up-get-object-data 0 41)", "up-get-object-data", "id", "41"),
+                    _e("(up-get-object-data 0 41)", "up-get-object-data", "0", "41"),
                 ),
             ),
             NativeDucRule(
