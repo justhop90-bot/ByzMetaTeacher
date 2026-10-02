@@ -995,10 +995,6 @@ def lower_strategy_profile(
                     raise ValueError(
                         f"strategic demand '{spec.identity}' requires primary arbitration but no plan is configured"
                     )
-                requirements = (
-                    *requirements,
-                    f"(goal {profile.strategic_arbitration.state_name} {spec.required_primary_intent.value})",
-                )
                 emergency_ref = profile.strategic_arbitration.emergency_observation_ref
                 if (
                     emergency_ref is not None
