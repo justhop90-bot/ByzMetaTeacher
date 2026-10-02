@@ -13,17 +13,17 @@ Gameplay acceptance is behavioral. A scenario passes when the compiled policy ex
 
 ## Verified artifact run — 2026-10-02
 
-The current deployable artifact was built and validated on GitHub Actions PR run #3261 (36974395323) from commit 64a6f28933dfcff44ef5a71ebee76000a02ce12.
+The current deployable artifact was built and validated on GitHub Actions PR run #3272 (36976201125) from verified PR head 01d47f2b6605e34533e6f134e59856b7cce91c88 and merged into `bot/byzantine-core-v1` as ba2237dd96d5697561d04fcd1a5548094caeaca5.
 
 artifact: Byzantine.per
-artifact_sha256: e34852d5056bbecc190d9a7fb698e505813d6c6e53fbe425cbec9db93456f369
-artifact_bytes: 267786
+artifact_sha256: bf2b1d861fdec4a158e868ba2db73ea87fcaf30602ab76d244db5310e667f38a
+artifact_bytes: 267784
 demand_count: 76
 strategic_number_mode_count: 18
 compiler_revision: bcdab43727fefb29a26634490ecfe6b79fa4912a
 native_parser_revision: 3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba
 
-The run passed the full compiler regression suite (1,483 tests), Byzantine native zero-findings (0 findings), all focused native fixtures, all cross-platform native-support determinism jobs, and the final verification gate.
+The run passed the full compiler regression suite (1,489 tests), Byzantine native zero-findings (0 findings), all focused native fixtures, all cross-platform native-support determinism jobs, and the final verification gate. The DUC ObjectData hardening specifically eliminates the invalid `id`/undefined-symbol forms and validates ObjectData operands against the checked-in native value inventory.
 
 The 15-scenario artifact-policy matrix was re-run against this exact Byzantine.per. 15/15 scenarios passed at the static policy-contract level: each exposed its required demand/admission, native condition, action, completion/release evidence, and recovery path where applicable.
 
