@@ -1029,8 +1029,8 @@ def community_strategy_demands(
                 line="crossbow-line",
                 minimum=3,
                 age_guard="(current-age >= imperial-age)",
-                action_symbol="arbalester",
-                witness_symbol="arbalester",
+                action_symbol="arbalest",
+                witness_symbol="arbalest",
                 invalidate_ref="strategy-enemy-ranged-cleared",
             ),
             _training_demand(
