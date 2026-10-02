@@ -1542,13 +1542,12 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                         SourceLocation(1),
                     ),
                     parse_expression(pair_goal(number), SourceLocation(1)),
-                    parse_expression(anchor_missing(left), SourceLocation(1)),
                     parse_expression(
                         "(or "
+                        + anchor_missing(left)
+                        + " "
                         + anchor_missing(right)
-                        + " (up-pending-objects c: "
-                        + str(wall_id)
-                        + " > 0))",
+                        + ")",
                         SourceLocation(1),
                     ),
                 ),
@@ -1606,7 +1605,6 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
             )
         )
 
-    pair_values = [str(item["number"]) for item in anchor_pairs]
     strong_pair_values = [
         str(item["number"])
         for item in anchor_pairs
