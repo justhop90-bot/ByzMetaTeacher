@@ -1524,21 +1524,7 @@
 
 ; Package -> demand activation. Demands are reasserted persistently; the
 ; lifecycle itself owns completion, release, and loss recovery.
-(defrule
-    (current-age == feudal-age)
-    (or
-        (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
-        (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
-        (and
-            (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
-            (unit-type-count-total militia-line >= bt-feudal-maa-floor)
-        )
-    )
-    (goal demand-feudal-archer-floor 0)
-    (unit-type-count-total archer-line < bt-feudal-archer-floor)
-=>
-    (set-goal demand-feudal-archer-floor 1)
-)
+(defrule (current-age == feudal-age) (or (or (goal byzantine-feudal-army-package byzantine-feudal-package-archer) (goal byzantine-feudal-army-package byzantine-feudal-package-scout)) (and (goal byzantine-feudal-army-package byzantine-feudal-package-maa) (unit-type-count-total militia-line >= bt-feudal-maa-floor))) (goal demand-feudal-archer-floor 0) (unit-type-count-total archer-line < bt-feudal-archer-floor) => (set-goal demand-feudal-archer-floor 1))
 
 (defrule
     (current-age == feudal-age)
@@ -3062,51 +3048,7 @@
     (set-goal byzantine-army-attack-ready 1)
 )
 
-(defrule
-    (current-age >= imperial-age)
-    (goal byzantine-army-plan-phase 2)
-    (goal byzantine-army-attack-ready 0)
-    (up-compare-sn 227 >= 75)
-    (or
-        (or
-            (and
-                (or
-                    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-                    (or
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-                    )
-                )
-                (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)
-            )
-            (and
-                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
-                (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor)
-            )
-        )
-        (and
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
-            (unit-type-count-total arbalest >= bt-imperial-arbalester-floor)
-        )
-    )
-    (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
-    (or
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-standard)
-            (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
-            (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
-            (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
-        )
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-            (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
-            (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
-            (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
-        )
-    )
-=>
-    (set-goal byzantine-army-attack-ready 1)
-)
+(defrule (current-age >= imperial-age) (goal byzantine-army-plan-phase 2) (goal byzantine-army-attack-ready 0) (up-compare-sn 227 >= 75) (or (or (and (or (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced) (or (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted) (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege))) (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)) (and (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry) (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor))) (and (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged) (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))) (unit-type-count-total 359 >= bt-imperial-halberdier-floor) (or (and (and (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)) (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)) (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)) (and (and (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)) (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)) (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target))) => (set-goal byzantine-army-attack-ready 1))
 
 (defrule
     (current-age >= castle-age)
@@ -3180,50 +3122,7 @@
     (set-goal byzantine-army-attack-ready 1)
 )
 
-(defrule
-    (goal byzantine-army-reinforcement 1)
-    (current-age >= imperial-age)
-    (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
-    (or
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-standard)
-            (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
-            (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
-            (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
-        )
-        (and
-            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
-            (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
-            (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
-            (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
-        )
-    )
-    (or
-        (or
-            (and
-                (or
-                    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-                    (or
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
-                        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
-                    )
-                )
-                (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)
-            )
-            (and
-                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
-                (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor)
-            )
-        )
-        (and
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
-            (unit-type-count-total arbalest >= bt-imperial-arbalester-floor)
-        )
-    )
-=>
-    (set-goal byzantine-army-reinforcement 0)
-    (set-goal byzantine-army-attack-ready 1)
-)
+(defrule (goal byzantine-army-reinforcement 1) (current-age >= imperial-age) (unit-type-count-total 359 >= bt-imperial-halberdier-floor) (or (and (and (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)) (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)) (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)) (and (and (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)) (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)) (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target))) (or (or (and (or (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced) (or (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted) (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege))) (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)) (and (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry) (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor))) (and (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged) (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))) => (set-goal byzantine-army-reinforcement 0) (set-goal byzantine-army-attack-ready 1))
 
 (defrule
     (true)
@@ -4314,18 +4213,7 @@
     (set-goal demand-feudal-archer-floor 0)
 )
 
-(defrule
-    (goal demand-feudal-archer-floor 0)
-    (current-age == feudal-age)
-    (unit-type-count-total archer-line < bt-feudal-archer-floor)
-    (or
-        (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
-        (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
-        (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
-    )
-=>
-    (set-goal demand-feudal-archer-floor 1)
-)
+(defrule (goal demand-feudal-archer-floor 0) (current-age == feudal-age) (unit-type-count-total archer-line < bt-feudal-archer-floor) (or (or (goal byzantine-feudal-army-package byzantine-feudal-package-archer) (goal byzantine-feudal-army-package byzantine-feudal-package-scout)) (goal byzantine-feudal-army-package byzantine-feudal-package-maa)) => (set-goal demand-feudal-archer-floor 1))
 
 (defrule
     (or
@@ -5104,18 +4992,7 @@
 )
 
 ; Age handoff: one persistent farm controller owns the active age.
-(defrule
-    (current-age >= imperial-age)
-    (or
-        (goal demand-economy-farm-boom-castle 1)
-        (goal demand-economy-farm-boom-castle 65)
-        (goal demand-economy-farm-boom-castle 67)
-        (goal demand-economy-farm-boom-castle 66)
-    )
-=>
-    (set-goal demand-economy-farm-boom-castle 0)
-    (set-goal demand-economy-farm-boom-imperial 1)
-)
+(defrule (current-age >= imperial-age) (or (or (or (goal demand-economy-farm-boom-castle 1) (goal demand-economy-farm-boom-castle 65)) (goal demand-economy-farm-boom-castle 67)) (goal demand-economy-farm-boom-castle 66)) => (set-goal demand-economy-farm-boom-castle 0) (set-goal demand-economy-farm-boom-imperial 1))
 
 ; Pending diagnostics: castle-second-town-center
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 53 and cannot reissue from pending goal 54
@@ -6101,238 +5978,42 @@
 ; The farm target follows active TC count. Naga/community practice increases farm
 ; pressure after TC2/TC3 instead of waiting for a famine. Our lifecycle still uses
 ; issued/pending/world-state witness semantics.
-(defrule
-    (goal demand-economy-farm-boom-castle 66)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-castle-farm-target-3tc))
-    )
-=>
-    (set-goal demand-economy-farm-boom-castle 0)
-)
+(defrule (goal demand-economy-farm-boom-castle 66) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-castle-farm-target-3tc))) => (set-goal demand-economy-farm-boom-castle 0))
 
 ; Recovery: active Castle farm target after world-state loss.
-(defrule
-    (goal demand-economy-farm-boom-castle 0)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))
-    )
-    (current-age == castle-age)
-=>
-    (set-goal demand-economy-farm-boom-castle 1)
-)
+(defrule (goal demand-economy-farm-boom-castle 0) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))) (current-age == castle-age) => (set-goal demand-economy-farm-boom-castle 1))
 
 ; Completion witness: Castle farm target.
-(defrule
-    (or
-        (goal demand-economy-farm-boom-castle 67)
-        (goal demand-economy-farm-boom-castle 65)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-castle-farm-target-3tc))
-    )
-=>
-    (set-goal demand-economy-farm-boom-castle 66)
-)
+(defrule (or (goal demand-economy-farm-boom-castle 67) (goal demand-economy-farm-boom-castle 65)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-castle-farm-target-3tc))) => (set-goal demand-economy-farm-boom-castle 66))
 
 ; Pending admission: Castle farm build.
-(defrule
-    (or
-        (goal demand-economy-farm-boom-castle 67)
-        (goal demand-economy-farm-boom-castle 65)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 >= 1)
-=>
-    (set-goal demand-economy-farm-boom-castle 65)
-)
+(defrule (or (goal demand-economy-farm-boom-castle 67) (goal demand-economy-farm-boom-castle 65)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))) (up-pending-objects c: 50 >= 1) => (set-goal demand-economy-farm-boom-castle 65))
 
 ; PLACEMENT_PENDING: Castle farm build.
-(defrule
-    (or
-        (goal demand-economy-farm-boom-castle 67)
-        (goal demand-economy-farm-boom-castle 65)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 == 0)
-    (up-pending-placement c: 50)
-=>
-    (set-goal demand-economy-farm-boom-castle 65)
-)
+(defrule (or (goal demand-economy-farm-boom-castle 67) (goal demand-economy-farm-boom-castle 65)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))) (up-pending-objects c: 50 == 0) (up-pending-placement c: 50) => (set-goal demand-economy-farm-boom-castle 65))
 
 ; RETRY: Castle farm build.
-(defrule
-    (or
-        (goal demand-economy-farm-boom-castle 67)
-        (goal demand-economy-farm-boom-castle 65)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 == 0)
-    (not (up-pending-placement c: 50))
-=>
-    (set-goal demand-economy-farm-boom-castle 1)
-    (set-goal construction-retry-barrier-economy-farm-boom-castle 1)
-)
+(defrule (or (goal demand-economy-farm-boom-castle 67) (goal demand-economy-farm-boom-castle 65)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))) (up-pending-objects c: 50 == 0) (not (up-pending-placement c: 50)) => (set-goal demand-economy-farm-boom-castle 1) (set-goal construction-retry-barrier-economy-farm-boom-castle 1))
 
 ; Action issuance: one farm per build pass toward the active TC-based target.
-(defrule
-    (goal demand-economy-farm-boom-castle 1)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-castle-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))
-    )
-    (goal construction-retry-barrier-economy-farm-boom-castle 0)
-    (up-pending-objects c: 50 == 0)
-    (not (up-pending-placement c: 50))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age == castle-age)
-    (unit-type-count-total villager >= 45)
-    (building-type-count-total mill >= 1)
-    (can-build-with-escrow farm)
-    (or
-        (idle-farm-count < 2)
-        (and (building-type-count-total town-center >= 2) (goal strategic-primary-intent 3) (wood-amount >= 335))
-        (and (building-type-count-total town-center >= 3) (wood-amount >= 275))
-        (food-amount < 600)
-    )
-=>
-    (build farm)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-farm-boom-castle 67)
-)
+(defrule (goal demand-economy-farm-boom-castle 1) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-castle-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-castle-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-castle-farm-target-3tc))) (goal construction-retry-barrier-economy-farm-boom-castle 0) (up-pending-objects c: 50 == 0) (not (up-pending-placement c: 50)) (goal action-claim-build-pass-singleton 0) (current-age == castle-age) (unit-type-count-total villager >= 45) (building-type-count-total mill >= 1) (can-build-with-escrow farm) (or (or (or (idle-farm-count < 2) (and (and (building-type-count-total town-center >= 2) (goal strategic-primary-intent 3)) (wood-amount >= 335))) (and (building-type-count-total town-center >= 3) (wood-amount >= 275))) (food-amount < 600)) => (build farm) (set-goal action-claim-build-pass-singleton 1) (set-goal demand-economy-farm-boom-castle 67))
 
 ; Pending diagnostics: economy-farm-boom-imperial
 ; Imperial food target is also TC-aware: fast-Imp 1TC remains viable, while 2TC/3TC
 ; economies scale their farm bank instead of freezing at the obsolete 16-farm floor.
-(defrule
-    (goal demand-economy-farm-boom-imperial 66)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-imperial-farm-target-3tc))
-    )
-=>
-    (set-goal demand-economy-farm-boom-imperial 0)
-)
+(defrule (goal demand-economy-farm-boom-imperial 66) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-imperial-farm-target-3tc))) => (set-goal demand-economy-farm-boom-imperial 0))
 
-(defrule
-    (goal demand-economy-farm-boom-imperial 0)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))
-    )
-    (current-age >= imperial-age)
-=>
-    (set-goal demand-economy-farm-boom-imperial 1)
-)
+(defrule (goal demand-economy-farm-boom-imperial 0) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))) (current-age >= imperial-age) => (set-goal demand-economy-farm-boom-imperial 1))
 
-(defrule
-    (or
-        (goal demand-economy-farm-boom-imperial 70)
-        (goal demand-economy-farm-boom-imperial 68)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-imperial-farm-target-3tc))
-    )
-=>
-    (set-goal demand-economy-farm-boom-imperial 69)
-)
+(defrule (or (goal demand-economy-farm-boom-imperial 70) (goal demand-economy-farm-boom-imperial 68)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm >= bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm >= bt-imperial-farm-target-3tc))) => (set-goal demand-economy-farm-boom-imperial 69))
 
-(defrule
-    (or
-        (goal demand-economy-farm-boom-imperial 70)
-        (goal demand-economy-farm-boom-imperial 68)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 >= 1)
-=>
-    (set-goal demand-economy-farm-boom-imperial 68)
-)
+(defrule (or (goal demand-economy-farm-boom-imperial 70) (goal demand-economy-farm-boom-imperial 68)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))) (up-pending-objects c: 50 >= 1) => (set-goal demand-economy-farm-boom-imperial 68))
 
-(defrule
-    (or
-        (goal demand-economy-farm-boom-imperial 70)
-        (goal demand-economy-farm-boom-imperial 68)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 == 0)
-    (up-pending-placement c: 50)
-=>
-    (set-goal demand-economy-farm-boom-imperial 68)
-)
+(defrule (or (goal demand-economy-farm-boom-imperial 70) (goal demand-economy-farm-boom-imperial 68)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))) (up-pending-objects c: 50 == 0) (up-pending-placement c: 50) => (set-goal demand-economy-farm-boom-imperial 68))
 
-(defrule
-    (or
-        (goal demand-economy-farm-boom-imperial 70)
-        (goal demand-economy-farm-boom-imperial 68)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))
-    )
-    (up-pending-objects c: 50 == 0)
-    (not (up-pending-placement c: 50))
-=>
-    (set-goal demand-economy-farm-boom-imperial 1)
-    (set-goal construction-retry-barrier-economy-farm-boom-imperial 1)
-)
+(defrule (or (goal demand-economy-farm-boom-imperial 70) (goal demand-economy-farm-boom-imperial 68)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))) (up-pending-objects c: 50 == 0) (not (up-pending-placement c: 50)) => (set-goal demand-economy-farm-boom-imperial 1) (set-goal construction-retry-barrier-economy-farm-boom-imperial 1))
 
-(defrule
-    (goal demand-economy-farm-boom-imperial 1)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm < bt-imperial-farm-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))
-    )
-    (goal construction-retry-barrier-economy-farm-boom-imperial 0)
-    (up-pending-objects c: 50 == 0)
-    (not (up-pending-placement c: 50))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= imperial-age)
-    (unit-type-count-total villager >= 60)
-    (building-type-count-total mill >= 1)
-    (can-build-with-escrow farm)
-    (or
-        (idle-farm-count < 2)
-        (and (building-type-count-total town-center >= 2) (goal strategic-primary-intent 3) (wood-amount >= 335))
-        (and (building-type-count-total town-center >= 3) (wood-amount >= 275))
-        (food-amount < 700)
-    )
-=>
-    (build farm)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-farm-boom-imperial 70)
-)
+(defrule (goal demand-economy-farm-boom-imperial 1) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count farm < bt-imperial-farm-target-1tc)) (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm < bt-imperial-farm-target-2tc))) (and (building-type-count-total town-center >= 3) (building-type-count farm < bt-imperial-farm-target-3tc))) (goal construction-retry-barrier-economy-farm-boom-imperial 0) (up-pending-objects c: 50 == 0) (not (up-pending-placement c: 50)) (goal action-claim-build-pass-singleton 0) (current-age >= imperial-age) (unit-type-count-total villager >= 60) (building-type-count-total mill >= 1) (can-build-with-escrow farm) (or (or (or (idle-farm-count < 2) (and (and (building-type-count-total town-center >= 2) (goal strategic-primary-intent 3)) (wood-amount >= 335))) (and (building-type-count-total town-center >= 3) (wood-amount >= 275))) (food-amount < 700)) => (build farm) (set-goal action-claim-build-pass-singleton 1) (set-goal demand-economy-farm-boom-imperial 70))
 
 ; Pending diagnostics: economy-lumber-camp-floor-1
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 74 and cannot reissue from pending goal 75
@@ -6731,116 +6412,19 @@
 ; Pending diagnostics: economy-food-mill-boom
 ; Community farm-boom pattern: add local food dropsites as the farm bank expands.
 ; TC1 = 1 mill, TC2 + sustained farm bank = 2 mills, TC3 + expanded farm bank = 3.
-(defrule
-    (goal demand-economy-food-mill-boom 69)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill >= bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill >= bt-boom-mill-target-3tc))
-    )
-=>
-    (set-goal demand-economy-food-mill-boom 0)
-)
+(defrule (goal demand-economy-food-mill-boom 69) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill >= bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill >= bt-boom-mill-target-3tc))) => (set-goal demand-economy-food-mill-boom 0))
 
-(defrule
-    (goal demand-economy-food-mill-boom 0)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill < bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill < bt-boom-mill-target-3tc))
-    )
-=>
-    (set-goal demand-economy-food-mill-boom 1)
-)
+(defrule (goal demand-economy-food-mill-boom 0) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill < bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill < bt-boom-mill-target-3tc))) => (set-goal demand-economy-food-mill-boom 1))
 
-(defrule
-    (or
-        (goal demand-economy-food-mill-boom 71)
-        (goal demand-economy-food-mill-boom 69)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill >= bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill >= bt-boom-mill-target-3tc))
-    )
-=>
-    (set-goal demand-economy-food-mill-boom 70)
-)
+(defrule (or (goal demand-economy-food-mill-boom 71) (goal demand-economy-food-mill-boom 69)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill >= bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill >= bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill >= bt-boom-mill-target-3tc))) => (set-goal demand-economy-food-mill-boom 70))
 
-(defrule
-    (or
-        (goal demand-economy-food-mill-boom 71)
-        (goal demand-economy-food-mill-boom 69)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill < bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill < bt-boom-mill-target-3tc))
-    )
-    (up-pending-objects c: 68 >= 1)
-=>
-    (set-goal demand-economy-food-mill-boom 69)
-)
+(defrule (or (goal demand-economy-food-mill-boom 71) (goal demand-economy-food-mill-boom 69)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill < bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill < bt-boom-mill-target-3tc))) (up-pending-objects c: 68 >= 1) => (set-goal demand-economy-food-mill-boom 69))
 
-(defrule
-    (or
-        (goal demand-economy-food-mill-boom 71)
-        (goal demand-economy-food-mill-boom 69)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill < bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill < bt-boom-mill-target-3tc))
-    )
-    (up-pending-objects c: 68 == 0)
-    (up-pending-placement c: 68)
-=>
-    (set-goal demand-economy-food-mill-boom 69)
-)
+(defrule (or (goal demand-economy-food-mill-boom 71) (goal demand-economy-food-mill-boom 69)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill < bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill < bt-boom-mill-target-3tc))) (up-pending-objects c: 68 == 0) (up-pending-placement c: 68) => (set-goal demand-economy-food-mill-boom 69))
 
-(defrule
-    (or
-        (goal demand-economy-food-mill-boom 71)
-        (goal demand-economy-food-mill-boom 69)
-    )
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill < bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill < bt-boom-mill-target-3tc))
-    )
-    (up-pending-objects c: 68 == 0)
-    (not (up-pending-placement c: 68))
-=>
-    (set-goal demand-economy-food-mill-boom 1)
-    (set-goal construction-retry-barrier-economy-food-mill-boom 1)
-)
+(defrule (or (goal demand-economy-food-mill-boom 71) (goal demand-economy-food-mill-boom 69)) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill < bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill < bt-boom-mill-target-3tc))) (up-pending-objects c: 68 == 0) (not (up-pending-placement c: 68)) => (set-goal demand-economy-food-mill-boom 1) (set-goal construction-retry-barrier-economy-food-mill-boom 1))
 
-(defrule
-    (goal demand-economy-food-mill-boom 1)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc))
-        (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3)) (building-type-count farm >= 18) (building-type-count mill < bt-boom-mill-target-2tc))
-        (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26) (building-type-count mill < bt-boom-mill-target-3tc))
-    )
-    (goal construction-retry-barrier-economy-food-mill-boom 0)
-    (up-pending-objects c: 68 == 0)
-    (not (up-pending-placement c: 68))
-    (goal action-claim-build-pass-singleton 0)
-    (current-age >= dark-age)
-    (resource-found food)
-    (can-build mill)
-    (or
-        (and (not (building-type-count-total town-center >= 2)) (dropsite-min-distance food > 5))
-        (and (building-type-count-total town-center >= 2) (dropsite-min-distance food > 8))
-    )
-=>
-    (set-strategic-number sn-allow-adjacent-dropsites 0)
-    (set-strategic-number sn-dropsite-separation-distance 10)
-    (set-strategic-number sn-mill-max-distance 17)
-    (build mill)
-    (set-goal action-claim-build-pass-singleton 1)
-    (set-goal demand-economy-food-mill-boom 71)
-)
+(defrule (goal demand-economy-food-mill-boom 1) (or (or (and (not (building-type-count-total town-center >= 2)) (building-type-count mill < bt-boom-mill-target-1tc)) (and (and (and (building-type-count-total town-center >= 2) (not (building-type-count-total town-center >= 3))) (building-type-count farm >= 18)) (building-type-count mill < bt-boom-mill-target-2tc))) (and (and (building-type-count-total town-center >= 3) (building-type-count farm >= 26)) (building-type-count mill < bt-boom-mill-target-3tc))) (goal construction-retry-barrier-economy-food-mill-boom 0) (up-pending-objects c: 68 == 0) (not (up-pending-placement c: 68)) (goal action-claim-build-pass-singleton 0) (current-age >= dark-age) (resource-found food) (can-build mill) (or (and (not (building-type-count-total town-center >= 2)) (dropsite-min-distance food > 5)) (and (building-type-count-total town-center >= 2) (dropsite-min-distance food > 8))) => (set-strategic-number sn-allow-adjacent-dropsites 0) (set-strategic-number sn-dropsite-separation-distance 10) (set-strategic-number sn-mill-max-distance 17) (build mill) (set-goal action-claim-build-pass-singleton 1) (set-goal demand-economy-food-mill-boom 71))
 
 ; Pending diagnostics: economy-market-floor-1
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 76 and cannot reissue from pending goal 77
@@ -10177,44 +9761,7 @@
 )
 
 ; Action issuance: castle-varangian-guard-floor | ACTIVE -> ISSUED
-(defrule
-    (goal demand-castle-varangian-guard-floor 1)
-    (or
-        (and
-            (goal byzantine-army-plan-phase 1)
-            (goal counter-package-mounted_pressure_castle 1)
-            (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
-        )
-        (and
-            (goal byzantine-army-plan-phase 2)
-            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
-            (not (unit-type-count varangian-guard-line >= bt-imperial-varangian-floor))
-        )
-    )
-    (goal production-retry-barrier-castle-varangian-guard-floor 0)
-    (not (up-pending-objects c: 2703 >= 1))
-    (or
-        (and
-            (goal byzantine-army-plan-phase 1)
-            (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))
-        )
-        (and
-            (goal byzantine-army-plan-phase 2)
-            (not (unit-type-count varangian-guard-line >= bt-imperial-varangian-floor))
-        )
-    )
-    (goal action-claim-train-arbitration 0)
-    (current-age >= castle-age)
-    (can-train-with-escrow varangian-guard-line)
-    (or
-        (and (goal byzantine-army-plan-phase 1) (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor))
-        (and (goal byzantine-army-plan-phase 2) (unit-type-count-total varangian-guard-line < bt-imperial-varangian-floor))
-    )
-=>
-    (train varangian-guard-line)
-    (set-goal action-claim-train-arbitration 1)
-    (set-goal demand-castle-varangian-guard-floor 60)
-)
+(defrule (goal demand-castle-varangian-guard-floor 1) (or (and (and (goal byzantine-army-plan-phase 1) (goal counter-package-mounted_pressure_castle 1)) (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))) (and (and (goal byzantine-army-plan-phase 2) (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)) (not (unit-type-count varangian-guard-line >= bt-imperial-varangian-floor)))) (goal production-retry-barrier-castle-varangian-guard-floor 0) (not (up-pending-objects c: 2703 >= 1)) (or (and (goal byzantine-army-plan-phase 1) (not (unit-type-count varangian-guard-line >= bt-castle-varangian-floor))) (and (goal byzantine-army-plan-phase 2) (not (unit-type-count varangian-guard-line >= bt-imperial-varangian-floor)))) (goal action-claim-train-arbitration 0) (current-age >= castle-age) (can-train-with-escrow varangian-guard-line) (or (and (goal byzantine-army-plan-phase 1) (unit-type-count-total varangian-guard-line < bt-castle-varangian-floor)) (and (goal byzantine-army-plan-phase 2) (unit-type-count-total varangian-guard-line < bt-imperial-varangian-floor))) => (train varangian-guard-line) (set-goal action-claim-train-arbitration 1) (set-goal demand-castle-varangian-guard-floor 60))
 
 ; Pending diagnostics: castle-mangonel-floor
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 50 and cannot reissue from pending goal 51
