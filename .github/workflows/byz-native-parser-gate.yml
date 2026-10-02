@@ -3,7 +3,7 @@ name: Temporary Byzantine native parser gate
 on:
   push:
     paths:
-      - "tmp/byzantine-parser-gate.per"
+      - "tmp/byzantine-parser-chunks/**"
       - ".github/workflows/byz-native-parser-gate.yml"
   workflow_dispatch:
 
