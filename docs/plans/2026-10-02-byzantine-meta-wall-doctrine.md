@@ -32,16 +32,17 @@ The current contract intentionally does not claim a full spatial simulation, exa
 
 ### Arbitration
 
-Choose a pair of two distinct defensive building types from this fixed native inventory:
+Choose a pair from the fixed native anchor inventory:
 
-| Priority class | Anchor | Native ID | Normal wall tier |
-|---|---|---:|---|
-| Strong | Castle | 82 | Stone |
-| Strong | Keep | 235 | Stone |
-| Strong | Bombard Tower | 236 | Stone |
-| Standard | Guard Tower | 234 | Palisade |
-| Standard | Watch Tower | 79 | Palisade |
-| Standard | Outpost | 598 | Palisade |
+| Anchor role | Anchor | Native ID | Base score | Normal wall tier |
+|---|---|---:|---:|---|
+| Home | Town Center | 109 | 38 | Palisade unless paired with a strong anchor |
+| Strong | Castle | 82 | 42 | Stone |
+| Strong | Keep | 235 | 40 | Stone |
+| Strong | Bombard Tower | 236 | 37 | Stone |
+| Standard | Guard Tower | 234 | 27 | Palisade |
+| Standard | Watch Tower | 79 | 23 | Palisade |
+| Standard | Outpost | 598 | 19 | Palisade |
 
 The pair is selected deterministically from the compiler's candidate order. The first viable pair is used.
 
@@ -98,6 +99,55 @@ A destroyed anchor is therefore a geometry invalidation event, not merely a miss
 Once a pair succeeds, the bot does not continuously rebuild the same line every script pass. A persistent completion latch retires the request until an anchor is lost.
 
 This is the important control-plane difference between a defensive system and a wall spam loop.
+
+
+## 3. Anchor scoring model
+
+The rough draft used fixed pair order. That is now replaced by a bounded native scoring model.
+
+The compiler evaluates:
+
+**PairScore = AnchorA + AnchorB + Synergy + Material + DistanceBand**
+
+Anchor values are the fixed defensive values above. They are compiler policy, not engine facts.
+
+Synergy:
+- Town Center + strong anchor: +12.
+- Town Center + standard anchor: +10.
+- Strong + strong: +8.
+- Strong + standard: +6.
+- Standard + standard: +4.
+
+Material opportunity cost:
+- Stone Wall: -10.
+- Palisade Wall: 0.
+
+Distance is the major meta term:
+- 0-8 tiles: +42.
+- 9-16 tiles: +30.
+- 17-24 tiles: +18.
+- 25-32 tiles: +6.
+- 33-48 tiles: -20.
+- Greater than 48 tiles: no candidate.
+
+The score is compiled into a deterministic ordered decision table rather than calculated by a runtime scheduler. The generated .per therefore contains one native rule for each anchor pair and distance band. The highest-scoring viable rule fires first.
+
+This weighting is intentional. A very strong Castle/Keep pair does not automatically beat a compact Town Center/tower funnel. The model prices the length of the wall because community practice emphasizes using existing buildings and short segments rather than spending builder time and resources on distant perimeter walls. Current DE AI behavior also explicitly moves toward funnel walls using buildings or palisades. Official DE notes say Extreme AI sometimes builds a few funnel walls with buildings or palisades between starting forests and the Town Center, and earlier AI changes made map closedness and forward defensive buildings part of wall decisions.
+
+The important meta improvement is therefore defensive value per wall distance, not maximum anchor strength.
+
+### What the score does not claim
+
+The score does not claim:
+- exact path closure;
+- natural choke ownership;
+- terrain/elevation suitability;
+- resource value;
+- enemy attack-route probability;
+- villager reinforcement time;
+- future army access through the defended side.
+
+Those require additional native observations. Until those contracts are proven, they remain OPEN and do not enter the numeric score.
 
 ## 3. Why this matches the community meta
 
@@ -306,9 +356,15 @@ The engine supports the object, but the current bot does not yet have a sufficie
 
 ### Arbitration
 
-- [x] 15 distinct-type candidate pairs represented.
-- [x] Strong/standard anchor tiers represented.
-- [x] Palisade/Stone material choice tied to tier.
+- [x] Town Center included as the home anchor.
+- [x] 21 distinct-type candidate pairs represented.
+- [x] Explicit anchor base scores.
+- [x] Explicit pair synergy scores.
+- [x] Explicit material opportunity-cost penalty.
+- [x] Five bounded point-distance score bands.
+- [x] Candidates beyond 48 tiles rejected.
+- [x] Deterministic score-descending rule ordering.
+- [x] Palisade/Stone material choice tied to anchor tier.
 - [x] Feudal/Castle age gate tied to material.
 - [x] Existing enemy-pressure evidence reused.
 - [x] Pair identity persists across passes.
