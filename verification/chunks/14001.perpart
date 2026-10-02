@@ -1,0 +1,1000 @@
+=>
+    (set-goal demand-research-bow-saw 0)
+)
+
+; Completion witness: research-bow-saw | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-bow-saw 102)
+        (goal demand-research-bow-saw 100)
+    )
+    (research-completed 203)
+=>
+    (set-goal demand-research-bow-saw 101)
+)
+
+; Pending admission: research-bow-saw | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-bow-saw 102)
+        (goal demand-research-bow-saw 100)
+    )
+    (not (research-completed 203))
+    (up-research-status c: 203 >= 2)
+=>
+    (set-goal demand-research-bow-saw 100)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-bow-saw 102)
+        (goal demand-research-bow-saw 100)
+    )
+    (not (research-completed 203))
+    (not (up-research-status c: 203 >= 2))
+=>
+    (set-goal demand-research-bow-saw 1)
+    (set-goal research-retry-barrier-research-bow-saw 1)
+)
+
+; Action issuance: research-bow-saw | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-bow-saw 1)
+    (not (research-completed 203))
+    (goal research-retry-barrier-research-bow-saw 0)
+    (not (up-research-status c: 203 >= 2))
+    (not (research-completed 203))
+    (current-age >= castle-age)
+    (can-research-with-escrow bow-saw)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (research bow-saw)
+    (set-goal demand-research-bow-saw 102)
+)
+
+; Pending diagnostics: research-two-man-saw
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 121 and cannot reissue from pending goal 122
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 122 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 123 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-two-man-saw | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-two-man-saw in ACTIVE; it is not PENDING.
+; Release: research-two-man-saw | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-two-man-saw 123)
+    (research-completed 221)
+=>
+    (set-goal demand-research-two-man-saw 0)
+)
+
+; Completion witness: research-two-man-saw | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-two-man-saw 124)
+        (goal demand-research-two-man-saw 122)
+    )
+    (research-completed 221)
+=>
+    (set-goal demand-research-two-man-saw 123)
+)
+
+; Pending admission: research-two-man-saw | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-two-man-saw 124)
+        (goal demand-research-two-man-saw 122)
+    )
+    (not (research-completed 221))
+    (up-research-status c: 221 >= 2)
+=>
+    (set-goal demand-research-two-man-saw 122)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-two-man-saw 124)
+        (goal demand-research-two-man-saw 122)
+    )
+    (not (research-completed 221))
+    (not (up-research-status c: 221 >= 2))
+=>
+    (set-goal demand-research-two-man-saw 1)
+    (set-goal research-retry-barrier-research-two-man-saw 1)
+)
+
+; Action issuance: research-two-man-saw | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-two-man-saw 1)
+    (not (research-completed 221))
+    (goal research-retry-barrier-research-two-man-saw 0)
+    (not (up-research-status c: 221 >= 2))
+    (not (research-completed 221))
+    (current-age >= imperial-age)
+    (can-research-with-escrow two-man-saw)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (research two-man-saw)
+    (set-goal demand-research-two-man-saw 124)
+)
+
+; Pending diagnostics: research-bodkin-arrow
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 98 and cannot reissue from pending goal 99
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 99 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 100 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-bodkin-arrow | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-bodkin-arrow in ACTIVE; it is not PENDING.
+; Release: research-bodkin-arrow | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-bodkin-arrow 100)
+    (research-completed 200)
+=>
+    (set-goal demand-research-bodkin-arrow 0)
+)
+
+; Completion witness: research-bodkin-arrow | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-bodkin-arrow 101)
+        (goal demand-research-bodkin-arrow 99)
+    )
+    (research-completed 200)
+=>
+    (set-goal demand-research-bodkin-arrow 100)
+)
+
+; Pending admission: research-bodkin-arrow | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-bodkin-arrow 101)
+        (goal demand-research-bodkin-arrow 99)
+    )
+    (not (research-completed 200))
+    (up-research-status c: 200 >= 2)
+=>
+    (set-goal demand-research-bodkin-arrow 99)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-bodkin-arrow 101)
+        (goal demand-research-bodkin-arrow 99)
+    )
+    (not (research-completed 200))
+    (not (up-research-status c: 200 >= 2))
+=>
+    (set-goal demand-research-bodkin-arrow 1)
+    (set-goal research-retry-barrier-research-bodkin-arrow 1)
+)
+
+; Action issuance: research-bodkin-arrow | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-bodkin-arrow 1)
+    (not (research-completed 200))
+    (goal research-retry-barrier-research-bodkin-arrow 0)
+    (not (up-research-status c: 200 >= 2))
+    (not (research-completed 200))
+    (current-age >= castle-age)
+    (can-research-with-escrow bodkin-arrow)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research bodkin-arrow)
+    (set-goal demand-research-bodkin-arrow 101)
+)
+
+; Pending diagnostics: research-conscription
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 102 and cannot reissue from pending goal 103
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 103 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 104 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-conscription | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-conscription in ACTIVE; it is not PENDING.
+; Release: research-conscription | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-conscription 104)
+    (research-completed 315)
+=>
+    (set-goal demand-research-conscription 0)
+)
+
+; Completion witness: research-conscription | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-conscription 105)
+        (goal demand-research-conscription 103)
+    )
+    (research-completed 315)
+=>
+    (set-goal demand-research-conscription 104)
+)
+
+; Pending admission: research-conscription | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-conscription 105)
+        (goal demand-research-conscription 103)
+    )
+    (not (research-completed 315))
+    (up-research-status c: 315 >= 2)
+=>
+    (set-goal demand-research-conscription 103)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-conscription 105)
+        (goal demand-research-conscription 103)
+    )
+    (not (research-completed 315))
+    (not (up-research-status c: 315 >= 2))
+=>
+    (set-goal demand-research-conscription 1)
+    (set-goal research-retry-barrier-research-conscription 1)
+)
+
+; Action issuance: research-conscription | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-conscription 1)
+    (not (research-completed 315))
+    (goal research-retry-barrier-research-conscription 0)
+    (not (up-research-status c: 315 >= 2))
+    (not (research-completed 315))
+    (current-age >= imperial-age)
+    (can-research-with-escrow conscription)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research conscription)
+    (set-goal demand-research-conscription 105)
+)
+
+; Pending diagnostics: research-chemistry
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 101 and cannot reissue from pending goal 102
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 102 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 103 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-chemistry | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-chemistry in ACTIVE; it is not PENDING.
+; Release: research-chemistry | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-chemistry 103)
+    (research-completed 47)
+=>
+    (set-goal demand-research-chemistry 0)
+)
+
+; Completion witness: research-chemistry | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-chemistry 104)
+        (goal demand-research-chemistry 102)
+    )
+    (research-completed 47)
+=>
+    (set-goal demand-research-chemistry 103)
+)
+
+; Pending admission: research-chemistry | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-chemistry 104)
+        (goal demand-research-chemistry 102)
+    )
+    (not (research-completed 47))
+    (up-research-status c: 47 >= 2)
+=>
+    (set-goal demand-research-chemistry 102)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-chemistry 104)
+        (goal demand-research-chemistry 102)
+    )
+    (not (research-completed 47))
+    (not (up-research-status c: 47 >= 2))
+=>
+    (set-goal demand-research-chemistry 1)
+    (set-goal research-retry-barrier-research-chemistry 1)
+)
+
+; Action issuance: research-chemistry | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-chemistry 1)
+    (not (research-completed 47))
+    (goal research-retry-barrier-research-chemistry 0)
+    (not (up-research-status c: 47 >= 2))
+    (not (research-completed 47))
+    (current-age >= imperial-age)
+    (can-research-with-escrow chemistry)
+=>
+    (release-escrow gold)
+    (research chemistry)
+    (set-goal demand-research-chemistry 104)
+)
+
+; Pending diagnostics: research-gold-mining
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 107 and cannot reissue from pending goal 108
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 108 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 109 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-gold-mining | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-gold-mining in ACTIVE; it is not PENDING.
+; Release: research-gold-mining | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-gold-mining 109)
+    (research-completed 55)
+=>
+    (set-goal demand-research-gold-mining 0)
+)
+
+; Completion witness: research-gold-mining | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-gold-mining 110)
+        (goal demand-research-gold-mining 108)
+    )
+    (research-completed 55)
+=>
+    (set-goal demand-research-gold-mining 109)
+)
+
+; Pending admission: research-gold-mining | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-gold-mining 110)
+        (goal demand-research-gold-mining 108)
+    )
+    (not (research-completed 55))
+    (up-research-status c: 55 >= 2)
+=>
+    (set-goal demand-research-gold-mining 108)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-gold-mining 110)
+        (goal demand-research-gold-mining 108)
+    )
+    (not (research-completed 55))
+    (not (up-research-status c: 55 >= 2))
+=>
+    (set-goal demand-research-gold-mining 1)
+    (set-goal research-retry-barrier-research-gold-mining 1)
+)
+
+; Action issuance: research-gold-mining | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-gold-mining 1)
+    (not (research-completed 55))
+    (goal research-retry-barrier-research-gold-mining 0)
+    (not (up-research-status c: 55 >= 2))
+    (not (research-completed 55))
+    (current-age >= feudal-age)
+    (can-research-with-escrow gold-mining)
+=>
+    (release-escrow food)
+    (research gold-mining)
+    (set-goal demand-research-gold-mining 110)
+)
+
+; Pending diagnostics: research-gold-shaft-mining
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 108 and cannot reissue from pending goal 109
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 109 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 110 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-gold-shaft-mining | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-gold-shaft-mining in ACTIVE; it is not PENDING.
+; Release: research-gold-shaft-mining | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-gold-shaft-mining 110)
+    (research-completed 182)
+=>
+    (set-goal demand-research-gold-shaft-mining 0)
+)
+
+; Completion witness: research-gold-shaft-mining | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-gold-shaft-mining 111)
+        (goal demand-research-gold-shaft-mining 109)
+    )
+    (research-completed 182)
+=>
+    (set-goal demand-research-gold-shaft-mining 110)
+)
+
+; Pending admission: research-gold-shaft-mining | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-gold-shaft-mining 111)
+        (goal demand-research-gold-shaft-mining 109)
+    )
+    (not (research-completed 182))
+    (up-research-status c: 182 >= 2)
+=>
+    (set-goal demand-research-gold-shaft-mining 109)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-gold-shaft-mining 111)
+        (goal demand-research-gold-shaft-mining 109)
+    )
+    (not (research-completed 182))
+    (not (up-research-status c: 182 >= 2))
+=>
+    (set-goal demand-research-gold-shaft-mining 1)
+    (set-goal research-retry-barrier-research-gold-shaft-mining 1)
+)
+
+; Action issuance: research-gold-shaft-mining | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-gold-shaft-mining 1)
+    (not (research-completed 182))
+    (goal research-retry-barrier-research-gold-shaft-mining 0)
+    (not (up-research-status c: 182 >= 2))
+    (not (research-completed 182))
+    (current-age >= castle-age)
+    (can-research-with-escrow gold-shaft-mining)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research gold-shaft-mining)
+    (set-goal demand-research-gold-shaft-mining 111)
+)
+
+; Pending diagnostics: research-heavy-plow
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 113 and cannot reissue from pending goal 114
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 114 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 115 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-heavy-plow | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-heavy-plow in ACTIVE; it is not PENDING.
+; Release: research-heavy-plow | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-heavy-plow 115)
+    (research-completed 13)
+=>
+    (set-goal demand-research-heavy-plow 0)
+)
+
+; Completion witness: research-heavy-plow | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-heavy-plow 116)
+        (goal demand-research-heavy-plow 114)
+    )
+    (research-completed 13)
+=>
+    (set-goal demand-research-heavy-plow 115)
+)
+
+; Pending admission: research-heavy-plow | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-heavy-plow 116)
+        (goal demand-research-heavy-plow 114)
+    )
+    (not (research-completed 13))
+    (up-research-status c: 13 >= 2)
+=>
+    (set-goal demand-research-heavy-plow 114)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-heavy-plow 116)
+        (goal demand-research-heavy-plow 114)
+    )
+    (not (research-completed 13))
+    (not (up-research-status c: 13 >= 2))
+=>
+    (set-goal demand-research-heavy-plow 1)
+    (set-goal research-retry-barrier-research-heavy-plow 1)
+)
+
+; Action issuance: research-heavy-plow | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-heavy-plow 1)
+    (not (research-completed 13))
+    (goal research-retry-barrier-research-heavy-plow 0)
+    (not (up-research-status c: 13 >= 2))
+    (not (research-completed 13))
+    (current-age >= castle-age)
+    (can-research-with-escrow heavy-plow)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research heavy-plow)
+    (set-goal demand-research-heavy-plow 116)
+)
+
+; Pending diagnostics: research-fletching
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 106 and cannot reissue from pending goal 107
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 107 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 108 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-fletching | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-fletching in ACTIVE; it is not PENDING.
+; Release: research-fletching | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-fletching 108)
+    (research-completed 199)
+=>
+    (set-goal demand-research-fletching 0)
+)
+
+; Completion witness: research-fletching | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-fletching 109)
+        (goal demand-research-fletching 107)
+    )
+    (research-completed 199)
+=>
+    (set-goal demand-research-fletching 108)
+)
+
+; Pending admission: research-fletching | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-fletching 109)
+        (goal demand-research-fletching 107)
+    )
+    (not (research-completed 199))
+    (up-research-status c: 199 >= 2)
+=>
+    (set-goal demand-research-fletching 107)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-fletching 109)
+        (goal demand-research-fletching 107)
+    )
+    (not (research-completed 199))
+    (not (up-research-status c: 199 >= 2))
+=>
+    (set-goal demand-research-fletching 1)
+    (set-goal research-retry-barrier-research-fletching 1)
+)
+
+; Action issuance: research-fletching | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-fletching 1)
+    (not (research-completed 199))
+    (goal research-retry-barrier-research-fletching 0)
+    (not (up-research-status c: 199 >= 2))
+    (not (research-completed 199))
+    (or
+        (current-age >= castle-age)
+        (and
+            (current-age == feudal-age)
+            (or
+                (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
+                (or
+                    (goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher)
+                    (or
+                        (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+                        (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+                    )
+                )
+            )
+        )
+    )
+    (can-research-with-escrow fletching)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research fletching)
+    (set-goal demand-research-fletching 109)
+)
+
+; Pending diagnostics: research-cavalier
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 100 and cannot reissue from pending goal 101
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 101 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 102 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-cavalier | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-cavalier in ACTIVE; it is not PENDING.
+; Release: research-cavalier | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-cavalier 102)
+    (research-completed 209)
+=>
+    (set-goal demand-research-cavalier 0)
+)
+
+; Completion witness: research-cavalier | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-cavalier 103)
+        (goal demand-research-cavalier 101)
+    )
+    (research-completed 209)
+=>
+    (set-goal demand-research-cavalier 102)
+)
+
+; Pending admission: research-cavalier | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-cavalier 103)
+        (goal demand-research-cavalier 101)
+    )
+    (not (research-completed 209))
+    (up-research-status c: 209 >= 2)
+=>
+    (set-goal demand-research-cavalier 101)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-cavalier 103)
+        (goal demand-research-cavalier 101)
+    )
+    (not (research-completed 209))
+    (not (up-research-status c: 209 >= 2))
+=>
+    (set-goal demand-research-cavalier 1)
+    (set-goal research-retry-barrier-research-cavalier 1)
+)
+
+; Action issuance: research-cavalier | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-cavalier 1)
+    (not (research-completed 209))
+    (goal research-retry-barrier-research-cavalier 0)
+    (not (up-research-status c: 209 >= 2))
+    (not (research-completed 209))
+    (unit-type-count cavalier >= 1)
+    (current-age >= imperial-age)
+    (can-research-with-escrow cavalier)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research cavalier)
+    (set-goal demand-research-cavalier 103)
+)
+
+; Pending diagnostics: research-hussar
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 115 and cannot reissue from pending goal 116
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 116 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 117 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-hussar | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-hussar in ACTIVE; it is not PENDING.
+; Release: research-hussar | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-hussar 117)
+    (research-completed 428)
+=>
+    (set-goal demand-research-hussar 0)
+)
+
+; Completion witness: research-hussar | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-hussar 118)
+        (goal demand-research-hussar 116)
+    )
+    (research-completed 428)
+=>
+    (set-goal demand-research-hussar 117)
+)
+
+; Pending admission: research-hussar | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-hussar 118)
+        (goal demand-research-hussar 116)
+    )
+    (not (research-completed 428))
+    (up-research-status c: 428 >= 2)
+=>
+    (set-goal demand-research-hussar 116)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-hussar 118)
+        (goal demand-research-hussar 116)
+    )
+    (not (research-completed 428))
+    (not (up-research-status c: 428 >= 2))
+=>
+    (set-goal demand-research-hussar 1)
+    (set-goal research-retry-barrier-research-hussar 1)
+)
+
+; Action issuance: research-hussar | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-hussar 1)
+    (not (research-completed 428))
+    (goal research-retry-barrier-research-hussar 0)
+    (not (up-research-status c: 428 >= 2))
+    (not (research-completed 428))
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+        (or
+            (players-unit-type-count any-enemy mangonel-line >= 2)
+            (unit-type-count hussar >= 1)
+        )
+    )
+    (current-age >= imperial-age)
+    (can-research-with-escrow hussar)
+=>
+    (release-escrow food)
+    (research hussar)
+    (set-goal demand-research-hussar 118)
+)
+
+; Pending diagnostics: research-onager
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 117 and cannot reissue from pending goal 118
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 118 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 119 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-onager | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-onager in ACTIVE; it is not PENDING.
+; Release: research-onager | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-onager 119)
+    (research-completed 257)
+=>
+    (set-goal demand-research-onager 0)
+)
+
+; Completion witness: research-onager | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-onager 120)
+        (goal demand-research-onager 118)
+    )
+    (research-completed 257)
+=>
+    (set-goal demand-research-onager 119)
+)
+
+; Pending admission: research-onager | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-onager 120)
+        (goal demand-research-onager 118)
+    )
+    (not (research-completed 257))
+    (up-research-status c: 257 >= 2)
+=>
+    (set-goal demand-research-onager 118)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-onager 120)
+        (goal demand-research-onager 118)
+    )
+    (not (research-completed 257))
+    (not (up-research-status c: 257 >= 2))
+=>
+    (set-goal demand-research-onager 1)
+    (set-goal research-retry-barrier-research-onager 1)
+)
+
+; Action issuance: research-onager | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-onager 1)
+    (not (research-completed 257))
+    (goal research-retry-barrier-research-onager 0)
+    (not (up-research-status c: 257 >= 2))
+    (not (research-completed 257))
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 4)
+            (unit-type-count onager >= 1)
+        )
+    )
+    (current-age >= imperial-age)
+    (can-research-with-escrow onager)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (research onager)
+    (set-goal demand-research-onager 120)
+)
+
+; Pending diagnostics: research-siege-ram
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 119 and cannot reissue from pending goal 120
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 120 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 121 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-siege-ram | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-siege-ram in ACTIVE; it is not PENDING.
+; Release: research-siege-ram | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-siege-ram 121)
+    (research-completed 255)
+=>
+    (set-goal demand-research-siege-ram 0)
+)
+
+; Completion witness: research-siege-ram | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-siege-ram 122)
+        (goal demand-research-siege-ram 120)
+    )
+    (research-completed 255)
+=>
+    (set-goal demand-research-siege-ram 121)
+)
+
+; Pending admission: research-siege-ram | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-siege-ram 122)
+        (goal demand-research-siege-ram 120)
+    )
+    (not (research-completed 255))
+    (up-research-status c: 255 >= 2)
+=>
+    (set-goal demand-research-siege-ram 120)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-siege-ram 122)
+        (goal demand-research-siege-ram 120)
+    )
+    (not (research-completed 255))
+    (not (up-research-status c: 255 >= 2))
+=>
+    (set-goal demand-research-siege-ram 1)
+    (set-goal research-retry-barrier-research-siege-ram 1)
+)
+
+; Action issuance: research-siege-ram | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-siege-ram 1)
+    (not (research-completed 255))
+    (goal research-retry-barrier-research-siege-ram 0)
+    (not (up-research-status c: 255 >= 2))
+    (not (research-completed 255))
+    (or
+        (goal byzantine-siege-scale byzantine-siege-scale-standard)
+        (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+    )
+    (current-age >= imperial-age)
+    (can-research-with-escrow siege-ram)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+    (research siege-ram)
+    (set-goal demand-research-siege-ram 122)
+)
+
+; Pending diagnostics: research-arbalester
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 95 and cannot reissue from pending goal 96
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 96 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 97 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-arbalester | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-arbalester in ACTIVE; it is not PENDING.
+; Release: research-arbalester | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-arbalester 97)
+    (research-completed 237)
+=>
+    (set-goal demand-research-arbalester 0)
+)
+
+; Completion witness: research-arbalester | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-arbalester 98)
+        (goal demand-research-arbalester 96)
+    )
+    (research-completed 237)
+=>
+    (set-goal demand-research-arbalester 97)
+)
+
+; Pending admission: research-arbalester | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-arbalester 98)
+        (goal demand-research-arbalester 96)
+    )
+    (not (research-completed 237))
+    (up-research-status c: 237 >= 2)
+=>
+    (set-goal demand-research-arbalester 96)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-arbalester 98)
+        (goal demand-research-arbalester 96)
+    )
+    (not (research-completed 237))
+    (not (up-research-status c: 237 >= 2))
+=>
+    (set-goal demand-research-arbalester 1)
+    (set-goal research-retry-barrier-research-arbalester 1)
+)
+
+; Action issuance: research-arbalester | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-arbalester 1)
+    (not (research-completed 237))
+    (goal research-retry-barrier-research-arbalester 0)
+    (not (up-research-status c: 237 >= 2))
+    (not (research-completed 237))
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+            (or
+                (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+                (unit-type-count arbalest >= 1)
+            )
+        )
+    )
+    (current-age >= imperial-age)
+    (can-research-with-escrow arbalest)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+    (research arbalest)
+    (set-goal demand-research-arbalester 98)
+)
+
+; Pending diagnostics: research-halberdier
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 109 and cannot reissue from pending goal 110
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 110 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 111 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-halberdier | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-halberdier in ACTIVE; it is not PENDING.
+; Release: research-halberdier | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-halberdier 111)
+    (research-completed 429)
+=>
+    (set-goal demand-research-halberdier 0)
+)
+
+; Completion witness: research-halberdier | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
