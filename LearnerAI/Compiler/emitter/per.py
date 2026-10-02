@@ -78,11 +78,15 @@ def _validate_artifact_budget(text: str) -> None:
             f"EMITTER-RULE-LIMIT: generated artifact has {len(rules)} rules; "
             f"DE limit is {MAX_RULES}"
         )
-    longest_line = max((len(line) for line in text.splitlines()), default=0)
+    lines = text.splitlines()
+    longest_line = max((len(line) for line in lines), default=0)
     if longest_line > MAX_LINE_LENGTH:
+        line_number = max(range(len(lines)), key=lambda index: len(lines[index])) + 1
+        offending_line = lines[line_number - 1]
         raise CompileError(
-            f"EMITTER-LINE-LIMIT: generated line has {longest_line} characters; "
-            f"DE limit is {MAX_LINE_LENGTH}"
+            f"EMITTER-LINE-LIMIT: generated line {line_number} has "
+            f"{longest_line} characters; DE limit is {MAX_LINE_LENGTH}: "
+            f"{offending_line}"
         )
     for index, rule in enumerate(rules, 1):
         elements = rule.count("(") - 1

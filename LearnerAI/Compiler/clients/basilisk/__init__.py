@@ -62,6 +62,22 @@ from ...ir.production_runtime import (
     ProductionRuntimeStatus,
     evaluate_production_runtime,
 )
+from ...ir.map_profile import MapKind, MapProfile, default_byzantine_map_profiles
+from ...ir.opening import (
+    OpeningFamily,
+    OpeningPlanValue,
+    OpeningSelectorPlan,
+    default_byzantine_opening_selector,
+    lower_opening_selector,
+)
+from ...ir.economic_control import (
+    EconomyAllocation,
+    EconomyControllerPlan,
+    EconomyMode,
+    EconomyModePolicy,
+    default_byzantine_economy_controller,
+    lower_economy_controller,
+)
 from ...ir.water import (
     TransportExecutionPhase,
     WaterExecutionPlan,
@@ -123,6 +139,20 @@ __all__ = (
     "StrategyEnvelope",
     "StrategyPosture",
     "StrategyProfile",
+    "MapKind",
+    "MapProfile",
+    "default_byzantine_map_profiles",
+    "OpeningFamily",
+    "OpeningPlanValue",
+    "OpeningSelectorPlan",
+    "default_byzantine_opening_selector",
+    "lower_opening_selector",
+    "EconomyAllocation",
+    "EconomyControllerPlan",
+    "EconomyMode",
+    "EconomyModePolicy",
+    "default_byzantine_economy_controller",
+    "lower_economy_controller",
     "TransportExecutionPhase",
     "WaterExecutionPlan",
     "WaterExecutionState",

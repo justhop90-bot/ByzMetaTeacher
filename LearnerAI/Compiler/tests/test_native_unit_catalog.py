@@ -24,6 +24,8 @@ class NativeUnitCatalogTests(unittest.TestCase):
     def test_inventory_gap_aliases_resolve_by_manifest_evidence(self):
         self.assertEqual(resolve_unit_id("demolition-raft"), 1104)
         self.assertEqual(resolve_unit_id("carrack"), 2628)
+        self.assertEqual(resolve_unit_id("varangian-guard"), 2703)
+        self.assertEqual(resolve_unit_id("elite-varangian-guard"), 2704)
 
     def test_alias_backed_numeric_ids_resolve(self):
         self.assertEqual(resolve_unit_id("1104"), 1104)
@@ -40,6 +42,8 @@ class NativeUnitCatalogTests(unittest.TestCase):
     def test_alias_resolution_normalizes_case(self):
         self.assertEqual(resolve_unit_id("Demolition-Raft"), 1104)
         self.assertEqual(resolve_unit_id("Carrack"), 2628)
+        self.assertEqual(resolve_unit_id("Varangian-Guard"), 2703)
+        self.assertEqual(resolve_unit_id("Elite-Varangian-Guard"), 2704)
 
     def test_aliased_unit_compiles_production_lifecycle(self):
         source = """

@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
     from .water import WaterExecutionPlan
+    from .map_profile import MapProfile
+    from .opening import OpeningSelectorPlan
+    from .economic_control import EconomyControllerPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -384,6 +387,9 @@ class StrategyProfile:
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
+    map_profile: tuple["MapProfile", ...] = ()
+    opening_selector: "OpeningSelectorPlan | None" = None
+    economy_controller: "EconomyControllerPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -460,6 +466,9 @@ class StrategyCompilation:
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
+    map_profile: tuple["MapProfile", ...] = ()
+    opening_selector: "OpeningSelectorPlan | None" = None
+    economy_controller: "EconomyControllerPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1054,6 +1063,9 @@ def lower_strategy_profile(
         attack_plan=profile.attack_plan,
         duc_plan=profile.duc_plan,
         water_execution_plan=profile.water_execution_plan,
+        map_profile=profile.map_profile,
+        opening_selector=profile.opening_selector,
+        economy_controller=profile.economy_controller,
     )
 
 
@@ -1572,6 +1584,14 @@ def _strategy_control_plan(profile: StrategyProfile):
             profile.water_execution_plan,
             profile,
         )
+    opening_plan = None
+    if profile.opening_selector is not None:
+        from .opening import lower_opening_selector
+        opening_plan = lower_opening_selector(profile.opening_selector, profile)
+    economy_plan = None
+    if profile.economy_controller is not None:
+        from .economic_control import lower_economy_controller
+        economy_plan = lower_economy_controller(profile.economy_controller, profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1597,6 +1617,8 @@ def _strategy_control_plan(profile: StrategyProfile):
         assertion_plan,
         attack_lifecycle_plan,
         water_plan,
+        opening_plan,
+        economy_plan,
     )
 
 
