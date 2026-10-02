@@ -79,7 +79,7 @@
 - [x] 9/9 native-support determinism passes.
 - [x] Cross-platform snapshot comparison passes.
 - [x] Compiler verification gate passes.
-- [ ] Merge only the verified branch into `main`.
+- [x] Merge only the verified branch into `main`.
 
 ## Actual remaining behavioral gaps after this repair
 1. **DUC behavioral synthesis:** selecting concrete Byzantine discovery/target policies and connecting them to strategy intent is still needed. The compiler will not guess target classes or runtime object liveness from generic DUC primitives.
