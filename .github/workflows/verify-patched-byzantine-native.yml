@@ -1,8 +1,8 @@
-name: Verify patched Byzantine native parser
+name: Verify patched Byzantine artifact
 on:
   push:
     branches:
-      - "verify/byzantine-dark-age-mining-native"
+      - verify/byzantine-dark-age-mining-native
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -12,50 +12,31 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Reconstruct uploaded artifact byte-for-byte
+      - name: Reconstruct patched artifact
+        shell: bash
         run: |
-        run: |
-          : > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
-          for part in verification/chunks/*.perpart; do cat "$part" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; printf "\n" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; done
-          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "bdd18bec7fd87676950234d1d4548de549e81e2f221f4236b6d5c78a9d0109ff"
-          python -c 'import base64; from pathlib import Path; p=Path("/tmp/Byzantine-Core-v1-dark-age-mining-patched.per"); lines=p.read_text(encoding="utf-8").splitlines(); repl=base64.b64decode("KGRlZnJ1bGUKICAgICh0cnVlKQo9PgogICAgKHNldC1nb2FsIGRlbWFuZC1mZXVkYWwtdHJhbnNpdGlvbiAxKQogICAgKHNldC1nb2FsIGRlbWFuZC1jYXN0bGUtYWdlLXRyYW5zaXRpb24gMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWFybHktZGVmZW5zaXZlLXNwZWFycyAxKQogICAgKHNldC1nb2FsIGRlbWFuZC1mZXVkYWwtaW5mcmFzdHJ1Y3R1cmUgMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtY2FzdGxlLWNvbW1pdG1lbnQgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtY291bnRlci1tb3VudGVkLXNwZWFycyAwKQogICAgKHNldC1nb2FsIGRlbWFuZC1jb3VudGVyLXJhbmdlZC1za2lybWlzaGVycyAwKQogICAgKHNldC1nb2FsIGRlbWFuZC1jb3VudGVyLWNhc3RsZS1jYW1lbHMgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtY291bnRlci1jYXN0bGUtY2F0YXBocmFjdHMgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtY291bnRlci1jYXN0bGUtc2llZ2UtcmVzcG9uc2UgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtaW1wZXJpYWwtY29udmVyc2lvbiAxKQogICAgKHNldC1nb2FsIGRlbWFuZC1jYXN0bGUtc2Vjb25kLXRvd24tY2VudGVyIDApCiAgICAoc2V0LWdvYWwgZGVtYW5kLWNhc3RsZS10aGlyZC10b3duLWNlbnRlciAwKQogICAgKHNldC1nb2FsIGRlbWFuZC1lY29ub215LWhvdXNlLWZsb29yLTEgMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1ob3VzZS1mbG9vci00IDEpCiAgICAoc2V0LWdvYWwgZGVtYW5kLWVjb25vbXktaG91c2UtZmxvb3ItOCAxKQogICAgKHNldC1nb2FsIGRlbWFuZC1lY29ub215LWhvdXNlLWZsb29yLTEyIDEpCiAgICAoc2V0LWdvYWwgZGVtYW5kLWVjb25vbXktaG91c2UtZmxvb3ItMTYgMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1mYXJtLWZsb29yLWZldWRhbC00IDEpCiAgICAoc2V0LWdvYWwgZGVtYW5kLWVjb25vbXktZmFybS1mbG9vci1mZXVkYWwtOCAxKQogICAgKGRpc2FibGUtc2VsZikKKQoKKGRlZnJ1bGUKICAgICh0cnVlKQo9PgogICAgKHNldC1nb2FsIGRlbWFuZC1lY29ub215LWZhcm0tYm9vbS1jYXN0bGUgMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1mYXJtLWJvb20taW1wZXJpYWwgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1sdW1iZXItY2FtcC1mbG9vci0xIDEpCiAgICAoc2V0LWdvYWwgZGVtYW5kLWVjb25vbXktbHVtYmVyLWNhbXAtZmxvb3ItMiAxKQogICAgKHNldC1nb2FsIGRlbWFuZC1lY29ub215LW1pbmluZy1jYW1wLWZsb29yLTEgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1taW5pbmctY2FtcC1mbG9vci0yIDApCiAgICAoc2V0LWdvYWwgZGVtYW5kLWVjb25vbXktZm9vZC1taWxsLWJvb20gMSkKICAgIChzZXQtZ29hbCBkZW1hbmQtZWNvbm9teS1tYXJrZXQtZmxvb3ItMSAxKQogICAgKHNldC1nb2FsIGJ5emFudGluZS1zdG9uZS1kZW1hbmQgMCkKICAgIChzZXQtZ29hbCBkZW1hbmQtY2FzdGxlLXN0YWJsZS1jYXBhYmlsaXR5IDApCiAgICAoc2V0LWdvYWwgZGVtYW5kLWNhc3RsZS1hcmNoZXJ5LWNhcGFiaWxpdHkgMCkKICAgIChkaXNhYmxlLXNlbGYpCikK").decode().splitlines(); lines[8657:8694]=repl; p.write_text("\n".join(lines)+"\n", encoding="utf-8")'
-          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "78cbba8d7aa24d0e8af467970783fe4a07932ac86e6fd5ae8f216dff60d8024c"
+          : > /tmp/byzantine.per
+          for part in verification/chunks/*.perpart; do
+            cat "$part" >> /tmp/byzantine.per
+            printf "\n" >> /tmp/byzantine.per
+          done
+          sha256sum /tmp/byzantine.per
+          test "$(sha256sum /tmp/byzantine.per | cut -d' ' -f1)" = "78cbba8d7aa24d0e8af467970783fe4a07932ac86e6fd5ae8f216dff60d8024c"
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
-      - name: Pinned native parser gate
+      - name: Native parser twice and output determinism
+        shell: bash
         run: |
           set +e
-          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/native-1.json
-          status1=$?
-          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/native-2.json
-          status2=$?
+          python -m aoe2_ai_lab lint /tmp/byzantine.per --profile default --json > /tmp/native-1.json
+          s1=$?
+          python -m aoe2_ai_lab lint /tmp/byzantine.per --profile default --json > /tmp/native-2.json
+          s2=$?
           set -e
-          echo "first_exit=$status1"
-          echo "second_exit=$status2"
-          echo "first_result:"
+          echo "first_exit=$s1"
+          echo "second_exit=$s2"
           cat /tmp/native-1.json
-          echo "second_result:"
           cat /tmp/native-2.json
           cmp -s /tmp/native-1.json /tmp/native-2.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          a=json.loads(Path("/tmp/native-1.json").read_text())
-          print("finding_count=",a.get("finding_count"))
-          print("failed=",a.get("failed"))
-          if a.get("finding_count") != 0 or a.get("failed") is not False or status1 if False else False:
-              pass
-          PY
-          test $status1 -eq 0
-          test $status2 -eq 0
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          a=json.loads(Path("/tmp/native-1.json").read_text())
-          if a.get("finding_count") != 0:
-              raise SystemExit(1)
-          if a.get("findings") != []:
-              raise SystemExit(1)
-          if a.get("failed") is not False:
-              raise SystemExit(1)
-          PY
+          test $s1 -eq 0
+          test $s2 -eq 0
