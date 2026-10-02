@@ -1,6 +1,4 @@
 import unittest
-from pathlib import Path
-
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
     build_byzantine_strategy,
@@ -87,7 +85,7 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", counter_feudal.facts[0].source)
 
         output = compile_strategy_profile(profile, self.effective)
-        self.assertIn("(goal opening-plan 0)", output)
+        self.assertIn("(goal opening-plan -1)", output)
         self.assertIn("(set-goal opening-plan 5)", output)
         self.assertIn("(set-goal opening-plan 4)", output)
         self.assertIn("(set-goal opening-plan 3)", output)
@@ -103,6 +101,11 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
         self.assertEqual(
             profile.economy_controller.controller_id,
             "byzantine-economy-v1",
+        )
+        from LearnerAI.Compiler.clients.basilisk import EconomyMode
+        self.assertEqual(
+            {item.mode for item in profile.economy_controller.policies},
+            set(EconomyMode),
         )
         written_sources = {
             action.source
