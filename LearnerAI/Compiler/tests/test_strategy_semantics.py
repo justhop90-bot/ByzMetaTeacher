@@ -124,6 +124,20 @@ class StrategySemanticsTests(unittest.TestCase):
                     for evidence in transition.evidence)
             )
 
+    def test_byzantine_dark_age_economy_is_55_food_30_wood_15_gold(self):
+        from LearnerAI.Compiler.ir.economic_control import (
+            EconomyMode,
+            default_byzantine_economy_controller,
+        )
+
+        plan = default_byzantine_economy_controller()
+        base = next(item for item in plan.policies if item.mode is EconomyMode.BASE)
+
+        self.assertEqual(base.allocation.food, 55)
+        self.assertEqual(base.allocation.wood, 30)
+        self.assertEqual(base.allocation.gold, 15)
+        self.assertEqual(base.allocation.food + base.allocation.wood + base.allocation.gold, 100)
+
 
 if __name__ == "__main__":
     unittest.main()
