@@ -143,6 +143,11 @@ class ConstructionTransitionTests(unittest.TestCase):
                 "siege-workshop": resolve_building_id("siege-workshop"),
                 "university": resolve_building_id("university"),
                 "outpost": resolve_building_id("outpost"),
+                "lumber-camp": resolve_building_id("lumber-camp"),
+                "mining-camp": resolve_building_id("mining-camp"),
+                "mill": resolve_building_id("mill"),
+                "farm": resolve_building_id("farm"),
+                "market": resolve_building_id("market"),
             },
             {
                 "town-center": 621,
@@ -152,6 +157,11 @@ class ConstructionTransitionTests(unittest.TestCase):
                 "siege-workshop": 49,
                 "university": 209,
                 "outpost": 598,
+                "lumber-camp": 562,
+                "mining-camp": 584,
+                "mill": 68,
+                "farm": 50,
+                "market": 84,
             },
         )
 
