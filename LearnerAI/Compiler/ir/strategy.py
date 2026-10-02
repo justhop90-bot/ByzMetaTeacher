@@ -1377,7 +1377,7 @@ def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
     attack command remains issue-only; phase release is driven by an explicit
     observed pressure witness or a force-floor loss.
     """
-    if profile.attack_plan is None:
+    if profile.profile_id != "byzantine-land-castle-v1" or profile.attack_plan is None:
         return None
 
     from ..runtime_binding import GoalSlotRequest
