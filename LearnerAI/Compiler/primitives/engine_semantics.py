@@ -237,10 +237,6 @@ _PERSISTENT_STATE_SPECS = (
     ("up-compare-sn", "state.compare.strategic-number"),
 )
 
-_PLAYER_CONTEXT_SPECS = (
-    ("up-find-player", "player-context.find"),
-)
-
 
 _OBSERVATION_SPECS = (
     ("current-age", "observation.age.current"),
@@ -426,47 +422,6 @@ def _native_output_reader_mapping(command: str, identity: str) -> EngineSemantic
         recovery=(
             "re-evaluate or reissue the native reader as needed; no synthetic cache "
             "or retry state is introduced"
-        ),
-        practice_references=(),
-    )
-
-
-def _player_context_mapping(command: str, identity: str) -> EngineSemanticMapping:
-    return EngineSemanticMapping(
-        identity=identity,
-        native_command=command,
-        native_kind="Action",
-        status=EngineSemanticMappingStatus.CONTRACTED,
-        evidence_class="ENGINE FACT",
-        evidence_sources=(
-            "https://airef.github.io/",
-            "https://airef.github.io/tables/up-patch-notes.html",
-        ),
-        state_effects=(
-            "finds a native player matching the requested stance/search method and "
-            "writes its player number into the caller-supplied GoalId"
-        ),
-        lifetime=(
-            "the output Goal persists until another native Goal write changes it; "
-            "the selected player context is subsequently consumed by commands that "
-            "accept a player number or focus-player"
-        ),
-        ordering=(
-            "the player search executes at its emitted rule position; the compiler "
-            "does not claim same-rule visibility of the output beyond the native "
-            "command contract"
-        ),
-        admission=(
-            "native action has exact PlayerStance, FindPlayerMethod, and OutputGoalId "
-            "parameters as documented by AIRef/UserPatch"
-        ),
-        completion=(
-            "the player-number output is the contracted command result; it is not a "
-            "world-state completion witness for strategic work"
-        ),
-        recovery=(
-            "reissue the player search when the strategic context must be refreshed; "
-            "do not infer opponent identity beyond the native result"
         ),
         practice_references=(),
     )
@@ -905,10 +860,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         for command, identity in _DUC_COMMAND_SPECS
     )
     mappings.extend(
-        _player_context_mapping(command, identity)
-        for command, identity in _PLAYER_CONTEXT_SPECS
-    )
-    mappings.extend(
         _native_output_reader_mapping(command, identity)
         for command, identity in _NATIVE_OUTPUT_READER_SPECS
     )
@@ -959,7 +910,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     registry.validate_exact_executable_commands(
         tuple(command for command, _identity in _NATIVE_OUTPUT_READER_SPECS)
         + default_duc_executable_commands()
-        + tuple(command for command, _identity in _PLAYER_CONTEXT_SPECS)
         + tuple(command for command, _identity in _PERSISTENT_STATE_SPECS)
         + tuple(command for command, _identity in _OBSERVATION_SPECS)
         + tuple(command for command, _identity in _ADMISSIBILITY_SPECS)
