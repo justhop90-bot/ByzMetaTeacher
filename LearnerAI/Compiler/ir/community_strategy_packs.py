@@ -874,7 +874,17 @@ def build_byzantine_stock_strategy(
         if observation.identity not in observed:
             observations.append(observation)
 
-    demands = list(base.demands)
+    demands = []
+    for base_demand in base.demands:
+        if (
+            base_demand.execution is not None
+            and base_demand.execution.action.startswith("(train ")
+        ):
+            base_demand = replace(
+                base_demand,
+                production_arbitration_group="production",
+            )
+        demands.append(base_demand)
     existing_demands = {item.identity for item in demands}
     for demand in community_strategy_demands(effective):
         if demand.identity == "water-fishing-continuity" and not include_water_continuity:
