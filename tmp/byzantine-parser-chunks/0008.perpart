@@ -1,0 +1,999 @@
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (wood-amount > 5000)
+    (goal demand-economy-farm-boom-imperial 0)
+    (or
+        (and
+            (not (building-type-count-total town-center >= 2))
+            (building-type-count farm < bt-imperial-farm-target-1tc)
+        )
+        (or
+            (and
+                (building-type-count-total town-center >= 2)
+                (not (building-type-count-total town-center >= 3))
+                (building-type-count farm < bt-imperial-farm-target-2tc)
+            )
+            (and
+                (building-type-count-total town-center >= 3)
+                (building-type-count farm < bt-imperial-farm-target-3tc)
+            )
+        )
+    )
+=>
+    (set-goal demand-economy-farm-boom-imperial 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-wood)
+)
+
+; FOOD: standing army floor is the final existing food sink before Market.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (food-amount > 5000)
+    (goal demand-imperial-halberdier-floor 0)
+    (unit-type-count-total 359 < bt-imperial-late-halberdier-target)
+=>
+    (set-goal demand-imperial-halberdier-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-food)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (goal demand-economy-farm-boom-imperial 0)
+    (goal demand-economy-house-floor-16 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (food-amount > 5000)
+    (goal demand-castle-cataphract-floor 0)
+    (unit-type-count-total cataphract-line < bt-imperial-late-cataphract-target)
+=>
+    (set-goal demand-castle-cataphract-floor 1)
+    (set-goal byzantine-surplus-spend-claim 1)
+    (set-goal byzantine-surplus-spend-resource byzantine-surplus-resource-food)
+)
+
+;----------------------------------------------------------------
+; BOUNDED LATE-GAME GATHERER DELTA CONTROL
+;----------------------------------------------------------------
+; Efficiency rule: late-game gatherer pressure is a small correction, not a
+; second economy scheduler. The posture percentages remain the baseline. This
+; layer only moves two actual gatherers when one resource is materially overbanked
+; and another is materially short, then holds that direction behind a 45-second
+; cooldown and a separate release threshold. This creates hysteresis instead of
+; villager ping-pong when banks cross a single threshold.
+;
+; State values:
+;   0 idle
+;   1 wood -> gold
+;   2 wood -> food
+;   3 gold -> food
+;   4 gold -> wood
+;   5 food -> gold
+;   6 food -> wood
+;
+; The delta block is strictly lower priority than upgrade/research work, existing
+; surplus-spend arbitration, remote-resource recovery, and market balancing.
+
+; Release: wood -> gold. Re-arm the cooldown when the direction is released so
+; the next correction cannot immediately point somewhere else.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-wood-gold)
+    (or
+        (wood-amount <= bt-economy-delta-wood-release)
+        (gold-amount >= bt-economy-delta-gold-release)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Release: wood -> food.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-wood-food)
+    (or
+        (wood-amount <= bt-economy-delta-wood-release)
+        (food-amount >= 2500)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Release: gold -> food.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-gold-food)
+    (or
+        (gold-amount <= bt-economy-delta-gold-release)
+        (food-amount >= 2500)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Release: gold -> wood.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-gold-wood)
+    (or
+        (gold-amount <= bt-economy-delta-gold-release)
+        (wood-amount >= bt-economy-delta-wood-recovered)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Release: food -> gold.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-food-gold)
+    (or
+        (food-amount <= bt-economy-delta-food-release)
+        (gold-amount >= bt-economy-delta-gold-release)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Release: food -> wood.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-food-wood)
+    (or
+        (food-amount <= bt-economy-delta-food-release)
+        (wood-amount >= bt-economy-delta-wood-recovered)
+    )
+=>
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Wood surplus -> gold shortage. Gold is the first target because it unlocks
+; upgrades and the Byzantine gold-heavy late army. No percentage rewrite occurs.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (wood-amount > bt-economy-delta-wood-surplus)
+    (gold-amount < bt-economy-delta-gold-low)
+=>
+    (up-retask-gatherers wood c: byzantine-economy-delta-step)
+    (up-modify-sn sn-wood-gatherer-percentage c:- 5)
+    (up-modify-sn sn-gold-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-wood-gold)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Wood surplus -> food shortage. Lower priority than the gold repair.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (wood-amount > bt-economy-delta-wood-surplus)
+    (gold-amount >= bt-economy-delta-gold-low)
+    (food-amount < bt-economy-delta-food-low)
+=>
+    (up-retask-gatherers wood c: byzantine-economy-delta-step)
+    (up-modify-sn sn-wood-gatherer-percentage c:- 5)
+    (up-modify-sn sn-food-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-wood-food)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Gold surplus -> food shortage.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (gold-amount > bt-economy-delta-gold-surplus)
+    (food-amount < bt-economy-delta-food-low)
+=>
+    (up-retask-gatherers gold c: byzantine-economy-delta-step)
+    (up-modify-sn sn-gold-gatherer-percentage c:- 5)
+    (up-modify-sn sn-food-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-gold-food)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Gold surplus -> wood shortage.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (gold-amount > bt-economy-delta-gold-surplus)
+    (food-amount >= bt-economy-delta-food-low)
+    (wood-amount < bt-economy-delta-wood-low)
+=>
+    (up-retask-gatherers gold c: byzantine-economy-delta-step)
+    (up-modify-sn sn-gold-gatherer-percentage c:- 5)
+    (up-modify-sn sn-wood-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-gold-wood)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Food surplus -> gold shortage. Food is the last source to be drained, and only
+; when gold is genuinely deficient, which prevents the common feast/famine flip.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (food-amount > bt-economy-delta-food-surplus)
+    (gold-amount < bt-economy-delta-gold-low)
+=>
+    (up-retask-gatherers food c: byzantine-economy-delta-step)
+    (up-modify-sn sn-food-gatherer-percentage c:- 5)
+    (up-modify-sn sn-gold-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-food-gold)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+; Food surplus -> wood shortage.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal byzantine-economy-delta-state byzantine-economy-delta-idle)
+    (or
+        (up-timer-status byzantine-economy-delta-timer c:== timer-disabled)
+        (up-timer-status byzantine-economy-delta-timer c:== timer-triggered)
+    )
+    (food-amount > bt-economy-delta-food-surplus)
+    (gold-amount >= bt-economy-delta-gold-low)
+    (wood-amount < bt-economy-delta-wood-low)
+=>
+    (up-retask-gatherers food c: byzantine-economy-delta-step)
+    (up-modify-sn sn-food-gatherer-percentage c:- 5)
+    (up-modify-sn sn-wood-gatherer-percentage c:+ 5)
+    (set-goal byzantine-economy-delta-state byzantine-economy-delta-food-wood)
+    (enable-timer byzantine-economy-delta-timer bt-economy-delta-cooldown-seconds)
+)
+
+;----------------------------------------------------------------
+; PETARD / STATIC-DEFENSE BREAK PACKAGE
+;----------------------------------------------------------------
+; Byzantine has no reason to feed the main army into a persistent wall. A small
+; Castle-built petard packet is cheaper and cleaner when a large enemy stone-wall
+; presence has been observed. This is a demand-light execution overlay, not a
+; second siege scheduler.
+(defrule
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (goal byzantine-army-reinforcement 0)
+    (not (town-under-attack))
+    (players-building-type-count any-enemy 117 >= 5)
+    (unit-type-count-total petard < 3)
+    (goal action-claim-train-arbitration 0)
+    (can-train petard)
+=>
+    (train petard)
+    (set-goal action-claim-train-arbitration 1)
+)
+
+;----------------------------------------------------------------
+; EXISTING-DEMAND MARKET RESIDUAL BALANCE
+;----------------------------------------------------------------
+; Market remains the last resort. The explicit surplus claim prevents it from
+; firing in the same pass that an existing higher-value demand was reasserted.
+; Stand up the first offensive siege battery as soon as Imperial is reached.
+; Target escalation is driven only by the localized fortification witness.
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-siege-scale 0)
+=>
+    (set-goal byzantine-siege-scale byzantine-siege-scale-standard)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-siege-scale byzantine-siege-scale-standard)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-siege-scale byzantine-siege-scale-fortified)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+    (not (goal byzantine-fortification-threat 1))
+=>
+    (set-goal byzantine-siege-scale byzantine-siege-scale-standard)
+)
+
+;----------------------------------------------------------------
+; UPGRADE SEQUENCING
+;----------------------------------------------------------------
+; Standing army first establishes the useful mass, then spends Imperial gold
+; on the Byzantine-specific package in this order:
+;   Logistica -> Elite Cataphract -> Elite Varangian Guard -> Elite Skirmisher.
+; Existing ordinary research demands remain responsible for blacksmith/ranged/
+; siege upgrades; these unique upgrades must not race each other for the bank.
+
+;----------------------------------------------------------------
+; BOUNDED MARKET RESIDUAL BALANCE
+;----------------------------------------------------------------
+; Market is the last direct spending tier. High-value research, siege, army
+; reinforcement, and remote resource recovery must all be idle before it can act.
+; Standard buy/sell actions are used deliberately because the exact variable-
+; amount UP command shape remains EVIDENCE-ONLY in the compiler registry.
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (building-type-count-total market >= 1)
+    (wood-amount > 5000)
+    (gold-amount < 1800)
+    (can-sell-commodity wood)
+=>
+    (sell-commodity wood)
+    (set-goal byzantine-market-state byzantine-market-sell-wood)
+)
+
+(defrule
+    (goal byzantine-market-state byzantine-market-sell-wood)
+    (or
+        (wood-amount <= 3500)
+        (gold-amount >= 2200)
+    )
+=>
+    (set-goal byzantine-market-state byzantine-market-idle)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (building-type-count-total market >= 1)
+    (gold-amount > 3500)
+    (food-amount < 1400)
+    (can-buy-commodity food)
+=>
+    (buy-commodity food)
+    (set-goal byzantine-market-state byzantine-market-buy-food)
+)
+
+(defrule
+    (goal byzantine-market-state byzantine-market-buy-food)
+    (or
+        (food-amount >= 1800)
+        (gold-amount <= 2500)
+    )
+=>
+    (set-goal byzantine-market-state byzantine-market-idle)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-remote-resource-state byzantine-remote-resource-idle)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-army-attack-ready 2)
+    (goal byzantine-surplus-spend-claim 0)
+    (goal demand-castle-cataphract-floor 0)
+    (goal demand-castle-varangian-guard-floor 0)
+    (goal demand-imperial-arbalester-floor 0)
+    (goal demand-imperial-halberdier-floor 0)
+    (goal demand-imperial-siege-ram-floor 0)
+    (goal demand-imperial-trebuchet-floor 0)
+    (goal demand-imperial-bombard-floor 0)
+    (building-type-count-total market >= 1)
+    (gold-amount > 4000)
+    (wood-amount < 900)
+    (can-buy-commodity wood)
+=>
+    (buy-commodity wood)
+    (set-goal byzantine-market-state byzantine-market-buy-wood)
+)
+
+(defrule
+    (goal byzantine-market-state byzantine-market-buy-wood)
+    (or
+        (wood-amount >= 1400)
+        (gold-amount <= 2500)
+    )
+=>
+    (set-goal byzantine-market-state byzantine-market-idle)
+)
+
+
+
+; -----------------------------------------------------------------------------
+; LATE-GAME SPEND / RECOVERY OVERLAY
+; -----------------------------------------------------------------------------
+; Food crisis: do not wait for the broad market controller to notice starvation.
+(defrule
+    (current-age >= feudal-age)
+    (goal byzantine-food-recovery-state byzantine-food-recovery-idle)
+    (goal byzantine-army-reinforcement 0)
+    (or (food-amount < 450) (and (current-age >= imperial-age) (food-amount < 700)))
+    (or (wood-amount > 900) (gold-amount > 900))
+    (or
+        (up-timer-status byzantine-food-recovery-timer c:== timer-disabled)
+        (up-timer-status byzantine-food-recovery-timer c:== timer-triggered)
+    )
+=>
+    (up-retask-gatherers food c: 4)
+    (set-goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (enable-timer byzantine-food-recovery-timer bt-byzantine-food-recovery-seconds)
+)
+
+(defrule
+    (goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (food-amount >= 900)
+=>
+    (set-goal byzantine-food-recovery-state byzantine-food-recovery-idle)
+    (disable-timer byzantine-food-recovery-timer)
+)
+
+(defrule
+    (goal byzantine-food-recovery-state byzantine-food-recovery-active)
+    (timer-triggered byzantine-food-recovery-timer)
+    (food-amount < 900)
+=>
+    (disable-timer byzantine-food-recovery-timer)
+    (enable-timer byzantine-food-recovery-timer bt-byzantine-food-recovery-seconds)
+    (up-retask-gatherers food c: 2)
+)
+
+; Production-capacity expansion: once the Byzantine economy has actually
+; reached Imperial scale, add production outlets before permitting the resource
+; bank to become the only "strategy" on the screen.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (building-type-count barracks < 4)
+    (up-pending-objects c: 12 == 0)
+    (can-build barracks)
+=>
+    (build barracks)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (gold-amount > 1500)
+    (building-type-count stable < 3)
+    (up-pending-objects c: 101 == 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+    )
+    (can-build stable)
+=>
+    (build stable)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2200)
+    (building-type-count archery-range < 3)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (up-pending-objects c: 87 == 0)
+    (can-build archery-range)
+=>
+    (build archery-range)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-fortification-threat 1)
+    (goal action-claim-build-pass-singleton 0)
+    (not (town-under-attack))
+    (population-headroom > 10)
+    (wood-amount > 2400)
+    (building-type-count siege-workshop < 2)
+    (up-pending-objects c: 49 == 0)
+    (can-build siege-workshop)
+=>
+    (build siege-workshop)
+    (set-goal action-claim-build-pass-singleton 1)
+)
+
+; Team trade is a resource sink only after direct production/research pressure
+; has been given first refusal. The six-cart ceiling is intentionally modest.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-late-resource-burn 1)
+    (goal byzantine-late-upgrade-priority 0)
+    (goal byzantine-army-reinforcement 0)
+    (goal action-claim-train-arbitration 0)
+    (not (town-under-attack))
+    (population-headroom > 8)
+    (building-type-count market >= 1)
+    (players-building-type-count any-ally market >= 1)
+    (unit-type-count-total trade-cart < 6)
+    (food-amount > 900)
+    (wood-amount > 900)
+    (gold-amount > 1400)
+    (can-train trade-cart)
+=>
+    (train trade-cart)
+    (set-goal action-claim-train-arbitration 1)
+)
+
+; Emergency food purchase is the final fallback for genuine hunger, not a
+; standing market policy. It only fires with a large gold bank.
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-market-state byzantine-market-idle)
+    (goal byzantine-army-reinforcement 0)
+    (goal byzantine-surplus-spend-claim 0)
+    (building-type-count-total market >= 1)
+    (gold-amount > 3000)
+    (food-amount < 600)
+    (can-buy-commodity food)
+=>
+    (buy-commodity food)
+    (set-goal byzantine-market-state byzantine-market-buy-food)
+)
+
+;----------------------------------------------------------------
+; ATTACK THRESHOLDS AND REINFORCEMENT
+;----------------------------------------------------------------
+; The attack gate is persistent and army-based. Enemy composition changes the
+; selected backbone, but does not create the need to attack.
+; Castle: 4 Cataphracts + 4 Skirmishers + 2 Mangonels + 1 Monk.
+; Imperial: selected 6-unit backbone + 8 Halberdiers + 2/2/2 siege.
+
+(defrule
+    (current-age == castle-age)
+    (goal byzantine-army-plan-phase 1)
+    (goal byzantine-army-attack-ready 0)
+    (up-compare-sn 227 >= 75)
+    (unit-type-count-total cataphract-line >= bt-castle-cataphract-floor)
+    (unit-type-count-total skirmisher-line >= bt-castle-skirmisher-floor)
+    (unit-type-count-total mangonel-line >= bt-castle-attack-siege-target)
+    (unit-type-count-total monk >= bt-castle-monk-floor)
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (up-compare-sn 227 >= 75)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
+        (or
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+            (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+        )
+    )
+    (unit-type-count-total cataphract-line >= bt-imperial-cataphract-floor)
+    (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
+    (or
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-standard)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
+                )
+            )
+        )
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (up-compare-sn 227 >= 75)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry)
+    (unit-type-count-total varangian-guard-line >= bt-imperial-varangian-floor)
+    (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
+    (or
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-standard)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
+                )
+            )
+        )
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+(defrule
+    (current-age >= imperial-age)
+    (goal byzantine-army-plan-phase 2)
+    (goal byzantine-army-attack-ready 0)
+    (up-compare-sn 227 >= 75)
+    (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+    (unit-type-count-total arbalest >= bt-imperial-arbalester-floor)
+    (unit-type-count-total 359 >= bt-imperial-halberdier-floor)
+    (or
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-standard)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-bombard-floor)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-attack-siege-target)
+                )
+            )
+        )
+        (and
+            (goal byzantine-siege-scale byzantine-siege-scale-fortified)
+            (and
+                (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
+                (and
+                    (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
+                    (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
+                )
+            )
+        )
+    )
+=>
+    (set-goal byzantine-army-attack-ready 1)
+)
+
+;----------------------------------------------------------------
+; FORTIFICATION-AWARE SIEGE APPROACH
+;----------------------------------------------------------------
+; Locality contract: fortifications only affect the offensive controller when
+; they are near the current enemy objective anchor. The anchor is the nearest
+; enemy TC, discovered through DUC. The DUC distance filter is then applied to
+; the saved TC point, so an unrelated tower/castle/wall elsewhere cannot turn an
+; open-ground attack into a fortified assault.
+;
+; This intentionally avoids the unproven claim that attack-now exposes a stable
+; target position. Target-local micro remains OPEN.
+
+(defrule
+    (current-age >= castle-age)
+    (or
+        (goal byzantine-army-attack-ready 1)
+        (goal byzantine-army-attack-ready 2)
+    )
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-idle)
+    (goal byzantine-fortification-probe-found 0)
+    (goal byzantine-fortification-threat 0)
+    (or
+        (up-timer-status byzantine-fortification-probe-timer c:== timer-disabled)
+        (up-timer-status byzantine-fortification-probe-timer c:== timer-triggered)
+    )
+=>
+    (disable-timer byzantine-fortification-probe-timer)
+    (set-goal byzantine-fortification-probe-found 0)
+    (up-find-player enemy find-closest byzantine-fortification-probe-player)
+    (up-modify-sn sn-focus-player-number g:= byzantine-fortification-probe-player)
+    (up-full-reset-search)
+    (up-find-remote c: town-center c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-anchor)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-anchor)
+    (up-compare-goal 368 c:> 0)
+=>
+    (up-set-target-object search-remote c: 0)
+    (up-get-point position-object byzantine-fortification-probe-point)
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-fortification-probe-point)
+    (up-filter-distance c: 0 c: bt-castle-fortification-local-radius)
+    (up-find-remote c: 82 c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-castle)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-anchor)
+    (up-compare-goal 368 c:== 0)
+=>
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-finish)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-castle)
+    (up-compare-goal 368 c:> 0)
+=>
+    (set-goal byzantine-fortification-probe-found 1)
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-fortification-probe-point)
+    (up-filter-distance c: 0 c: bt-castle-fortification-local-radius)
+    (up-find-remote c: bt-tower-class c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-tower)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-castle)
+    (up-compare-goal 368 c:== 0)
+=>
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-fortification-probe-point)
+    (up-filter-distance c: 0 c: bt-castle-fortification-local-radius)
+    (up-find-remote c: bt-tower-class c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-tower)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-tower)
+    (up-compare-goal 368 c:> 0)
+=>
+    (set-goal byzantine-fortification-probe-found 1)
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-fortification-probe-point)
+    (up-filter-distance c: 0 c: bt-castle-fortification-local-radius)
+    (up-find-remote c: bt-wall-class c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-wall)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-tower)
+    (up-compare-goal 368 c:== 0)
+=>
+    (up-reset-search 1 1 1 1)
+    (up-set-target-point byzantine-fortification-probe-point)
+    (up-filter-distance c: 0 c: bt-castle-fortification-local-radius)
+    (up-find-remote c: bt-wall-class c: 1)
+    (up-get-search-state byzantine-fortification-probe-search)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-wall)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-wall)
+    (up-compare-goal 368 c:>= bt-local-wall-count)
+=>
+    (set-goal byzantine-fortification-probe-found 1)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-finish)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-wall)
+    (up-compare-goal 368 c:< bt-local-wall-count)
+=>
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-finish)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-finish)
+    (goal byzantine-fortification-probe-found 1)
+=>
+    (up-reset-filters)
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (set-goal byzantine-fortification-threat 1)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-idle)
+    (enable-timer byzantine-fortification-probe-timer bt-fortification-probe-seconds)
+)
+
+(defrule
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-finish)
+    (goal byzantine-fortification-probe-found 0)
+=>
+    (up-reset-filters)
+    (up-full-reset-search)
+    (up-modify-sn sn-focus-player-number c:= 0)
+    (set-goal byzantine-fortification-threat 0)
+    (set-goal byzantine-fortification-probe-state byzantine-fortification-probe-idle)
+    (enable-timer byzantine-fortification-probe-timer bt-fortification-probe-seconds)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-probe-state byzantine-fortification-probe-idle)
+    (goal byzantine-fortification-probe-found 0)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-fortification-threat 0)
+)
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-army-attack-ready 1)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-threat 1)
+=>
+    (set-goal byzantine-siege-approach-claim 1)
+    (set-goal byzantine-siege-approach byzantine-siege-approach-fortified)
+)
+(defrule
+    (or
+        (goal byzantine-siege-approach byzantine-siege-approach-fortified)
+        (or
+            (goal byzantine-siege-approach byzantine-siege-approach-staging)
+            (goal byzantine-siege-approach byzantine-siege-approach-escorted)
+        )
+    )
+    (not (goal byzantine-fortification-threat 1))
+=>
+    (set-goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (set-goal byzantine-siege-approach-claim 0)
+    (set-goal byzantine-siege-breach-witness 0)
+)
+
+
+(defrule
+    (current-age >= castle-age)
+    (goal byzantine-siege-approach byzantine-siege-approach-normal)
+    (goal byzantine-fortification-threat 0)
+=>
+    (set-goal byzantine-siege-approach-claim 0)
+)

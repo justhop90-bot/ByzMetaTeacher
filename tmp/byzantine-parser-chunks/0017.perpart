@@ -1,0 +1,1000 @@
+        (goal demand-imperial-bombard-floor 85)
+        (goal demand-imperial-bombard-floor 83)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count bombard-cannon >= bt-imperial-bombard-floor))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count bombard-cannon >= bt-imperial-fortified-bombard-target))
+    ))
+    (up-pending-objects c: 36 >= 1)
+=>
+    (set-goal demand-imperial-bombard-floor 83)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-bombard-floor 85)
+        (goal demand-imperial-bombard-floor 83)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count bombard-cannon >= bt-imperial-bombard-floor))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count bombard-cannon >= bt-imperial-fortified-bombard-target))
+    ))
+    (not (up-pending-objects c: 36 >= 1))
+=>
+    (set-goal demand-imperial-bombard-floor 1)
+    (set-goal production-retry-barrier-imperial-bombard-floor 209)
+)
+
+; Action issuance: bombard | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-bombard-floor 1)
+    (or
+        (not (or
+            (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count bombard-cannon >= bt-imperial-bombard-floor))
+            (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count bombard-cannon >= bt-imperial-fortified-bombard-target))
+        ))
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (wood-amount > 3000)
+                (and
+                    (gold-amount > 2500)
+                    (unit-type-count-total bombard-cannon < bt-imperial-late-bombard-target)
+                )
+            )
+        )
+    )
+    (goal production-retry-barrier-imperial-bombard-floor 0)
+    (not (up-pending-objects c: 36 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (research-completed 47)
+    (can-train-with-escrow bombard-cannon)
+=>
+    (train bombard-cannon)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-bombard-floor 85)
+)
+
+; Pending diagnostics: castle-monk-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 52 and cannot reissue from pending goal 53
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 53 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 54 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-monk-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-monk-floor in ACTIVE; it is not PENDING.
+; Release: castle-monk-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-monk-floor 54)
+    (unit-type-count monk >= bt-castle-monk-floor)
+=>
+    (set-goal demand-castle-monk-floor 0)
+)
+
+; Recovery: castle-monk-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-monk-floor 0)
+    (not (unit-type-count monk >= bt-castle-monk-floor))
+    (building-type-count-total 104 >= 1)
+=>
+    (set-goal demand-castle-monk-floor 1)
+)
+
+; Completion witness: castle-monk-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-monk-floor 55)
+        (goal demand-castle-monk-floor 53)
+    )
+    (unit-type-count monk >= bt-castle-monk-floor)
+=>
+    (set-goal demand-castle-monk-floor 54)
+)
+
+; Pending admission: castle-monk-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-monk-floor 55)
+        (goal demand-castle-monk-floor 53)
+    )
+    (not (unit-type-count monk >= bt-castle-monk-floor))
+    (up-pending-objects c: 125 >= 1)
+=>
+    (set-goal demand-castle-monk-floor 53)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-monk-floor 55)
+        (goal demand-castle-monk-floor 53)
+    )
+    (not (unit-type-count monk >= bt-castle-monk-floor))
+    (not (up-pending-objects c: 125 >= 1))
+=>
+    (set-goal demand-castle-monk-floor 1)
+    (set-goal production-retry-barrier-castle-monk-floor 1)
+)
+
+; Action issuance: castle-monk-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-monk-floor 1)
+    (not (unit-type-count monk >= bt-castle-monk-floor))
+    (goal production-retry-barrier-castle-monk-floor 0)
+    (not (up-pending-objects c: 125 >= 1))
+    (not (unit-type-count monk >= bt-castle-monk-floor))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= castle-age)
+    (can-train-with-escrow monk)
+    (unit-type-count-total monk < bt-castle-monk-floor)
+=>
+    (train monk)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-monk-floor 55)
+)
+
+; Pending diagnostics: imperial-cavalier-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 84 and cannot reissue from pending goal 85
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 85 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 86 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-cavalier-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-cavalier-floor in ACTIVE; it is not PENDING.
+; Release: imperial-cavalier-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-cavalier-floor 86)
+    (unit-type-count cavalier >= bt-imperial-cavalier-target)
+=>
+    (set-goal demand-imperial-cavalier-floor 0)
+)
+
+; Recovery: imperial-cavalier-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-cavalier-floor 0)
+    (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
+    (players-unit-type-count any-enemy archer-line >= 4)
+=>
+    (set-goal demand-imperial-cavalier-floor 1)
+)
+
+; Completion witness: imperial-cavalier-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-cavalier-floor 87)
+        (goal demand-imperial-cavalier-floor 85)
+    )
+    (unit-type-count cavalier >= bt-imperial-cavalier-target)
+=>
+    (set-goal demand-imperial-cavalier-floor 86)
+)
+
+; Pending admission: imperial-cavalier-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-cavalier-floor 87)
+        (goal demand-imperial-cavalier-floor 85)
+    )
+    (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
+    (up-pending-objects c: 283 >= 1)
+=>
+    (set-goal demand-imperial-cavalier-floor 85)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-cavalier-floor 87)
+        (goal demand-imperial-cavalier-floor 85)
+    )
+    (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
+    (not (up-pending-objects c: 283 >= 1))
+=>
+    (set-goal demand-imperial-cavalier-floor 1)
+    (set-goal production-retry-barrier-imperial-cavalier-floor 1)
+)
+
+; Action issuance: imperial-cavalier-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-cavalier-floor 1)
+    (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
+    (goal production-retry-barrier-imperial-cavalier-floor 0)
+    (not (up-pending-objects c: 283 >= 1))
+    (not (unit-type-count cavalier >= bt-imperial-cavalier-target))
+    (goal action-claim-train-arbitration 0)
+    (or
+        (players-unit-type-count any-enemy archer-line >= 4)
+        (unit-type-count cavalier >= 1)
+    )
+    (current-age >= imperial-age)
+    (can-train-with-escrow cavalier)
+    (unit-type-count-total cavalier < bt-imperial-cavalier-target)
+=>
+    (train cavalier)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-cavalier-floor 87)
+)
+
+; Pending diagnostics: imperial-hussar-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 88 and cannot reissue from pending goal 89
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 89 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 90 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-hussar-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-hussar-floor in ACTIVE; it is not PENDING.
+; Release: imperial-hussar-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-hussar-floor 90)
+    (unit-type-count hussar >= bt-imperial-hussar-target)
+=>
+    (set-goal demand-imperial-hussar-floor 0)
+)
+
+; Recovery: imperial-hussar-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-hussar-floor 0)
+    (not (unit-type-count hussar >= bt-imperial-hussar-target))
+    (players-unit-type-count any-enemy mangonel-line >= 2)
+    (not (players-unit-type-count any-enemy mangonel-line < 2))
+=>
+    (set-goal demand-imperial-hussar-floor 1)
+)
+
+; Completion witness: imperial-hussar-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-hussar-floor 91)
+        (goal demand-imperial-hussar-floor 89)
+    )
+    (unit-type-count hussar >= bt-imperial-hussar-target)
+=>
+    (set-goal demand-imperial-hussar-floor 90)
+)
+
+; Pending admission: imperial-hussar-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-hussar-floor 91)
+        (goal demand-imperial-hussar-floor 89)
+    )
+    (not (unit-type-count hussar >= bt-imperial-hussar-target))
+    (up-pending-objects c: 441 >= 1)
+=>
+    (set-goal demand-imperial-hussar-floor 89)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-hussar-floor 91)
+        (goal demand-imperial-hussar-floor 89)
+    )
+    (not (unit-type-count hussar >= bt-imperial-hussar-target))
+    (not (up-pending-objects c: 441 >= 1))
+=>
+    (set-goal demand-imperial-hussar-floor 1)
+    (set-goal production-retry-barrier-imperial-hussar-floor 1)
+)
+
+; Action issuance: imperial-hussar-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-hussar-floor 1)
+    (not (unit-type-count hussar >= bt-imperial-hussar-target))
+    (goal production-retry-barrier-imperial-hussar-floor 0)
+    (not (up-pending-objects c: 441 >= 1))
+    (not (unit-type-count hussar >= bt-imperial-hussar-target))
+    (goal action-claim-train-arbitration 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege)
+        (or
+            (players-unit-type-count any-enemy mangonel-line >= 2)
+            (unit-type-count hussar >= 1)
+        )
+    )
+    (current-age >= imperial-age)
+    (can-train-with-escrow hussar)
+    (unit-type-count-total hussar < bt-imperial-hussar-target)
+=>
+    (train hussar)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-hussar-floor 91)
+)
+
+; Pending diagnostics: imperial-onager-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 90 and cannot reissue from pending goal 91
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 91 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 92 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-onager-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-onager-floor in ACTIVE; it is not PENDING.
+; Release: imperial-onager-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-onager-floor 92)
+    (unit-type-count onager >= bt-imperial-onager-target)
+=>
+    (set-goal demand-imperial-onager-floor 0)
+)
+
+; Recovery: imperial-onager-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-onager-floor 0)
+    (not (unit-type-count onager >= bt-imperial-onager-target))
+    (players-unit-type-count any-enemy archer-line >= 4)
+=>
+    (set-goal demand-imperial-onager-floor 1)
+)
+
+; Completion witness: imperial-onager-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-onager-floor 93)
+        (goal demand-imperial-onager-floor 91)
+    )
+    (unit-type-count onager >= bt-imperial-onager-target)
+=>
+    (set-goal demand-imperial-onager-floor 92)
+)
+
+; Pending admission: imperial-onager-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-onager-floor 93)
+        (goal demand-imperial-onager-floor 91)
+    )
+    (not (unit-type-count onager >= bt-imperial-onager-target))
+    (up-pending-objects c: 550 >= 1)
+=>
+    (set-goal demand-imperial-onager-floor 91)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-onager-floor 93)
+        (goal demand-imperial-onager-floor 91)
+    )
+    (not (unit-type-count onager >= bt-imperial-onager-target))
+    (not (up-pending-objects c: 550 >= 1))
+=>
+    (set-goal demand-imperial-onager-floor 1)
+    (set-goal production-retry-barrier-imperial-onager-floor 1)
+)
+
+; Action issuance: imperial-onager-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-onager-floor 1)
+    (not (unit-type-count onager >= bt-imperial-onager-target))
+    (goal production-retry-barrier-imperial-onager-floor 0)
+    (not (up-pending-objects c: 550 >= 1))
+    (not (unit-type-count onager >= bt-imperial-onager-target))
+    (goal action-claim-train-arbitration 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-ranged)
+        (or
+            (players-unit-type-count any-enemy archer-line >= 4)
+            (unit-type-count onager >= 1)
+        )
+    )
+    (current-age >= imperial-age)
+    (can-train-with-escrow onager)
+    (unit-type-count-total onager < bt-imperial-onager-target)
+=>
+    (train onager)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-onager-floor 93)
+)
+
+; Siege lifecycle: ram | persistent standard/fortified battery, no enemy-gated activation.
+; The recurrent demand owns feasibility, pending observation, completion witness, and recovery.
+; Release: ram | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-siege-ram-floor 94)
+    (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+    )
+=>
+    (set-goal demand-imperial-siege-ram-floor 0)
+)
+
+; Recovery: ram | RELEASED -> ACTIVE on world-state loss or siege-scale increase
+(defrule
+    (goal demand-imperial-siege-ram-floor 0)
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+    ))
+=>
+    (set-goal demand-imperial-siege-ram-floor 1)
+)
+
+; Completion witness: ram | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-siege-ram-floor 95)
+        (goal demand-imperial-siege-ram-floor 93)
+    )
+    (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+    )
+=>
+    (set-goal demand-imperial-siege-ram-floor 94)
+)
+
+; Pending admission: ram | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-siege-ram-floor 95)
+        (goal demand-imperial-siege-ram-floor 93)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+    ))
+    (up-pending-objects c: 1258 >= 1)
+=>
+    (set-goal demand-imperial-siege-ram-floor 93)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-siege-ram-floor 95)
+        (goal demand-imperial-siege-ram-floor 93)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+    ))
+    (not (up-pending-objects c: 1258 >= 1))
+=>
+    (set-goal demand-imperial-siege-ram-floor 1)
+    (set-goal production-retry-barrier-imperial-siege-ram-floor 219)
+)
+
+; Action issuance: ram | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-siege-ram-floor 1)
+    (or
+        (not (or
+            (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count battering-ram-line >= bt-imperial-attack-siege-target))
+            (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count battering-ram-line >= bt-imperial-fortified-ram-target))
+        ))
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (wood-amount > 3000)
+                (unit-type-count-total battering-ram-line < bt-imperial-late-ram-target)
+            )
+        )
+    )
+    (goal production-retry-barrier-imperial-siege-ram-floor 0)
+    (not (up-pending-objects c: 1258 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (can-train-with-escrow battering-ram-line)
+=>
+    (train battering-ram-line)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-siege-ram-floor 95)
+)
+
+; Siege lifecycle: treb | persistent standard/fortified battery, no enemy-gated activation.
+; The recurrent demand owns feasibility, pending observation, completion witness, and recovery.
+; Release: treb | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-trebuchet-floor 95)
+    (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+    )
+=>
+    (set-goal demand-imperial-trebuchet-floor 0)
+)
+
+; Recovery: treb | RELEASED -> ACTIVE on world-state loss or siege-scale increase
+(defrule
+    (goal demand-imperial-trebuchet-floor 0)
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+    ))
+=>
+    (set-goal demand-imperial-trebuchet-floor 1)
+)
+
+; Completion witness: treb | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-trebuchet-floor 96)
+        (goal demand-imperial-trebuchet-floor 94)
+    )
+    (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+    )
+=>
+    (set-goal demand-imperial-trebuchet-floor 95)
+)
+
+; Pending admission: treb | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-trebuchet-floor 96)
+        (goal demand-imperial-trebuchet-floor 94)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+    ))
+    (up-pending-objects c: 331 >= 1)
+=>
+    (set-goal demand-imperial-trebuchet-floor 94)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-trebuchet-floor 96)
+        (goal demand-imperial-trebuchet-floor 94)
+    )
+    (not (or
+        (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+        (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+    ))
+    (not (up-pending-objects c: 331 >= 1))
+=>
+    (set-goal demand-imperial-trebuchet-floor 1)
+    (set-goal production-retry-barrier-imperial-trebuchet-floor 220)
+)
+
+; Action issuance: treb | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-trebuchet-floor 1)
+    (or
+        (not (or
+            (and (goal byzantine-siege-scale byzantine-siege-scale-standard) (unit-type-count trebuchet >= bt-imperial-trebuchet-target))
+            (and (goal byzantine-siege-scale byzantine-siege-scale-fortified) (unit-type-count trebuchet >= bt-imperial-fortified-trebuchet-target))
+        ))
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (wood-amount > 3000)
+                (and
+                    (gold-amount > 2500)
+                    (unit-type-count-total trebuchet < bt-imperial-late-trebuchet-target)
+                )
+            )
+        )
+    )
+    (goal production-retry-barrier-imperial-trebuchet-floor 0)
+    (not (up-pending-objects c: 331 >= 1))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (can-train-with-escrow trebuchet)
+=>
+    (train trebuchet)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-trebuchet-floor 96)
+)
+
+; Pending diagnostics: imperial-arbalester-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 81 and cannot reissue from pending goal 82
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 82 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 83 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-arbalester-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-arbalester-floor in ACTIVE; it is not PENDING.
+; Release: imperial-arbalester-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-arbalester-floor 83)
+    (unit-type-count arbalest >= bt-imperial-arbalester-floor)
+=>
+    (set-goal demand-imperial-arbalester-floor 0)
+)
+
+; Completion witness: imperial-arbalester-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-arbalester-floor 84)
+        (goal demand-imperial-arbalester-floor 82)
+    )
+    (unit-type-count arbalest >= bt-imperial-arbalester-floor)
+=>
+    (set-goal demand-imperial-arbalester-floor 83)
+)
+
+; Pending admission: imperial-arbalester-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-arbalester-floor 84)
+        (goal demand-imperial-arbalester-floor 82)
+    )
+    (not (unit-type-count arbalest >= bt-imperial-arbalester-floor))
+    (up-pending-objects c: 492 >= 1)
+=>
+    (set-goal demand-imperial-arbalester-floor 82)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-arbalester-floor 84)
+        (goal demand-imperial-arbalester-floor 82)
+    )
+    (not (unit-type-count arbalest >= bt-imperial-arbalester-floor))
+    (not (up-pending-objects c: 492 >= 1))
+=>
+    (set-goal demand-imperial-arbalester-floor 1)
+    (set-goal production-retry-barrier-imperial-arbalester-floor 1)
+)
+
+; Action issuance: imperial-arbalester-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-arbalester-floor 1)
+    (not (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))
+    (goal production-retry-barrier-imperial-arbalester-floor 0)
+    (not (up-pending-objects c: 492 >= 1))
+    (not (unit-type-count-total arbalest >= bt-imperial-arbalester-floor))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= imperial-age)
+    (can-train-with-escrow arbalest)
+    (or
+        (unit-type-count-total arbalest < bt-imperial-arbalester-floor)
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (goal byzantine-late-upgrade-priority 0)
+                (and
+                (gold-amount > 3000)
+                (unit-type-count-total arbalest < bt-imperial-late-arbalester-target)
+            )
+            )
+        )
+    )
+=>
+    (train arbalest)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-arbalester-floor 84)
+)
+
+; Pending diagnostics: castle-camel-transition-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 46 and cannot reissue from pending goal 47
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 47 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 48 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-camel-transition-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-castle-camel-transition-floor in ACTIVE; it is not PENDING.
+; Release: castle-camel-transition-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-castle-camel-transition-floor 48)
+    (unit-type-count 329 >= 2)
+=>
+    (set-goal demand-castle-camel-transition-floor 0)
+)
+
+; Recovery: castle-camel-transition-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-castle-camel-transition-floor 0)
+    (not (unit-type-count 329 >= 2))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
+    (not (current-age >= imperial-age))
+=>
+    (set-goal demand-castle-camel-transition-floor 1)
+)
+
+; Completion witness: castle-camel-transition-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-castle-camel-transition-floor 49)
+        (goal demand-castle-camel-transition-floor 47)
+    )
+    (unit-type-count 329 >= 2)
+=>
+    (set-goal demand-castle-camel-transition-floor 48)
+)
+
+; Pending admission: castle-camel-transition-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-castle-camel-transition-floor 49)
+        (goal demand-castle-camel-transition-floor 47)
+    )
+    (not (unit-type-count 329 >= 2))
+    (up-pending-objects c: 329 >= 1)
+=>
+    (set-goal demand-castle-camel-transition-floor 47)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-camel-transition-floor 49)
+        (goal demand-castle-camel-transition-floor 47)
+    )
+    (not (unit-type-count 329 >= 2))
+    (not (up-pending-objects c: 329 >= 1))
+=>
+    (set-goal demand-castle-camel-transition-floor 1)
+    (set-goal production-retry-barrier-castle-camel-transition-floor 1)
+)
+
+; Action issuance: castle-camel-transition-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-camel-transition-floor 1)
+    (not (unit-type-count 329 >= 2))
+    (goal production-retry-barrier-castle-camel-transition-floor 0)
+    (not (up-pending-objects c: 329 >= 1))
+    (not (unit-type-count 329 >= 2))
+    (goal action-claim-train-arbitration 0)
+    (current-age >= castle-age)
+    (can-train-with-escrow 329)
+    (unit-type-count-total 329 < 2)
+=>
+    (train 329)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-castle-camel-transition-floor 49)
+)
+
+; Pending diagnostics: imperial-halberdier-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 86 and cannot reissue from pending goal 87
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 87 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 88 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-halberdier-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-halberdier-floor in ACTIVE; it is not PENDING.
+; Release: imperial-halberdier-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-halberdier-floor 88)
+    (unit-type-count 359 >= bt-imperial-halberdier-floor)
+=>
+    (set-goal demand-imperial-halberdier-floor 0)
+)
+
+; Recovery: imperial-halberdier-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-halberdier-floor 0)
+    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
+    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-rider-line < 4))))
+=>
+    (set-goal demand-imperial-halberdier-floor 1)
+)
+
+; Completion witness: imperial-halberdier-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-halberdier-floor 89)
+        (goal demand-imperial-halberdier-floor 87)
+    )
+    (unit-type-count 359 >= bt-imperial-halberdier-floor)
+=>
+    (set-goal demand-imperial-halberdier-floor 88)
+)
+
+; Pending admission: imperial-halberdier-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-halberdier-floor 89)
+        (goal demand-imperial-halberdier-floor 87)
+    )
+    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (up-pending-objects c: 359 >= 1)
+=>
+    (set-goal demand-imperial-halberdier-floor 87)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-halberdier-floor 89)
+        (goal demand-imperial-halberdier-floor 87)
+    )
+    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (not (up-pending-objects c: 359 >= 1))
+=>
+    (set-goal demand-imperial-halberdier-floor 1)
+    (set-goal production-retry-barrier-imperial-halberdier-floor 1)
+)
+
+; Action issuance: imperial-halberdier-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-halberdier-floor 1)
+    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (goal production-retry-barrier-imperial-halberdier-floor 0)
+    (not (up-pending-objects c: 359 >= 1))
+    (not (unit-type-count 359 >= bt-imperial-halberdier-floor))
+    (goal action-claim-train-arbitration 0)
+    (or
+        (goal byzantine-army-plan-phase 2)
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+    )
+    (current-age >= imperial-age)
+    (can-train-with-escrow 359)
+    (or
+        (unit-type-count-total 359 < bt-imperial-halberdier-floor)
+        (and
+            (goal byzantine-late-resource-burn 1)
+            (and
+                (goal byzantine-late-upgrade-priority 0)
+                (and
+                (or
+                    (wood-amount > 3000)
+                    (food-amount > 3500)
+                )
+                (unit-type-count-total 359 < bt-imperial-late-halberdier-target)
+            )
+            )
+        )
+    )
+=>
+    (train 359)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-halberdier-floor 89)
+)
+
+; Pending diagnostics: imperial-heavy-camel-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 87 and cannot reissue from pending goal 88
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 88 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 89 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-heavy-camel-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-heavy-camel-floor in ACTIVE; it is not PENDING.
+; Release: imperial-heavy-camel-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-heavy-camel-floor 89)
+    (unit-type-count 330 >= bt-imperial-heavy-camel-target)
+=>
+    (set-goal demand-imperial-heavy-camel-floor 0)
+)
+
+; Recovery: imperial-heavy-camel-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-heavy-camel-floor 0)
+    (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
+    (or (players-unit-type-count any-enemy knight >= 4) (or (players-unit-type-count any-enemy scout-cavalry-line >= 6) (players-unit-type-count any-enemy camel-rider-line >= 4)))
+    (not (and (players-unit-type-count any-enemy knight < 4) (and (players-unit-type-count any-enemy scout-cavalry-line < 6) (players-unit-type-count any-enemy camel-rider-line < 4))))
+=>
+    (set-goal demand-imperial-heavy-camel-floor 1)
+)
+
+; Completion witness: imperial-heavy-camel-floor | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-heavy-camel-floor 90)
+        (goal demand-imperial-heavy-camel-floor 88)
+    )
+    (unit-type-count 330 >= bt-imperial-heavy-camel-target)
+=>
+    (set-goal demand-imperial-heavy-camel-floor 89)
+)
+
+; Pending admission: imperial-heavy-camel-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-heavy-camel-floor 90)
+        (goal demand-imperial-heavy-camel-floor 88)
+    )
+    (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
+    (up-pending-objects c: 330 >= 1)
+=>
+    (set-goal demand-imperial-heavy-camel-floor 88)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-heavy-camel-floor 90)
+        (goal demand-imperial-heavy-camel-floor 88)
+    )
+    (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
+    (not (up-pending-objects c: 330 >= 1))
+=>
+    (set-goal demand-imperial-heavy-camel-floor 1)
+    (set-goal production-retry-barrier-imperial-heavy-camel-floor 1)
+)
+
+; Action issuance: imperial-heavy-camel-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-heavy-camel-floor 1)
+    (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
+    (goal production-retry-barrier-imperial-heavy-camel-floor 0)
+    (not (up-pending-objects c: 330 >= 1))
+    (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
+    (goal action-claim-train-arbitration 0)
+    (or
+        (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
+        (or
+            (players-unit-type-count any-enemy knight >= 4)
+            (or
+                (players-unit-type-count any-enemy scout-cavalry-line >= 6)
+                (or
+                    (players-unit-type-count any-enemy camel-rider-line >= 4)
+                    (unit-type-count 330 >= 1)
+                )
+            )
+        )
+    )
+    (current-age >= imperial-age)
+    (can-train-with-escrow 330)
+    (unit-type-count-total 330 < bt-imperial-heavy-camel-target)
+=>
+    (train 330)
+    (set-goal action-claim-train-arbitration 1)
+    (set-goal demand-imperial-heavy-camel-floor 90)
+)
+
+; Pending diagnostics: water-fishing-lines
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 128 and cannot reissue from pending goal 129
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 129 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 130 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: water-fishing-lines | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-water-fishing-lines in ACTIVE; it is not PENDING.
+; Release: water-fishing-lines | COMPLETE -> RELEASED
+(defrule
+    (goal demand-water-fishing-lines 130)
+    (research-completed 906)
+=>
+    (set-goal demand-water-fishing-lines 0)
+)
+
+; Recovery: water-fishing-lines | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-water-fishing-lines 0)
+    (not (research-completed 906))
+    (goal strategic-primary-intent 1)
+    (map-type islands)
+    (not (research-completed 906))
+=>
+    (set-goal demand-water-fishing-lines 1)
+)
+
+; Completion witness: water-fishing-lines | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-water-fishing-lines 131)
+        (goal demand-water-fishing-lines 129)
+    )
+    (research-completed 906)
+=>
+    (set-goal demand-water-fishing-lines 130)
+)
+
+; Pending admission: water-fishing-lines | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-water-fishing-lines 131)
+        (goal demand-water-fishing-lines 129)
+    )
+    (not (research-completed 906))
+    (up-research-status c: 906 >= 2)
+=>
+    (set-goal demand-water-fishing-lines 129)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-water-fishing-lines 131)
+        (goal demand-water-fishing-lines 129)
+    )
+    (not (research-completed 906))
+    (not (up-research-status c: 906 >= 2))
+=>
+    (set-goal demand-water-fishing-lines 1)
+    (set-goal research-retry-barrier-water-fishing-lines 1)
+)
+
+; Action issuance: water-fishing-lines | ACTIVE -> ISSUED
+(defrule

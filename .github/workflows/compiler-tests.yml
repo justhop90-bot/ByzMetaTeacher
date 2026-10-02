@@ -83,6 +83,13 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Native zero-findings acceptance - patched Byzantine artifact
+        run: |
+          cat tmp/byzantine-parser-chunks/*.perpart > /tmp/byzantine-parser-gate.per
+          python tmp/apply_byzantine_native_fixes.py /tmp/byzantine-parser-gate.per
+          python tmp/split_byzantine_imperial_farm.py /tmp/byzantine-parser-gate.per
+          python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/byzantine-parser-gate.per --report /tmp/native-reports/byzantine-parser-gate.json
+
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
