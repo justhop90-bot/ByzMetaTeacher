@@ -296,6 +296,48 @@ class NativeAttackIrTests(unittest.TestCase):
         self.assertNotEqual(surface.status.value, "contracted")
 
 
+    def test_attack_goal_input_request_binds_shared_goal_state(self):
+        from Compiler.ir.native_attack import NativeAttackGoalInputRequest
+        from Compiler.runtime_binding import GoalSlotRequest
+        from Compiler.ir.model import GoalRole, SemanticId, StorageRequestId
+
+        owner = SemanticId("test", "byzantine-attack-phase")
+        request = GoalSlotRequest(
+            StorageRequestId(owner, "byzantine-attack-phase"),
+            role=GoalRole.PERSISTENT_STATE,
+        )
+        plan = NativeAttackLifecyclePlan(
+            rules=(
+                NativeAttackRule(
+                    identity="goal-gated-attack",
+                    order=1,
+                    facts=(
+                        _expr("(goal byzantine-attack-phase 2)", "goal", "byzantine-attack-phase", "2"),
+                    ),
+                    actions=(
+                        _expr("(attack-now)", "attack-now"),
+                    ),
+                    lifecycle=_REQUIRED_LIFECYCLE,
+                ),
+            ),
+            goal_input_requests=(
+                NativeAttackGoalInputRequest(
+                    identity="goal-gated-attack-input",
+                    rule_identity="goal-gated-attack",
+                    section="FACT",
+                    expression_index=0,
+                    argument_index=0,
+                    request=request,
+                ),
+            ),
+        )
+        registry = default_de_registry()
+        registry.validate_attack_plan(plan)
+        self.assertIn(
+            "goal-gated-attack",
+            tuple(rule.identity for rule in plan.rules),
+        )
+
 class NativeAttackBinderTests(unittest.TestCase):
     def setUp(self):
         registry = default_de_registry()
