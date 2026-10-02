@@ -227,6 +227,95 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train mangonel)", artifact)
         self.assertIn("(research imperial-age)", artifact)
 
+    def test_profile_has_imperial_trash_war_packages(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn(
+            "(players-unit-type-count any-enemy knight >= 3)",
+            demands["imperial-halberdier-counter"].execution.requirements,
+        )
+        self.assertIn(
+            "(players-unit-type-count any-enemy archer-line >= 4)",
+            demands["imperial-elite-skirmisher-counter"].execution.requirements,
+        )
+        self.assertIn(
+            "(train 359)",
+            demands["imperial-halberdier-counter"].execution.action,
+        )
+        self.assertIn(
+            "(train 6)",
+            demands["imperial-elite-skirmisher-counter"].execution.action,
+        )
+        self.assertIn(
+            "(train 330)",
+            demands["imperial-heavy-camel-counter"].execution.action,
+        )
+
+    def test_profile_has_imperial_gunpowder_conversion(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn(
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            demands["imperial-hand-cannoneer-counter"].execution.requirements,
+        )
+        self.assertIn(
+            "(up-research-status c: 47 >= 3)",
+            demands["imperial-hand-cannoneer-counter"].execution.requirements,
+        )
+        self.assertIn(
+            "(train 5)",
+            demands["imperial-hand-cannoneer-counter"].execution.action,
+        )
+        self.assertIn(
+            "(research 47)",
+            demands["imperial-chemistry"].execution.action,
+        )
+
+    def test_profile_has_imperial_cataphract_conversion(self):
+        demands = {item.identity: item for item in self.profile.demands}
+        self.assertIn(
+            "(up-research-status c: 61 >= 3)",
+            demands["imperial-elite-cataphract-floor"].execution.requirements,
+        )
+        self.assertIn(
+            "(up-research-status c: 361 >= 3)",
+            demands["imperial-elite-cataphract-floor"].execution.requirements,
+        )
+        self.assertIn(
+            "(map-type arena)",
+            demands["imperial-elite-cataphract-floor"].execution.requirements,
+        )
+        self.assertIn(
+            "(research 361)",
+            demands["imperial-elite-cataphract"].execution.action,
+        )
+
+    def test_profile_has_imperial_production_conversion(self):
+        from Compiler.clients.basilisk import EconomyMode
+
+        policy = next(
+            item
+            for item in self.profile.economy_controller.policies
+            if item.mode is EconomyMode.IMPERIAL_CONVERSION
+        )
+        self.assertEqual(policy.allocation.food, 40)
+        self.assertEqual(policy.allocation.wood, 25)
+        self.assertEqual(policy.allocation.gold, 35)
+        self.assertEqual(policy.allocation.builders, 7)
+
+        imperial = self.profile.demand("imperial-conversion")
+        self.assertIn(
+            "(unit-type-count-total villager >= 40)",
+            imperial.execution.requirements,
+        )
+
+    def test_imperial_artifact_contains_win_condition_actions(self):
+        artifact = compile_strategy_profile(self.profile, self.effective)
+        self.assertIn("(train 359)", artifact)
+        self.assertIn("(train 6)", artifact)
+        self.assertIn("(train 330)", artifact)
+        self.assertIn("(train 5)", artifact)
+        self.assertIn("(research 361)", artifact)
+        self.assertIn("(research 315)", artifact)
+
     def test_profile_has_long_housing_ladder(self):
         identities = {item.identity for item in self.profile.demands}
         self.assertIn("house-stage-1", identities)
