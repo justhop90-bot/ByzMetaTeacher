@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from ..ast import SourceLocation
-from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
-from ..semantic.analyzer import parse_expression
 from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 from .strategic_number import StrategicNumberOrigin
@@ -95,6 +93,8 @@ def lower_economy_controller(
     plan: EconomyControllerPlan,
     profile,
 ) -> NativeControlPlan:
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
+    from ..semantic.analyzer import parse_expression
     existing_ids = {
         mode.native_strategic_number_id
         for mode in profile.strategic_number_modes
