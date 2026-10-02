@@ -170,6 +170,7 @@ def _research_demand(
     tech = _tech(effective, tech_name)
     token = _slug(tech.name)
     complete_ref = f"{identity}-complete"
+    pending_ref = f"{identity}-pending"
     floors = tuple(ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
     policy = None
     if floors:
@@ -828,9 +829,14 @@ def build_byzantine_stock_strategy(
     The existing Castle profile remains the compatibility baseline. This builder
     composes the new community-derived strategic packs on top of that profile.
     """
-    from .strategy import build_byzantine_castle_strategy
+    from .strategy import (
+        _default_byzantine_attack_plan,
+        _default_byzantine_duc_plan,
+        build_byzantine_castle_strategy,
+    )
 
     base = build_byzantine_castle_strategy(effective)
+    stock_profile_id = "byzantine-stock-v1"
     observations = list(base.observations)
     observed = {item.identity for item in observations}
     for observation in community_strategy_observations(effective):
@@ -852,7 +858,7 @@ def build_byzantine_stock_strategy(
         StrategicMilitaryComposition(
             identity="castle-standard-package",
             production_demands=("castle-knight-floor", "castle-cataphract-floor"),
-            attack_objective="byzantine-castle-pressure",
+            attack_objective="castle-commitment",
         ),
         StrategicMilitaryComposition(
             identity="castle-defense-package",
@@ -869,13 +875,15 @@ def build_byzantine_stock_strategy(
 
     return replace(
         base,
-        profile_id="byzantine-stock-v1",
+        profile_id=stock_profile_id,
         demands=tuple(demands),
         observations=tuple(observations),
         military_compositions=tuple(compositions),
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
         ),
+        attack_plan=_default_byzantine_attack_plan(stock_profile_id),
+        duc_plan=_default_byzantine_duc_plan(stock_profile_id),
         envelope=replace(
             base.envelope,
             maps=("ARABIA", "ARENA", "STANDARD_LAND", "HYBRID", "ISLANDS"),
