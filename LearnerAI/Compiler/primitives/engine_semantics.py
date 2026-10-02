@@ -263,7 +263,6 @@ _ADMISSIBILITY_SPECS = (
 _ARBITRATION_SPECS = (
     ("can-afford-building", "arbitration.building.affordability"),
     ("can-afford-research", "arbitration.research.affordability"),
-    ("up-point-distance", "arbitration.wall.anchor-distance"),
 )
 
 _FEASIBILITY_SPECS = (
@@ -286,6 +285,10 @@ _ACTION_SPECS = (
     ("build", "execution.build.request"),
     ("train", "execution.train.request"),
     ("research", "execution.research.request"),
+)
+
+_NATIVE_CONTROL_FACT_SPECS = (
+    ("up-point-distance", "arbitration.wall.anchor-distance"),
 )
 
 _NATIVE_CONTROL_ACTION_SPECS = (
@@ -788,7 +791,13 @@ def default_native_controller_executable_commands() -> tuple[str, ...]:
 
 def default_native_control_plane_executable_commands() -> tuple[str, ...]:
     """Return commands promoted through the typed native control plane."""
-    return tuple(command for command, _identity in _NATIVE_CONTROL_ACTION_SPECS)
+    return tuple(
+        command
+        for command, _identity in (
+            *_NATIVE_CONTROL_FACT_SPECS,
+            *_NATIVE_CONTROL_ACTION_SPECS,
+        )
+    )
 
 
 
@@ -874,6 +883,11 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.append(_escrow_release_mapping())
     mappings.append(_escrow_percentage_mapping())
     mappings.append(_attack_issue_mapping())
+    mappings.extend(
+        _fact_mapping(command, identity, "ARBITRATION")
+        for command, identity in _NATIVE_CONTROL_FACT_SPECS
+    )
+
     mappings.extend(
         EngineSemanticMapping(
             identity=identity,
