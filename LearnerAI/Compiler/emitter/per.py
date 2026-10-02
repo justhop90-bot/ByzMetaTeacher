@@ -519,9 +519,35 @@ def emit(
                 attachment.owned_rule_identity, {}
             ).setdefault(attachment.action_index, []).append(attachment)
 
+        attack_state_bindings = {}
+        for state in control_plan.states if control_plan is not None else ():
+            if state.identifier in {
+                rule.activation_state_name
+                for rule in native_attack_plan.rules
+                if rule.activation_state_name is not None
+            }:
+                binding = bindings.binding_for(state.request.request_id)
+                if not isinstance(binding, GoalSlot):
+                    raise CompileError(
+                        f"EMITTER-ATTACK-LIFECYCLE: attack state '{state.identifier}' "
+                        "did not resolve to a GoalSlot"
+                    )
+                attack_state_bindings[state.identifier] = binding.id.value
+
         for rule in native_attack_plan.rules:
             out.append(f"; Native attack rule: {rule.identity}")
             out.append("(defrule")
+            if rule.activation_state_name is not None:
+                goal_id = attack_state_bindings.get(rule.activation_state_name)
+                if goal_id is None:
+                    raise CompileError(
+                        f"EMITTER-ATTACK-LIFECYCLE: attack rule '{rule.identity}' "
+                        f"references missing control state '{rule.activation_state_name}'"
+                    )
+                assert rule.activation_state_value is not None
+                out.append(
+                    f"    (goal {goal_id} {rule.activation_state_value})"
+                )
             out.extend(f"    {fact.source}" for fact in rule.facts)
             out.append("=>")
             for action_index, action in enumerate(rule.actions):
@@ -537,6 +563,13 @@ def emit(
                         f"{attachment.native_strategic_number_id} {attachment.value})"
                     )
                 out.append(f"    {action.source}")
+                if (
+                    action.head == "attack-now"
+                    and rule.issued_state_value is not None
+                    and rule.activation_state_name is not None
+                ):
+                    goal_id = attack_state_bindings[rule.activation_state_name]
+                    out.append(f"    (set-goal {goal_id} {rule.issued_state_value})")
             out += [")", ""]
 
     if escrow_plan is not None and not escrow_plan.empty:
