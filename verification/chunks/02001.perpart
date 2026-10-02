@@ -1,0 +1,999 @@
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-guard-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-castle-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-keep-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point > 32)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-watch-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= castle-age)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-bombard-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-guard-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (current-age >= feudal-age)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point > 32)
+    (up-point-distance byzantine-wall-watch-point byzantine-wall-outpost-point <= 48)
+=>
+    (set-goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+)
+; No pair survived the bounded geometry scan. Wait rather than hammering DUC.
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-acquire)
+    (goal byzantine-wall-anchor-pair 0)
+=>
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count castle == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count keep == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count town-center == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count keep == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count castle == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count bombard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count keep == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count guard-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count bombard-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count guard-tower == 0)
+        (building-type-count watch-tower == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count guard-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (or
+        (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+        (or
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+            (goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+        )
+    )
+    (or
+        (building-type-count watch-tower == 0)
+        (building-type-count outpost == 0)
+    )
+=>
+    (set-goal byzantine-wall-anchor-pair 0)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-selected)
+    (up-compare-goal byzantine-wall-anchor-pair > 0)
+=>
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-castle)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count castle >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-castle-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-keep)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count keep >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-keep-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count town-center >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 117)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-guard-tower)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-guard-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-watch-tower)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-watch-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-town-center-outpost)
+    (current-age >= feudal-age)
+    (building-type-count town-center >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-tc-point c: 72)
+=>
+    (up-build-line byzantine-wall-tc-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-keep)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count keep >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-keep-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-castle-outpost)
+    (current-age >= castle-age)
+    (building-type-count castle >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-castle-point c: 117)
+=>
+    (up-build-line byzantine-wall-castle-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-bombard-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count bombard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-bombard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-keep-outpost)
+    (current-age >= castle-age)
+    (building-type-count keep >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-keep-point c: 117)
+=>
+    (up-build-line byzantine-wall-keep-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-guard-tower)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count guard-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-guard-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-watch-tower)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-watch-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-bombard-tower-outpost)
+    (current-age >= castle-age)
+    (building-type-count bombard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 117))
+    (up-can-build-line 0 byzantine-wall-bombard-point c: 117)
+=>
+    (up-build-line byzantine-wall-bombard-point byzantine-wall-outpost-point c: 117)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-watch-tower)
+    (current-age >= feudal-age)
+    (building-type-count guard-tower >= 1)
+    (building-type-count watch-tower >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-guard-point c: 72)
+=>
+    (up-build-line byzantine-wall-guard-point byzantine-wall-watch-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-guard-tower-outpost)
+    (current-age >= feudal-age)
+    (building-type-count guard-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-guard-point c: 72)
+=>
+    (up-build-line byzantine-wall-guard-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+(defrule
+    (goal byzantine-wall-geometry-state byzantine-wall-geometry-armed)
+    (goal demand-adaptive-stone-wall 1)
+    (goal action-claim-build-pass-singleton 0)
+    (goal byzantine-wall-anchor-pair byzantine-wall-pair-watch-tower-outpost)
+    (current-age >= feudal-age)
+    (building-type-count watch-tower >= 1)
+    (building-type-count outpost >= 1)
+    (up-pending-objects c: 72 == 0)
+    (not (up-pending-placement c: 72))
+    (up-can-build-line 0 byzantine-wall-watch-point c: 72)
+=>
+    (up-build-line byzantine-wall-watch-point byzantine-wall-outpost-point c: 72)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-stone-wall 46)
+    (set-goal byzantine-wall-geometry-state byzantine-wall-geometry-idle)
+    (enable-timer byzantine-wall-geometry-timer bt-byzantine-wall-geometry-seconds)
+)
+
+; Native attack lifecycle plan
+; Castle attack-now is intentionally subordinated to the persistent army plan.
+; The plan's own attack trigger lives below with reinforcement/reassessment.
+
+; Native escrow release plan
+; Native escrow release rule: 0
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 9
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 37
+(defrule
+    (true)
+=>
+    (release-escrow food)
+)
+
+; Native escrow release rule: 38
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 39
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 40
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 41
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 42
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 43
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 44
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
