@@ -252,6 +252,28 @@ def lower_economy_controller(
                 )
             )
 
+    # Stone is deliberately not part of the generic economy allocation model.
+    # The Byzantine Dark Age contract is nevertheless explicit: BASE writes
+    # zero stone rather than inheriting an engine/default allocation.
+    writer_rules.append(
+        NativeControlRule(
+            "economy-controller-write-base-sn-stone-gatherer-percentage",
+            facts=(
+                parse_expression("(goal economy-posture 1)", SourceLocation(1)),
+                parse_expression(
+                    "(up-compare-sn sn-stone-gatherer-percentage != 0)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(
+                parse_expression(
+                    "(set-strategic-number sn-stone-gatherer-percentage 0)",
+                    SourceLocation(1),
+                ),
+            ),
+        )
+    )
+
     return NativeControlPlan(
         states=tuple(states),
         rules=selection_rules + tuple(writer_rules),
