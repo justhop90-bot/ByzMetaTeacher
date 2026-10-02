@@ -384,7 +384,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-enemy-castle-cleared",
-            "(players-building-type-count any-enemy 0 < 1)",
+            f"(players-building-type-count any-enemy {int(castle.id)} < 1)",
             castle.provenance,
         ),
         _observation(
