@@ -56,7 +56,11 @@ class NativePersistentControlPlaneTests(unittest.TestCase):
                 NativeControlRule(
                     "issue-wall-line",
                     facts=(
-                        Expression("(true)", "true", ()),
+                        Expression(
+                            "(current-age >= feudal-age)",
+                            "current-age",
+                            (">=", "feudal-age"),
+                        ),
                     ),
                     actions=(
                         Expression(
