@@ -18,6 +18,7 @@ class EconomyMode(IntEnum):
     WATER_CONTROL = 5
     CASTLE_CONVERSION = 6
     IMPERIAL_CONVERSION = 7
+    FOOD_RECOVERY = 8
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,7 @@ def default_byzantine_economy_controller() -> EconomyControllerPlan:
             EconomyModePolicy(EconomyMode.WATER_CONTROL, EconomyAllocation(38, 42, 20, 8)),
             EconomyModePolicy(EconomyMode.CASTLE_CONVERSION, EconomyAllocation(45, 25, 30, 7)),
             EconomyModePolicy(EconomyMode.IMPERIAL_CONVERSION, EconomyAllocation(40, 25, 35, 7)),
+            EconomyModePolicy(EconomyMode.FOOD_RECOVERY, EconomyAllocation(70, 20, 10, 5)),
         ),
     )
 
@@ -231,6 +233,13 @@ def lower_economy_controller(
             "economy-controller-select-imperial-conversion",
             EconomyMode.IMPERIAL_CONVERSION,
             "(current-age >= imperial-age)",
+        ),
+        # Food recovery deliberately comes after every normal age/mode selector.
+        # It is an emergency policy override, not a competing age trajectory.
+        select_rule(
+            "economy-controller-select-food-recovery",
+            EconomyMode.FOOD_RECOVERY,
+            "(food-amount < 350)",
         ),
     )
 
