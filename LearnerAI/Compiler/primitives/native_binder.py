@@ -353,6 +353,40 @@ class NativeSemanticBinder:
 
         primitive = self.adapter_lookup(name)
         if primitive is None:
+            mapping = self.semantic_mappings.for_command(name)
+            if mapping is not None and mapping.status is EngineSemanticMappingStatus.CONTRACTED:
+                mapping_ok, mapping_message = self.semantic_mappings.validate_primitive(
+                    command=name,
+                    native_kind=native.command_type,
+                    identity=mapping.identity,
+                )
+                if mapping_ok:
+                    diagnostic = self._diagnostic(
+                        name,
+                        NativeSupportState.ENGINE_SEMANTICS_MAPPED,
+                        "NATIVE-SUPPORT-004",
+                        "info",
+                        f"native control semantic mapping registered: {mapping.identity}",
+                    )
+                    return NativeSupportAssessment(
+                        name,
+                        NativeSupportState.ENGINE_SEMANTICS_MAPPED,
+                        "native command has a contracted engine semantic mapping",
+                        (diagnostic,),
+                    )
+                diagnostic = self._diagnostic(
+                    name,
+                    NativeSupportState.UNSUPPORTED,
+                    "NATIVE-SUPPORT-006",
+                    "error",
+                    mapping_message,
+                )
+                return NativeSupportAssessment(
+                    name,
+                    NativeSupportState.UNSUPPORTED,
+                    diagnostic.message,
+                    (diagnostic,),
+                )
             engine_effect = self.engine_effects.get(name)
             if engine_effect is not None:
                 effect_ok, effect_message = self.engine_effects.validate_effect(
