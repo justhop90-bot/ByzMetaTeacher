@@ -8,6 +8,9 @@ on:
       - main
     paths:
       - "LearnerAI/Compiler/**"
+      - "LearnerAI/Compiler/bots/**"
+      - "LearnerAI/Compiler/tests/test_byzantine_bot.py"
+      - "tools/build_byzantine_bot.py"
       - ".github/workflows/compiler-tests.yml"
   pull_request:
     paths:
@@ -87,6 +90,10 @@ jobs:
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
         run: python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/CompilerFixture.per --report /tmp/native-reports/compiler-fixture.json
+      - name: Build Byzantine Core v1 deployable artifact
+        run: python tools/build_byzantine_bot.py
+      - name: Native zero-findings acceptance - Byzantine Core v1 bot
+        run: python LearnerAI/Compiler/tests/assert_native_zero.py dist/byzantine/Byzantine.per --report /tmp/native-reports/byzantine-bot.json
       - name: Native zero-findings acceptance - strategy vertical-slice fixture
         run: |
           python - <<'PY'
@@ -299,6 +306,7 @@ jobs:
           path: |
             /tmp/native-reports
             /tmp/CompilerFixture.per
+            dist/byzantine
             /tmp/basilisk-strategy.per
             /tmp/basilisk-strategy-runtime.per
             /tmp/byzantine-strategy-control-slice.per
