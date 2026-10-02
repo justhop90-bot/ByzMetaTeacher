@@ -80,7 +80,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(research loom)", first)
         self.assertIn("(train villager)", first)
         self.assertIn("(train cataphract)", first)
-        self.assertIn("(build barracks)", first)
+        self.assertIn("(build 12)", first)
         self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", first)
         self.assertIn("(train varangian-guard)", first)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", first)
@@ -91,7 +91,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         demands = {item.identity: item for item in self.profile.demands}
         barracks = demands["feudal-barracks"]
         self.assertIn("(current-age >= feudal-age)", barracks.execution.requirements)
-        self.assertIn("(can-build barracks)", barracks.execution.requirements)
+        self.assertIn("(can-build 12)", barracks.execution.requirements)
         self.assertIn("MOUNTED_PRESSURE_FEUDAL", {
             item.identity for item in self.profile.counter_packages
         })
@@ -414,7 +414,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             self.assertIn(identity, demands)
 
         artifact = compile_strategy_profile(self.profile, self.effective)
-        self.assertIn("(build dock)", artifact)
+        self.assertIn("(build 45)", artifact)
         self.assertIn("(train fishing-ship)", artifact)
         self.assertIn("(train transport-ship)", artifact)
         self.assertIn("(train fire-galley)", artifact)
@@ -427,7 +427,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
 
     def test_compilation_contains_staged_housing(self):
         artifact = compile_strategy_profile(self.profile, self.effective)
-        self.assertIn("(build house)", artifact)
+        self.assertIn("(build 70)", artifact)
         self.assertIn("(goal strategy-posture 3)", artifact)
 
 
