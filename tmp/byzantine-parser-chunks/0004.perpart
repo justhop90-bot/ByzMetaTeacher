@@ -1,0 +1,1000 @@
+=>
+    (release-escrow food)
+)
+
+; Native escrow release rule: 52
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 53
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 54
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 55
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 56
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 57
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 58
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 59
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 60
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 61
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 62
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 80
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 81
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+)
+
+; Native escrow release rule: 82
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 83
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 84
+(defrule
+    (true)
+=>
+    (release-escrow food)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 85
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native escrow release rule: 86
+(defrule
+    (true)
+=>
+    (release-escrow wood)
+    (release-escrow gold)
+)
+
+; Native persistent control plane
+(defconst arb-c01 148)
+(defconst arb-c02 149)
+(defconst arb-c03 150)
+(defconst arb-o01 151)
+(defconst arb-o02 152)
+(defconst arb-o03 153)
+(defconst arb-o04 154)
+(defconst arb-o05 155)
+(defconst arb-o06 156)
+(defconst arb-o07 157)
+(defconst arb-o08 158)
+(defconst arb-o09 159)
+(defconst counter-package-infantry_pressure_castle 143)
+(defconst counter-package-mounted_pressure_castle 144)
+(defconst counter-package-mounted_pressure_feudal 145)
+(defconst counter-package-ranged_pressure_feudal 146)
+(defconst counter-package-siege_pressure_castle 147)
+(defconst economy-posture 141)
+(defconst opening-plan 142)
+(defconst sn-food-gatherer-percentage 117)
+(defconst sn-gold-gatherer-percentage 118)
+(defconst sn-native-18 18)
+(defconst sn-native-227 227)
+(defconst sn-native-36 36)
+(defconst sn-native-4 4)
+(defconst sn-native-42 42)
+(defconst sn-percent-civilian-builders 1)
+(defconst sn-wood-gatherer-percentage 120)
+(defconst strategic-primary-intent 161)
+(defconst strategy-posture 162)
+(defconst transport-phase 163)
+(defconst water-posture 164)
+(defconst byzantine-natural-food-state 165)
+(defconst byzantine-natural-food-stable 0)
+(defconst byzantine-natural-food-transition 1)
+(defconst byzantine-natural-food-farms 2)
+; UserPatch food-source classes used by community food retasking.
+(defconst livestock-food 958)
+(defconst forage-food 16)
+(defconst fisher-food 17)
+(defconst hunting-food 15)
+(defconst byzantine-resource-claim 269)
+(defconst byzantine-scout-phase 270)
+; NAGA-derived scouting intelligence state. Observation stays separate from
+; military execution: the scout records what it has actually searched, while
+; package arbitration consumes the persistent sighting goals below.
+(defconst byzantine-scout-focus-player 381)
+(defconst byzantine-scout-search-state 382)
+(defconst byzantine-scout-sighted-stable 386)
+(defconst byzantine-scout-sighted-range 387)
+(defconst byzantine-scout-sighted-barracks 388)
+(defconst byzantine-scout-sighted-siege 389)
+; Stored enemy resource geometry. Each point consumes the two-goal position span.
+(defconst byzantine-scout-wood-point 390)
+(defconst byzantine-scout-gold-point 392)
+(defconst byzantine-scout-intel-timer 10)
+(defconst bt-byzantine-scout-intel-seconds 30)
+
+; -----------------------------------------------------------------------------
+
+
+(defconst demand-economy-barracks-floor-1 271)
+(defconst issued-economy-barracks-floor-1 272)
+(defconst pending-economy-barracks-floor-1 273)
+(defconst complete-economy-barracks-floor-1 274)
+; Byzantine Castle-Age research lifecycle. This is deliberately separate from
+; demand-castle-commitment, which owns physical Castle construction only.
+(defconst demand-castle-age-transition 275)
+(defconst pending-castle-age-transition 276)
+(defconst complete-castle-age-transition 277)
+(defconst issued-castle-age-transition 278)
+(defconst research-retry-barrier-castle-age-transition 280)
+(defconst bt-castle-age-villager-maturity 28)
+; Byzantine Imperial-Age maturity follows the community-native civilian
+; bank discipline. This is a policy threshold, not an engine fact.
+(defconst bt-imperial-age-villager-maturity 50)
+
+; Imperial military composition arbitration.
+; 0 = Byzantine balanced backbone
+; 1 = mounted counter package
+; 2 = ranged counter package
+; 3 = infantry pressure / Cataphract package
+; 4 = siege-pressure / raiding package
+(defconst byzantine-imperial-composition-posture 281)
+(defconst byzantine-imperial-posture-balanced 0)
+(defconst byzantine-imperial-posture-mounted 1)
+(defconst byzantine-imperial-posture-ranged 2)
+(defconst byzantine-imperial-posture-infantry 3)
+(defconst byzantine-imperial-posture-siege 4)
+
+; Post-Castle military upgrade/reinforcement demand channels.
+(defconst demand-imperial-elite-cataphract-upgrade 282)
+(defconst pending-imperial-elite-cataphract-upgrade 283)
+(defconst complete-imperial-elite-cataphract-upgrade 284)
+(defconst issued-imperial-elite-cataphract-upgrade 285)
+(defconst research-retry-barrier-imperial-elite-cataphract-upgrade 286)
+(defconst demand-imperial-elite-varangian-upgrade 287)
+(defconst pending-imperial-elite-varangian-upgrade 288)
+(defconst complete-imperial-elite-varangian-upgrade 289)
+(defconst issued-imperial-elite-varangian-upgrade 290)
+(defconst research-retry-barrier-imperial-elite-varangian-upgrade 291)
+(defconst demand-imperial-elite-skirmisher-upgrade 292)
+(defconst pending-imperial-elite-skirmisher-upgrade 293)
+(defconst complete-imperial-elite-skirmisher-upgrade 294)
+(defconst issued-imperial-elite-skirmisher-upgrade 295)
+(defconst research-retry-barrier-imperial-elite-skirmisher-upgrade 297)
+
+; Persistent Byzantine army plan.
+; 0 = pre-Castle army policy inactive
+; 1 = Castle standing army
+; 2 = Imperial standing army
+(defconst byzantine-army-plan-phase 298)
+(defconst byzantine-army-attack-ready 299)
+(defconst byzantine-army-reinforcement 300)
+(defconst byzantine-army-stale-state 367)
+(defconst byzantine-army-stale-timer 6)
+(defconst byzantine-army-stale-ready 0)
+(defconst byzantine-army-stale-armed 1)
+(defconst byzantine-army-stale-triggered 2)
+(defconst bt-army-stale-seconds 90)
+; Fortification locality probe cadence. Timer is cadence only; the DUC probe
+; remains the world-state witness for fortification pressure.
+(defconst byzantine-fortification-probe-timer 7)
+(defconst bt-fortification-probe-seconds 60)
+; Per-pass surplus-spending arbitration. This selects one existing spend channel
+; before the Market residual layer so multiple late-bank demands do not compete.
+(defconst byzantine-surplus-spend-claim 368)
+(defconst byzantine-surplus-spend-resource 369)
+(defconst byzantine-surplus-resource-idle 0)
+(defconst byzantine-surplus-resource-gold 1)
+(defconst byzantine-surplus-resource-wood 2)
+(defconst byzantine-surplus-resource-food 3)
+(defconst byzantine-tc2-complete 301)
+(defconst byzantine-late-resource-burn 302)
+(defconst byzantine-late-upgrade-priority 348)
+(defconst byzantine-late-research-claim 349)
+
+(defconst byzantine-siege-approach 350)
+(defconst byzantine-siege-approach-claim 351)
+(defconst byzantine-siege-breach-witness 352)
+(defconst byzantine-fortification-threat 353)
+(defconst byzantine-remote-resource-state 354)
+(defconst byzantine-remote-resource-kind 355)
+(defconst byzantine-market-state 356)
+(defconst byzantine-economy-delta-state 380)
+(defconst byzantine-economy-delta-timer 9)
+(defconst byzantine-economy-delta-idle 0)
+(defconst byzantine-economy-delta-wood-gold 1)
+(defconst byzantine-economy-delta-wood-food 2)
+(defconst byzantine-economy-delta-gold-food 3)
+(defconst byzantine-economy-delta-gold-wood 4)
+(defconst byzantine-economy-delta-food-gold 5)
+(defconst byzantine-economy-delta-food-wood 6)
+(defconst byzantine-economy-delta-step 2)
+(defconst bt-economy-delta-cooldown-seconds 45)
+(defconst bt-economy-delta-wood-release 3500)
+(defconst bt-economy-delta-gold-release 3000)
+(defconst bt-economy-delta-food-release 3500)
+(defconst bt-economy-delta-gold-low 2200)
+(defconst bt-economy-delta-food-low 1800)
+(defconst bt-economy-delta-wood-low 900)
+(defconst bt-economy-delta-wood-recovered 1600)
+(defconst bt-economy-delta-gold-surplus 4500)
+(defconst bt-economy-delta-wood-surplus 5000)
+(defconst bt-economy-delta-food-surplus 5000)
+
+(defconst byzantine-siege-approach-normal 0)
+(defconst byzantine-siege-approach-fortified 1)
+(defconst byzantine-siege-approach-staging 2)
+(defconst byzantine-siege-approach-escorted 3)
+(defconst byzantine-siege-approach-breach 4)
+(defconst byzantine-siege-approach-assault 5)
+(defconst byzantine-siege-approach-recover 6)
+
+(defconst byzantine-remote-resource-idle 0)
+(defconst byzantine-remote-resource-observe 1)
+(defconst byzantine-remote-resource-committed 2)
+(defconst byzantine-remote-resource-verify 3)
+(defconst byzantine-remote-resource-recover 4)
+(defconst byzantine-remote-resource-none 0)
+(defconst byzantine-remote-resource-wood 1)
+(defconst byzantine-remote-resource-gold 2)
+; Resource-camp productivity probe. A productive camp is witnessed by assigned
+; villagers, not by the number of camp buildings that happen to exist.
+(defconst byzantine-remote-resource-productivity-state 370)
+(defconst byzantine-remote-resource-productivity-camp-id 371)
+(defconst byzantine-remote-resource-productivity-search 372)
+(defconst byzantine-remote-resource-productivity-point 376)
+(defconst byzantine-remote-resource-productivity-worker-search 378)
+(defconst byzantine-remote-resource-productivity-timer 8)
+(defconst bt-resource-productivity-seconds 30)
+(defconst bt-resource-productivity-local-radius 8)
+(defconst bt-resource-productive-gatherers 2)
+(defconst byzantine-remote-productivity-idle 0)
+(defconst byzantine-remote-productivity-find-resource 1)
+(defconst byzantine-remote-productivity-find-camp 2)
+(defconst byzantine-remote-productivity-find-workers 3)
+(defconst byzantine-remote-productivity-decide 4)
+(defconst byzantine-remote-resource-productivity-search-local-list 373)
+(defconst byzantine-remote-resource-productivity-search-remote-list 375)
+(defconst byzantine-remote-resource-productivity-worker-list 379)
+
+(defconst byzantine-market-idle 0)
+(defconst byzantine-market-sell-wood 1)
+(defconst byzantine-market-buy-food 2)
+(defconst byzantine-market-buy-wood 3)
+; Fortification locality probe state. The probe anchors defensive checks to the
+; nearest enemy TC rather than treating any enemy defensive building anywhere
+; on the map as relevant to the current attack.
+(defconst byzantine-fortification-probe-state 360)
+(defconst byzantine-fortification-probe-found 361)
+(defconst byzantine-fortification-probe-player 362)
+(defconst byzantine-fortification-probe-point 364)
+(defconst byzantine-fortification-probe-search 366)
+(defconst byzantine-fortification-probe-idle 0)
+(defconst byzantine-fortification-probe-anchor 1)
+(defconst byzantine-fortification-probe-castle 2)
+(defconst byzantine-fortification-probe-tower 3)
+(defconst byzantine-fortification-probe-wall 4)
+(defconst byzantine-fortification-probe-finish 5)
+(defconst bt-tower-class 952)
+(defconst bt-wall-class 927)
+(defconst bt-castle-fortification-local-radius 16)
+(defconst bt-local-wall-count 4)
+(defconst bt-castle-cataphract-floor 4)
+(defconst bt-castle-varangian-floor 3)
+(defconst bt-castle-skirmisher-floor 4)
+(defconst bt-castle-mangonel-floor 2)
+(defconst bt-castle-monk-floor 1)
+(defconst bt-imperial-cavalier-target 2)
+(defconst bt-imperial-hussar-target 4)
+(defconst bt-imperial-onager-target 2)
+(defconst bt-imperial-heavy-camel-target 3)
+(defconst bt-imperial-cataphract-floor 6)
+(defconst bt-imperial-varangian-floor 6)
+(defconst bt-imperial-arbalester-floor 6)
+(defconst bt-imperial-halberdier-floor 8)
+(defconst bt-imperial-late-cataphract-target 18)
+(defconst bt-imperial-late-varangian-target 14)
+(defconst bt-imperial-late-arbalester-target 14)
+(defconst bt-imperial-late-halberdier-target 18)
+(defconst bt-imperial-late-bombard-target 4)
+(defconst bt-imperial-late-trebuchet-target 4)
+(defconst bt-imperial-late-ram-target 4)
+(defconst bt-imperial-bombard-floor 2)
+(defconst bt-imperial-trebuchet-target 2)
+(defconst bt-castle-attack-siege-target 2)
+(defconst bt-imperial-attack-siege-target 2)
+(defconst byzantine-siege-scale 320)
+(defconst byzantine-siege-scale-standard 1)
+(defconst byzantine-siege-scale-fortified 2)
+(defconst bt-imperial-fortified-trebuchet-target 3)
+(defconst bt-imperial-fortified-bombard-target 3)
+(defconst bt-imperial-fortified-ram-target 4)
+; Persistent TC-aware farm policy. Values are unit/building counts, not goal IDs.
+(defconst bt-castle-farm-target-1tc 12)
+(defconst bt-castle-farm-target-2tc 20)
+(defconst bt-castle-farm-target-3tc 30)
+(defconst bt-imperial-farm-target-1tc 18)
+(defconst bt-imperial-farm-target-2tc 26)
+(defconst bt-imperial-farm-target-3tc 48)
+(defconst bt-boom-mill-target-1tc 1)
+(defconst bt-boom-mill-target-2tc 2)
+(defconst bt-boom-mill-target-3tc 3)
+(defconst construction-retry-barrier-economy-barracks-floor-1 266)
+
+; Native control rule: strategy-posture-initialize-000
+(defrule
+    (goal strategy-posture 0)
+=>
+    (set-goal strategy-posture 0)
+    (disable-self)
+)
+
+; Native control rule: strategy-posture-transition-001
+(defrule
+    (and (or (goal strategy-posture 1) (goal strategy-posture 3)) (and (current-age >= castle-age) (building-type-count-total castle >= 1)))
+=>
+    (set-goal strategy-posture 4)
+)
+
+; Native control rule: strategy-posture-transition-002
+(defrule
+    (and (or (goal strategy-posture 3) (goal strategy-posture 4)) (players-unit-type-count any-enemy knight >= 3))
+=>
+    (set-goal strategy-posture 1)
+)
+
+; Native control rule: strategy-posture-transition-003
+(defrule
+    (and (goal strategy-posture 1) (players-unit-type-count any-enemy knight < 3))
+=>
+    (set-goal strategy-posture 3)
+)
+
+; Native control rule: strategy-posture-transition-004
+(defrule
+    (and (goal strategy-posture 0) (current-age == dark-age))
+=>
+    (set-goal strategy-posture 3)
+)
+
+; Native control rule: strategy-posture-transition-005
+(defrule
+    (and (goal strategy-posture 0) (current-age >= feudal-age))
+=>
+    (set-goal strategy-posture 3)
+)
+
+; Native control rule: strategic-arbitration-state-initialize
+(defrule
+    (goal strategic-primary-intent 0)
+=>
+    (set-goal arb-o01 0)
+    (set-goal arb-o02 0)
+    (set-goal arb-o03 0)
+    (set-goal arb-o04 0)
+    (set-goal arb-o05 0)
+    (set-goal arb-o06 0)
+    (set-goal arb-o07 0)
+    (set-goal arb-o08 0)
+    (set-goal arb-o09 0)
+    (set-goal arb-c01 0)
+    (set-goal arb-c02 0)
+    (set-goal arb-c03 0)
+    (disable-self)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-water-islands
+(defrule
+    (goal arb-o01 0)
+    (map-type islands)
+=>
+    (set-goal arb-o01 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-water-islands
+(defrule
+    (goal arb-o01 1)
+    (not (map-type islands))
+=>
+    (set-goal arb-o01 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-current-feudal-age
+(defrule
+    (goal arb-o02 0)
+    (current-age >= feudal-age)
+=>
+    (set-goal arb-o02 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-current-feudal-age
+(defrule
+    (goal arb-o02 1)
+    (not (current-age >= feudal-age))
+=>
+    (set-goal arb-o02 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-castle-complete
+(defrule
+    (goal arb-o03 0)
+    (and (current-age >= castle-age) (building-type-count-total castle >= 1))
+=>
+    (set-goal arb-o03 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-castle-complete
+(defrule
+    (goal arb-o03 1)
+    (not (and (current-age >= castle-age) (building-type-count-total castle >= 1)))
+=>
+    (set-goal arb-o03 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-current-imperial-age
+(defrule
+    (goal arb-o04 0)
+    (current-age >= imperial-age)
+=>
+    (set-goal arb-o04 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-current-imperial-age
+(defrule
+    (goal arb-o04 1)
+    (not (current-age >= imperial-age))
+=>
+    (set-goal arb-o04 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-enemy-pressure
+(defrule
+    (goal arb-o05 0)
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+=>
+    (set-goal arb-o05 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-enemy-pressure
+(defrule
+    (goal arb-o05 1)
+    (not (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5))))
+=>
+    (set-goal arb-o05 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-castle-age
+(defrule
+    (goal arb-o06 0)
+    (current-age >= castle-age)
+=>
+    (set-goal arb-o06 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-castle-age
+(defrule
+    (goal arb-o06 1)
+    (not (current-age >= castle-age))
+=>
+    (set-goal arb-o06 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-arena-map
+(defrule
+    (goal arb-o07 0)
+    (map-type arena)
+=>
+    (set-goal arb-o07 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-arena-map
+(defrule
+    (goal arb-o07 1)
+    (not (map-type arena))
+=>
+    (set-goal arb-o07 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-town-center-capability
+(defrule
+    (goal arb-o08 0)
+    (building-type-count-total 109 < 2)
+=>
+    (set-goal arb-o08 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-town-center-capability
+(defrule
+    (goal arb-o08 1)
+    (not (building-type-count-total 109 < 2))
+=>
+    (set-goal arb-o08 0)
+)
+
+; Native control rule: strategic-arbitration-observation-enable-strategy-town-center-complete
+(defrule
+    (goal arb-o09 0)
+    (building-type-count-total 109 >= 2)
+=>
+    (set-goal arb-o09 1)
+)
+
+; Native control rule: strategic-arbitration-observation-disable-strategy-town-center-complete
+(defrule
+    (goal arb-o09 1)
+    (not (building-type-count-total 109 >= 2))
+=>
+    (set-goal arb-o09 0)
+)
+
+; Native control rule: strategic-arbitration-candidate-enable-water-investment
+(defrule
+    (goal arb-c01 0)
+    (goal arb-o01 1)
+=>
+    (set-goal arb-c01 1)
+)
+
+; Native control rule: strategic-arbitration-candidate-disable-water-investment
+(defrule
+    (goal arb-c01 1)
+    (not (goal arb-o01 1))
+=>
+    (set-goal arb-c01 0)
+)
+
+; Native control rule: strategic-arbitration-candidate-enable-castle-trajectory
+(defrule
+    (goal arb-c02 0)
+    (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (goal arb-o01 0))
+=>
+    (set-goal arb-c02 1)
+)
+
+; Native control rule: strategic-arbitration-candidate-disable-castle-trajectory
+; Castle trajectory is strategic intent, not a pressure veto.
+; Enemy pressure is owned by the military layer; it may delay execution but must not
+; erase the Castle/boom path and strand the construction demand.
+(defrule
+    (goal arb-c02 1)
+    (not (and (and (and (goal arb-o02 1) (goal arb-o03 0)) (goal arb-o04 0)) (goal arb-o01 0)))
+=>
+    (set-goal arb-c02 0)
+)
+
+; Native control rule: strategic-arbitration-candidate-enable-two-tc-expansion
+(defrule
+    (goal arb-c03 0)
+    (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (goal arb-o01 0))
+=>
+    (set-goal arb-c03 1)
+)
+
+; Native control rule: strategic-arbitration-candidate-disable-two-tc-expansion
+(defrule
+    (goal arb-c03 1)
+    (not (and (and (and (goal arb-o06 1) (goal arb-o08 1)) (goal arb-o03 1)) (goal arb-o01 0)))
+=>
+    (set-goal arb-c03 0)
+)
+
+; Native control rule: strategic-primary-intent-select-water-investment-from-0
+(defrule
+    (and (goal strategic-primary-intent 0) (goal arb-c01 1))
+=>
+    (set-goal strategic-primary-intent 1)
+)
+
+; Native control rule: strategic-primary-intent-select-castle-trajectory-from-0
+(defrule
+    (and (and (goal strategic-primary-intent 0) (goal arb-c02 1)) (not (goal arb-c01 1)))
+=>
+    (set-goal strategic-primary-intent 2)
+)
+
+; Native control rule: strategic-primary-intent-select-two-tc-expansion-from-0
+(defrule
+    (and (and (and (goal strategic-primary-intent 0) (goal arb-c03 1)) (not (goal arb-c01 1))) (not (goal arb-c02 1)))
+=>
+    (set-goal strategic-primary-intent 3)
+)
+
+; Native control rule: strategic-primary-intent-select-two-tc-expansion-from-2
+(defrule
+    (and (goal strategic-primary-intent 2) (goal arb-c03 1))
+=>
+    (set-goal strategic-primary-intent 3)
+)
+
+; Native control rule: strategic-primary-intent-release-castle-trajectory
+(defrule
+    (and (and (goal strategic-primary-intent 2) (goal arb-o03 1)) (not (goal arb-c03 1)))
+=>
+    (set-goal strategic-primary-intent 0)
+)
+
+; Native control rule: strategic-primary-intent-invalidate-castle-trajectory
+(defrule
+    (and (goal strategic-primary-intent 2) (goal arb-o04 1))
+=>
+    (set-goal strategic-primary-intent 0)
+)
+
+; Native control rule: counter-package-selection-reset-000
+(defrule
+    (current-age >= dark-age)
+=>
+    (set-goal counter-package-siege_pressure_castle 0)
+    (set-goal counter-package-mounted_pressure_castle 0)
+    (set-goal counter-package-infantry_pressure_castle 0)
+    (set-goal counter-package-mounted_pressure_feudal 0)
+    (set-goal counter-package-ranged_pressure_feudal 0)
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-minimal)
+)
+
+; Native control rule: counter-package-selection-001-infantry_pressure_castle
+(defrule
+    (and (current-age >= castle-age) (players-unit-type-count any-enemy militia-line >= 5))
+=>
+    (set-goal counter-package-infantry_pressure_castle 1)
+)
+
+; Native control rule: counter-package-selection-002-mounted_pressure_castle
+(defrule
+    (players-unit-type-count any-enemy knight >= 3)
+=>
+    (set-goal counter-package-mounted_pressure_castle 1)
+)
+
+; Native control rule: counter-package-selection-003-mounted_pressure_feudal
+(defrule
+    (current-age == feudal-age)
+    (or
+        (players-unit-type-count any-enemy scout-cavalry-line >= 3)
+        (players-unit-type-count any-enemy knight >= 1)
+    )
+=>
+    (set-goal counter-package-mounted_pressure_feudal 1)
+)
+
+; Native control rule: counter-package-selection-004-ranged_pressure_feudal
+(defrule
+    (and (current-age == feudal-age) (players-unit-type-count any-enemy archer-line >= 3))
+=>
+    (set-goal counter-package-ranged_pressure_feudal 1)
+)
+
+; Native control rule: counter-package-selection-005-siege_pressure_castle
+(defrule
+    (and (current-age >= castle-age) (players-unit-type-count any-enemy mangonel-line >= 2))
+=>
+    (set-goal counter-package-siege_pressure_castle 1)
+)
+
+;---------------------------------------------------------------
+; PERSISTENT FEUDAL MILITARY PACKAGE ARBITRATION
+; Community pattern translated into Byzantine policy:
+; choose one executable Feudal package from observed enemy composition,
+; then let the package's demand/recovery channels maintain the floor.
+; Threat priority: mounted > ranged > infantry > anti-spear mobility.
+
+; Standard open-land Feudal pressure starts from Archers rather than
+; blindly provisioning every production building. Fast-Castle and water
+; openings stay minimal unless an actual land threat is observed.
+(defrule
+    (current-age == feudal-age)
+    (or
+        (goal opening-plan 1)
+        (goal opening-plan 2)
+    )
+    (not (players-unit-type-count any-enemy scout-cavalry-line >= 3))
+    (not (players-unit-type-count any-enemy knight >= 1))
+    (not (players-unit-type-count any-enemy archer-line >= 3))
+    (not (players-unit-type-count any-enemy militia-line >= 5))
+    (not (players-unit-type-count any-enemy spearman-line >= 4))
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-archer)
+)
+
+; MAA is a supported offensive branch when sustained Barracks pressure is
+; observed without a current ranged/cavalry threat. The branch then follows
+; the community MAA -> Archer transition once the melee floor is reached.
+(defrule
+    (current-age == feudal-age)
+    (goal opening-plan 1)
+    (players-building-type-count any-enemy barracks >= 2)
+    (players-unit-type-count any-enemy militia-line < 3)
+    (players-unit-type-count any-enemy archer-line < 3)
+    (players-unit-type-count any-enemy scout-cavalry-line < 3)
+    (players-unit-type-count any-enemy knight < 1)
+    (players-unit-type-count any-enemy spearman-line < 4)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+)
+
+; Anti-infantry branch. Community scripting uses Archers as the standard
+; switch when the opponent commits to Feudal infantry.
+(defrule
+    (current-age == feudal-age)
+    (players-unit-type-count any-enemy militia-line >= 5)
+    (players-unit-type-count any-enemy scout-cavalry-line < 3)
+    (players-unit-type-count any-enemy knight < 1)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-archer)
+)
+
+; Anti-ranged branch. Byzantine cheap Skirmishers are the direct response.
+(defrule
+    (current-age == feudal-age)
+    (players-unit-type-count any-enemy archer-line >= 3)
+    (players-unit-type-count any-enemy scout-cavalry-line < 3)
+    (players-unit-type-count any-enemy knight < 1)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher)
+)
+
+; Anti-scout branch. Spears remain the hard floor, with the mobile
+; Scout -> Archer package available against spear walls.
+(defrule
+    (current-age == feudal-age)
+    (players-unit-type-count any-enemy spearman-line >= 4)
+    (players-unit-type-count any-enemy scout-cavalry-line < 3)
+    (players-unit-type-count any-enemy knight < 1)
+    (players-unit-type-count any-enemy archer-line < 3)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+)
+
+; Mixed mounted+ranged pressure gets the explicit cheap trash package. Pure
+; mounted pressure keeps its spear-only floor instead of wasting food on skirms.
+(defrule
+    (current-age == feudal-age)
+    (goal counter-package-mounted_pressure_feudal 1)
+    (goal counter-package-ranged_pressure_feudal 1)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-trash)
+)
+
+; Fast-Castle and water openings remain minimal unless one of the explicit
+; threat selectors above has already forced a response package.
+(defrule
+    (current-age == feudal-age)
+    (or
+        (goal opening-plan 3)
+        (or (goal opening-plan 4) (goal opening-plan 5))
+    )
+    (players-unit-type-count any-enemy scout-cavalry-line < 3)
+    (players-unit-type-count any-enemy archer-line < 3)
+    (players-unit-type-count any-enemy militia-line < 5)
+    (players-unit-type-count any-enemy spearman-line < 4)
+=>
+    (set-goal byzantine-feudal-army-package byzantine-feudal-package-minimal)
+)
+
+; Package -> demand activation. Demands are reasserted persistently; the
+; lifecycle itself owns completion, release, and loss recovery.
+(defrule
+    (current-age == feudal-age)
+    (or
+        (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
+        (or
+            (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+            (and
+                (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+                (unit-type-count-total militia-line >= bt-feudal-maa-floor)
+            )
+        )
+    )
+    (goal demand-feudal-archer-floor 0)
+    (unit-type-count-total archer-line < bt-feudal-archer-floor)
+=>
+    (set-goal demand-feudal-archer-floor 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+    (goal demand-feudal-scout-floor 0)
+    (unit-type-count-total scout-cavalry-line < bt-feudal-scout-floor)
+=>
+    (set-goal demand-feudal-scout-floor 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+    (goal demand-feudal-maa-upgrade 0)
+    (not (research-completed ri-man-at-arms))
+=>
+    (set-goal demand-feudal-maa-upgrade 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+    (research-completed ri-man-at-arms)
+    (goal demand-feudal-maa-floor 0)
+    (unit-type-count-total militia-line < bt-feudal-maa-floor)
+=>
+    (set-goal demand-feudal-maa-floor 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-trash)
+=>
+    (set-goal demand-counter-mounted-spears 1)
+    (set-goal demand-counter-ranged-skirmishers 1)
+)
+
+; Scout package and MAA package both gain ranged follow-up, matching common
+; Scouts->Archers and MAA->Archers community transitions.
+(defrule
+    (current-age == feudal-age)
+    (or
+        (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+        (and
+            (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+            (unit-type-count-total militia-line >= bt-feudal-maa-floor)
+        )
+    )
+    (goal demand-feudal-archer-floor 0)
+    (unit-type-count-total archer-line < bt-feudal-archer-floor)
+=>
+    (set-goal demand-feudal-archer-floor 1)
+)
+
+; Conditional infrastructure: do not spend a Feudal building on a Stable
+; or Range until the selected military package actually needs it.
+(defrule
+    (current-age == feudal-age)
+    (or
+        (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
+        (or
+            (goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher)
+            (or
+                (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+                (or
+                    (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+                    (goal byzantine-feudal-army-package byzantine-feudal-package-trash)
+                )
+            )
+        )
+    )
+    (goal demand-castle-archery-capability 0)
+    (not (building-type-count archery-range >= 1))
+=>
+    (set-goal demand-castle-archery-capability 1)
+)
+
+(defrule
+    (current-age == feudal-age)
+    (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+    (goal demand-castle-stable-capability 0)
+    (not (building-type-count stable >= 1))
+=>
+    (set-goal demand-castle-stable-capability 1)
+)
+
+; Native control rule: sn-mode-civilian-builders-castle-000
+(defrule
+    (and (current-age == castle-age) (up-compare-sn sn-native-4 != 8))
+=>
+    (set-strategic-number sn-native-4 8)
+)
+
+; Native control rule: sn-mode-civilian-builders-dark-001
+(defrule
+    (and (current-age == dark-age) (up-compare-sn sn-native-4 != 3))
+=>
+    (set-strategic-number sn-native-4 3)
+)
+
+; Native control rule: sn-mode-civilian-builders-feudal-002
+(defrule
+    (and (current-age == feudal-age) (up-compare-sn sn-native-4 != 5))
+=>
+    (set-strategic-number sn-native-4 5)
+)
+
+; Native control rule: sn-mode-civilian-builders-imperial-003
+(defrule
+    (and (current-age == imperial-age) (up-compare-sn sn-native-4 != 12))
+=>
+    (set-strategic-number sn-native-4 12)
+)
+
+; Native control rule: sn-mode-total-explorers-castle-004
+(defrule
