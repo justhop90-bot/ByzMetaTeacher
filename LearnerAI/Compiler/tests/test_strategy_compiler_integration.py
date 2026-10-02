@@ -11,7 +11,10 @@ from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
 from LearnerAI.Compiler.ir.native_duc import NativeDucPlan, NativeDucRule
-from LearnerAI.Compiler.ir.strategy import StrategyPosture
+from LearnerAI.Compiler.ir.strategy import (
+    StrategyPosture,
+    _byzantine_wall_pair_score,
+)
 from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
 from LearnerAI.Compiler.clients.basilisk import (
     ByzantineProfile,
@@ -137,57 +140,171 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             (
                 "byzantine-castle-target-knight",
                 "byzantine-castle-target-infantry",
+                "byzantine-wall-find-town-center-anchor",
+                "byzantine-wall-find-castle-anchor",
+                "byzantine-wall-find-keep-anchor",
+                "byzantine-wall-find-bombard-tower-anchor",
+                "byzantine-wall-find-guard-tower-anchor",
+                "byzantine-wall-find-watch-tower-anchor",
+                "byzantine-wall-find-outpost-anchor",
             ),
-        )
-        self.assertEqual(
-            tuple(item.source for item in plan.rules[0].facts),
-            (
-                "(current-age >= castle-age)",
-                "(up-compare-sn 227 >= 75)",
-                "(players-unit-type-count any-enemy knight >= 3)",
-            ),
-        )
-        self.assertEqual(
-            tuple(item.source for item in plan.rules[1].facts),
-            (
-                "(current-age >= castle-age)",
-                "(up-compare-sn 227 >= 75)",
-                "(players-unit-type-count any-enemy militia-line >= 5)",
-            ),
-        )
-        self.assertEqual(
-            tuple(item.head for item in plan.rules[0].actions[:3]),
-            (
-                "up-full-reset-search",
-                "up-find-remote",
-                "up-set-target-object",
-            ),
-        )
-        self.assertEqual(
-            tuple(item.head for item in plan.rules[1].actions[:3]),
-            (
-                "up-full-reset-search",
-                "up-find-remote",
-                "up-set-target-object",
-            ),
-        )
-        self.assertTrue(
-            all(
-                any(
-                    output.rule_identity == rule.identity
-                    and output.command == "up-get-object-data"
-                    for output in plan.output_requests
-                )
-                for rule in plan.rules
-            )
         )
 
+        anchor_specs = (
+            ("town-center", 109),
+            ("castle", 82),
+            ("keep", 235),
+            ("bombard-tower", 236),
+            ("guard-tower", 234),
+            ("watch-tower", 79),
+            ("outpost", 598),
+        )
+        self.assertEqual(len(plan.output_requests), 9)
+        self.assertEqual(len(plan.input_requests), 0)
+        for anchor, building_id in anchor_specs:
+            rule_identity = f"byzantine-wall-find-{anchor}-anchor"
+            self.assertTrue(
+                any(
+                    output.rule_identity == rule_identity
+                    and output.command == "up-get-point"
+                    and output.request.request_id.purpose == f"{anchor}-anchor"
+                    for output in plan.output_requests
+                )
+            )
+            self.assertEqual(
+                tuple(
+                    action.source
+                    for action in next(
+                        rule for rule in plan.rules if rule.identity == rule_identity
+                    ).actions
+                ),
+                (
+                    "(up-full-reset-search)",
+                    f"(up-find-local c: {building_id} c: 1)",
+                    "(up-set-target-object search-local c: 0)",
+                    f"(up-get-point position-object byzantine-wall-anchor-{anchor})",
+                ),
+            )
+
         output = compile_strategy_profile(self.profile, self.effective)
-        self.assertIn("; Native DUC rule: byzantine-castle-target-knight", output)
-        self.assertIn("(up-find-remote c: 38 c: 1)", output)
-        self.assertIn("(up-set-target-object search-remote c: 0)", output)
-        self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
-        self.assertIn("(up-find-remote c: 74 c: 1)", output)
+        for anchor, building_id in anchor_specs:
+            self.assertIn(f"; Native DUC rule: byzantine-wall-find-{anchor}-anchor", output)
+            self.assertIn(f"(up-find-local c: {building_id} c: 1)", output)
+
+    def test_byzantine_wall_anchor_scoring_model_is_compactness_first(self):
+        close_tc_tower = _byzantine_wall_pair_score(
+            "town-center",
+            "guard-tower",
+            42,
+        )
+        far_tc_tower = _byzantine_wall_pair_score(
+            "town-center",
+            "guard-tower",
+            -20,
+        )
+        close_strong_pair = _byzantine_wall_pair_score(
+            "castle",
+            "keep",
+            42,
+        )
+        close_tc_outpost = _byzantine_wall_pair_score(
+            "town-center",
+            "outpost",
+            42,
+        )
+        self.assertGreater(close_tc_tower, far_tc_tower)
+        self.assertGreater(close_strong_pair, close_tc_outpost)
+
+        compilation = lower_strategy_profile(self.profile, self.effective)
+        control = compilation.control_plan
+        assert control is not None
+        scoring_rules = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-wall-geometry-score-")
+        )
+        self.assertEqual(len(scoring_rules), 21 * 5)
+        self.assertIn(
+            "byzantine-wall-geometry-score-town-center-guard-tower-8",
+            scoring_rules,
+        )
+
+    def test_byzantine_strategy_lowers_phase35_wall_geometry_control_plane(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+
+        state_ids = tuple(state.identifier for state in control.states)
+        for identifier in (
+            "byzantine-wall-geometry-request",
+            "byzantine-wall-anchor-pair",
+            "byzantine-wall-issued",
+            "byzantine-wall-anchor-town-center",
+            "byzantine-wall-anchor-castle",
+            "byzantine-wall-anchor-keep",
+            "byzantine-wall-anchor-bombard-tower",
+            "byzantine-wall-anchor-guard-tower",
+            "byzantine-wall-anchor-watch-tower",
+            "byzantine-wall-anchor-outpost",
+        ):
+            self.assertIn(identifier, state_ids)
+
+        anchor_types = (
+            "town-center",
+            "castle",
+            "keep",
+            "bombard-tower",
+            "guard-tower",
+            "watch-tower",
+            "outpost",
+        )
+        pairs = [
+            f"{left}-{right}"
+            for index, left in enumerate(anchor_types)
+            for right in anchor_types[index + 1 :]
+        ]
+        rule_ids = {
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-wall-geometry-")
+        }
+        self.assertIn("byzantine-wall-geometry-initialize", rule_ids)
+        self.assertIn("byzantine-wall-geometry-arm-observation", rule_ids)
+        self.assertIn("byzantine-wall-geometry-begin-scoring", rule_ids)
+        self.assertIn("byzantine-wall-geometry-no-viable-pair", rule_ids)
+        for pair in pairs:
+            self.assertIn(
+                f"byzantine-wall-geometry-score-{pair}-8",
+                rule_ids,
+            )
+            self.assertIn(f"byzantine-wall-geometry-issue-{pair}", rule_ids)
+            self.assertIn(f"byzantine-wall-geometry-reanchor-{pair}", rule_ids)
+            self.assertIn(f"byzantine-wall-geometry-release-{pair}", rule_ids)
+
+        output = compile_strategy_profile(self.profile, self.effective)
+        for anchor in anchor_types:
+            self.assertIn(f"(defconst byzantine-wall-anchor-{anchor}", output)
+
+        self.assertIn(
+            "(up-point-distance byzantine-wall-anchor-town-center "
+            "byzantine-wall-anchor-guard-tower <= 8)",
+            output,
+        )
+        self.assertIn(
+            "(up-build-line byzantine-wall-anchor-town-center "
+            "byzantine-wall-anchor-guard-tower c: 72)",
+            output,
+        )
+        self.assertIn(
+            "(up-build-line byzantine-wall-anchor-castle "
+            "byzantine-wall-anchor-keep c: 117)",
+            output,
+        )
+        self.assertNotIn("byzantine-wall-resource-kind", output)
+        self.assertNotIn("byzantine-wall-gold-point", output)
+        self.assertNotIn("byzantine-wall-wood-point", output)
+        self.assertNotIn("byzantine-wall-stone-point", output)
 
     def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
