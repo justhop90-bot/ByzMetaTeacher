@@ -16,6 +16,7 @@ from .native_control import NativeControlPlan, NativeControlRule, NativeControlS
 
 
 class WaterPosture(IntEnum):
+    UNKNOWN = -1
     NONE = 0
     FISHING = 1
     NAVAL_DEFENSE = 2
@@ -24,6 +25,7 @@ class WaterPosture(IntEnum):
 
 
 class TransportExecutionPhase(IntEnum):
+    UNKNOWN = -1
     INACTIVE = 0
     PREPARE = 1
     READY = 2
@@ -36,11 +38,11 @@ class WaterExecutionState:
 
     posture: WaterPosture = WaterPosture.NONE
     transport_phase: TransportExecutionPhase = TransportExecutionPhase.INACTIVE
-    transport_required: bool = False
-    transport_capable: bool = False
-    dock_exists: bool = False
-    naval_pressure: bool = False
-    warboat_floor_met: bool = False
+    transport_required: bool | None = False
+    transport_capable: bool | None = False
+    dock_exists: bool | None = False
+    naval_pressure: bool | None = False
+    warboat_floor_met: bool | None = False
 
 
 @dataclass(frozen=True)
@@ -81,7 +83,9 @@ def transition_transport_execution(
 ) -> WaterExecutionState:
     """Advance transport execution without treating dispatch as landing proof."""
 
-    if not transport_required:
+    if transport_required is None or transport_capable is None:
+        phase = current.transport_phase if current.transport_phase is not TransportExecutionPhase.INACTIVE else TransportExecutionPhase.UNKNOWN
+    elif not transport_required:
         phase = TransportExecutionPhase.INACTIVE
     elif transport_capable:
         phase = TransportExecutionPhase.READY
@@ -109,16 +113,24 @@ def derive_water_posture(
     warboat_floor_met: bool,
 ) -> WaterPosture:
     """Derive deterministic water posture from typed strategic observations."""
-    if transport_required:
+    if transport_required is True:
         return WaterPosture.TRANSPORT_SUPPORT
-    if naval_pressure:
+    if transport_required is None:
+        return WaterPosture.UNKNOWN
+    if naval_pressure is True:
+        if warboat_floor_met is None:
+            return WaterPosture.UNKNOWN
         return (
             WaterPosture.NAVAL_CONTROL
             if warboat_floor_met
             else WaterPosture.NAVAL_DEFENSE
         )
-    if dock_exists:
+    if naval_pressure is None:
+        return WaterPosture.UNKNOWN
+    if dock_exists is True:
         return WaterPosture.FISHING
+    if dock_exists is None:
+        return WaterPosture.UNKNOWN
     return WaterPosture.NONE
 
 
