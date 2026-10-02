@@ -268,6 +268,7 @@ def _training_demand(
             witness=f"(unit-type-count {line} >= {minimum})",
             release=f"(unit-type-count {line} >= {minimum})",
         ),
+        recovery=_CapabilityRecoveryContract(),
     )
 
 
