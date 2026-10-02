@@ -10,7 +10,9 @@ from typing import Mapping, TYPE_CHECKING
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
-\nif TYPE_CHECKING:\n    from ..runtime_binding import GoalSlotRequest\nfrom .strategic_number_arbitration import StrategicNumberActionAttachment
+if TYPE_CHECKING:
+    from ..runtime_binding import GoalSlotRequest
+from .strategic_number_arbitration import StrategicNumberActionAttachment
 
 
 class AttackLifecycleObservation(str, Enum):
