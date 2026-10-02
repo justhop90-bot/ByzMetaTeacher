@@ -26,6 +26,11 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     # than silently disappearing from the compiler's build vocabulary.
     "town-center": 621,
     "stable": 101,
+    "farm": 50,
+    "mill": 68,
+    "market": 84,
+    "lumber-camp": 562,
+    "mining-camp": 584,
     "siege-workshop": 49,
     "university": 209,
     "outpost": 598,
