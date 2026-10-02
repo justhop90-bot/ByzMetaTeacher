@@ -39,6 +39,8 @@ from .water import (
 class StrategicObservationType(str, Enum):
     CURRENT_AGE = "CURRENT_AGE"
     RESOURCE_AMOUNT = "RESOURCE_AMOUNT"
+    ECONOMY_STATE = "ECONOMY_STATE"
+    RESOURCE_AVAILABILITY = "RESOURCE_AVAILABILITY"
     BUILDING_COUNT = "BUILDING_COUNT"
     UNIT_CURRENT_COUNT = "UNIT_CURRENT_COUNT"
     UNIT_QUEUED_COUNT = "UNIT_QUEUED_COUNT"
@@ -535,6 +537,9 @@ _OBSERVATION_PRIMITIVES: dict[str, StrategicObservationType] = {
     "wood-amount": StrategicObservationType.RESOURCE_AMOUNT,
     "gold-amount": StrategicObservationType.RESOURCE_AMOUNT,
     "stone-amount": StrategicObservationType.RESOURCE_AMOUNT,
+    "housing-headroom": StrategicObservationType.ECONOMY_STATE,
+    "idle-farm-count": StrategicObservationType.ECONOMY_STATE,
+    "resource-found": StrategicObservationType.RESOURCE_AVAILABILITY,
     "building-type-count": StrategicObservationType.BUILDING_COUNT,
     "building-type-count-total": StrategicObservationType.BUILDING_COUNT,
     "unit-type-count": StrategicObservationType.UNIT_CURRENT_COUNT,
