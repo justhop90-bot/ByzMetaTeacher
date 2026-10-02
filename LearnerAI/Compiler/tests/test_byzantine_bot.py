@@ -101,7 +101,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         demands = {item.identity: item for item in self.profile.demands}
         wheelbarrow_id = int(demands["research-wheelbarrow"].target.entity_id)
         self.assertIn(
-            f"(research-completed {wheelbarrow_id})",
+            f"(up-research-status c: {wheelbarrow_id} >= 3)",
             demands["research-double-bit-axe"].execution.requirements,
         )
         self.assertIn(
