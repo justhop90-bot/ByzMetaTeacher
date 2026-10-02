@@ -1383,8 +1383,6 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         return None
 
     from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalRole, GoalSlotRequest
-    from .model import SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     wall = _byzantine_wall_geometry_requests(profile.profile_id)
@@ -1413,6 +1411,23 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         "(players-unit-type-count any-enemy militia-line >= 5)))"
     )
 
+    common_arm_facts = (
+        parse_expression(
+            "(goal byzantine-wall-geometry-request 0)",
+            SourceLocation(1),
+        ),
+        parse_expression(
+            "(current-age >= feudal-age)",
+            SourceLocation(1),
+        ),
+        parse_expression(enemy_pressure, SourceLocation(1)),
+        parse_expression(
+            "(building-type-count 117 == 0)",
+            SourceLocation(1),
+        ),
+        parse_expression("(can-build 117)", SourceLocation(1)),
+    )
+
     return NativeControlPlan(
         states=(resource_kind_state, request_state, start_state, end_state),
         rules=(
@@ -1433,25 +1448,13 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                 ),
             ),
             NativeControlRule(
-                "byzantine-wall-geometry-arm",
+                "byzantine-wall-geometry-arm-gold",
                 facts=(
+                    *common_arm_facts,
                     parse_expression(
-                        "(goal byzantine-wall-geometry-request 0)",
+                        "(dropsite-min-distance gold > 12)",
                         SourceLocation(1),
                     ),
-                    parse_expression(
-                        "(current-age >= feudal-age)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(enemy_pressure, SourceLocation(1)),
-                    parse_expression("(dropsite-min-distance gold > 12)", SourceLocation(1)),
-                    parse_expression(
-                        "(building-type-count stone-wall == 0)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(can-build stone-wall)",
-                        SourceLocation(1),
                 ),
                 actions=(
                     parse_expression(
@@ -1465,26 +1468,17 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                 ),
             ),
             NativeControlRule(
-                "byzantine-wall-geometry-arm",
+                "byzantine-wall-geometry-arm-wood",
                 facts=(
+                    *common_arm_facts,
                     parse_expression(
-                        "(goal byzantine-wall-geometry-request 0)",
+                        "(not (dropsite-min-distance gold > 12))",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(current-age >= feudal-age)",
+                        "(dropsite-min-distance wood > 12)",
                         SourceLocation(1),
                     ),
-                    parse_expression(enemy_pressure, SourceLocation(1)),
-                    parse_expression("(not (dropsite-min-distance gold > 12))", SourceLocation(1)),
-                    parse_expression("(dropsite-min-distance wood > 12)", SourceLocation(1)),
-                    parse_expression(
-                        "(building-type-count stone-wall == 0)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        "(can-build stone-wall)",
-                        SourceLocation(1),
                 ),
                 actions=(
                     parse_expression(
@@ -1498,27 +1492,21 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                 ),
             ),
             NativeControlRule(
-                "byzantine-wall-geometry-arm",
+                "byzantine-wall-geometry-arm-stone",
                 facts=(
+                    *common_arm_facts,
                     parse_expression(
-                        "(goal byzantine-wall-geometry-request 0)",
+                        "(not (dropsite-min-distance gold > 12))",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(current-age >= feudal-age)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(enemy_pressure, SourceLocation(1)),
-                    parse_expression("(not (dropsite-min-distance gold > 12))", SourceLocation(1)),
-                    parse_expression("(not (dropsite-min-distance wood > 12))", SourceLocation(1)),
-                    parse_expression("(dropsite-min-distance stone > 12)", SourceLocation(1)),
-                    parse_expression(
-                        "(building-type-count stone-wall == 0)",
+                        "(not (dropsite-min-distance wood > 12))",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(can-build stone-wall)",
+                        "(dropsite-min-distance stone > 12)",
                         SourceLocation(1),
+                    ),
                 ),
                 actions=(
                     parse_expression(
@@ -1538,10 +1526,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                         "(goal byzantine-wall-geometry-request 1)",
                         SourceLocation(1),
                     ),
-                    parse_expression(
-                        "(can-build stone-wall)",
-                        SourceLocation(1),
-                    ),
+                    parse_expression("(can-build 117)", SourceLocation(1)),
                 ),
                 actions=(
                     parse_expression(
@@ -1562,7 +1547,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(building-type-count stone-wall >= 1)",
+                        "(building-type-count 117 >= 1)",
                         SourceLocation(1),
                     ),
                 ),
@@ -1581,7 +1566,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(building-type-count stone-wall == 0)",
+                        "(building-type-count 117 == 0)",
                         SourceLocation(1),
                     ),
                     parse_expression(
@@ -1593,7 +1578,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(can-build stone-wall)",
+                        "(can-build 117)",
                         SourceLocation(1),
                     ),
                 ),
@@ -1606,6 +1591,7 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
             ),
         ),
     )
+
 
 
 def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
