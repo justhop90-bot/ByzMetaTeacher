@@ -138,7 +138,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "byzantine-castle-target-knight",
                 "byzantine-castle-target-infantry",
                 "byzantine-wall-find-tc",
-                "byzantine-wall-find-vulnerable-resource",
+                "byzantine-wall-find-vulnerable-gold",
+                "byzantine-wall-find-vulnerable-wood",
+                "byzantine-wall-find-vulnerable-stone",
             ),
         )
         self.assertEqual(
@@ -183,12 +185,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 for rule in plan.rules[:2]
             )
         )
-        self.assertEqual(len(plan.output_requests), 4)
-        self.assertEqual(len(plan.input_requests), 1)
-        self.assertEqual(
-            plan.input_requests[0].source.purpose,
-            "resource-kind",
-        )
+        self.assertEqual(len(plan.output_requests), 6)
+        self.assertEqual(len(plan.input_requests), 0)
         self.assertTrue(
             any(
                 output.rule_identity == "byzantine-wall-find-tc"
@@ -196,13 +194,14 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 for output in plan.output_requests
             )
         )
-        self.assertTrue(
-            any(
-                output.rule_identity == "byzantine-wall-find-vulnerable-resource"
-                and output.request.request_id.purpose == "wall-end"
-                for output in plan.output_requests
+        for kind in ("gold", "wood", "stone"):
+            self.assertTrue(
+                any(
+                    output.rule_identity == f"byzantine-wall-find-vulnerable-{kind}"
+                    and output.request.request_id.purpose == f"wall-{kind}-point"
+                    for output in plan.output_requests
+                )
             )
-        )
 
         output = compile_strategy_profile(self.profile, self.effective)
         self.assertIn("; Native DUC rule: byzantine-castle-target-knight", output)
@@ -212,13 +211,22 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
         self.assertIn("; Native DUC rule: byzantine-wall-find-tc", output)
         self.assertIn("(up-find-local c: town-center c: 1)", output)
-        self.assertIn("; Native DUC rule: byzantine-wall-find-vulnerable-resource", output)
+        for kind in ("gold", "wood", "stone"):
+            self.assertIn(
+                f"; Native DUC rule: byzantine-wall-find-vulnerable-{kind}",
+                output,
+            )
+            self.assertIn(f"(up-find-resource c: {kind} c: 1)", output)
         self.assertIn(
-            "(up-find-resource g: byzantine-wall-resource-kind c: 1)",
+            "(up-build-line byzantine-wall-start byzantine-wall-gold-point c: 117)",
             output,
         )
         self.assertIn(
-            "(up-build-line byzantine-wall-start byzantine-wall-end c: 117)",
+            "(up-build-line byzantine-wall-start byzantine-wall-wood-point c: 117)",
+            output,
+        )
+        self.assertIn(
+            "(up-build-line byzantine-wall-start byzantine-wall-stone-point c: 117)",
             output,
         )
 
@@ -232,7 +240,9 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             "byzantine-wall-geometry-request",
             "byzantine-wall-resource-kind",
             "byzantine-wall-start",
-            "byzantine-wall-end",
+            "byzantine-wall-gold-point",
+            "byzantine-wall-wood-point",
+            "byzantine-wall-stone-point",
         ):
             self.assertIn(identifier, state_ids)
 
