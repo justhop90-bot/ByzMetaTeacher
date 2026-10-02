@@ -1596,8 +1596,8 @@ def community_strategy_demands(
                 line="camel-rider-line",
                 minimum=3,
                 age_guard="(current-age >= imperial-age)",
-                action_symbol="heavy-camel-rider",
-                witness_symbol="heavy-camel-rider",
+                action_symbol="330",
+                witness_symbol="330",
                 invalidate_ref="strategy-enemy-mounted-heavy-cleared",
             ),
         )
