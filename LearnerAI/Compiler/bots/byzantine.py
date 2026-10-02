@@ -419,7 +419,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             building_name="dock",
             minimum_age=Age.DARK,
             upper_bound=1,
-            invalidate_ref="strategy-water-islands",
+            invalidate_ref="strategy-dock-exists",
             extra_requirements=(
                 "(map-type islands)",
             ),
@@ -780,7 +780,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
                 action_token="429",
                 reason_label="Research Halberdier for the Byzantine late anti-mounted package",
                 extra_requirements=(
-                    "(players-unit-type-count any-enemy knight >= 3)",
+                    "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
                 ),
             ),
             _imperial_research(
@@ -800,7 +800,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
                 action_token="236",
                 reason_label="Research Heavy Camel for sustained enemy mounted pressure",
                 extra_requirements=(
-                    "(players-unit-type-count any-enemy knight >= 3)",
+                    "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
                 ),
             ),
             _imperial_research(
@@ -840,7 +840,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             upper_bound=6,
             age_guard="(current-age >= imperial-age)",
             extra_requirements=(
-                "(players-unit-type-count any-enemy knight >= 3)",
+                "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
                 "(up-research-status c: 429 >= 3)",
             ),
         ),
@@ -878,7 +878,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             upper_bound=3,
             age_guard="(current-age >= imperial-age)",
             extra_requirements=(
-                "(players-unit-type-count any-enemy knight >= 3)",
+                "(or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy scout-cavalry-line >= 3))",
                 "(up-research-status c: 236 >= 3)",
             ),
         ),
