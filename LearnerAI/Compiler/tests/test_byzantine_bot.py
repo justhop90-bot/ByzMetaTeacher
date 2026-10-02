@@ -31,15 +31,15 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         demands = {item.identity: item for item in self.profile.demands}
         self.assertIn(
             "(players-unit-type-count any-enemy scout-cavalry-line >= 3)",
-            demands["feudal-spears-2-4"].execution.requirements,
+            demands["counter-mounted-spears"].execution.requirements,
         )
         self.assertIn(
             "(players-unit-type-count any-enemy archer-line >= 3)",
-            demands["feudal-skirmishers-2-4"].execution.requirements,
+            demands["counter-ranged-skirmishers"].execution.requirements,
         )
         self.assertIn(
             "(players-unit-type-count any-enemy militia-line >= 5)",
-            demands["castle-varangians-2-4"].execution.requirements,
+            demands["castle-varangian-guard-floor"].execution.requirements,
         )
 
     def test_compilation_is_deterministic_and_contains_core_actions(self):
@@ -50,6 +50,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(train villager)", first)
         self.assertIn("(train cataphract)", first)
         self.assertIn("(train varangian-guard)", first)
+        self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", first)
         self.assertIn("(attack-now)", first)
 
     def test_profile_has_long_housing_ladder(self):
