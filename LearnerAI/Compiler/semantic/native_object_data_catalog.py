@@ -75,6 +75,10 @@ def resolve_object_data_id(symbol: str) -> int:
         )
 
     value = int(token, 10)
+    if value < 0:
+        raise NativeObjectDataError(
+            f"ObjectData ID '{symbol}' is not valid for up-get-object-data"
+        )
     if value not in _object_data_ids():
         raise NativeObjectDataError(
             f"ObjectData ID '{symbol}' is not present in the checked-in native inventory"
