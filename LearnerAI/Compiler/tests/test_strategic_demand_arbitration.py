@@ -120,6 +120,29 @@ class StrategicDemandArbitrationTests(unittest.TestCase):
         self.assertTrue(any(item.startswith("(not (or") for item in castle_requirements))
         self.assertTrue(any(item.startswith("(not (or") for item in tc_requirements))
 
+    def test_primary_intent_is_lowered_as_native_control_not_semantic_requirement(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        compilation = lower_strategy_profile(self.profile, effective)
+
+        castle = next(d for d in compilation.demands if d.name == "castle-commitment")
+        requirements = tuple(item.expression.source for item in castle.requirements)
+
+        self.assertFalse(
+            any("strategic-primary-intent" in item for item in requirements)
+        )
+        output = __import__(
+            "LearnerAI.Compiler.clients.basilisk",
+            fromlist=["compile_strategy_profile"],
+        ).compile_strategy_profile(self.profile, effective)
+        self.assertIn(
+            "(goal strategic-primary-intent 2)",
+            output,
+        )
+        self.assertIn(
+            "(set-goal demand-castle-commitment 1)",
+            output,
+        )
+
     def test_recoverable_primary_demand_carries_world_loss_policy(self):
         binding = self.profile.demand("castle-commitment")
         self.assertTrue(binding.recovery_on_world_loss)
