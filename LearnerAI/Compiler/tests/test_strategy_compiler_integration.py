@@ -73,23 +73,36 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         assert plan is not None
         self.assertEqual(
             tuple(rule.identity for rule in plan.rules),
-            ("byzantine-castle-attack-now",),
+            (
+                "byzantine-castle-attack-now-cataphract",
+                "byzantine-castle-attack-now-knight",
+            ),
         )
         self.assertEqual(
             tuple(item.source for item in plan.rules[0].facts),
             (
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
-                "(or (unit-type-count cataphract >= 2) (unit-type-count knight >= 3))",
+                "(unit-type-count cataphract >= 2)",
+            ),
+        )
+        self.assertEqual(
+            tuple(item.source for item in plan.rules[1].facts),
+            (
+                "(current-age == castle-age)",
+                "(up-compare-sn 227 >= 75)",
+                "(unit-type-count knight >= 3)",
             ),
         )
         self.assertEqual(plan.rules[0].actions[0].source, "(attack-now)")
+        self.assertEqual(plan.rules[1].actions[0].source, "(attack-now)")
 
         first = compile_strategy_profile(self.profile, self.effective)
         second = compile_strategy_profile(self.profile, self.effective)
         self.assertEqual(first, second)
         self.assertIn("; Native attack lifecycle plan", first)
-        self.assertIn("; Native attack rule: byzantine-castle-attack-now", first)
+        self.assertIn("; Native attack rule: byzantine-castle-attack-now-cataphract", first)
+        self.assertIn("; Native attack rule: byzantine-castle-attack-now-knight", first)
         self.assertIn("(attack-now)", first)
 
     def test_runtime_strategy_uses_the_same_default_attack_plan_channel(self):
@@ -102,7 +115,8 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             snapshot,
         )
         self.assertIn("; Native attack lifecycle plan", output)
-        self.assertIn("; Native attack rule: byzantine-castle-attack-now", output)
+        self.assertIn("; Native attack rule: byzantine-castle-attack-now-cataphract", output)
+        self.assertIn("; Native attack rule: byzantine-castle-attack-now-knight", output)
         self.assertIn("(current-age == castle-age)", output)
         self.assertIn("(attack-now)", output)
 
