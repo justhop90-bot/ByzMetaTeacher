@@ -1464,8 +1464,6 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
     recover_rules = []
 
     for pair in anchor_pairs:
-        left = pair["left"]
-        right = pair["right"]
         wall_id = pair["wall_id"]
         age = pair["age"]
         identity = pair["identity"]
@@ -1625,10 +1623,6 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
                     ),
                     parse_expression(
                         "(goal byzantine-wall-completed 0)",
-                        SourceLocation(1),
-                    ),
-                    parse_expression(
-                        f"(building-type-count {wall_id} >= 1)",
                         SourceLocation(1),
                     ),
                     parse_expression(
