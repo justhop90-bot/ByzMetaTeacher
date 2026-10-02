@@ -127,7 +127,7 @@ def _build_demand(
         priority=priority,
         reason=(_persistent(reason_label, reason_ref),),
         admissibility=(
-            _execution(f"{identity}:native-admission", requirements[0]),
+            _persistent(f"{identity}:strategic-admission", reason_ref),
         ),
         invalidation=(
             _persistent(f"{identity}:policy-invalidation", invalidate_ref),
@@ -166,21 +166,10 @@ def _research_demand(
     reason_label: str,
     resources: tuple[Resource, ...],
     minimum_floors: tuple[tuple[Resource, int], ...] = (),
-) -> tuple[StrategicDemandSpec, StrategicObservationSpec]:
+) -> StrategicDemandSpec:
     tech = _tech(effective, tech_name)
     token = _slug(tech.name)
     complete_ref = f"{identity}-complete"
-    obs = StrategicObservationSpec(
-        complete_ref,
-        f"(research-completed {int(tech.id)})",
-        provenance=tech.provenance,
-    )
-    incomplete_ref = f"{identity}-pending"
-    pending_obs = StrategicObservationSpec(
-        incomplete_ref,
-        f"(not (research-completed {int(tech.id)}))",
-        provenance=tech.provenance,
-    )
     floors = tuple(ProtectedResourceFloor(resource, amount) for resource, amount in minimum_floors)
     policy = None
     if floors:
@@ -227,7 +216,7 @@ def _research_demand(
             escrow_release_resources=resources,
         ),
     )
-    return demand, obs
+    return demand
 
 
 def _training_demand(
@@ -252,7 +241,7 @@ def _training_demand(
         priority=priority,
         reason=(_persistent(reason_label, reason_ref),),
         admissibility=(
-            _execution(f"{identity}:age", age_guard),
+            _persistent(f"{identity}:age-admission", reason_ref),
         ),
         invalidation=(),
         capability_intent=CapabilityIntent(
@@ -281,6 +270,20 @@ def _training_demand(
     )
 
 
+_RESEARCH_PACK = (
+    ("research-wheelbarrow", "economy", "feudal-age", "wheelbarrow", StrategicPriority.SUPPORT, (Resource.FOOD,)),
+    ("research-double-bit-axe", "economy", "feudal-age", "double-bit-axe", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-horse-collar", "economy", "feudal-age", "horse-collar", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-hand-cart", "economy", "castle-age", "hand-cart", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.WOOD)),
+    ("research-bow-saw", "economy", "castle-age", "bow-saw", StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
+    ("research-two-man-saw", "economy", "castle-age", "two-man-saw", StrategicPriority.SUPPORT, (Resource.WOOD, Resource.GOLD)),
+    ("research-bodkin-arrow", "military", "feudal-age", "bodkin-arrow", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-bloodlines", "military", "feudal-age", "bloodlines", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-conscription", "military", "imperial-age", "conscription", StrategicPriority.SUPPORT, (Resource.FOOD, Resource.GOLD)),
+    ("research-chemistry", "military", "imperial-age", "chemistry", StrategicPriority.SUPPORT, (Resource.GOLD,)),
+)
+
+
 def community_strategy_observations(
     effective: EffectiveCivData,
 ) -> tuple[StrategicObservationSpec, ...]:
@@ -295,7 +298,7 @@ def community_strategy_observations(
     barracks = _building(effective, "barracks")
     castle = _building(effective, "castle")
     university = _building(effective, "university")
-    return (
+    observations = [
         _observation(
             "strategy-castle-age",
             "(current-age >= castle-age)",
@@ -389,7 +392,26 @@ def community_strategy_observations(
             f"(building-type-count-total {int(university.id)} >= 1)",
             university.provenance,
         ),
-    )
+    ]
+
+    for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK:
+        tech = _tech(effective, tech_name)
+        observations.append(
+            _observation(
+                f"{identity}-complete",
+                f"(research-completed {int(tech.id)})",
+                tech.provenance,
+            )
+        )
+        observations.append(
+            _observation(
+                f"{identity}-pending",
+                f"(not (research-completed {int(tech.id)}))",
+                tech.provenance,
+            )
+        )
+
+    return tuple(observations)
 
 
 def community_strategy_demands(
@@ -417,10 +439,7 @@ def community_strategy_demands(
                 _persistent("Imperial remains the next durable strategic conversion", "strategy-castle-age"),
             ),
             admissibility=(
-                _execution(
-                    "imperial:can-research",
-                    "(can-research-with-escrow imperial-age)",
-                ),
+                _persistent("Imperial remains admissible in Castle Age", "strategy-castle-age"),
             ),
             invalidation=(
                 _persistent("Imperial conversion complete", "strategy-imperial-age"),
@@ -480,13 +499,9 @@ def community_strategy_demands(
                 ),
             ),
             admissibility=(
-                _execution(
-                    "castle-second-town-center:target-open",
-                    "(building-type-count-total town-center < 2)",
-                ),
-                _execution(
-                    "castle-second-town-center:can-build",
-                    "(can-build town-center)",
+                _persistent(
+                    "Second Town Center opportunity remains strategically admissible",
+                    "strategy-town-center-capability",
                 ),
             ),
             invalidation=(
@@ -585,89 +600,8 @@ def community_strategy_demands(
         )
     )
 
-    for identity, owner, age, tech_name, priority, resources in (
-        (
-            "research-wheelbarrow",
-            "economy",
-            "feudal-age",
-            "wheelbarrow",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD,),
-        ),
-        (
-            "research-double-bit-axe",
-            "economy",
-            "feudal-age",
-            "double-bit-axe",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.WOOD),
-        ),
-        (
-            "research-horse-collar",
-            "economy",
-            "feudal-age",
-            "horse-collar",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.WOOD),
-        ),
-        (
-            "research-hand-cart",
-            "economy",
-            "castle-age",
-            "hand-cart",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.WOOD),
-        ),
-        (
-            "research-bow-saw",
-            "economy",
-            "castle-age",
-            "bow-saw",
-            StrategicPriority.SUPPORT,
-            (Resource.WOOD, Resource.GOLD),
-        ),
-        (
-            "research-two-man-saw",
-            "economy",
-            "castle-age",
-            "two-man-saw",
-            StrategicPriority.SUPPORT,
-            (Resource.WOOD, Resource.GOLD),
-        ),
-        (
-            "research-bodkin-arrow",
-            "military",
-            "feudal-age",
-            "bodkin-arrow",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.GOLD),
-        ),
-        (
-            "research-bloodlines",
-            "military",
-            "feudal-age",
-            "bloodlines",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.GOLD),
-        ),
-        (
-            "research-conscription",
-            "military",
-            "imperial-age",
-            "conscription",
-            StrategicPriority.SUPPORT,
-            (Resource.FOOD, Resource.GOLD),
-        ),
-        (
-            "research-chemistry",
-            "military",
-            "imperial-age",
-            "chemistry",
-            StrategicPriority.SUPPORT,
-            (Resource.GOLD,),
-        ),
-    ):
-        demand, _obs = _research_demand(
+    for identity, owner, age, tech_name, priority, resources in _RESEARCH_PACK:
+        demand = _research_demand(
             effective=effective,
             identity=identity,
             owner=owner,
@@ -761,9 +695,9 @@ def community_strategy_demands(
                 ),
             ),
             admissibility=(
-                _execution(
-                    "water-fishing-continuity:can-train",
-                    "(can-train-with-escrow fishing-ship-line)",
+                _persistent(
+                    "Existing dock is a verified strategic water provider",
+                    "strategy-dock-exists",
                 ),
             ),
             invalidation=(),
