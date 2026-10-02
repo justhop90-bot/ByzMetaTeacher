@@ -124,6 +124,25 @@ class StrategySemanticsTests(unittest.TestCase):
                     for evidence in transition.evidence)
             )
 
+
+    def test_byzantine_dark_age_lowering_writes_zero_stone(self):
+        from LearnerAI.Compiler.ir.economic_control import (
+            default_byzantine_economy_controller,
+            lower_economy_controller,
+        )
+
+        compilation = lower_economy_controller(
+            default_byzantine_economy_controller(),
+            self.profile,
+        )
+        rule = next(
+            item for item in compilation.rules
+            if item.identity == "economy-controller-write-base-sn-stone-gatherer-percentage"
+        )
+
+        self.assertEqual(rule.actions[0].head, "set-strategic-number")
+        self.assertEqual(rule.actions[0].args, ("sn-stone-gatherer-percentage", "0"))
+
     def test_byzantine_dark_age_economy_is_55_food_30_wood_15_gold(self):
         from LearnerAI.Compiler.ir.economic_control import (
             EconomyMode,
