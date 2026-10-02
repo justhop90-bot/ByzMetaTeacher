@@ -161,6 +161,57 @@ def _build_demand(
     )
 
 
+def _staged_build_demand(
+    *,
+    identity: str,
+    owner: str,
+    posture: _StrategyPosture,
+    priority: _StrategicPriority,
+    reason_ref: str,
+    reason_label: str,
+    building,
+    minimum: int,
+    requirements: tuple[str, ...],
+    action_name: str | None = None,
+    witness_symbol: str | None = None,
+    opportunity_cost: _OpportunityCostPolicy | None = None,
+) -> _StrategicDemandSpec:
+    if minimum < 1:
+        raise ValueError("staged build demand minimum must be positive")
+    action_name = action_name or _slug(building.name)
+    witness_symbol = witness_symbol or action_name
+    target_guard = f"(building-type-count-total {action_name} < {minimum})"
+    target_witness = f"(building-type-count {witness_symbol} >= {minimum})"
+    return _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        posture=posture,
+        priority=priority,
+        reason=(_persistent(reason_label, reason_ref),),
+        admissibility=(_persistent(f"{identity}:strategic-admission", reason_ref),),
+        invalidation=(),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.BUILD,
+            "building",
+            int(building.id),
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
+            "building",
+            int(building.id),
+            minimum=minimum,
+        ),
+        opportunity_cost=opportunity_cost,
+        execution=_ExecutionDemandTemplate(
+            requirements=(*requirements, target_guard),
+            action=f"(build {action_name})",
+            witness=target_witness,
+            release=target_witness,
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+
+
 def _research_demand(
     *,
     effective: EffectiveCivData,
@@ -577,6 +628,56 @@ def community_strategy_observations(
             f"(building-type-count-total {int(_building(effective, "stone-wall").id)} >= 1)",
             _building(effective, "stone-wall").provenance,
         ),
+        _observation(
+            "strategy-housing-pressure",
+            "(housing-headroom < 4)",
+            _airef_provenance(effective, "commands/commands-details.html#housing-headroom"),
+        ),
+        _observation(
+            "strategy-food-shortage",
+            "(food-amount < 350)",
+            _airef_provenance(effective, "commands/commands-details.html#food-amount"),
+        ),
+        _observation(
+            "strategy-food-crisis",
+            "(food-amount < 200)",
+            _airef_provenance(effective, "commands/commands-details.html#food-amount"),
+        ),
+        _observation(
+            "strategy-idle-farms",
+            "(idle-farm-count > 0)",
+            _airef_provenance(effective, "commands/commands-details.html#idle-farm-count"),
+        ),
+        _observation(
+            "strategy-wood-resource-opportunity",
+            "(resource-found wood)",
+            _airef_provenance(effective, "commands/commands-details.html#resource-found"),
+        ),
+        _observation(
+            "strategy-gold-resource-opportunity",
+            "(resource-found gold)",
+            _airef_provenance(effective, "commands/commands-details.html#resource-found"),
+        ),
+        _observation(
+            "strategy-food-resource-opportunity",
+            "(resource-found food)",
+            _airef_provenance(effective, "commands/commands-details.html#resource-found"),
+        ),
+        _observation(
+            "strategy-wood-dropsite-distant",
+            "(dropsite-min-distance wood > 12)",
+            _airef_provenance(effective, "commands/commands-details.html#dropsite-min-distance"),
+        ),
+        _observation(
+            "strategy-mining-dropsite-distant",
+            "(or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))",
+            _airef_provenance(effective, "commands/commands-details.html#dropsite-min-distance"),
+        ),
+        _observation(
+            "strategy-market-resource-imbalance",
+            "(or (food-amount < 350) (or (wood-amount < 150) (gold-amount < 150)))",
+            _airef_provenance(effective, "commands/commands-details.html#food-amount"),
+        ),
     ]
 
     for identity, _owner, _age, tech_name, _priority, _resources in _RESEARCH_PACK:
@@ -732,6 +833,249 @@ def community_strategy_demands(
                 action="(build town-center)",
                 witness="(building-type-count town-center >= 2)",
                 release="(building-type-count town-center >= 2)",
+            ),
+        )
+    )
+
+    house = _building(effective, "house")
+    farm = _building(effective, "farm")
+    lumber_camp = _building(effective, "lumber-camp")
+    mining_camp = _building(effective, "mining-camp")
+    mill = _building(effective, "mill")
+    market = _building(effective, "market")
+
+    # Economic continuity. These are bounded persistent demands, not a hidden
+    # villager scheduler. The engine decides current construction feasibility;
+    # strategy only decides when the capability is wanted and what floor is useful.
+    demands.extend(
+        (
+            _staged_build_demand(
+                identity="economy-house-floor-1",
+                owner="economy-construction",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-housing-pressure",
+                reason_label="Housing headroom below the community continuity threshold",
+                building=house,
+                minimum=1,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(can-build house)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-house-floor-4",
+                owner="economy-construction",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-housing-pressure",
+                reason_label="Maintain a bounded early housing floor before the next production wave",
+                building=house,
+                minimum=4,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(can-build house)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-house-floor-8",
+                owner="economy-construction",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-housing-pressure",
+                reason_label="Maintain midgame housing continuity without waiting for population lockout",
+                building=house,
+                minimum=8,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(can-build house)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-house-floor-12",
+                owner="economy-construction",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-housing-pressure",
+                reason_label="Maintain Castle housing headroom for sustained production",
+                building=house,
+                minimum=12,
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-build house)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-house-floor-16",
+                owner="economy-construction",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-housing-pressure",
+                reason_label="Maintain late-game housing headroom before production stalls",
+                building=house,
+                minimum=16,
+                requirements=(
+                    "(current-age >= imperial-age)",
+                    "(can-build house)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-farm-floor-feudal-4",
+                owner="economy-farming",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-food-shortage",
+                reason_label="Food shortage with no idle farm requires a bounded Feudal farm floor",
+                building=farm,
+                minimum=4,
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-build-with-escrow farm)",
+                    "(idle-farm-count == 0)",
+                    "(food-amount < 350)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-farm-floor-feudal-8",
+                owner="economy-farming",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-food-shortage",
+                reason_label="Sustained Feudal food shortage requires more farming capacity",
+                building=farm,
+                minimum=8,
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(can-build-with-escrow farm)",
+                    "(idle-farm-count == 0)",
+                    "(food-amount < 350)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-farm-floor-castle-12",
+                owner="economy-farming",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-food-shortage",
+                reason_label="Castle food shortage requires continued farm-bank replacement",
+                building=farm,
+                minimum=12,
+                requirements=(
+                    "(current-age >= castle-age)",
+                    "(can-build-with-escrow farm)",
+                    "(idle-farm-count == 0)",
+                    "(food-amount < 350)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-farm-floor-imperial-16",
+                owner="economy-farming",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-food-shortage",
+                reason_label="Imperial food shortage requires a sustained farm economy",
+                building=farm,
+                minimum=16,
+                requirements=(
+                    "(current-age >= imperial-age)",
+                    "(can-build-with-escrow farm)",
+                    "(idle-farm-count == 0)",
+                    "(food-amount < 350)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-lumber-camp-floor-1",
+                owner="economy-dropsites",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-wood-resource-opportunity",
+                reason_label="Wood resource availability requires a real lumber dropsite",
+                building=lumber_camp,
+                minimum=1,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(unit-type-count-total villager >= 7)",
+                    "(resource-found wood)",
+                    "(can-build lumber-camp)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-lumber-camp-floor-2",
+                owner="economy-dropsites",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-wood-dropsite-distant",
+                reason_label="Distant wood requires a second lumber dropsite rather than a gathering-range stretch",
+                building=lumber_camp,
+                minimum=2,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(resource-found wood)",
+                    "(dropsite-min-distance wood > 12)",
+                    "(can-build lumber-camp)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-mining-camp-floor-1",
+                owner="economy-dropsites",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.CORE,
+                reason_ref="strategy-gold-resource-opportunity",
+                reason_label="Gold/stone access requires a real mining dropsite before military scaling",
+                building=mining_camp,
+                minimum=1,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(unit-type-count-total villager >= 9)",
+                    "(or (resource-found gold) (resource-found stone))",
+                    "(can-build mining-camp)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-mining-camp-floor-2",
+                owner="economy-dropsites",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-mining-dropsite-distant",
+                reason_label="Distant gold/stone requires a second mining dropsite",
+                building=mining_camp,
+                minimum=2,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(or (resource-found gold) (resource-found stone))",
+                    "(or (dropsite-min-distance gold > 12) (dropsite-min-distance stone > 12))",
+                    "(can-build mining-camp)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-food-mill-floor-1",
+                owner="economy-dropsites",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-food-resource-opportunity",
+                reason_label="Food resource availability requires the mill capability",
+                building=mill,
+                minimum=1,
+                requirements=(
+                    "(current-age >= dark-age)",
+                    "(resource-found food)",
+                    "(can-build mill)",
+                ),
+            ),
+            _staged_build_demand(
+                identity="economy-market-floor-1",
+                owner="economy-market",
+                posture=_StrategyPosture.BOOM,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-market-resource-imbalance",
+                reason_label="Resource imbalance creates a Market conversion opportunity",
+                building=market,
+                minimum=1,
+                requirements=(
+                    "(current-age >= feudal-age)",
+                    "(or (food-amount < 350) (or (wood-amount < 150) (gold-amount < 150)))",
+                    "(can-build market)",
+                ),
             ),
         )
     )
@@ -1591,6 +1935,21 @@ def build_byzantine_stock_strategy(
         "imperial-siege-ram-floor",
         "imperial-trebuchet-floor",
         "imperial-bombard-floor",
+        "economy-house-floor-1",
+        "economy-house-floor-4",
+        "economy-house-floor-8",
+        "economy-house-floor-12",
+        "economy-house-floor-16",
+        "economy-farm-floor-feudal-4",
+        "economy-farm-floor-feudal-8",
+        "economy-farm-floor-castle-12",
+        "economy-farm-floor-imperial-16",
+        "economy-lumber-camp-floor-1",
+        "economy-lumber-camp-floor-2",
+        "economy-mining-camp-floor-1",
+        "economy-mining-camp-floor-2",
+        "economy-food-mill-floor-1",
+        "economy-market-floor-1",
         *strategic_intent_map,
     }
     demands = [
