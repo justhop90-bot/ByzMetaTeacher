@@ -37,13 +37,13 @@
 - Consumes: existing `NativeDucPlan`
 - Produces: `StrategyProfile.duc_plan`, `StrategyCompilation.duc_plan`, and `lower_strategy_profile(..., duc_plan=...)`
 
-- [ ] Add a failing integration test that passes an explicit `NativeDucPlan` to `lower_strategy_profile()` and asserts object identity is preserved.
-- [ ] Assert the same plan can be emitted through the normal and runtime strategy compilation paths.
-- [ ] Run the focused strategy integration test and observe the expected missing-parameter/field failure.
-- [ ] Add the type-only optional channel to both strategy dataclasses.
-- [ ] Carry the field unchanged through `lower_strategy_profile()`.
-- [ ] Do not attach a default Byzantine DUC plan in this task.
-- [ ] Run the focused strategy integration test and confirm the channel passes.
+- [x] Add a failing integration test that passes an explicit `NativeDucPlan` to `lower_strategy_profile()` and asserts object identity is preserved.
+- [x] Assert the same plan can be emitted through the normal and runtime strategy compilation paths.
+- [x] Run the focused strategy integration test and observe the expected missing-emitter-label failure; the emitted DUC rule was present.
+- [x] Add the type-only optional channel to both strategy dataclasses.
+- [x] Carry the field unchanged through `lower_strategy_profile()`.
+- [x] Do not attach a default Byzantine DUC plan in this task.
+- [x] Run the focused strategy integration test and confirm the channel passes in the full compiler regression.
 
 ## Task 2: Existing compiler channel threading
 
@@ -55,10 +55,10 @@
 - Consumes: `StrategyCompilation.duc_plan`
 - Produces: `compile_strategy_profile(..., duc_plan=...)` and `compile_strategy_runtime_profile(..., duc_plan=...)`
 
-- [ ] Normal compilation uses the explicit override when supplied, otherwise the lowered profile's `duc_plan`.
-- [ ] Runtime compilation uses the same precedence after runtime demand selection.
-- [ ] Reuse the generic compiler's existing `duc_plan` argument; do not add a new generic compiler API.
-- [ ] Confirm emitted DUC rules are byte-identical across repeated compilations.
+- [x] Normal compilation uses the explicit override when supplied, otherwise the lowered profile's `duc_plan`.
+- [x] Runtime compilation uses the same precedence after runtime demand selection.
+- [x] Reuse the generic compiler's existing `duc_plan` argument; do not add a new generic compiler API.
+- [x] Confirm emitted DUC rules are byte-identical across repeated compilations.
 
 ## Task 3: Documentation/current-state reconciliation
 
@@ -67,18 +67,18 @@
 - Modify: `LearnerAI/Compiler/PROJECT_STATE.md`
 - Test: none beyond CI/document consistency review
 
-- [ ] Remove production/train arbitration from the live next-implementation-target wording.
-- [ ] Record the actual current DUC gap as downstream strategy exposure, not missing low-level DUC vocabulary.
-- [ ] Keep DUC runtime liveness, retained-filter behavior, and exact native lifecycle boundaries explicitly OPEN.
-- [ ] Record the remaining attack gap as executable completion/release/controller runtime semantics, not missing typed IR.
+- [x] Remove production/train arbitration from the live next-implementation-target wording.
+- [x] Record the actual current DUC gap as downstream strategy exposure, not missing low-level DUC vocabulary.
+- [x] Keep DUC runtime liveness, retained-filter behavior, and exact native lifecycle boundaries explicitly OPEN.
+- [x] Record the remaining attack gap as executable completion/release/controller runtime semantics, not missing typed IR.
 
 ## Task 4: Acceptance and merge
-- [ ] Focused strategy integration regression passes.
-- [ ] Native DUC target/reacquisition/group fixtures remain zero-findings.
-- [ ] Full compiler regression passes.
-- [ ] 9/9 native-support determinism passes.
-- [ ] Cross-platform snapshot comparison passes.
-- [ ] Compiler verification gate passes.
+- [x] Focused strategy integration regression passes within the 1,431-test compiler suite.
+- [x] Native DUC target/reacquisition/group fixtures remain zero-findings.
+- [x] Full compiler regression passes.
+- [x] 9/9 native-support determinism passes.
+- [x] Cross-platform snapshot comparison passes.
+- [x] Compiler verification gate passes.
 - [ ] Merge only the verified branch into `main`.
 
 ## Actual remaining behavioral gaps after this repair
