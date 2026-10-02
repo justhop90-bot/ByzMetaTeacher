@@ -28,11 +28,11 @@ class WaterTransportExecutionTests(unittest.TestCase):
         ready = WaterExecutionState(
             transport_required=True,
             transport_capable=True,
-            phase=TransportExecutionPhase.READY,
+            transport_phase=TransportExecutionPhase.READY,
         )
         recovered = transition_transport_execution(ready, transport_required=True, transport_capable=False)
 
-        self.assertEqual(recovered.phase, TransportExecutionPhase.RECOVER)
+        self.assertEqual(recovered.transport_phase, TransportExecutionPhase.RECOVER)
         self.assertTrue(recovered.transport_required)
         self.assertFalse(recovered.transport_capable)
 
@@ -89,8 +89,8 @@ class WaterTransportExecutionTests(unittest.TestCase):
         map_assessment = registry.assess_support("map-type")
         warboat_assessment = registry.assess_support("warboat-count")
 
-        self.assertEqual(map_assessment.state.value, "EXECUTABLE_SAFE")
-        self.assertEqual(warboat_assessment.state.value, "EXECUTABLE_SAFE")
+        self.assertEqual(map_assessment.state.value, "executable-safe")
+        self.assertEqual(warboat_assessment.state.value, "executable-safe")
 
     def test_client_exports_typed_water_execution_surface(self):
         self.assertTrue(WaterExecutionPlan)
