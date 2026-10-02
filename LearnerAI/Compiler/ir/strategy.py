@@ -1605,45 +1605,30 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
             )
         )
 
-    strong_pair_values = [
-        str(item["number"])
-        for item in anchor_pairs
-        if item["wall_id"] == 117
-    ]
-    light_pair_values = [
-        str(item["number"])
-        for item in anchor_pairs
-        if item["wall_id"] == 72
-    ]
-
-    def binary_or(expressions):
-        if len(expressions) == 1:
-            return expressions[0]
-        result = expressions[-1]
-        for expression in reversed(expressions[:-1]):
-            result = f"(or {expression} {result})"
-        return result
-
     release_rules = []
-    for values, wall_id, label in (
-        (strong_pair_values, 117, "stone"),
-        (light_pair_values, 72, "palisade"),
-    ):
+    for pair in anchor_pairs:
+        left = pair["left"]
+        right = pair["right"]
+        wall_id = pair["wall_id"]
+        number = pair["number"]
         release_rules.append(
             NativeControlRule(
-                f"byzantine-wall-geometry-release-{label}",
+                f"byzantine-wall-geometry-release-{pair['identity']}",
                 facts=(
                     parse_expression(
                         "(goal byzantine-wall-geometry-request 2)",
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        binary_or(
-                            [
-                                f"(goal byzantine-wall-anchor-pair {value})"
-                                for value in values
-                            ]
-                        ),
+                        f"(goal byzantine-wall-anchor-pair {number})",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        "(goal byzantine-wall-completed 0)",
+                        SourceLocation(1),
+                    ),
+                    parse_expression(
+                        f"(building-type-count {wall_id} >= 1)",
                         SourceLocation(1),
                     ),
                     parse_expression(
