@@ -1566,8 +1566,8 @@ def community_strategy_demands(
                 line="camel-rider-line",
                 minimum=2,
                 age_guard="(current-age >= castle-age)",
-                action_symbol="camel-rider",
-                witness_symbol="camel-rider",
+                action_symbol="329",
+                witness_symbol="329",
                 invalidate_ref="strategy-imperial-age",
             ),
             _training_demand(
