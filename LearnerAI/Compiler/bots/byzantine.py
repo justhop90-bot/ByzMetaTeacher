@@ -380,6 +380,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
     )
 
 
+    # Final Core v1 economic infrastructure closes the deferred opening seam
+    # without changing generic compiler semantics or adding another scheduler.
     # Basic economic infrastructure is explicit bot policy. The stock strategy
     # already owns research and resource allocation, but neither of those facts
     # physically creates the dropsites that keep villagers productive.
