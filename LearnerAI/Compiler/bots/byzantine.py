@@ -682,6 +682,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
 
     wheelbarrow_id = int(base.demand("research-wheelbarrow").target.entity_id)
     double_bit_axe_id = int(base.demand("research-double-bit-axe").target.entity_id)
+    bow_saw_id = int(base.demand("research-bow-saw").target.entity_id)
     horse_collar_id = int(base.demand("research-horse-collar").target.entity_id)
     gold_mining_id = int(base.demand("research-gold-mining").target.entity_id)
     fletching_id = int(base.demand("research-fletching").target.entity_id)
@@ -708,7 +709,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             "(unit-type-count-total villager >= 35)",
         ),
         "research-two-man-saw": (
-            f"(up-research-status c: {double_bit_axe_id} >= 3)",
+            f"(up-research-status c: {bow_saw_id} >= 3)",
             "(unit-type-count-total villager >= 50)",
             "(current-age >= imperial-age)",
         ),
