@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 from ..ast import SourceLocation
-from ..runtime_binding import GoalSlotRequest
+
+if TYPE_CHECKING:
+    from ..runtime_binding import GoalSlotRequest
 from .model import GoalRole, SemanticId, StorageRequestId
 from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
@@ -139,6 +142,7 @@ def lower_water_execution_plan(
     profile,
 ) -> NativeControlPlan:
     """Lower water posture and transport recovery into the shared control plane."""
+    from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
 
     required = profile.observation(plan.transport_required_observation).expression
