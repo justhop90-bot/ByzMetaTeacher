@@ -113,7 +113,7 @@ def _vertical_plan(read_placeholder="0"):
                 actions=(
                     _e("(up-find-local c: 83 c: 1)", "up-find-local", "c:", "83", "c:", "1"),
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
-                    _e("(up-get-object-data id 41)", "up-get-object-data", "id", "41"),
+                    _e("(up-get-object-data 0 41)", "up-get-object-data", "0", "41"),
                 ),
             ),
             NativeDucRule(
@@ -305,7 +305,7 @@ class DucGoalHandoffTests(unittest.TestCase):
                     order=0,
                     facts=(_e("(true)", "true"),),
                     actions=(
-                        _e("(up-get-object-data id 41)", "up-get-object-data", "id", "41"),
+                        _e("(up-get-object-data 0 41)", "up-get-object-data", "0", "41"),
                     ),
                 ),
                 NativeDucRule(
@@ -418,7 +418,7 @@ class DucReacquisitionVerticalTests(unittest.TestCase):
     def test_vertical_resolves_shared_slot(self):
         artifact = compile_source(_marker_source(), duc_plan=_vertical_plan())
         written = re.search(
-            r"\(up-get-object-data id (\d+)\)", artifact
+            r"\(up-get-object-data 0 (\d+)\)", artifact
         )
         read = re.search(r"\(up-set-target-by-id g: (\d+)\)", artifact)
         self.assertIsNotNone(written)
