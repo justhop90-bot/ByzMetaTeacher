@@ -1375,7 +1375,6 @@ def _duc_focus_control_plan(profile: StrategyProfile):
     from ..semantic.analyzer import parse_expression
     from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, SemanticId, StorageRequestId
-    from ..primitives.strategic_number_catalog import StrategicNumberOrigin
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     owner = SemanticId(profile.profile_id, "byzantine-focus-player")
