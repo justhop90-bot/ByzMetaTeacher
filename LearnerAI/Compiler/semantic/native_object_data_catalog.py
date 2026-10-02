@@ -29,10 +29,20 @@ def _object_data_ids() -> frozenset[int]:
         )
 
     payload = json.loads(_INVENTORY.read_text(encoding="utf-8"))
-    family = payload.get("families", {}).get(_OBJECT_DATA_FAMILY)
-    if not isinstance(family, dict):
+    families = payload.get("families", ())
+    family = next(
+        (
+            candidate
+            for candidate in families
+            if isinstance(candidate, dict)
+            and candidate.get("parameter_name") == "ObjectData"
+            and str(candidate.get("family_type", "")).lower() == "value-list"
+        ),
+        None,
+    )
+    if family is None:
         raise NativeObjectDataError(
-            "native ObjectData value family 32 is missing from the checked-in inventory"
+            "native ObjectData value family is missing from the checked-in inventory"
         )
 
     ids: set[int] = set()
@@ -46,7 +56,7 @@ def _object_data_ids() -> frozenset[int]:
             continue
     if not ids:
         raise NativeObjectDataError(
-            "native ObjectData value family 32 contains no numeric entries"
+            "native ObjectData value family contains no numeric entries"
         )
     return frozenset(ids)
 
