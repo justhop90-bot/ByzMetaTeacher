@@ -143,6 +143,30 @@ class StrategicDemandArbitrationTests(unittest.TestCase):
             output,
         )
 
+    def test_counter_demands_start_released_and_follow_selected_package(self):
+        effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
+        output = __import__(
+            "LearnerAI.Compiler.clients.basilisk",
+            fromlist=["compile_strategy_profile"],
+        ).compile_strategy_profile(self.profile, effective)
+
+        init_start = output.index("; Demand initialization")
+        init_block = output[init_start: output.index("; Invalidation:", init_start)]
+        spear_line = next(
+            line
+            for line in init_block.splitlines()
+            if "(set-goal demand-counter-mounted-spears" in line
+        )
+        self.assertNotEqual(spear_line.split()[-1].rstrip(")"), "1")
+        self.assertIn(
+            "(goal counter-package-mounted_pressure_feudal 1)",
+            output,
+        )
+        self.assertIn(
+            "(set-goal demand-counter-mounted-spears 1)",
+            output,
+        )
+
     def test_recoverable_primary_demand_carries_world_loss_policy(self):
         binding = self.profile.demand("castle-commitment")
         self.assertTrue(binding.recovery_on_world_loss)
