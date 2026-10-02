@@ -320,8 +320,8 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         demand = self.profile.demand("water-dock-capability")
         self.assertIn("(map-type islands)", demand.execution.requirements)
         self.assertEqual(
-            demand.execution.invalidate,
-            "(building-type-count-total dock >= 1)",
+            demand.invalidation[0].observation_ref,
+            "strategy-dock-exists",
         )
 
     def test_profile_has_imperial_trash_war_packages(self):
