@@ -14,7 +14,8 @@ jobs:
           python-version: "3.12"
       - name: Reconstruct uploaded artifact byte-for-byte
         run: |
-          cat verification/chunks/*.perpart > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          : > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          for part in verification/chunks/*.perpart; do cat "$part" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; printf "\n" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; done
           sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
           test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
       - name: Install pinned native parser
