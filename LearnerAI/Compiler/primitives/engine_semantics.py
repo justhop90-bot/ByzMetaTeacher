@@ -263,6 +263,7 @@ _ADMISSIBILITY_SPECS = (
 _ARBITRATION_SPECS = (
     ("can-afford-building", "arbitration.building.affordability"),
     ("can-afford-research", "arbitration.research.affordability"),
+    ("up-point-distance", "arbitration.wall.anchor-distance"),
 )
 
 _FEASIBILITY_SPECS = (
@@ -285,6 +286,10 @@ _ACTION_SPECS = (
     ("build", "execution.build.request"),
     ("train", "execution.train.request"),
     ("research", "execution.research.request"),
+)
+
+_NATIVE_CONTROL_ACTION_SPECS = (
+    ("up-build-line", "execution.build.line-request"),
 )
 
 _ESCROW_COMMAND_SPECS = (
@@ -865,6 +870,46 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
     mappings.append(_escrow_percentage_mapping())
     mappings.append(_attack_issue_mapping())
     mappings.extend(
+        EngineSemanticMapping(
+            identity=identity,
+            native_command=command,
+            native_kind="Action",
+            status=EngineSemanticMappingStatus.CONTRACTED,
+            evidence_class="ENGINE FACT",
+            evidence_sources=(
+                "https://airef.github.io/commands/commands-details.html#up-build-line",
+                "repo://docs/reference/engine/catalog/build.md",
+                "repo://docs/reference/inventories/airef-command-schema.json",
+            ),
+            state_effects=(
+                "submits a native building-line placement request from two caller-supplied "
+                "GoalSpan point pairs; the request itself does not prove placement or completion"
+            ),
+            lifetime=(
+                "the native placement request is handed to the engine when the action executes; "
+                "subsequent placement and construction state remain engine-managed"
+            ),
+            ordering=(
+                "the two point spans are read at action execution in emitted source order; "
+                "later rules may observe only whatever native placement/world state subsequently exists"
+            ),
+            admission=(
+                "native command is schema-valid when both point operands are contracted GoalSpan "
+                "storage and the BuildingId is a valid native constant"
+            ),
+            completion=(
+                "no generic completion is claimed; building presence and geometric closure require "
+                "separate world-state witnesses"
+            ),
+            recovery=(
+                "reassess native placement/world state and reissue or retire the geometry plan; "
+                "no synthetic scheduler or completion inference is introduced"
+            ),
+            practice_references=(),
+        )
+        for command, identity in _NATIVE_CONTROL_ACTION_SPECS
+    )
+    mappings.extend(
         (
             EngineSemanticMapping(
                 identity="duc.search-state-retained",
@@ -918,5 +963,6 @@ def default_engine_semantic_mapping_registry() -> EngineSemanticMappingRegistry:
         + tuple(command for command, _identity in _ACTION_SPECS)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
+        + default_native_control_plane_executable_commands()
     )
     return registry
