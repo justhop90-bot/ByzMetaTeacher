@@ -53,9 +53,9 @@ class ByzantineArtifactCompilerAudit(unittest.TestCase):
         print(f"compiler rule-diagnostic errors={len(rule_report.errors)}")
         if strategic.errors:
             print("SN ERRORS", strategic.errors)
-        if recurrent.errors:
+        if recurrent_errors:
             print("RECURRENT ERRORS", recurrent_errors)
-        if duc.errors:
+        if duc_errors:
             print("DUC ERRORS", duc_errors)
         if rule_report.errors:
             print("RULE ERRORS", rule_report.errors)
