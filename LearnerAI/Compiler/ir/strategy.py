@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
     from .water import WaterExecutionPlan
+    from .map_profile import MapProfile
+    from .opening import OpeningSelectorPlan
+    from .economic_control import EconomyControllerPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -384,6 +387,9 @@ class StrategyProfile:
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
     water_execution_plan: "WaterExecutionPlan | None" = None
+    map_profile: tuple["MapProfile", ...] = ()
+    opening_selector: "OpeningSelectorPlan | None" = None
+    economy_controller: "EconomyControllerPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
