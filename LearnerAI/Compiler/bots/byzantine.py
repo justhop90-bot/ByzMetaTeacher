@@ -396,78 +396,8 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
         )
     )
 
-    # Castle power is staged instead of asking for six of everything at once.
-    demands.extend(
-        (
-            _staged_training(
-                effective=effective,
-                identity="castle-cataphracts-2-4",
-                owner="military",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.CORE,
-                reason_ref="strategy-castle-age",
-                reason_label="Establish the first Byzantine Cataphract core",
-                line="cataphract-line",
-                action_symbol="cataphract",
-                witness_symbol="cataphract",
-                lower_bound=2,
-                upper_bound=4,
-                age_guard="(current-age >= castle-age)",
-            ),
-            _staged_training(
-                effective=effective,
-                identity="castle-knights-3-5",
-                owner="military",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.SUPPORT,
-                reason_ref="strategy-castle-age",
-                reason_label="Maintain mobile Castle cavalry for pressure and reaction",
-                line="knight-line",
-                action_symbol="knight-line",
-                witness_symbol="knight-line",
-                lower_bound=3,
-                upper_bound=5,
-                age_guard="(current-age >= castle-age)",
-            ),
-            _staged_training(
-                effective=effective,
-                identity="castle-varangians-2-4",
-                owner="castle-varangian",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="strategy-enemy-infantry-pressure",
-                reason_label="Commit Varangian Guards only against sustained infantry pressure",
-                line="varangian-guard-line",
-                action_symbol="varangian-guard",
-                witness_symbol="varangian-guard",
-                lower_bound=2,
-                upper_bound=4,
-                age_guard="(current-age >= castle-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy militia-line >= 5)",
-                ),
-            ),
-            _staged_training(
-                effective=effective,
-                identity="castle-mangonels-1-2",
-                owner="siege",
-                posture=StrategyPosture.CASTLE_POWER,
-                priority=StrategicPriority.DEFENSE,
-                reason_ref="strategy-enemy-siege",
-                reason_label="Maintain limited Castle siege under sustained enemy siege pressure",
-                line="mangonel-line",
-                action_symbol="mangonel-line",
-                witness_symbol="mangonel-line",
-                lower_bound=1,
-                upper_bound=2,
-                age_guard="(current-age >= castle-age)",
-                extra_requirements=(
-                    "(players-unit-type-count any-enemy mangonel-line >= 2)",
-                ),
-            ),
-        )
-    )
-
+    # Castle military floors are already owned by the stock Byzantine
+    # strategy. Bot policy only strengthens their executable threat guards.
     return tuple(demands)
 
 
