@@ -228,6 +228,60 @@ def _research_demand(
     return demand
 
 
+def _water_research_demand(
+    *,
+    effective: EffectiveCivData,
+    identity: str,
+    tech_name: str,
+    owner: str,
+    age: str,
+    reason_label: str,
+    resources: tuple[Resource, ...],
+) -> _StrategicDemandSpec:
+    tech = _tech(effective, tech_name)
+    token = _slug(tech.name)
+    complete_ref = f"{identity}-complete"
+    return _StrategicDemandSpec(
+        identity=identity,
+        owner=owner,
+        posture=_StrategyPosture.BOOM if age == "feudal-age" else _StrategyPosture.CASTLE_POWER,
+        priority=_StrategicPriority.SUPPORT,
+        reason=(
+            _persistent(reason_label, "strategy-water-islands"),
+            _persistent(f"{identity}:completion-state", complete_ref),
+        ),
+        admissibility=(
+            _persistent(f"{identity}:water-admission", "strategy-water-islands"),
+        ),
+        invalidation=(
+            _persistent(f"{identity}:completed", complete_ref),
+        ),
+        capability_intent=_CapabilityIntent(
+            _CapabilityIntentKind.RESEARCH,
+            "technology",
+            int(tech.id),
+        ),
+        target=_StrategicTarget(
+            _StrategicTargetKind.EXACT,
+            "technology",
+            int(tech.id),
+        ),
+        opportunity_cost=None,
+        execution=_ExecutionDemandTemplate(
+            requirements=(
+                f"(current-age >= {age})",
+                "(map-type islands)",
+                f"(can-research-with-escrow {token})",
+            ),
+            action=f"(research {token})",
+            witness=f"(research-completed {int(tech.id)})",
+            release=f"(research-completed {int(tech.id)})",
+            escrow_release_resources=resources,
+        ),
+        recovery=_CapabilityRecoveryContract(),
+    )
+
+
 def _training_demand(
     *,
     effective: EffectiveCivData,
@@ -888,6 +942,65 @@ def community_strategy_demands(
         )
     )
 
+    demands.extend(
+        (
+            _water_research_demand(
+                effective=effective,
+                identity="water-fishing-lines",
+                tech_name="fishing-lines",
+                owner="water-economy",
+                age="feudal-age",
+                reason_label="Fishing Lines improve a committed Byzantine fishing economy",
+                resources=(Resource.FOOD, Resource.WOOD),
+            ),
+            _water_research_demand(
+                effective=effective,
+                identity="water-gillnets",
+                tech_name="gillnets",
+                owner="water-economy",
+                age="castle-age",
+                reason_label="Gillnets sustain a committed Byzantine fishing economy",
+                resources=(Resource.FOOD, Resource.WOOD),
+            ),
+            _water_research_demand(
+                effective=effective,
+                identity="water-warships",
+                tech_name="warships",
+                owner="water-naval",
+                age="castle-age",
+                reason_label="Warships unlock the verified Castle naval escalation",
+                resources=(Resource.FOOD, Resource.GOLD),
+            ),
+            _water_research_demand(
+                effective=effective,
+                identity="water-heavy-warships",
+                tech_name="heavy-warships",
+                owner="water-naval",
+                age="imperial-age",
+                reason_label="Heavy Warships unlock verified Imperial galley escalation",
+                resources=(Resource.FOOD, Resource.GOLD),
+            ),
+            _water_research_demand(
+                effective=effective,
+                identity="water-fast-fire-ship",
+                tech_name="fast-fire-ship",
+                owner="water-naval",
+                age="imperial-age",
+                reason_label="Fast Fire Ship is the verified Imperial fire-line escalation",
+                resources=(Resource.WOOD, Resource.GOLD),
+            ),
+            _water_research_demand(
+                effective=effective,
+                identity="water-greek-fire",
+                tech_name="greek-fire",
+                owner="water-naval",
+                age="castle-age",
+                reason_label="Greek Fire is a verified Byzantine water-combat upgrade",
+                resources=(Resource.FOOD, Resource.GOLD),
+            ),
+        )
+    )
+
     # Water continuity starts only after a real dock is observed. This is
     # deliberately narrower than automatic water discovery: the latter still
     # requires a proven environmental predicate and remains OPEN.
@@ -1013,6 +1126,10 @@ def community_strategy_demands(
                     "Enemy naval pressure has cleared",
                     "strategy-enemy-naval-pressure-cleared",
                 ),
+                _persistent(
+                    "Castle Age supersedes the Fire Galley floor",
+                    "strategy-castle-age",
+                ),
             ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
@@ -1066,6 +1183,10 @@ def community_strategy_demands(
                     "Enemy naval pressure has cleared",
                     "strategy-enemy-naval-pressure-cleared",
                 ),
+                _persistent(
+                    "Imperial Age supersedes the basic Galley floor",
+                    "strategy-imperial-age",
+                ),
             ),
             capability_intent=_CapabilityIntent(
                 _CapabilityIntentKind.TRAIN,
@@ -1094,6 +1215,71 @@ def community_strategy_demands(
                 release="(or (unit-type-count galley >= 3) "
                 "(and (players-unit-type-count any-enemy galley-line < 2) "
                 "(players-unit-type-count any-enemy fire-galley-line < 2)))",
+            ),
+        )
+    )
+
+    demands.extend(
+        (
+            _training_demand(
+                effective=effective,
+                identity="water-fire-ship-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-naval-pressure",
+                reason_label="Castle naval pressure requires a Fire Ship floor",
+                line="fire-ship-line",
+                minimum=2,
+                age_guard="(current-age >= castle-age)",
+                action_symbol="fire-ship",
+                witness_symbol="fire-ship",
+                invalidate_ref="strategy-imperial-age",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-fast-fire-ship-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-naval-pressure",
+                reason_label="Imperial naval pressure requires Fast Fire Ships",
+                line="fire-ship-line",
+                minimum=3,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="fast-fire-ship",
+                witness_symbol="fast-fire-ship",
+                invalidate_ref="strategy-enemy-naval-pressure-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-galleon-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                reason_ref="strategy-enemy-naval-pressure",
+                reason_label="Imperial naval control requires a Galleon floor",
+                line="galley-line",
+                minimum=3,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="galleon",
+                witness_symbol="galleon",
+                invalidate_ref="strategy-enemy-naval-pressure-cleared",
+            ),
+            _training_demand(
+                effective=effective,
+                identity="water-dromon-floor",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.DEFENSE,
+                reason_ref="strategy-enemy-castle",
+                reason_label="Enemy fortification justifies a Byzantine Dromon floor",
+                line="dromon-line",
+                minimum=1,
+                age_guard="(current-age >= imperial-age)",
+                action_symbol="dromon",
+                witness_symbol="dromon",
+                invalidate_ref="strategy-enemy-castle-cleared",
             ),
         )
     )
@@ -1283,18 +1469,47 @@ def build_byzantine_stock_strategy(
         "water-transport-capability": _PrimaryStrategicIntent.WATER,
         "water-naval-defense": _PrimaryStrategicIntent.WATER,
         "water-naval-control": _PrimaryStrategicIntent.WATER,
+        "water-fishing-lines": _PrimaryStrategicIntent.WATER,
+        "water-gillnets": _PrimaryStrategicIntent.WATER,
+        "water-warships": _PrimaryStrategicIntent.WATER,
+        "water-heavy-warships": _PrimaryStrategicIntent.WATER,
+        "water-fast-fire-ship": _PrimaryStrategicIntent.WATER,
+        "water-greek-fire": _PrimaryStrategicIntent.WATER,
+        "water-fire-ship-floor": _PrimaryStrategicIntent.WATER,
+        "water-fast-fire-ship-floor": _PrimaryStrategicIntent.WATER,
+        "water-galleon-floor": _PrimaryStrategicIntent.WATER,
+        "water-dromon-floor": _PrimaryStrategicIntent.WATER,
     }
     counter_demand_ids = {
         demand_identity
         for package in default_byzantine_counter_packages(effective)
         for demand_identity in package.demand_identities
     }
+    recoverable_world_loss = {
+        "castle-stable-capability",
+        "castle-siege-capability",
+        "castle-monastery-capability",
+        "imperial-university-capability",
+        "adaptive-outpost",
+        "castle-knight-floor",
+        "castle-cataphract-floor",
+        "castle-varangian-guard-floor",
+        "castle-mangonel-floor",
+        "castle-monk-floor",
+        "imperial-cavalier-floor",
+        "imperial-hussar-floor",
+        "imperial-onager-floor",
+        "imperial-siege-ram-floor",
+        "imperial-trebuchet-floor",
+        "imperial-bombard-floor",
+        *strategic_intent_map,
+    }
     demands = [
         replace(
             demand,
             required_primary_intent=strategic_intent_map.get(demand.identity),
             recovery_on_world_loss=(
-                demand.identity in strategic_intent_map
+                demand.identity in recoverable_world_loss
                 or demand.identity in counter_demand_ids
                 or demand.recovery_on_world_loss
             ),
