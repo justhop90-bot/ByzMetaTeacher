@@ -260,6 +260,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
                 "(unit-type-count cataphract >= 2)",
+                "(goal byzantine-attack-phase 2)",
             ),
         )
         self.assertEqual(
@@ -268,6 +269,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
                 "(unit-type-count knight >= 3)",
+                "(goal byzantine-attack-phase 4)",
             ),
         )
         self.assertEqual(plan.rules[0].actions[0].source, "(attack-now)")
@@ -280,6 +282,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native attack rule: byzantine-castle-attack-now-cataphract", first)
         self.assertIn("; Native attack rule: byzantine-castle-attack-now-knight", first)
         self.assertIn("(attack-now)", first)
+        self.assertNotIn("(goal byzantine-attack-phase 2)", first)
 
     def test_runtime_strategy_uses_the_same_default_attack_plan_channel(self):
         snapshot = RuntimeObservationSnapshot(
