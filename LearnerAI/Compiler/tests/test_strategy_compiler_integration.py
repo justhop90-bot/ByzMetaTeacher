@@ -189,6 +189,62 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
         self.assertIn("; Native DUC rule: byzantine-castle-target-infantry", output)
         self.assertIn("(up-find-remote c: 74 c: 1)", output)
 
+    def test_byzantine_strategy_lowers_attack_lifecycle_control_state_machine(self):
+        compilation = lower_strategy_profile(self.profile, self.effective)
+
+        self.assertIsNotNone(compilation.control_plan)
+        control = compilation.control_plan
+        assert control is not None
+        state_ids = tuple(state.identifier for state in control.states)
+        self.assertIn("byzantine-attack-phase", state_ids)
+
+        rule_ids = tuple(
+            rule.identity
+            for rule in control.rules
+            if rule.identity.startswith("byzantine-attack-phase-")
+        )
+        self.assertEqual(
+            rule_ids,
+            (
+                "byzantine-attack-phase-initialize",
+                "byzantine-attack-phase-prepare-cataphract",
+                "byzantine-attack-phase-attack-cataphract",
+                "byzantine-attack-phase-prepare-knight",
+                "byzantine-attack-phase-attack-knight",
+                "byzantine-attack-phase-complete-cataphract",
+                "byzantine-attack-phase-complete-knight",
+                "byzantine-attack-phase-recover-cataphract",
+                "byzantine-attack-phase-recover-knight",
+                "byzantine-attack-phase-reassess",
+            ),
+        )
+
+        attack_plan = compilation.attack_plan
+        assert attack_plan is not None
+        self.assertIn(
+            "(goal byzantine-attack-phase 2)",
+            tuple(fact.source for fact in attack_plan.rules[0].facts),
+        )
+        self.assertIn(
+            "(goal byzantine-attack-phase 4)",
+            tuple(fact.source for fact in attack_plan.rules[1].facts),
+        )
+
+        output = compile_strategy_profile(self.profile, self.effective)
+        self.assertIn("(defconst byzantine-attack-phase", output)
+        self.assertIn(
+            "(set-goal byzantine-attack-phase 1)",
+            output,
+        )
+        self.assertIn(
+            "(set-goal byzantine-attack-phase 2)",
+            output,
+        )
+        self.assertIn(
+            "(set-goal byzantine-attack-phase 0)",
+            output,
+        )
+
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
 
@@ -208,6 +264,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
                 "(unit-type-count cataphract >= 2)",
+                "(goal byzantine-attack-phase 2)",
             ),
         )
         self.assertEqual(
@@ -216,6 +273,7 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
                 "(current-age == castle-age)",
                 "(up-compare-sn 227 >= 75)",
                 "(unit-type-count knight >= 3)",
+                "(goal byzantine-attack-phase 4)",
             ),
         )
         self.assertEqual(plan.rules[0].actions[0].source, "(attack-now)")

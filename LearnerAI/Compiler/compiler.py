@@ -165,7 +165,7 @@ def _compiler_owned_state_identifiers(generated_source: str) -> frozenset[str]:
     return frozenset(ignored)
 
 
-def _storage_requests(ir, control_plan=None, duc_plan=None):
+def _storage_requests(ir, control_plan=None, duc_plan=None, attack_plan=None):
     requests = []
     seen = set()
     for demand in ir:
@@ -188,6 +188,18 @@ def _storage_requests(ir, control_plan=None, duc_plan=None):
             requests.append(request)
     if control_plan is not None:
         for request in control_plan.storage_requests:
+            if request.request_id in seen:
+                continue
+            seen.add(request.request_id)
+            requests.append(request)
+    attack_storage_plan = (
+        attack_plan.native_plan
+        if isinstance(attack_plan, AttackExecution)
+        else attack_plan
+    )
+    if attack_storage_plan is not None:
+        for input_request in attack_storage_plan.goal_input_requests:
+            request = input_request.request
             if request.request_id in seen:
                 continue
             seen.add(request.request_id)
@@ -360,6 +372,7 @@ def _compile_ir_parts(
         program.demands,
         program.control_plan,
         program.duc_plan,
+        program.attack_plan,
     )
     if any(
         isinstance(request, StrategicNumberRequest)
