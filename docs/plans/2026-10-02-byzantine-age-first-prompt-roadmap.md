@@ -17,7 +17,7 @@ Turn Dark Age from a villager-count checkpoint into a real economic opening whil
 - Counter-opening branch extends the Dark target to 24.
 - Arena Fast Castle branch extends the Dark target to 26.
 - Water branches extend the Dark target to 24.
-- Loom is now an explicit Dark Age research demand using the existing `_research_demand` helper.
+- Loom is now an explicit Dark Age research demand using the same `StrategicDemandSpec` construction style as the existing age-transition demand.
 - Loom protects its factual 50-gold cost through the existing opportunity-cost mechanism.
 - Existing Feudal/Castle/Imperial villager stages remain intact.
 - No generic compiler changes.
