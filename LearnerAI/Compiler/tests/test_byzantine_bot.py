@@ -57,6 +57,8 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(research loom)", first)
         self.assertIn("(train villager)", first)
         self.assertIn("(train cataphract)", first)
+        self.assertIn("(build barracks)", first)
+        self.assertIn("(not (players-unit-type-count any-enemy militia-line >= 5))", first)
         self.assertIn("(train varangian-guard)", first)
         self.assertIn("(players-unit-type-count any-enemy militia-line >= 5)", first)
         self.assertIn("(attack-now)", first)
