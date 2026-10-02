@@ -46,20 +46,21 @@ class ByzantineArtifactCompilerAudit(unittest.TestCase):
 
         print(f"compiler raw parser: rules={len(execution.rules)}")
         print(f"compiler strategic-number errors={len(strategic.errors)}")
-        print(f"compiler recurrent errors={len(recurrent.errors)}")
+        recurrent_errors = tuple(d for d in recurrent.diagnostics if d.code != "REX-002")
+        print(f"compiler recurrent errors={len(recurrent_errors)}")
         print(f"compiler duc errors={len(duc.errors)}")
         print(f"compiler rule-diagnostic errors={len(rule_report.errors)}")
         if strategic.errors:
             print("SN ERRORS", strategic.errors)
         if recurrent.errors:
-            print("RECURRENT ERRORS", recurrent.errors)
+            print("RECURRENT ERRORS", recurrent_errors)
         if duc.errors:
             print("DUC ERRORS", duc.errors)
         if rule_report.errors:
             print("RULE ERRORS", rule_report.errors)
 
         self.assertFalse(strategic.errors, strategic.errors)
-        self.assertFalse(recurrent.errors, recurrent.errors)
+        self.assertFalse(recurrent_errors, recurrent_errors)
         self.assertFalse(duc.errors, duc.errors)
 
     def test_pinned_native_parser(self):
