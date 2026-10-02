@@ -504,7 +504,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(current-age >= feudal-age)", market.execution.requirements)
         self.assertIn("(unit-type-count-total villager >= 24)", market.execution.requirements)
         self.assertIn(
-            "(or (food-amount < 300) (wood-amount < 150) (gold-amount < 150))",
+            "(or (food-amount < 300) (or (wood-amount < 150) (gold-amount < 150)))",
             market.execution.requirements,
         )
 
