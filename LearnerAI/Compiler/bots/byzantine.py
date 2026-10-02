@@ -376,7 +376,6 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             building_name="barracks",
             minimum_age=Age.FEUDAL,
             upper_bound=1,
-            action_name="12",
         )
     )
 
@@ -423,7 +422,6 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             extra_requirements=(
                 "(map-type islands)",
             ),
-            action_name="45",
         )
     )
 
