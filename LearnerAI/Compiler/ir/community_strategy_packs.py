@@ -216,6 +216,7 @@ def _research_demand(
             release=f"(research-completed {int(tech.id)})",
             escrow_release_resources=resources,
         ),
+        recovery=_CapabilityRecoveryContract(),
     )
     return demand
 
