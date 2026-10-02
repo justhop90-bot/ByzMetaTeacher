@@ -2051,13 +2051,13 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
         (
             "byzantine-castle-target-knight",
             "(players-unit-type-count any-enemy knight >= 3)",
-            "knight-line",
+            "38",
             "knight",
         ),
         (
             "byzantine-castle-target-infantry",
             "(players-unit-type-count any-enemy militia-line >= 5)",
-            "militia-line",
+            "74",
             "militia-line",
         ),
     )
