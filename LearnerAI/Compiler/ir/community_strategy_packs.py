@@ -928,8 +928,8 @@ def community_strategy_demands(
                     "(building-type-count-total mill >= 1)",
                     "(unit-type-count-total villager >= 18)",
                     "(can-build-with-escrow farm)",
-                    "(idle-farm-count == 0)",
-                    "(food-amount < 350)",
+                    "(idle-farm-count < 2)",
+                    "(food-amount < 500)",
                 ),
             ),
             _staged_build_demand(
@@ -946,8 +946,8 @@ def community_strategy_demands(
                     "(building-type-count-total mill >= 1)",
                     "(unit-type-count-total villager >= 30)",
                     "(can-build-with-escrow farm)",
-                    "(idle-farm-count == 0)",
-                    "(food-amount < 350)",
+                    "(idle-farm-count < 2)",
+                    "(food-amount < 700)",
                 ),
             ),
             _staged_build_demand(
@@ -964,8 +964,8 @@ def community_strategy_demands(
                     "(unit-type-count-total villager >= 45)",
                     "(building-type-count-total mill >= 1)",
                     "(can-build-with-escrow farm)",
-                    "(idle-farm-count == 0)",
-                    "(food-amount < 350)",
+                    "(idle-farm-count < 2)",
+                    "(food-amount < 900)",
                 ),
             ),
             _staged_build_demand(
@@ -979,9 +979,11 @@ def community_strategy_demands(
                 minimum=16,
                 requirements=(
                     "(current-age >= imperial-age)",
+                    "(building-type-count-total mill >= 1)",
+                    "(unit-type-count-total villager >= 60)",
                     "(can-build-with-escrow farm)",
-                    "(idle-farm-count == 0)",
-                    "(food-amount < 350)",
+                    "(idle-farm-count < 2)",
+                    "(food-amount < 1100)",
                 ),
             ),
             _staged_build_demand(
