@@ -578,6 +578,7 @@ _PLAYER_VALUES = {
     "every",
     "any-enemy",
     "every-enemy",
+    "this-any-ally",
 }
 
 
