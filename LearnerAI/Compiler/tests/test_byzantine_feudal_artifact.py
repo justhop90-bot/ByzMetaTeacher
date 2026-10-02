@@ -48,20 +48,21 @@ class ByzantineArtifactCompilerAudit(unittest.TestCase):
         print(f"compiler strategic-number errors={len(strategic.errors)}")
         recurrent_errors = tuple(d for d in recurrent.diagnostics if d.code != "REX-002")
         print(f"compiler recurrent errors={len(recurrent_errors)}")
-        print(f"compiler duc errors={len(duc.errors)}")
+        duc_errors = tuple(item for item in duc.diagnostics if str(item.severity).upper() == "ERROR")
+        print(f"compiler duc errors={len(duc_errors)}")
         print(f"compiler rule-diagnostic errors={len(rule_report.errors)}")
         if strategic.errors:
             print("SN ERRORS", strategic.errors)
         if recurrent.errors:
             print("RECURRENT ERRORS", recurrent_errors)
         if duc.errors:
-            print("DUC ERRORS", duc.errors)
+            print("DUC ERRORS", duc_errors)
         if rule_report.errors:
             print("RULE ERRORS", rule_report.errors)
 
         self.assertFalse(strategic.errors, strategic.errors)
         self.assertFalse(recurrent_errors, recurrent_errors)
-        self.assertFalse(duc.errors, duc.errors)
+        self.assertFalse(duc_errors, duc_errors)
 
     def test_pinned_native_parser(self):
         proc = subprocess.run(
@@ -84,7 +85,15 @@ class ByzantineArtifactCompilerAudit(unittest.TestCase):
             payload = json.loads(proc.stdout)
             print("native failed=", payload.get("failed"))
             print("native finding_count=", payload.get("finding_count"))
-            for finding in payload.get("findings", [])[:20]:
+            findings = payload.get("findings", [])
+            print("native unique codes=", sorted({f.get("code") for f in findings}))
+            grouped = {}
+            for f in findings:
+                key = (f.get("code"), f.get("severity"), f.get("message"))
+                grouped[key] = grouped.get(key, 0) + 1
+            for (key, count) in sorted(grouped.items(), key=lambda item: (item[0][0] or "", item[0][1] or "", item[0][2] or "")):
+                print("NATIVE-GROUP", count, key)
+            for finding in findings[:20]:
                 print("NATIVE", finding)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         payload = json.loads(proc.stdout)
