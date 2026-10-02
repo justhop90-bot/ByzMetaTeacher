@@ -121,14 +121,12 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         output = compile_strategy_profile(profile, self.effective)
 
         for action in (
-            "(research fishing-lines)",
-            "(research gillnets)",
-            "(research warships)",
-            "(research heavy-warships)",
-            "(research fast-fire-ship)",
-            "(research greek-fire)",
+            "(research 906)",
+            "(research 65)",
+            "(research 34)",
+            "(research 35)",
+            "(research 464)",
             "(train fire-ship)",
-            "(train fast-fire-ship)",
             "(train galleon)",
             "(train dromon)",
         ):
