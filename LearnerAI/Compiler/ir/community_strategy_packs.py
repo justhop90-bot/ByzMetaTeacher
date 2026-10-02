@@ -332,6 +332,11 @@ def community_strategy_observations(
             _airef_provenance(effective, "commands/commands-details.html#map-type"),
         ),
         _observation(
+            "strategy-opening-pressure",
+            "(town-under-attack)",
+            _airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
+        ),
+        _observation(
             "strategy-enemy-pressure",
             "(or (players-unit-type-count any-enemy knight >= 3) "
             "(or (players-unit-type-count any-enemy archer-line >= 4) "
