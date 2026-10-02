@@ -83,6 +83,34 @@ jobs:
       - name: Verify native parser import
         run: |
           python -c "import aoe2_ai_lab; print('aoe2-ai-parser import: OK')"
+      - name: Pinned native parser gate - uploaded patched Byzantine artifact
+        run: |
+          cat verification/chunks/*.perpart > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
+          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
+          set +e
+          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/byz-native-1.json
+          status1=$?
+          python -m aoe2_ai_lab lint /tmp/Byzantine-Core-v1-dark-age-mining-patched.per --profile default --json > /tmp/byz-native-2.json
+          status2=$?
+          set -e
+          echo "first_exit=$status1"
+          echo "second_exit=$status2"
+          echo "first_result:"
+          cat /tmp/byz-native-1.json
+          echo "second_result:"
+          cat /tmp/byz-native-2.json
+          cmp -s /tmp/byz-native-1.json /tmp/byz-native-2.json
+          test $status1 -eq 0
+          test $status2 -eq 0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("/tmp/byz-native-1.json").read_text())
+          print("finding_count=", report.get("finding_count"))
+          print("failed=", report.get("failed"))
+          if report.get("finding_count") != 0 or report.get("findings") != [] or report.get("failed") is not False:
+              raise SystemExit(1)
+          PY
       - name: Verify generic compiler fixture reproducibility
         run: python LearnerAI/Compiler/tests/assert_generated_fixture_reproducible.py --output /tmp/CompilerFixture.per
       - name: Native zero-findings acceptance - freshly compiled generic compiler fixture
