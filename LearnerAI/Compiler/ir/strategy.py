@@ -1578,6 +1578,14 @@ def _strategy_control_plan(profile: StrategyProfile):
             profile.water_execution_plan,
             profile,
         )
+    opening_plan = None
+    if profile.opening_selector is not None:
+        from .opening import lower_opening_selector
+        opening_plan = lower_opening_selector(profile.opening_selector, profile)
+    economy_plan = None
+    if profile.economy_controller is not None:
+        from .economic_control import lower_economy_controller
+        economy_plan = lower_economy_controller(profile.economy_controller, profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1603,6 +1611,8 @@ def _strategy_control_plan(profile: StrategyProfile):
         assertion_plan,
         attack_lifecycle_plan,
         water_plan,
+        opening_plan,
+        economy_plan,
     )
 
 
