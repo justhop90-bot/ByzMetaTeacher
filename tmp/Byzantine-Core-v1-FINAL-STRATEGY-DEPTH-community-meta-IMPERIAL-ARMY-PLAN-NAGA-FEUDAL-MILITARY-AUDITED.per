@@ -1528,10 +1528,12 @@
     (current-age == feudal-age)
     (or
         (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
-        (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
-        (and
-            (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
-            (unit-type-count-total militia-line >= bt-feudal-maa-floor)
+        (or
+            (goal byzantine-feudal-army-package byzantine-feudal-package-scout)
+            (and
+                (goal byzantine-feudal-army-package byzantine-feudal-package-maa)
+                (unit-type-count-total militia-line >= bt-feudal-maa-floor)
+            )
         )
     )
     (goal demand-feudal-archer-floor 0)
