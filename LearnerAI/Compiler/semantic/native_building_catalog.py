@@ -29,6 +29,8 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     "siege-workshop": 49,
     "university": 209,
     "outpost": 598,
+    "watch-tower": 79,
+    "stone-wall": 117,
 }
 
 
