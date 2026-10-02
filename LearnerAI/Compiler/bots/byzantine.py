@@ -503,7 +503,7 @@ def _castle_logistica_research(effective: EffectiveCivData) -> _strategy.Strateg
         execution=_strategy.ExecutionDemandTemplate(
             requirements=(
                 "(current-age >= castle-age)",
-                "(or (goal opening-plan 3) "
+                "(or (map-type arena) "
                 "(players-unit-type-count any-enemy militia-line >= 5))",
                 "(can-research-with-escrow ri-logistica)",
             ),
@@ -545,7 +545,7 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
     guard_by_identity = {
         "castle-second-town-center": (
             "(map-type arena)",
-            "(goal opening-plan 3)",
+            "(map-type arena)",
             "(unit-type-count-total villager >= 35)",
             "(not (players-unit-type-count any-enemy militia-line >= 5))",
         ),
