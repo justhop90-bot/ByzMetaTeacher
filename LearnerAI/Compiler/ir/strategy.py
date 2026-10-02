@@ -1514,6 +1514,26 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
         ),
     )
 
+    begin_scoring = NativeControlRule(
+        "byzantine-wall-geometry-begin-scoring",
+        facts=(
+            parse_expression(
+                "(goal byzantine-wall-geometry-request 1)",
+                SourceLocation(1),
+            ),
+            parse_expression(
+                "(goal byzantine-wall-issued 0)",
+                SourceLocation(1),
+            ),
+        ),
+        actions=(
+            parse_expression(
+                "(set-goal byzantine-wall-geometry-request 2)",
+                SourceLocation(1),
+            ),
+        ),
+    )
+
     score_rules = []
     for pair in anchor_pairs:
         for band_index, (max_distance, distance_score) in enumerate(
