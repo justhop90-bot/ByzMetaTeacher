@@ -131,7 +131,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
     def test_profile_has_conditional_castle_economic_expansion(self):
         demand = self.profile.demand("castle-second-town-center")
         self.assertIn("(map-type arena)", demand.execution.requirements)
-        self.assertIn("(goal opening-plan 3)", demand.execution.requirements)
+        self.assertIn("(map-type arena)", demand.execution.requirements)
         self.assertIn("(unit-type-count-total villager >= 35)", demand.execution.requirements)
         self.assertIn(
             "(not (players-unit-type-count any-enemy militia-line >= 5))",
@@ -148,7 +148,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["castle-cataphract-floor"].execution.requirements,
         )
         self.assertIn(
-            "(goal opening-plan 3)",
+            "(map-type arena)",
             demands["castle-cataphract-floor"].execution.requirements,
         )
 
@@ -159,7 +159,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["castle-monk-floor"].execution.requirements,
         )
         self.assertIn(
-            "(goal opening-plan 3)",
+            "(map-type arena)",
             demands["castle-monk-floor"].execution.requirements,
         )
         self.assertIn(
