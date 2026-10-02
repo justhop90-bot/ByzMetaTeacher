@@ -1373,21 +1373,35 @@ def _duc_focus_control_plan(profile: StrategyProfile):
         return None
 
     from ..semantic.analyzer import parse_expression
-    from ..runtime_binding import GoalSlotRequest
+    from ..runtime_binding import GoalSlotRequest, StrategicNumberRequest
     from .model import GoalRole, SemanticId, StorageRequestId
+    from ..primitives.strategic_number_catalog import StrategicNumberOrigin
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
 
     owner = SemanticId(profile.profile_id, "byzantine-focus-player")
     state_name = "byzantine-focus-player"
-    state = NativeControlState(
+    player_state = NativeControlState(
         state_name,
         GoalSlotRequest(
             StorageRequestId(owner, state_name),
             role=GoalRole.PERSISTENT_STATE,
         ),
     )
+    focus_sn_state = NativeControlState(
+        "sn-focus-player-number",
+        StrategicNumberRequest(
+            StorageRequestId(owner, "sn-focus-player-number"),
+            why_not_goal=(
+                "Native focus-player context is a Strategic Number control state; "
+                "the compiler does not infer player identity beyond the native output."
+            ),
+            stability_key=f"{profile.profile_id}:sn-focus-player-number",
+            origin=StrategicNumberOrigin.NATIVE_REFERENCE,
+            native_strategic_number_id=251,
+        ),
+    )
     return NativeControlPlan(
-        states=(state,),
+        states=(focus_sn_state, player_state),
         rules=(
             NativeControlRule(
                 f"{state_name}-discover",
