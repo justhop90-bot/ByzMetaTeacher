@@ -374,6 +374,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 minimum_age=Age.DARK,
                 lower_bound=index,
                 upper_bound=index + 1,
+                extra_requirements=("(population-headroom <= 2)",),
             )
         )
 
