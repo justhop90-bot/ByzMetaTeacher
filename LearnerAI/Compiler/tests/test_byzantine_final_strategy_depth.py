@@ -23,7 +23,7 @@ class ByzantineFinalStrategyDepthTests(unittest.TestCase):
             "imperial-heavy-camel-floor",
         ):
             self.assertIn(identity, self.demands)
-        self.assertIn("(train camel-rider)", self.output)
+        self.assertIn("(train 329)", self.output)
         self.assertIn("(train halberdier)", self.output)
         self.assertIn("(train heavy-camel-rider)", self.output)
 
