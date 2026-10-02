@@ -19,7 +19,17 @@ class NativeBuildingIdError(ValueError):
 # This is a deliberate source-target/native-observation split, not a second
 # public BuildingId symbol. The checked-in Byzantine object manifest records
 # object 621 as the Castle-Age Town Center object used for expansion.
-_TOWN_CENTER_BUILD_OBJECT_ID = 621
+_CANONICAL_BUILDING_ID_OVERRIDES = {
+    # The checked-in Byzantine factual snapshot supplies these native object
+    # identities. Their engine catalog detail pages are absent from the current
+    # catalog tree, so these symbols remain explicit and auditable here rather
+    # than silently disappearing from the compiler's build vocabulary.
+    "town-center": 621,
+    "stable": 101,
+    "siege-workshop": 49,
+    "university": 209,
+    "outpost": 598,
+}
 
 
 @lru_cache(maxsize=1)
@@ -67,8 +77,9 @@ def resolve_building_id(symbol: str) -> int:
             f"invalid BuildingId symbol '{symbol}'"
         )
 
-    if token == "town-center":
-        return _TOWN_CENTER_BUILD_OBJECT_ID
+    override = _CANONICAL_BUILDING_ID_OVERRIDES.get(token)
+    if override is not None:
+        return override
 
     try:
         return _building_ids()[token]
