@@ -103,6 +103,23 @@ jobs:
           )
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per --report /tmp/native-reports/strategy.json
+      - name: Generate fresh Byzantine artifact and machine-audited land delta
+        run: |
+          cp /tmp/basilisk-strategy.per /tmp/Byzantine-Core-v1-current.per
+          python LearnerAI/Compiler/tests/audit_byzantine_land_delta.py \
+            /tmp/Byzantine-Core-v1-current.per \
+            --report /tmp/native-reports/byzantine-land-delta.json
+
+      - name: Upload fresh Byzantine artifact and land delta
+        uses: actions/upload-artifact@v7
+        with:
+          name: byzantine-land-delta
+          path: |
+            /tmp/Byzantine-Core-v1-current.per
+            /tmp/native-reports/byzantine-land-delta.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Native zero-findings acceptance - Varangian map opening economy control slice
         run: |
           python - <<'PY'
