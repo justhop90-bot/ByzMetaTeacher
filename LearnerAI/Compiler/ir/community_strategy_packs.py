@@ -333,8 +333,8 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-opening-pressure",
-            "(town-under-attack)",
-            _airef_provenance(effective, "commands/commands-details.html#town-under-attack"),
+            "(players-unit-type-count any-enemy militia-line >= 5)",
+            effective.unit_line("militia-line").provenance,
         ),
         _observation(
             "strategy-enemy-pressure",
