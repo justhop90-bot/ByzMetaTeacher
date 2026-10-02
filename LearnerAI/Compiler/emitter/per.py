@@ -789,7 +789,7 @@ def emit(
             ]
             if demand.strategic_binding.required_primary_intent is not None:
                 recovery_guards.append(
-                    f"(goal {demand.strategic_binding._arbitration_state_name} "
+                    f"(goal {demand.strategic_binding.arbitration_state_name} "
                     f"{demand.strategic_binding.required_primary_intent.value})"
                 )
             recovery_guards.extend(
