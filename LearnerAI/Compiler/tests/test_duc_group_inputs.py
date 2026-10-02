@@ -194,7 +194,7 @@ class DucGroupInputTests(unittest.TestCase):
 
     def test_object_data_operand_must_be_numeric(self):
         plan = _group_plan(object_data="object-data-id")
-        with self.assertRaisesRegex(ValueError, "requires a numeric ObjectData"):
+        with self.assertRaisesRegex(ValueError, "must be a numeric native ObjectData ID"):
             default_de_registry().validate_duc_plan(plan)
 
     def test_input_wrong_command_rejected(self):
