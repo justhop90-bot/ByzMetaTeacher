@@ -180,13 +180,11 @@ class PrimitiveRegistry:
             missing = sorted(goal_sites - rule_sites)
             raise ValueError(f"native attack Goal input sites do not exist: {missing}")
         for request in plan.goal_input_requests:
-            site = (request.rule_identity, request.section, request.expression_index)
-            expression = next(
-                expression
-                for rule in plan.rules
-                if rule.identity == request.rule_identity
-                for expression in (rule.facts if request.section == "FACT" else rule.actions)
+            rule = next(
+                rule for rule in plan.rules if rule.identity == request.rule_identity
             )
+            expressions = rule.facts if request.section == "FACT" else rule.actions
+            expression = expressions[request.expression_index]
             if request.argument_index >= len(expression.args):
                 raise ValueError(f"native attack Goal input '{request.site_key}' argument is outside expression")
             if expression.head not in {"goal", "up-compare-goal"}:
