@@ -1778,13 +1778,12 @@ def _strategy_control_plan(profile: StrategyProfile):
 
 
 def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
-    """Lower strategic arbitration through persistent observation mirrors.
+    """Lower strategic arbitration through compact persistent native state.
 
-    Arbitration candidate predicates are deliberately cached as native Goal
-    facts before selection/release rules consume them. This keeps generated
-    .per guards short and deterministic instead of recursively expanding the
-    same observation expressions into every precedence rule. The mirrors are
-    compiler-policy state, not a second scheduler.
+    Native observations are mirrored into short Goal slots. Each arbitration
+    candidate is then mirrored into its own compact eligibility Goal, so
+    precedence/release rules consume only small state predicates instead of
+    recursively expanding Boolean observation trees.
     """
     plan = profile.strategic_arbitration
     if plan is None:
@@ -1797,9 +1796,6 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
 
     def observation_expr(ref: str) -> str:
         return profile.observation(ref).expression
-
-    def observation_state_name(ref: str) -> str:
-        return f"strategic-observation-{ref}"
 
     observation_refs = []
     seen_observations: set[str] = set()
@@ -1820,18 +1816,45 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
     if plan.emergency_observation_ref is not None:
         add_observation(plan.emergency_observation_ref)
 
+    observation_state_names = {
+        ref: f"arb-o{index:02d}"
+        for index, ref in enumerate(observation_refs, start=1)
+    }
+
+    ordered = tuple(
+        sorted(plan.candidates, key=lambda item: (-item.priority, item.identity))
+    )
+    candidate_state_names = {
+        candidate.identity: f"arb-c{index:02d}"
+        for index, candidate in enumerate(ordered, start=1)
+    }
+
     observation_states = tuple(
         NativeControlState(
-            observation_state_name(ref),
+            observation_state_names[ref],
             GoalSlotRequest(
                 StorageRequestId(
-                    SemanticId(profile.profile_id, observation_state_name(ref)),
+                    SemanticId(profile.profile_id, observation_state_names[ref]),
                     "arbitration-observation",
                 ),
                 role=GoalRole.PERSISTENT_STATE,
             ),
         )
         for ref in observation_refs
+    )
+
+    candidate_states = tuple(
+        NativeControlState(
+            candidate_state_names[candidate.identity],
+            GoalSlotRequest(
+                StorageRequestId(
+                    SemanticId(profile.profile_id, candidate_state_names[candidate.identity]),
+                    "arbitration-candidate",
+                ),
+                role=GoalRole.PERSISTENT_STATE,
+            ),
+        )
+        for candidate in ordered
     )
 
     primary_state = NativeControlState(
@@ -1846,19 +1869,9 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
     )
 
     def observation_guard(ref: str, expected: bool) -> str:
-        state = observation_state_name(ref)
-        return f"(goal {state} {1 if expected else 0})"
+        return f"(goal {observation_state_names[ref]} {1 if expected else 0})"
 
-    def combine(parts: list[str]) -> str:
-        if not parts:
-            return "(true)"
-        if len(parts) == 1:
-            return parts[0]
-        return _combine_binary_native_guards("and", tuple(parts))
-
-    candidate_guards: dict[str, str] = {}
-    ordered = tuple(sorted(plan.candidates, key=lambda item: (-item.priority, item.identity)))
-    for candidate in ordered:
+    def candidate_guard(candidate: object) -> str:
         parts = [
             observation_guard(ref, True)
             for ref in candidate.required_observation_refs
@@ -1867,91 +1880,124 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             observation_guard(ref, False)
             for ref in candidate.forbidden_observation_refs
         )
-        candidate_guards[candidate.identity] = combine(parts)
+        if not parts:
+            return "(true)"
+        combined = parts[0]
+        for part in parts[1:]:
+            combined = f"(and {combined} {part})"
+        return combined
 
-    rules: list[NativeControlRule] = []
+    candidate_guards = {
+        candidate.identity: candidate_guard(candidate)
+        for candidate in ordered
+    }
 
-    if observation_states:
-        rules.append(
-            NativeControlRule(
-                "strategic-arbitration-observation-initialize",
-                facts=(
-                    parse_expression(
-                        f"(goal {plan.state_name} 0)",
-                        SourceLocation(1),
-                    ),
-                ),
-                actions=tuple(
-                    [
-                        *(
-                            parse_expression(
-                                f"(set-goal {state.identifier} 0)",
-                                SourceLocation(1),
-                            )
-                            for state in observation_states
-                        ),
-                        parse_expression("(disable-self)", SourceLocation(1)),
-                    ]
-                ),
-            )
-        )
-
-        for ref in observation_refs:
-            state_name = observation_state_name(ref)
-            expression = observation_expr(ref)
-            rules.append(
-                NativeControlRule(
-                    f"strategic-arbitration-observation-enable-{ref}",
-                    facts=(
-                        parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
-                        parse_expression(expression, SourceLocation(1)),
-                    ),
-                    actions=(
-                        parse_expression(f"(set-goal {state_name} 1)", SourceLocation(1)),
-                    ),
-                )
-            )
-            rules.append(
-                NativeControlRule(
-                    f"strategic-arbitration-observation-disable-{ref}",
-                    facts=(
-                        parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
-                        parse_expression(f"(not {expression})", SourceLocation(1)),
-                    ),
-                    actions=(
-                        parse_expression(f"(set-goal {state_name} 0)", SourceLocation(1)),
-                    ),
-                )
-            )
-
-    rules.append(
+    rules: list[NativeControlRule] = [
         NativeControlRule(
-            "strategic-primary-intent-initialize",
-            facts=(parse_expression(f"(goal {plan.state_name} 0)", SourceLocation(1)),),
-            actions=(
-                parse_expression(f"(set-goal {plan.state_name} 0)", SourceLocation(1)),
-                parse_expression("(disable-self)", SourceLocation(1)),
+            "strategic-arbitration-state-initialize",
+            facts=(
+                parse_expression(
+                    f"(goal {plan.state_name} 0)",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=tuple(
+                [
+                    *(
+                        parse_expression(
+                            f"(set-goal {state.identifier} 0)",
+                            SourceLocation(1),
+                        )
+                        for state in (*observation_states, *candidate_states)
+                    ),
+                    parse_expression("(disable-self)", SourceLocation(1)),
+                ]
             ),
         )
-    )
+    ]
+
+    for ref in observation_refs:
+        state_name = observation_state_names[ref]
+        expression = observation_expr(ref)
+        rules.append(
+            NativeControlRule(
+                f"strategic-arbitration-observation-enable-{ref}",
+                facts=(
+                    parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
+                    parse_expression(expression, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {state_name} 1)", SourceLocation(1)),
+                ),
+            )
+        )
+        rules.append(
+            NativeControlRule(
+                f"strategic-arbitration-observation-disable-{ref}",
+                facts=(
+                    parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
+                    parse_expression(f"(not {expression})", SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {state_name} 0)", SourceLocation(1)),
+                ),
+            )
+        )
 
     for candidate in ordered:
+        state_name = candidate_state_names[candidate.identity]
+        eligibility = candidate_guards[candidate.identity]
+        rules.append(
+            NativeControlRule(
+                f"strategic-arbitration-candidate-enable-{candidate.identity.lower()}",
+                facts=(
+                    parse_expression(f"(goal {state_name} 0)", SourceLocation(1)),
+                    parse_expression(eligibility, SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {state_name} 1)", SourceLocation(1)),
+                ),
+            )
+        )
+        rules.append(
+            NativeControlRule(
+                f"strategic-arbitration-candidate-disable-{candidate.identity.lower()}",
+                facts=(
+                    parse_expression(f"(goal {state_name} 1)", SourceLocation(1)),
+                    parse_expression(f"(not {eligibility})", SourceLocation(1)),
+                ),
+                actions=(
+                    parse_expression(f"(set-goal {state_name} 0)", SourceLocation(1)),
+                ),
+            )
+        )
+
+    for candidate in ordered:
+        candidate_state = candidate_state_names[candidate.identity]
         for source_intent in candidate.from_intents:
             guards = [
                 f"(goal {plan.state_name} {source_intent.value})",
-                candidate_guards[candidate.identity],
+                f"(goal {candidate_state} 1)",
             ]
             higher = tuple(
                 other
                 for other in ordered
-                if other.priority > candidate.priority and source_intent in other.from_intents
+                if other.priority > candidate.priority
+                and source_intent in other.from_intents
             )
-            for other in higher:
-                guards.append(f"(not {candidate_guards[other.identity]})")
+            guards.extend(
+                f"(not (goal {candidate_state_names[other.identity]} 1))"
+                for other in higher
+            )
             rules.append(
                 NativeControlRule(
                     f"strategic-primary-intent-select-{candidate.identity.lower()}-from-{source_intent.value}",
-                    facts=(parse_expression(combine(guards), SourceLocation(1)),),
+                    facts=(
+                        parse_expression(
+                            _combine_binary_native_guards("and", tuple(guards)),
+                            SourceLocation(1),
+                        ),
+                    ),
                     actions=(
                         parse_expression(
                             f"(set-goal {plan.state_name} {candidate.intent.value})",
@@ -1962,19 +2008,22 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             )
 
     for candidate in ordered:
-        if not candidate.release_observation_refs and not candidate.invalidation_observation_refs:
-            continue
+        candidate_state = candidate_state_names[candidate.identity]
         source = f"(goal {plan.state_name} {candidate.intent.value})"
         if candidate.release_observation_refs:
             release_parts = [
                 observation_guard(ref, True)
                 for ref in candidate.release_observation_refs
             ]
-            blocking = []
-            for other in ordered:
-                if candidate.intent in other.from_intents:
-                    blocking.append(f"(not {candidate_guards[other.identity]})")
-            release_guard = combine([source, combine(release_parts), *blocking])
+            blocking = [
+                f"(not (goal {candidate_state_names[other.identity]} 1))"
+                for other in ordered
+                if candidate.intent in other.from_intents
+            ]
+            release_guard = _combine_binary_native_guards(
+                "and",
+                tuple([source, *release_parts, *blocking]),
+            )
             rules.append(
                 NativeControlRule(
                     f"strategic-primary-intent-release-{candidate.identity.lower()}",
@@ -1987,19 +2036,22 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
                     ),
                 )
             )
+
         if candidate.invalidation_observation_refs:
             invalidation_parts = [
                 observation_guard(ref, True)
                 for ref in candidate.invalidation_observation_refs
             ]
-            blocking = []
-            for other in ordered:
-                if (
-                    other.priority > candidate.priority
-                    and candidate.intent in other.from_intents
-                ):
-                    blocking.append(f"(not {candidate_guards[other.identity]})")
-            invalidation_guard = combine([source, combine(invalidation_parts), *blocking])
+            blocking = [
+                f"(not (goal {candidate_state_names[other.identity]} 1))"
+                for other in ordered
+                if other.priority > candidate.priority
+                and candidate.intent in other.from_intents
+            ]
+            invalidation_guard = _combine_binary_native_guards(
+                "and",
+                tuple([source, *invalidation_parts, *blocking]),
+            )
             rules.append(
                 NativeControlRule(
                     f"strategic-primary-intent-invalidate-{candidate.identity.lower()}",
@@ -2014,7 +2066,7 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
             )
 
     return NativeControlPlan(
-        states=(primary_state, *observation_states),
+        states=(primary_state, *observation_states, *candidate_states),
         rules=tuple(rules),
     )
 
