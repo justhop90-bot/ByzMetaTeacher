@@ -34,7 +34,14 @@ def _profile():
     profile = build_byzantine_castle_strategy(effective)
     # Goal-FSM tests isolate the existing control-plane seam. Native SN mode
     # synthesis has its own dedicated tests and acceptance fixture.
-    return effective, replace(profile, strategic_number_modes=(), attack_plan=None, duc_plan=None)
+    return effective, replace(
+        profile,
+        strategic_number_modes=(),
+        attack_plan=None,
+        duc_plan=None,
+        counter_packages=(),
+        strategic_arbitration=None,
+    )
 
 
 def _with_assertions(profile, *assertions_by_spec):
