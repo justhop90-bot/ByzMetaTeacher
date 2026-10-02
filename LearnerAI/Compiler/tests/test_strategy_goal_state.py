@@ -41,6 +41,10 @@ def _profile():
         duc_plan=None,
         counter_packages=(),
         strategic_arbitration=None,
+        demands=tuple(
+            demand for demand in profile.demands
+            if not demand.identity.startswith("counter-")
+        ),
     )
 
 
