@@ -63,6 +63,7 @@ _CONTROL_COMMANDS = frozenset(
         "up-timer-status",
         "disable-self",
         "up-jump-rule",
+        "up-find-player",
     }
 )
 
@@ -246,7 +247,15 @@ def _validate_leaf(
     if head not in _CONTROL_COMMANDS:
         return
 
-    if head in _GOAL_COMMANDS:
+    if head == "up-find-player":
+        _require_state(
+            str(expression.args[2]),
+            "GOAL",
+            states,
+            command=head,
+            argument_index=2,
+        )
+    elif head in _GOAL_COMMANDS:
         index = 0
         _require_state(
             str(expression.args[index]),
