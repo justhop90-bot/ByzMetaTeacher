@@ -1961,10 +1961,10 @@ def build_land_castle_strategy(
 def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
     """Default Castle-age Byzantine issue actuator.
 
-    This is intentionally an issue-only native slice. The executable guard
-    uses only native Facts that are already semantic-safe here: Castle age,
-    attack allocation at/above the policy threshold, and a small standing
-    heavy-army floor. Targeting, completion, release, and reset remain OPEN.
+    The native attack binder accepts atomic Facts per rule. The two army
+    alternatives are therefore lowered as deterministic sibling rules rather
+    than a composite logical Fact. Targeting, completion, release, and reset
+    remain outside this executable slice.
     """
     from ..semantic.analyzer import parse_expression
     from .native_attack import (
@@ -1979,21 +1979,40 @@ def _default_byzantine_attack_plan() -> "NativeAttackLifecyclePlan":
         AttackLifecycleObservation.COMPLETION_UNOBSERVED,
         AttackLifecycleObservation.REASSESS_REQUIRED,
     )
-    rule = NativeAttackRule(
-        identity="byzantine-castle-attack-now",
-        order=100,
-        facts=(
-            parse_expression("(current-age == castle-age)", SourceLocation(1)),
-            parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
-            parse_expression(
-                "(or (unit-type-count cataphract >= 2) (unit-type-count knight >= 3))",
-                SourceLocation(1),
-            ),
-        ),
-        actions=(parse_expression("(attack-now)", SourceLocation(1)),),
-        lifecycle=lifecycle,
+    common_facts = (
+        parse_expression("(current-age == castle-age)", SourceLocation(1)),
+        parse_expression("(up-compare-sn 227 >= 75)", SourceLocation(1)),
     )
-    return NativeAttackLifecyclePlan(rules=(rule,))
+    return NativeAttackLifecyclePlan(
+        rules=(
+            NativeAttackRule(
+                identity="byzantine-castle-attack-now-cataphract",
+                order=100,
+                facts=(
+                    *common_facts,
+                    parse_expression(
+                        "(unit-type-count cataphract >= 2)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+                lifecycle=lifecycle,
+            ),
+            NativeAttackRule(
+                identity="byzantine-castle-attack-now-knight",
+                order=110,
+                facts=(
+                    *common_facts,
+                    parse_expression(
+                        "(unit-type-count knight >= 3)",
+                        SourceLocation(1),
+                    ),
+                ),
+                actions=(parse_expression("(attack-now)", SourceLocation(1)),),
+                lifecycle=lifecycle,
+            ),
+        )
+    )
 
 
 def _byzantine_strategic_number_modes() -> tuple[StrategicNumberMode, ...]:
