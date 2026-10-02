@@ -6,8 +6,10 @@ from LearnerAI.Compiler.clients.basilisk import (
     compile_strategy_profile,
     compile_strategy_runtime_profile,
 )
+from LearnerAI.Compiler.ast import Expression
 from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
 from LearnerAI.Compiler.ir.game_data import Resource
+from LearnerAI.Compiler.ir.native_duc import NativeDucPlan, NativeDucRule
 from LearnerAI.Compiler.ir.strategy import StrategyPosture
 from LearnerAI.Compiler.ir.strategy_runtime import RuntimeObservationSnapshot
 from LearnerAI.Compiler.clients.basilisk import (
@@ -64,6 +66,48 @@ class StrategyCompilerIntegrationTests(unittest.TestCase):
             action_block.index("(release-escrow gold)"),
             action_block.index("(research feudal-age)"),
         )
+
+    def test_strategy_compilation_exposes_explicit_duc_plan_channel(self):
+        plan = NativeDucPlan(
+            rules=(
+                NativeDucRule(
+                    identity="byzantine-duc-channel",
+                    order=0,
+                    facts=(Expression("(true)", "true", ()),),
+                    actions=(
+                        Expression(
+                            "(up-full-reset-search)",
+                            "up-full-reset-search",
+                            (),
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        compilation = lower_strategy_profile(
+            self.profile,
+            self.effective,
+            duc_plan=plan,
+        )
+        self.assertIs(compilation.duc_plan, plan)
+
+        output = compile_strategy_profile(
+            self.profile,
+            self.effective,
+            duc_plan=plan,
+        )
+        self.assertIn("; Native DUC plan", output)
+        self.assertIn("; Native DUC rule: byzantine-duc-channel", output)
+        self.assertIn("(up-full-reset-search)", output)
+
+        runtime_output = compile_strategy_runtime_profile(
+            self.profile,
+            self.effective,
+            RuntimeObservationSnapshot(previous_posture=StrategyPosture.CASTLE_POWER),
+            duc_plan=plan,
+        )
+        self.assertIn("; Native DUC rule: byzantine-duc-channel", runtime_output)
 
     def test_byzantine_strategy_lowers_default_attack_lifecycle(self):
         compilation = lower_strategy_profile(self.profile, self.effective)
