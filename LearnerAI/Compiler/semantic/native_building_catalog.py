@@ -68,7 +68,8 @@ def resolve_building_id(symbol: str) -> int:
     token = symbol.strip().lower()
     if token.isdigit():
         object_id = int(token)
-        if object_id not in _building_ids().values():
+        known_ids = set(_building_ids().values()) | set(_CANONICAL_BUILDING_ID_OVERRIDES.values())
+        if object_id not in known_ids:
             raise NativeBuildingIdError(
                 f"numeric BuildingId '{symbol}' is not a known DE building"
             )
