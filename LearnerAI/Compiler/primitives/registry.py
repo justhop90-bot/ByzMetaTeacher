@@ -570,6 +570,16 @@ class PrimitiveRegistry:
                     raise ValueError(
                         f"{expression.head} native expression must have exactly two arguments"
                     )
+                try:
+                    object_data_id = int(str(expression.args[0]), 10)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"{expression.head} native expression requires a numeric ObjectData operand"
+                    ) from exc
+                if not 0 <= object_data_id <= 255:
+                    raise ValueError(
+                        f"{expression.head} native expression ObjectData operand must be in 0..255"
+                    )
 
             elif expression.head == "up-get-point":
                 if output_request.argument_index != 1:
