@@ -410,6 +410,15 @@ class ByzantineBotPolicyTests(unittest.TestCase):
         self.assertIn("(research 361)", artifact)
         self.assertIn("(research 315)", artifact)
 
+    def test_islands_open_fishing_starts_in_dark_and_reaches_four(self):
+        demand = self.profile.demand("water-fishing-opening")
+        self.assertEqual(demand.target.minimum, 4)
+        self.assertIn("(current-age >= dark-age)", demand.execution.requirements)
+        self.assertIn("(map-type islands)", demand.execution.requirements)
+        self.assertIn("(building-type-count-total dock >= 1)", demand.execution.requirements)
+        self.assertEqual(demand.execution.action, "(train fishing-ship)")
+        self.assertEqual(demand.execution.witness, "(unit-type-count fishing-ship >= 4)")
+
     def test_profile_has_complete_water_capability_chain(self):
         demands = {item.identity: item for item in self.profile.demands}
 
