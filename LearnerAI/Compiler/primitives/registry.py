@@ -1526,6 +1526,9 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     facts = [
         Primitive("current-age", "FACT", "OBSERVATION", 2, 2),
         Primitive("food-amount", "FACT", "OBSERVATION", 2, 2),
+        Primitive("housing-headroom", "FACT", "OBSERVATION", 2, 2),
+        Primitive("idle-farm-count", "FACT", "OBSERVATION", 2, 2),
+        Primitive("resource-found", "FACT", "OBSERVATION", 1, 1),
         Primitive("wood-amount", "FACT", "OBSERVATION", 2, 2),
         Primitive("gold-amount", "FACT", "OBSERVATION", 2, 2),
         Primitive("stone-amount", "FACT", "OBSERVATION", 2, 2),
