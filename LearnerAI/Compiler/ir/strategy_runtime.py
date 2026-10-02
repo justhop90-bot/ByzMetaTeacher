@@ -1298,18 +1298,25 @@ def _evaluate_water_execution_state(
         truths[reference] = truth
         evaluated.append((label, truth))
 
-    true = lambda reference: truths[reference] is EvidenceTruth.TRUE
+    def tri(reference: str) -> bool | None:
+        truth = truths[reference]
+        if truth is EvidenceTruth.TRUE:
+            return True
+        if truth is EvidenceTruth.FALSE:
+            return False
+        return None
+
     prior = snapshot.previous_water_execution_state or WaterExecutionState()
     transport_state = transition_transport_execution(
         prior,
-        transport_required=true(plan.transport_required_observation),
-        transport_capable=true(plan.transport_capable_observation),
+        transport_required=tri(plan.transport_required_observation),
+        transport_capable=tri(plan.transport_capable_observation),
     )
     posture = derive_water_posture(
-        transport_required=true(plan.transport_required_observation),
-        dock_exists=true(plan.dock_observation),
-        naval_pressure=true(plan.naval_pressure_observation),
-        warboat_floor_met=true(plan.warboat_floor_observation),
+        transport_required=tri(plan.transport_required_observation),
+        dock_exists=tri(plan.dock_observation),
+        naval_pressure=tri(plan.naval_pressure_observation),
+        warboat_floor_met=tri(plan.warboat_floor_observation),
     )
     return (
         WaterExecutionState(
@@ -1317,9 +1324,9 @@ def _evaluate_water_execution_state(
             transport_phase=transport_state.transport_phase,
             transport_required=transport_state.transport_required,
             transport_capable=transport_state.transport_capable,
-            dock_exists=true(plan.dock_observation),
-            naval_pressure=true(plan.naval_pressure_observation),
-            warboat_floor_met=true(plan.warboat_floor_observation),
+            dock_exists=tri(plan.dock_observation),
+            naval_pressure=tri(plan.naval_pressure_observation),
+            warboat_floor_met=tri(plan.warboat_floor_observation),
         ),
         tuple(evaluated),
     )
