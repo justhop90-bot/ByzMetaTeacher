@@ -678,9 +678,16 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         ),
         "research-hand-cart": (
             f"(up-research-status c: {wheelbarrow_id} >= 3)",
+            "(unit-type-count-total villager >= 30)",
         ),
         "research-bow-saw": (
             f"(up-research-status c: {double_bit_axe_id} >= 3)",
+            "(unit-type-count-total villager >= 35)",
+        ),
+        "research-two-man-saw": (
+            f"(up-research-status c: {double_bit_axe_id} >= 3)",
+            "(unit-type-count-total villager >= 50)",
+            "(current-age >= imperial-age)",
         ),
         "research-gold-shaft-mining": (
             f"(up-research-status c: {gold_mining_id} >= 3)",
