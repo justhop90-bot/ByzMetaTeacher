@@ -2251,7 +2251,7 @@ def _default_byzantine_duc_plan(profile_id: str) -> "NativeDucPlan":
                         SourceLocation(1),
                     ),
                     parse_expression(
-                        "(up-get-object-data object-data-id 0)",
+                        "(up-get-object-data 0 0)",
                         SourceLocation(1),
                     ),
                 ),
