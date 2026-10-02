@@ -187,8 +187,8 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             "(research 61)",
             "(train arbalester)",
             "(train petard)",
-            "(build watch-tower)",
-            "(build stone-wall)",
+            "(build 79)",
+            "(build 117)",
         ):
             self.assertIn(action, output)
 
