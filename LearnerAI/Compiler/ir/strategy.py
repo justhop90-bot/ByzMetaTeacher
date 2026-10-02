@@ -1775,6 +1775,7 @@ def _strategic_demand_arbitration_control_plan(profile: StrategyProfile):
     if plan is None:
         return None
 
+    from ..runtime_binding import GoalSlotRequest
     from ..semantic.analyzer import parse_expression
     from .model import GoalRole, SemanticId, StorageRequestId
     from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
