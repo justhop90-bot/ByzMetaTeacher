@@ -2,7 +2,7 @@
 """Native acceptance gate for DUC target reacquisition by stored identity.
 
 Vertical: DISCOVER (find + set-target-object) -> STORE_ID
-(up-get-object-data id into an allocated GoalSlot) ->
+(up-get-object-data 0 into an allocated GoalSlot) ->
 REACQUIRE (up-set-target-by-id g: resolving to the same slot) ->
 ISSUE (up-target-objects). Target liveness remains runtime OPEN.
 """
@@ -62,7 +62,7 @@ def _vertical():
                 actions=(
                     _e("(up-find-local c: 83 c: 1)", "up-find-local", "c:", "83", "c:", "1"),
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
-                    _e("(up-get-object-data id 41)", "up-get-object-data", "id", "41"),
+                    _e("(up-get-object-data 0 41)", "up-get-object-data", "id", "41"),
                 ),
             ),
             NativeDucRule(
@@ -125,7 +125,7 @@ def main() -> int:
             + ", ".join(missing)
         )
 
-    written = re.search(r"\(up-get-object-data id (\d+)\)", first)
+    written = re.search(r"\(up-get-object-data 0 (\d+)\)", first)
     read = re.search(r"\(up-set-target-by-id g: (\d+)\)", first)
     if written is None or read is None:
         raise SystemExit(
