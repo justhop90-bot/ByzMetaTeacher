@@ -497,7 +497,7 @@ def community_strategy_observations(
             "strategy-enemy-mounted-heavy",
             "(or (players-unit-type-count any-enemy knight >= 4) "
             "(or (players-unit-type-count any-enemy scout-cavalry-line >= 6) "
-            "(players-unit-type-count any-enemy camel-line >= 4)))",
+            "(players-unit-type-count any-enemy camel-rider-line >= 4)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
@@ -510,7 +510,7 @@ def community_strategy_observations(
             "strategy-enemy-mounted-heavy-cleared",
             "(and (players-unit-type-count any-enemy knight < 4) "
             "(and (players-unit-type-count any-enemy scout-cavalry-line < 6) "
-            "(players-unit-type-count any-enemy camel-line < 4)))",
+            "(players-unit-type-count any-enemy camel-rider-line < 4)))",
             tuple(
                 dict.fromkeys(
                     (*effective.unit_line("knight-line").provenance,
@@ -544,7 +544,7 @@ def community_strategy_observations(
         ),
         _observation(
             "strategy-water-trade-opportunity",
-            "(and (map-type islands) (players-building-type-count any-ally market >= 1))",
+            "(and (map-type islands) (players-building-type-count this-any-ally market >= 1))",
             _airef_provenance(effective, "commands/commands-details.html#players-building-type-count"),
         ),
         _observation(
