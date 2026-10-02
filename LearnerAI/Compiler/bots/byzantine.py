@@ -321,7 +321,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             24,
             "Dark Age counter-opening economic growth",
-            ("(goal opening-plan 2)",),
+            ("(up-compare-goal opening-plan c:== 2)",),
         ),
         (
             "villagers-dark-fast-castle-26",
@@ -329,7 +329,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             26,
             "Dark Age Fast Castle economic growth",
-            ("(goal opening-plan 3)",),
+            ("(up-compare-goal opening-plan c:== 3)",),
         ),
         (
             "villagers-dark-water-24",
@@ -337,7 +337,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
             22,
             24,
             "Dark Age water-opening economic growth",
-            ("(or (goal opening-plan 4) (goal opening-plan 5))",),
+            ("(or (up-compare-goal opening-plan c:== 4) (up-compare-goal opening-plan c:== 5))",),
         ),
         ("villagers-feudal-30", Age.FEUDAL, 18, 30, "Feudal economic growth", ()),
         ("villagers-castle-45", Age.CASTLE, 30, 45, "Castle expansion economy", ()),
