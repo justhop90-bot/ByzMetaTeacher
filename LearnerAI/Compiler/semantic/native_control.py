@@ -311,6 +311,16 @@ def _validate_leaf(
                 f"native control command '{head}' has invalid typed arithmetic: {exc}"
             ) from exc
 
+    if head == "up-point-distance":
+        for index in (0, 1):
+            _require_state(
+                str(expression.args[index]),
+                "GOAL_SPAN",
+                states,
+                command=head,
+                argument_index=index,
+            )
+
     if head == "up-set-timer":
         timer_selector = str(expression.args[0])
         if timer_selector not in {"c:", "c"}:
