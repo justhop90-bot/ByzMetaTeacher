@@ -232,6 +232,8 @@ def _research_demand(
         429: "429",
         236: "236",
         61: "61",
+        905: "905",
+        244: "244",
     }.get(int(tech.id), _slug(tech.name))
     complete_ref = f"{identity}-complete"
     pending_ref = f"{identity}-pending"
@@ -1625,6 +1627,30 @@ def community_strategy_demands(
                 reason_label="Greek Fire is a verified Byzantine water-combat upgrade",
                 resources=(Resource.FOOD, Resource.GOLD),
             ),
+            _research_demand(
+                effective=effective,
+                identity="research-demolition-ship",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                age_guard="(current-age >= castle-age)",
+                age_observation_ref="strategy-castle-age",
+                tech_name="demolition-ship",
+                reason_label="Enemy naval pressure or water control justifies Demolition Ship access",
+                resources=(Resource.WOOD, Resource.GOLD),
+            ),
+            _research_demand(
+                effective=effective,
+                identity="research-heavy-demolition-ship",
+                owner="water-naval",
+                posture=_StrategyPosture.CASTLE_POWER,
+                priority=_StrategicPriority.SUPPORT,
+                age_guard="(current-age >= imperial-age)",
+                age_observation_ref="strategy-imperial-age",
+                tech_name="heavy-demolition-ship",
+                reason_label="Imperial naval pressure justifies Heavy Demolition Ship access",
+                resources=(Resource.WOOD, Resource.GOLD),
+            ),
         )
     )
 
@@ -2239,6 +2265,13 @@ def build_byzantine_stock_strategy(
         "water-demolition-ship-floor",
         "water-heavy-demolition-ship-floor",
         "water-trade-cog-floor",
+        "research-demolition-ship",
+        "research-heavy-demolition-ship",
+        "adaptive-watch-tower",
+        "adaptive-stone-wall",
+        "adaptive-guard-tower",
+        "imperial-keep-floor",
+        "imperial-bombard-tower-floor",
         "economy-house-floor-1",
         "economy-house-floor-4",
         "economy-house-floor-8",
