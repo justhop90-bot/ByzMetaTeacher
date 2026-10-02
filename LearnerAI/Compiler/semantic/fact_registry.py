@@ -143,6 +143,14 @@ def _parameter_context(
             case_sensitive=False,
         )
 
+    if command == "resource-found" and name == "Resource":
+        return CanonicalizationContext.enum(
+            parameter_name=name,
+            domain="RESOURCE",
+            members=_RESOURCE_VALUES,
+            case_sensitive=False,
+        )
+
     if command == "dropsite-min-distance" and name == "Resource":
         return CanonicalizationContext.enum(
             parameter_name=name,
