@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .model import SemanticDemand
     from .counter_strategy import CounterPackage
     from .native_attack import NativeAttackLifecyclePlan
+    from .native_duc import NativeDucPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -380,6 +381,7 @@ class StrategyProfile:
     policy_recipes: tuple["PolicyRecipe", ...] = ()
     counter_packages: tuple["CounterPackage", ...] = ()
     attack_plan: "NativeAttackLifecyclePlan | None" = None
+    duc_plan: "NativeDucPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -454,6 +456,7 @@ class StrategyCompilation:
     control_plan: "NativeControlPlan | None" = None
     military_compositions: tuple["MilitaryCompositionPlan", ...] = ()
     attack_plan: "NativeAttackLifecyclePlan | None" = None
+    duc_plan: "NativeDucPlan | None" = None
 
 
 _AGE_ORDER = {
@@ -1046,6 +1049,7 @@ def lower_strategy_profile(
         control_plan=_strategy_control_plan(profile),
         military_compositions=tuple(military_compositions),
         attack_plan=profile.attack_plan,
+        duc_plan=profile.duc_plan,
     )
 
 
