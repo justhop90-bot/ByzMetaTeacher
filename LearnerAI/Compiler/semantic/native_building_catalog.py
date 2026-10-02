@@ -31,6 +31,11 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     "siege-workshop": 49,
     "university": 209,
     "outpost": 598,
+    "lumber-camp": 562,
+    "mining-camp": 584,
+    "mill": 68,
+    "farm": 50,
+    "market": 84,
 }
 
 
