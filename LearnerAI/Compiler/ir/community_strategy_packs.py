@@ -27,6 +27,9 @@ from .strategy import (
     StrategyProfile as _StrategyProfile,
     StrategicObservationSpec as _StrategicObservationSpec,
     CapabilityRecoveryContract as _CapabilityRecoveryContract,
+    PrimaryStrategicIntent as _PrimaryStrategicIntent,
+    StrategicDemandArbitrationPlan as _StrategicDemandArbitrationPlan,
+    StrategicIntentCandidate as _StrategicIntentCandidate,
     StrategicMilitaryComposition as _StrategicMilitaryComposition,
 )
 from .versioning import EvidenceKind, EvidenceRef
@@ -1187,11 +1190,80 @@ def build_byzantine_stock_strategy(
         if composition.identity not in composition_ids:
             compositions.append(composition)
 
+    strategic_intent_map = {
+        "castle-commitment": _PrimaryStrategicIntent.CASTLE,
+        "castle-second-town-center": _PrimaryStrategicIntent.TWO_TC,
+        "water-fishing-continuity": _PrimaryStrategicIntent.WATER,
+        "water-transport-capability": _PrimaryStrategicIntent.WATER,
+        "water-naval-defense": _PrimaryStrategicIntent.WATER,
+        "water-naval-control": _PrimaryStrategicIntent.WATER,
+    }
+    demands = [
+        replace(
+            demand,
+            required_primary_intent=strategic_intent_map.get(demand.identity),
+            recovery_on_world_loss=(
+                demand.identity in strategic_intent_map
+                or demand.recovery_on_world_loss
+            ),
+        )
+        for demand in demands
+    ]
+
+    arbitration = _StrategicDemandArbitrationPlan(
+        state_name="strategic-primary-intent",
+        emergency_observation_ref="strategy-enemy-pressure",
+        candidates=(
+            _StrategicIntentCandidate(
+                identity="water-investment",
+                intent=_PrimaryStrategicIntent.WATER,
+                from_intents=(_PrimaryStrategicIntent.NONE,),
+                required_observation_refs=("strategy-water-islands",),
+                priority=300,
+            ),
+            _StrategicIntentCandidate(
+                identity="castle-trajectory",
+                intent=_PrimaryStrategicIntent.CASTLE,
+                from_intents=(_PrimaryStrategicIntent.NONE,),
+                required_observation_refs=("current-feudal-age",),
+                forbidden_observation_refs=(
+                    "strategy-castle-complete",
+                    "strategy-water-islands",
+                    "strategy-enemy-pressure",
+                ),
+                release_observation_refs=("strategy-castle-complete",),
+                invalidation_observation_refs=("current-imperial-age",),
+                priority=200,
+            ),
+            _StrategicIntentCandidate(
+                identity="two-tc-expansion",
+                intent=_PrimaryStrategicIntent.TWO_TC,
+                from_intents=(
+                    _PrimaryStrategicIntent.NONE,
+                    _PrimaryStrategicIntent.CASTLE,
+                ),
+                required_observation_refs=(
+                    "strategy-castle-age",
+                    "strategy-arena-map",
+                    "strategy-town-center-capability",
+                    "strategy-castle-complete",
+                ),
+                forbidden_observation_refs=(
+                    "strategy-water-islands",
+                    "strategy-enemy-pressure",
+                ),
+                release_observation_refs=("strategy-town-center-complete",),
+                priority=100,
+            ),
+        ),
+    )
+
     return replace(
         base,
         profile_id=stock_profile_id,
         demands=tuple(demands),
         observations=tuple(observations),
+        strategic_arbitration=arbitration,
         military_compositions=tuple(compositions),
         strategic_number_modes=tuple(
             (*base.strategic_number_modes, *community_strategy_sn_modes())
