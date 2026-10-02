@@ -171,7 +171,7 @@ class PrimitiveRegistry:
     def bind_duc_command(self, command: str):
         goal_sites = {request.site_key for request in plan.goal_input_requests}
         rule_sites = {
-            (rule.identity, section, index)
+            (rule.identity, section, index, 0)
             for rule in plan.rules
             for section, expressions in (("FACT", rule.facts), ("ACTION", rule.actions))
             for index, _expression in enumerate(expressions)
