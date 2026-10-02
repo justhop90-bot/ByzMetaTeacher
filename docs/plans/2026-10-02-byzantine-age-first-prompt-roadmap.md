@@ -1,4 +1,4 @@
-**3/7 PROMPTS**
+**4/7 PROMPTS**
 
 # Byzantine Core v1 — Age-First Bot Roadmap
 
@@ -88,7 +88,7 @@ Prompt 2 also requires focused tests for the Barracks provider, counter-package 
 
 ---
 
-## **3/7 — Prompt 3: Castle Conversion Engine — ACTIVE**
+## **3/7 — Prompt 3: Castle Conversion Engine — IMPLEMENTED / CI PENDING**
 
 ### Objective
 
@@ -132,11 +132,24 @@ The compiled bot must exhibit one coherent Castle macro posture at a time rather
 
 ---
 
-## **4/7 — Prompt 4: Imperial Win-Condition Engine — QUEUED**
+## **4/7 — Prompt 4: Imperial Win-Condition Engine — ACTIVE**
 
 ### Objective
 
 Give Byzantines an actual endgame plan.
+
+### Implemented in this prompt
+
+- Added Imperial Halberdier, Elite Skirmisher, Heavy Camel, Hand Cannoneer, and Elite Cataphract production branches using the existing staged-training demand pattern.
+- Halberdier, Elite Skirmisher, and Heavy Camel are triggered by verified sustained mounted/ranged pressure rather than standing mass production.
+- Hand Cannoneer is triggered by sustained infantry pressure and requires Chemistry completion.
+- Elite Cataphract conversion requires both Logistica and Elite Cataphract research, with Arena or infantry pressure as the strategic trigger.
+- Added targeted Imperial research demands for Halberdier, Elite Skirmisher, Heavy Camel, and Elite Cataphract.
+- Reused the existing stock Chemistry and Conscription demands, adding bot-local execution guards instead of duplicate research identities.
+- Preserved the existing Imperial economy allocation at 40 food / 25 wood / 35 gold / 7 builders.
+- The Castle Logistica demand is correctly Imperial-gated; Castle Cataphract production remains available before Logistica, while the Imperial upgrade branch is gated on both technologies.
+- No new scheduler, compiler primitive, or parallel package controller was introduced.
+
 
 ### Primary conversion packages
 
@@ -166,6 +179,8 @@ Give Byzantines an actual endgame plan.
 ### Acceptance
 
 Imperial entry must select a resource and production direction instead of merely unlocking more unit types.
+
+Prompt 4 also requires focused tests for trash conversion, gunpowder conversion, Elite Cataphract conversion, research gating, and generated artifact actions.
 
 ---
 
