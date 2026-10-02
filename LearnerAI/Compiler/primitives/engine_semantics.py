@@ -241,6 +241,9 @@ _PERSISTENT_STATE_SPECS = (
 _OBSERVATION_SPECS = (
     ("current-age", "observation.age.current"),
     ("food-amount", "observation.resource.food"),
+    ("housing-headroom", "observation.economy.housing-headroom"),
+    ("idle-farm-count", "observation.economy.idle-farm-count"),
+    ("resource-found", "observation.resource.found"),
     ("wood-amount", "observation.resource.wood"),
     ("gold-amount", "observation.resource.gold"),
     ("stone-amount", "observation.resource.stone"),
