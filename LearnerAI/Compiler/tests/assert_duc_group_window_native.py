@@ -75,7 +75,7 @@ def _vertical():
                     _e("(up-set-target-object search-local c: 0)", "up-set-target-object", "search-local", "c:", "0"),
                     _e("(up-create-group 0 40 c: 0)", "up-create-group", "0", "40", "c:", "0"),
                     _e("(up-get-group-size c: 0 41)", "up-get-group-size", "c:", "0", "41"),
-                    _e("(up-get-object-data object-data-id 41)", "up-get-object-data", "object-data-id", "41"),
+                    _e("(up-get-object-data 0 41)", "up-get-object-data", "0", "41"),
                 ),
             ),
             NativeDucRule(
@@ -157,7 +157,7 @@ def main() -> int:
         )
 
     size_slot = re.search(r"\(up-get-group-size c: 0 (\d+)\)", first)
-    id_slot = re.search(r"\(up-get-object-data object-data-id (\d+)\)", first)
+    id_slot = re.search(r"\(up-get-object-data 0 (\d+)\)", first)
     windowed = re.search(r"\(up-create-group (\d+) (\d+) c: 1\)", first)
     if size_slot is None or id_slot is None or windowed is None:
         raise SystemExit("group window fixture is missing the measure/window pair")
