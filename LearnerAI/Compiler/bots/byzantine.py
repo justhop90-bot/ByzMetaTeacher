@@ -72,23 +72,25 @@ def _aged_building_demand(
     upper_bound: int | None = None,
     invalidate_ref: str | None = None,
     extra_requirements: tuple[str, ...] = (),
+    action_name: str | None = None,
 ) -> StrategicDemandSpec:
     building = next(
         item
         for item in effective.buildings
         if item.name.lower().replace(" ", "-") == building_name.lower().replace(" ", "-")
     )
+    native_action = action_name or building_name
     guard_parts = [f"(current-age >= {_native_age(minimum_age)})"]
     if lower_bound is not None:
         guard_parts.append(
-            f"(building-type-count-total {building_name} >= {lower_bound})"
+            f"(building-type-count-total {native_action} >= {lower_bound})"
         )
     if upper_bound is not None:
         guard_parts.append(
-            f"(building-type-count-total {building_name} < {upper_bound})"
+            f"(building-type-count-total {native_action} < {upper_bound})"
         )
     requirements = tuple(
-        [*guard_parts, f"(can-build {building_name})", *extra_requirements]
+        [*guard_parts, f"(can-build {native_action})", *extra_requirements]
     )
     return _build_demand(
         identity=identity,
@@ -99,6 +101,8 @@ def _aged_building_demand(
         reason_label=reason_label,
         building=building,
         requirements=requirements,
+        action_name=native_action,
+        target_witness=f"(building-type-count {native_action} > 0)",
         invalidate_ref=invalidate_ref,
     )
 
@@ -288,6 +292,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "dark-lumber-camp",
             "Dark Age lumber camp",
             "lumber-camp",
+            "562",
             Age.DARK,
             "current-dark-age",
         ),
@@ -295,6 +300,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "dark-mining-camp",
             "Dark Age mining camp",
             "mining-camp",
+            "584",
             Age.DARK,
             "current-dark-age",
         ),
@@ -302,6 +308,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "dark-mill",
             "Dark Age mill",
             "mill",
+            "68",
             Age.DARK,
             "current-dark-age",
         ),
@@ -320,7 +327,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
             "current-feudal-age",
         ),
     ):
-        identity, reason_label, building_name, age, reason_ref = spec
+        identity, reason_label, building_name, native_action, age, reason_ref = spec
         demands.append(
             _aged_building_demand(
                 effective=effective,
@@ -332,6 +339,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[StrategicDemandSpec, ...]
                 reason_label=reason_label,
                 building_name=building_name,
                 minimum_age=age,
+                action_name=native_action,
             )
         )
 
