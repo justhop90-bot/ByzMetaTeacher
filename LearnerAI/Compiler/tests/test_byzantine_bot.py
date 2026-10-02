@@ -441,7 +441,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             self.assertIn(identity, demands)
 
         self.assertIn(
-            "(or (resource-found wood) (unit-type-count-total villager >= 7))",
+            "(unit-type-count-total villager >= 7)",
             demands["dark-lumber-camp"].execution.requirements,
         )
         self.assertIn(
@@ -449,7 +449,7 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["wood-dropsite-extension"].execution.requirements,
         )
         self.assertIn(
-            "(or (resource-found gold) (resource-found stone))",
+            "(or (dropsite-min-distance gold > 5) (dropsite-min-distance stone > 5))",
             demands["dark-mining-camp"].execution.requirements,
         )
         self.assertIn(
@@ -457,7 +457,11 @@ class ByzantineBotPolicyTests(unittest.TestCase):
             demands["mining-dropsite-extension"].execution.requirements,
         )
         self.assertIn(
-            "(or (resource-found food) (unit-type-count-total villager >= 7))",
+            "(unit-type-count-total villager >= 7)",
+            demands["dark-mill-capability"].execution.requirements,
+        )
+        self.assertIn(
+            "(dropsite-min-distance food > 5)",
             demands["dark-mill-capability"].execution.requirements,
         )
 
