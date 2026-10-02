@@ -93,14 +93,22 @@ class ByzantineStrategyControlSliceTests(unittest.TestCase):
             profile.economy_controller.controller_id,
             "byzantine-economy-v1",
         )
-        written_ids = {
-            int(str(action.args[0]))
+        written_names = {
+            str(action.args[0])
             for rule in control.rules
             if rule.identity.startswith("economy-controller-")
             for action in rule.actions
             if action.head == "set-strategic-number"
         }
-        self.assertEqual(written_ids, {117, 120, 118, 1})
+        self.assertEqual(
+            written_names,
+            {
+                "sn-food-gatherer-percentage",
+                "sn-wood-gatherer-percentage",
+                "sn-gold-gatherer-percentage",
+                "sn-percent-civilian-builders",
+            },
+        )
 
         output = compile_strategy_profile(profile, self.effective)
         self.assertIn("(defconst sn-food-gatherer-percentage 117)", output)
