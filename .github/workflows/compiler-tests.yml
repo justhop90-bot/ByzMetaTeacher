@@ -104,6 +104,8 @@ jobs:
           PY
           python LearnerAI/Compiler/tests/assert_native_zero.py /tmp/basilisk-strategy.per --report /tmp/native-reports/strategy.json
       - name: Generate fresh Byzantine artifact and machine-audited land delta
+        env:
+          PYTHONPATH: .:LearnerAI
         run: |
           cp /tmp/basilisk-strategy.per /tmp/Byzantine-Core-v1-current.per
           python LearnerAI/Compiler/tests/audit_byzantine_land_delta.py \
