@@ -36,6 +36,7 @@ class StrategicNumberReassertionPolicy(str, Enum):
 
 
 _STRATEGY_POSTURE_STATE = "strategy-posture"
+_BYZ_ATTACK_STATE = "byzantine-attack-state"
 _STRATEGY_POSTURE_VALUES = {
     StrategyPosture.FLUSH: 1,
     StrategyPosture.RUSH: 2,
@@ -1419,12 +1420,104 @@ def _duc_focus_control_plan(profile: StrategyProfile):
     )
 
 
+def _byzantine_attack_lifecycle_control_plan(profile: StrategyProfile):
+    """Own the compiler-side attack issuance/reassessment/reset state."""
+    if profile.attack_plan is None:
+        return None
+    rules = profile.attack_plan.rules
+    activated = tuple(
+        rule for rule in rules
+        if rule.activation_state_name is not None
+    )
+    if not activated:
+        return None
+    names = {rule.activation_state_name for rule in activated}
+    if names != {_BYZ_ATTACK_STATE}:
+        raise ValueError(
+            "default Byzantine attack plan may use only "
+            f"'{_BYZ_ATTACK_STATE}' as its lifecycle control state"
+        )
+
+    from ..semantic.analyzer import parse_expression
+    from ..runtime_binding import GoalSlotRequest
+    from .model import GoalRole, SemanticId, StorageRequestId
+    from .native_control import NativeControlPlan, NativeControlRule, NativeControlState
+
+    owner = SemanticId(profile.profile_id, _BYZ_ATTACK_STATE)
+    state = NativeControlState(
+        _BYZ_ATTACK_STATE,
+        GoalSlotRequest(
+            StorageRequestId(owner, _BYZ_ATTACK_STATE),
+            role=GoalRole.PERSISTENT_STATE,
+        ),
+    )
+    army_ready = (
+        "(or "
+        "(unit-type-count cataphract >= 2) "
+        "(unit-type-count knight >= 3))"
+    )
+    attack_ready = (
+        "(and "
+        "(current-age >= castle-age) "
+        "(up-compare-sn sn-native-227 c:>= 75) "
+        f"{army_ready})"
+    )
+    rules_out = (
+        NativeControlRule(
+            f"{_BYZ_ATTACK_STATE}-initialize-000",
+            facts=(parse_expression(f"(goal {_BYZ_ATTACK_STATE} 0)", SourceLocation(1)),),
+            actions=(
+                parse_expression(f"(set-goal {_BYZ_ATTACK_STATE} 0)", SourceLocation(1)),
+                parse_expression("(disable-self)", SourceLocation(1)),
+            ),
+        ),
+        NativeControlRule(
+            f"{_BYZ_ATTACK_STATE}-prepare-001",
+            facts=(
+                parse_expression(f"(goal {_BYZ_ATTACK_STATE} 0)", SourceLocation(1)),
+                parse_expression(
+                    "(and (current-age >= castle-age) "
+                    "(up-compare-sn sn-native-227 c:>= 75))",
+                    SourceLocation(1),
+                ),
+            ),
+            actions=(parse_expression(f"(set-goal {_BYZ_ATTACK_STATE} 1)", SourceLocation(1)),),
+        ),
+        NativeControlRule(
+            f"{_BYZ_ATTACK_STATE}-assemble-002",
+            facts=(
+                parse_expression(f"(goal {_BYZ_ATTACK_STATE} 1)", SourceLocation(1)),
+                parse_expression(army_ready, SourceLocation(1)),
+            ),
+            actions=(parse_expression(f"(set-goal {_BYZ_ATTACK_STATE} 2)", SourceLocation(1)),),
+        ),
+        NativeControlRule(
+            f"{_BYZ_ATTACK_STATE}-reassess-003",
+            facts=(
+                parse_expression(f"(goal {_BYZ_ATTACK_STATE} 3)", SourceLocation(1)),
+                parse_expression(f"(not {attack_ready})", SourceLocation(1)),
+            ),
+            actions=(parse_expression(f"(set-goal {_BYZ_ATTACK_STATE} 4)", SourceLocation(1)),),
+        ),
+        NativeControlRule(
+            f"{_BYZ_ATTACK_STATE}-reset-004",
+            facts=(parse_expression(f"(goal {_BYZ_ATTACK_STATE} 4)", SourceLocation(1)),),
+            actions=(parse_expression(f"(set-goal {_BYZ_ATTACK_STATE} 0)", SourceLocation(1)),),
+        ),
+    )
+    return NativeControlPlan(
+        states=(state,),
+        rules=rules_out,
+    )
+
+
 def _strategy_control_plan(profile: StrategyProfile):
     """Lower posture transitions, SN modes, and explicit Goal assertions through one control plane."""
     posture_plan = _posture_transition_control_plan(profile)
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     duc_focus_plan = _duc_focus_control_plan(profile)
+    attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1449,6 +1542,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         mode_plan,
         assertion_plan,
         duc_focus_plan,
+        attack_lifecycle_plan,
     )
 
 
