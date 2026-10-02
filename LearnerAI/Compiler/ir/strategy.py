@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .counter_strategy import CounterPackage
     from .native_attack import NativeAttackLifecyclePlan
     from .native_duc import NativeDucPlan
+    from .water import WaterExecutionPlan
     from ..semantic.policy_recipe import (
         PolicyOverride,
         PolicyRecipe,
@@ -382,6 +383,8 @@ class StrategyProfile:
     counter_packages: tuple["CounterPackage", ...] = ()
     attack_plan: "NativeAttackLifecyclePlan | None" = None
     duc_plan: "NativeDucPlan | None" = None
+    water_execution_plan: "WaterExecutionPlan | None" = None
+    water_execution_plan: "WaterExecutionPlan | None" = None
 
     def demand(self, identity: str) -> StrategicDemandSpec:
         for item in self.demands:
@@ -1050,6 +1053,7 @@ def lower_strategy_profile(
         military_compositions=tuple(military_compositions),
         attack_plan=profile.attack_plan,
         duc_plan=profile.duc_plan,
+        water_execution_plan=profile.water_execution_plan,
     )
 
 
@@ -1561,6 +1565,17 @@ def _strategy_control_plan(profile: StrategyProfile):
     mode_plan = _strategic_number_arbitration_control_plan(profile)
     assertion_plan = _goal_state_control_plan(profile)
     attack_lifecycle_plan = _byzantine_attack_lifecycle_control_plan(profile)
+    water_plan = (
+        None
+        if profile.water_execution_plan is None
+        else __import__(
+            "Compiler.ir.water",
+            fromlist=("lower_water_execution_plan",),
+        ).lower_water_execution_plan(
+            profile.water_execution_plan,
+            profile,
+        )
+    )
 
     if any(
         state.identifier == _STRATEGY_POSTURE_STATE
@@ -1585,6 +1600,7 @@ def _strategy_control_plan(profile: StrategyProfile):
         mode_plan,
         assertion_plan,
         attack_lifecycle_plan,
+        water_plan,
     )
 
 
