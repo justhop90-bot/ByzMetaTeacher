@@ -1379,7 +1379,10 @@ def _merge_native_control_plans(*plans):
 
 
 def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
-    if profile.profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}:
+    if (
+        profile.profile_id not in {"byzantine-land-castle-v1", "byzantine-stock-v1"}
+        or profile.duc_plan is None
+    ):
         return None
 
     from ..semantic.analyzer import parse_expression
