@@ -231,7 +231,7 @@ def _training_demand(
     return _StrategicDemandSpec(
         identity=identity,
         owner=owner,
-        production_arbitration_group=owner,
+        production_arbitration_group="production",
         posture=posture,
         priority=priority,
         reason=(_persistent(reason_label, reason_ref),),
@@ -717,6 +717,7 @@ def community_strategy_demands(
         _StrategicDemandSpec(
             identity="water-fishing-continuity",
             owner="water-economy",
+            production_arbitration_group="production",
             posture=_StrategyPosture.BOOM,
             priority=_StrategicPriority.SUPPORT,
             reason=(
