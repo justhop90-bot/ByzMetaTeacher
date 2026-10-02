@@ -181,7 +181,7 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
         output = compile_strategy_profile(profile, self.effective)
 
         for action in (
-            "(research 237)",
+            "(research arbalest)",
             "(research 429)",
             "(research 236)",
             "(research 61)",
