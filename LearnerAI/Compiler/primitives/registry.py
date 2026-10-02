@@ -1564,6 +1564,7 @@ def default_de_registry(schema_path: Path | None = None) -> PrimitiveRegistry:
     semantic_registry.validate_exact_executable_commands(
         tuple(item.command for item in default_native_output_goal_contracts())
         + default_duc_executable_commands()
+        + default_player_context_executable_commands()
         + tuple(item.name for item in primitive_items)
         + default_escrow_executable_commands()
         + default_native_controller_executable_commands()
