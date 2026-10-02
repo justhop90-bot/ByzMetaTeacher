@@ -797,7 +797,8 @@
 (defrule
     (true)
 =>
-    (release-escrow wood)    (release-escrow gold)
+    (release-escrow wood)
+    (release-escrow gold)
 )
 
 ; Native escrow release rule: 53
@@ -996,8 +997,7 @@
 ; bank discipline. This is a policy threshold, not an engine fact.
 (defconst bt-imperial-age-villager-maturity 50)
 
-; Imperial military composition arbitration.
-; 0 = Byzantine balanced backbone
+; Imperial military composition arbitration.; 0 = Byzantine balanced backbone
 ; 1 = mounted counter package
 ; 2 = ranged counter package
 ; 3 = infantry pressure / Cataphract package
@@ -1596,7 +1596,8 @@
 ; Conditional infrastructure: do not spend a Feudal building on a Stable
 ; or Range until the selected military package actually needs it.
 (defrule
-    (current-age == feudal-age)    (or
+    (current-age == feudal-age)
+    (or
         (goal byzantine-feudal-army-package byzantine-feudal-package-archer)
         (or
             (goal byzantine-feudal-army-package byzantine-feudal-package-skirmisher)
@@ -1996,7 +1997,6 @@
     (set-strategic-number sn-minimum-boar-hunt-group-size 0)
     (set-strategic-number sn-minimum-number-hunters 0)
 )
-
 ; Native scouting rule: byzantine-scout-dispatch-dark
 (defrule
     (goal byzantine-scout-phase 0)
@@ -2395,6 +2395,7 @@
 =>
     (set-strategic-number sn-wood-gatherer-percentage 20)
 )
+
 ; Native control rule: economy-controller-write-food_recovery-sn-gold-gatherer-percentage
 (defrule
     (goal economy-posture 8)
@@ -2995,7 +2996,6 @@
 =>
     (set-goal demand-imperial-arbalester-floor 1)
 )
-
 (defrule
     (current-age >= imperial-age)
     (goal demand-imperial-halberdier-floor 0)
@@ -3194,7 +3194,8 @@
         (and
             (goal byzantine-siege-scale byzantine-siege-scale-fortified)
             (unit-type-count-total trebuchet >= bt-imperial-fortified-trebuchet-target)
-            (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)            (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
+            (unit-type-count-total bombard-cannon >= bt-imperial-fortified-bombard-target)
+            (unit-type-count-total battering-ram-line >= bt-imperial-fortified-ram-target)
         )
     )
     (or
@@ -4792,7 +4793,8 @@
     (goal counter-package-infantry_pressure_castle 1)
     (current-age >= feudal-age)
 =>
-    (set-goal demand-counter-castle-cataphracts 1))
+    (set-goal demand-counter-castle-cataphracts 1)
+)
 
 ; Completion witness: counter-castle-cataphracts | PENDING/ISSUED -> COMPLETE
 (defrule
@@ -4991,8 +4993,7 @@
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-infantry))
     (not (goal byzantine-imperial-composition-posture byzantine-imperial-posture-siege))
 =>
-    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced)
-)
+    (set-goal byzantine-imperial-composition-posture byzantine-imperial-posture-balanced))
 
 ; Pending diagnostics: imperial-conversion
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 85 and cannot reissue from pending goal 86
@@ -5591,7 +5592,8 @@
     )
     (not (building-type-count house >= 8))
     (up-pending-objects c: 70 == 0)
-    (up-pending-placement c: 70)=>
+    (up-pending-placement c: 70)
+=>
     (set-goal demand-economy-house-floor-8 74)
 )
 
@@ -5990,8 +5992,7 @@
     (idle-farm-count < 2)
     (food-amount < 500)
     (building-type-count-total farm < 4)
-=>
-    (build farm)
+=>    (build farm)
     (set-goal action-claim-build-pass-singleton 1)
     (set-goal demand-economy-farm-floor-feudal-4 68)
 )
@@ -6390,7 +6391,8 @@
         (goal demand-economy-lumber-camp-floor-1 77)
         (goal demand-economy-lumber-camp-floor-1 75)
     )
-    (not (building-type-count lumber-camp >= 1))    (up-pending-objects c: 562 == 0)
+    (not (building-type-count lumber-camp >= 1))
+    (up-pending-objects c: 562 == 0)
     (up-pending-placement c: 562)
 =>
     (set-goal demand-economy-lumber-camp-floor-1 75)
@@ -6990,7 +6992,6 @@
 =>
     (set-goal demand-castle-stable-capability 58)
 )
-
 ; Pending admission: castle-stable-capability | ISSUED/PENDING -> PENDING
 (defrule
     (or
@@ -7189,7 +7190,8 @@
         (goal demand-castle-siege-capability 55)
     )
     (not (building-type-count siege-workshop >= 1))
-    (up-pending-objects c: 49 >= 1)=>
+    (up-pending-objects c: 49 >= 1)
+=>
     (set-goal demand-castle-siege-capability 55)
 )
 
@@ -8787,7 +8789,8 @@
     (set-goal demand-research-heavy-plow 114)
 )
 
-; RETRY | ISSUED/PENDING -> ACTIVE(defrule
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
     (or
         (goal demand-research-heavy-plow 116)
         (goal demand-research-heavy-plow 114)
@@ -8986,8 +8989,7 @@
 ; Completion witness: research-hussar | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
-        (goal demand-research-hussar 118)
-        (goal demand-research-hussar 116)
+        (goal demand-research-hussar 118)        (goal demand-research-hussar 116)
     )
     (research-completed 428)
 =>
@@ -9586,7 +9588,8 @@
     (not (up-research-status c: 98 >= 2))
 =>
     (set-goal demand-imperial-elite-skirmisher-upgrade 1)
-    (set-goal research-retry-barrier-imperial-elite-skirmisher-upgrade 1))
+    (set-goal research-retry-barrier-imperial-elite-skirmisher-upgrade 1)
+)
 (defrule
     (goal demand-imperial-elite-skirmisher-upgrade 1)
     (goal research-retry-barrier-imperial-elite-skirmisher-upgrade 0)
@@ -9986,7 +9989,6 @@
 =>
     (set-goal demand-research-theocracy 121)
 )
-
 ; RETRY | ISSUED/PENDING -> ACTIVE
 (defrule
     (or
@@ -10385,7 +10387,8 @@
 ; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 53 is active
 ; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 54 is reached
 ; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'train' is not treated as completion evidence; witness 'unit-type-count' owns completion
-; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state; Issuance failure: castle-monk-floor | RETAIN-ACTIVE
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'unit-type-count' and may clear the demand only from complete state
+; Issuance failure: castle-monk-floor | RETAIN-ACTIVE
 ; An unsatisfied issuance guard leaves demand-castle-monk-floor in ACTIVE; it is not PENDING.
 ; Release: castle-monk-floor | COMPLETE -> RELEASED
 (defrule
@@ -10984,8 +10987,7 @@
     (or
         (goal demand-castle-camel-transition-floor 49)
         (goal demand-castle-camel-transition-floor 47)
-    )
-    (unit-type-count 329 >= 2)
+    )    (unit-type-count 329 >= 2)
 =>
     (set-goal demand-castle-camel-transition-floor 48)
 )
@@ -11184,7 +11186,8 @@
     (goal production-retry-barrier-imperial-heavy-camel-floor 0)
     (not (up-pending-objects c: 330 >= 1))
     (not (unit-type-count 330 >= bt-imperial-heavy-camel-target))
-    (goal action-claim-train-arbitration 0)    (or
+    (goal action-claim-train-arbitration 0)
+    (or
         (goal byzantine-imperial-composition-posture byzantine-imperial-posture-mounted)
         (or
             (players-unit-type-count any-enemy knight >= 4)
@@ -12783,6 +12786,7 @@
 =>
     (set-goal demand-water-trade-cog-floor 1)
 )
+
 ; Completion witness: water-trade-cog-floor | PENDING/ISSUED -> COMPLETE
 (defrule
     (or
