@@ -35,6 +35,9 @@ _CANONICAL_BUILDING_ID_OVERRIDES = {
     "university": 209,
     "outpost": 598,
     "watch-tower": 79,
+    "guard-tower": 234,
+    "keep": 235,
+    "bombard-tower": 236,
     "stone-wall": 117,
 }
 
