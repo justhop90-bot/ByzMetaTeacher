@@ -508,10 +508,10 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
             "(unit-type-count-total villager >= 20)",
         ),
         "research-double-bit-axe": (
-            f"(research-completed {wheelbarrow_id})",
+            f"(up-research-status c: {wheelbarrow_id} >= 3)",
         ),
         "research-horse-collar": (
-            f"(research-completed {wheelbarrow_id})",
+            f"(up-research-status c: {wheelbarrow_id} >= 3)",
         ),
         "research-fletching": (
             "(building-type-count-total 87 >= 1)",
