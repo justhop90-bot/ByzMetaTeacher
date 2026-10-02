@@ -26,9 +26,11 @@ Turn Dark Age from a villager-count checkpoint into a real economic opening whil
 - No replacement economy scheduler.
 - Tests lock the new identities and emitted Loom action.
 
-### What remains deliberately outside Prompt 1
+### Deferred execution dependency closed in the final completeness tranche
 
-Resource-building construction for lumber camp, mill, mining camp, farm and dock remains constrained by the current verified native BuildingId surface. Do not smuggle a compiler/catalog repair into the bot prompt. The policy can be added once the already-existing native vocabulary is usable; the bot roadmap records that as an execution dependency rather than falsifying support.
+At Prompt 1 time, resource-building construction for lumber camp, mill, mining camp and farm was deliberately deferred because the bot did not yet expose those providers through its executable policy path. The final completeness tranche now uses the existing native BuildingId catalog and construction lifecycle directly. Dock remains owned by the existing Islands/water policy.
+
+The bot now emits real Lumber Camp, Mining Camp, Mill and Farm demands, uses existing `resource-found` / `dropsite-min-distance` observations, and applies existing Strategic Number placement controls. This closes the old Prompt 1 execution dependency without changing generic compiler semantics.
 
 ### Acceptance
 
@@ -254,7 +256,7 @@ Finish the water branch without pretending that ship production alone is a water
 
 - Added the missing Byzantine first-Dock capability demand for Islands maps.
 - Reused the existing typed water execution plan for fishing, transport, naval defense, naval control, and transport-loss recovery.
-- Kept fishing below a bounded two-ship floor.
+- Kept the stock water continuity demand bounded at two ships and added the separate Dark-Age Islands opening tranche to reach four Fishing Ships after the first Dock.
 - Kept transport at one reusable ship and allowed the existing capability-loss path to return it to the execution phase after loss.
 - Kept defensive Fire Galley production bounded to observed enemy naval pressure.
 - Kept Castle Galley control bounded to observed enemy naval pressure and Castle availability.
