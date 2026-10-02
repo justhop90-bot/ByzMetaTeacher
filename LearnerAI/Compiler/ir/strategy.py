@@ -1766,10 +1766,8 @@ def _byzantine_wall_geometry_control_plan(profile: StrategyProfile):
             *[item[3] for item in score_rules],
             no_viable_pair,
             *reanchor_rules,
-            *repair_rules,
             *issue_rules,
             *release_rules,
-            *recover_rules,
             arm_observation,
         ),
     )
@@ -2675,7 +2673,7 @@ def _byzantine_wall_defensive_anchor_requests(profile_id: str):
             role=GoalRole.PERSISTENT_STATE,
         ),
         "issued": GoalSlotRequest(
-            StorageRequestId(owner, "wall-completed"),
+            StorageRequestId(owner, "wall-issued"),
             role=GoalRole.PERSISTENT_STATE,
         ),
         "town-center": point("town-center-anchor"),
