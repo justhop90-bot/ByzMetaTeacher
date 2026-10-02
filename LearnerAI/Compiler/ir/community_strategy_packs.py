@@ -533,11 +533,6 @@ def community_strategy_observations(
             ),
         ),
         _observation(
-            "strategy-relic-unsecured",
-            "(not (hold-relics))",
-            _airef_provenance(effective, "commands/commands-details.html#hold-relics"),
-        ),
-        _observation(
             "strategy-enemy-monk-pressure",
             "(players-unit-type-count any-enemy monk-line >= 2)",
             _airef_provenance(effective, "commands/commands-details.html#players-unit-type-count"),
