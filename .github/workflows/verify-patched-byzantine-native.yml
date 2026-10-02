@@ -17,7 +17,96 @@ jobs:
           : > /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
           for part in verification/chunks/*.perpart; do cat "$part" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; printf "\n" >> /tmp/Byzantine-Core-v1-dark-age-mining-patched.per; done
           sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per
-          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "7fcb5f8e8f0872961078aff063e9f72f84e864de0e51736a4719f26446d00973"
+          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "bdd18bec7fd87676950234d1d4548de549e81e2f221f4236b6d5c78a9d0109ff"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("/tmp/Byzantine-Core-v1-dark-age-mining-patched.per")
+          s = p.read_text(encoding="utf-8")
+          old = """(defrule
+    (true)
+=>
+    (set-goal demand-feudal-transition 1)
+    (set-goal demand-castle-age-transition 1)
+    (set-goal demand-early-defensive-spears 1)
+    (set-goal demand-feudal-infrastructure 1)
+    (set-goal demand-castle-commitment 0)
+    (set-goal demand-counter-mounted-spears 0)
+    (set-goal demand-counter-ranged-skirmishers 0)
+    (set-goal demand-counter-castle-camels 0)
+    (set-goal demand-counter-castle-cataphracts 0)
+    (set-goal demand-counter-castle-siege-response 0)
+    (set-goal demand-imperial-conversion 1)
+    (set-goal demand-castle-second-town-center 0)
+    (set-goal demand-castle-third-town-center 0)
+    (set-goal demand-economy-house-floor-1 1)
+    (set-goal demand-economy-house-floor-4 1)
+    (set-goal demand-economy-house-floor-8 1)
+    (set-goal demand-economy-house-floor-12 1)
+    (set-goal demand-economy-house-floor-16 1)
+    (set-goal demand-economy-farm-floor-feudal-4 1)
+    (set-goal demand-economy-farm-floor-feudal-8 1)
+    (set-goal demand-economy-farm-boom-castle 1)
+    (set-goal demand-economy-farm-boom-imperial 0)
+    (set-goal demand-economy-lumber-camp-floor-1 1)
+    (set-goal demand-economy-lumber-camp-floor-2 1)
+    (set-goal demand-economy-mining-camp-floor-1 0)
+    (set-goal demand-economy-mining-camp-floor-2 0)
+    (set-goal demand-economy-food-mill-boom 1)
+    (set-goal demand-economy-market-floor-1 1)
+    (set-goal byzantine-stone-demand 0)
+    (set-goal demand-castle-stable-capability 0)
+    (set-goal demand-castle-archery-capability 0)
+    (disable-self)
+)
+"""
+          new = """(defrule
+    (true)
+=>
+    (set-goal demand-feudal-transition 1)
+    (set-goal demand-castle-age-transition 1)
+    (set-goal demand-early-defensive-spears 1)
+    (set-goal demand-feudal-infrastructure 1)
+    (set-goal demand-castle-commitment 0)
+    (set-goal demand-counter-mounted-spears 0)
+    (set-goal demand-counter-ranged-skirmishers 0)
+    (set-goal demand-counter-castle-camels 0)
+    (set-goal demand-counter-castle-cataphracts 0)
+    (set-goal demand-counter-castle-siege-response 0)
+    (set-goal demand-imperial-conversion 1)
+    (set-goal demand-castle-second-town-center 0)
+    (set-goal demand-castle-third-town-center 0)
+    (set-goal demand-economy-house-floor-1 1)
+    (set-goal demand-economy-house-floor-4 1)
+    (set-goal demand-economy-house-floor-8 1)
+    (set-goal demand-economy-house-floor-12 1)
+    (set-goal demand-economy-house-floor-16 1)
+    (set-goal demand-economy-farm-floor-feudal-4 1)
+    (set-goal demand-economy-farm-floor-feudal-8 1)
+    (disable-self)
+)
+
+(defrule
+    (true)
+=>
+    (set-goal demand-economy-farm-boom-castle 1)
+    (set-goal demand-economy-farm-boom-imperial 0)
+    (set-goal demand-economy-lumber-camp-floor-1 1)
+    (set-goal demand-economy-lumber-camp-floor-2 1)
+    (set-goal demand-economy-mining-camp-floor-1 0)
+    (set-goal demand-economy-mining-camp-floor-2 0)
+    (set-goal demand-economy-food-mill-boom 1)
+    (set-goal demand-economy-market-floor-1 1)
+    (set-goal byzantine-stone-demand 0)
+    (set-goal demand-castle-stable-capability 0)
+    (set-goal demand-castle-archery-capability 0)
+    (disable-self)
+)
+"""
+          if old not in s:
+              raise SystemExit("initialization block not found")
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
+          PY
+          test "$(sha256sum /tmp/Byzantine-Core-v1-dark-age-mining-patched.per | cut -d' ' -f1)" = "78cbba8d7aa24d0e8af467970783fe4a07932ac86e6fd5ae8f216dff60d8024c"
       - name: Install pinned native parser
         run: python -m pip install "git+https://github.com/joerollman/aoe2-ai-parser.git@3dfa2583b7c2ec36b85ccb421ebd0abe9ff276ba"
       - name: Pinned native parser gate
