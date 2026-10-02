@@ -25,6 +25,7 @@ from ..ir.capability import (
     SemanticId,
     WitnessId,
     WitnessKind,
+    CapabilityRecoveryContract,
 )
 from ..primitives import PrimitiveRegistry
 from .capability_validation import ValidationReport, validate_capability_graph
@@ -232,6 +233,12 @@ def project_capability_graph(
                 release=(release_predicate,),
                 owner=demand.identity,
                 strategic_binding=demand.strategic_binding,
+                recovery=(
+                    demand.strategic_binding.recovery
+                    if demand.strategic_binding is not None
+                    and demand.strategic_binding.recovery is not None
+                    else CapabilityRecoveryContract()
+                ),
                 location=demand.location,
             )
         )
