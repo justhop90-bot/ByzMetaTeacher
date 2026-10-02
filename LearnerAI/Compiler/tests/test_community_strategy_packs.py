@@ -45,6 +45,55 @@ class ByzantineCommunityStrategyPackTests(unittest.TestCase):
             self.assertIn(f"{identity}-pending", observations)
             self.assertIn(f"{identity}-complete", observations)
 
+    def test_verified_imperial_land_escalation_is_present(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        demands = {demand.identity: demand for demand in profile.demands}
+
+        for identity in (
+            "imperial-cavalier-floor",
+            "imperial-hussar-floor",
+            "imperial-onager-floor",
+            "imperial-siege-ram-floor",
+            "imperial-trebuchet-floor",
+        ):
+            self.assertIn(identity, demands)
+            self.assertIn(
+                "(current-age >= imperial-age)",
+                demands[identity].execution.requirements,
+            )
+
+        observations = {item.identity for item in profile.observations}
+        self.assertIn("strategy-enemy-siege-cleared", observations)
+        self.assertIn("strategy-enemy-castle-cleared", observations)
+
+    def test_imperial_land_research_pack_has_verified_witnesses(self):
+        profile = build_byzantine_stock_strategy(self.effective)
+        observations = {item.identity for item in profile.observations}
+
+        for identity in (
+            "research-cavalier",
+            "research-hussar",
+            "research-onager",
+            "research-siege-ram",
+        ):
+            self.assertIn(identity, {demand.identity for demand in profile.demands})
+            self.assertIn(f"{identity}-pending", observations)
+            self.assertIn(f"{identity}-complete", observations)
+
+    def test_imperial_land_slice_emits_native_training_actions(self):
+        from Compiler.clients.basilisk import compile_strategy_profile
+
+        profile = build_byzantine_stock_strategy(self.effective)
+        output = compile_strategy_profile(profile, self.effective)
+
+        for action in (
+            "(train cavalier)",
+            "(train hussar)",
+            "(train onager)",
+            "(train battering-ram-line)",
+            "(train trebuchet)",
+        ):
+            self.assertIn(action, output)
     def test_stock_profile_has_explicit_control_and_water_modes(self):
         profile = build_byzantine_stock_strategy(self.effective)
         sn_ids = {mode.native_strategic_number_id for mode in profile.strategic_number_modes}
