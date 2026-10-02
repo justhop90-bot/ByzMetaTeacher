@@ -10,7 +10,6 @@ from typing import Mapping, TYPE_CHECKING
 from enum import Enum
 
 from ..ast import Expression, SourceLocation
-from .model import StorageRequestId
 \nif TYPE_CHECKING:\n    from ..runtime_binding import GoalSlotRequest\nfrom .strategic_number_arbitration import StrategicNumberActionAttachment
 
 
@@ -140,11 +139,6 @@ class NativeAttackLifecyclePlan:
                 raise ValueError(
                     f"native attack Goal input '{request.identity}' must bind "
                     "argument 0"
-                )
-            if request.request.request_id.purpose != "byzantine-attack-phase":
-                raise ValueError(
-                    f"native attack Goal input '{request.identity}' must use the "
-                    "byzantine-attack-phase storage purpose"
                 )
 
         if not isinstance(self.strategic_number_action_attachments, tuple):
