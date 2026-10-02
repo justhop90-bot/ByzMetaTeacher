@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from ..ir.civ_profile import EffectiveCivData
-from ..ir.community_strategy_packs import _build_demand, _research_demand, _training_demand
+from ..ir.community_strategy_packs import _build_demand, _training_demand
 from ..ir.game_data import Age, Resource
 from ..ir import strategy as _strategy
 
@@ -191,6 +191,61 @@ def _with_execution_guards(
     return replace(demand, execution=execution)
 
 
+
+def _dark_loom_research(effective: EffectiveCivData) -> _strategy.StrategicDemandSpec:
+    tech = effective.tech(22)
+    cost = effective.cost_of("tech:22")
+    return _strategy.StrategicDemandSpec(
+        identity="dark-loom",
+        owner="economy",
+        posture=_strategy.StrategyPosture.BOOM,
+        priority=_strategy.StrategicPriority.SUPPORT,
+        reason=(
+            _persistent(
+                "Secure the Dark Age villager economy before the Feudal transition",
+                "current-dark-age",
+            ),
+        ),
+        admissibility=(
+            _persistent(
+                "Loom remains admissible while the Byzantine bot is in Dark Age",
+                "current-dark-age",
+            ),
+        ),
+        invalidation=(),
+        capability_intent=_strategy.CapabilityIntent(
+            _strategy.CapabilityIntentKind.RESEARCH,
+            "technology",
+            int(tech.id),
+        ),
+        target=_strategy.StrategicTarget(
+            _strategy.StrategicTargetKind.EXACT,
+            "technology",
+            int(tech.id),
+        ),
+        opportunity_cost=_strategy.OpportunityCostPolicy(
+            owner="economy",
+            protected_floors=(
+                _strategy.ProtectedResourceFloor(Resource.GOLD, cost.gold),
+            ),
+            emergency_override_postures=(
+                _strategy.StrategyPosture.FLUSH,
+                _strategy.StrategyPosture.RUSH,
+            ),
+        ),
+        execution=_strategy.ExecutionDemandTemplate(
+            requirements=(
+                "(current-age == dark-age)",
+                "(can-research-with-escrow loom)",
+            ),
+            action="(research loom)",
+            witness="(research-completed 22)",
+            release="(research-completed 22)",
+            escrow_release_resources=(Resource.GOLD,),
+        ),
+    )
+
+
 def _castle_age_transition(effective: EffectiveCivData) -> _strategy.StrategicDemandSpec:
     advance = effective.age_advance(Age.CASTLE)
     cost = effective.cost_of_age_advance(Age.CASTLE)
@@ -253,21 +308,7 @@ def _bot_demands(effective: EffectiveCivData) -> tuple[_strategy.StrategicDemand
     # Civilian production is deliberately staged. One permanent "make
     # villagers" demand is easy to write and excellent at starving everything
     # else, which is apparently how humanity discovered economic collapse.
-    demands.append(
-        _research_demand(
-            effective=effective,
-            identity="dark-loom",
-            owner="economy",
-            posture=_strategy.StrategyPosture.BOOM,
-            priority=_strategy.StrategicPriority.SUPPORT,
-            age_guard="(current-age == dark-age)",
-            age_observation_ref="current-dark-age",
-            tech_name="loom",
-            reason_label="Secure the Dark Age villager economy before the Feudal transition",
-            resources=(Resource.GOLD,),
-            minimum_floors=((Resource.GOLD, 50),),
-        )
-    )
+    demands.append(_dark_loom_research(effective))
 
     villager_stages = (
         ("villagers-dark-22", Age.DARK, 10, 22, "Dark Age villager production", ()),
