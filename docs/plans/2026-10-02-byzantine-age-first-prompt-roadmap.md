@@ -1,4 +1,4 @@
-**5/7 PROMPTS**
+**6/7 PROMPTS**
 
 # Byzantine Core v1 — Age-First Bot Roadmap
 
@@ -184,7 +184,7 @@ Prompt 4 also requires focused tests for trash conversion, gunpowder conversion,
 
 ---
 
-## **5/7 — Prompt 5: Resource Demand Controller — ACTIVE**
+## **5/7 — Prompt 5: Resource Demand Controller — IMPLEMENTED / CI PENDING**
 
 ### Objective
 
@@ -244,11 +244,24 @@ Prompt 5 also requires focused tests for all seven economy modes, research prior
 
 ---
 
-## **6/7 — Prompt 6: Water, Transport, and Positional Completion — QUEUED**
+## **6/7 — Prompt 6: Water, Transport, and Positional Completion — ACTIVE**
 
 ### Objective
 
 Finish the water branch without pretending that ship production alone is a water strategy.
+
+### Implemented in this prompt
+
+- Added the missing Byzantine first-Dock capability demand for Islands maps.
+- Reused the existing typed water execution plan for fishing, transport, naval defense, naval control, and transport-loss recovery.
+- Kept fishing below a bounded two-ship floor.
+- Kept transport at one reusable ship and allowed the existing capability-loss path to return it to the execution phase after loss.
+- Kept defensive Fire Galley production bounded to observed enemy naval pressure.
+- Kept Castle Galley control bounded to observed enemy naval pressure and Castle availability.
+- Did not add a second Dock demand.
+- Did not modify the generic water compiler or create a second water scheduler.
+- Added bot-focused artifact coverage for Dock, Fishing Ship, Transport Ship, Fire Galley, and Galley actions.
+
 
 ### Required behavior
 
@@ -261,6 +274,8 @@ Finish the water branch without pretending that ship production alone is a water
 - recovery after transport/naval loss.
 
 The existing water and transport compiler machinery is reused. No parallel water scheduler is permitted.
+
+Prompt 6 also requires focused tests for first-Dock admission, fishing continuity, transport recovery, naval-defense pressure, and deterministic water artifact emission.
 
 ---
 
