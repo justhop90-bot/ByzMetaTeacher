@@ -585,7 +585,7 @@ def community_strategy_demands(
                 reason_ref="strategy-castle-age",
                 reason_label="Imperial conversion requires a verified university provider",
                 building=university,
-                requirements=(" (current-age >= castle-age)", "(can-build university)"),
+                requirements=("(current-age >= castle-age)", "(can-build university)"),
             ),
             _build_demand(
                 identity="adaptive-outpost",
