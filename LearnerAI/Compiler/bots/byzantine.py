@@ -502,7 +502,7 @@ def _castle_logistica_research(effective: EffectiveCivData) -> _strategy.Strateg
         ),
         execution=_strategy.ExecutionDemandTemplate(
             requirements=(
-                "(current-age >= castle-age)",
+                "(current-age >= imperial-age)",
                 "(or (map-type arena) "
                 "(players-unit-type-count any-enemy militia-line >= 5))",
                 "(can-research-with-escrow ri-logistica)",
@@ -670,9 +670,6 @@ def build_byzantine_bot_profile(effective: EffectiveCivData):
         ),
         "castle-archery-capability": (
             "(players-unit-type-count any-enemy archer-line >= 4)",
-        ),
-        "castle-siege-capability": (
-            "(players-unit-type-count any-enemy mangonel-line >= 2)",
         ),
         "adaptive-outpost": (
             "(or (players-unit-type-count any-enemy knight >= 3) "
