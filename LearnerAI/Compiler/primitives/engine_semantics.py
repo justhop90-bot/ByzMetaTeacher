@@ -263,6 +263,7 @@ _ADMISSIBILITY_SPECS = (
 _ARBITRATION_SPECS = (
     ("can-afford-building", "arbitration.building.affordability"),
     ("can-afford-research", "arbitration.research.affordability"),
+    ("up-point-distance", "arbitration.wall.anchor-distance"),
 )
 
 _FEASIBILITY_SPECS = (
