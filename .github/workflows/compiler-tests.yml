@@ -93,10 +93,10 @@ jobs:
           from pathlib import Path
           from LearnerAI.Compiler.clients.basilisk import compile_strategy_profile
           from LearnerAI.Compiler.ir.civ_profile import resolve_effective_civ
-          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_castle_strategy
+          from LearnerAI.Compiler.clients.basilisk import ByzantineProfile, build_byzantine_strategy
 
           effective = resolve_effective_civ(ByzantineProfile.for_update_185872())
-          profile = build_byzantine_castle_strategy(effective)
+          profile = build_byzantine_strategy(effective)
           Path("/tmp/basilisk-strategy.per").write_text(
               compile_strategy_profile(profile, effective),
               encoding="utf-8",
