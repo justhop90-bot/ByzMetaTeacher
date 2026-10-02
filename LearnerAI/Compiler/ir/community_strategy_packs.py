@@ -807,12 +807,13 @@ def community_strategy_demands(
                 release="(unit-type-count fishing-ship >= 2)",
             ),
         )
+    )
     demands.append(
         _StrategicDemandSpec(
             identity="water-transport-capability",
             owner="water-transport",
             production_arbitration_group="production",
-            posture=_StrategyPosture.TRANSPORT_SUPPORT if False else _StrategyPosture.BOOM,
+            posture=_StrategyPosture.BOOM,
             priority=_StrategicPriority.DEFENSE,
             reason=(
                 _persistent(
