@@ -1,0 +1,1000 @@
+        (goal demand-castle-monastery-capability 52)
+    )
+    (not (building-type-count monastery >= 1))
+    (up-pending-objects c: 104 == 0)
+    (up-pending-placement c: 104)
+=>
+    (set-goal demand-castle-monastery-capability 52)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-castle-monastery-capability 54)
+        (goal demand-castle-monastery-capability 52)
+    )
+    (not (building-type-count monastery >= 1))
+    (up-pending-objects c: 104 == 0)
+    (not (up-pending-placement c: 104))
+=>
+    (set-goal demand-castle-monastery-capability 1)
+    (set-goal construction-retry-barrier-castle-monastery-capability 1)
+)
+
+; Action issuance: castle-monastery-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-castle-monastery-capability 1)
+    (not (building-type-count monastery >= 1))
+    (goal construction-retry-barrier-castle-monastery-capability 0)
+    (up-pending-objects c: 104 == 0)
+    (not (up-pending-placement c: 104))
+    (not (building-type-count monastery > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (can-build monastery)
+=>
+    (build monastery)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-castle-monastery-capability 54)
+)
+
+; Pending diagnostics: imperial-university-capability
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 94 and cannot reissue from pending goal 95
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 95 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 96 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-university-capability | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-university-capability in ACTIVE; it is not PENDING.
+; Release: imperial-university-capability | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-university-capability 96)
+    (building-type-count university > 0)
+=>
+    (set-goal demand-imperial-university-capability 0)
+)
+
+; Recovery: imperial-university-capability | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-university-capability 0)
+    (not (building-type-count university >= 1))
+    (current-age >= castle-age)
+=>
+    (set-goal demand-imperial-university-capability 1)
+)
+
+; Construction observation: imperial-university-capability
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: imperial-university-capability | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-university-capability 97)
+        (goal demand-imperial-university-capability 95)
+    )
+    (building-type-count university >= 1)
+=>
+    (set-goal demand-imperial-university-capability 96)
+)
+
+; Pending admission: imperial-university-capability | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-university-capability 97)
+        (goal demand-imperial-university-capability 95)
+    )
+    (not (building-type-count university >= 1))
+    (up-pending-objects c: 209 >= 1)
+=>
+    (set-goal demand-imperial-university-capability 95)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-university-capability 97)
+        (goal demand-imperial-university-capability 95)
+    )
+    (not (building-type-count university >= 1))
+    (up-pending-objects c: 209 == 0)
+    (up-pending-placement c: 209)
+=>
+    (set-goal demand-imperial-university-capability 95)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-university-capability 97)
+        (goal demand-imperial-university-capability 95)
+    )
+    (not (building-type-count university >= 1))
+    (up-pending-objects c: 209 == 0)
+    (not (up-pending-placement c: 209))
+=>
+    (set-goal demand-imperial-university-capability 1)
+    (set-goal construction-retry-barrier-imperial-university-capability 1)
+)
+
+; Action issuance: imperial-university-capability | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-university-capability 1)
+    (not (building-type-count university >= 1))
+    (goal construction-retry-barrier-imperial-university-capability 0)
+    (up-pending-objects c: 209 == 0)
+    (not (up-pending-placement c: 209))
+    (not (building-type-count university > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (can-build university)
+=>
+    (build university)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-university-capability 97)
+)
+
+; Pending diagnostics: adaptive-outpost
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 42 and cannot reissue from pending goal 43
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 43 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 44 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: adaptive-outpost | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-adaptive-outpost in ACTIVE; it is not PENDING.
+; Release: adaptive-outpost | COMPLETE -> RELEASED
+(defrule
+    (goal demand-adaptive-outpost 44)
+    (building-type-count outpost > 0)
+=>
+    (set-goal demand-adaptive-outpost 0)
+)
+
+; Recovery: adaptive-outpost | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-adaptive-outpost 0)
+    (not (building-type-count outpost >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+=>
+    (set-goal demand-adaptive-outpost 1)
+)
+
+; Construction observation: adaptive-outpost
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: adaptive-outpost | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-adaptive-outpost 45)
+        (goal demand-adaptive-outpost 43)
+    )
+    (building-type-count outpost >= 1)
+=>
+    (set-goal demand-adaptive-outpost 44)
+)
+
+; Pending admission: adaptive-outpost | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-outpost 45)
+        (goal demand-adaptive-outpost 43)
+    )
+    (not (building-type-count outpost >= 1))
+    (up-pending-objects c: 598 >= 1)
+=>
+    (set-goal demand-adaptive-outpost 43)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-outpost 45)
+        (goal demand-adaptive-outpost 43)
+    )
+    (not (building-type-count outpost >= 1))
+    (up-pending-objects c: 598 == 0)
+    (up-pending-placement c: 598)
+=>
+    (set-goal demand-adaptive-outpost 43)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-adaptive-outpost 45)
+        (goal demand-adaptive-outpost 43)
+    )
+    (not (building-type-count outpost >= 1))
+    (up-pending-objects c: 598 == 0)
+    (not (up-pending-placement c: 598))
+=>
+    (set-goal demand-adaptive-outpost 1)
+    (set-goal construction-retry-barrier-adaptive-outpost 1)
+)
+
+; Action issuance: adaptive-outpost | ACTIVE -> ISSUED
+(defrule
+    (goal demand-adaptive-outpost 1)
+    (not (building-type-count outpost >= 1))
+    (goal construction-retry-barrier-adaptive-outpost 0)
+    (up-pending-objects c: 598 == 0)
+    (not (up-pending-placement c: 598))
+    (not (building-type-count outpost > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (can-build outpost)
+=>
+    (build outpost)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-outpost 45)
+)
+
+; Pending diagnostics: adaptive-watch-tower
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 44 and cannot reissue from pending goal 45
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 45 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 46 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: adaptive-watch-tower | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-adaptive-watch-tower in ACTIVE; it is not PENDING.
+; Release: adaptive-watch-tower | COMPLETE -> RELEASED
+(defrule
+    (goal demand-adaptive-watch-tower 46)
+    (building-type-count 79 > 0)
+=>
+    (set-goal demand-adaptive-watch-tower 0)
+)
+
+; Recovery: adaptive-watch-tower | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-adaptive-watch-tower 0)
+    (not (building-type-count 79 >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+    (not (current-age >= imperial-age))
+=>
+    (set-goal demand-adaptive-watch-tower 1)
+)
+
+; Construction observation: adaptive-watch-tower
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: adaptive-watch-tower | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-adaptive-watch-tower 47)
+        (goal demand-adaptive-watch-tower 45)
+    )
+    (building-type-count 79 >= 1)
+=>
+    (set-goal demand-adaptive-watch-tower 46)
+)
+
+; Pending admission: adaptive-watch-tower | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-watch-tower 47)
+        (goal demand-adaptive-watch-tower 45)
+    )
+    (not (building-type-count 79 >= 1))
+    (up-pending-objects c: 79 >= 1)
+=>
+    (set-goal demand-adaptive-watch-tower 45)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-watch-tower 47)
+        (goal demand-adaptive-watch-tower 45)
+    )
+    (not (building-type-count 79 >= 1))
+    (up-pending-objects c: 79 == 0)
+    (up-pending-placement c: 79)
+=>
+    (set-goal demand-adaptive-watch-tower 45)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-adaptive-watch-tower 47)
+        (goal demand-adaptive-watch-tower 45)
+    )
+    (not (building-type-count 79 >= 1))
+    (up-pending-objects c: 79 == 0)
+    (not (up-pending-placement c: 79))
+=>
+    (set-goal demand-adaptive-watch-tower 1)
+    (set-goal construction-retry-barrier-adaptive-watch-tower 1)
+)
+
+; Action issuance: adaptive-watch-tower | ACTIVE -> ISSUED
+(defrule
+    (goal demand-adaptive-watch-tower 1)
+    (not (building-type-count 79 >= 1))
+    (goal construction-retry-barrier-adaptive-watch-tower 0)
+    (up-pending-objects c: 79 == 0)
+    (not (up-pending-placement c: 79))
+    (not (building-type-count 79 > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= feudal-age)
+    (can-build 79)
+    (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5))
+=>
+    (build 79)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-watch-tower 47)
+)
+
+; Pending diagnostics: adaptive-stone-wall
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 43 and cannot reissue from pending goal 44
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 44 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 45 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: adaptive-stone-wall | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-adaptive-stone-wall in ACTIVE; it is not PENDING.
+; Release: adaptive-stone-wall | COMPLETE -> RELEASED
+(defrule
+    (goal demand-adaptive-stone-wall 45)
+    (or
+        (building-type-count 72 > 0)
+        (building-type-count 117 > 0)
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 0)
+)
+
+; Recovery: adaptive-stone-wall | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-adaptive-stone-wall 0)
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+    (not (current-age >= imperial-age))
+=>
+    (set-goal demand-adaptive-stone-wall 1)
+)
+
+; Construction observation: adaptive-stone-wall
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: adaptive-stone-wall | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-adaptive-stone-wall 46)
+        (goal demand-adaptive-stone-wall 44)
+    )
+    (or
+        (building-type-count 72 >= 1)
+        (building-type-count 117 >= 1)
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 45)
+)
+
+; Pending admission: adaptive-stone-wall | ISSUED/PENDING -> PENDING
+; Both wall materials are valid because the same demand emits Palisade in Feudal
+; and Stone in Castle+. Pending is queue protection, never completion truth.
+(defrule
+    (or
+        (goal demand-adaptive-stone-wall 46)
+        (goal demand-adaptive-stone-wall 44)
+    )
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (or
+        (up-pending-objects c: 72 >= 1)
+        (up-pending-objects c: 117 >= 1)
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 44)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-stone-wall 46)
+        (goal demand-adaptive-stone-wall 44)
+    )
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (or
+        (up-pending-placement c: 72)
+        (up-pending-placement c: 117)
+    )
+=>
+    (set-goal demand-adaptive-stone-wall 44)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE only after both wall queues are clear.
+(defrule
+    (or
+        (goal demand-adaptive-stone-wall 46)
+        (goal demand-adaptive-stone-wall 44)
+    )
+    (not (building-type-count 72 >= 1))
+    (not (building-type-count 117 >= 1))
+    (up-pending-objects c: 72 == 0)
+    (up-pending-objects c: 117 == 0)
+    (not (up-pending-placement c: 72))
+    (not (up-pending-placement c: 117))
+=>
+    (set-goal demand-adaptive-stone-wall 1)
+    (set-goal construction-retry-barrier-adaptive-stone-wall 1)
+)
+
+; Action issuance is intentionally owned by the geometry rules above.
+; The old generic (build 117) placement path is retired; wall construction now
+; enters through up-build-line after a bounded, persisted point plan.
+
+; Pending diagnostics: adaptive-guard-tower
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 41 and cannot reissue from pending goal 42
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 42 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 43 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: adaptive-guard-tower | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-adaptive-guard-tower in ACTIVE; it is not PENDING.
+; Release: adaptive-guard-tower | COMPLETE -> RELEASED
+(defrule
+    (goal demand-adaptive-guard-tower 43)
+    (building-type-count 234 > 0)
+=>
+    (set-goal demand-adaptive-guard-tower 0)
+)
+
+; Recovery: adaptive-guard-tower | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-adaptive-guard-tower 0)
+    (not (building-type-count 234 >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+    (not (current-age >= imperial-age))
+=>
+    (set-goal demand-adaptive-guard-tower 1)
+)
+
+; Construction observation: adaptive-guard-tower
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: adaptive-guard-tower | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-adaptive-guard-tower 44)
+        (goal demand-adaptive-guard-tower 42)
+    )
+    (building-type-count 234 >= 1)
+=>
+    (set-goal demand-adaptive-guard-tower 43)
+)
+
+; Pending admission: adaptive-guard-tower | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-guard-tower 44)
+        (goal demand-adaptive-guard-tower 42)
+    )
+    (not (building-type-count 234 >= 1))
+    (up-pending-objects c: 234 >= 1)
+=>
+    (set-goal demand-adaptive-guard-tower 42)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-adaptive-guard-tower 44)
+        (goal demand-adaptive-guard-tower 42)
+    )
+    (not (building-type-count 234 >= 1))
+    (up-pending-objects c: 234 == 0)
+    (up-pending-placement c: 234)
+=>
+    (set-goal demand-adaptive-guard-tower 42)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-adaptive-guard-tower 44)
+        (goal demand-adaptive-guard-tower 42)
+    )
+    (not (building-type-count 234 >= 1))
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+=>
+    (set-goal demand-adaptive-guard-tower 1)
+    (set-goal construction-retry-barrier-adaptive-guard-tower 1)
+)
+
+; Action issuance: adaptive-guard-tower | ACTIVE -> ISSUED
+(defrule
+    (goal demand-adaptive-guard-tower 1)
+    (not (building-type-count 234 >= 1))
+    (goal construction-retry-barrier-adaptive-guard-tower 0)
+    (up-pending-objects c: 234 == 0)
+    (not (up-pending-placement c: 234))
+    (not (building-type-count 234 > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= castle-age)
+    (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5))
+    (can-build 234)
+=>
+    (build 234)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-adaptive-guard-tower 44)
+)
+
+; Pending diagnostics: imperial-keep-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 89 and cannot reissue from pending goal 90
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 90 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 91 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-keep-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-keep-floor in ACTIVE; it is not PENDING.
+; Release: imperial-keep-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-keep-floor 91)
+    (building-type-count 235 > 0)
+=>
+    (set-goal demand-imperial-keep-floor 0)
+)
+
+; Recovery: imperial-keep-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-keep-floor 0)
+    (not (building-type-count 235 >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+=>
+    (set-goal demand-imperial-keep-floor 1)
+)
+
+; Construction observation: imperial-keep-floor
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: imperial-keep-floor | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-keep-floor 92)
+        (goal demand-imperial-keep-floor 90)
+    )
+    (building-type-count 235 >= 1)
+=>
+    (set-goal demand-imperial-keep-floor 91)
+)
+
+; Pending admission: imperial-keep-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-keep-floor 92)
+        (goal demand-imperial-keep-floor 90)
+    )
+    (not (building-type-count 235 >= 1))
+    (up-pending-objects c: 235 >= 1)
+=>
+    (set-goal demand-imperial-keep-floor 90)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-keep-floor 92)
+        (goal demand-imperial-keep-floor 90)
+    )
+    (not (building-type-count 235 >= 1))
+    (up-pending-objects c: 235 == 0)
+    (up-pending-placement c: 235)
+=>
+    (set-goal demand-imperial-keep-floor 90)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-keep-floor 92)
+        (goal demand-imperial-keep-floor 90)
+    )
+    (not (building-type-count 235 >= 1))
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+=>
+    (set-goal demand-imperial-keep-floor 1)
+    (set-goal construction-retry-barrier-imperial-keep-floor 1)
+)
+
+; Action issuance: imperial-keep-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-keep-floor 1)
+    (not (building-type-count 235 >= 1))
+    (goal construction-retry-barrier-imperial-keep-floor 0)
+    (up-pending-objects c: 235 == 0)
+    (not (up-pending-placement c: 235))
+    (not (building-type-count 235 > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5)) (players-building-type-count any-enemy 82 >= 1))
+    (can-build 235)
+=>
+    (build 235)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-keep-floor 92)
+)
+
+; Pending diagnostics: imperial-bombard-tower-floor
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 83 and cannot reissue from pending goal 84
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 84 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 85 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'build' is not treated as completion evidence; witness 'building-type-count' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'building-type-count' and may clear the demand only from complete state
+; Issuance failure: imperial-bombard-tower-floor | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-imperial-bombard-tower-floor in ACTIVE; it is not PENDING.
+; Release: imperial-bombard-tower-floor | COMPLETE -> RELEASED
+(defrule
+    (goal demand-imperial-bombard-tower-floor 85)
+    (building-type-count 236 > 0)
+=>
+    (set-goal demand-imperial-bombard-tower-floor 0)
+)
+
+; Recovery: imperial-bombard-tower-floor | RELEASED -> ACTIVE on world-state loss
+(defrule
+    (goal demand-imperial-bombard-tower-floor 0)
+    (not (building-type-count 236 >= 1))
+    (or (players-unit-type-count any-enemy knight >= 3) (or (players-unit-type-count any-enemy archer-line >= 4) (players-unit-type-count any-enemy militia-line >= 5)))
+=>
+    (set-goal demand-imperial-bombard-tower-floor 1)
+)
+
+; Construction observation: imperial-bombard-tower-floor
+; Precedence: COMPLETE > FOUNDATION_PENDING > PLACEMENT_PENDING > RETRY
+; Completion witness: imperial-bombard-tower-floor | PENDING/ISSUED -> COMPLETE
+; COMPLETE | ISSUED/PENDING -> COMPLETE
+(defrule
+    (or
+        (goal demand-imperial-bombard-tower-floor 86)
+        (goal demand-imperial-bombard-tower-floor 84)
+    )
+    (building-type-count 236 >= 1)
+=>
+    (set-goal demand-imperial-bombard-tower-floor 85)
+)
+
+; Pending admission: imperial-bombard-tower-floor | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-bombard-tower-floor 86)
+        (goal demand-imperial-bombard-tower-floor 84)
+    )
+    (not (building-type-count 236 >= 1))
+    (up-pending-objects c: 236 >= 1)
+=>
+    (set-goal demand-imperial-bombard-tower-floor 84)
+)
+
+; PLACEMENT_PENDING | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-imperial-bombard-tower-floor 86)
+        (goal demand-imperial-bombard-tower-floor 84)
+    )
+    (not (building-type-count 236 >= 1))
+    (up-pending-objects c: 236 == 0)
+    (up-pending-placement c: 236)
+=>
+    (set-goal demand-imperial-bombard-tower-floor 84)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-imperial-bombard-tower-floor 86)
+        (goal demand-imperial-bombard-tower-floor 84)
+    )
+    (not (building-type-count 236 >= 1))
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+=>
+    (set-goal demand-imperial-bombard-tower-floor 1)
+    (set-goal construction-retry-barrier-imperial-bombard-tower-floor 1)
+)
+
+; Action issuance: imperial-bombard-tower-floor | ACTIVE -> ISSUED
+(defrule
+    (goal demand-imperial-bombard-tower-floor 1)
+    (not (building-type-count 236 >= 1))
+    (goal construction-retry-barrier-imperial-bombard-tower-floor 0)
+    (up-pending-objects c: 236 == 0)
+    (not (up-pending-placement c: 236))
+    (not (building-type-count 236 > 0))
+    (goal action-claim-build-pass-singleton 0)
+    (current-age >= imperial-age)
+    (or (or (players-unit-type-count any-enemy knight >= 3) (players-unit-type-count any-enemy militia-line >= 5)) (players-unit-type-count any-enemy mangonel-line >= 2))
+    (can-build 236)
+=>
+    (build 236)
+    (set-goal action-claim-build-pass-singleton 1)
+    (set-goal demand-imperial-bombard-tower-floor 86)
+)
+
+; Pending diagnostics: research-wheelbarrow
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 122 and cannot reissue from pending goal 123
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 123 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 124 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-wheelbarrow | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-wheelbarrow in ACTIVE; it is not PENDING.
+; Release: research-wheelbarrow | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-wheelbarrow 124)
+    (research-completed 213)
+=>
+    (set-goal demand-research-wheelbarrow 0)
+)
+
+; Completion witness: research-wheelbarrow | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (research-completed 213)
+=>
+    (set-goal demand-research-wheelbarrow 124)
+)
+
+; Pending admission: research-wheelbarrow | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (not (research-completed 213))
+    (up-research-status c: 213 >= 2)
+=>
+    (set-goal demand-research-wheelbarrow 123)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-wheelbarrow 125)
+        (goal demand-research-wheelbarrow 123)
+    )
+    (not (research-completed 213))
+    (not (up-research-status c: 213 >= 2))
+=>
+    (set-goal demand-research-wheelbarrow 1)
+    (set-goal research-retry-barrier-research-wheelbarrow 1)
+)
+
+; Action issuance: research-wheelbarrow | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-wheelbarrow 1)
+    (not (research-completed 213))
+    (goal research-retry-barrier-research-wheelbarrow 0)
+    (not (up-research-status c: 213 >= 2))
+    (not (research-completed 213))
+    (current-age >= feudal-age)
+    (can-research-with-escrow wheelbarrow)
+=>
+    (release-escrow food)
+    (research wheelbarrow)
+    (set-goal demand-research-wheelbarrow 125)
+)
+
+; Pending diagnostics: research-double-bit-axe
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 104 and cannot reissue from pending goal 105
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 105 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 106 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-double-bit-axe | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-double-bit-axe in ACTIVE; it is not PENDING.
+; Release: research-double-bit-axe | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-double-bit-axe 106)
+    (research-completed 202)
+=>
+    (set-goal demand-research-double-bit-axe 0)
+)
+
+; Completion witness: research-double-bit-axe | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-double-bit-axe 107)
+        (goal demand-research-double-bit-axe 105)
+    )
+    (research-completed 202)
+=>
+    (set-goal demand-research-double-bit-axe 106)
+)
+
+; Pending admission: research-double-bit-axe | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-double-bit-axe 107)
+        (goal demand-research-double-bit-axe 105)
+    )
+    (not (research-completed 202))
+    (up-research-status c: 202 >= 2)
+=>
+    (set-goal demand-research-double-bit-axe 105)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-double-bit-axe 107)
+        (goal demand-research-double-bit-axe 105)
+    )
+    (not (research-completed 202))
+    (not (up-research-status c: 202 >= 2))
+=>
+    (set-goal demand-research-double-bit-axe 1)
+    (set-goal research-retry-barrier-research-double-bit-axe 1)
+)
+
+; Action issuance: research-double-bit-axe | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-double-bit-axe 1)
+    (not (research-completed 202))
+    (goal research-retry-barrier-research-double-bit-axe 0)
+    (not (up-research-status c: 202 >= 2))
+    (not (research-completed 202))
+    (current-age >= feudal-age)
+    (can-research-with-escrow double-bit-axe)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research double-bit-axe)
+    (set-goal demand-research-double-bit-axe 107)
+)
+
+; Pending diagnostics: research-horse-collar
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 114 and cannot reissue from pending goal 115
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 115 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 116 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-horse-collar | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-horse-collar in ACTIVE; it is not PENDING.
+; Release: research-horse-collar | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-horse-collar 116)
+    (research-completed 14)
+=>
+    (set-goal demand-research-horse-collar 0)
+)
+
+; Completion witness: research-horse-collar | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-horse-collar 117)
+        (goal demand-research-horse-collar 115)
+    )
+    (research-completed 14)
+=>
+    (set-goal demand-research-horse-collar 116)
+)
+
+; Pending admission: research-horse-collar | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-horse-collar 117)
+        (goal demand-research-horse-collar 115)
+    )
+    (not (research-completed 14))
+    (up-research-status c: 14 >= 2)
+=>
+    (set-goal demand-research-horse-collar 115)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-horse-collar 117)
+        (goal demand-research-horse-collar 115)
+    )
+    (not (research-completed 14))
+    (not (up-research-status c: 14 >= 2))
+=>
+    (set-goal demand-research-horse-collar 1)
+    (set-goal research-retry-barrier-research-horse-collar 1)
+)
+
+; Action issuance: research-horse-collar | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-horse-collar 1)
+    (not (research-completed 14))
+    (goal research-retry-barrier-research-horse-collar 0)
+    (not (up-research-status c: 14 >= 2))
+    (not (research-completed 14))
+    (current-age >= feudal-age)
+    (can-research-with-escrow horse-collar)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research horse-collar)
+    (set-goal demand-research-horse-collar 117)
+)
+
+; Pending diagnostics: research-hand-cart
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 110 and cannot reissue from pending goal 111
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 111 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 112 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-hand-cart | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-hand-cart in ACTIVE; it is not PENDING.
+; Release: research-hand-cart | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-hand-cart 112)
+    (research-completed 249)
+=>
+    (set-goal demand-research-hand-cart 0)
+)
+
+; Completion witness: research-hand-cart | PENDING/ISSUED -> COMPLETE
+(defrule
+    (or
+        (goal demand-research-hand-cart 113)
+        (goal demand-research-hand-cart 111)
+    )
+    (research-completed 249)
+=>
+    (set-goal demand-research-hand-cart 112)
+)
+
+; Pending admission: research-hand-cart | ISSUED/PENDING -> PENDING
+(defrule
+    (or
+        (goal demand-research-hand-cart 113)
+        (goal demand-research-hand-cart 111)
+    )
+    (not (research-completed 249))
+    (up-research-status c: 249 >= 2)
+=>
+    (set-goal demand-research-hand-cart 111)
+)
+
+; RETRY | ISSUED/PENDING -> ACTIVE
+(defrule
+    (or
+        (goal demand-research-hand-cart 113)
+        (goal demand-research-hand-cart 111)
+    )
+    (not (research-completed 249))
+    (not (up-research-status c: 249 >= 2))
+=>
+    (set-goal demand-research-hand-cart 1)
+    (set-goal research-retry-barrier-research-hand-cart 1)
+)
+
+; Action issuance: research-hand-cart | ACTIVE -> ISSUED
+(defrule
+    (goal demand-research-hand-cart 1)
+    (not (research-completed 249))
+    (goal research-retry-barrier-research-hand-cart 0)
+    (not (up-research-status c: 249 >= 2))
+    (not (research-completed 249))
+    (current-age >= castle-age)
+    (can-research-with-escrow hand-cart)
+=>
+    (release-escrow food)
+    (release-escrow wood)
+    (research hand-cart)
+    (set-goal demand-research-hand-cart 113)
+)
+
+; Pending diagnostics: research-bow-saw
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-GUARD: action is gated by active goal 99 and cannot reissue from pending goal 100
+; PENDING-DIAGNOSTIC [INFO] PENDING-WITNESS-GUARD: completion witness is evaluated only while pending goal 100 is active
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-GUARD: release is evaluated only after completion goal 101 is reached
+; PENDING-DIAGNOSTIC [INFO] PENDING-ACTION-WITNESS-SEPARATE: action 'research' is not treated as completion evidence; witness 'research-completed' owns completion
+; PENDING-DIAGNOSTIC [INFO] PENDING-RELEASE-SEPARATE: release remains separate from witness 'research-completed' and may clear the demand only from complete state
+; Issuance failure: research-bow-saw | RETAIN-ACTIVE
+; An unsatisfied issuance guard leaves demand-research-bow-saw in ACTIVE; it is not PENDING.
+; Release: research-bow-saw | COMPLETE -> RELEASED
+(defrule
+    (goal demand-research-bow-saw 101)
+    (research-completed 203)
