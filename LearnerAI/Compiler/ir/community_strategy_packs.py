@@ -1228,6 +1228,7 @@ def build_byzantine_stock_strategy(
                 required_observation_refs=("current-feudal-age",),
                 forbidden_observation_refs=(
                     "castle-complete",
+                    "current-imperial-age",
                     "strategy-water-islands",
                     "strategy-enemy-pressure",
                 ),
